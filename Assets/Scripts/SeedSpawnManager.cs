@@ -18,6 +18,7 @@ public class SeedSpawnManager : MonoBehaviour
         currentSeed.GetComponent<MagicSeed>().SetManager(this); // Link to seed script
     }
 
+
     public void RespawnSeed() // For next room or replay
     {
         if (currentSeed != null) Destroy(currentSeed);
