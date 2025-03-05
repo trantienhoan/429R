@@ -27,6 +27,10 @@ namespace UnityEngine.XR.Content.Interaction
         [Tooltip("Events to fire when the 'non broken' object is restored.")]
         RestoreEvent m_OnRestore = new RestoreEvent();
 
+        [SerializeField]
+        [Tooltip("Particle system to play when the object is restored.")]
+        ParticleSystem m_RestoreParticleSystem;
+
         bool m_Resting = true;
         float m_Timer = 0.0f;
         bool m_Restored = false;
@@ -93,6 +97,12 @@ namespace UnityEngine.XR.Content.Interaction
                 {
                     m_Restored = true;
                     var restoredVersion = Instantiate(m_RestoredVersion, transform.position, transform.rotation);
+                    if (m_RestoreParticleSystem != null)
+                    {
+                        ParticleSystem psInstance = Instantiate(m_RestoreParticleSystem, transform.position, transform.rotation);
+                        psInstance.Play();
+                        Destroy(psInstance.gameObject, psInstance.main.duration);
+                    }
                     m_OnRestore.Invoke(restoredVersion);
                     Destroy(gameObject);
                 }

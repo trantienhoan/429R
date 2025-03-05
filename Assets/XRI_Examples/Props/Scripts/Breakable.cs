@@ -23,10 +23,15 @@ namespace UnityEngine.XR.Content.Interaction
             "The first parameter is the colliding object, the second parameter is the 'broken' version.")]
         BreakEvent m_OnBreak = new BreakEvent();
 
+        [SerializeField]
+        [Tooltip("Particle system to play when the object breaks.")]
+        ParticleSystem m_BreakParticleSystem;
+
+
         bool m_Destroyed = false;
 
         /// <summary>
-        /// Events to fire when a matching object collides and break this object.
+        /// Events to fire when a atmching object collides and break this object.
         /// The first parameter is the colliding object, the second parameter is the 'broken' version.
         /// </summary>
         public BreakEvent onBreak => m_OnBreak;
@@ -40,6 +45,12 @@ namespace UnityEngine.XR.Content.Interaction
             {
                 m_Destroyed = true;
                 var brokenVersion = Instantiate(m_BrokenVersion, transform.position, transform.rotation);
+                if (m_BreakParticleSystem != null)
+                {
+                    ParticleSystem psInstance = Instantiate(m_BreakParticleSystem, transform.position, transform.rotation);
+                    psInstance.Play();
+                    Destroy(psInstance.gameObject, psInstance.main.duration);
+                }
                 m_OnBreak.Invoke(collision.gameObject, brokenVersion);
                 Destroy(gameObject);
             }
