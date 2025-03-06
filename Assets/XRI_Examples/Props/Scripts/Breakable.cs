@@ -41,10 +41,18 @@ namespace UnityEngine.XR.Content.Interaction
             if (m_Destroyed)
                 return;
 
-            if (collision.gameObject.tag.Equals(m_ColliderTag, System.StringComparison.InvariantCultureIgnoreCase))
+            //if (collision.gameObject.tag.Equals(m_ColliderTag, System.StringComparison.InvariantCultureIgnoreCase))
+            if (collision.gameObject.CompareTag(m_ColliderTag))
             {
                 m_Destroyed = true;
-                var brokenVersion = Instantiate(m_BrokenVersion, transform.position, transform.rotation);
+                //var brokenVersion = Instantiate(m_BrokenVersion, transform.position, transform.rotation);
+                GameObject brokenVersion = null; // Default to null if no broken version is assigned
+
+                if (m_BrokenVersion != null)
+                {
+                    brokenVersion = Instantiate(m_BrokenVersion, transform.position, transform.rotation);
+                }
+
                 if (m_BreakParticleSystem != null)
                 {
                     ParticleSystem psInstance = Instantiate(m_BreakParticleSystem, transform.position, transform.rotation);
