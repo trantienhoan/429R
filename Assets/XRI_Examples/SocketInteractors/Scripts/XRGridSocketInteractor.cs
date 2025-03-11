@@ -101,7 +101,8 @@ namespace UnityEngine.XR.Content.Interaction
         /// <summary>
         /// See <see cref="MonoBehaviour"/>.
         /// </summary>
-        protected virtual void OnValidate()
+        //protected virtual void OnValidate()
+        protected override void OnValidate()
         {
             m_GridWidth = Mathf.Max(1, m_GridWidth);
             m_GridHeight = Mathf.Max(1, m_GridHeight);
@@ -112,15 +113,23 @@ namespace UnityEngine.XR.Content.Interaction
         /// </summary>
         protected virtual void OnDrawGizmosSelected()
         {
+            if (attachTransform == null)
+                return;
+
             Gizmos.color = Color.green;
             Gizmos.matrix = attachTransform != null ? attachTransform.localToWorldMatrix : transform.localToWorldMatrix;
+
             for (var i = 0; i < m_GridHeight; i++)
             {
                 for (var j = 0; j < m_GridWidth; j++)
                 {
-                    var currentPosition = new Vector3(j * m_CellOffset.x, i * m_CellOffset.y, 0f);
-                    Gizmos.DrawLine(currentPosition + (Vector3.left * m_CellOffset.x * 0.5f), currentPosition + (Vector3.right * m_CellOffset.y * 0.5f));
-                    Gizmos.DrawLine(currentPosition + (Vector3.down * m_CellOffset.x * 0.5f), currentPosition + (Vector3.up * m_CellOffset.y * 0.5f));
+                    Vector3 startPos = new Vector3(j * m_CellOffset.x, 0, 0);
+                    Vector3 endPos = new Vector3(j * m_CellOffset.x, m_GridHeight * m_CellOffset.y, 0);
+                    Gizmos.DrawLine(startPos, endPos);
+
+                    startPos = new Vector3(0, i * m_CellOffset.y, 0);
+                    endPos = new Vector3(m_GridWidth * m_CellOffset.x, i * m_CellOffset.y, 0);
+                    Gizmos.DrawLine(startPos, endPos);
                 }
             }
         }

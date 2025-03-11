@@ -79,50 +79,119 @@ namespace UnityEngine.XR.Content.Interaction
                     m_Timer = 0.0f;
                     m_Resting = false;
 
-                    foreach (var child in m_ChildTransforms)
+                    // Stop tracking positions if there is no restored version
+                    if (m_RestoredVersion != null)
                     {
-                        if (child == null)
-                            continue;
+                        foreach (var child in m_ChildTransforms)
+                        {
+                            if (child == null)
+                                continue;
 
-                        var poses = m_ChildPoses[child];
-                        poses.m_EndPose = new Pose(child.position, child.rotation);
-                        m_ChildPoses[child] = poses;
+                            var poses = m_ChildPoses[child];
+                            poses.m_EndPose = new Pose(child.position, child.rotation);
+                            m_ChildPoses[child] = poses;
+                        }
                     }
                 }
             }
             else
             {
-                var timePercent = m_Timer / m_RestoreTime;
-                if (timePercent > 1.0f)
+                if (m_RestoredVersion != null)
                 {
-                    m_Restored = true;
-                    var restoredVersion = Instantiate(m_RestoredVersion, transform.position, transform.rotation);
-                    if (m_RestoreParticleSystem != null)
+                    var timePercent = m_Timer / m_RestoreTime;
+                    if (timePercent > 1.0f)
                     {
-                        ParticleSystem psInstance = Instantiate(m_RestoreParticleSystem, transform.position, transform.rotation);
-                        psInstance.Play();
-                        Destroy(psInstance.gameObject, psInstance.main.duration);
+                        m_Restored = true;
+                        var restoredVersion = Instantiate(m_RestoredVersion, transform.position, transform.rotation);
+                        m_OnRestore.Invoke(restoredVersion);
+
+                        if (m_RestoreParticleSystem != null)
+                        {
+                            ParticleSystem psInstance = Instantiate(m_RestoreParticleSystem, transform.position, transform.rotation);
+                            psInstance.Play();
+                            Destroy(psInstance.gameObject, psInstance.main.duration);
+                        }
+
+                        foreach (var child in m_ChildTransforms)
+                        {
+                            if (child != null)
+                                Destroy(child.gameObject);
+                        }
+
+                        Destroy(gameObject);
                     }
-                    m_OnRestore.Invoke(restoredVersion);
-                    Destroy(gameObject);
+                    else
+                    {
+                        timePercent = 1.0f - ((1.0f - timePercent) * (1.0f - timePercent));
+
+                        foreach (var child in m_ChildTransforms)
+                        {
+                            if (child == null)
+                                continue;
+
+                            var poses = m_ChildPoses[child];
+                            var lerpedPosition = Vector3.Lerp(poses.m_EndPose.position, poses.m_StartPose.position, timePercent);
+                            var lerpedRotation = Quaternion.Slerp(poses.m_EndPose.rotation, poses.m_StartPose.rotation, timePercent);
+                            child.position = lerpedPosition;
+                            child.rotation = lerpedRotation;
+                        }
+                    }
                 }
                 else
                 {
-                    timePercent = 1.0f - ((1.0f - timePercent) * (1.0f - timePercent));
-
-                    foreach (var child in m_ChildTransforms)
+                    // If no restored version, wait then shrink instead of rewinding position
+                    if (m_Timer > m_RestoreTime)
                     {
-                        if (child == null)
-                            continue;
-
-                        var poses = m_ChildPoses[child];
-                        var lerpedPosition = Vector3.Lerp(poses.m_EndPose.position, poses.m_StartPose.position, timePercent);
-                        var lerpedRotation = Quaternion.Slerp(poses.m_EndPose.rotation, poses.m_StartPose.rotation, timePercent);
-                        child.position = lerpedPosition;
-                        child.rotation = lerpedRotation;
+                        m_Restored = true;
+                        StartCoroutine(ShrinkAndDestroy());
                     }
                 }
             }
         }
+
+        private System.Collections.IEnumerator ShrinkAndDestroy()
+        {
+            float scaleTime = 0.5f; // Duration for scaling effect
+            float elapsedTime = 0f;
+
+            // Scale up first
+            while (elapsedTime < scaleTime / 2)
+            {
+                float scaleFactor = Mathf.Lerp(1f, 1.3f, elapsedTime / (scaleTime / 2));
+                foreach (var child in m_ChildTransforms)
+                {
+                    if (child != null)
+                        child.localScale = Vector3.one * scaleFactor;
+                }
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+
+            elapsedTime = 0f;
+
+            // Scale down to zero
+            while (elapsedTime < scaleTime)
+            {
+                float scaleFactor = Mathf.Lerp(1.3f, 0f, elapsedTime / scaleTime);
+                foreach (var child in m_ChildTransforms)
+                {
+                    if (child != null)
+                        child.localScale = Vector3.one * scaleFactor;
+                }
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+
+            // Destroy all child objects
+            foreach (var child in m_ChildTransforms)
+            {
+                if (child != null)
+                    Destroy(child.gameObject);
+            }
+
+            // Destroy the main object
+            Destroy(gameObject);
+        }
+
     }
 }
