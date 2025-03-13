@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 
 public class MagicSeed : MonoBehaviour
@@ -6,9 +6,17 @@ public class MagicSeed : MonoBehaviour
     public ParticleSystem hintParticles; // Assign a particle system in Inspector
     private SeedSpawnManager manager;
     private bool isPickedUp = false;
+    private FairyController fairyController;
 
     void Start()
     {
+        fairyController = FindObjectOfType<FairyController>();
+
+        if (fairyController == null)
+        {
+            Debug.LogError("⚠️ MagicSeed: No FairyController found in the scene! Make sure it's in the hierarchy.");
+        }
+
         StartCoroutine(HintSequence());
     }
 
@@ -41,13 +49,56 @@ public class MagicSeed : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player") && !isPickedUp) // Tag your VR hand as "Player"
+        Debug.Log("🔹 MagicSeed: OnTriggerEnter triggered with " + other.gameObject.name);
+
+        if (other.CompareTag("Player") && !isPickedUp)
         {
+            Debug.Log("✅ MagicSeed: Player picked up the seed!");
+
             isPickedUp = true;
-            hintParticles.Stop();
-            CancelInvoke(); // Stop hints
-            FindObjectOfType<FairyController>().SummonFairy(transform.position);
-            gameObject.SetActive(false); // Hide seed
+            StopCoroutine(HintSequence());
+            CancelInvoke();
+
+            if (hintParticles != null)
+            {
+                Debug.Log("🌟 MagicSeed: Stopping hint particles.");
+                hintParticles.Stop();
+            }
+
+            if (fairyController != null)
+            {
+                Debug.Log("🧚 MagicSeed: Summoning Fairy at " + transform.position);
+                fairyController.SummonFairy(transform.position);
+            }
+            else
+            {
+                Debug.LogWarning("⚠️ MagicSeed: FairyController not found!");
+            }
+
+            // 🔥 Force release from XR system
+            var interactable = GetComponent<UnityEngine.XR.Interaction.Toolkit.XRGrabInteractable>();
+            if (interactable != null && interactable.isSelected)
+            {
+                Debug.Log("🎮 MagicSeed: Forcing release from XR system.");
+                interactable.interactionManager.SelectExit(interactable.firstInteractorSelecting, interactable);
+                interactable.enabled = false; // Prevent re-grabbing
+            }
+            else
+            {
+                Debug.LogWarning("⚠️ MagicSeed: No XRGrabInteractable found!");
+            }
+
+            // ✅ Ensure rigidbody doesn't interfere
+            var rb = GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                Debug.Log("🔧 MagicSeed: Adjusting Rigidbody properties.");
+                rb.isKinematic = false;
+                rb.useGravity = true;
+            }
+
+            Debug.Log("🚀 MagicSeed: Removing object.");
+            Destroy(gameObject); // Completely remove seed
         }
     }
 }
