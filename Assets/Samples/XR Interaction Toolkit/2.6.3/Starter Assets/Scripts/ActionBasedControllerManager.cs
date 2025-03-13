@@ -9,6 +9,7 @@ namespace UnityEngine.XR.Interaction.Toolkit.Samples.StarterAssets
     /// <summary>
     /// Use this class to mediate the controllers and their associated interactors and input actions under different interaction states.
     /// </summary>
+    /// 
     [AddComponentMenu("XR/Action Based Controller Manager")]
     [DefaultExecutionOrder(k_UpdateOrder)]
     public class ActionBasedControllerManager : MonoBehaviour

@@ -6,17 +6,15 @@ public class MagicSeed : MonoBehaviour
     public ParticleSystem hintParticles; // Assign a particle system in Inspector
     private SeedSpawnManager manager;
     private bool isPickedUp = false;
-    private FairyController fairyController;
+    private FairyController fairyController => manager.fairyController;
+
+    // 🌟 Add references for scene effects
+    public Light directionalLight; // Assign the Directional Light in Inspector
+    public Material emissionMaterial; // Assign the emission material in Inspector
+    public Transform wall000, wall001, wall002, wall003, ceiling; // Assign walls & ceiling
 
     void Start()
     {
-        fairyController = FindObjectOfType<FairyController>();
-
-        if (fairyController == null)
-        {
-            Debug.LogError("⚠️ MagicSeed: No FairyController found in the scene! Make sure it's in the hierarchy.");
-        }
-
         StartCoroutine(HintSequence());
     }
 
@@ -98,7 +96,59 @@ public class MagicSeed : MonoBehaviour
             }
 
             Debug.Log("🚀 MagicSeed: Removing object.");
+
+            // 🌟 Start all scene effects
+            StartCoroutine(DarkenLight());
+            StartCoroutine(MoveWalls());
+
             Destroy(gameObject); // Completely remove seed
+        }
+    }
+    // 🌟 Coroutine to darken light and adjust temperature
+    IEnumerator DarkenLight()
+    {
+        float duration = 5f; // Time to complete the transition
+        float timer = 0f;
+        Color startColor = directionalLight.color;
+        Color targetColor = Color.black; // Darken filter color
+        float startTemp = directionalLight.colorTemperature;
+        float targetTemp = 1f; // Drop temperature
+
+        while (timer < duration)
+        {
+            timer += Time.deltaTime;
+            float t = timer / duration;
+            directionalLight.color = Color.Lerp(startColor, targetColor, t);
+            directionalLight.colorTemperature = Mathf.Lerp(startTemp, targetTemp, t);
+            yield return null;
+        }
+    }
+
+    // 🌟 Coroutine to move walls in different directions
+    IEnumerator MoveWalls()
+    {
+        float duration = 7f; // Time to complete the movement
+        float distance = 7f; // Distance each wall moves
+        float timer = 0f;
+
+        Vector3 startWall000 = wall000.position;
+        Vector3 startWall001 = wall001.position;
+        Vector3 startWall002 = wall002.position;
+        Vector3 startWall003 = wall003.position;
+        Vector3 startCeiling = ceiling.position;
+
+        while (timer < duration)
+        {
+            timer += Time.deltaTime;
+            float t = timer / duration;
+
+            wall000.position = Vector3.Lerp(startWall000, startWall000 + Vector3.forward * distance, t);
+            wall001.position = Vector3.Lerp(startWall001, startWall001 + Vector3.right * distance, t);
+            wall002.position = Vector3.Lerp(startWall002, startWall002 + Vector3.back * distance, t);
+            wall003.position = Vector3.Lerp(startWall003, startWall003 + Vector3.left * distance, t);
+            ceiling.position = Vector3.Lerp(startCeiling, startCeiling + Vector3.up * distance, t);
+
+            yield return null;
         }
     }
 }
