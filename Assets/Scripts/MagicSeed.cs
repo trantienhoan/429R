@@ -127,28 +127,37 @@ public class MagicSeed : MonoBehaviour
     // 🌟 Coroutine to move walls in different directions
     IEnumerator MoveWalls()
     {
-        float duration = 7f; // Time to complete the movement
-        float distance = 7f; // Distance each wall moves
-        float timer = 0f;
+        float duration = 5f; // Total movement duration (increase if needed)
+        float targetDistance = 50f; // Move the walls further away
 
-        Vector3 startWall000 = wall000.position;
-        Vector3 startWall001 = wall001.position;
-        Vector3 startWall002 = wall002.position;
-        Vector3 startWall003 = wall003.position;
-        Vector3 startCeiling = ceiling.position;
+        Vector3 targetWall000 = wall000.position + Vector3.forward * targetDistance;
+        Vector3 targetWall001 = wall001.position + Vector3.right * targetDistance;
+        Vector3 targetWall002 = wall002.position + Vector3.back * targetDistance;
+        Vector3 targetWall003 = wall003.position + Vector3.left * targetDistance;
+        Vector3 targetCeiling = ceiling.position + Vector3.up * targetDistance;
+
+        float timer = 0f;
 
         while (timer < duration)
         {
             timer += Time.deltaTime;
             float t = timer / duration;
+            t = t * t * (3f - 2f * t); // Smoothstep for better easing
 
-            wall000.position = Vector3.Lerp(startWall000, startWall000 + Vector3.forward * distance, t);
-            wall001.position = Vector3.Lerp(startWall001, startWall001 + Vector3.right * distance, t);
-            wall002.position = Vector3.Lerp(startWall002, startWall002 + Vector3.back * distance, t);
-            wall003.position = Vector3.Lerp(startWall003, startWall003 + Vector3.left * distance, t);
-            ceiling.position = Vector3.Lerp(startCeiling, startCeiling + Vector3.up * distance, t);
+            wall000.position = Vector3.Lerp(wall000.position, targetWall000, t);
+            wall001.position = Vector3.Lerp(wall001.position, targetWall001, t);
+            wall002.position = Vector3.Lerp(wall002.position, targetWall002, t);
+            wall003.position = Vector3.Lerp(wall003.position, targetWall003, t);
+            ceiling.position = Vector3.Lerp(ceiling.position, targetCeiling, t);
 
             yield return null;
         }
+        
+        // Ensure final positions are set
+        wall000.position = targetWall000;
+        wall001.position = targetWall001;
+        wall002.position = targetWall002;
+        wall003.position = targetWall003;
+        ceiling.position = targetCeiling;
     }
 }
