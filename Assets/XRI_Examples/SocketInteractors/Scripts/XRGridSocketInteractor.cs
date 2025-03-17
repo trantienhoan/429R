@@ -11,7 +11,7 @@ namespace UnityEngine.XR.Content.Interaction
     /// During Awake, a Grid Socket instantiates one GameObject (as child of its Attach Transform) for each grid cell.
     /// The Transform component of these instantiated objects are used as the actual attach point for the Interactables.
     /// </remarks>
-    public class XRGridSocketInteractor : XRSocketInteractor
+    public class XRGridSocketInteractor : UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor
     {
         [Space]
         [SerializeField]
@@ -59,8 +59,8 @@ namespace UnityEngine.XR.Content.Interaction
         }
 
         readonly HashSet<Transform> m_UnorderedUsedAttachedTransform = new HashSet<Transform>();
-        readonly Dictionary<IXRInteractable, Transform> m_UsedAttachTransformByInteractable =
-            new Dictionary<IXRInteractable, Transform>();
+        readonly Dictionary<UnityEngine.XR.Interaction.Toolkit.Interactables.IXRInteractable, Transform> m_UsedAttachTransformByInteractable =
+            new Dictionary<UnityEngine.XR.Interaction.Toolkit.Interactables.IXRInteractable, Transform>();
 
         Transform[,] m_Grid;
 
@@ -155,21 +155,21 @@ namespace UnityEngine.XR.Content.Interaction
         }
 
         /// <inheritdoc />
-        public override bool CanSelect(IXRSelectInteractable interactable)
+        public override bool CanSelect(UnityEngine.XR.Interaction.Toolkit.Interactables.IXRSelectInteractable interactable)
         {
             return IsSelecting(interactable)
                    || (hasEmptyAttachTransform && !interactable.isSelected && !m_UnorderedUsedAttachedTransform.Contains(GetAttachTransform(interactable)));
         }
 
         /// <inheritdoc />
-        public override bool CanHover(IXRHoverInteractable interactable)
+        public override bool CanHover(UnityEngine.XR.Interaction.Toolkit.Interactables.IXRHoverInteractable interactable)
         {
             return base.CanHover(interactable)
                    && !m_UnorderedUsedAttachedTransform.Contains(GetAttachTransform(interactable));
         }
 
         /// <inheritdoc />
-        public override Transform GetAttachTransform(IXRInteractable interactable)
+        public override Transform GetAttachTransform(UnityEngine.XR.Interaction.Toolkit.Interactables.IXRInteractable interactable)
         {
             if (m_UsedAttachTransformByInteractable.TryGetValue(interactable, out var interactableAttachTransform))
                 return interactableAttachTransform;

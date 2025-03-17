@@ -17,7 +17,7 @@ namespace UnityEngine.XR.Content.Rendering
             Unhighlighted,
         }
 
-        static List<IXRTargetPriorityInteractor> s_InteractorList = new List<IXRTargetPriorityInteractor>();
+        static List<UnityEngine.XR.Interaction.Toolkit.Interactors.IXRTargetPriorityInteractor> s_InteractorList = new List<UnityEngine.XR.Interaction.Toolkit.Interactors.IXRTargetPriorityInteractor>();
 
 #pragma warning disable 649
         [Header("Audio")]
@@ -80,7 +80,7 @@ namespace UnityEngine.XR.Content.Rendering
 
 #pragma warning restore 649
 
-        XRBaseInteractable m_Interactable;
+        UnityEngine.XR.Interaction.Toolkit.Interactables.XRBaseInteractable m_Interactable;
 
         Material m_PulseMaterial;
         float m_StartingAlpha;
@@ -104,22 +104,22 @@ namespace UnityEngine.XR.Content.Rendering
         protected void Awake()
         {
             // Find the grab interactable
-            m_Interactable = GetComponentInParent<XRBaseInteractable>();
+            m_Interactable = GetComponentInParent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRBaseInteractable>();
 
             // Hook up to events
-            if (m_Interactable is IXRHoverInteractable hoverInteractable)
+            if (m_Interactable is UnityEngine.XR.Interaction.Toolkit.Interactables.IXRHoverInteractable hoverInteractable)
             {
                 hoverInteractable.hoverEntered.AddListener(OnHoverEntered);
                 hoverInteractable.hoverExited.AddListener(OnHoverExited);
             }
 
-            if (m_Interactable is IXRSelectInteractable selectInteractable)
+            if (m_Interactable is UnityEngine.XR.Interaction.Toolkit.Interactables.IXRSelectInteractable selectInteractable)
             {
                 selectInteractable.selectEntered.AddListener(OnSelectEntered);
                 selectInteractable.selectExited.AddListener(OnSelectExited);
             }
 
-            if (m_Interactable is IXRActivateInteractable activateInteractable)
+            if (m_Interactable is UnityEngine.XR.Interaction.Toolkit.Interactables.IXRActivateInteractable activateInteractable)
             {
                 activateInteractable.activated.AddListener(OnActivated);
                 activateInteractable.deactivated.AddListener(OnDeactivated);
@@ -199,7 +199,7 @@ namespace UnityEngine.XR.Content.Rendering
 
         void OnHoverEntered(HoverEnterEventArgs args)
         {
-            if (args.interactorObject is XRSocketInteractor)
+            if (args.interactorObject is UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor)
                 return;
 
             m_HoveredCount++;
@@ -222,7 +222,7 @@ namespace UnityEngine.XR.Content.Rendering
 
         void OnHoverExited(HoverExitEventArgs args)
         {
-            if (args.interactorObject is XRSocketInteractor)
+            if (args.interactorObject is UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor)
                 return;
 
             m_HoveredCount--;
@@ -230,11 +230,11 @@ namespace UnityEngine.XR.Content.Rendering
             UpdateHighlightState();
         }
 
-        bool HasValidInteractor(List<IXRTargetPriorityInteractor> interactors)
+        bool HasValidInteractor(List<UnityEngine.XR.Interaction.Toolkit.Interactors.IXRTargetPriorityInteractor> interactors)
         {
             foreach (var interactor in interactors)
             {
-                if (!(interactor is XRSocketInteractor))
+                if (!(interactor is UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor))
                     return true;
             }
             return false;
@@ -282,7 +282,7 @@ namespace UnityEngine.XR.Content.Rendering
 
         void OnSelectEntered(SelectEnterEventArgs args)
         {
-            if (args.interactorObject is XRSocketInteractor)
+            if (args.interactorObject is UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor)
                 return;
 
             if (m_AudioClick != null)
@@ -303,7 +303,7 @@ namespace UnityEngine.XR.Content.Rendering
 
         void OnSelectExited(SelectExitEventArgs args)
         {
-            if (args.interactorObject is XRSocketInteractor)
+            if (args.interactorObject is UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor)
                 return;
 
             if (m_OutlineHighlight != null)
@@ -322,7 +322,7 @@ namespace UnityEngine.XR.Content.Rendering
 
         void OnActivated(ActivateEventArgs args)
         {
-            if (args.interactorObject is XRSocketInteractor)
+            if (args.interactorObject is UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor)
                 return;
 
             if (m_OutlineHighlight != null)
@@ -343,7 +343,7 @@ namespace UnityEngine.XR.Content.Rendering
 
         void OnDeactivated(DeactivateEventArgs args)
         {
-            if (args.interactorObject is XRSocketInteractor)
+            if (args.interactorObject is UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor)
                 return;
 
             if (m_OutlineHighlight != null)

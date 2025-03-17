@@ -10,8 +10,8 @@ namespace UnityEngine.XR.Content.Interaction
     {
         const ContinuousMoveProviderBase.GravityApplicationMode k_DefaultGravityApplicationMode =
             ContinuousMoveProviderBase.GravityApplicationMode.AttemptingMove;
-        const ConstrainedMoveProvider.GravityApplicationMode k_DefaultGravityMode =
-            ConstrainedMoveProvider.GravityApplicationMode.AttemptingMove;
+        const UnityEngine.XR.Interaction.Toolkit.Locomotion.Movement.ConstrainedMoveProvider.GravityApplicationMode k_DefaultGravityMode =
+            UnityEngine.XR.Interaction.Toolkit.Locomotion.Movement.ConstrainedMoveProvider.GravityApplicationMode.AttemptingMove;
 
         /// <summary>
         /// Sets which movement control scheme to use.
@@ -93,13 +93,13 @@ namespace UnityEngine.XR.Content.Interaction
 
         [SerializeField]
         [Tooltip("Stores the locomotion provider for two-handed grab movement.")]
-        TwoHandedGrabMoveProvider m_TwoHandedGrabMoveProvider;
+        UnityEngine.XR.Interaction.Toolkit.Locomotion.Movement.TwoHandedGrabMoveProvider m_TwoHandedGrabMoveProvider;
 
         /// <summary>
         /// Stores the locomotion provider for two-handed grab movement.
         /// </summary>
         /// <seealso cref="TwoHandedGrabMoveProvider"/>
-        public TwoHandedGrabMoveProvider twoHandedGrabMoveProvider
+        public UnityEngine.XR.Interaction.Toolkit.Locomotion.Movement.TwoHandedGrabMoveProvider twoHandedGrabMoveProvider
         {
             get => m_TwoHandedGrabMoveProvider;
             set => m_TwoHandedGrabMoveProvider = value;

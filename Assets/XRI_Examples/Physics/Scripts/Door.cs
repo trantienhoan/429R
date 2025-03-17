@@ -49,9 +49,9 @@ namespace UnityEngine.XR.Content.Interaction
         bool m_Locked = false;
 
         GameObject m_KeySocket;
-        IXRSelectInteractable m_Key;
+        UnityEngine.XR.Interaction.Toolkit.Interactables.IXRSelectInteractable m_Key;
 
-        XRBaseInteractor m_KnobInteractor;
+        UnityEngine.XR.Interaction.Toolkit.Interactors.XRBaseInteractor m_KnobInteractor;
         Transform m_KnobInteractorAttachTransform;
 
         /// <summary>
@@ -158,7 +158,7 @@ namespace UnityEngine.XR.Content.Interaction
 
         public void KeyLockSelect(SelectEnterEventArgs args)
         {
-            m_KnobInteractor = args.interactorObject as XRBaseInteractor;
+            m_KnobInteractor = args.interactorObject as UnityEngine.XR.Interaction.Toolkit.Interactors.XRBaseInteractor;
             m_KnobInteractorAttachTransform = args.interactorObject.GetAttachTransform(args.interactableObject);
         }
 

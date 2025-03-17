@@ -1,4 +1,4 @@
-using UnityEngine.XR.Interaction.Toolkit;
+
 
 namespace UnityEngine.XR.Content.Interaction
 {
@@ -9,13 +9,13 @@ namespace UnityEngine.XR.Content.Interaction
     {
         [SerializeField]
         [Tooltip("The Socket Interactor that controls this socket attach point.")]
-        XRSocketInteractor m_ControllingInteractor;
+        UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor m_ControllingInteractor;
 
         void Start()
         {
             // If there is an existing interactable, we match its position so the object does not move
             if (m_ControllingInteractor == null)
-                m_ControllingInteractor = GetComponentInParent<XRSocketInteractor>();
+                m_ControllingInteractor = GetComponentInParent<UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor>();
 
             if (m_ControllingInteractor == null)
             {

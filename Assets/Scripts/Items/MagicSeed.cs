@@ -74,7 +74,7 @@ public class MagicSeed : MonoBehaviour
             }
 
             // 🔥 Force release from XR system
-            var interactable = GetComponent<UnityEngine.XR.Interaction.Toolkit.XRGrabInteractable>();
+            var interactable = GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
             if (interactable != null && interactable.isSelected)
             {
                 Debug.Log("🎮 MagicSeed: Forcing release from XR system.");

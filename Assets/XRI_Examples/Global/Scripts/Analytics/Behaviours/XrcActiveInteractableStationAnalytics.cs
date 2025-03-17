@@ -1,4 +1,4 @@
-using UnityEngine.XR.Interaction.Toolkit;
+
 
 namespace UnityEngine.XR.Content.Interaction.Analytics
 {
@@ -11,21 +11,21 @@ namespace UnityEngine.XR.Content.Interaction.Analytics
     {
         [Header("Active SimpleObject Substation")]
         [SerializeField]
-        XRBaseInteractable[] m_SimpleActiveInteractables;
+        UnityEngine.XR.Interaction.Toolkit.Interactables.XRBaseInteractable[] m_SimpleActiveInteractables;
 
         [Header("Candle Substation")]
         [SerializeField]
-        XRBaseInteractable m_LighterInteractable;
+        UnityEngine.XR.Interaction.Toolkit.Interactables.XRBaseInteractable m_LighterInteractable;
 
         [SerializeField]
-        XRBaseInteractable[] m_CandleInteractables;
+        UnityEngine.XR.Interaction.Toolkit.Interactables.XRBaseInteractable[] m_CandleInteractables;
 
         [SerializeField]
         OnTrigger[] m_CandleTriggers;
 
         [Header("Launcher Substation")]
         [SerializeField]
-        XRBaseInteractable m_LauncherInteractable;
+        UnityEngine.XR.Interaction.Toolkit.Interactables.XRBaseInteractable m_LauncherInteractable;
 
         [SerializeField]
         OnTrigger m_EasyRingTrigger;
@@ -38,7 +38,7 @@ namespace UnityEngine.XR.Content.Interaction.Analytics
 
         [Header("Megaphone Substation")]
         [SerializeField]
-        XRBaseInteractable m_MegaphoneInteractable;
+        UnityEngine.XR.Interaction.Toolkit.Interactables.XRBaseInteractable m_MegaphoneInteractable;
 
         void Awake()
         {

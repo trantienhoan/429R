@@ -16,8 +16,9 @@ public class SetOptionFromUI : MonoBehaviour
         volumeSlider.onValueChanged.AddListener(SetGlobalVolume);
         turnDropdown.onValueChanged.AddListener(SetTurnPlayerPref);
 
-        if (PlayerPrefs.HasKey("turn"))
-            turnDropdown.SetValueWithoutNotify(PlayerPrefs.GetInt("turn"));
+        // Initialize dropdown with current turn type
+        bool isSnapTurn = PlayerPrefs.GetInt("UseSnapTurn", 1) == 1;
+        turnDropdown.SetValueWithoutNotify(isSnapTurn ? 0 : 1);
     }
 
     public void SetGlobalVolume(float value)
@@ -27,7 +28,8 @@ public class SetOptionFromUI : MonoBehaviour
 
     public void SetTurnPlayerPref(int value)
     {
-        PlayerPrefs.SetInt("turn", value); 
-        turnTypeFromPlayerPref.ApplyPlayerPref();
+        // Convert dropdown value to UseSnapTurn format (0 = snap turn, 1 = continuous turn)
+        PlayerPrefs.SetInt("UseSnapTurn", value == 0 ? 1 : 0);
+        turnTypeFromPlayerPref.UpdateTurnType();
     }
 }

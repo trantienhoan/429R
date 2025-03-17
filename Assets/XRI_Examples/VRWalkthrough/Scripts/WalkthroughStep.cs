@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine.Events;
-using UnityEngine.XR.Interaction.Toolkit;
+
 
 namespace UnityEngine.XR.Content.Walkthrough
 {
@@ -19,7 +19,7 @@ namespace UnityEngine.XR.Content.Walkthrough
 
         [SerializeField]
         [Tooltip("The Teleportation Provider used to reposition the user. Usually a component on the XR Origin.")]
-        TeleportationProvider m_TeleportationProvider;
+        UnityEngine.XR.Interaction.Toolkit.Locomotion.Teleportation.TeleportationProvider m_TeleportationProvider;
 
         [SerializeField]
         [Tooltip("Optional audio source for voiceover")]
@@ -273,10 +273,10 @@ namespace UnityEngine.XR.Content.Walkthrough
 
         void SetCameraPosition()
         {
-            TeleportRequest request = new TeleportRequest()
+            UnityEngine.XR.Interaction.Toolkit.Locomotion.Teleportation.TeleportRequest request = new UnityEngine.XR.Interaction.Toolkit.Locomotion.Teleportation.TeleportRequest()
             {
                 requestTime = Time.time,
-                matchOrientation = MatchOrientation.TargetUpAndForward,
+                matchOrientation = UnityEngine.XR.Interaction.Toolkit.Locomotion.Teleportation.MatchOrientation.TargetUpAndForward,
 
                 destinationPosition = m_CameraTarget.transform.position,
                 destinationRotation = m_CameraTarget.transform.rotation

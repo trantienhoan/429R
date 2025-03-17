@@ -1,4 +1,4 @@
-using UnityEngine.XR.Interaction.Toolkit;
+
 
 namespace UnityEngine.XR.Content.Interaction
 {
@@ -22,7 +22,7 @@ namespace UnityEngine.XR.Content.Interaction
         }
 
         /// <inheritdoc />
-        public override bool CanHover(IXRHoverInteractable interactable)
+        public override bool CanHover(UnityEngine.XR.Interaction.Toolkit.Interactables.IXRHoverInteractable interactable)
         {
             if (!base.CanHover(interactable))
                 return false;
@@ -32,7 +32,7 @@ namespace UnityEngine.XR.Content.Interaction
         }
 
         /// <inheritdoc />
-        public override bool CanSelect(IXRSelectInteractable interactable)
+        public override bool CanSelect(UnityEngine.XR.Interaction.Toolkit.Interactables.IXRSelectInteractable interactable)
         {
             if (!base.CanSelect(interactable))
                 return false;

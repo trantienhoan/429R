@@ -19,7 +19,7 @@ namespace UnityEngine.XR.Content.Interaction
         void Start()
         {
             // We want to hook up to the Select events so we can read data about the interacting controller
-            var interactable = GetComponent<IXRSelectInteractable>();
+            var interactable = GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.IXRSelectInteractable>();
             if (interactable == null || interactable as Object == null)
             {
                 Debug.LogWarning($"No interactable on {name} - no animation will be played.", this);
@@ -50,7 +50,7 @@ namespace UnityEngine.XR.Content.Interaction
         void OnSelect(SelectEnterEventArgs args)
         {
             // Get the controller from the interactor, and then the activation control from there
-            var controllerInteractor = args.interactorObject as XRBaseControllerInteractor;
+            var controllerInteractor = args.interactorObject as UnityEngine.XR.Interaction.Toolkit.Interactors.XRBaseInputInteractor;
             if (controllerInteractor == null)
             {
                 Debug.LogWarning($"Selected by {args.interactorObject.transform.name}, which is not an XRBaseControllerInteractor", this);

@@ -33,7 +33,7 @@ namespace UnityEngine.XR.Content.Interaction.Analytics
             gripButton.onPress.AddListener(() => XrcAnalytics.interactionEvent.Send(parameter));
         }
 
-        internal static void Register(XRSocketInteractor socket, StationParameter connectParameter, StationParameter disconnectParameter = null)
+        internal static void Register(UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor socket, StationParameter connectParameter, StationParameter disconnectParameter = null)
         {
             if (socket == null)
                 return;
@@ -57,13 +57,13 @@ namespace UnityEngine.XR.Content.Interaction.Analytics
             onTrigger.onEnter.AddListener(otherGameObject => Send(onEnterParameter));
         }
 
-        internal static void Register(IEnumerable<XRBaseInteractable> interactables, StationParameter grabParameter, StationParameter activateParameter = null)
+        internal static void Register(IEnumerable<UnityEngine.XR.Interaction.Toolkit.Interactables.XRBaseInteractable> interactables, StationParameter grabParameter, StationParameter activateParameter = null)
         {
             foreach (var interactable in interactables)
                 Register(interactable, grabParameter, activateParameter);
         }
 
-        internal static void Register(XRBaseInteractable interactable, StationParameter grabParameter, StationParameter activateParameter = null)
+        internal static void Register(UnityEngine.XR.Interaction.Toolkit.Interactables.XRBaseInteractable interactable, StationParameter grabParameter, StationParameter activateParameter = null)
         {
             if (interactable == null)
                 return;
@@ -81,7 +81,7 @@ namespace UnityEngine.XR.Content.Interaction.Analytics
 
         static void OnGrabInteractable(SelectEnterEventArgs args, StationParameter parameter)
         {
-            if (!(args.interactorObject is XRBaseControllerInteractor))
+            if (!(args.interactorObject is UnityEngine.XR.Interaction.Toolkit.Interactors.XRBaseInputInteractor))
                 return;
 
             XrcAnalytics.interactionEvent.Send(parameter);
