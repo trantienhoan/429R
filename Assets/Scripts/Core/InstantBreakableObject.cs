@@ -9,6 +9,7 @@ namespace Core
         [SerializeField] protected bool breakOnlyFromWeapons = true;
         [SerializeField] protected bool useImpactForce = true;
         [SerializeField] protected LayerMask collisionLayers = -1; // -1 means all layers
+        [SerializeField] protected float damageMultiplier = 1f; // New field to control damage scaling
 
         // Public methods to modify settings
         public void SetBreakSettings(float impactForce, bool onlyWeapons, bool useForce)
@@ -47,11 +48,23 @@ namespace Core
                 Vector3 hitPoint = collision.contacts[0].point;
                 Vector3 hitDirection = collision.contacts[0].normal;
                 
-                // Calculate damage based on impact force
-                float damage = useImpactForce ? impactForce : health;
+                // Calculate damage based on impact force and weapon status
+                float damage;
+                if (useImpactForce)
+                {
+                    // Scale damage based on impact force, with a minimum damage
+                    damage = Mathf.Max(impactForce * damageMultiplier, minimumImpactForce);
+                    Debug.Log($"Calculated damage: {damage} (Impact force: {impactForce}, Multiplier: {damageMultiplier})");
+                }
+                else
+                {
+                    // If not using impact force, apply full health as damage
+                    damage = health;
+                    Debug.Log($"Using full health as damage: {damage}");
+                }
                 
-                // Apply damage
-                TakeDamage(damage, hitPoint, hitDirection);
+                // Apply damage using base class method to ensure events are triggered
+                base.TakeDamage(damage, hitPoint, hitDirection);
             }
         }
 

@@ -31,8 +31,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.7, y: 0.7, z: 0.7}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 2372198660267658206}
   m_Father: {fileID: 0}
@@ -109,6 +109,7 @@ MonoBehaviour:
   drag: 30
   angularDrag: 30
   useGravity: 1
+  breakUpwardForce: 2
   onBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -121,8 +122,12 @@ MonoBehaviour:
   collisionLayers:
     serializedVersion: 2
     m_Bits: 4294967295
+  damageMultiplier: 1
   intactMaterial: {fileID: 0}
   breakingMaterial: {fileID: 0}
+  boxMass: 1
+  boxSize: {x: 1, y: 1, z: 1}
+  boxMaterial: {fileID: 0}
 --- !u!33 &627956263598655002
 MeshFilter:
   m_ObjectHideFlags: 0

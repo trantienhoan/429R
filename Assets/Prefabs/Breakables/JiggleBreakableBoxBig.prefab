@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 5499714219526123263}
   - component: {fileID: 627956263598655002}
   - component: {fileID: 8508430040790421382}
-  - component: {fileID: 5422911037560676863}
+  - component: {fileID: 6839995935536558861}
   m_Layer: 0
   m_Name: JiggleBreakableBoxBig
   m_TagString: Untagged
@@ -31,7 +31,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 2, y: 2, z: 2}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 7749925701961158855}
@@ -138,7 +138,7 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &5422911037560676863
+--- !u!114 &6839995935536558861
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -147,19 +147,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 2061228985669117825}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e354109c8e211c24eb1ff00ea2b7accf, type: 3}
+  m_Script: {fileID: 11500000, guid: 7d9e2af4cddbb1d469ce6879a4b55336, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  health: 100
+  health: 500
   isBreakable: 1
-  itemDropPrefabs: []
+  itemDropPrefabs:
+  - {fileID: 2061228985669117825, guid: 6c87842cc47bf5e4db7e4a7e6eca8255, type: 3}
   dropForce: 5
   destroyDelay: 2
   breakEffect: {fileID: 0}
   breakSound: {fileID: 0}
   mass: 1000
-  drag: 1
-  angularDrag: 1
+  drag: 2
+  angularDrag: 2
   useGravity: 1
   breakUpwardForce: 2
   onBreak:
@@ -168,12 +169,12 @@ MonoBehaviour:
   onDamage:
     m_PersistentCalls:
       m_Calls: []
-  minimumImpactForce: 5
-  breakOnlyFromWeapons: 1
-  useImpactForce: 1
-  collisionLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
+  jiggleForce: 0.1
+  jiggleDuration: 1.5
+  jiggleCount: 3
+  itemDropInterval: 0.5
+  jiggleDamping: 0.5
+  jiggleFrequency: 2
 --- !u!1001 &3752818397708675998
 PrefabInstance:
   m_ObjectHideFlags: 0

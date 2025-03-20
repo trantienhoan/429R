@@ -1,11 +1,12 @@
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
+using Core;
 
 [RequireComponent(typeof(UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable))]
 public class TestWeapon : MonoBehaviour
 {
     [Header("Weapon Settings")]
-    [SerializeField] private float weaponMass = 1f;
+    [SerializeField] private float weaponMass = 0.9f;
     [SerializeField] private float impactForceMultiplier = 1f;
     
     private Rigidbody rb;
@@ -15,43 +16,11 @@ public class TestWeapon : MonoBehaviour
 
     private void Awake()
     {
-        // Get or add required components
+        Debug.Log($"TestWeapon: Awake called on {gameObject.name}");
+        
+        // Get required components
         rb = GetComponent<Rigidbody>();
-        if (rb == null)
-        {
-            rb = gameObject.AddComponent<Rigidbody>();
-        }
-
-        // Get the grab interactable
         grabInteractable = GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
-        if (grabInteractable == null)
-        {
-            grabInteractable = gameObject.AddComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
-        }
-
-        // Configure the grab interactable
-        grabInteractable.movementType = UnityEngine.XR.Interaction.Toolkit.Interactables.XRBaseInteractable.MovementType.VelocityTracking;
-        grabInteractable.throwOnDetach = false;
-        grabInteractable.smoothPosition = true;
-        grabInteractable.smoothRotation = true;
-        grabInteractable.smoothPositionAmount = 10f;
-        grabInteractable.smoothRotationAmount = 10f;
-        grabInteractable.tightenPosition = 0.8f;
-        grabInteractable.tightenRotation = 0.8f;
-        grabInteractable.throwSmoothingDuration = 0.1f;
-        grabInteractable.throwVelocityScale = 1f;
-        grabInteractable.throwAngularVelocityScale = 1f;
-        grabInteractable.retainTransformParent = true;
-
-        // Configure rigidbody
-        rb.mass = weaponMass;
-        rb.useGravity = true;
-        rb.isKinematic = false;
-        rb.interpolation = RigidbodyInterpolation.Interpolate;
-        rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
-        rb.maxAngularVelocity = 50f;
-        rb.solverIterations = 6;
-        rb.solverVelocityIterations = 2;
 
         // Subscribe to grab events
         grabInteractable.selectEntered.AddListener(OnGrab);
@@ -59,20 +28,29 @@ public class TestWeapon : MonoBehaviour
         
         // Ensure weapon tag is set
         gameObject.tag = "Weapon";
+        
+        // Log final state
+        Debug.Log($"TestWeapon: Setup complete on {gameObject.name}");
+        Debug.Log($"TestWeapon: Has Rigidbody: {rb != null}");
+        Debug.Log($"TestWeapon: Has XRGrabInteractable: {grabInteractable != null}");
+        Debug.Log($"TestWeapon: Tag: {gameObject.tag}");
+
+        if (rb != null)
+        {
+            rb.mass = weaponMass;
+        }
     }
 
     private void OnGrab(SelectEnterEventArgs args)
     {
-        // Make the weapon kinematic when grabbed
+        Debug.Log($"TestWeapon: Grabbed by {args.interactorObject.transform.name}");
         rb.isKinematic = true;
-        Debug.Log("Weapon grabbed - set to kinematic");
     }
 
     private void OnRelease(SelectExitEventArgs args)
     {
-        // Make the weapon non-kinematic when released
+        Debug.Log($"TestWeapon: Released by {args.interactorObject.transform.name}");
         rb.isKinematic = false;
-        Debug.Log("Weapon released - set to non-kinematic");
     }
 
     private void FixedUpdate()
@@ -84,12 +62,23 @@ public class TestWeapon : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        // Check if the hit object has a BreakableObject component
-        if (collision.gameObject.TryGetComponent<Core.BreakableObject>(out var breakable))
+        // Calculate impact force based on collision impulse
+        float impactForce = collision.impulse.magnitude * impactForceMultiplier;
+        
+        // Try to damage any type of breakable object
+        var jiggleBreakable = collision.gameObject.GetComponent<JiggleBreakableBed>();
+        if (jiggleBreakable != null)
         {
-            float impactForce = currentSpeed * impactForceMultiplier;
-            Debug.Log($"Weapon hit {collision.gameObject.name} with force: {impactForce}");
-            breakable.TakeDamage(impactForce, collision.contacts[0].point, collision.contacts[0].normal);
+            jiggleBreakable.TakeDamage(impactForce, collision.contacts[0].point, collision.contacts[0].normal);
+            return;
+        }
+
+        // Look for TreeOfLight in the collided object and its children
+        var treeOfLight = collision.gameObject.GetComponentInChildren<TreeOfLight>();
+        if (treeOfLight != null)
+        {
+            Debug.Log($"TestWeapon: Hit TreeOfLight with force {impactForce}");
+            treeOfLight.TakeDamage(impactForce);
         }
     }
 

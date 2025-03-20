@@ -31,7 +31,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 2, y: 2, z: 2}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 7749925701961158855}
@@ -116,7 +116,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: -4099090524529705888, guid: 5daa2e3c4c8d7b948841d963f321a6bf, type: 3}
+  - {fileID: -351022541804052484, guid: 44f3430c585c6514985b591c28e05a78, type: 3}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -152,7 +152,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   health: 100
   isBreakable: 1
-  itemDropPrefabs: []
+  itemDropPrefabs:
+  - {fileID: 2061228985669117825, guid: 0fd62c8c352ceaa4589e2c49dd306f4a, type: 3}
   dropForce: 5
   destroyDelay: 2
   breakEffect: {fileID: 0}
@@ -174,6 +175,7 @@ MonoBehaviour:
   collisionLayers:
     serializedVersion: 2
     m_Bits: 4294967295
+  damageMultiplier: 1
 --- !u!1001 &3752818397708675998
 PrefabInstance:
   m_ObjectHideFlags: 0

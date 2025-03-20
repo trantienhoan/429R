@@ -24,11 +24,13 @@ public class TestBreakableSetup : MonoBehaviour
     [SerializeField] private GameObject instantBreakablePrefab;
     [SerializeField] private int instantBreakableCount = 3;
     [SerializeField] private Vector3 instantBreakableSpacing = new Vector3(1f, 0f, 1f);
+    [SerializeField] private Transform instantBreakableSpawnPoint;
     
     [Header("Jiggle Breakable Objects")]
     [SerializeField] private GameObject jiggleBreakablePrefab;
     [SerializeField] private int jiggleBreakableCount = 3;
     [SerializeField] private Vector3 jiggleBreakableSpacing = new Vector3(1f, 0f, 1f);
+    [SerializeField] private Transform jiggleBreakableSpawnPoint;
     
     [Header("Spawn Settings")]
     [SerializeField] private Vector3 spawnOrigin = new Vector3(0f, 1f, 0f);
@@ -120,16 +122,24 @@ public class TestBreakableSetup : MonoBehaviour
 
     private void SpawnInstantBreakables()
     {
+        if (instantBreakablePrefab == null)
+        {
+            Debug.LogError("TestBreakableSetup: No instant breakable prefab assigned!");
+            return;
+        }
+
+        // Use spawn point if assigned, otherwise use spawn origin
+        Vector3 spawnPosition = instantBreakableSpawnPoint != null ? instantBreakableSpawnPoint.position : spawnOrigin;
+
         for (int i = 0; i < instantBreakableCount; i++)
         {
-            Vector3 position = spawnOrigin + new Vector3(
+            Vector3 position = spawnPosition + new Vector3(
                 instantBreakableSpacing.x * i,
                 0f,
                 0f
             );
 
             GameObject obj = Instantiate(instantBreakablePrefab, position, Quaternion.identity);
-            obj.transform.localScale = Vector3.one * objectScale;
             
             // Configure the breakable object
             if (obj.TryGetComponent<InstantBreakableObject>(out var breakable))
@@ -138,19 +148,32 @@ public class TestBreakableSetup : MonoBehaviour
                 if (obj.TryGetComponent<Rigidbody>(out var rb))
                 {
                     rb.mass = objectMass;
+                    rb.isKinematic = false;
+                    rb.useGravity = true;
                 }
             }
         }
+
+        Debug.Log($"Spawned {instantBreakableCount} instant breakable objects");
     }
 
     private void SpawnJiggleBreakables()
     {
+        if (jiggleBreakablePrefab == null)
+        {
+            Debug.LogError("TestBreakableSetup: No jiggle breakable prefab assigned!");
+            return;
+        }
+
+        // Use spawn point if assigned, otherwise use spawn origin
+        Vector3 spawnPosition = jiggleBreakableSpawnPoint != null ? jiggleBreakableSpawnPoint.position : spawnOrigin;
+
         for (int i = 0; i < jiggleBreakableCount; i++)
         {
-            Vector3 position = spawnOrigin + new Vector3(
+            Vector3 position = spawnPosition + new Vector3(
                 jiggleBreakableSpacing.x * i,
                 0f,
-                jiggleBreakableSpacing.z
+                0f
             );
 
             GameObject obj = Instantiate(jiggleBreakablePrefab, position, Quaternion.identity);
@@ -164,9 +187,13 @@ public class TestBreakableSetup : MonoBehaviour
                 if (obj.TryGetComponent<Rigidbody>(out var rb))
                 {
                     rb.mass = objectMass;
+                    rb.isKinematic = false;
+                    rb.useGravity = true;
                 }
             }
         }
+
+        Debug.Log($"Spawned {jiggleBreakableCount} jiggle breakable objects");
     }
 
     private void Update()
@@ -185,6 +212,14 @@ public class TestBreakableSetup : MonoBehaviour
         {
             SpawnWeapon();
         }
+        if (Input.GetKeyDown(KeyCode.I))
+        {
+            SpawnInstantBreakables();
+        }
+        if (Input.GetKeyDown(KeyCode.J))
+        {
+            SpawnJiggleBreakables();
+        }
     }
 
     private void UpdateDebugText()
@@ -201,6 +236,8 @@ public class TestBreakableSetup : MonoBehaviour
         text += "Controls:\n";
         text += "R - Respawn Boxes\n";
         text += "T - Spawn New Weapon\n";
+        text += "I - Spawn Instant Breakables\n";
+        text += "J - Spawn Jiggle Breakables\n";
 
         debugText.text = text;
     }
