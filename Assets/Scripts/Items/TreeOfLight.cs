@@ -141,7 +141,7 @@ public class TreeOfLight : MonoBehaviour
             // If we're fully grown, tell the pot we're breaking
             if (isFullyGrown)
             {
-                parentPot.OnTreeBreak();
+                parentPot.Break();
             }
             else
             {

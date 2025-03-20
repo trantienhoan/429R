@@ -65,6 +65,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 1bca6060b0173b64ab0a49c7d8811640,
         type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 1bca6060b0173b64ab0a49c7d8811640,
+        type: 3}
       propertyPath: m_TagString
       value: MagicalSeed
       objectReference: {fileID: 0}
@@ -263,8 +268,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.27054763, y: 0.20829399, z: 0.2880426}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 0.27054763, y: 0.16532141, z: 0.2880426}
+  m_Center: {x: 0, y: 0.021486279, z: 0}
 --- !u!114 &3608908808364529689
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -277,3 +282,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: deaa2e625936d2943ae57355fa1d7d95, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  maxDistanceFromPlayer: 20
+  checkInterval: 1
+  seedPrefab: {fileID: 3777597441533160902}
+  respawnPoint: {fileID: 0}
+  respawnDelay: 2

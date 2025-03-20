@@ -81,6 +81,7 @@ public class TreeOfLightPot : MonoBehaviour
     [SerializeField] private float keyRotationSpeed = 30f;
 
     private float currentHealth;
+    private GameObject spawnedKey; // Add this field to track the spawned key
 
     private void Awake()
     {
@@ -313,11 +314,51 @@ public class TreeOfLightPot : MonoBehaviour
                     socketInteractor.enabled = false;
                 }
 
-                // Destroy the seed after a short delay
-                Destroy(seed.gameObject, 0.5f);
+                // Destroy the seed immediately
+                Destroy(seed.gameObject);
 
                 // Start growth sequence
                 StartCoroutine(GrowTree());
+            }
+        }
+    }
+
+    private void OnDestroy()
+    {
+        // Clean up any existing seeds in the socket
+        if (socketInteractor != null)
+        {
+            var interactables = socketInteractor.interactablesSelected;
+            foreach (var interactable in interactables)
+            {
+                if (interactable != null)
+                {
+                    MagicalSeed seed = interactable.transform.GetComponent<MagicalSeed>();
+                    if (seed != null)
+                    {
+                        Destroy(seed.gameObject);
+                    }
+                }
+            }
+        }
+    }
+
+    private void OnDisable()
+    {
+        // Clean up any existing seeds in the socket when disabled
+        if (socketInteractor != null)
+        {
+            var interactables = socketInteractor.interactablesSelected;
+            foreach (var interactable in interactables)
+            {
+                if (interactable != null)
+                {
+                    MagicalSeed seed = interactable.transform.GetComponent<MagicalSeed>();
+                    if (seed != null)
+                    {
+                        Destroy(seed.gameObject);
+                    }
+                }
             }
         }
     }
@@ -407,6 +448,12 @@ public class TreeOfLightPot : MonoBehaviour
         {
             monsterSpawner.StopSpawning();
         }
+
+        // If the pot is already broken when the tree finishes growing, spawn the key
+        if (isBroken && isTreeBroken)
+        {
+            SpawnKey();
+        }
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -478,87 +525,62 @@ public class TreeOfLightPot : MonoBehaviour
         }
     }
 
-    public void OnTreeBreak()
-    {
-        isTreeBroken = true;
-        // If we're already broken, spawn the key
-        if (isBroken && isFullyGrown)
-        {
-            SpawnKey();
-        }
-    }
-
     public void Break()
     {
         if (isBroken) return;
+        
         isBroken = true;
-
-        // Spawn explosion effect
+        isGrowing = false;
+        hasSeedBeenPlanted = false;
+        growthTimer = 0f;
+        wasUpright = false;
+        
+        // Play break effects
         if (explosionEffectPrefab != null)
         {
             Instantiate(explosionEffectPrefab, transform.position, Quaternion.identity);
         }
 
-        // Break the tree if it exists and isn't already broken
-        if (currentTree != null && !isTreeBroken)
-        {
-            TreeOfLight treeOfLight = currentTree.GetComponent<TreeOfLight>();
-            if (treeOfLight != null)
-            {
-                treeOfLight.Break();
-            }
-        }
-
-        // If the tree is already broken and we were fully grown, spawn the key
-        if (isTreeBroken && isFullyGrown)
-        {
-            SpawnKey();
-        }
-        else
-        {
-            // If not fully grown or tree isn't broken yet, just disable the pot
-            gameObject.SetActive(false);
-        }
-    }
-
-    private void SpawnKey()
-    {
+        // Spawn the key immediately when the pot breaks
         if (doorKeyPrefab != null && keySpawnPoint != null)
         {
-            StartCoroutine(SpawnKeyWithDelay());
+            GameObject key = Instantiate(doorKeyPrefab, keySpawnPoint.position, keySpawnPoint.rotation);
+            spawnedKey = key;
+            StartCoroutine(HoverAndRotateKey());
         }
         else
         {
-            gameObject.SetActive(false);
+            Debug.LogError("Door key prefab or spawn point not assigned!");
         }
+
+        // Disable the pot after a short delay
+        StartCoroutine(DisablePot());
     }
 
-    private IEnumerator SpawnKeyWithDelay()
+    private IEnumerator DisablePot()
     {
-        // Wait for a short moment after the explosion
-        yield return new WaitForSeconds(0.2f);
-
-        // Spawn the key
-        GameObject key = Instantiate(doorKeyPrefab, keySpawnPoint.position, keySpawnPoint.rotation);
-        StartCoroutine(HoverAndRotateKey(key));
-
-        // Disable the pot after spawning the key
+        // Wait for effects to play
+        yield return new WaitForSeconds(0.5f);
+        
+        // Disable the pot
         gameObject.SetActive(false);
     }
 
-    private IEnumerator HoverAndRotateKey(GameObject key)
+    private IEnumerator HoverAndRotateKey()
     {
-        Vector3 startPos = key.transform.position;
+        if (spawnedKey == null) yield break;
+
+        Vector3 startPos = spawnedKey.transform.position;
         float timeOffset = Random.Range(0f, 2f * Mathf.PI); // Random starting phase
 
-        while (true)
+        while (spawnedKey != null && spawnedKey.activeInHierarchy)
         {
             // Hover up and down
             float hoverOffset = Mathf.Sin(Time.time * keyHoverSpeed + timeOffset) * keyHoverHeight;
-            key.transform.position = startPos + Vector3.up * hoverOffset;
+            spawnedKey.transform.position = startPos + Vector3.up * hoverOffset;
 
             // Rotate around Y axis
-            key.transform.Rotate(Vector3.up, keyRotationSpeed * Time.deltaTime);
+            spawnedKey.transform.Rotate(Vector3.up, keyRotationSpeed * Time.deltaTime);
 
             yield return null;
         }
@@ -576,6 +598,20 @@ public class TreeOfLightPot : MonoBehaviour
         if (treeOfLight != null)
         {
             treeOfLight.SetFullyGrown(true);
+        }
+    }
+
+    private void SpawnKey()
+    {
+        if (doorKeyPrefab != null && keySpawnPoint != null)
+        {
+            GameObject key = Instantiate(doorKeyPrefab, keySpawnPoint.position, keySpawnPoint.rotation);
+            spawnedKey = key;
+            StartCoroutine(HoverAndRotateKey());
+        }
+        else
+        {
+            Debug.LogError("Door key prefab or spawn point not assigned!");
         }
     }
 } 

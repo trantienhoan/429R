@@ -501,10 +501,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   treePrefab: {fileID: 8368527830041989588, guid: 7b5f58ba9d7ee8d4c992737dff1e8a38,
     type: 3}
-  growthDuration: 10
-  maxTreeScale: 1
+  growthDuration: 60
+  maxTreeScale: 2
   growthDelay: 0.5
-  initialLightIntensity: 0.1
+  initialLightIntensity: 1
   growingLightIntensity: 0.3
   finalLightIntensity: 2
   finalLightPulseSpeed: 1
@@ -516,13 +516,13 @@ MonoBehaviour:
   topRadius: 0.12
   triggerColliderHeight: 0.5
   triggerColliderRadius: 0.3
-  potMass: 5
-  potDrag: 1
+  potMass: 10
+  potDrag: 0.05
   potAngularDrag: 0.5
   potColliderHeight: 0.5
   potColliderRadius: 0.3
   isPlanted: 0
-  jiggleAmount: 0.05
+  jiggleAmount: 0.1
   jiggleSpeed: 30
   jiggleDamping: 8
   uprightForce: 5

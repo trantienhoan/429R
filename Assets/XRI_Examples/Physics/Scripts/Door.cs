@@ -43,10 +43,9 @@ namespace UnityEngine.XR.Content.Interaction
 
         JointLimits m_OpenDoorLimits;
         JointLimits m_ClosedDoorLimits;
-        bool m_Closed = false;
+        bool m_Closed = true;
         float m_LastHandleValue = 1.0f;
-
-        bool m_Locked = false;
+        bool m_Locked = true; // Start locked by default
 
         GameObject m_KeySocket;
         UnityEngine.XR.Interaction.Toolkit.Interactables.IXRSelectInteractable m_Key;
@@ -73,6 +72,7 @@ namespace UnityEngine.XR.Content.Interaction
             m_DoorJoint.limits = m_ClosedDoorLimits;
             m_KeyKnob.SetActive(false);
             m_Closed = true;
+            m_Locked = true; // Ensure door starts locked
         }
 
         void Update()
@@ -108,8 +108,11 @@ namespace UnityEngine.XR.Content.Interaction
 
         public void BeginDoorPulling(SelectEnterEventArgs args)
         {
-            m_DoorPuller.connectedBody = args.interactorObject.GetAttachTransform(args.interactableObject);
-            m_DoorPuller.enabled = true;
+            if (!m_Locked) // Only allow pulling if door is unlocked
+            {
+                m_DoorPuller.connectedBody = args.interactorObject.GetAttachTransform(args.interactableObject);
+                m_DoorPuller.enabled = true;
+            }
         }
 
         public void EndDoorPulling()

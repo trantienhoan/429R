@@ -16,6 +16,10 @@ namespace Core
         [SerializeField] private int jiggleCount = 3;
         [SerializeField] private float itemDropInterval = 0.5f;
 
+        [Header("Collider Settings")]
+        [SerializeField] private bool useChildColliders = true;
+        [SerializeField] private string childColliderTag = "BreakablePart";
+
         [Header("Effects")]
         [SerializeField] private GameObject hitParticlePrefab;
         [SerializeField] private GameObject breakParticlePrefab;
@@ -33,6 +37,7 @@ namespace Core
         private bool isJiggling = false;
         private Vector3 lastHitPoint;
         private Vector3 lastHitDirection;
+        private Collider[] childColliders;
 
         protected override void Awake()
         {
@@ -41,15 +46,36 @@ namespace Core
             originalScale = transform.localScale;
             targetPosition = originalPosition;
 
+            // Setup child colliders
+            if (useChildColliders)
+            {
+                SetupChildColliders();
+            }
+
             // Add AudioSource component if not present
             audioSource = GetComponent<AudioSource>();
             if (audioSource == null)
             {
                 audioSource = gameObject.AddComponent<AudioSource>();
-                audioSource.spatialBlend = 1f; // Make it fully 3D
+                audioSource.spatialBlend = 1f;
                 audioSource.rolloffMode = AudioRolloffMode.Linear;
                 audioSource.minDistance = 1f;
                 audioSource.maxDistance = 20f;
+            }
+        }
+
+        private void SetupChildColliders()
+        {
+            // Get all colliders in children
+            childColliders = GetComponentsInChildren<Collider>();
+            
+            // Tag child colliders if needed
+            foreach (Collider col in childColliders)
+            {
+                if (col.gameObject != gameObject) // Skip the main object
+                {
+                    col.gameObject.tag = childColliderTag;
+                }
             }
         }
 
@@ -72,9 +98,9 @@ namespace Core
             // Play hit particle effect
             if (hitParticlePrefab != null)
             {
-                GameObject hitEffect = Instantiate(hitParticlePrefab, transform.position, Quaternion.identity);
+                GameObject hitEffect = Instantiate(hitParticlePrefab, hitPoint, Quaternion.LookRotation(hitDirection));
                 hitEffect.transform.localScale *= particleScale;
-                Destroy(hitEffect, 2f); // Destroy after 2 seconds
+                Destroy(hitEffect, 2f);
             }
 
             // Play hit sound
@@ -105,7 +131,7 @@ namespace Core
                 float xOffset = Mathf.Sin(jiggleProgress * jiggleCount * 2 * Mathf.PI) * jiggleAmount;
                 float zOffset = Mathf.Cos(jiggleProgress * jiggleCount * 2 * Mathf.PI) * jiggleAmount;
                 
-                // Apply jiggle
+                // Apply jiggle to main object
                 transform.position = originalPosition + new Vector3(xOffset, 0, zOffset);
 
                 // Drop items periodically during the jiggle
@@ -138,8 +164,6 @@ namespace Core
                 randomDirection.y = Mathf.Abs(randomDirection.y);
 
                 GameObject droppedItem = Instantiate(itemPrefab, dropPoint, Random.rotation);
-                
-                // Reset the scale to 1 to prevent inheritance of parent's scale
                 droppedItem.transform.localScale = Vector3.one;
                 
                 if (droppedItem.TryGetComponent<Rigidbody>(out Rigidbody rb))
@@ -159,7 +183,7 @@ namespace Core
             {
                 GameObject breakEffect = Instantiate(breakParticlePrefab, transform.position, Quaternion.identity);
                 breakEffect.transform.localScale *= particleScale;
-                Destroy(breakEffect, 3f); // Destroy after 3 seconds
+                Destroy(breakEffect, 3f);
             }
 
             // Play break sound
@@ -176,14 +200,22 @@ namespace Core
 
         protected override void HandleDestruction()
         {
-            // Disable collider immediately
-            if (TryGetComponent<Collider>(out Collider col))
+            // Disable all colliders (main and children)
+            if (useChildColliders && childColliders != null)
             {
-                col.enabled = false;
+                foreach (Collider col in childColliders)
+                {
+                    col.enabled = false;
+                }
+            }
+            else if (TryGetComponent<Collider>(out Collider mainCollider))
+            {
+                mainCollider.enabled = false;
             }
 
-            // Disable mesh renderer immediately
-            if (TryGetComponent<MeshRenderer>(out MeshRenderer renderer))
+            // Disable mesh renderers (main and children)
+            MeshRenderer[] renderers = GetComponentsInChildren<MeshRenderer>();
+            foreach (MeshRenderer renderer in renderers)
             {
                 renderer.enabled = false;
             }
