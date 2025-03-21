@@ -76,12 +76,13 @@ public class TreeOfLightPot : MonoBehaviour
     [SerializeField] private GameObject doorKeyPrefab;
     [SerializeField] private Transform keySpawnPoint;
     [SerializeField] private float breakDelay = 1f;
-    [SerializeField] private float keyHoverHeight = 1f;
-    [SerializeField] private float keyHoverSpeed = 1f;
-    [SerializeField] private float keyRotationSpeed = 30f;
+    [SerializeField] private float keyHoverHeight = 0.3f;  // Reduced from 1f to 0.3f for more subtle movement
+    [SerializeField] private float keyHoverSpeed = 2f;     // Increased from 1f to 2f for faster movement
+    [SerializeField] private float keyRotationSpeed = 60f; // Increased from 30f to 60f for faster rotation
 
     private float currentHealth;
-    private GameObject spawnedKey; // Add this field to track the spawned key
+    private GameObject spawnedKey;
+    private Vector3 keyStartPosition; // Add this to store the initial position
 
     private void Awake()
     {
@@ -525,6 +526,16 @@ public class TreeOfLightPot : MonoBehaviour
         }
     }
 
+    public void OnTreeBreak()
+    {
+        isTreeBroken = true;
+        // If we're already broken and the tree was fully grown, spawn the key
+        if (isBroken && isFullyGrown)
+        {
+            SpawnKey();
+        }
+    }
+
     public void Break()
     {
         if (isBroken) return;
@@ -541,20 +552,26 @@ public class TreeOfLightPot : MonoBehaviour
             Instantiate(explosionEffectPrefab, transform.position, Quaternion.identity);
         }
 
-        // Spawn the key immediately when the pot breaks
-        if (doorKeyPrefab != null && keySpawnPoint != null)
+        // Break the tree if it exists and isn't already broken
+        if (currentTree != null && !isTreeBroken)
         {
-            GameObject key = Instantiate(doorKeyPrefab, keySpawnPoint.position, keySpawnPoint.rotation);
-            spawnedKey = key;
-            StartCoroutine(HoverAndRotateKey());
+            TreeOfLight treeOfLight = currentTree.GetComponent<TreeOfLight>();
+            if (treeOfLight != null)
+            {
+                treeOfLight.Break();
+            }
+        }
+
+        // If the tree is already broken and we were fully grown, spawn the key
+        if (isTreeBroken && isFullyGrown)
+        {
+            SpawnKey();
         }
         else
         {
-            Debug.LogError("Door key prefab or spawn point not assigned!");
+            // If not fully grown or tree isn't broken yet, just disable the pot
+            StartCoroutine(DisablePot());
         }
-
-        // Disable the pot after a short delay
-        StartCoroutine(DisablePot());
     }
 
     private IEnumerator DisablePot()
@@ -566,18 +583,72 @@ public class TreeOfLightPot : MonoBehaviour
         gameObject.SetActive(false);
     }
 
+    private void SpawnKey()
+    {
+        if (doorKeyPrefab != null && keySpawnPoint != null)
+        {
+            // Spawn the key slightly above the spawn point to avoid physics interactions
+            Vector3 spawnPosition = keySpawnPoint.position + Vector3.up * 0.5f;
+            GameObject key = Instantiate(doorKeyPrefab, spawnPosition, keySpawnPoint.rotation);
+            spawnedKey = key;
+            keyStartPosition = spawnPosition; // Store the initial position
+
+            // Make the key kinematic and disable its collider temporarily
+            Rigidbody keyRb = key.GetComponent<Rigidbody>();
+            if (keyRb != null)
+            {
+                keyRb.isKinematic = true;
+                keyRb.useGravity = false;
+            }
+
+            // Disable any colliders temporarily
+            Collider[] colliders = key.GetComponents<Collider>();
+            foreach (Collider col in colliders)
+            {
+                col.enabled = false;
+            }
+
+            // Start the hover animation
+            StartCoroutine(HoverAndRotateKey());
+        }
+        else
+        {
+            Debug.LogError("Door key prefab or spawn point not assigned!");
+        }
+    }
+
     private IEnumerator HoverAndRotateKey()
     {
         if (spawnedKey == null) yield break;
 
-        Vector3 startPos = spawnedKey.transform.position;
         float timeOffset = Random.Range(0f, 2f * Mathf.PI); // Random starting phase
+
+        // Wait a short moment before enabling physics
+        yield return new WaitForSeconds(0.5f);
+
+        // Re-enable physics and colliders
+        Rigidbody keyRb = spawnedKey.GetComponent<Rigidbody>();
+        if (keyRb != null)
+        {
+            keyRb.isKinematic = false;
+            keyRb.useGravity = true;
+        }
+
+        Collider[] colliders = spawnedKey.GetComponents<Collider>();
+        foreach (Collider col in colliders)
+        {
+            col.enabled = true;
+        }
 
         while (spawnedKey != null && spawnedKey.activeInHierarchy)
         {
-            // Hover up and down
+            // Calculate hover offset using a smoother sine wave
             float hoverOffset = Mathf.Sin(Time.time * keyHoverSpeed + timeOffset) * keyHoverHeight;
-            spawnedKey.transform.position = startPos + Vector3.up * hoverOffset;
+            
+            // Update position while maintaining the original X and Z coordinates
+            Vector3 newPosition = keyStartPosition;
+            newPosition.y += hoverOffset;
+            spawnedKey.transform.position = newPosition;
 
             // Rotate around Y axis
             spawnedKey.transform.Rotate(Vector3.up, keyRotationSpeed * Time.deltaTime);
@@ -598,20 +669,6 @@ public class TreeOfLightPot : MonoBehaviour
         if (treeOfLight != null)
         {
             treeOfLight.SetFullyGrown(true);
-        }
-    }
-
-    private void SpawnKey()
-    {
-        if (doorKeyPrefab != null && keySpawnPoint != null)
-        {
-            GameObject key = Instantiate(doorKeyPrefab, keySpawnPoint.position, keySpawnPoint.rotation);
-            spawnedKey = key;
-            StartCoroutine(HoverAndRotateKey());
-        }
-        else
-        {
-            Debug.LogError("Door key prefab or spawn point not assigned!");
         }
     }
 } 

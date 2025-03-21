@@ -411,10 +411,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b4c890cede2105b4d82a5863e3029a57, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  health: 20000
+  health: 10000
   isBreakable: 1
-  currentHealth: 10000
-  jiggleAmount: 0.05
+  currentHealth: 5000
+  jiggleAmount: 0.5
   jiggleSpeed: 30
   jiggleDamping: 8
   jiggleRecoverySpeed: 2
@@ -426,13 +426,12 @@ MonoBehaviour:
     type: 3}
   hitSound: {fileID: 0}
   breakSound: {fileID: 0}
-  particleScale: 1
+  particleScale: 2
   soundVolume: 1
   itemDropPrefabs:
   - {fileID: 3777597441533160902, guid: fc1b8c6522694e64eb1f3fc2edd03bd5, type: 3}
   - {fileID: 2061228985669117825, guid: 0fd62c8c352ceaa4589e2c49dd306f4a, type: 3}
   - {fileID: 2061228985669117825, guid: 8f568340892899741926341ce56b7594, type: 3}
-  - {fileID: 784072565763923235, guid: 52b0efbba0ab54548af1006d60566fe1, type: 3}
   dropForce: 10
   dropChance: 0.3
   onDamage:
@@ -515,6 +514,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 3212274207405080865}
     m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 6fc33d8efccb2d44f83ad11d1567cef9,
+        type: 3}
+      propertyPath: m_Name
+      value: Bed_Blanket
+      objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: c88b03190b5ec294f9dcaad00dffffc6,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -559,11 +563,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 6fc33d8efccb2d44f83ad11d1567cef9,
-        type: 3}
-      propertyPath: m_Name
-      value: Bed_Blanket
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

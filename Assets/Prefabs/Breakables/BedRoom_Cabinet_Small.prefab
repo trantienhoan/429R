@@ -219,9 +219,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b4c890cede2105b4d82a5863e3029a57, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  health: 100
+  health: 500
   isBreakable: 1
-  currentHealth: 0
+  currentHealth: 500
   jiggleAmount: 0.05
   jiggleSpeed: 30
   jiggleDamping: 8
@@ -236,7 +236,8 @@ MonoBehaviour:
   breakSound: {fileID: 0}
   particleScale: 1
   soundVolume: 1
-  itemDropPrefabs: []
+  itemDropPrefabs:
+  - {fileID: 2061228985669117825, guid: e8a523e631ff48a4d84ebea3669a9d90, type: 3}
   dropForce: 5
   dropChance: 0.3
   onDamage:
@@ -264,8 +265,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.48, y: 0.6459129, z: 0.48}
-  m_Center: {x: 0, y: 0.29739475, z: 0}
+  m_Size: {x: 0.48, y: 0.6723497, z: 0.55}
+  m_Center: {x: 0, y: 0.28417635, z: 0}
 --- !u!54 &2042166546271021172
 Rigidbody:
   m_ObjectHideFlags: 0

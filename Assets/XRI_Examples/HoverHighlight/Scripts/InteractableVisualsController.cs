@@ -105,6 +105,14 @@ namespace UnityEngine.XR.Content.Rendering
         {
             // Find the grab interactable
             m_Interactable = GetComponentInParent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRBaseInteractable>();
+            
+            // If no interactable found, disable this component
+            if (m_Interactable == null)
+            {
+                Debug.LogWarning($"No XRBaseInteractable found in parent objects of {gameObject.name}. Disabling InteractableVisualsController.");
+                enabled = false;
+                return;
+            }
 
             // Hook up to events
             if (m_Interactable is UnityEngine.XR.Interaction.Toolkit.Interactables.IXRHoverInteractable hoverInteractable)
@@ -141,7 +149,8 @@ namespace UnityEngine.XR.Content.Rendering
                 m_HighlightController.RegisterCacheUser(m_OutlineHighlight);
 
             m_HighlightController.Initialize();
-            m_StartingWidth = m_OutlineHighlight.outlineScale;
+            if (m_OutlineHighlight != null)
+                m_StartingWidth = m_OutlineHighlight.outlineScale;
         }
 
         /// <summary>
