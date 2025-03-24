@@ -6,9 +6,9 @@ namespace Core
     public class JiggleBreakableObject : BreakableObject
     {
         [Header("Jiggle Settings")]
-        [SerializeField] private float jiggleAmount = 0.1f;
-        [SerializeField] private float jiggleSpeed = 5f;
-        [SerializeField] private float jiggleDamping = 0.5f;
+        [SerializeField] private float jiggleAmount = 0.05f;
+        [SerializeField] private float jiggleSpeed = 30f;
+        [SerializeField] private float jiggleDamping = 8f;
         [SerializeField] private float jiggleRecoverySpeed = 2f;
         [SerializeField] private float hitScaleAmount = 0.8f;
         [SerializeField] private float hitScaleSpeed = 10f;
@@ -24,11 +24,11 @@ namespace Core
         [SerializeField] private GameObject hitParticlePrefab;
         [SerializeField] private GameObject breakParticlePrefab;
         [SerializeField] private AudioClip hitSound;
-        [SerializeField] private AudioClip breakSound;
+        [SerializeField] private new AudioClip breakSound;
         [SerializeField] private float particleScale = 1f;
         [SerializeField] private float soundVolume = 1f;
 
-        private AudioSource audioSource;
+        private new AudioSource audioSource;
         private Vector3 originalPosition;
         private Vector3 originalScale;
         private Vector3 targetPosition;
@@ -38,6 +38,8 @@ namespace Core
         private Vector3 lastHitPoint;
         private Vector3 lastHitDirection;
         private Collider[] childColliders;
+        private float jiggleTimer = 0f;
+        private Vector3 jiggleVelocity = Vector3.zero;
 
         protected override void Awake()
         {
@@ -242,6 +244,19 @@ namespace Core
             scaleProgress = Mathf.MoveTowards(scaleProgress, 1f, Time.deltaTime * hitScaleSpeed);
             float currentScale = Mathf.Lerp(hitScaleAmount, 1f, scaleProgress);
             transform.localScale = originalScale * currentScale;
+
+            // Update jiggle effect
+            if (jiggleTimer < jiggleDamping)
+            {
+                jiggleTimer += Time.deltaTime;
+                Rigidbody rb = GetComponent<Rigidbody>();
+                if (rb != null)
+                {
+                    // Apply damping to jiggle velocity
+                    jiggleVelocity *= (1 - (jiggleTimer / jiggleDamping));
+                    rb.linearVelocity = Vector3.Lerp(rb.linearVelocity, Vector3.zero, Time.deltaTime * jiggleDamping);
+                }
+            }
         }
 
         public void SetJiggleSettings(float amount, float damping, float speed)

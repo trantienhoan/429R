@@ -8,7 +8,7 @@ public class ShadowMonsterSpawner : MonoBehaviour
     [SerializeField] private float spawnRadius = 10f;
     [SerializeField] private float spawnHeight = 1f;
     [SerializeField] private int maxMonsters = 5;
-    [SerializeField] private float spawnInterval = 3f;
+    [SerializeField] private float spawnInterval = 5f;
     
     [Header("Wave Settings")]
     [SerializeField] private float waveInterval = 15f;
@@ -22,7 +22,7 @@ public class ShadowMonsterSpawner : MonoBehaviour
 
     private void Start()
     {
-        treeOfLight = FindObjectOfType<TreeOfLight>();
+        treeOfLight = Object.FindFirstObjectByType<TreeOfLight>();
         if (treeOfLight == null)
         {
             Debug.LogWarning("No Tree of Light found in scene!");
@@ -44,6 +44,7 @@ public class ShadowMonsterSpawner : MonoBehaviour
     {
         isSpawning = false;
         StopAllCoroutines();
+        CancelInvoke("SpawnMonster");
     }
 
     private IEnumerator SpawnWaves()
@@ -68,37 +69,13 @@ public class ShadowMonsterSpawner : MonoBehaviour
 
     private void SpawnMonster()
     {
-        if (activeMonsters >= maxMonsters) return;
-
-        // Calculate random position around the tree
-        float angle = Random.Range(0f, 360f);
-        float distance = Random.Range(spawnRadius * 0.5f, spawnRadius);
-        Vector3 spawnPosition = treeOfLight.transform.position + 
-            new Vector3(
-                Mathf.Cos(angle * Mathf.Deg2Rad) * distance,
-                spawnHeight,
-                Mathf.Sin(angle * Mathf.Deg2Rad) * distance
-            );
-
-        // Spawn the monster
-        GameObject monster = Instantiate(shadowMonsterPrefab, spawnPosition, Quaternion.identity);
-        activeMonsters++;
-
-        // Subscribe to monster's death
-        ShadowMonster shadowMonster = monster.GetComponent<ShadowMonster>();
-        if (shadowMonster != null)
-        {
-            StartCoroutine(MonitorMonsterDeath(shadowMonster));
-        }
-    }
-
-    private IEnumerator MonitorMonsterDeath(ShadowMonster monster)
-    {
-        while (monster != null)
-        {
-            yield return new WaitForSeconds(0.1f);
-        }
-        activeMonsters--;
+        if (!isSpawning || treeOfLight == null) return;
+        
+        // Spawn monster at random position within radius
+        Vector2 randomCircle = Random.insideUnitCircle * spawnRadius;
+        Vector3 spawnPosition = treeOfLight.transform.position + new Vector3(randomCircle.x, 0f, randomCircle.y);
+        
+        Instantiate(shadowMonsterPrefab, spawnPosition, Quaternion.identity);
     }
 
     private void OnDrawGizmosSelected()

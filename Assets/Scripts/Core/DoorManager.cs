@@ -12,7 +12,7 @@ public class DoorManager : MonoBehaviour
     
     [Header("References")]
     [SerializeField] private Door door;
-    [SerializeField] private UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor keySocket;
+    [SerializeField] private KeySocketInteractor keySocket;
     
     private bool isDoorUnlocked = false;
     private bool isTransitioning = false;

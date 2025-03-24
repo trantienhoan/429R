@@ -9,9 +9,6 @@ public class MagicalSeedManager : MonoBehaviour
     [SerializeField] private Transform[] seedSpawnLocations; // Array of possible spawn locations
     [SerializeField] private float spawnChance = 0.5f; // Chance for seed to spawn in each location
     
-    [Header("Breakable Settings")]
-    [SerializeField] private GameObject jiggleBreakableBed; // Reference to the breakable bed
-    
     private GameObject currentSeed;
     private bool hasSeedBeenFound = false;
 
@@ -42,12 +39,9 @@ public class MagicalSeedManager : MonoBehaviour
         }
     }
 
-    public void SpawnSeedFromBed()
+    public void SpawnSeedAtTransform(Transform location)
     {
-        if (jiggleBreakableBed != null)
-        {
-            SpawnSeedAtLocation(jiggleBreakableBed.transform);
-        }
+        SpawnSeedAtLocation(location);
     }
 
     private void SpawnSeedAtLocation(Transform location)

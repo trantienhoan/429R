@@ -4,9 +4,12 @@ public class BreakableBedInteraction : MonoBehaviour
 {
     [SerializeField] private float breakForce = 5f;
     [SerializeField] private float seedSpawnChance = 0.3f; // 30% chance to spawn seed when bed breaks
+    [SerializeField] private AudioClip breakSound;
+    [SerializeField] private GameObject breakEffect;
     
     private bool hasBroken = false;
     private Rigidbody[] bedParts;
+    private AudioSource audioSource;
 
     private void Start()
     {
@@ -19,6 +22,8 @@ public class BreakableBedInteraction : MonoBehaviour
             part.isKinematic = true;
             part.useGravity = false;
         }
+
+        audioSource = GetComponent<AudioSource>();
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -46,7 +51,31 @@ public class BreakableBedInteraction : MonoBehaviour
         // Check if we should spawn a seed
         if (Random.value <= seedSpawnChance)
         {
-            MagicalSeedManager.Instance.SpawnSeedFromBed();
+            OnBreak();
         }
+    }
+
+    private void OnBreak()
+    {
+        // Play break sound
+        if (breakSound != null && audioSource != null)
+        {
+            audioSource.PlayOneShot(breakSound);
+        }
+
+        // Play break effect
+        if (breakEffect != null)
+        {
+            Instantiate(breakEffect, transform.position, Quaternion.identity);
+        }
+
+        // Spawn seed at the bed's position
+        if (MagicalSeedManager.Instance != null)
+        {
+            MagicalSeedManager.Instance.SpawnSeedAtTransform(transform);
+        }
+
+        // Destroy the bed
+        Destroy(gameObject);
     }
 } 

@@ -689,7 +689,7 @@ MonoBehaviour:
   doorOpenAngle: 90
   transitionDelay: 1
   door: {fileID: 1992393634709716444}
-  keySocket: {fileID: 1938328786324727194}
+  keySocket: {fileID: 0}
 --- !u!1 &7025650377286697919
 GameObject:
   m_ObjectHideFlags: 0
@@ -820,7 +820,7 @@ GameObject:
   - component: {fileID: 5533127095154794891}
   - component: {fileID: 2276311747619742402}
   - component: {fileID: 6506544725693368079}
-  m_Layer: 28
+  m_Layer: 0
   m_Name: DoorLocked
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -998,7 +998,6 @@ GameObject:
   - component: {fileID: 647154205478192358}
   - component: {fileID: 6002342481568064606}
   - component: {fileID: 5386663343333797166}
-  - component: {fileID: 5294861796337144975}
   m_Layer: 0
   m_Name: DoorHandle
   m_TagString: Untagged
@@ -1093,33 +1092,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.025
+  m_Radius: 0.04
   m_Height: 0.2
   m_Direction: 0
   m_Center: {x: -0.1, y: -0.00000007636849, z: 0.175}
---- !u!136 &5294861796337144975
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7974651063430930546}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.025
-  m_Height: 0.2
-  m_Direction: 0
-  m_Center: {x: -0.1, y: -0.00000007636849, z: -0.175}
 --- !u!1 &8084261320235020126
 GameObject:
   m_ObjectHideFlags: 0
@@ -1147,9 +1123,9 @@ Transform:
   m_GameObject: {fileID: 8084261320235020126}
   serializedVersion: 2
   m_LocalRotation: {x: 0.00035136935, y: -0.7071067, z: 0.7071067, w: 0.00035136935}
-  m_LocalPosition: {x: 0.9435121, y: -0.2809, z: -0.0152}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalPosition: {x: 0.9435121, y: -0.2809, z: 0.003}
+  m_LocalScale: {x: 2.1944, y: 2.1944, z: 2.1944}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 188490433769314898}
   - {fileID: 1068060412577130725}

@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.XR.Interaction.Toolkit;
 using TMPro;
 using Core;
 
@@ -39,6 +38,12 @@ public class TestBreakableSetup : MonoBehaviour
     [SerializeField] private float objectHealth = 100f;
     [SerializeField] private float jiggleDuration = 1f;
     [SerializeField] private float jiggleIntensity = 0.5f;
+    [SerializeField] private float spawnRadius = 2f;
+    
+    [Header("Physics Settings")]
+    [SerializeField] private float mass = 1f;
+    [SerializeField] private float drag = 0.5f;
+    [SerializeField] private float angularDrag = 0.5f;
 
     private void Awake()
     {
@@ -66,6 +71,15 @@ public class TestBreakableSetup : MonoBehaviour
 
         SpawnInstantBreakables();
         SpawnJiggleBreakables();
+
+        // Find all breakable objects in the scene
+        BreakableObject[] breakableObjects = Object.FindObjectsByType<BreakableObject>(FindObjectsSortMode.None);
+        
+        // Set up each breakable object
+        foreach (BreakableObject obj in breakableObjects)
+        {
+            SetupBreakableObject(obj);
+        }
     }
 
     public void SpawnBoxGrid()
@@ -240,5 +254,59 @@ public class TestBreakableSetup : MonoBehaviour
         text += "J - Spawn Jiggle Breakables\n";
 
         debugText.text = text;
+    }
+
+    private void SetupBreakableObject(BreakableObject obj)
+    {
+        // Add Rigidbody if it doesn't exist
+        Rigidbody rb = obj.GetComponent<Rigidbody>();
+        if (rb == null)
+        {
+            rb = obj.gameObject.AddComponent<Rigidbody>();
+        }
+        
+        // Configure Rigidbody
+        rb.mass = mass;
+        rb.linearDamping = drag;
+        rb.angularDamping = angularDrag;
+        rb.useGravity = true;
+        
+        // Add XR Grab Interactable if it doesn't exist
+        UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable grabInteractable = obj.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
+        if (grabInteractable == null)
+        {
+            grabInteractable = obj.gameObject.AddComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
+        }
+        
+        // Configure XR Grab Interactable
+        grabInteractable.movementType = UnityEngine.XR.Interaction.Toolkit.Interactables.XRBaseInteractable.MovementType.VelocityTracking;
+        grabInteractable.throwOnDetach = true;
+        grabInteractable.smoothPosition = true;
+        grabInteractable.smoothRotation = true;
+        grabInteractable.smoothPositionAmount = 5f;
+        grabInteractable.smoothRotationAmount = 5f;
+        grabInteractable.tightenPosition = 0.5f;
+        grabInteractable.tightenRotation = 0.5f;
+        
+        // Add colliders if they don't exist
+        Collider[] colliders = obj.GetComponents<Collider>();
+        if (colliders.Length == 0)
+        {
+            BoxCollider boxCollider = obj.gameObject.AddComponent<BoxCollider>();
+            boxCollider.size = Vector3.one;
+            boxCollider.isTrigger = false;
+        }
+        
+        // Set the layer to Interactable
+        obj.gameObject.layer = LayerMask.NameToLayer("Interactable");
+    }
+    
+    private Vector3 GetRandomSpawnPosition()
+    {
+        float angle = Random.Range(0f, 360f);
+        float radius = Random.Range(0f, spawnRadius);
+        float x = Mathf.Cos(angle * Mathf.Deg2Rad) * radius;
+        float z = Mathf.Sin(angle * Mathf.Deg2Rad) * radius;
+        return new Vector3(x, spawnHeight, z);
     }
 } 

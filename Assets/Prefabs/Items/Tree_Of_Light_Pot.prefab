@@ -501,49 +501,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   treePrefab: {fileID: 8368527830041989588, guid: 7b5f58ba9d7ee8d4c992737dff1e8a38,
     type: 3}
-  growthDuration: 60
-  maxTreeScale: 2
+  doorKeyPrefab: {fileID: 784072565763923235, guid: 52b0efbba0ab54548af1006d60566fe1,
+    type: 3}
+  keySpawnPoint: {fileID: 265967999501900189}
+  treeSpawnPoint: {fileID: 265967999501900189}
+  growthDuration: 10
+  maxTreeScale: 1
   growthDelay: 0.5
   initialLightIntensity: 1
   growingLightIntensity: 0.3
   finalLightIntensity: 2
-  finalLightPulseSpeed: 1
-  finalLightPulseAmount: 0.2
-  uprightThreshold: 0.8
-  checkInterval: 0.1
-  trunkHeight: 1.25
-  trunkRadius: 0.15
-  topRadius: 0.12
-  triggerColliderHeight: 0.5
-  triggerColliderRadius: 0.3
-  potMass: 10
-  potDrag: 0.05
-  potAngularDrag: 0.5
-  potColliderHeight: 0.5
-  potColliderRadius: 0.3
-  isPlanted: 0
-  jiggleAmount: 0.1
-  jiggleSpeed: 30
-  jiggleDamping: 8
-  uprightForce: 5
-  onDamage:
-    m_PersistentCalls:
-      m_Calls: []
-  onBreak:
-    m_PersistentCalls:
-      m_Calls: []
-  trunkCollider: {fileID: 8922939456493463548}
-  topCollider: {fileID: 3875308471228042706}
-  maxHealth: 100
-  explosionEffectPrefab: {fileID: 5700784828077083704, guid: ed962e35f7fa6f34f8d27aa6d19ea293,
+  breakDelay: 0.5
+  breakSound: {fileID: 0}
+  breakEffect: {fileID: 9169966119468206341, guid: ed962e35f7fa6f34f8d27aa6d19ea293,
     type: 3}
-  doorKeyPrefab: {fileID: 784072565763923235, guid: 52b0efbba0ab54548af1006d60566fe1,
-    type: 3}
-  keySpawnPoint: {fileID: 265967999501900189}
-  breakDelay: 1
-  keyHoverHeight: 1
-  keyHoverSpeed: 1
-  keyRotationSpeed: 30
 --- !u!4 &5664211420611074727 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 90ead29ec06b9784e832b9c538d6641a,

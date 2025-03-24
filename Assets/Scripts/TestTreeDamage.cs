@@ -9,8 +9,7 @@ public class TestTreeDamage : MonoBehaviour
 
     private void Start()
     {
-        // Find the TreeOfLight component
-        treeOfLight = FindObjectOfType<TreeOfLight>();
+        treeOfLight = Object.FindFirstObjectByType<TreeOfLight>();
         if (treeOfLight == null)
         {
             Debug.LogWarning("No TreeOfLight found in the scene!");
@@ -24,6 +23,14 @@ public class TestTreeDamage : MonoBehaviour
         {
             treeOfLight.TakeDamage(damageAmount);
             Debug.Log($"Tree took {damageAmount} damage. Current health: {treeOfLight.GetHealthPercentage() * 100}%");
+        }
+    }
+
+    public void DamageTree()
+    {
+        if (treeOfLight != null)
+        {
+            treeOfLight.TakeDamage(damageAmount);
         }
     }
 } 
