@@ -30,6 +30,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7128215835568584494}
+  - {fileID: 33419902033746666}
   m_Father: {fileID: 1796825035687215763}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2408536400181763333
@@ -454,7 +455,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3081021950665055244}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -489,12 +490,12 @@ Transform:
   m_GameObject: {fileID: 3449286181070959477}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -1, z: -0, w: 0.0000029653306}
-  m_LocalPosition: {x: 0.942, y: -0.2805, z: -0.0132}
+  m_LocalPosition: {x: -0.35200006, y: 0.85495144, z: -0.058249734}
   m_LocalScale: {x: 1.18, y: 1.18, z: 0.98627687}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 622122095747888433}
-  m_Father: {fileID: 7128215835568584494}
+  m_Father: {fileID: 1480268917419768070}
   m_LocalEulerAnglesHint: {x: 0, y: -180, z: 0}
 --- !u!33 &7379060450533812592
 MeshFilter:
@@ -622,7 +623,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1796825035687215763}
   - component: {fileID: 1992393634709716444}
-  - component: {fileID: 3702122904962764214}
   m_Layer: 0
   m_Name: BedRoom_Door_Locked
   m_TagString: Untagged
@@ -665,7 +665,7 @@ MonoBehaviour:
   m_HandleCloseValue: 0.5
   m_HingeCloseAngle: 5
   m_KeyLockValue: 0
-  m_KeyUnlockValue: 0.1
+  m_KeyUnlockValue: 0
   m_KeyPullDistance: 0.3
   m_OnLock:
     m_PersistentCalls:
@@ -673,23 +673,6 @@ MonoBehaviour:
   m_OnUnlock:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &3702122904962764214
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5319416733037820165}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9ca08c6102dd92c42814f137bdd0c21e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  nextSceneName: MiniGameScene
-  doorOpenAngle: 90
-  transitionDelay: 1
-  door: {fileID: 1992393634709716444}
-  keySocket: {fileID: 0}
 --- !u!1 &7025650377286697919
 GameObject:
   m_ObjectHideFlags: 0
@@ -842,7 +825,6 @@ Transform:
   m_Children:
   - {fileID: 8509782302514732279}
   - {fileID: 5301896374067530598}
-  - {fileID: 33419902033746666}
   - {fileID: 8291455771666871373}
   m_Father: {fileID: 1480268917419768070}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1240,7 +1222,7 @@ MonoBehaviour:
   m_StartingSelectFilters: []
   m_StartingInteractionStrengthFilters: []
   m_Handle: {fileID: 188490433769314898}
-  m_Value: 0.5
+  m_Value: 0
   m_ClampedMotion: 1
   m_MaxAngle: 90
   m_MinAngle: -90

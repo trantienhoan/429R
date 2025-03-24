@@ -102,6 +102,13 @@ namespace Core
             {
                 GameObject hitEffect = Instantiate(hitParticlePrefab, hitPoint, Quaternion.LookRotation(hitDirection));
                 hitEffect.transform.localScale *= particleScale;
+                // Get and play the particle system
+                ParticleSystem hitParticles = hitEffect.GetComponent<ParticleSystem>();
+                if (hitParticles != null)
+                {
+                    hitParticles.Play();
+                    Debug.Log("Playing hit particles");
+                }
                 Destroy(hitEffect, 2f);
             }
 
@@ -153,14 +160,28 @@ namespace Core
             // Apply a small force in the hit direction
             if (rb != null)
             {
-                rb.AddForce(hitDirection * jiggleAmount * jiggleSpeed, ForceMode.Impulse);
+                // Clamp the force values to prevent extreme values
+                Vector3 clampedDirection = new Vector3(
+                    Mathf.Clamp(hitDirection.x, -1f, 1f),
+                    Mathf.Clamp(hitDirection.y, -1f, 1f),
+                    Mathf.Clamp(hitDirection.z, -1f, 1f)
+                );
+                
+                float clampedForce = Mathf.Clamp(jiggleAmount * jiggleSpeed, 0f, 100f);
+                rb.AddForce(clampedDirection * clampedForce, ForceMode.Impulse);
             }
         }
 
         private void Update()
         {
-            // Smoothly interpolate scale
-            transform.localScale = Vector3.Lerp(transform.localScale, targetScale, Time.deltaTime * hitScaleSpeed);
+            // Smoothly interpolate scale with safety checks
+            Vector3 newScale = Vector3.Lerp(transform.localScale, targetScale, Time.deltaTime * hitScaleSpeed);
+            newScale = new Vector3(
+                Mathf.Clamp(newScale.x, 0.1f, 10f),
+                Mathf.Clamp(newScale.y, 0.1f, 10f),
+                Mathf.Clamp(newScale.z, 0.1f, 10f)
+            );
+            transform.localScale = newScale;
 
             // Handle jiggle recovery
             if (isJiggling)
@@ -171,7 +192,13 @@ namespace Core
                     isJiggling = false;
                     if (rb != null)
                     {
-                        rb.linearVelocity = Vector3.zero;
+                        // Clamp velocity to prevent extreme values
+                        Vector3 clampedVelocity = new Vector3(
+                            Mathf.Clamp(rb.linearVelocity.x, -10f, 10f),
+                            Mathf.Clamp(rb.linearVelocity.y, -10f, 10f),
+                            Mathf.Clamp(rb.linearVelocity.z, -10f, 10f)
+                        );
+                        rb.linearVelocity = clampedVelocity;
                     }
                 }
             }
@@ -187,6 +214,13 @@ namespace Core
             {
                 GameObject breakEffect = Instantiate(breakParticlePrefab, transform.position, Quaternion.identity);
                 breakEffect.transform.localScale *= particleScale;
+                // Get and play the particle system
+                ParticleSystem breakParticles = breakEffect.GetComponent<ParticleSystem>();
+                if (breakParticles != null)
+                {
+                    breakParticles.Play();
+                    Debug.Log("Playing break particles");
+                }
                 Destroy(breakEffect, 3f);
             }
 

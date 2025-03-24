@@ -9,11 +9,17 @@ public class TreeOfLight : MonoBehaviour
     [Header("Light Settings")]
     [SerializeField] private Light treeLight;
     [SerializeField] private float maxLightIntensity = 2f;
+    [SerializeField] private float initialLightIntensity = 0f;
+    [SerializeField] private float growingLightIntensity = 1f;
     [SerializeField] private float finalLightPulseSpeed = 1f;
     [SerializeField] private float finalLightPulseAmount = 0.2f;
     
     [Header("Health Settings")]
     [SerializeField] private float maxHealth = 100f;
+    
+    [Header("Growth Settings")]
+    [SerializeField] private Vector3 startScale = Vector3.zero;
+    [SerializeField] private Vector3 targetScale = Vector3.one;
     
     [Header("Break Effects")]
     [SerializeField] private ParticleSystem breakEffect;
@@ -22,6 +28,7 @@ public class TreeOfLight : MonoBehaviour
     [Header("Events")]
     public UnityEvent onBreak;
     public UnityEvent onDamage;
+    public UnityEvent OnGrowthComplete;
     
     private float currentScale = 0f;
     private float currentLightIntensity = 0f;
@@ -31,6 +38,7 @@ public class TreeOfLight : MonoBehaviour
     private float growthDuration; // Set by TreeOfLightPot
     private float maxScale; // Set by TreeOfLightPot
     private float elapsedGrowthTime = 0f; // Track how long we've been growing
+    private float animationSpeed = 1f; // Store the animation speed
     
     private Animator animator;
     private static readonly int GrowTrigger = Animator.StringToHash("Grow");
@@ -60,6 +68,7 @@ public class TreeOfLight : MonoBehaviour
 
     public void SetGrowthSpeed(float speed)
     {
+        animationSpeed = speed;
         if (animator != null)
         {
             animator.SetFloat(GrowthSpeed, speed);
@@ -68,14 +77,30 @@ public class TreeOfLight : MonoBehaviour
 
     public void StartGrowth(float duration, float scale)
     {
+        Debug.Log($"TreeOfLight.StartGrowth called with duration: {duration}, scale: {scale}");
         growthDuration = duration;
         maxScale = scale;
         isGrowing = true;
+        elapsedGrowthTime = 0f;
+        
         if (animator != null)
         {
+            // Get the animation length
+            var animatorState = animator.GetCurrentAnimatorStateInfo(0);
+            float animationLength = animatorState.length;
+            
+            // Calculate the animation speed to match the desired duration
+            animationSpeed = animationLength / duration;
+            
+            Debug.Log($"Animation length: {animationLength}, Setting speed to: {animationSpeed}");
             animator.SetTrigger(GrowTrigger);
-            animator.SetFloat(GrowthSpeed, 1f / duration);
+            animator.SetFloat(GrowthSpeed, animationSpeed);
         }
+        else
+        {
+            Debug.LogWarning("No Animator component found on tree!");
+        }
+        
         StartCoroutine(GrowCoroutine());
     }
 
@@ -84,9 +109,9 @@ public class TreeOfLight : MonoBehaviour
         isGrowing = true;
         if (animator != null)
         {
-            animator.SetFloat(GrowthSpeed, 1f / growthDuration);
+            animator.SetFloat(GrowthSpeed, animationSpeed);
         }
-        StartCoroutine(GrowCoroutine());
+        Debug.Log($"Tree growth resumed from {elapsedGrowthTime} seconds");
     }
 
     public void StopGrowth()
@@ -96,68 +121,47 @@ public class TreeOfLight : MonoBehaviour
         {
             animator.SetFloat(GrowthSpeed, 0f);
         }
-        StopAllCoroutines();
-        Debug.Log($"Tree growth stopped at {elapsedGrowthTime:F1} seconds");
+        Debug.Log($"Tree growth paused at {elapsedGrowthTime} seconds");
     }
 
     private IEnumerator GrowCoroutine()
     {
-        float elapsedGrowthTime = 0f;
-        float startScale = 0f;
-        float targetScale = maxScale;
-        Vector3 startPosition = transform.localPosition;
-        Vector3 targetPosition = transform.localPosition + Vector3.up * 0.5f; // Move up slightly during growth
-
-        // Set initial scale
-        transform.localScale = Vector3.zero;
-        if (treeLight != null)
+        Debug.Log("Starting GrowCoroutine");
+        isGrowing = true;
+        
+        while (elapsedGrowthTime < growthDuration)
         {
-            treeLight.intensity = 0f;
-        }
-
-        // Start growth animation
-        if (animator != null)
-        {
-            animator.SetTrigger("Grow");
-        }
-
-        while (elapsedGrowthTime < growthDuration && isGrowing)
-        {
-            elapsedGrowthTime += Time.deltaTime;
-            float t = elapsedGrowthTime / growthDuration;
-            float smoothT = Mathf.SmoothStep(0f, 1f, t);
-
-            // Scale up
-            float currentScale = Mathf.Lerp(startScale, targetScale, smoothT);
-            transform.localScale = new Vector3(currentScale, currentScale, currentScale);
-
-            // Move up slightly
-            transform.localPosition = Vector3.Lerp(startPosition, targetPosition, smoothT);
-
-            // Adjust light intensity
-            if (treeLight != null)
+            if (!isGrowing)
             {
-                float lightIntensity = Mathf.Lerp(0f, maxLightIntensity, smoothT);
-                treeLight.intensity = lightIntensity;
+                Debug.Log("Growth paused, waiting...");
+                yield return null;
+                continue;
             }
 
+            elapsedGrowthTime += Time.deltaTime;
+            float growthProgress = elapsedGrowthTime / growthDuration;
+            
+            // Update tree scale
+            Vector3 newScale = Vector3.Lerp(startScale, targetScale * maxScale, growthProgress);
+            transform.localScale = newScale;
+            
+            // Update light intensity
+            if (treeLight != null)
+            {
+                float lightProgress = Mathf.Lerp(initialLightIntensity, growingLightIntensity, growthProgress);
+                treeLight.intensity = lightProgress;
+            }
+            
             yield return null;
         }
 
-        // Ensure we reach the final values
-        transform.localScale = Vector3.one * targetScale;
-        transform.localPosition = targetPosition;
-        if (treeLight != null)
-        {
-            treeLight.intensity = maxLightIntensity;
-        }
-
-        // Only trigger break if we completed growth
-        if (isGrowing)
-        {
-            Debug.Log("Tree growth complete, starting final effect");
-            StartCoroutine(FinalEffectCoroutine());
-        }
+        Debug.Log("Growth complete!");
+        isGrowing = false;
+        isFullyGrown = true;
+        OnGrowthComplete?.Invoke();
+        
+        // Start final effect
+        StartCoroutine(FinalEffectCoroutine());
     }
 
     private IEnumerator FinalEffectCoroutine()
@@ -217,8 +221,23 @@ public class TreeOfLight : MonoBehaviour
         if (breakEffect != null)
         {
             Debug.Log("Playing tree break effect");
-            breakEffect.Play();
-            StartCoroutine(DestroyAfterEffect());
+            // Create a new GameObject for the particle system
+            GameObject effectObject = new GameObject("TreeBreakEffect");
+            effectObject.transform.position = transform.position;
+            ParticleSystem effect = Instantiate(breakEffect, effectObject.transform);
+            effect.Play();
+            
+            // Destroy the effect object after the effect is done
+            Destroy(effectObject, effect.main.duration);
+            
+            // Trigger pot's break effect immediately
+            if (parentPot != null)
+            {
+                parentPot.OnTreeBreak();
+            }
+            
+            // Wait for effect to complete before disabling the tree
+            StartCoroutine(DestroyAfterEffect(effect.main.duration));
         }
         else
         {
@@ -227,18 +246,9 @@ public class TreeOfLight : MonoBehaviour
         }
     }
 
-    private IEnumerator DestroyAfterEffect()
+    private IEnumerator DestroyAfterEffect(float duration)
     {
-        if (breakEffect != null)
-        {
-            // Wait for the particle system to finish
-            yield return new WaitForSeconds(breakEffect.main.duration);
-        }
-        else
-        {
-            yield return new WaitForSeconds(breakEffectDuration);
-        }
-        
+        yield return new WaitForSeconds(duration);
         OnBreak();
     }
 
@@ -246,10 +256,6 @@ public class TreeOfLight : MonoBehaviour
     {
         Debug.Log("Tree breaking - triggering break event");
         onBreak.Invoke();
-        if (parentPot != null)
-        {
-            parentPot.OnTreeBreak();
-        }
         gameObject.SetActive(false);
     }
 
