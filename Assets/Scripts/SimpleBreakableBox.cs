@@ -59,18 +59,6 @@ public class SimpleBreakableBox : InstantBreakableObject
 
         Debug.Log($"SimpleBreakableBox: Setup completed for {gameObject.name}");
 
-        // Create the box mesh
-        GameObject boxObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        boxObject.transform.SetParent(transform);
-        boxObject.transform.localPosition = Vector3.zero;
-        boxObject.transform.localScale = boxSize;
-        
-        // Set the material if provided
-        if (boxMaterial != null)
-        {
-            boxObject.GetComponent<Renderer>().material = boxMaterial;
-        }
-        
         // Add the health bar
         GameObject healthBarPrefab = Resources.Load<GameObject>("Prefabs/BreakableHealthBar");
         if (healthBarPrefab != null)
@@ -154,7 +142,8 @@ public class SimpleBreakableBox : InstantBreakableObject
             rb.linearDamping = 0.5f;
         }
 
-        if (!TryGetComponent<MeshRenderer>(out _))
+        // Only add MeshFilter and MeshRenderer if they don't exist
+        if (!TryGetComponent<MeshFilter>(out _))
         {
             Debug.Log("SimpleBreakableBox: Adding MeshFilter and MeshRenderer");
             MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();

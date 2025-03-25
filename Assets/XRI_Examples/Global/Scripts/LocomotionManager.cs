@@ -1,317 +1,257 @@
-using UnityEngine.XR.Interaction.Toolkit;
-using UnityEngine.XR.Interaction.Toolkit.Samples.StarterAssets;
+using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit.Locomotion.Gravity;
+//using Unity.XR.CoreUtils;
+//using UnityEngine.XR.Interaction.Toolkit.Locomotion;
+//using UnityEngine.XR.Interaction.Toolkit.Locomotion.Turning;
+using UnityEngine.XR.Interaction.Toolkit.Locomotion.Movement;
+// Add any missing namespace for TwoHandedGrabMoveProvider
+// using UnityEngine.XR.Interaction.Toolkit.Samples.StarterAssets;
+using UnityEngine.XR.Interaction.Toolkit.Locomotion.Turning;
 
-namespace UnityEngine.XR.Content.Interaction
+namespace XRI_Examples.Global.Scripts
 {
-    /// <summary>
-    /// Use this class as a central manager to configure locomotion control schemes and configuration preferences.
-    /// </summary>
     public class LocomotionManager : MonoBehaviour
     {
-        const ContinuousMoveProviderBase.GravityApplicationMode k_DefaultGravityApplicationMode =
-            ContinuousMoveProviderBase.GravityApplicationMode.AttemptingMove;
-        const UnityEngine.XR.Interaction.Toolkit.Locomotion.Movement.ConstrainedMoveProvider.GravityApplicationMode k_DefaultGravityMode =
-            UnityEngine.XR.Interaction.Toolkit.Locomotion.Movement.ConstrainedMoveProvider.GravityApplicationMode.AttemptingMove;
-
-        /// <summary>
-        /// Sets which movement control scheme to use.
-        /// </summary>
-        /// <seealso cref="leftHandLocomotionType"/>
-        /// <seealso cref="rightHandLocomotionType"/>
-        public enum LocomotionType
-        {
-            /// <summary>
-            /// Use smooth (continuous) movement control scheme.
-            /// </summary>
-            MoveAndStrafe,
-
-            /// <summary>
-            /// Use teleport movement control scheme.
-            /// </summary>
-            TeleportAndTurn,
-        }
-
-        /// <summary>
-        /// Sets which turn style of locomotion to use.
-        /// </summary>
-        /// <seealso cref="leftHandTurnStyle"/>
-        /// <seealso cref="rightHandTurnStyle"/>
-        public enum TurnStyle
-        {
-            /// <summary>
-            /// Use snap turning to rotate the direction you are facing by snapping by a specified angle.
-            /// </summary>
-            Snap,
-
-            /// <summary>
-            /// Use continuous turning to smoothly rotate the direction you are facing by a specified speed.
-            /// </summary>
-            Smooth,
-        }
-
         [SerializeField]
-        [Tooltip("Stores the locomotion provider for smooth (continuous) movement.")]
-        DynamicMoveProvider m_DynamicMoveProvider;
-
-        /// <summary>
-        /// Stores the locomotion provider for smooth (continuous) movement.
-        /// </summary>
-        /// <seealso cref="DynamicMoveProvider"/>
-        public DynamicMoveProvider dynamicMoveProvider
-        {
-            get => m_DynamicMoveProvider;
-            set => m_DynamicMoveProvider = value;
-        }
-
+        private ContinuousMoveProvider mContinuousMoveProvider;
+        
         [SerializeField]
-        [Tooltip("Stores the locomotion provider for smooth (continuous) turning.")]
-        ContinuousTurnProviderBase m_SmoothTurnProvider;
-
-        /// <summary>
-        /// Stores the locomotion provider for smooth (continuous) turning.
-        /// </summary>
-        /// <seealso cref="ContinuousTurnProviderBase"/>
-        public ContinuousTurnProviderBase smoothTurnProvider
-        {
-            get => m_SmoothTurnProvider;
-            set => m_SmoothTurnProvider = value;
-        }
-
+        private ContinuousTurnProvider mContinuousTurnProvider;
+        
         [SerializeField]
-        [Tooltip("Stores the locomotion provider for snap turning.")]
-        SnapTurnProviderBase m_SnapTurnProvider;
-
-        /// <summary>
-        /// Stores the locomotion provider for snap turning.
-        /// </summary>
-        /// <seealso cref="SnapTurnProviderBase"/>
-        public SnapTurnProviderBase snapTurnProvider
-        {
-            get => m_SnapTurnProvider;
-            set => m_SnapTurnProvider = value;
-        }
-
+        private SnapTurnProvider mSnapTurnProvider;
+        
         [SerializeField]
-        [Tooltip("Stores the locomotion provider for two-handed grab movement.")]
-        UnityEngine.XR.Interaction.Toolkit.Locomotion.Movement.TwoHandedGrabMoveProvider m_TwoHandedGrabMoveProvider;
-
-        /// <summary>
-        /// Stores the locomotion provider for two-handed grab movement.
-        /// </summary>
-        /// <seealso cref="TwoHandedGrabMoveProvider"/>
-        public UnityEngine.XR.Interaction.Toolkit.Locomotion.Movement.TwoHandedGrabMoveProvider twoHandedGrabMoveProvider
-        {
-            get => m_TwoHandedGrabMoveProvider;
-            set => m_TwoHandedGrabMoveProvider = value;
-        }
-
+        private MonoBehaviour mTwoHandedGrabMoveProvider; // Use MonoBehaviour if type isn't available
+        
         [SerializeField]
-        [Tooltip("Reference to the manager that mediates the left-hand controllers.")]
-        ActionBasedControllerManager m_LeftHandManager;
-
+        private LocomotionType mLeftHandLocomotionType = LocomotionType.MoveAndStrafe;
+        
         [SerializeField]
-        [Tooltip("Reference to the manager that mediates the right-hand controllers.")]
-        ActionBasedControllerManager m_RightHandManager;
-
+        private LocomotionType mRightHandLocomotionType = LocomotionType.MoveAndStrafe;
+        
         [SerializeField]
-        [Tooltip("Controls which movement control scheme to use for the left hand.")]
-        LocomotionType m_LeftHandLocomotionType;
+        private TurnStyle mLeftHandTurnStyle = TurnStyle.Smooth;
+        
+        [SerializeField]
+        private TurnStyle mRightHandTurnStyle = TurnStyle.Smooth;
+        
+        [SerializeField] 
+        private bool mEnableComfortMode;
+        
+        [SerializeField]
+        private GravityProvider mGravityProvider;
+        
+        [SerializeField]
+        private bool mUseGravity = true;
+        
+        [SerializeField]
+        private bool mEnableFly;
+        
+        [SerializeField]
+        private bool mEnableGrabMovement;
 
-        /// <summary>
-        /// Controls which movement control scheme to use for the left hand.
-        /// </summary>
-        /// <seealso cref="LocomotionType"/>
+        public ContinuousMoveProvider continuousMoveProvider => mContinuousMoveProvider;
+        public ContinuousTurnProvider continuousTurnProvider => mContinuousTurnProvider;
+        public SnapTurnProvider snapTurnProvider => mSnapTurnProvider;
+        public MonoBehaviour twoHandedGrabMoveProvider => mTwoHandedGrabMoveProvider;
+        
         public LocomotionType leftHandLocomotionType
         {
-            get => m_LeftHandLocomotionType;
+            get => mLeftHandLocomotionType;
             set
             {
+                mLeftHandLocomotionType = value;
                 SetMoveScheme(value, true);
-                m_LeftHandLocomotionType = value;
             }
         }
-
-        [SerializeField]
-        [Tooltip("Controls which movement control scheme to use for the right hand.")]
-        LocomotionType m_RightHandLocomotionType;
-
-        /// <summary>
-        /// Controls which movement control scheme to use for the left hand.
-        /// </summary>
-        /// <seealso cref="LocomotionType"/>
+        
         public LocomotionType rightHandLocomotionType
         {
-            get => m_RightHandLocomotionType;
+            get => mRightHandLocomotionType;
             set
             {
+                mRightHandLocomotionType = value;
                 SetMoveScheme(value, false);
-                m_RightHandLocomotionType = value;
             }
         }
-
-        [SerializeField]
-        [Tooltip("Controls which turn style of locomotion to use for the left hand.")]
-        TurnStyle m_LeftHandTurnStyle;
-
-        /// <summary>
-        /// Controls which turn style of locomotion to use for the left hand.
-        /// </summary>
-        /// <seealso cref="TurnStyle"/>
+        
         public TurnStyle leftHandTurnStyle
         {
-            get => m_LeftHandTurnStyle;
+            get => mLeftHandTurnStyle;
             set
             {
+                mLeftHandTurnStyle = value;
                 SetTurnStyle(value, true);
-                m_LeftHandTurnStyle = value;
             }
         }
-
-        [SerializeField]
-        [Tooltip("Controls which turn style of locomotion to use for the right hand.")]
-        TurnStyle m_RightHandTurnStyle;
-
-        /// <summary>
-        /// Controls which turn style of locomotion to use for the left hand.
-        /// </summary>
-        /// <seealso cref="TurnStyle"/>
+        
         public TurnStyle rightHandTurnStyle
         {
-            get => m_RightHandTurnStyle;
+            get => mRightHandTurnStyle;
             set
             {
+                mRightHandTurnStyle = value;
                 SetTurnStyle(value, false);
-                m_RightHandTurnStyle = value;
             }
         }
-
-        [SerializeField]
-        [Tooltip("Whether to enable the comfort mode that applies the tunneling vignette effect to smooth movement and turn.")]
-        bool m_EnableComfortMode;
-
+        
         public bool enableComfortMode
         {
-            get => m_EnableComfortMode;
-            set
-            {
-                m_EnableComfortMode = value;
-                if (m_ComfortMode != null)
-                    m_ComfortMode.SetActive(m_EnableComfortMode);
-            }
+            get => mEnableComfortMode;
+            set => mEnableComfortMode = value;
         }
-
-        [SerializeField]
-        [Tooltip("Stores the GameObject for the comfort mode.")]
-        GameObject m_ComfortMode;
-
-        [SerializeField]
-        [Tooltip("Whether gravity affects continuous and grab movement when flying is disabled.")]
-        bool m_UseGravity;
-
-        /// <summary>
-        /// Whether gravity affects continuous and grab movement when flying is disabled.
-        /// </summary>
+        
         public bool useGravity
         {
-            get => m_UseGravity;
+            get => mUseGravity;
             set
             {
-                m_UseGravity = value;
-                m_DynamicMoveProvider.useGravity = value;
-                m_TwoHandedGrabMoveProvider.useGravity = value;
-                m_TwoHandedGrabMoveProvider.leftGrabMoveProvider.useGravity = value;
-                m_TwoHandedGrabMoveProvider.rightGrabMoveProvider.useGravity = value;
-                if (value)
+                mUseGravity = value;
+                
+                if (mGravityProvider != null)
                 {
-                    m_DynamicMoveProvider.gravityApplicationMode = k_DefaultGravityApplicationMode;
-                    m_TwoHandedGrabMoveProvider.gravityMode = k_DefaultGravityMode;
-                    m_TwoHandedGrabMoveProvider.leftGrabMoveProvider.gravityMode = k_DefaultGravityMode;
-                    m_TwoHandedGrabMoveProvider.rightGrabMoveProvider.gravityMode = k_DefaultGravityMode;
+                    mGravityProvider.enabled = value;
+                    
+                    if (!value)
+                    {
+                        mEnableFly = true;
+                    }
                 }
             }
         }
-
-        [SerializeField]
-        [Tooltip("Whether to enable flying for continuous and grab movement. This overrides the use of gravity.")]
-        bool m_EnableFly;
-
-        /// <summary>
-        /// Whether to enable flying for continuous and grab movement. This overrides the use of gravity.
-        /// </summary>
+        
         public bool enableFly
         {
-            get => m_EnableFly;
+            get => mEnableFly;
             set
             {
-                m_EnableFly = value;
-                m_DynamicMoveProvider.enableFly = value;
-                m_TwoHandedGrabMoveProvider.enableFreeYMovement = value;
-                m_TwoHandedGrabMoveProvider.leftGrabMoveProvider.enableFreeYMovement = value;
-                m_TwoHandedGrabMoveProvider.rightGrabMoveProvider.enableFreeYMovement = value;
+                mEnableFly = value;
+                
+                if (mContinuousMoveProvider != null)
+                {
+                    var propertyInfo = mContinuousMoveProvider.GetType().GetProperty("enableFly");
+                    if (propertyInfo != null)
+                    {
+                        propertyInfo.SetValue(mContinuousMoveProvider, value);
+                    }
+                    
+                    if (value)
+                        mUseGravity = false;
+                }
             }
         }
-
-        [SerializeField]
-        [Tooltip("Whether to enable grab movement.")]
-        bool m_EnableGrabMovement;
-
-        /// <summary>
-        /// Whether to enable grab movement.
-        /// </summary>
+        
         public bool enableGrabMovement
         {
-            get => m_EnableGrabMovement;
+            get => mEnableGrabMovement;
             set
             {
-                m_EnableGrabMovement = value;
-                m_TwoHandedGrabMoveProvider.enabled = value;
-                m_TwoHandedGrabMoveProvider.leftGrabMoveProvider.enabled = value;
-                m_TwoHandedGrabMoveProvider.rightGrabMoveProvider.enabled = value;
+                mEnableGrabMovement = value;
+                if (mTwoHandedGrabMoveProvider != null)
+                    mTwoHandedGrabMoveProvider.enabled = value;
             }
         }
 
-        void OnEnable()
+        protected void OnEnable()
         {
-            SetMoveScheme(m_LeftHandLocomotionType, true);
-            SetMoveScheme(m_RightHandLocomotionType, false);
-            SetTurnStyle(m_LeftHandTurnStyle, true);
-            SetTurnStyle(m_RightHandTurnStyle, false);
-
-            if (m_ComfortMode != null)
-                m_ComfortMode.SetActive(m_EnableComfortMode);
-
-            m_DynamicMoveProvider.useGravity = m_UseGravity;
-            m_TwoHandedGrabMoveProvider.useGravity = m_UseGravity;
-            m_TwoHandedGrabMoveProvider.leftGrabMoveProvider.useGravity = m_UseGravity;
-            m_TwoHandedGrabMoveProvider.rightGrabMoveProvider.useGravity = m_UseGravity;
-            if (m_UseGravity)
+            if (mGravityProvider != null)
             {
-                m_DynamicMoveProvider.gravityApplicationMode = k_DefaultGravityApplicationMode;
-                m_TwoHandedGrabMoveProvider.gravityMode = k_DefaultGravityMode;
-                m_TwoHandedGrabMoveProvider.leftGrabMoveProvider.gravityMode = k_DefaultGravityMode;
-                m_TwoHandedGrabMoveProvider.rightGrabMoveProvider.gravityMode = k_DefaultGravityMode;
+                mGravityProvider.enabled = mUseGravity;
+                
+                var propertyInfo = mContinuousMoveProvider.GetType().GetProperty("enableFly");
+                if (propertyInfo != null)
+                {
+                    propertyInfo.SetValue(mContinuousMoveProvider, mEnableFly);
+                }
             }
 
-            m_DynamicMoveProvider.enableFly = m_EnableFly;
-            m_TwoHandedGrabMoveProvider.enableFreeYMovement = m_EnableFly;
-            m_TwoHandedGrabMoveProvider.leftGrabMoveProvider.enableFreeYMovement = m_EnableFly;
-            m_TwoHandedGrabMoveProvider.rightGrabMoveProvider.enableFreeYMovement = m_EnableFly;
+            if (mTwoHandedGrabMoveProvider != null)
+                mTwoHandedGrabMoveProvider.enabled = mEnableGrabMovement;
 
-            m_TwoHandedGrabMoveProvider.enabled = m_EnableGrabMovement;
-            m_TwoHandedGrabMoveProvider.leftGrabMoveProvider.enabled = m_EnableGrabMovement;
-            m_TwoHandedGrabMoveProvider.rightGrabMoveProvider.enabled = m_EnableGrabMovement;
+            SetMoveScheme(mLeftHandLocomotionType, true);
+            SetMoveScheme(mRightHandLocomotionType, false);
+            SetTurnStyle(mLeftHandTurnStyle, true);
+            SetTurnStyle(mRightHandTurnStyle, false);
         }
 
-        void SetMoveScheme(LocomotionType scheme, bool leftHand)
+        private void SetMoveScheme(LocomotionType scheme, bool leftHand)
         {
-            var targetHand = leftHand ? m_LeftHandManager : m_RightHandManager;
-            targetHand.smoothMotionEnabled = (scheme == LocomotionType.MoveAndStrafe);
+            if (mContinuousMoveProvider == null)
+                return;
+                
+            // Different approach that works with the API
+            if (scheme == LocomotionType.NoMovement)
+            {
+                // Disable movement input completely
+                mContinuousMoveProvider.enabled = false;
+                return;
+            }
+            
+            // For other schemes, enable the provider
+            mContinuousMoveProvider.enabled = true;
+            
+            // Try to set specific properties if available
+            try
+            {
+                bool moveEnabled = scheme != LocomotionType.NoMovement;
+                
+                // Try setting hand-specific properties if they exist
+                var leftHandProperty = mContinuousMoveProvider.GetType().GetProperty("leftHandEnabled");
+                var rightHandProperty = mContinuousMoveProvider.GetType().GetProperty("rightHandEnabled");
+                
+                if (leftHandProperty != null && rightHandProperty != null)
+                {
+                    if (leftHand)
+                        leftHandProperty.SetValue(mContinuousMoveProvider, moveEnabled);
+                    else
+                        rightHandProperty.SetValue(mContinuousMoveProvider, moveEnabled);
+                }
+            }
+            catch (System.Exception)
+            {
+                // Fallback if properties don't exist
+                Debug.LogWarning("Unable to set specific hand movement settings - using generic enable/disable");
+            }
         }
 
-        void SetTurnStyle(TurnStyle style, bool leftHand)
+        public void SetTurnStyle(TurnStyle style, bool leftHand)
         {
-            var targetHand = leftHand ? m_LeftHandManager : m_RightHandManager;
-            targetHand.smoothTurnEnabled = (style == TurnStyle.Smooth);
+            if (mContinuousTurnProvider == null || mSnapTurnProvider == null)
+                return;
+                
+            switch (style)
+            {
+                case TurnStyle.Smooth:
+                    mContinuousTurnProvider.enabled = true;
+                    mSnapTurnProvider.enabled = false;
+                    break;
+                    
+                case TurnStyle.Snap:
+                    mContinuousTurnProvider.enabled = false;
+                    mSnapTurnProvider.enabled = true;
+                    break;
+                    
+                case TurnStyle.None:
+                    mContinuousTurnProvider.enabled = false;
+                    mSnapTurnProvider.enabled = false;
+                    break;
+            }
         }
+    }
+
+    public enum LocomotionType
+    {
+        MoveAndStrafe = 0,
+        MoveAndRotate = 1,
+        MoveAndTurn = 2,
+        NoMovement = 3,
+    }
+
+    public enum TurnStyle
+    {
+        Smooth = 0,
+        Snap = 1,
+        None = 2,
     }
 }

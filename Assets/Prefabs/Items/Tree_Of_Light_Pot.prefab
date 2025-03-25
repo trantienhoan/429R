@@ -501,20 +501,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   treePrefab: {fileID: 8368527830041989588, guid: 7b5f58ba9d7ee8d4c992737dff1e8a38,
     type: 3}
+  treeSpawnPoint: {fileID: 265967999501900189}
+  growthDelay: 0.5
+  growthDuration: 10
+  maxTreeScale: {x: 1, y: 1, z: 1}
+  tiltThreshold: 30
+  checkInterval: 0.5
   doorKeyPrefab: {fileID: 784072565763923235, guid: 52b0efbba0ab54548af1006d60566fe1,
     type: 3}
   keySpawnPoint: {fileID: 265967999501900189}
-  treeSpawnPoint: {fileID: 265967999501900189}
-  growthDuration: 10
-  maxTreeScale: 1
-  growthDelay: 0.5
-  initialLightIntensity: 1
-  growingLightIntensity: 0.3
-  finalLightIntensity: 2
-  breakDelay: 0.5
-  breakSound: {fileID: 0}
   breakEffect: {fileID: 9169966119468206341, guid: ed962e35f7fa6f34f8d27aa6d19ea293,
     type: 3}
+  breakSound: {fileID: 0}
+  audioSource: {fileID: 0}
+  socketInteractor: {fileID: 9009260404841559303}
 --- !u!4 &5664211420611074727 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 90ead29ec06b9784e832b9c538d6641a,

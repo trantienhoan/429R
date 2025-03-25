@@ -142,21 +142,21 @@ namespace UnityEngine.XR.Content.Interaction
             m_KeySocket.SetActive(false);
             m_Key.transform.gameObject.SetActive(false);
             m_KeyKnob.SetActive(true);
+
+            // Unlock the door immediately when key is inserted
+            if (m_Locked)
+            {
+                m_Locked = false;
+                m_OnUnlock.Invoke();
+                Debug.Log("Door unlocked by key insertion");
+            }
         }
 
         public void KeyUpdate(float keyValue)
         {
-            if (!m_Locked && keyValue > m_KeyLockValue)
-            {
-                m_Locked = true;
-                m_OnLock.Invoke();
-            }
-
-            if (m_Locked && keyValue < m_KeyUnlockValue)
-            {
-                m_Locked = false;
-                m_OnUnlock.Invoke();
-            }
+            // This method can be removed or left empty since we don't need key rotation anymore
+            // Keeping it for backward compatibility
+            return;
         }
 
         public void KeyLockSelect(SelectEnterEventArgs args)

@@ -1,12 +1,12 @@
 using UnityEngine;
-using UnityEngine.XR.Interaction.Toolkit;
-using UnityEngine.XR.Interaction.Toolkit.Samples.StarterAssets;
+using UnityEngine.XR.Interaction.Toolkit.Locomotion.Turning;
 
 public class SetTurnTypeFromPlayerPref : MonoBehaviour
 {
-    [SerializeField] private ActionBasedSnapTurnProvider snapTurn;
-    [SerializeField] private ActionBasedContinuousTurnProvider continuousTurn;
-    
+    //[SerializeField] private ActionBasedSnapTurnProvider snapTurn;
+    //[SerializeField] private ActionBasedContinuousTurnProvider continuousTurn;
+    [SerializeField] private SnapTurnProvider snapTurn;
+    [SerializeField] private ContinuousTurnProvider continuousTurn;
     private void Start()
     {
         UpdateTurnType();
