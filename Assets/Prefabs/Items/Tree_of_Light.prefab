@@ -274,15 +274,47 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   treeLight: {fileID: 6572412913515238074}
   maxLightIntensity: 2
+  initialLightIntensity: 0
+  growingLightIntensity: 1
   finalLightPulseSpeed: 1
   finalLightPulseAmount: 0.2
   maxHealth: 100
+  startScale: {x: 0, y: 0, z: 0}
+  targetScale: {x: 1, y: 1, z: 1}
+  growthCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
   breakEffectDuration: 1
+  breakDelay: 0.5
   onBreak:
     m_PersistentCalls:
       m_Calls: []
   onDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnGrowthComplete:
     m_PersistentCalls:
       m_Calls: []
