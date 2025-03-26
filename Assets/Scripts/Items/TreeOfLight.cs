@@ -286,7 +286,14 @@ public class TreeOfLight : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
 
         Debug.Log("Final effect complete, tree will now break");
-        Break(true); // Pass true to break the pot as well
+        if (parentPot != null)
+        {
+            parentPot.StartBreakSequence();
+        }
+        else
+        {
+            Debug.LogWarning("No parent pot reference found!");
+        }
     }
 
     public void TakeDamage(float damage)
@@ -296,67 +303,40 @@ public class TreeOfLight : MonoBehaviour
         currentHealth = Mathf.Max(0, currentHealth - damage);
         onDamage?.Invoke();
         
+        // Flash the light when damaged
+        if (treeLight != null)
+        {
+            StartCoroutine(DamageFlash());
+        }
+        
         if (currentHealth <= 0)
         {
             Break();
         }
     }
 
-    public void Break(bool breakPot = false)
+    private IEnumerator DamageFlash()
     {
-        // Prevent multiple break calls
-        if (!gameObject.activeInHierarchy) return;
+        float originalIntensity = treeLight.intensity;
+        treeLight.intensity = originalIntensity * 1.5f;
+        yield return new WaitForSeconds(0.1f);
+        treeLight.intensity = originalIntensity;
+    }
+
+    private void Break(bool breakPot = false)
+    {
+        if (!isFullyGrown) return;
         
-        Debug.Log($"Tree breaking (breakPot: {breakPot})");
+        Debug.Log("Tree breaking - starting break sequence");
         
-        // Disable interaction
-        if (grabInteractable != null)
-        {
-            grabInteractable.enabled = false;
-        }
-        
-        // Stop all ongoing effects
-        StopAllCoroutines();
-        
+        // Play break effect if available
         if (breakEffect != null)
         {
-            PlayBreakEffect(breakPot);
+            breakEffect.Play();
+            StartCoroutine(DestroyAfterEffect(breakEffectDuration));
         }
         else
         {
-            OnBreak();
-        }
-    }
-    
-    private void PlayBreakEffect(bool breakPot = false)
-    {
-        Debug.Log("Playing tree break effect");
-        
-        try
-        {
-            // Create a new GameObject for the particle system
-            GameObject effectObject = new GameObject("TreeBreakEffect");
-            effectObject.transform.position = transform.position;
-            effectObject.transform.rotation = transform.rotation;
-            
-            ParticleSystem effect = Instantiate(breakEffect, effectObject.transform);
-            effect.Play();
-            
-            // Destroy the effect object after the effect is done
-            Destroy(effectObject, Mathf.Max(effect.main.duration, breakEffectDuration));
-            
-            // Only trigger pot's break effect if breakPot is true
-            if (parentPot != null && breakPot)
-            {
-                parentPot.OnTreeBreak();
-            }
-            
-            // Wait for effect to complete before disabling the tree
-            StartCoroutine(DestroyAfterEffect(breakEffectDuration));
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"Error playing break effect: {e.Message}");
             OnBreak();
         }
     }

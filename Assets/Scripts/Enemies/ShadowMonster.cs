@@ -16,13 +16,27 @@ public class ShadowMonster : MonoBehaviour
     [SerializeField] private float maxHealth = 50f;
     [SerializeField] private float currentHealth;
     
+    [Header("Effects")]
+    [SerializeField] private ParticleSystem attackEffect;
+    [SerializeField] private AudioClip attackSound;
+    [SerializeField] private AudioSource audioSource;
+    
     private Transform target;
     private float lastAttackTime;
     private bool isDead = false;
+    private Animator animator;
+    private static readonly int AttackTrigger = Animator.StringToHash("Attack");
 
     private void Start()
     {
         currentHealth = maxHealth;
+        animator = GetComponent<Animator>();
+        
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>();
+        }
+        
         // Find the Tree of Light
         target = GameObject.FindGameObjectWithTag("TreeOfLight")?.transform;
         if (target == null)
@@ -31,6 +45,8 @@ public class ShadowMonster : MonoBehaviour
             enabled = false;
             return;
         }
+        
+        Debug.Log($"ShadowMonster spawned - targeting Tree of Light at {target.position}");
     }
 
     private void Update()
@@ -67,7 +83,27 @@ public class ShadowMonster : MonoBehaviour
         TreeOfLight tree = target.GetComponent<TreeOfLight>();
         if (tree != null)
         {
+            // Play attack animation if available
+            if (animator != null)
+            {
+                animator.SetTrigger(AttackTrigger);
+            }
+            
+            // Play attack effect if available
+            if (attackEffect != null)
+            {
+                attackEffect.Play();
+            }
+            
+            // Play attack sound if available
+            if (attackSound != null && audioSource != null)
+            {
+                audioSource.PlayOneShot(attackSound);
+            }
+            
+            // Deal damage to the tree
             tree.TakeDamage(attackDamage);
+            Debug.Log($"ShadowMonster attacked Tree of Light for {attackDamage} damage");
         }
     }
 

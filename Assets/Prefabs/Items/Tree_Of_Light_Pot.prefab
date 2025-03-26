@@ -243,6 +243,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 6891814520054160059}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 90ead29ec06b9784e832b9c538d6641a,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1849177776797559712}
   m_SourcePrefab: {fileID: 100100000, guid: 90ead29ec06b9784e832b9c538d6641a, type: 3}
 --- !u!1 &5030664726389686301 stripped
 GameObject:
@@ -455,7 +459,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_InteractionManager: {fileID: 0}
   m_InteractionLayers:
-    m_Bits: 1
+    m_Bits: 4294967295
   m_Handedness: 0
   m_AttachTransform: {fileID: 265967999501900189}
   m_KeepSelectedTargetValid: 1
@@ -502,12 +506,12 @@ MonoBehaviour:
   treePrefab: {fileID: 8368527830041989588, guid: 7b5f58ba9d7ee8d4c992737dff1e8a38,
     type: 3}
   treeSpawnPoint: {fileID: 265967999501900189}
-  growthDelay: 0.5
+  growthDelay: 0.15
   growthDuration: 10
   maxTreeScale: {x: 1, y: 1, z: 1}
   tiltThreshold: 30
   checkInterval: 0.5
-  doorKeyPrefab: {fileID: 784072565763923235, guid: 52b0efbba0ab54548af1006d60566fe1,
+  doorKeyPrefab: {fileID: 784072565763923235, guid: 3d53f2553dcf2974aab5868bc1a85582,
     type: 3}
   keySpawnPoint: {fileID: 265967999501900189}
   breakEffect: {fileID: 9169966119468206341, guid: ed962e35f7fa6f34f8d27aa6d19ea293,
@@ -515,6 +519,26 @@ MonoBehaviour:
   breakSound: {fileID: 0}
   audioSource: {fileID: 0}
   socketInteractor: {fileID: 9009260404841559303}
+--- !u!114 &1849177776797559712
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5030664726389686301}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd2ae3da4290e914fb8c0299e7686140, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shadowMonsterPrefab: {fileID: 0}
+  spawnRadius: 10
+  spawnHeight: 1
+  maxMonsters: 5
+  spawnInterval: 5
+  waveInterval: 15
+  monstersPerWave: 3
+  difficultyIncrease: 0.2
 --- !u!4 &5664211420611074727 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 90ead29ec06b9784e832b9c538d6641a,

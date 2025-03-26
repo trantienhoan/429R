@@ -17,9 +17,8 @@ namespace Items
         [SerializeField] private float tiltThreshold = 30f;
         [SerializeField] private float checkInterval = 0.5f;
     
-        // Commented out for now - you'll add this later
-        // [Header("Monster Spawning")]
-        // [SerializeField] private MonsterSpawner monsterSpawner;
+        [Header("Monster Spawning")]
+        [SerializeField] private ShadowMonsterSpawner monsterSpawner;
     
         [Header("Door Key")]
         [SerializeField] private GameObject doorKeyPrefab;
@@ -40,6 +39,7 @@ namespace Items
         private bool isPotUpright = true;
         private bool wasUpright = true;
         private float lastCheckTime = 0f;
+        private Rigidbody rb;
     
         private void Awake()
         {
@@ -66,6 +66,31 @@ namespace Items
                 Debug.Log("Created default tree spawn point");
             }
         
+            // Create key spawn point if it doesn't exist or if it's using the tree spawn point
+            if (keySpawnPoint == null || keySpawnPoint == treeSpawnPoint)
+            {
+                Debug.Log("Creating key spawn point");
+                GameObject keyPoint = new GameObject("KeySpawnPoint");
+                keyPoint.transform.SetParent(transform);
+                keyPoint.transform.localPosition = new Vector3(0, 0.5f, 0); // Spawn slightly above the pot
+                keySpawnPoint = keyPoint.transform;
+                Debug.Log("Created key spawn point");
+            }
+        
+            // Validate monster spawner
+            if (monsterSpawner == null)
+            {
+                Debug.LogError("Monster spawner not assigned to TreeOfLightPot!");
+                monsterSpawner = FindFirstObjectByType<ShadowMonsterSpawner>();
+                if (monsterSpawner == null)
+                {
+                    Debug.LogError("No ShadowMonsterSpawner found in scene!");
+                    enabled = false;
+                    return;
+                }
+                Debug.Log("Found ShadowMonsterSpawner in scene");
+            }
+        
             // Validate maxTreeScale
             if (!IsValidScale(maxTreeScale))
             {
@@ -77,12 +102,15 @@ namespace Items
             if (socketInteractor != null)
             {
                 socketInteractor.selectEntered.AddListener(OnSeedSocketed);
+                socketInteractor.selectExited.AddListener(OnSeedUnsocketed);
                 Debug.Log("Socket interactor listener set up");
             }
             else
             {
                 Debug.LogError("Socket interactor not assigned!");
             }
+        
+            rb = GetComponent<Rigidbody>();
         }
     
         private bool IsValidScale(Vector3 scale)
@@ -138,65 +166,33 @@ namespace Items
     
         private void OnSeedSocketed(SelectEnterEventArgs args)
         {
-            Debug.Log($"OnSeedSocketed called - isGrowing: {isGrowing}, hasSeedBeenPlanted: {hasSeedBeenPlanted}");
-        
-            // Don't process if already growing or has seed
-            if (isGrowing || hasSeedBeenPlanted)
+            // Check if the socketed object has the MagicalSeed component
+            var seed = args.interactableObject.transform.GetComponent<MagicalSeed>();
+            if (seed == null)
             {
-                Debug.Log("Ignoring seed socket - already growing or has seed");
+                // If it's not a seed, make the pot kinematic to prevent physics
+                if (rb != null)
+                {
+                    rb.isKinematic = true;
+                }
                 return;
             }
 
-            // Check if pot is upright before accepting seed
-            if (!isPotUpright)
+            // Store the seed reference and start growth
+            StartCoroutine(GrowTree(seed.gameObject));
+        }
+    
+        private void OnSeedUnsocketed(SelectExitEventArgs args)
+        {
+            // Check if the unsocketed object has the MagicalSeed component
+            var seed = args.interactableObject.transform.GetComponent<MagicalSeed>();
+            if (seed == null)
             {
-                Debug.Log("Cannot plant seed: Pot is not upright!");
-                return;
-            }
-
-            // Get the seed component
-            MagicalSeed seed = args.interactableObject.transform.GetComponent<MagicalSeed>();
-            if (seed != null)
-            {
-                Debug.Log("Valid seed detected in socket, starting growth...");
-            
-                // Disable the socket interactor to prevent other objects from being socketed
-                if (socketInteractor != null)
+                // If it wasn't a seed, restore the pot's physics
+                if (rb != null)
                 {
-                    socketInteractor.enabled = false;
-                    Debug.Log("Socket interactor disabled");
+                    rb.isKinematic = false;
                 }
-
-                // Mark as growing and planted
-                isGrowing = true;
-                hasSeedBeenPlanted = true;
-            
-                // Make seed stay in position but visually present
-                UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable seedGrab = seed.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
-                if (seedGrab != null)
-                {
-                    seedGrab.enabled = false;
-                    Debug.Log("Disabled seed grab interactable");
-                }
-            
-                Rigidbody seedRb = seed.GetComponent<Rigidbody>();
-                if (seedRb != null)
-                {
-                    seedRb.isKinematic = true;
-                    Debug.Log("Disabled seed physics");
-                }
-            
-                // Parent the seed to the pot to ensure it stays in place
-                seed.transform.SetParent(socketInteractor.attachTransform);
-                seed.transform.localPosition = Vector3.zero;
-                seed.transform.localRotation = Quaternion.identity;
-
-                // Start growth sequence
-                StartCoroutine(GrowTree(seed.gameObject));
-            }
-            else
-            {
-                Debug.LogError("Object in socket does not have MagicalSeed component!");
             }
         }
     
@@ -208,13 +204,37 @@ namespace Items
             yield return new WaitForSeconds(growthDelay);
             Debug.Log($"Initial delay complete ({growthDelay}s)");
         
-            // Destroy the seed now that we're ready to grow the tree
+            // Make seed sink into the pot before destroying
             if (seed != null)
             {
-                Destroy(seed);
-                Debug.Log("Seed destroyed");
-            }
+                // Get the seed's Rigidbody and make it kinematic
+                Rigidbody seedRb = seed.GetComponent<Rigidbody>();
+                if (seedRb != null)
+                {
+                    seedRb.isKinematic = true;
+                }
 
+                // Animate the seed sinking
+                float sinkDuration = 0.5f; // Duration of sinking animation
+                float elapsedTime = 0f;
+                Vector3 startPosition = seed.transform.position;
+                Vector3 endPosition = startPosition + Vector3.down * 0.2f; // Move down 20cm
+
+                while (elapsedTime < sinkDuration)
+                {
+                    elapsedTime += Time.deltaTime;
+                    float t = elapsedTime / sinkDuration;
+                    // Use smoothstep for a more natural sinking motion
+                    t = t * t * (3f - 2f * t);
+                    seed.transform.position = Vector3.Lerp(startPosition, endPosition, t);
+                    yield return null;
+                }
+
+                // Destroy the seed after sinking
+                Destroy(seed);
+                Debug.Log("Seed sunk and destroyed");
+            }
+        
             // Spawn the tree if it doesn't exist
             if (treeOfLight == null && treePrefab != null)
             {
@@ -262,6 +282,13 @@ namespace Items
                         float scale = Mathf.Max(validatedScale.x, validatedScale.y, validatedScale.z);
                         treeOfLight.StartGrowth(growthDuration, scale);
                         Debug.Log($"Tree growth started with duration: {growthDuration}, maxScale: {scale}");
+
+                        // Start spawning monsters when the tree starts growing
+                        if (monsterSpawner != null)
+                        {
+                            Debug.Log("Starting monster spawning");
+                            monsterSpawner.StartSpawning();
+                        }
                     }
                     else
                     {
@@ -284,7 +311,13 @@ namespace Items
             Debug.Log($"Waiting for growth duration: {growthDuration}s");
             yield return new WaitForSeconds(growthDuration);
         
-            // Monster spawning code removed - will be added later
+            // Stop spawning monsters when the tree is fully grown
+            if (monsterSpawner != null)
+            {
+                Debug.Log("Stopping monster spawning - tree fully grown");
+                monsterSpawner.StopSpawning();
+            }
+
             Debug.Log("Tree growth complete - ready for monster spawning stage");
         }
     
@@ -345,6 +378,24 @@ namespace Items
         
             // Disable the pot
             gameObject.SetActive(false);
+        }
+    
+        public void StartBreakSequence()
+        {
+            Debug.Log("Starting pot break sequence");
+            
+            // Play break effect if available
+            if (breakEffect != null)
+            {
+                breakEffect.Play();
+                if (audioSource != null && breakSound != null)
+                {
+                    audioSource.PlayOneShot(breakSound);
+                }
+            }
+            
+            // Start the break sequence coroutine
+            StartCoroutine(HandleBreakSequence(breakEffect.main.duration));
         }
     
         // This method is now disabled - all seed processing happens through the Socket Interactor
