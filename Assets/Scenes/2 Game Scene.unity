@@ -6872,6 +6872,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1910992779}
+  - component: {fileID: 1910992780}
   m_Layer: 0
   m_Name: Complete XR Origin Set Up With Hand Presence
   m_TagString: Player
@@ -6898,6 +6899,20 @@ Transform:
   - {fileID: 1899462287}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+--- !u!114 &1910992780
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1910992778}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2883e4c1dfd15bf43a546e9d36e341bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 100
+  currentHealth: 0
 --- !u!1 &1980113818
 GameObject:
   m_ObjectHideFlags: 0
@@ -8021,6 +8036,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Layer
       value: 14
+      objectReference: {fileID: 0}
+    - target: {fileID: 2956159122925430484, guid: 579c28d68b980f24d81e6866905d9a6e,
+        type: 3}
+      propertyPath: m_TagString
+      value: Ground
       objectReference: {fileID: 0}
     - target: {fileID: 3085628916642094421, guid: 579c28d68b980f24d81e6866905d9a6e,
         type: 3}

@@ -87,6 +87,11 @@ public class MagicalSeed : MonoBehaviour
             }
         }
     }
+    public void OnPlantedInPot()
+    {
+        // Implementation for when the seed is planted in a pot
+        Debug.Log("Seed has been planted in pot!");
+    }
 
     private void CheckDistance()
     {

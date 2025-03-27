@@ -1,314 +1,341 @@
 using UnityEngine;
+using UnityEngine.AI;
+using System.Collections;
+using System;
 
 public class ShadowMonster : MonoBehaviour
 {
-    [Header("Movement Settings")]
-    [SerializeField] private float moveSpeed = 5f;
-    [SerializeField] private float rotationSpeed = 10f;
-    [SerializeField] private float stoppingDistance = 1f;
+    [Header("Stats")]
+    [SerializeField] private float health = 100f;
+    [SerializeField] private float speed = 3.5f;
+    [SerializeField] private float damage = 10f;
     
     [Header("Attack Settings")]
-    [SerializeField] private float attackDamage = 10f;
-    [SerializeField] private float attackRange = 2f;
-    [SerializeField] private float attackCooldown = 1f;
-    
-    [Header("Health Settings")]
-    [SerializeField] private float maxHealth = 50f;
-    [SerializeField] private float currentHealth;
+    [SerializeField] private float attackRange = 1.5f;
+    [SerializeField] private float attackCooldown = 2f;
+    [SerializeField] private float detectionRadius = 10f;
     
     [Header("Effects")]
-    [SerializeField] private ParticleSystem attackEffect;
-    [SerializeField] private AudioClip attackSound;
-    [SerializeField] private AudioSource audioSource;
-    [SerializeField] private Material normalMaterial;
-    [SerializeField] private Material damageMaterial;
-    [SerializeField] private float damageFlashDuration = 0.2f;
     [SerializeField] private ParticleSystem deathEffect;
     [SerializeField] private AudioClip deathSound;
+    [SerializeField] private AudioClip attackSound;
+    [SerializeField] private AudioSource audioSource;
     
-    [Header("Surface Movement")]
-    [SerializeField] private float raycastDistance = 1.0f;
-    [SerializeField] private LayerMask surfaceLayers;
-    [SerializeField] private bool canWallCrawl = true;
-    [SerializeField] private float gravityMultiplier = 5f;
-    [SerializeField] private float surfaceDetectionRadius = 0.5f;
-
-    [Header("Window Navigation")]
-    [SerializeField] private LayerMask windowLayerMask;
-    [SerializeField] private float windowDetectionRange = 5f;
-    [SerializeField] private float windowPassThroughSpeed = 2f;
+    [Header("Light Weakness")]
+    [SerializeField] private float lightDamageMultiplier = 2f;
+    [SerializeField] private float minLightIntensityToDamage = 0.5f;
     
-    private void CheckForWindows()
-    {
-        if (isPassingThroughWindow) return;
-    
-        // Check if there's a window between us and the target
-        Vector3 directionToTarget = (target.position - transform.position).normalized;
-    
-        if (Physics.Raycast(transform.position, directionToTarget, out RaycastHit hit, 
-                windowDetectionRange, windowLayerMask))
-        {
-            // Found a window
-            targetWindow = hit.transform;
-            StartCoroutine(PassThroughWindow(targetWindow));
-        }
-    }
-
-    private IEnumerator PassThroughWindow(Transform window)
-    {
-        isPassingThroughWindow = true;
-    
-        // Get window center
-        Vector3 windowCenter = window.position;
-    
-        // Move towards window center
-        float startTime = Time.time;
-        Vector3 startPos = transform.position;
-    
-        while (Vector3.Distance(transform.position, windowCenter) > 0.1f)
-        {
-            float journeyLength = Vector3.Distance(startPos, windowCenter);
-            float distanceCovered = (Time.time - startTime) * windowPassThroughSpeed;
-            float fractionOfJourney = distanceCovered / journeyLength;
-        
-            transform.position = Vector3.Lerp(startPos, windowCenter, fractionOfJourney);
-            yield return null;
-        }
-    
-        // Once at window center, teleport slightly to other side
-        Vector3 directionToTarget = (target.position - windowCenter).normalized;
-        transform.position = windowCenter + directionToTarget * 0.5f;
-    
-        isPassingThroughWindow = false;
-        targetWindow = null;
-    }
-
-    private bool isPassingThroughWindow = false;
-    private Transform targetWindow = null;
-
-    private Vector3 surfaceNormal = Vector3.up;
-    private bool isGrounded = false;
-    private Transform currentSurface;
-
-
-    private Renderer monsterRenderer;
-
-    
-    public enum MonsterState { Idle, Chasing, Attacking, Dead }
-    private MonsterState currentState = MonsterState.Idle;
-    private Transform target;
-    private float lastAttackTime;
-    private bool isDead = false;
+    // References
+    private NavMeshAgent agent;
     private Animator animator;
-    private static readonly int AttackTrigger = Animator.StringToHash("Attack");
-    public delegate void MonsterEvent(ShadowMonster monster);
-    public static event MonsterEvent OnMonsterSpawned;
-    public static event MonsterEvent OnMonsterDeath;
-
-    private void Start()
+    private GameObject player;
+    private PlayerHealth playerHealth;
+    //private bool isDead = false;
+    private float lastAttackTime;
+    
+    // Delegate for spawner to listen to
+    public delegate void MonsterEventHandler(ShadowMonster monster);
+    
+    // Events
+    public event MonsterEventHandler MonsterSpawned;
+    public event MonsterEventHandler MonsterDeath;
+    public event Action OnMonsterDeath;
+    
+    // Animation hashes
+    private static readonly int Speed = Animator.StringToHash("Speed");
+    private static readonly int Attack = Animator.StringToHash("Attack");
+    private static readonly int IsDeadHash = Animator.StringToHash("IsDead");
+    
+    private void Awake()
     {
-        monsterRenderer = GetComponentInChildren<Renderer>();
-        currentHealth = maxHealth;
+        // Set up references
+        agent = GetComponent<NavMeshAgent>();
         animator = GetComponent<Animator>();
-        OnMonsterSpawned?.Invoke(this);
         
         if (audioSource == null)
         {
-            audioSource = GetComponent<AudioSource>();
+            audioSource = gameObject.AddComponent<AudioSource>();
         }
         
-        // Find the Tree of Light
-        target = GameObject.FindGameObjectWithTag("TreeOfLight")?.transform;
-        if (target == null)
+        // Configure NavMeshAgent
+        if (agent != null)
         {
-            Debug.LogWarning("No Tree of Light found in scene!");
-            enabled = false;
-            return;
+            agent.speed = speed;
+            agent.stoppingDistance = attackRange * 0.8f;
         }
-        
-        Debug.Log($"ShadowMonster spawned - targeting Tree of Light at {target.position}");
-        
     }
-    private void CheckSurface()
+    
+    private void Start()
     {
-        isGrounded = false;
-    
-        // Cast multiple rays in a sphere to detect surfaces
-        RaycastHit closestHit = new RaycastHit();
-        float closestDistance = float.MaxValue;
-    
-        for (int i = 0; i < 6; i++)
+        // Find player
+        player = GameObject.FindGameObjectWithTag("Player");
+        if (player == null)
         {
-            Vector3 direction = Vector3.zero;
-        
-            // Use 6 primary directions
-            switch (i)
-            {
-                case 0: direction = Vector3.down; break;
-                case 1: direction = Vector3.up; break;
-                case 2: direction = Vector3.forward; break;
-                case 3: direction = Vector3.back; break;
-                case 4: direction = Vector3.left; break;
-                case 5: direction = Vector3.right; break;
-            }
-        
-            if (Physics.SphereCast(transform.position, surfaceDetectionRadius, direction, 
-                    out RaycastHit hit, raycastDistance, surfaceLayers))
-            {
-                if (hit.distance < closestDistance)
-                {
-                    closestDistance = hit.distance;
-                    closestHit = hit;
-                    isGrounded = true;
-                }
-            }
-        }
-    
-        if (isGrounded)
-        {
-            surfaceNormal = closestHit.normal;
-            currentSurface = closestHit.transform;
+            Debug.LogWarning("Player not found. Make sure it has the 'Player' tag.");
         }
         else
         {
-            surfaceNormal = Vector3.up;
-            currentSurface = null;
+            playerHealth = player.GetComponent<PlayerHealth>();
+            if (playerHealth == null)
+            {
+                Debug.LogWarning("Player does not have a PlayerHealth component");
+            }
+        }
+        
+        // Notify that monster has spawned
+        if (MonsterSpawned != null)
+        {
+            MonsterSpawned(this);
         }
     }
-
-
+    
     private void Update()
     {
-        if (isDead) return;
-
-        CheckSurface();
-        CheckForWindows();
-    
-        // Move towards the tree
-        Vector3 direction = (target.position - transform.position).normalized;
-    
-        // Adjust direction based on current surface
-        if (canWallCrawl && currentSurface != null)
+        if (isDead)
         {
-            // Project movement direction onto the surface plane
-            direction = Vector3.ProjectOnPlane(direction, surfaceNormal).normalized;
-        }
-    
-        // Rotate to face direction
-        if (direction != Vector3.zero)
-        {
-            Quaternion targetRotation = Quaternion.LookRotation(direction, surfaceNormal);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
-        }
-
-        // Check if we're in attack range
-        float distanceToTarget = Vector3.Distance(transform.position, target.position);
-    
-        if (distanceToTarget <= attackRange)
-        {
-            // Attack the tree
-            if (Time.time >= lastAttackTime + attackCooldown)
+            // Check if player is within detection range
+            float distanceToPlayer = Vector3.Distance(transform.position, player.transform.position);
+            
+            if (distanceToPlayer <= detectionRadius)
             {
-                Attack();
-                lastAttackTime = Time.time;
+                // Move toward player
+                if (agent != null)
+                {
+                    agent.SetDestination(player.transform.position);
+                }
+                
+                // Update animation
+                if (animator != null)
+                {
+                    animator.SetFloat(Speed, agent.velocity.magnitude);
+                }
+                
+                // Check if in attack range and cooldown has elapsed
+                if (distanceToPlayer <= attackRange && Time.time >= lastAttackTime + attackCooldown)
+                {
+                    AttackPlayer();
+                }
+            }
+            else
+            {
+                // Stop moving if player is out of detection range
+                if (agent != null)
+                {
+                    agent.SetDestination(transform.position);
+                }
+                
+                // Update animation to idle
+                if (animator != null)
+                {
+                    animator.SetFloat(Speed, 0);
+                }
             }
         }
-        else if (distanceToTarget > stoppingDistance)
-        {
-            // Move towards the tree
-            transform.position += direction * moveSpeed * Time.deltaTime;
         
-            // Apply gravity if not on a surface and can wall crawl
-            if (!isGrounded && canWallCrawl)
+        // Check for light damage
+        CheckForLightDamage();
+    }
+    
+    private void AttackPlayer()
+    {
+        // Update last attack time
+        lastAttackTime = Time.time;
+        
+        // Play attack animation
+        if (animator != null)
+        {
+            animator.SetTrigger(Attack);
+        }
+        
+        // Play attack sound
+        if (audioSource != null && attackSound != null)
+        {
+            audioSource.PlayOneShot(attackSound);
+        }
+        
+        // Apply damage to player
+        if (playerHealth != null)
+        {
+            // Allow a small delay before applying damage to match animation
+            StartCoroutine(DealDamageWithDelay(0.5f));
+        }
+    }
+    
+    private IEnumerator DealDamageWithDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        
+        if (playerHealth != null && !isDead)
+        {
+            // Check if still in range before applying damage
+            float distanceToPlayer = Vector3.Distance(transform.position, player.transform.position);
+            if (distanceToPlayer <= attackRange * 1.5f)
             {
-                transform.position += Physics.gravity.normalized * gravityMultiplier * Time.deltaTime;
+                playerHealth.TakeDamage(damage);
             }
         }
     }
-
-    private void Attack()
-    {
-        TreeOfLight tree = target.GetComponent<TreeOfLight>();
-        if (tree != null)
-        {
-            // Play attack animation if available
-            if (animator != null)
-            {
-                animator.SetTrigger(AttackTrigger);
-            }
-            
-            // Play attack effect if available
-            if (attackEffect != null)
-            {
-                attackEffect.Play();
-            }
-            
-            // Play attack sound if available
-            if (attackSound != null && audioSource != null)
-            {
-                audioSource.PlayOneShot(attackSound);
-            }
-            
-            // Deal damage to the tree
-            tree.TakeDamage(attackDamage);
-            Debug.Log($"ShadowMonster attacked Tree of Light for {attackDamage} damage");
-        }
-    }
-
-    public void TakeDamage(float damage)
+    
+    public void TakeDamage(float damageAmount)
     {
         if (isDead) return;
         
-        currentHealth -= damage;
+        health -= damageAmount;
         
-        // Visual feedback
-        if (monsterRenderer != null && normalMaterial != null && damageMaterial != null)
-            StartCoroutine(FlashDamage());
-
-        if (currentHealth <= 0)
+        if (health <= 0)
         {
             Die();
         }
     }
-    private IEnumerator FlashDamage() {
-        monsterRenderer.material = damageMaterial;
-        yield return new WaitForSeconds(damageFlashDuration);
-        monsterRenderer.material = normalMaterial;
-    }
+    private bool isDead = false;
 
     private void Die()
     {
         isDead = true;
-        // Play death animation if available
-        if (animator != null) {
-            animator.SetTrigger("Death");
+        
+        // Stop movement
+        if (agent != null)
+        {
+            agent.isStopped = true;
+            agent.enabled = false;
         }
-    
-        // Play death effect if available
-        if (deathEffect != null) {
-            deathEffect.Play();
+        
+        // Play death animation
+        if (animator != null)
+        {
+            animator.SetBool(IsDead, true);
         }
-    
-        // Play death sound if available
-        if (deathSound != null && audioSource != null) {
+        
+        // Play death effects
+        if (deathEffect != null)
+        {
+            Instantiate(deathEffect, transform.position, Quaternion.identity);
+        }
+        
+        // Play death sound
+        if (audioSource != null && deathSound != null)
+        {
             audioSource.PlayOneShot(deathSound);
         }
-
-        OnMonsterDeath?.Invoke(this);
-    
+        
         // Disable colliders
         Collider[] colliders = GetComponents<Collider>();
-        foreach (Collider c in colliders) {
-            c.enabled = false;
+        foreach (Collider collider in colliders)
+        {
+            collider.enabled = false;
         }
+        
+        // Notify that monster has died
+        if (MonsterDeath != null)
+        {
+            MonsterDeath(this);
+        }
+        
+        OnMonsterDeath?.Invoke();
+
+        // Destroy after a delay
+        StartCoroutine(DestroyAfterDelay(3f));
+    }
     
-        Destroy(gameObject, 3f); // Longer time to allow effects to finish
+    public virtual bool IsDead()
+    {
+        return isDead;
+    }
+    public void SetDead(bool value)
+    {
+        isDead = value;
+        
+        // Update animator
+        if (animator != null)
+        {
+            animator.SetBool(IsDeadHash, isDead);
+        }
     }
 
+    private IEnumerator DestroyAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        
+        // Fade out
+        Renderer[] renderers = GetComponentsInChildren<Renderer>();
+        float fadeTime = 1f;
+        float elapsed = 0;
+        
+        // Store original materials
+        Material[] materials = new Material[renderers.Length];
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (renderers[i].material.HasProperty("_Color"))
+            {
+                materials[i] = renderers[i].material;
+            }
+        }
+        
+        // Fade out materials
+        while (elapsed < fadeTime)
+        {
+            elapsed += Time.deltaTime;
+            float normalizedTime = elapsed / fadeTime;
+            
+            for (int i = 0; i < materials.Length; i++)
+            {
+                if (materials[i] != null && materials[i].HasProperty("_Color"))
+                {
+                    Color color = materials[i].color;
+                    color.a = 1 - normalizedTime;
+                    materials[i].color = color;
+                }
+            }
+            
+            yield return null;
+        }
+        
+        Destroy(gameObject);
+    }
+    
+    private void CheckForLightDamage()
+    {
+        // Check nearby lights that could harm the shadow monster
+        Light[] nearbyLights = FindObjectsOfType<Light>();
+        
+        foreach (Light light in nearbyLights)
+        {
+            // Skip inactive lights or those below the damage threshold
+            if (!light.enabled || light.intensity < minLightIntensityToDamage)
+                continue;
+                
+            // Calculate distance and check if in range
+            float distanceToLight = Vector3.Distance(transform.position, light.transform.position);
+            float lightRange = light.range;
+            
+            // Skip if out of light range
+            if (distanceToLight > lightRange)
+                continue;
+                
+            // Calculate damage based on light intensity and distance
+            float distanceFactor = 1 - (distanceToLight / lightRange);
+            float lightDamage = light.intensity * lightDamageMultiplier * distanceFactor * Time.deltaTime;
+            
+            // Apply damage
+            TakeDamage(lightDamage);
+        }
+    }
+    
+    // Called by light wave effect to instantly kill monster
+    public void OnHitByLightWave()
+    {
+        TakeDamage(health); // Instantly kill
+    }
+    
+    // Draw gizmos for visualization in the editor
     private void OnDrawGizmosSelected()
     {
-        // Visualize attack range
+        // Detection radius
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, detectionRadius);
+        
+        // Attack range
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, attackRange);
     }
-} 
+}

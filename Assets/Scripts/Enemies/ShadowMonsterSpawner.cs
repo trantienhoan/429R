@@ -1,320 +1,347 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
-public class ShadowMonsterSpawner : MonoBehaviour
+namespace Enemies
 {
-    [Header("Spawn Settings")]
-    [SerializeField] private GameObject shadowMonsterPrefab;
-    [SerializeField] private float spawnRadius = 10f;
-    [SerializeField] private float spawnHeight = 1f;
-    [SerializeField] private int maxMonsters = 5;
-    [SerializeField] private float spawnInterval = 5f;
-    
-    [Header("Wave Settings")]
-    [SerializeField] private float waveInterval = 15f;
-    [SerializeField] private int monstersPerWave = 3;
-    [SerializeField] private float difficultyIncrease = 0.2f;
-    [SerializeField] private Transform[] spawnPoints;
-    [SerializeField] private bool useSpawnPoints = false;
-    [SerializeField] private bool randomizeSpawnPoints = true;
-    
-    [Header("Wall Crawling Settings")]
-    [SerializeField] private bool spawnOnWalls = true;
-    [SerializeField] private LayerMask spawnSurfacesLayerMask;
-    [SerializeField] private float surfaceDetectionHeight = 10f;
-
-    private int currentSpawnPointIndex = 0;
-    private void SpawnMonster() 
-   {
-    if (!isSpawning || treeOfLight == null) return;
-    
-    Vector3 spawnPosition;
-    Vector3 surfaceNormal = Vector3.up;
-    bool validSurfaceFound = false;
-    
-    if (useSpawnPoints && spawnPoints != null && spawnPoints.Length > 0)
+    // Create a simple class to track monsters if you need one
+    [System.Serializable]
+    public class MonsterTrackerData
     {
-        // Use defined spawn points
-        if (randomizeSpawnPoints)
+        public List<GameObject> activeMonsters = new List<GameObject>();
+    }
+
+    public class ShadowMonsterSpawner : MonoBehaviour
+    {
+        [Header("Spawning Settings")] [SerializeField]
+        [SerializeField] public GameObject monsterPrefab;
+        [SerializeField] private int maxMonstersAlive = 5;
+        [SerializeField] private float spawnInterval = 5f;
+        [SerializeField] private float minSpawnDistance = 10f;
+        [SerializeField] private float maxSpawnDistance = 25f;
+        [SerializeField] private Transform player;
+        [SerializeField] private bool spawnAtNightOnly = true;
+        [SerializeField] private bool spawnAwayFromLight = true;
+        [SerializeField] private float minimumLightLevelToSpawn = 0.3f;
+        [SerializeField] private float minSpawnDelay = 5f;
+        [SerializeField] private float maxSpawnDelay = 15f;
+        [SerializeField] private Transform[] spawnPoints;
+        [SerializeField] private MonsterTrackerData monsterData = new MonsterTrackerData();
+        public Vector3 FindValidSpawnPosition()
         {
-            int randomIndex = Random.Range(0, spawnPoints.Length);
-            spawnPosition = spawnPoints[randomIndex].position;
-        }
-        else
-        {
-            spawnPosition = spawnPoints[currentSpawnPointIndex].position;
-            currentSpawnPointIndex = (currentSpawnPointIndex + 1) % spawnPoints.Length;
+            // Implementation for finding a spawn position
+            Vector3 spawnerPos = transform.position;
+            float spawnRadius = 5f;
+            Vector3 randomOffset = new Vector3(
+                Random.Range(-spawnRadius, spawnRadius),
+                0f,
+                Random.Range(-spawnRadius, spawnRadius)
+            );
+            
+            return spawnerPos + randomOffset;
         }
         
-        validSurfaceFound = true;
-    }
-    else
-    {
-        // Choose random spawn location
-        if (spawnOnWalls)
+        // Method to register a monster
+        public void RegisterMonster(GameObject monster)
         {
-            // Try to find a valid surface (floor, wall, ceiling)
-            for (int attempt = 0; attempt < 10; attempt++)
+            if (monster != null && monsterData != null)
             {
-                // Generate random point within spawn radius
-                Vector2 randomCircle = Random.insideUnitCircle * spawnRadius;
-                Vector3 randomPoint = treeOfLight.transform.position + 
-                    new Vector3(randomCircle.x, Random.Range(0, surfaceDetectionHeight), randomCircle.y);
-                
-                // Cast rays in random directions to find surfaces
-                Vector3 randomDirection = Random.onUnitSphere;
-                if (Physics.Raycast(randomPoint, randomDirection, out RaycastHit hit, 
-                                   spawnRadius, spawnSurfacesLayerMask))
+                monsterData.activeMonsters.Add(monster);
+            }
+        }
+        
+        // Method for TreeOfLightPot to call instead of passing itself
+        public void NotifyMonsterSpawned(GameObject monster)
+        {
+            // Do whatever you need when a monster is spawned
+            RegisterMonster(monster);
+        }
+
+        private bool isSpawning = false;
+        private Coroutine spawnCoroutine;
+
+
+        [Header("Wave Settings")] [SerializeField]
+        private bool useWaves = false;
+
+        [SerializeField] private int baseWaveSize = 3;
+        [SerializeField] private int additionalMonstersPerWave = 1;
+        [SerializeField] private float timeBetweenWaves = 30f;
+
+        [Header("Debug")] [SerializeField] private bool showSpawnPoints = true;
+
+        // Internal variables
+        private List<ShadowMonster> activeMonsters = new List<ShadowMonster>();
+        private float nextSpawnTime = 0f;
+        private int currentWave = 0;
+
+        private void Start()
+        {
+            if (player == null)
+            {
+                player = GameObject.FindGameObjectWithTag("Player")?.transform;
+                if (player == null)
                 {
-                    spawnPosition = hit.point + hit.normal * 0.1f; // Slightly offset from surface
-                    surfaceNormal = hit.normal;
-                    validSurfaceFound = true;
-                    break;
+                    Debug.LogError("No player found! Make sure your player has the 'Player' tag.");
+                    enabled = false;
+                    return;
                 }
             }
-            
-            // If no valid surface found, use default spawn method
-            if (!validSurfaceFound)
+
+            if (useWaves)
             {
-                Vector2 randomCircle = Random.insideUnitCircle * spawnRadius;
-                spawnPosition = treeOfLight.transform.position + 
-                    new Vector3(randomCircle.x, spawnHeight, randomCircle.y);
-                validSurfaceFound = true;
+                StartCoroutine(SpawnWaves());
             }
         }
-        else
+
+        private void Update()
         {
-            // Original random spawn code
-            Vector2 randomCircle = Random.insideUnitCircle * spawnRadius;
-            spawnPosition = treeOfLight.transform.position + 
-                new Vector3(randomCircle.x, spawnHeight, randomCircle.y);
-            validSurfaceFound = true;
-        }
-    }
-    
-    if (validSurfaceFound)
-    {
-        // Create the monster
-        GameObject monster = Instantiate(shadowMonsterPrefab, spawnPosition, Quaternion.identity);
-        
-        // Orient monster based on surface normal if spawning on walls
-        if (spawnOnWalls)
-        {
-            monster.transform.rotation = Quaternion.FromToRotation(Vector3.up, surfaceNormal);
-        }
-        
-        monster.transform.parent = transform; // Organize in hierarchy
-    }
-}
+            if (useWaves) return; // Don't do regular spawning if using waves
 
-
-    [Serializable]
-    public class DifficultyWave {
-        public int waveNumber;
-        public int monstersPerWave;
-        public float monsterHealthMultiplier = 1.0f;
-        public float monsterDamageMultiplier = 1.0f;
-        public float monsterSpeedMultiplier = 1.0f;
-    }
-
-    [SerializeField] private DifficultyWave[] difficultyWaves;
-    [SerializeField] private bool useCustomDifficultyWaves = false;
-
-    private void ApplyWaveDifficulty() {
-        if (useCustomDifficultyWaves && difficultyWaves != null && difficultyWaves.Length > 0) {
-            // Find the appropriate difficulty wave
-            DifficultyWave currentDifficulty = null;
-            for (int i = difficultyWaves.Length - 1; i >= 0; i--) {
-                if (currentWave >= difficultyWaves[i].waveNumber) {
-                    currentDifficulty = difficultyWaves[i];
-                    break;
+            if (Time.time >= nextSpawnTime && activeMonsters.Count < maxMonstersAlive)
+            {
+                if (!spawnAtNightOnly || IsNightTime())
+                {
+                    SpawnMonster();
+                    nextSpawnTime = Time.time + spawnInterval;
                 }
             }
-        
-            if (currentDifficulty != null) {
-                monstersPerWave = currentDifficulty.monstersPerWave;
-                // Store difficulty multipliers to apply to monsters when spawned
-            }
-        } else {
-            // Original difficulty progression
-            monstersPerWave = Mathf.RoundToInt(monstersPerWave * (1 + difficultyIncrease));
         }
-    }
-    
-    [Header("Wave Feedback")]
-    [SerializeField] private AudioClip newWaveSound;
-    [SerializeField] private ParticleSystem waveStartVfx;
-    [SerializeField] private bool showWaveUI = true;
 
-    private void StartNewWave() {
-        currentWave++;
-    
-        // Visual feedback
-        if (waveStartVfx != null) {
-            waveStartVfx.Play();
-        }
-    
-        // Audio feedback
-        if (newWaveSound != null) {
-            AudioSource.PlayClipAtPoint(newWaveSound, treeOfLight.transform.position);
-        }
-    
-        // UI notification could be implemented here
-        if (showWaveUI) {
-            // Call to UI manager to show wave number
-        }
-    }
-
-
-    private TreeOfLight treeOfLight;
-    private bool isSpawning = false;
-    private int currentWave = 0;
-    private int activeMonsters = 0;
-    private List<ShadowMonster> activeMonstersList = new List<ShadowMonster>();
-
-    private void OnEnable() {
-        ShadowMonster.OnMonsterSpawned += RegisterMonster;
-        ShadowMonster.OnMonsterDeath += UnregisterMonster;
-    }
-
-    private void OnDisable() {
-        ShadowMonster.OnMonsterSpawned -= RegisterMonster;
-        ShadowMonster.OnMonsterDeath -= UnregisterMonster;
-    }
-
-    private void RegisterMonster(ShadowMonster monster) {
-        activeMonstersList.Add(monster);
-        activeMonsters = activeMonstersList.Count;
-    }
-
-    private void UnregisterMonster(ShadowMonster monster) {
-        activeMonstersList.Remove(monster);
-        activeMonsters = activeMonstersList.Count;
-    }
-
-    private void Start()
-    {
-        currentHealth = maxHealth;
-        monsterRenderer = GetComponentInChildren<Renderer>();
-        animator = GetComponentInChildren<Animator>();
-    
-        // Find tree of light or player as target
-        GameObject treeObj = GameObject.FindGameObjectWithTag("TreeOfLight");
-        if (treeObj != null)
+        private GameObject SpawnMonster()
         {
-            target = treeObj.transform;
-        }
-        else
-        {
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null)
+            // Find a valid spawn position
+            Vector3 spawnPosition = FindValidSpawnPosition();
+
+            // Instantiate the monster
+            GameObject monster = Instantiate(monsterPrefab, spawnPosition, Quaternion.identity);
+
+            // Register the monster if it has the ShadowMonster component
+            ShadowMonster monsterComponent = monster.GetComponent<ShadowMonster>();
+            if (monsterComponent != null)
             {
-                target = player.transform;
-            }
-        }
-    
-        if (OnMonsterSpawned != null)
-        {
-            OnMonsterSpawned(this);
-        }
-    }
+                RegisterMonster(monsterComponent);
 
-    public void StartSpawning()
-    {
-        if (isSpawning) return;
-        
-        isSpawning = true;
-        currentWave = 0;
-        StartCoroutine(SpawnWaves());
-    }
+                // Since there's no OnMonsterDeath event, we need an alternative approach
+                // Option 1: Check if ShadowMonster has another way to detect death
+                // For example, if it has a public method SetDeathCallback:
+                // monsterComponent.SetDeathCallback(() => UnregisterMonster(monsterComponent));
 
-    public void StopSpawning()
-    {
-        isSpawning = false;
-        StopAllCoroutines();
-        CancelInvoke("SpawnMonster");
-    }
-
-    private IEnumerator SpawnWaves()
-    {
-        while (isSpawning)
-        {
-            // Wait for wave interval
-            yield return new WaitForSeconds(waveInterval);
-            
-            // Spawn monsters for this wave
-            for (int i = 0; i < monstersPerWave && activeMonsters < maxMonsters; i++)
-            {
-                SpawnMonster();
-                yield return new WaitForSeconds(spawnInterval);
-            }
-            
-            // Increase difficulty for next wave
-            currentWave++;
-            monstersPerWave = Mathf.RoundToInt(monstersPerWave * (1 + difficultyIncrease));
-        }
-    }
-
-    private void SpawnMonster()
-    {
-        if (!isSpawning || treeOfLight == null) return;
-        
-        // Spawn monster at random position within radius
-        Vector2 randomCircle = Random.insideUnitCircle * spawnRadius;
-        Vector3 spawnPosition = treeOfLight.transform.position + new Vector3(randomCircle.x, 0f, randomCircle.y);
-        
-        Instantiate(shadowMonsterPrefab, spawnPosition, Quaternion.identity);
-    }
-    private void Attack()
-    {
-        // Trigger attack animation
-        if (animator != null)
-        {
-            animator.SetTrigger(AttackTrigger);
-        }
-    
-        // Play attack effect
-        if (attackEffect != null)
-        {
-            attackEffect.Play();
-        }
-    
-        // Play attack sound
-        if (audioSource != null && attackSound != null)
-        {
-            audioSource.PlayOneShot(attackSound);
-        }
-    
-        // Deal damage to the tree or player
-        if (target != null)
-        {
-            TreeOfLight tree = target.GetComponent<TreeOfLight>();
-            if (tree != null)
-            {
-                tree.TakeDamage(attackDamage);
+                // Option 2: If it doesn't, we can add a MonsterTracker component
+                MonsterTracker tracker = monsterData;
+                tracker.Initialize(this, monsterComponent);
             }
             else
             {
-                PlayerHealth playerHealth = target.GetComponent<PlayerHealth>();
-                if (playerHealth != null)
+                Debug.LogWarning("Spawned monster prefab doesn't have a ShadowMonster component!");
+            }
+
+            Debug.Log("Monster spawned at " + spawnPosition);
+            return monster;
+        }
+
+
+
+        private IEnumerator SpawnWaves()
+        {
+            while (true)
+            {
+                yield return new WaitForSeconds(timeBetweenWaves);
+
+                if (!spawnAtNightOnly || IsNightTime())
                 {
-                    playerHealth.TakeDamage(attackDamage);
+                    currentWave++;
+                    int monstersToSpawn = baseWaveSize + (additionalMonstersPerWave * (currentWave - 1));
+
+                    for (int i = 0; i < monstersToSpawn; i++)
+                    {
+                        SpawnMonster();
+                        yield return new WaitForSeconds(1f); // Slight delay between spawns in a wave
+                    }
                 }
             }
         }
-    }
 
-
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, surfaceDetectionRadius);
-         
-        if (isGrounded)
+        public void StartSpawning()
         {
-            Gizmos.color = Color.green;
-            Gizmos.DrawRay(transform.position, surfaceNormal * 2);
+            if (!isSpawning)
+            {
+                isSpawning = true;
+                spawnCoroutine = StartCoroutine(SpawnMonsters());
+                Debug.Log("Monster spawning started");
+            }
+        }
+
+        public void StopSpawning()
+        {
+            if (isSpawning)
+            {
+                isSpawning = false;
+                if (spawnCoroutine != null)
+                {
+                    StopCoroutine(spawnCoroutine);
+                    spawnCoroutine = null;
+                }
+
+                Debug.Log("Monster spawning stopped");
+            }
+        }
+
+        private IEnumerator SpawnMonsters()
+        {
+            while (isSpawning)
+            {
+                // Wait for random time between min and max delay
+                float delay = Random.Range(minSpawnDelay, maxSpawnDelay);
+                yield return new WaitForSeconds(delay);
+
+                if (isSpawning && spawnPoints.Length > 0 && monsterPrefab != null)
+                {
+                    // Choose random spawn point
+                    Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
+
+                    // Spawn monster
+                    GameObject monster = Instantiate(monsterPrefab, spawnPoint.position, spawnPoint.rotation);
+                    Debug.Log("Shadow monster spawned at " + spawnPoint.name);
+                }
+            }
+        }
+
+
+        // This method is called when a new monster is spawned
+        private void RegisterMonster(ShadowMonster monster)
+        {
+            if (!activeMonsters.Contains(monster))
+            {
+                activeMonsters.Add(monster);
+            }
+        }
+
+        // This method is called when a monster dies
+        public void UnregisterMonster(ShadowMonster monster)
+        {
+            if (activeMonsters.Contains(monster))
+            {
+                activeMonsters.Remove(monster);
+            }
+        }
+
+
+        private Vector3 FindValidSpawnPosition()
+        {
+            // Try to find a valid spawn position
+            for (int i = 0; i < 10; i++) // Try 10 times
+            {
+                // Find random position around player
+                float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
+                float distance = Random.Range(minSpawnDistance, maxSpawnDistance);
+
+                Vector3 offset = new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle)) * distance;
+                Vector3 spawnPos = player.position + offset;
+
+                // Cast ray down to find ground
+                RaycastHit hit;
+                if (Physics.Raycast(spawnPos + Vector3.up * 50, Vector3.down, out hit, 100f,
+                        LayerMask.GetMask("Ground", "Terrain")))
+                {
+                    spawnPos = hit.point;
+
+                    // Check if not too close to light if that setting is enabled
+                    if (spawnAwayFromLight)
+                    {
+                        float lightLevel = GetLightLevelAtPosition(spawnPos);
+                        if (lightLevel > minimumLightLevelToSpawn)
+                        {
+                            continue; // Skip this position, try again
+                        }
+                    }
+
+                    // Found a valid position
+                    return spawnPos;
+                }
+            }
+
+            // If we can't find a valid position, just spawn at random distance around player
+            float fallbackAngle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
+            float fallbackDistance = Random.Range(minSpawnDistance, maxSpawnDistance);
+            Vector3 fallbackOffset =
+                new Vector3(Mathf.Cos(fallbackAngle), 0, Mathf.Sin(fallbackAngle)) * fallbackDistance;
+
+            return player.position + fallbackOffset;
+        }
+
+        private float GetLightLevelAtPosition(Vector3 position)
+        {
+            // Find all lights in the scene
+            Light[] sceneLights = FindObjectsOfType<Light>();
+            float totalLightLevel = 0f;
+
+            foreach (Light light in sceneLights)
+            {
+                if (!light.enabled) continue;
+
+                float distance = Vector3.Distance(position, light.transform.position);
+
+                // Skip if out of range
+                if (distance > light.range)
+                    continue;
+
+                // Calculate light contribution based on distance and intensity
+                float lightFalloff = 1f - Mathf.Clamp01(distance / light.range);
+                totalLightLevel += light.intensity * lightFalloff;
+            }
+
+            return totalLightLevel;
+        }
+
+        private bool IsNightTime()
+        {
+            // This is a placeholder. In your actual game, you should
+            // check your day/night cycle system to determine if it's night
+            // For testing, you could just always return true
+
+            return true;
+        }
+
+        // Draw the spawn area in the editor for debugging
+        private void OnDrawGizmosSelected()
+        {
+            if (!showSpawnPoints || player == null) return;
+
+            // Min spawn distance
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(player.position, minSpawnDistance);
+
+            // Max spawn distance
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(player.position, maxSpawnDistance);
+        }
+
+        // Public method to trigger a wave manually
+        public void TriggerWave(int extraMonsters = 0)
+        {
+            if (!useWaves)
+            {
+                currentWave++;
+                int monstersToSpawn = baseWaveSize + (additionalMonstersPerWave * (currentWave - 1)) + extraMonsters;
+
+                StartCoroutine(SpawnWaveCoroutine(monstersToSpawn));
+            }
+        }
+
+        private IEnumerator SpawnWaveCoroutine(int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                SpawnMonster();
+                yield return new WaitForSeconds(1f);
+            }
+        }
+
+        // Public accessor for active monsters count
+        public int GetActiveMonsterCount()
+        {
+            return activeMonsters.Count;
         }
     }
-
-} 
+}
