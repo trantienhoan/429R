@@ -66,7 +66,7 @@ public class TestWeapon : MonoBehaviour
         float impactForce = collision.impulse.magnitude * impactForceMultiplier;
         
         // Try to damage any type of breakable object
-        var jiggleBreakable = collision.gameObject.GetComponent<JiggleBreakableBed>();
+        var jiggleBreakable = collision.gameObject.GetComponent<JiggleBreakableBigObject>();
         if (jiggleBreakable != null)
         {
             jiggleBreakable.TakeDamage(impactForce, collision.contacts[0].point, collision.contacts[0].normal);

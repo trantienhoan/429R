@@ -408,50 +408,54 @@ MonoBehaviour:
   m_GameObject: {fileID: 2873185459364158363}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b4c890cede2105b4d82a5863e3029a57, type: 3}
+  m_Script: {fileID: 11500000, guid: c63e449bee2a27e4092f0b298d2b4946, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   health: 10000
   isBreakable: 1
-  currentHealth: 5000
-  jiggleAmount: 0.5
-  jiggleSpeed: 30
-  jiggleDamping: 8
-  jiggleRecoverySpeed: 2
-  hitScaleAmount: 0.8
-  hitScaleSpeed: 10
-  hitParticlePrefab: {fileID: 4938095755617958529, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
-    type: 3}
-  breakParticlePrefab: {fileID: 5700784828077083704, guid: ed962e35f7fa6f34f8d27aa6d19ea293,
-    type: 3}
-  hitSound: {fileID: 0}
-  breakSound: {fileID: 0}
-  particleScale: 2
-  soundVolume: 1
   itemDropPrefabs:
-  - {fileID: 3777597441533160902, guid: fc1b8c6522694e64eb1f3fc2edd03bd5, type: 3}
+  - {fileID: 2061228985669117825, guid: e8a523e631ff48a4d84ebea3669a9d90, type: 3}
   - {fileID: 2061228985669117825, guid: 0fd62c8c352ceaa4589e2c49dd306f4a, type: 3}
+  - {fileID: 6094110933056598107, guid: 210ac6b31acd6624f8da0bc7d650acf6, type: 3}
   - {fileID: 2061228985669117825, guid: 8f568340892899741926341ce56b7594, type: 3}
-  dropForce: 10
-  dropChance: 0.3
-  onDamage:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 5493108226376211371}
-        m_TargetAssemblyTypeName: Core.BreakableHealthBar, Assembly-CSharp
-        m_MethodName: OnDamageTaken
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+  - {fileID: 6791078792911687941, guid: 05e1091b4730bbc4289581b887c1a6ed, type: 3}
+  - {fileID: 6259452005893947210, guid: b1855aa3b7ce58e4a9a9a845b6f76374, type: 3}
+  dropForce: 5
+  destroyDelay: 2
+  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+    type: 3}
+  breakSound: {fileID: 0}
+  mass: 1000
+  drag: 1
+  angularDrag: 1
+  useGravity: 1
+  breakUpwardForce: 2
   onBreak:
     m_PersistentCalls:
       m_Calls: []
+  onDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  minimumImpactForce: 5
+  breakOnlyFromWeapons: 1
+  useImpactForce: 1
+  collisionLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  damageMultiplier: 1
+  jiggleAmount: 0.1
+  jiggleRecoverySpeed: 2
+  jiggleDuration: 0.5
+  useScaleEffect: 1
+  canDropItems: 1
+  possibleDropItems:
+  - {fileID: 8961484861306615235, guid: cd1551e2aecb44e4db26e0db000210a9, type: 3}
+  maxDropCount: 3
+  dropSpread: 0.5
+  dropForce: 2
+  magicalSeedDropChance: 0.25
+  magicalSeedPrefab: {fileID: 3777597441533160902, guid: fc1b8c6522694e64eb1f3fc2edd03bd5,
+    type: 3}
 --- !u!65 &7739054573268763685
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -514,11 +518,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 3212274207405080865}
     m_Modifications:
-    - target: {fileID: -8679921383154817045, guid: 6fc33d8efccb2d44f83ad11d1567cef9,
-        type: 3}
-      propertyPath: m_Name
-      value: Bed_Blanket
-      objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: c88b03190b5ec294f9dcaad00dffffc6,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -564,6 +563,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 6fc33d8efccb2d44f83ad11d1567cef9,
+        type: 3}
+      propertyPath: m_Name
+      value: Bed_Blanket
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -583,11 +587,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 3212274207405080865}
     m_Modifications:
-    - target: {fileID: 6888805585474124633, guid: 6fc33d8efccb2d44f83ad11d1567cef9,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 3049818546280501433, guid: 547eb6710968cdd46832f52f2632becc,
         type: 3}
       propertyPath: m_Name
@@ -693,6 +692,11 @@ PrefabInstance:
       propertyPath: m_PresetInfoIsWorld
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6888805585474124633, guid: 6fc33d8efccb2d44f83ad11d1567cef9,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -704,18 +708,6 @@ RectTransform:
     type: 3}
   m_PrefabInstance: {fileID: 5086473244398124645}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &5493108226376211371 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 769474123348764110, guid: 547eb6710968cdd46832f52f2632becc,
-    type: 3}
-  m_PrefabInstance: {fileID: 5086473244398124645}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e01dd56dbf2cb5c4db130ecb772e8bff, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1001 &7528392873015244588
 PrefabInstance:
   m_ObjectHideFlags: 0

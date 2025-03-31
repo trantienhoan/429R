@@ -1,349 +1,169 @@
-using System.Collections;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
-using UnityEngine.XR.Interaction.Toolkit.Interactors;
+using System.Collections;
 
-namespace Items
+public class TreeOfLightPot : MonoBehaviour
 {
-    public class TreeOfLightPot : MonoBehaviour
+    [Header("References")]
+    [SerializeField] private GameObject treeModel;
+    [SerializeField] private ParticleSystem growthParticles;
+    
+    [Header("Growth Settings")]
+    [SerializeField] private float treeGrowthDuration = 5f;
+    [SerializeField] private float seedShrinkDuration = 2f;
+    
+    [SerializeField] private UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor socketInteractor;
+    private bool seedPlaced = false;
+    
+    private bool isGrowing = false;
+    
+    private void Awake()
     {
-        [Header("Tree Growth Settings")]
-        [SerializeField] private GameObject treePrefab;
-        [SerializeField] private Transform treeSpawnPoint;
-        [SerializeField] private float growthDelay = 1.0f;
-        [SerializeField] private float growthDuration = 30.0f;
-        [SerializeField] private Vector3 maxTreeScale = new Vector3(1, 1, 1);
+        // Get the socket interactor directly
+        socketInteractor = GetComponentInChildren<UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor>();
+        if (socketInteractor == null)
+        {
+            Debug.LogError("TreeOfLightPot: No XR Socket Interactor found on this object or its children!");
+        }
+        
+        // Ensure tree is initially hidden
+        if (treeModel != null)
+            treeModel.SetActive(false);
+        else
+            Debug.LogWarning("TreeOfLightPot: No tree model assigned!");
+            
+        Debug.Log("TreeOfLightPot initialized");
+    }
     
-        [Header("Pot Orientation")]
-        [SerializeField] private float tiltThreshold = 30f;
-        [SerializeField] private float checkInterval = 0.5f;
+    private void OnEnable()
+    {
+        if (socketInteractor != null)
+        {
+            // Register for socket events
+            socketInteractor.selectEntered.AddListener(OnSeedPlaced);
+            Debug.Log("TreeOfLightPot: Socket event listeners registered");
+        }
+    }
     
-        [Header("Monster Spawning")]
-        [SerializeField] private ShadowMonsterSpawner monsterSpawner;
-        [SerializeField] private Enemies.ShadowMonsterSpawner spawner;
-        [SerializeField] private GameObject monsterPrefab;
-
-        private GameObject SpawnMonster()
+    private void OnDisable()
+    {
+        if (socketInteractor != null)
         {
-            // Find a valid spawn position
-            Vector3 spawnPosition = FindValidSpawnPosition();
-
-            // Instantiate the monster
-            GameObject monster = Instantiate(monsterPrefab, spawnPosition, Quaternion.identity);
-
-            RegisterMonsterLocal(monster);
-
-            return monster;
+            socketInteractor.selectEntered.RemoveListener(OnSeedPlaced);
         }
-        private Vector3 FindValidSpawnPositionLocal()
-        {
-            // Implement the logic needed to find a valid spawn position
-            // For example:
-            Vector3 potPosition = transform.position;
-            float spawnRadius = 3f;
-            Vector3 randomOffset = new Vector3(
-                Random.Range(-spawnRadius, spawnRadius),
-                0f,
-                Random.Range(-spawnRadius, spawnRadius)
-            );
-            
-            return potPosition + randomOffset;
-        }
-        private void RegisterMonsterLocal(GameObject monster)
-        {
-            // Any logic needed to keep track of spawned monsters
-            // For example, you could add the monster to a list if needed:
-            spawnedMonsters.Add(monster);
-        }
-        private void NotifySpawner(GameObject monster)
-        {
-            // If the error is in a call like: spawner.SomeMethod(this)
-            // Change it to use the spawner reference and pass the monster instead:
-            if (spawner != null)
-            {
-                spawner.NotifyMonsterSpawned(monster); // Or whatever the method should be
-            }
-        }
-
-
-        [Header("Door Key")]
-        [SerializeField] private GameObject doorKeyPrefab;
-        [SerializeField] private Transform keySpawnPoint;
+    }
     
-        [Header("Effects")]
-        [SerializeField] private ParticleSystem breakEffect;
-        [SerializeField] private AudioClip breakSound;
-        [SerializeField] private AudioSource audioSource;
+    private void OnSeedPlaced(SelectEnterEventArgs args)
+    {
+        if (seedPlaced) return; // Prevent multiple activations
     
-        [Header("Interaction")]
-        [SerializeField] private XRSocketInteractor socketInteractor;
+        seedPlaced = true;
     
-        // Private variables
-        private TreeOfLight treeOfLight;
-        private bool isGrowing = false;
-        private bool isGrowthCompleted = false;
-        private bool hasSeedBeenPlanted = false;
-        private bool isPotUpright = true;
-        private bool wasUpright = true;
-        private Rigidbody rb;
-        private Coroutine growthMonitorRoutine;
-        private Coroutine orientationCheckRoutine;
+        // Get the selected object (seed)
+        GameObject seed = args.interactableObject.transform.gameObject;
     
-        private void Awake()
+        // Start growth sequence
+        StartCoroutine(GrowthSequence(seed));
+    }
+    
+    
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.CompareTag("MagicalSeed") || other.CompareTag("Seed"))
         {
-            // Set up references
-            if (audioSource == null)
-            {
-                audioSource = GetComponent<AudioSource>();
-            }
-
-            rb = GetComponent<Rigidbody>();
-            
-            // Validate required components
-            if (treePrefab == null)
-            {
-                Debug.LogError("Tree prefab not assigned to TreeOfLightPot!");
-            }
-        
-            if (treeSpawnPoint == null)
-            {
-                Debug.LogError("Tree spawn point not assigned to TreeOfLightPot!");
-                // Create a default spawn point if none exists
-                GameObject spawnPoint = new GameObject("TreeSpawnPoint");
-                spawnPoint.transform.SetParent(transform);
-                spawnPoint.transform.localPosition = Vector3.zero;
-                treeSpawnPoint = spawnPoint.transform;
-                Debug.Log("Created default tree spawn point");
-            }
-        
-            // Create key spawn point if it doesn't exist or if it's using the tree spawn point
-            if (keySpawnPoint == null || keySpawnPoint == treeSpawnPoint)
-            {
-                GameObject keyPoint = new GameObject("KeySpawnPoint");
-                keyPoint.transform.SetParent(transform);
-                keyPoint.transform.localPosition = new Vector3(0, 0.5f, 0); // Spawn slightly above the pot
-                keySpawnPoint = keyPoint.transform;
-                Debug.Log("Created key spawn point");
-            }
-        
-            // Validate monster spawner
-            if (monsterSpawner == null)
-            {
-                Debug.LogWarning("Monster spawner not assigned to TreeOfLightPot!");
-                monsterSpawner = FindObjectOfType<ShadowMonsterSpawner>();
-                if (monsterSpawner != null)
-                {
-                    Debug.Log("Found ShadowMonsterSpawner in scene");
-                }
-            }
-            
-            // Setup Socket Interactor
-            if (socketInteractor == null)
-            {
-                Debug.LogError("Socket interactor not assigned to TreeOfLightPot!");
-                socketInteractor = GetComponent<XRSocketInteractor>();
-            }
+            // Implement seed sucking behavior
+            StartCoroutine(SuckSeedIntoSocket(other.gameObject));
+        }
+    }
+    private IEnumerator SuckSeedIntoSocket(GameObject seed)
+    {
+        // Disable seed's collider and rigidbody during animation
+        Collider seedCollider = seed.GetComponent<Collider>();
+        Rigidbody seedRigidbody = seed.GetComponent<Rigidbody>();
+        if (seedCollider) seedCollider.enabled = false;
+        if (seedRigidbody) seedRigidbody.isKinematic = true;
+       
+        // Animate the seed moving to the socket
+        Vector3 startPos = seed.transform.position;
+        Vector3 targetPos = transform.position + Vector3.up * 0.3f; // Adjust based on your pot's socket position
+        float duration = 0.5f;
+        float elapsedTime = 0;
+       
+        while (elapsedTime < duration)
+        {
+            seed.transform.position = Vector3.Lerp(startPos, targetPos, elapsedTime / duration);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+       
+        // Place seed in final position and trigger any growth effects
+        seed.transform.position = targetPos;
+        seed.transform.SetParent(transform); // Parent to pot
+       
+        var dummyArgs = new SelectEnterEventArgs();
+        // You might need to populate some properties of dummyArgs
+        OnSeedPlaced(dummyArgs);
+    }
+    
+    private IEnumerator GrowthSequence(GameObject seed)
+    {
+        if (isGrowing)
+        {
+            Debug.Log("TreeOfLightPot: Growth already in progress, ignoring");
+            yield break;
         }
         
-        private void Start()
-        {
-            // Setup socket interactor
-            if (socketInteractor != null)
-            {
-                socketInteractor.selectEntered.AddListener(OnSeedPlaced);
-            }
-            
-            // Start the orientation checking routine
-            orientationCheckRoutine = StartCoroutine(CheckOrientation());
-        }
+        isGrowing = true;
+        Debug.Log("TreeOfLightPot: Starting growth sequence");
         
-        private void OnSeedPlaced(SelectEnterEventArgs args)
+        // Step 1: Shrink seed
+        if (seed != null)
         {
-            if (hasSeedBeenPlanted) return;
+            Vector3 originalScale = seed.transform.localScale;
             
-            // Check if the placed object is a MagicalSeed
-            MagicalSeed seed = args.interactableObject.transform.GetComponent<MagicalSeed>();
-            if (seed == null)
+            // Shrink the seed over time
+            float elapsed = 0f;
+            while (elapsed < seedShrinkDuration)
             {
-                Debug.Log("Object placed in socket is not a MagicalSeed");
-                return;
-            }
-            
-            Debug.Log("MagicalSeed placed in pot!");
-            hasSeedBeenPlanted = true;
-            
-            // Tell the seed it's been planted
-            seed.OnPlantedInPot();
-            
-            // Start the growth process after a delay
-            StartCoroutine(StartTreeGrowth());
-        }
-        
-        private IEnumerator StartTreeGrowth()
-        {
-            // Wait for the initial growth delay
-            yield return new WaitForSeconds(growthDelay);
-            
-            // Instantiate the tree at the spawn point
-            GameObject treeObject = Instantiate(treePrefab, treeSpawnPoint.position, treeSpawnPoint.rotation);
-            treeObject.transform.SetParent(treeSpawnPoint);
-            
-            // Get the TreeOfLight component
-            treeOfLight = treeObject.GetComponent<TreeOfLight>();
-            if (treeOfLight == null)
-            {
-                Debug.LogError("Tree prefab does not have TreeOfLight component!");
-                yield break;
-            }
-            
-            // Setup tree with parent pot reference
-            treeOfLight.SetParentPot(this);
-            
-            // Start the growth process
-            treeOfLight.StartGrowth(growthDuration, maxTreeScale.x);
-            isGrowing = true;
-            
-            // Start the growth monitor routine
-            growthMonitorRoutine = StartCoroutine(MonitorTreeGrowth());
-            
-            // Begin spawning monsters when growth starts
-            if (monsterSpawner != null)
-            {
-                monsterSpawner.StartSpawning();
-                Debug.Log("Monster spawning started as growth begins");
-            }
-        }
-        
-        private IEnumerator MonitorTreeGrowth()
-        {
-            float elapsedTime = 0f;
-            
-            while (elapsedTime < growthDuration && !isGrowthCompleted)
-            {
-                // Only increase elapsed time if pot is upright
-                if (isPotUpright)
-                {
-                    elapsedTime += Time.deltaTime;
-                    
-                    // Update tree growth progress
-                    if (treeOfLight != null)
-                    {
-                        float progress = elapsedTime / growthDuration;
-                        treeOfLight.UpdateGrowthProgress(progress);
-                    }
-                }
-                
+                float t = elapsed / seedShrinkDuration;
+                seed.transform.localScale = Vector3.Lerp(originalScale, Vector3.zero, t);
+                elapsed += Time.deltaTime;
                 yield return null;
             }
             
-            // Complete growth when time is up
-            CompleteTreeGrowth();
+            // Completely hide the seed
+            seed.transform.localScale = Vector3.zero;
         }
         
-        private void CompleteTreeGrowth()
+        // Step 2: Play growth particles
+        if (growthParticles != null)
         {
-            isGrowthCompleted = true;
-            isGrowing = false;
-            
-            // Notify tree growth is complete - will trigger light wave effect
-            if (treeOfLight != null)
-            {
-                treeOfLight.CompleteGrowth();
-            }
-            
-            // The tree light wave will kill all monsters
-            // Note: We don't stop spawning here as the monsters should be killed by the light wave
-            
-            // Start the break sequence after a delay
-            StartCoroutine(BreakSequence());
+            growthParticles.Play();
+            Debug.Log("TreeOfLightPot: Playing growth particles");
         }
         
-        private IEnumerator BreakSequence()
+        // Step 3: Grow the tree
+        if (treeModel != null)
         {
-            // Wait for break delay
-            yield return new WaitForSeconds(3f);
+            // Make tree visible but start at zero scale
+            treeModel.SetActive(true);
+            treeModel.transform.localScale = Vector3.zero;
             
-            // Play break effects
-            if (breakEffect != null)
+            // Grow the tree over time
+            float elapsed = 0f;
+            while (elapsed < treeGrowthDuration)
             {
-                breakEffect.Play();
+                float t = elapsed / treeGrowthDuration;
+                treeModel.transform.localScale = Vector3.Lerp(Vector3.zero, Vector3.one, t);
+                elapsed += Time.deltaTime;
+                yield return null;
             }
             
-            if (audioSource != null && breakSound != null)
-            {
-                audioSource.PlayOneShot(breakSound);
-            }
-            
-            // Destroy tree
-            if (treeOfLight != null)
-            {
-                Destroy(treeOfLight.gameObject);
-            }
-            
-            // Stop monster spawning after tree breaks
-            if (monsterSpawner != null)
-            {
-                monsterSpawner.StopSpawning();
-            }
-            
-            // Spawn door key
-            if (doorKeyPrefab != null && keySpawnPoint != null)
-            {
-                Instantiate(doorKeyPrefab, keySpawnPoint.position, keySpawnPoint.rotation);
-                Debug.Log("Door key spawned!");
-            }
-            
-            // Apply explosion force to pot parts
-            foreach (Rigidbody childRb in GetComponentsInChildren<Rigidbody>())
-            {
-                if (childRb != rb && childRb != null)
-                {
-                    Vector3 explosionForce = Random.insideUnitSphere.normalized * 5f;
-                    childRb.AddForce(explosionForce, ForceMode.Impulse);
-                }
-            }
+            // Ensure final scale is exactly Vector3.one
+            treeModel.transform.localScale = Vector3.one;
+            Debug.Log("TreeOfLightPot: Tree fully grown");
         }
         
-        private IEnumerator CheckOrientation()
-        {
-            while (true)
-            {
-                // Check if the pot's up direction is within threshold of world up
-                Vector3 potUpDirection = transform.up;
-                float angle = Vector3.Angle(potUpDirection, Vector3.up);
-                
-                // Determine if pot is upright based on the angle threshold
-                wasUpright = isPotUpright;
-                isPotUpright = angle < tiltThreshold;
-                
-                // Handle orientation changes
-                if (wasUpright != isPotUpright)
-                {
-                    if (isPotUpright)
-                    {
-                        Debug.Log("Pot is now upright. Resuming growth.");
-                        if (treeOfLight != null && isGrowing)
-                        {
-                            treeOfLight.ResumeGrowth();
-                        }
-                    }
-                    else
-                    {
-                        Debug.Log("Pot is tilted. Pausing growth.");
-                        if (treeOfLight != null && isGrowing)
-                        {
-                            treeOfLight.PauseGrowth();
-                        }
-                    }
-                }
-                
-                yield return new WaitForSeconds(checkInterval);
-            }
-        }
-        
-        public bool IsPotUpright()
-        {
-            return isPotUpright;
-        }
+        isGrowing = false;
     }
 }

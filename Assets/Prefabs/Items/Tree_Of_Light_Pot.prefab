@@ -209,7 +209,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 90ead29ec06b9784e832b9c538d6641a,
         type: 3}
       propertyPath: m_TagString
-      value: TreePot
+      value: TreeOfLightPot
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -230,7 +230,7 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 90ead29ec06b9784e832b9c538d6641a,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 4184577096103047608}
+      addedObject: {fileID: 8907825430483624632}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 90ead29ec06b9784e832b9c538d6641a,
         type: 3}
       insertIndex: -1
@@ -302,8 +302,8 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.17, y: 0.47, z: 0.17}
   m_Center: {x: -0.000000014901161, y: 0.24767435, z: 0.00000010430813}
---- !u!65 &4184577096103047608
-BoxCollider:
+--- !u!64 &8907825430483624632
+MeshCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -320,9 +320,10 @@ BoxCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 0.31999826, y: 0.29385087, z: 0.3199982}
-  m_Center: {x: -0.000000022351742, y: 0.1469254, z: 0.00000011175871}
+  serializedVersion: 5
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: -3613631383267924718, guid: 90ead29ec06b9784e832b9c538d6641a, type: 3}
 --- !u!114 &5697808428061282135
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -397,7 +398,7 @@ MonoBehaviour:
   m_StartingInteractionStrengthFilters: []
   m_AttachTransform: {fileID: 0}
   m_SecondaryAttachTransform: {fileID: 0}
-  m_UseDynamicAttach: 0
+  m_UseDynamicAttach: 1
   m_MatchAttachPosition: 1
   m_MatchAttachRotation: 1
   m_SnapToColliderVolume: 1
@@ -464,7 +465,8 @@ MonoBehaviour:
   m_AttachTransform: {fileID: 265967999501900189}
   m_KeepSelectedTargetValid: 1
   m_DisableVisualsWhenBlockedInGroup: 1
-  m_StartingSelectedInteractable: {fileID: 0}
+  m_StartingSelectedInteractable: {fileID: 2648095480573965488, guid: fc1b8c6522694e64eb1f3fc2edd03bd5,
+    type: 3}
   m_StartingTargetFilter: {fileID: 0}
   m_HoverEntered:
     m_PersistentCalls:
@@ -503,22 +505,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1281fa446ed55b34ab02c06d60cb2673, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  treePrefab: {fileID: 8368527830041989588, guid: 7b5f58ba9d7ee8d4c992737dff1e8a38,
+  treeModel: {fileID: 8368527830041989588, guid: 7b5f58ba9d7ee8d4c992737dff1e8a38,
     type: 3}
-  treeSpawnPoint: {fileID: 265967999501900189}
-  growthDelay: 0.15
-  growthDuration: 10
-  maxTreeScale: {x: 1, y: 1, z: 1}
-  tiltThreshold: 30
-  checkInterval: 0.5
-  doorKeyPrefab: {fileID: 784072565763923235, guid: 3d53f2553dcf2974aab5868bc1a85582,
+  growthParticles: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
-  keySpawnPoint: {fileID: 265967999501900189}
-  breakEffect: {fileID: 9169966119468206341, guid: ed962e35f7fa6f34f8d27aa6d19ea293,
-    type: 3}
-  breakSound: {fileID: 0}
-  audioSource: {fileID: 0}
-  socketInteractor: {fileID: 9009260404841559303}
+  treeGrowthDuration: 5
+  seedShrinkDuration: 2
 --- !u!114 &1849177776797559712
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -531,14 +523,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd2ae3da4290e914fb8c0299e7686140, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shadowMonsterPrefab: {fileID: 0}
-  spawnRadius: 10
-  spawnHeight: 1
-  maxMonsters: 5
+  maxMonstersAlive: 25
   spawnInterval: 5
-  waveInterval: 15
-  monstersPerWave: 3
-  difficultyIncrease: 0.2
+  minSpawnDistance: 10
+  maxSpawnDistance: 25
+  player: {fileID: 0}
+  spawnAtNightOnly: 1
+  spawnAwayFromLight: 1
+  minimumLightLevelToSpawn: 0.3
+  minSpawnDelay: 5
+  maxSpawnDelay: 15
+  spawnPoints: []
+  monsterData:
+    activeMonsters: []
+  monsterPrefab: {fileID: 0}
+  spiderPrefab: {fileID: 641341794854005767, guid: 74ff73dedb8bc7b4083e2753e9ada44f,
+    type: 3}
+  useWaves: 0
+  baseWaveSize: 3
+  additionalMonstersPerWave: 1
+  timeBetweenWaves: 30
+  showSpawnPoints: 1
 --- !u!4 &5664211420611074727 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 90ead29ec06b9784e832b9c538d6641a,

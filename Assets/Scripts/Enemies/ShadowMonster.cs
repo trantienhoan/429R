@@ -203,7 +203,7 @@ public class ShadowMonster : MonoBehaviour
         // Play death animation
         if (animator != null)
         {
-            animator.SetBool(IsDead, true);
+            animator.SetBool(IsDeadHash, true);
         }
         
         // Play death effects
@@ -296,7 +296,7 @@ public class ShadowMonster : MonoBehaviour
     private void CheckForLightDamage()
     {
         // Check nearby lights that could harm the shadow monster
-        Light[] nearbyLights = FindObjectsOfType<Light>();
+        Light[] nearbyLights = FindObjectsByType<Light>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         
         foreach (Light light in nearbyLights)
         {

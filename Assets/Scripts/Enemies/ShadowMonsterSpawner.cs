@@ -1,4 +1,5 @@
 using UnityEngine;
+using Enemies;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -13,8 +14,7 @@ namespace Enemies
 
     public class ShadowMonsterSpawner : MonoBehaviour
     {
-        [Header("Spawning Settings")] [SerializeField]
-        [SerializeField] public GameObject monsterPrefab;
+        [Header("Spawning Settings")]
         [SerializeField] private int maxMonstersAlive = 5;
         [SerializeField] private float spawnInterval = 5f;
         [SerializeField] private float minSpawnDistance = 10f;
@@ -27,20 +27,15 @@ namespace Enemies
         [SerializeField] private float maxSpawnDelay = 15f;
         [SerializeField] private Transform[] spawnPoints;
         [SerializeField] private MonsterTrackerData monsterData = new MonsterTrackerData();
-        public Vector3 FindValidSpawnPosition()
-        {
-            // Implementation for finding a spawn position
-            Vector3 spawnerPos = transform.position;
-            float spawnRadius = 5f;
-            Vector3 randomOffset = new Vector3(
-                Random.Range(-spawnRadius, spawnRadius),
-                0f,
-                Random.Range(-spawnRadius, spawnRadius)
-            );
-            
-            return spawnerPos + randomOffset;
-        }
+
+		[Header("Monster Settings")]
+		[SerializeField] private GameObject monsterPrefab;
         
+        [Header("Spider Settings")]
+        [SerializeField] private GameObject spiderPrefab;
+
+
+
         // Method to register a monster
         public void RegisterMonster(GameObject monster)
         {
@@ -122,14 +117,9 @@ namespace Enemies
             {
                 RegisterMonster(monsterComponent);
 
-                // Since there's no OnMonsterDeath event, we need an alternative approach
-                // Option 1: Check if ShadowMonster has another way to detect death
-                // For example, if it has a public method SetDeathCallback:
-                // monsterComponent.SetDeathCallback(() => UnregisterMonster(monsterComponent));
+                ShadowMonsterObserver observer = monster.AddComponent<ShadowMonsterObserver>();
+    			observer.Setup(this, monsterComponent);
 
-                // Option 2: If it doesn't, we can add a MonsterTracker component
-                MonsterTracker tracker = monsterData;
-                tracker.Initialize(this, monsterComponent);
             }
             else
             {
@@ -273,7 +263,7 @@ namespace Enemies
         private float GetLightLevelAtPosition(Vector3 position)
         {
             // Find all lights in the scene
-            Light[] sceneLights = FindObjectsOfType<Light>();
+            Light[] sceneLights = FindObjectsByType<Light>(FindObjectsSortMode.None);
             float totalLightLevel = 0f;
 
             foreach (Light light in sceneLights)

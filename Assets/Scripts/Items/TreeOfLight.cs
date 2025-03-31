@@ -258,7 +258,7 @@ public class TreeOfLight : MonoBehaviour
         // Kill all monsters in the scene
         yield return new WaitForSeconds(0.5f); // Wait a moment for the wave to expand
         
-        ShadowMonster[] monsters = FindObjectsOfType<ShadowMonster>();
+        ShadowMonster[] monsters = FindObjectsByType<ShadowMonster>(FindObjectsSortMode.None);
         foreach (ShadowMonster monster in monsters)
         {
             monster.TakeDamage(float.MaxValue); // Kill instantly

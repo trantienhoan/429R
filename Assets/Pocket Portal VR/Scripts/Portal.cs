@@ -476,7 +476,7 @@ public class Portal : MonoBehaviour
 
     void CheckForTransitionObjects() {
         Vector3 portalSize = meshFilter.mesh.bounds.size;
-        PortalTransitionObject[] objects = FindObjectsOfType<PortalTransitionObject>();
+        PortalTransitionObject[] objects = FindObjectsByType<PortalTransitionObject>(FindObjectsSortMode.None);
         foreach(PortalTransitionObject obj in objects) {
             bool shouldDeform =
                 (Mathf.Pow(transform.InverseTransformDirection(obj.transform.position - this.transform.position).z, 2) <= minimumDeformRangeSquared) && // z direction is close
