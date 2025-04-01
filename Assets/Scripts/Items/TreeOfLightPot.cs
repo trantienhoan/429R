@@ -14,8 +14,11 @@ public class TreeOfLightPot : MonoBehaviour
     [SerializeField] private AudioSource growthAudioSource;
     
     [Header("Growth Settings")]
+    [SerializeField] private GameObject treeOfLightPrefab;
     [SerializeField] private float treeGrowthDuration = 5f;
     [SerializeField] private float seedShrinkDuration = 2f;
+    [SerializeField] private string[] validSeedNames = { "magical_seed", "seed_of_light" };
+    [SerializeField] private string magicalSeedTag = "magical_seed";
     
     [Header("Physics Settings")]
     [SerializeField] private float baseMass = 5f; // Make it heavy at the bottom
@@ -29,15 +32,26 @@ public class TreeOfLightPot : MonoBehaviour
     
     [Header("Visual Feedback")]
     [SerializeField] private Material potActiveMaterial;
+    [SerializeField] private ParticleSystem plantingEffect;
+    
+    [Header("Events")]
+    [SerializeField] private UnityEngine.Events.UnityEvent onTreeFullyGrown;
+    [SerializeField] private UnityEngine.Events.UnityEvent onSeedPlaced;
     
     [SerializeField] private UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor socketInteractor;
     
+    // State tracking
     private bool seedPlaced;
     private bool isGrowing;
     private HealthComponent treeHealthComponent;
+    private bool hasMagicalSeed = false;
+    private GameObject spawnedTree;
+    private Animator potAnimator;
     
     private void Awake()
     {
+        potAnimator = GetComponent<Animator>();
+        
         // Get the socket interactor directly
         socketInteractor = GetComponentInChildren<UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor>();
         if (socketInteractor == null)
@@ -115,6 +129,12 @@ public class TreeOfLightPot : MonoBehaviour
             
         if (healthComponent == null)
             healthComponent = gameObject.AddComponent<HealthComponent>();
+            
+        // Initialize health if it's a new component
+        if (healthComponent != null)
+        {
+            healthComponent.SetMaxHealth(maxHealth);
+        }
     }
     
     private void OnHealthDepleted()
@@ -131,13 +151,26 @@ public class TreeOfLightPot : MonoBehaviour
     
     private void LinkTreeHealth()
     {
-        if (treeModel == null) return;
-        
-        treeHealthComponent = treeModel.GetComponent<HealthComponent>();
-        if (treeHealthComponent == null)
-            treeHealthComponent = treeModel.AddComponent<HealthComponent>();
+        if (spawnedTree != null)
+        {
+            treeHealthComponent = spawnedTree.GetComponent<HealthComponent>();
+            if (treeHealthComponent == null)
+                treeHealthComponent = spawnedTree.AddComponent<HealthComponent>();
+        }
+        else if (treeModel != null)
+        {
+            treeHealthComponent = treeModel.GetComponent<HealthComponent>();
+            if (treeHealthComponent == null)
+                treeHealthComponent = treeModel.AddComponent<HealthComponent>();
+        }
+        else
+        {
+            Debug.LogWarning("TreeOfLightPot: No tree object available to link health");
+            return;
+        }
             
         // We'll use the damage relay system to connect the tree and pot health
+        treeHealthComponent.SetMaxHealth(maxHealth);
         treeHealthComponent.OnHealthChanged += HandleTreeHealthChanged;
         healthComponent.OnHealthChanged += HandlePotHealthChanged;
     }
@@ -213,11 +246,21 @@ public class TreeOfLightPot : MonoBehaviour
             return;
         }
     
-        seedPlaced = true;
-    
-        // Get the selected object (seed)
         GameObject seed = args.interactableObject.transform.gameObject;
         
+        // Check if this is a valid seed
+        if (!IsValidSeed(seed))
+        {
+            Debug.Log("TreeOfLightPot: Invalid seed type, ignoring.");
+            return;
+        }
+        
+        seedPlaced = true;
+        hasMagicalSeed = true;
+        
+        // Invoke seed placed event
+        onSeedPlaced?.Invoke();
+    
         // Disable the socket interactor so nothing else can be placed
         if (socketInteractor != null)
         {
@@ -238,6 +281,24 @@ public class TreeOfLightPot : MonoBehaviour
         StartCoroutine(GrowthSequence(seed));
     }
     
+    /// <summary>
+    /// Checks if the provided item is a valid magical seed.
+    /// </summary>
+    private bool IsValidSeed(GameObject item)
+    {
+        if (item.CompareTag(magicalSeedTag)) return true;
+        
+        foreach (string validName in validSeedNames)
+        {
+            if (item.name.Contains(validName))
+            {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
     private IEnumerator GrowthSequence(GameObject seed)
     {
         if (isGrowing)
@@ -255,6 +316,12 @@ public class TreeOfLightPot : MonoBehaviour
         
         isGrowing = true;
         Debug.Log("TreeOfLightPot: Starting growth sequence");
+        
+        // Play planting effect if available
+        if (plantingEffect != null)
+        {
+            plantingEffect.Play();
+        }
         
         // Step 1: Shrink seed
         Vector3 originalScale = seed.transform.localScale;
@@ -279,6 +346,10 @@ public class TreeOfLightPot : MonoBehaviour
         {
             seed.transform.localScale = Vector3.zero;
             seed.transform.position = treeSpawnPoint.position;
+            
+            // Option to destroy seed after it's been "planted"
+            // Destroying instead of just hiding
+            Destroy(seed);
         }
         
         // Step 2: Play growth particles
@@ -289,35 +360,142 @@ public class TreeOfLightPot : MonoBehaviour
             Debug.Log("TreeOfLightPot: Playing growth particles");
         }
         
-        // Step 3: Grow the tree
-        if (treeModel != null)
+        // Step 3: Grow the tree - determine which method to use
+        if (treeOfLightPrefab != null) 
         {
-            // Position the tree at the spawn point
-            treeModel.transform.position = treeSpawnPoint.position;
-            treeModel.transform.rotation = treeSpawnPoint.rotation;
-            
-            // Make tree visible but start at zero scale
-            treeModel.SetActive(true);
-            treeModel.transform.localScale = Vector3.zero;
-            
-            // Link tree health with pot health
-            LinkTreeHealth();
-            
-            // Grow the tree over time
-            elapsed = 0f;
-            while (elapsed < treeGrowthDuration)
-            {
-                float t = elapsed / treeGrowthDuration;
-                treeModel.transform.localScale = Vector3.Lerp(Vector3.zero, Vector3.one, t);
-                elapsed += Time.deltaTime;
-                yield return null;
-            }
-            
-            // Ensure final scale is exactly Vector3.one
-            treeModel.transform.localScale = Vector3.one;
-            Debug.Log("TreeOfLightPot: Tree fully grown");
+            // Use the prefab spawning method
+            GrowTreeFromPrefab();
+        }
+        else if (treeModel != null)
+        {
+            // Use the built-in tree model
+            yield return GrowBuiltInTree();
         }
         
+        // Invoke the tree fully grown event
+        onTreeFullyGrown?.Invoke();
+        
         isGrowing = false;
+    }
+    
+    private IEnumerator GrowBuiltInTree()
+    {
+        // Position the tree at the spawn point
+        treeModel.transform.position = treeSpawnPoint.position;
+        treeModel.transform.rotation = treeSpawnPoint.rotation;
+        
+        // Make tree visible but start at zero scale
+        treeModel.SetActive(true);
+        treeModel.transform.localScale = Vector3.zero;
+        
+        // Link tree health with pot health
+        LinkTreeHealth();
+        
+        // Grow the tree over time
+        float elapsed = 0f;
+        while (elapsed < treeGrowthDuration)
+        {
+            float t = elapsed / treeGrowthDuration;
+            treeModel.transform.localScale = Vector3.Lerp(Vector3.zero, Vector3.one, t);
+            elapsed += Time.deltaTime;
+            yield return null; // This was yield break before which was a bug!
+        }
+        
+        // Ensure final scale is exactly Vector3.one
+        treeModel.transform.localScale = Vector3.one;
+        Debug.Log("TreeOfLightPot: Tree fully grown");
+    }
+    
+    private void GrowTreeFromPrefab()
+    {
+        if (treeSpawnPoint != null && treeOfLightPrefab != null)
+        {
+            // Spawn the tree at the specified spawn point
+            spawnedTree = Instantiate(treeOfLightPrefab, treeSpawnPoint.position, treeSpawnPoint.rotation);
+            spawnedTree.transform.SetParent(transform);
+            
+            // Get the TreeOfLight component and trigger growth
+            TreeOfLight treeOfLight = spawnedTree.GetComponent<TreeOfLight>();
+            if (treeOfLight != null)
+            {
+                treeOfLight.StartGrowing(treeGrowthDuration, OnTreeGrowthComplete);
+                
+                // Link tree health with pot health - do this after spawning the tree
+                LinkTreeHealth();
+            }
+            else
+            {
+                Debug.LogError("TreeOfLightPot: TreeOfLight component not found on prefab");
+            }
+            
+            // Start pot's growth animation or effects
+            StartPotGrowth();
+        }
+        else
+        {
+            Debug.LogError("TreeOfLightPot: Tree spawn point or tree prefab not assigned");
+        }
+    }
+    
+    private void StartPotGrowth()
+    {
+        if (potAnimator != null)
+        {
+            potAnimator.SetTrigger("StartGrowth");
+        }
+        
+        // Already handled in ActivatePot(), but could add additional effects here
+    }
+    
+    private void OnTreeGrowthComplete()
+    {
+        Debug.Log("TreeOfLightPot: Tree growth complete callback received");
+        // Any additional actions when tree growth is complete
+    }
+    
+    /// <summary>
+    /// Alternative method for placing items manually (without XR interaction)
+    /// </summary>
+    public void OnItemPlaced(GameObject item)
+    {
+        if (seedPlaced || isGrowing) return;
+        
+        // Check if the placed item is the magical seed
+        if (IsValidSeed(item))
+        {
+            seedPlaced = true;
+            hasMagicalSeed = true;
+            
+            // Invoke seed placed event
+            onSeedPlaced?.Invoke();
+            
+            // Activate pot visual and audio feedback
+            ActivatePot();
+            
+            // Start growth sequence
+            StartCoroutine(GrowthSequence(item));
+        }
+    }
+    
+    /// <summary>
+    /// Public method to manually trigger tree growth (for debugging or special game events).
+    /// </summary>
+    public void ForceGrowth()
+    {
+        if (!seedPlaced && !isGrowing)
+        {
+            seedPlaced = true;
+            hasMagicalSeed = true;
+            
+            // Create an empty GameObject to represent the seed
+            GameObject dummySeed = new GameObject("DummySeed");
+            dummySeed.transform.position = transform.position;
+            
+            // Activate pot visual and audio feedback
+            ActivatePot();
+            
+            // Start growth sequence with the dummy seed
+            StartCoroutine(GrowthSequence(dummySeed));
+        }
     }
 }
