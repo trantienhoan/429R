@@ -1,9 +1,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+namespace Enemies
+{
 
 [DefaultExecutionOrder(1)]
-public class PlayerPivot : MonoBehaviour
+public class SpiderPivot : MonoBehaviour
 {
     [SerializeField] Transform pivot;
     [SerializeField] Scan scan;
@@ -48,4 +50,5 @@ public class PlayerPivot : MonoBehaviour
         pivot.position = Vector3   .Lerp(transform.position, posAvg, positionWeight);
         pivot.rotation = Quaternion.Lerp(transform.rotation, rotAvg, rotationWeight);
     }
+}
 }

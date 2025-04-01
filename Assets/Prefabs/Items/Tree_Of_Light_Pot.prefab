@@ -465,8 +465,7 @@ MonoBehaviour:
   m_AttachTransform: {fileID: 265967999501900189}
   m_KeepSelectedTargetValid: 1
   m_DisableVisualsWhenBlockedInGroup: 1
-  m_StartingSelectedInteractable: {fileID: 2648095480573965488, guid: fc1b8c6522694e64eb1f3fc2edd03bd5,
-    type: 3}
+  m_StartingSelectedInteractable: {fileID: 0}
   m_StartingTargetFilter: {fileID: 0}
   m_HoverEntered:
     m_PersistentCalls:
@@ -511,6 +510,7 @@ MonoBehaviour:
     type: 3}
   treeGrowthDuration: 5
   seedShrinkDuration: 2
+  socketInteractor: {fileID: 9009260404841559303}
 --- !u!114 &1849177776797559712
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -536,10 +536,11 @@ MonoBehaviour:
   spawnPoints: []
   monsterData:
     activeMonsters: []
-  monsterPrefab: {fileID: 0}
+  monsterPrefab: {fileID: 641341794854005767, guid: 74ff73dedb8bc7b4083e2753e9ada44f,
+    type: 3}
   spiderPrefab: {fileID: 641341794854005767, guid: 74ff73dedb8bc7b4083e2753e9ada44f,
     type: 3}
-  useWaves: 0
+  useWaves: 1
   baseWaveSize: 3
   additionalMonstersPerWave: 1
   timeBetweenWaves: 30

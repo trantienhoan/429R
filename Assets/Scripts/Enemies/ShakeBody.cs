@@ -1,9 +1,10 @@
 using System;
-using System.Collections;
+//using System.Collections;
 using UnityEngine;
 
-
-[RequireComponent(typeof(Player3D))]
+namespace Enemies
+{
+[RequireComponent(typeof(SpiderController))]
 public class ShakeBody : MonoBehaviour
 {
     [SerializeField] Transform body;
@@ -12,12 +13,12 @@ public class ShakeBody : MonoBehaviour
 
 
 
-    Player3D player3D;
-    Vector3 bodyLocalPos;
-    Quaternion bodyLocalRot;
-    float timeOffset;
+    private SpiderController spiderController;
+    private Vector3 bodyLocalPos;
+    private Quaternion bodyLocalRot;
+    private float timeOffset;
 
-    public Transform Body { get => body; }
+    public Transform Body { get => this.body; }
 
 
     void Awake()
@@ -34,7 +35,7 @@ public class ShakeBody : MonoBehaviour
 
     void Cache()
     {
-        player3D = GetComponent<Player3D>();
+        spiderController = GetComponent<SpiderController>(); 
         bodyLocalPos = body.localPosition;
         bodyLocalRot = body.localRotation;
         timeOffset = UnityEngine.Random.value * 1000;
@@ -42,10 +43,25 @@ public class ShakeBody : MonoBehaviour
 
     void Update()
     {
-        body.localPosition = bodyLocalPos + Vector3   .Lerp(bodyShakeIdle.Pos(timeOffset), bodyShakeMove.Pos(timeOffset), player3D.SpeedProgress);
-        body.localRotation = bodyLocalRot * Quaternion.Lerp(bodyShakeIdle.Rot(timeOffset), bodyShakeMove.Rot(timeOffset), player3D.SpeedProgress);
-    }
+        // Check for null references to avoid exceptions
+        if (body == null || spiderController == null || 
+            bodyShakeIdle == null || bodyShakeMove == null)
+            return;
 
+        // Use spiderController.Speed or another appropriate property
+        float speedProgress = Mathf.Clamp01(spiderController.Speed);  // Assuming Speed is normalized; if not, modify as needed
+
+        body.localPosition = bodyLocalPos + Vector3.Lerp(
+            bodyShakeIdle.Pos(timeOffset), 
+            bodyShakeMove.Pos(timeOffset), 
+            speedProgress);
+            
+        body.localRotation = bodyLocalRot * Quaternion.Lerp(
+            bodyShakeIdle.Rot(timeOffset), 
+            bodyShakeMove.Rot(timeOffset), 
+            speedProgress);
+    }
+    
 
     [Serializable]
     public class BodyShakeData
@@ -73,4 +89,5 @@ public class ShakeBody : MonoBehaviour
                 (0.5f - Mathf.PerlinNoise(500, time * rotNoiseFreq)) * rotNoise);
         }
     }
+}
 }

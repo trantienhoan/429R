@@ -36,7 +36,7 @@ public class Spaceship : MonoBehaviour
     {
         player3D = GetComponent<Player3D>();
 
-        Volume volume = FindObjectOfType<Volume>();
+        Volume volume = FindFirstObjectByType<Volume>();
         volume.profile.TryGet(out lensDistortion);
         volume.profile.TryGet(out chromaticAberration);
         if (lensDistortion) lensDistoIntensityAdd = lensDistortion.intensity.value;

@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
 using System;
+using Core;
 
 public class ShadowMonster : MonoBehaviour
 {
@@ -29,7 +30,7 @@ public class ShadowMonster : MonoBehaviour
     private NavMeshAgent agent;
     private Animator animator;
     private GameObject player;
-    private PlayerHealth playerHealth;
+    private HealthComponent playerHealth;
     //private bool isDead = false;
     private float lastAttackTime;
     
@@ -75,7 +76,7 @@ public class ShadowMonster : MonoBehaviour
         }
         else
         {
-            playerHealth = player.GetComponent<PlayerHealth>();
+            playerHealth = player.GetComponent<HealthComponent>();
             if (playerHealth == null)
             {
                 Debug.LogWarning("Player does not have a PlayerHealth component");

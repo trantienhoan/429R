@@ -17,7 +17,7 @@ public class CamFollowTarget : MonoBehaviour
     {
         if (!target)
         {
-            CamTarget camTarget = FindObjectOfType<CamTarget>();
+            CamTarget camTarget = FindFirstObjectByType<CamTarget>();
             if (camTarget)
                 target = camTarget.transform;
         }

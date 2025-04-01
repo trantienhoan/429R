@@ -91,7 +91,7 @@ public class TestBreakableSetup : MonoBehaviour
         }
 
         // Clear existing boxes
-        var existingBoxes = GameObject.FindObjectsOfType<Core.InstantBreakableObject>();
+        var existingBoxes = GameObject.FindObjectsByType<Core.InstantBreakableObject>(FindObjectsSortMode.None);
         foreach (var box in existingBoxes)
         {
             Destroy(box.gameObject);
@@ -130,7 +130,7 @@ public class TestBreakableSetup : MonoBehaviour
             return;
         }
 
-        GameObject weapon = Instantiate(weaponPrefab, weaponSpawnPoint.position, weaponSpawnPoint.rotation);
+        //GameObject weapon = Instantiate(weaponPrefab, weaponSpawnPoint.position, weaponSpawnPoint.rotation);
         Debug.Log("Spawned test weapon");
     }
 
@@ -238,7 +238,7 @@ public class TestBreakableSetup : MonoBehaviour
 
     private void UpdateDebugText()
     {
-        var boxes = GameObject.FindObjectsOfType<Core.InstantBreakableObject>();
+        var boxes = GameObject.FindObjectsByType<Core.InstantBreakableObject>(FindObjectsSortMode.None);
         int intactBoxes = 0;
         foreach (var box in boxes)
         {
@@ -299,14 +299,5 @@ public class TestBreakableSetup : MonoBehaviour
         
         // Set the layer to Interactable
         obj.gameObject.layer = LayerMask.NameToLayer("Interactable");
-    }
-    
-    private Vector3 GetRandomSpawnPosition()
-    {
-        float angle = Random.Range(0f, 360f);
-        float radius = Random.Range(0f, spawnRadius);
-        float x = Mathf.Cos(angle * Mathf.Deg2Rad) * radius;
-        float z = Mathf.Sin(angle * Mathf.Deg2Rad) * radius;
-        return new Vector3(x, spawnHeight, z);
     }
 } 

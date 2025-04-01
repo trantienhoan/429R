@@ -256,6 +256,7 @@ GameObject:
   - component: {fileID: 641341794854005766}
   - component: {fileID: 2353675945042972726}
   - component: {fileID: 2125000930435270336}
+  - component: {fileID: 468950205795392041}
   m_Layer: 0
   m_Name: BedRoom_Spider
   m_TagString: Untagged
@@ -314,6 +315,30 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &468950205795392041
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 641341794854005767}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7827a43e46c569d4188c307419dc062c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  health: 100
+  speed: 3.5
+  damage: 10
+  attackRange: 1.5
+  attackCooldown: 2
+  detectionRadius: 10
+  deathEffect: {fileID: 0}
+  deathSound: {fileID: 0}
+  attackSound: {fileID: 0}
+  audioSource: {fileID: 0}
+  lightDamageMultiplier: 2
+  minLightIntensityToDamage: 0.5
 --- !u!1 &641341795188840196
 GameObject:
   m_ObjectHideFlags: 0
@@ -355,7 +380,7 @@ GameObject:
   m_Component:
   - component: {fileID: 945281892079234707}
   - component: {fileID: 1739174811645609496}
-  - component: {fileID: 945281892079234706}
+  - component: {fileID: 3595760298217139877}
   - component: {fileID: 945281892079234732}
   - component: {fileID: 6735881763639930273}
   - component: {fileID: 945281892079234729}
@@ -379,7 +404,7 @@ Transform:
   m_GameObject: {fileID: 945281892079234704}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: -0.06, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -399,35 +424,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cf99765292666ec4ea9708fc7835fd50, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  treeOfLightPotTag: TreeOfLightPot
-  playerTag: Player
-  detectionRange: 20
+  controller: {fileID: 3595760298217139877}
+  animator: {fileID: 2125000930435270336}
+  spiderIK: {fileID: 945281892079234729}
+  targetingRange: 10
   attackRange: 1.5
-  detectionLayers:
+  wanderRadius: 5
+  minDistanceToWanderPoint: 1
+  maxWanderDistance: 20
+  startPosition: {x: 0, y: 0, z: 0}
+  normalSpeed: 1
+  chaseSpeed: 1.5
+  attackDuration: 1
+  attackCooldown: 2
+  damageRecoveryTime: 0.5
+  currentState: 0
+  detectionRadius: 10
+  targetLayer:
     serializedVersion: 2
-    m_Bits: 2097152
-  moveSpeed: 2
-  turnSpeed: 120
-  surfaceDetectionDistance: 2
-  surfaceLayers:
-    serializedVersion: 2
-    m_Bits: 2097152
-  raycastOrigin: {fileID: 0}
-  raySphereRadius: 0.5
-  legTargets: []
-  legIKSolvers: []
-  legMoveDistance: 0.5
-  legMoveDuration: 0.2
-  footHeight: 0.3
+    m_Bits: 1073741952
   maxHealth: 100
   knockbackForce: 5
-  attackDamage: 10
-  attackCooldown: 2
-  deathParticles: {fileID: 0}
-  spiderAnimator: {fileID: 2125000930435270336}
-  waypointsBetweenSpawnAndWindow: []
-  waypointsFromWindowToRoom: []
---- !u!114 &945281892079234706
+--- !u!114 &3595760298217139877
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -436,22 +454,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 945281892079234704}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: db1e0171db36c46af9e433c282a20d91, type: 3}
+  m_Script: {fileID: 11500000, guid: 3e16795754551ec4a832daf7975bb7c2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  controller: {fileID: 0}
-  accelerationForward: 15
-  accelerationBack: 7.5
-  accelerationSide: 7.5
+  maxSpeed: 5
+  acceleration: 40
   friction: 5
-  addVelocity: {x: 0, y: 0}
-  rotationSpeed: 90
+  arcTransformRotation: {fileID: 945281892079234707}
   arcAngle: 270
   arcResolution: 6
   arcLayer:
     serializedVersion: 2
     m_Bits: 2097152
-  arcTransformRotation: {fileID: 945281892079234707}
 --- !u!114 &945281892079234732
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -481,11 +495,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   armCount: 11
-  armLenght: 0.5
-  armLenghtCoef: {x: 1, y: 1}
+  armLength: 0.42
+  armLengthCoef: {x: 1, y: 1}
   armPoints: 4
-  player3D: {fileID: 945281892079234706}
-  armLenghtSpeedCoef: 0
+  controller: {fileID: 3595760298217139877}
+  armLengthSpeedCoef: 0
   weightByDist: 0
   arcAngle: 270
   arcResolution: 4
@@ -539,7 +553,6 @@ MonoBehaviour:
   - {fileID: 3933685120993303692}
   - {fileID: 1218962021230890147}
   stepTime: 0.2
-  stepDelayRand: 0.2
   stepHeight: 0.15
   stepHeightCurve:
     serializedVersion: 2
@@ -641,7 +654,7 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 0
+  m_Interpolate: 1
   m_Constraints: 0
   m_CollisionDetection: 0
 --- !u!114 &4450452925798802707
@@ -3218,7 +3231,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3574496770001131984}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.06934597, y: -0.055013087, z: -0.04100567, w: -0.99523026}
+  m_LocalRotation: {x: -0.007877651, y: -0.0650167, z: -0.045379877, w: -0.9968206}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -3569,7 +3582,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7368889994932919345}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.046811823, y: -0.07240099, z: -0.06825603, w: -0.9939355}
+  m_LocalRotation: {x: 0.001046108, y: -0.05970769, z: -0.052795894, w: -0.99681824}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -3659,7 +3672,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7368889994961264069}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.068797536, y: 0.055094063, z: 0.041106306, w: -0.9952597}
+  m_LocalRotation: {x: -0.007339732, y: 0.06509894, z: 0.04548143, w: -0.9968148}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -3782,7 +3795,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7368889995128297668}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.07984602, y: -0.005573655, z: -0.0023598026, w: -0.99678886}
+  m_LocalRotation: {x: -0.0031913535, y: -0.00025968012, z: -0.00010638499, w: -0.9999949}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -4132,7 +4145,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7368889995646082725}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.10504206, y: 0.014745101, z: 0.0058642235, w: 0.99434125}
+  m_LocalRotation: {x: 0.01529268, y: 0.016339019, z: 0.0063655786, w: 0.99972934}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -4189,7 +4202,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7368889995663618019}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.10404826, y: 0.014588419, z: 0.0058191055, w: -0.99444824}
+  m_LocalRotation: {x: -0.0145676555, y: 0.016181972, z: 0.00631827, w: -0.999743}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -4611,7 +4624,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7368889996561950012}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.047656152, y: 0.07233722, z: 0.06810705, w: -0.9939103}
+  m_LocalRotation: {x: 0.00021164416, y: 0.05962958, z: 0.052659445, w: -0.9968306}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -4797,7 +4810,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7368889996832825569}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.079837196, y: 0.005574484, z: 0.0023600946, w: -0.9967896}
+  m_LocalRotation: {x: -0.0031828643, y: 0.00026035507, z: 0.00010666087, w: -0.99999493}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
