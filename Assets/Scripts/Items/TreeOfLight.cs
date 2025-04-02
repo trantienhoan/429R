@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using System.Collections;
 using Core;
+using Enemies; // Added missing namespace for ShadowMonsterSpawner
 
 namespace Items
 {
@@ -38,7 +39,8 @@ namespace Items
         [SerializeField] private float destroyDelayAfterBreak = 2.0f;
         
         [Header("Events")]
-        public UnityEvent OnGrowthStart;
+        public UnityEvent OnGrowthStarted; // Added for compatibility with ShadowMonsterSpawner
+        public UnityEvent OnGrowthStart;   // Keep for backward compatibility
         public UnityEvent OnGrowthPaused;
         public UnityEvent OnGrowthResumed;
         public UnityEvent OnGrowthComplete;
@@ -49,7 +51,6 @@ namespace Items
         private bool isFullyGrown = false;
         private bool isGrowing = false;
         private bool isPaused = false;
-        private float elapsedGrowthTime = 0f;
         private float growthProgress = 0f;
         private float animationSpeed = 1f;
         
@@ -126,7 +127,7 @@ namespace Items
             {
                 healthComponent.OnHealthChanged += OnHealthChanged;
                 healthComponent.OnDeath += OnHealthDepleted;
-                lastRecordedHealth = healthComponent.GetCurrentHealth();
+                lastRecordedHealth = healthComponent.Health; // Fixed: removed parentheses
             }
         }
 
@@ -137,29 +138,6 @@ namespace Items
             {
                 healthComponent.OnHealthChanged -= OnHealthChanged;
                 healthComponent.OnDeath -= OnHealthDepleted;
-            }
-        }
-
-        private void Update()
-        {
-            // Update growth if active and not paused
-            if (isGrowing && !isPaused)
-            {
-                elapsedGrowthTime += Time.deltaTime * animationSpeed;
-                growthProgress = Mathf.Clamp01(elapsedGrowthTime / growthDuration);
-                
-                UpdateGrowthProgress(growthProgress);
-                
-                // Notify parent pot about growth progress
-                if (parentPot != null)
-                {
-                    parentPot.UpdateTreeGrowthProgress(growthProgress);
-                }
-                
-                if (growthProgress >= 1.0f && !isFullyGrown)
-                {
-                    CompleteGrowth();
-                }
             }
         }
 
@@ -204,7 +182,6 @@ namespace Items
             // Set growth state
             isGrowing = true;
             isPaused = false;
-            elapsedGrowthTime = 0f;
             growthProgress = 0f;
             
             // Start growth animation
@@ -214,8 +191,9 @@ namespace Items
                 animator.SetFloat(GrowthSpeed, animationSpeed);
             }
             
-            // Notify listeners
+            // Notify listeners - invoke both events for compatibility
             OnGrowthStart?.Invoke();
+            OnGrowthStarted?.Invoke();
             
             // Start the actual growth coroutine
             if (growthRoutine != null)
@@ -234,28 +212,53 @@ namespace Items
         /// <summary>
         /// Starts growing with specified duration and completion callback
         /// </summary>
-        public void StartGrowing(float duration, Action onGrowthCompleteCallback = null)
+        public void StartGrowthWithDuration(float duration, Action onComplete = null)
         {
             // Set the callback to be triggered when growth completes
-            if (onGrowthCompleteCallback != null)
+            if (onComplete != null)
             {
-                this.onGrowthCompleteCallback = onGrowthCompleteCallback;
+                onGrowthCompleteCallback = onComplete;
             }
             
             // Override growth duration if needed
-            this.growthDuration = duration > 0 ? duration : this.growthDuration;
+            growthDuration = duration > 0 ? duration : growthDuration;
             
-            // Use the existing growth method
+            // Use the standard growth method
             StartGrowth();
+        }
+        
+        // Keep this for backward compatibility
+        public void StartGrowing(float duration, Action onGrowthCompleteCallback = null)
+        {
+            StartGrowthWithDuration(duration, onGrowthCompleteCallback);
         }
         
         private IEnumerator GrowthRoutine()
         {
+            float elapsedGrowthTime = 0f;
+            
             while (isGrowing && growthProgress < 1.0f)
             {
                 if (!isPaused)
                 {
+                    // Update elapsed time and progress
+                    elapsedGrowthTime += Time.deltaTime * animationSpeed;
+                    growthProgress = Mathf.Clamp01(elapsedGrowthTime / growthDuration);
+                    
+                    // Update visuals
                     UpdateGrowthProgress(growthProgress);
+                    
+                    // Notify parent pot about growth progress
+                    if (parentPot != null)
+                    {
+                        parentPot.UpdateTreeGrowthProgress(growthProgress);
+                    }
+                    
+                    // Check if growth is complete
+                    if (growthProgress >= 1.0f && !isFullyGrown)
+                    {
+                        CompleteGrowth();
+                    }
                 }
                 yield return null;
             }
@@ -403,6 +406,7 @@ namespace Items
                 if (onGrowthCompleteCallback != null)
                 {
                     onGrowthCompleteCallback.Invoke();
+                    onGrowthCompleteCallback = null; // Clear the callback
                 }
                 
                 // Notify parent pot that growth is complete
@@ -422,14 +426,14 @@ namespace Items
         private void KillAllShadowMonsters()
         {
             // Find the ShadowMonsterSpawner
-            ShadowMonsterSpawner spawner = FindObjectOfType<ShadowMonsterSpawner>();
+            ShadowMonsterSpawner spawner = FindFirstObjectByType<ShadowMonsterSpawner>();
             if (spawner != null)
             {
                 // Stop the spawner from creating new monsters
                 spawner.StopSpawning();
                 
                 // Find all active ShadowMonster objects in the scene
-                ShadowMonster[] monsters = FindObjectsOfType<ShadowMonster>();
+                ShadowMonster[] monsters = FindObjectsByType<ShadowMonster>(FindObjectsSortMode.None);
                 foreach (ShadowMonster monster in monsters)
                 {
                     // Kill/destroy each monster

@@ -48,7 +48,7 @@ public class TreeOfLightPot : MonoBehaviour
     
     [Header("Events")]
     [SerializeField] private UnityEngine.Events.UnityEvent onTreeFullyGrown;
-    [SerializeField] private UnityEngine.Events.UnityEvent onSeedPlaced;
+    [SerializeField] public UnityEngine.Events.UnityEvent onSeedPlaced;
     
     [SerializeField] private UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor socketInteractor;
     
@@ -59,6 +59,19 @@ public class TreeOfLightPot : MonoBehaviour
     private bool hasMagicalSeed = false;
     private GameObject spawnedTree;
     private Animator potAnimator;
+
+	public void Break()
+	{
+		OnHealthDepleted();
+	}
+	
+	public void OnTreeBroken()
+	{
+    	// Route to existing functionality
+    	OnTreeDestroyed();
+	}
+
+
     
     private void Awake()
     {

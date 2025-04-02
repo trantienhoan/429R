@@ -1,6 +1,9 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using Items;
+using UnityEngine.Events;
+
 
 namespace Enemies
 {
@@ -15,6 +18,7 @@ namespace Enemies
         [Header("Tree Dependency")]
         [SerializeField] private TreeOfLight treeOfLight;
         [SerializeField] private bool onlySpawnAfterTreeGrowth = true;
+		[SerializeField] private TreeOfLightPot treeOfLightPot;
         
         [Header("Spawning Settings")]
         [SerializeField] private int maxMonstersAlive = 5;
@@ -69,25 +73,37 @@ namespace Enemies
                 }
             }
             
-            // Find TreeOfLight if not assigned
-            if (treeOfLight == null && onlySpawnAfterTreeGrowth)
-            {
-                treeOfLight = FindObjectOfType<TreeOfLight>();
-                if (treeOfLight == null)
-                {
-                    LogError("TreeOfLight not found but required for spawning control!");
-                    enabled = false;
-                    return;
-                }
-                
-                // Subscribe to tree events
-                SubscribeToTreeEvents();
-            }
-            else if (!onlySpawnAfterTreeGrowth)
-            {
-                // If we don't care about the tree, allow spawning immediately
-                canSpawnBasedOnTree = true;
-            }
+            // Replace the TreeOfLight lookup with TreeOfLightPot lookup
+    	if (treeOfLight == null && onlySpawnAfterTreeGrowth)
+    	{
+        	// Find the pot instead of the tree
+        	if (treeOfLightPot == null)
+        	{
+        	    treeOfLightPot = FindAnyObjectByType<TreeOfLightPot>();
+        	}
+        
+        	if (treeOfLightPot != null)
+        	{
+        	    // Subscribe to the seed placed event
+        	    treeOfLightPot.onSeedPlaced.AddListener(OnSeedPlaced);
+        	    Log("Waiting for seed to be placed in pot");
+        	}
+        	else
+        	{
+        	    LogWarning("TreeOfLightPot not found, monster spawning might not work correctly");
+        	}
+    	}
+
+    	else if (!onlySpawnAfterTreeGrowth)
+    	{
+        	// Keep existing code
+        	canSpawnBasedOnTree = true;
+    	}
+    	else if (treeOfLight != null)
+    	{
+        	// If tree is already assigned, subscribe to its events
+        	SubscribeToTreeEvents();
+    	}
 
             // Clear any pre-existing monsters from previous sessions
             CleanupMonsterLists();
@@ -104,6 +120,31 @@ namespace Enemies
                 UnsubscribeFromTreeEvents();
             }
         }
+		
+		private void OnSeedPlaced()
+		{
+    		// Start looking for the TreeOfLight now that the seed has been placed
+    		StartCoroutine(WaitForTreeOfLight());
+		}
+
+		private IEnumerator WaitForTreeOfLight()
+		{
+    		// Give time for the tree to be created
+    		yield return new WaitForSeconds(0.5f);
+    
+   	 		// Now look for the tree
+    		treeOfLight = FindAnyObjectByType<TreeOfLight>();
+    		if (treeOfLight != null)
+    		{
+        		SubscribeToTreeEvents();
+        		Log("Found TreeOfLight after seed placement");
+    		}
+    		else
+    		{
+        		LogWarning("TreeOfLight still not found after seed placement");
+        		// Optional: retry mechanism or fallback behavior
+    		}
+		}
         
         private void SubscribeToTreeEvents()
         {
@@ -111,7 +152,7 @@ namespace Enemies
             // This is a placeholder - you need to implement the actual event in TreeOfLight
             if (treeOfLight != null)
             {
-                treeOfLight.OnGrowthStarted += HandleTreeGrowthStarted;
+                treeOfLight.OnGrowthStarted.AddListener(HandleTreeGrowthStarted);
             }
         }
         
@@ -119,9 +160,19 @@ namespace Enemies
         {
             if (treeOfLight != null)
             {
-                treeOfLight.OnGrowthStarted -= HandleTreeGrowthStarted;
+                treeOfLight.OnGrowthStarted.RemoveListener(HandleTreeGrowthStarted);
             }
         }
+	
+		public UnityEvent OnGrowthStarted = new UnityEvent();
+    
+    	// Call this when tree growth starts
+    	private void StartGrowth()
+    	{
+        	// Other growth code
+    	    OnGrowthStarted.Invoke();
+	    }
+
         
         private void HandleTreeGrowthStarted()
         {
@@ -130,7 +181,7 @@ namespace Enemies
             Log("Tree growth started - Monster spawning now enabled");
             
             // If we're using waves, start the wave coroutine now
-            if (useWaves && !spawnCoroutine)
+            if (useWaves && spawnCoroutine == null)
             {
                 spawnCoroutine = StartCoroutine(SpawnWaves());
             }
