@@ -2,9 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.Events;
 using System.Collections;
-using Items;
 using Core;
-using UnityEngine.XR.Interaction.Toolkit;
 
 namespace Items
 {
@@ -19,13 +17,6 @@ namespace Items
         [SerializeField] private float finalLightPulseSpeed = 1f;
         [SerializeField] private float finalLightPulseAmount = 0.2f;
         
-        [Header("Light Wave Effect")]
-        [SerializeField] private GameObject lightWavePrefab;
-        [SerializeField] private float lightWaveRadius = 30f;
-        [SerializeField] private float lightWaveSpeed = 10f;
-        [SerializeField] private float lightWaveDuration = 3f;
-        [SerializeField] private Color lightWaveColor = Color.white;
-        
         [Header("Growth Settings")]
         [SerializeField] private Vector3 startScale = Vector3.zero;
         [SerializeField] private Vector3 targetScale = Vector3.one;
@@ -39,12 +30,20 @@ namespace Items
         [SerializeField] private GameObject keyPrefab;
         [SerializeField] private bool destroyPotOnCompletion = true;
         
+        [Header("Breaking Effects")]
+        [SerializeField] private ParticleSystem hitParticleEffect;
+        [SerializeField] private ParticleSystem breakParticleEffect;
+        [SerializeField] private AudioClip breakSound;
+        [SerializeField] private GameObject intactModel;
+        [SerializeField] private float destroyDelayAfterBreak = 2.0f;
+        
         [Header("Events")]
         public UnityEvent OnGrowthStart;
         public UnityEvent OnGrowthPaused;
         public UnityEvent OnGrowthResumed;
         public UnityEvent OnGrowthComplete;
-        public UnityEvent OnLightWaveCreated;
+        public UnityEvent OnTreeHit;
+        public UnityEvent OnTreeBroken;
         
         // State tracking
         private bool isFullyGrown = false;
@@ -69,6 +68,7 @@ namespace Items
 
         // Callbacks
         private Action onGrowthCompleteCallback;
+        private float lastRecordedHealth;
 
         private void Awake()
         {
@@ -95,14 +95,38 @@ namespace Items
             // Initialize scale
             transform.localScale = startScale;
         }
+        
+        private void OnHealthChanged(float currentHealth, float maxHealth)
+        {
+            // Only calculate damage if health decreased
+            if (currentHealth < lastRecordedHealth)
+            {
+                float damage = lastRecordedHealth - currentHealth;
+        
+                Debug.Log($"Tree took {damage} damage. Health: {currentHealth}/{maxHealth}");
+                
+                // Play hit effects
+                OnHit();
+        
+                // Notify parent pot
+                if (parentPot != null)
+                {
+                    parentPot.OnTreeDamaged(damage);
+                }
+            }
+    
+            // Update the last recorded health for next time
+            lastRecordedHealth = currentHealth;
+        }
 
         private void OnEnable()
         {
             // Subscribe to health events if health component exists
             if (healthComponent != null)
             {
-                healthComponent.OnDamaged.AddListener(OnHealthDamaged);
-                healthComponent.OnDeath.AddListener(OnHealthDepleted);
+                healthComponent.OnHealthChanged += OnHealthChanged;
+                healthComponent.OnDeath += OnHealthDepleted;
+                lastRecordedHealth = healthComponent.GetCurrentHealth();
             }
         }
 
@@ -111,8 +135,8 @@ namespace Items
             // Unsubscribe from health events
             if (healthComponent != null)
             {
-                healthComponent.OnDamaged.RemoveListener(OnHealthDamaged);
-                healthComponent.OnDeath.RemoveListener(OnHealthDepleted);
+                healthComponent.OnHealthChanged -= OnHealthChanged;
+                healthComponent.OnDeath -= OnHealthDepleted;
             }
         }
 
@@ -369,8 +393,8 @@ namespace Items
                 // Start blinding light effect
                 StartCoroutine(BlindingLightEffect());
                 
-                // Create light wave that affects monsters
-                StartCoroutine(CreateLightWaveEffect());
+                // Kill all shadow monsters
+                KillAllShadowMonsters();
                 
                 // Trigger completion event
                 OnGrowthComplete?.Invoke();
@@ -392,257 +416,198 @@ namespace Items
             }
         }
         
+        /// <summary>
+        /// Kills all shadow monsters when the tree is fully grown
+        /// </summary>
+        private void KillAllShadowMonsters()
+        {
+            // Find the ShadowMonsterSpawner
+            ShadowMonsterSpawner spawner = FindObjectOfType<ShadowMonsterSpawner>();
+            if (spawner != null)
+            {
+                // Stop the spawner from creating new monsters
+                spawner.StopSpawning();
+                
+                // Find all active ShadowMonster objects in the scene
+                ShadowMonster[] monsters = FindObjectsOfType<ShadowMonster>();
+                foreach (ShadowMonster monster in monsters)
+                {
+                    // Kill/destroy each monster
+                    Destroy(monster.gameObject);
+                }
+                
+                Debug.Log($"TreeOfLight: Destroyed {monsters.Length} shadow monsters");
+            }
+            else
+            {
+                Debug.LogWarning("TreeOfLight: ShadowMonsterSpawner not found in scene");
+            }
+        }
+        
         private IEnumerator BlindingLightEffect()
         {
             if (treeLight != null)
             {
                 // Create a blinding flash
                 float startIntensity = treeLight.intensity;
-                float peakIntensity = maxLightIntensity * finalLightIntensityMultiplier * 2;
-                float duration = 1.5f;
+                float maxBlindingIntensity = maxLightIntensity * 2f;
+                
+                // Quickly increase intensity for blinding effect
+                float flashDuration = 0.5f;
                 float elapsed = 0f;
                 
-                // Ramp up
-                while (elapsed < duration * 0.3f)
+                while (elapsed < flashDuration)
                 {
                     elapsed += Time.deltaTime;
-                    float progress = elapsed / (duration * 0.3f);
-                    treeLight.intensity = Mathf.Lerp(startIntensity, peakIntensity, progress);
+                    float t = elapsed / flashDuration;
+                    treeLight.intensity = Mathf.Lerp(startIntensity, maxBlindingIntensity, t);
                     yield return null;
                 }
                 
-                // Hold
-                treeLight.intensity = peakIntensity;
-                yield return new WaitForSeconds(duration * 0.4f);
-                
-                // Ramp down
+                // Gradually return to normal brightness
                 elapsed = 0f;
-                while (elapsed < duration * 0.3f)
+                float fadeDuration = 1.5f;
+                
+                while (elapsed < fadeDuration)
                 {
                     elapsed += Time.deltaTime;
-                    float progress = elapsed / (duration * 0.3f);
-                    treeLight.intensity = Mathf.Lerp(peakIntensity, maxLightIntensity, progress);
+                    float t = elapsed / fadeDuration;
+                    treeLight.intensity = Mathf.Lerp(maxBlindingIntensity, maxLightIntensity, t);
                     yield return null;
                 }
                 
-                // Set final intensity
-                treeLight.intensity = maxLightIntensity;
-                
-                // Start pulsing effect
-                if (finalEffectRoutine != null)
-                {
-                    StopCoroutine(finalEffectRoutine);
-                }
-                finalEffectRoutine = StartCoroutine(PulseLight());
+                // Start pulsing light effect
+                StartCoroutine(PulseLight());
             }
         }
-        
-        private IEnumerator CreateLightWaveEffect()
-        {
-            Debug.Log("Creating light wave effect to affect monsters");
-            
-            // Create wave effect if we have a prefab
-            if (lightWavePrefab != null)
-            {
-                GameObject lightWave = Instantiate(lightWavePrefab, transform.position, Quaternion.identity);
-                var waveEffect = lightWave.GetComponent<LightWaveEffect>();
-                
-                if (waveEffect != null)
-                {
-                    // Configure the wave effect
-                    waveEffect.SetParameters(lightWaveRadius, lightWaveSpeed, lightWaveDuration, lightWaveColor);
-                    waveEffect.StartWave();
-                }
-                else
-                {
-                    Debug.LogWarning("LightWaveEffect component not found on lightWavePrefab");
-                    
-                    // Create a simple expanding sphere effect as fallback
-                    StartCoroutine(SimpleExpandingSphereEffect());
-                }
-            }
-            else
-            {
-                Debug.LogWarning("Light wave prefab not assigned, using simple effect");
-                // Create a simple expanding sphere effect as fallback
-                StartCoroutine(SimpleExpandingSphereEffect());
-            }
-            
-            // Affect all monsters in the scene
-            yield return new WaitForSeconds(0.5f); // Wait a moment for the wave to expand
-            
-            // Find all shadow monsters and damage them
-            // Using GameObject.FindObjectsOfType for better compatibility
-            var monsters = GameObject.FindObjectsOfType<MonoBehaviour>()
-                .Where(m => m.GetType().Name.Contains("ShadowMonster"))
-                .ToArray();
-                
-            foreach (var monster in monsters)
-            {
-                // Use reflection to safely call TakeDamage if it exists
-                var takeDamageMethod = monster.GetType().GetMethod("TakeDamage");
-                if (takeDamageMethod != null)
-                {
-                    takeDamageMethod.Invoke(monster, new object[] { float.MaxValue });
-                }
-            }
-            
-            OnLightWaveCreated?.Invoke();
-        }
-        
-        private IEnumerator SimpleExpandingSphereEffect()
-        {
-            // Create a simple sphere to represent the light wave
-            GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            sphere.transform.position = transform.position;
-            sphere.transform.localScale = Vector3.one * 0.1f;
-            
-            // Create light material
-            Material waveMaterial = new Material(Shader.Find("Standard"));
-            waveMaterial.color = lightWaveColor;
-            waveMaterial.EnableKeyword("_EMISSION");
-            waveMaterial.SetColor("_EmissionColor", lightWaveColor * 2f);
-            
-            // Apply material
-            MeshRenderer renderer = sphere.GetComponent<MeshRenderer>();
-            renderer.material = waveMaterial;
-            
-            // Make the sphere not collide with anything
-            Collider collider = sphere.GetComponent<Collider>();
-            if (collider != null)
-            {
-                Destroy(collider);
-            }
-            
-            // Expand the sphere
-            float elapsed = 0f;
-            while (elapsed < lightWaveDuration)
-            {
-                elapsed += Time.deltaTime;
-                float progress = elapsed / lightWaveDuration;
-                float currentRadius = progress * lightWaveRadius;
-                
-                sphere.transform.localScale = Vector3.one * currentRadius;
-                
-                // Fade out as wave expands
-                Color fadeColor = lightWaveColor;
-                fadeColor.a = 1f - progress;
-                waveMaterial.color = fadeColor;
-                
-                yield return null;
-            }
-            
-            // Destroy the sphere when done
-            Destroy(sphere);
-        }
-        
+
         private IEnumerator PulseLight()
         {
-            while (isFullyGrown)
+            if (treeLight != null)
             {
-                // Pulse light up and down
-                float pulse = Mathf.Sin(Time.time * finalLightPulseSpeed) * finalLightPulseAmount;
-                if (treeLight != null)
+                float baseIntensity = maxLightIntensity;
+                
+                while (isFullyGrown)
                 {
-                    treeLight.intensity = maxLightIntensity + pulse;
+                    // Create pulsing effect
+                    float pulseFactor = Mathf.Sin(Time.time * finalLightPulseSpeed) * finalLightPulseAmount + 1.0f;
+                    treeLight.intensity = baseIntensity * pulseFactor;
+                    yield return null;
                 }
-                yield return null;
             }
         }
         
         private IEnumerator CompletionSequence()
         {
-            // Wait a moment for the light effects to complete
-            yield return new WaitForSeconds(2f);
-            
-            // Play completion effect
+            // Play completion particle effect if assigned
             if (completionEffect != null)
             {
-                ParticleSystem effect = Instantiate(completionEffect, transform.position, Quaternion.identity);
-                Destroy(effect.gameObject, completionEffectDuration);
+                completionEffect.Play();
+                yield return new WaitForSeconds(completionEffectDuration);
             }
             
-            // Drop key item
+            // Spawn the key if assigned
             if (keyPrefab != null)
             {
-                Vector3 dropPosition = transform.position + Vector3.up * 0.5f;
-                GameObject key = Instantiate(keyPrefab, dropPosition, Quaternion.identity);
+                Vector3 spawnPosition = transform.position + Vector3.up * 1.5f;
+                GameObject key = Instantiate(keyPrefab, spawnPosition, Quaternion.identity);
                 
-                // Add force to make it drop naturally
+                // Apply small upward force if rigidbody exists
                 Rigidbody keyRb = key.GetComponent<Rigidbody>();
                 if (keyRb != null)
                 {
                     keyRb.AddForce(Vector3.up * 2f, ForceMode.Impulse);
-                    keyRb.AddTorque(new Vector3(UnityEngine.Random.Range(-1f, 1f), 
-                                                UnityEngine.Random.Range(-1f, 1f), 
-                                                UnityEngine.Random.Range(-1f, 1f)) * 0.5f, ForceMode.Impulse);
                 }
             }
             
-            // Wait a moment before destroying
-            yield return new WaitForSeconds(1f);
-            
-            // Destroy tree and pot if configured to do so
-            if (parentPot != null)
+            // Destroy parent pot if configured to do so
+            if (destroyPotOnCompletion && parentPot != null)
             {
-                // Let the pot know to prepare for destruction
-                parentPot.PrepareForDestruction();
-                
-                // Only destroy the pot if that option is enabled
-                if (destroyPotOnCompletion)
-                {
-                    Destroy(parentPot.gameObject);
-                }
-            }
-            
-            // Destroy the tree
-            Destroy(gameObject);
-        }
-
-        // Health component event handlers
-        private void OnHealthDamaged(float damage)
-        {
-            // You can add visual effects for damage here if needed
-            Debug.Log($"Tree took {damage} damage");
-            
-            // Notify parent pot
-            if (parentPot != null)
-            {
-                parentPot.OnTreeDamaged(damage);
+                parentPot.Break();
             }
         }
         
+        /// <summary>
+        /// Called when the tree takes damage
+        /// </summary>
+        public void OnHit()
+        {
+            // Play hit particle effect
+            if (hitParticleEffect != null)
+            {
+                hitParticleEffect.Play();
+            }
+            
+            // Trigger hit event
+            OnTreeHit?.Invoke();
+        }
+        
+        /// <summary>
+        /// Called when tree health is depleted
+        /// </summary>
         private void OnHealthDepleted()
         {
-            // Tree is destroyed by something other than completion
-            Debug.Log("Tree of Light was destroyed before completion");
-            
-            // Clean up
-            if (finalEffectRoutine != null)
-            {
-                StopCoroutine(finalEffectRoutine);
-            }
-            
-            if (growthRoutine != null)
-            {
-                StopCoroutine(growthRoutine);
-            }
-            
-            // Notify parent pot about destruction
-            if (parentPot != null)
-            {
-                parentPot.OnTreeDestroyed();
-            }
-            
-            // Destroy the tree
-            Destroy(gameObject);
+            Break();
         }
         
+        /// <summary>
+        /// Breaks the tree using particle effects similar to JiggleBreakableBigObject
+        /// </summary>
+        public void Break()
+        {
+            // Don't allow breaking twice
+            if (this.enabled == false)
+                return;
+                
+            // Play break particle effect
+            if (breakParticleEffect != null)
+            {
+                breakParticleEffect.Play();
+            }
+            
+            // Play breaking sound
+            if (breakSound != null)
+            {
+                AudioSource.PlayClipAtPoint(breakSound, transform.position);
+            }
+            
+            // Hide the intact model
+            if (intactModel != null)
+            {
+                intactModel.SetActive(false);
+            }
+            
+            // Trigger broken event
+            OnTreeBroken?.Invoke();
+            
+            // Notify parent pot if it exists
+            if (parentPot != null)
+            {
+                parentPot.OnTreeBroken();
+            }
+            
+            // Disable this component
+            this.enabled = false;
+            
+            // Optional: Destroy this object after a delay
+            Destroy(gameObject, destroyDelayAfterBreak);
+        }
+        
+        /// <summary>
+        /// Validates a scale value to prevent errors
+        /// </summary>
         private bool IsValidScale(Vector3 scale)
         {
-            return !float.IsNaN(scale.x) && !float.IsNaN(scale.y) && !float.IsNaN(scale.z) &&
-                   !float.IsInfinity(scale.x) && !float.IsInfinity(scale.y) && !float.IsInfinity(scale.z) &&
-                   scale.x >= 0 && scale.y >= 0 && scale.z >= 0;
+            // Check for NaN or infinity
+            if (float.IsNaN(scale.x) || float.IsInfinity(scale.x) ||
+                float.IsNaN(scale.y) || float.IsInfinity(scale.y) ||
+                float.IsNaN(scale.z) || float.IsInfinity(scale.z))
+            {
+                Debug.LogWarning("Invalid scale detected: " + scale);
+                return false;
+            }
+            
+            return true;
         }
     }
 }

@@ -1,11 +1,9 @@
 using UnityEngine;
-using Enemies;
 using System.Collections;
 using System.Collections.Generic;
 
 namespace Enemies
 {
-    // Create a simple class to track monsters if you need one
     [System.Serializable]
     public class MonsterTrackerData
     {
@@ -14,6 +12,10 @@ namespace Enemies
 
     public class ShadowMonsterSpawner : MonoBehaviour
     {
+        [Header("Tree Dependency")]
+        [SerializeField] private TreeOfLight treeOfLight;
+        [SerializeField] private bool onlySpawnAfterTreeGrowth = true;
+        
         [Header("Spawning Settings")]
         [SerializeField] private int maxMonstersAlive = 5;
         [SerializeField] private float spawnInterval = 5f;
@@ -26,74 +28,141 @@ namespace Enemies
         [SerializeField] private float minSpawnDelay = 5f;
         [SerializeField] private float maxSpawnDelay = 15f;
         [SerializeField] private Transform[] spawnPoints;
-        [SerializeField] private MonsterTrackerData monsterData = new MonsterTrackerData();
 
-		[Header("Monster Settings")]
-		[SerializeField] private GameObject monsterPrefab;
+        [Header("Monster Settings")]
+        [SerializeField] private GameObject monsterPrefab;
+        [SerializeField] private GameObject spiderPrefab; // For future implementation
+        [SerializeField] private float spiderSpawnChance = 0.2f; // 20% chance to spawn spider instead
         
-        [Header("Spider Settings")]
-        [SerializeField] private GameObject spiderPrefab;
-
-
-
-        // Method to register a monster
-        public void RegisterMonster(GameObject monster)
-        {
-            if (monster != null && monsterData != null)
-            {
-                monsterData.activeMonsters.Add(monster);
-            }
-        }
-        
-        // Method for TreeOfLightPot to call instead of passing itself
-        public void NotifyMonsterSpawned(GameObject monster)
-        {
-            // Do whatever you need when a monster is spawned
-            RegisterMonster(monster);
-        }
-
-        private bool isSpawning = false;
-        private Coroutine spawnCoroutine;
-
-
-        [Header("Wave Settings")] [SerializeField]
-        private bool useWaves = false;
-
+        [Header("Wave Settings")]
+        [SerializeField] private bool useWaves = false;
         [SerializeField] private int baseWaveSize = 3;
         [SerializeField] private int additionalMonstersPerWave = 1;
         [SerializeField] private float timeBetweenWaves = 30f;
 
-        [Header("Debug")] [SerializeField] private bool showSpawnPoints = true;
+        [Header("Debug")]
+        [SerializeField] private bool showSpawnPoints = true;
+        [SerializeField] private bool debugLogs = false;
 
-        // Internal variables
+        // Unified monster tracking
         private List<ShadowMonster> activeMonsters = new List<ShadowMonster>();
+        [SerializeField] private MonsterTrackerData monsterData = new MonsterTrackerData();
+        
+        // Spawning control
+        private bool isSpawning = false;
+        private Coroutine spawnCoroutine;
         private float nextSpawnTime = 0f;
         private int currentWave = 0;
+        private bool canSpawnBasedOnTree = false;
 
         private void Start()
         {
+            // Find player if not assigned
             if (player == null)
             {
                 player = GameObject.FindGameObjectWithTag("Player")?.transform;
                 if (player == null)
                 {
-                    Debug.LogError("No player found! Make sure your player has the 'Player' tag.");
+                    LogError("No player found! Make sure your player has the 'Player' tag.");
                     enabled = false;
                     return;
                 }
             }
-
-            if (useWaves)
+            
+            // Find TreeOfLight if not assigned
+            if (treeOfLight == null && onlySpawnAfterTreeGrowth)
             {
-                StartCoroutine(SpawnWaves());
+                treeOfLight = FindObjectOfType<TreeOfLight>();
+                if (treeOfLight == null)
+                {
+                    LogError("TreeOfLight not found but required for spawning control!");
+                    enabled = false;
+                    return;
+                }
+                
+                // Subscribe to tree events
+                SubscribeToTreeEvents();
+            }
+            else if (!onlySpawnAfterTreeGrowth)
+            {
+                // If we don't care about the tree, allow spawning immediately
+                canSpawnBasedOnTree = true;
+            }
+
+            // Clear any pre-existing monsters from previous sessions
+            CleanupMonsterLists();
+            
+            // Start spawning system based on configuration
+            InitializeSpawningSystem();
+        }
+        
+        private void OnDestroy()
+        {
+            // Unsubscribe from TreeOfLight events to prevent memory leaks
+            if (treeOfLight != null)
+            {
+                UnsubscribeFromTreeEvents();
+            }
+        }
+        
+        private void SubscribeToTreeEvents()
+        {
+            // Subscribe to the appropriate event from TreeOfLight
+            // This is a placeholder - you need to implement the actual event in TreeOfLight
+            if (treeOfLight != null)
+            {
+                treeOfLight.OnGrowthStarted += HandleTreeGrowthStarted;
+            }
+        }
+        
+        private void UnsubscribeFromTreeEvents()
+        {
+            if (treeOfLight != null)
+            {
+                treeOfLight.OnGrowthStarted -= HandleTreeGrowthStarted;
+            }
+        }
+        
+        private void HandleTreeGrowthStarted()
+        {
+            // Now we can start spawning monsters
+            canSpawnBasedOnTree = true;
+            Log("Tree growth started - Monster spawning now enabled");
+            
+            // If we're using waves, start the wave coroutine now
+            if (useWaves && !spawnCoroutine)
+            {
+                spawnCoroutine = StartCoroutine(SpawnWaves());
+            }
+        }
+
+        private void CleanupMonsterLists()
+        {
+            activeMonsters.Clear();
+            monsterData.activeMonsters.Clear();
+        }
+
+        private void InitializeSpawningSystem()
+        {
+            // Only start wave spawning if tree growth is not a factor or the tree is already growing
+            if (useWaves && canSpawnBasedOnTree)
+            {
+                spawnCoroutine = StartCoroutine(SpawnWaves());
+                Log("Wave spawning initialized");
+            }
+            else
+            {
+                Log("Regular spawning initialized (Update method)");
+                // Regular spawning is handled in Update
             }
         }
 
         private void Update()
         {
-            if (useWaves) return; // Don't do regular spawning if using waves
+            // Skip if using waves or not allowed to spawn based on tree
+            if (useWaves || !canSpawnBasedOnTree) return;
 
-            if (Time.time >= nextSpawnTime && activeMonsters.Count < maxMonstersAlive)
+            if (Time.time >= nextSpawnTime && CanSpawnMore())
             {
                 if (!spawnAtNightOnly || IsNightTime())
                 {
@@ -103,47 +172,139 @@ namespace Enemies
             }
         }
 
-        private GameObject SpawnMonster()
+        private bool CanSpawnMore()
         {
-            // Find a valid spawn position
-            Vector3 spawnPosition = FindValidSpawnPosition();
-
-            // Instantiate the monster
-            GameObject monster = Instantiate(monsterPrefab, spawnPosition, Quaternion.identity);
-
-            // Register the monster if it has the ShadowMonster component
-            ShadowMonster monsterComponent = monster.GetComponent<ShadowMonster>();
-            if (monsterComponent != null)
-            {
-                RegisterMonster(monsterComponent);
-
-                ShadowMonsterObserver observer = monster.AddComponent<ShadowMonsterObserver>();
-    			observer.Setup(this, monsterComponent);
-
-            }
-            else
-            {
-                Debug.LogWarning("Spawned monster prefab doesn't have a ShadowMonster component!");
-            }
-
-            Debug.Log("Monster spawned at " + spawnPosition);
-            return monster;
+            return activeMonsters.Count < maxMonstersAlive;
         }
 
+        // Unified monster spawning method
+        private GameObject SpawnMonster()
+        {
+            // Check if we can spawn based on the tree status
+            if (onlySpawnAfterTreeGrowth && !canSpawnBasedOnTree)
+            {
+                Log("Attempted to spawn monster but tree growth hasn't started yet");
+                return null;
+            }
+            
+            // Check if we're at capacity
+            if (!CanSpawnMore())
+            {
+                Log("At max monster capacity, can't spawn more");
+                return null;
+            }
 
+            // Find a valid spawn position
+            Vector3 spawnPosition = FindValidSpawnPosition();
+            
+            // Decide which monster type to spawn (basic monster or spider)
+            GameObject prefabToSpawn = monsterPrefab;
+            if (spiderPrefab != null && Random.value < spiderSpawnChance)
+            {
+                prefabToSpawn = spiderPrefab;
+            }
 
+            // Instantiate the monster
+            GameObject monster = Instantiate(prefabToSpawn, spawnPosition, Quaternion.identity);
+            
+            // Register the monster properly
+            RegisterMonster(monster);
+            
+            Log($"Monster spawned at {spawnPosition}");
+            return monster;
+        }
+        
+        // Unified monster registration
+        public void RegisterMonster(GameObject monster)
+        {
+            if (monster == null) return;
+            
+            // Add to GameObject tracking list
+            if (!monsterData.activeMonsters.Contains(monster))
+            {
+                monsterData.activeMonsters.Add(monster);
+            }
+            
+            // Add to ShadowMonster tracking list
+            ShadowMonster monsterComponent = monster.GetComponent<ShadowMonster>();
+            if (monsterComponent != null && !activeMonsters.Contains(monsterComponent))
+            {
+                activeMonsters.Add(monsterComponent);
+                
+                // Add observer component if needed
+                if (!monster.GetComponent<ShadowMonsterObserver>())
+                {
+                    ShadowMonsterObserver observer = monster.AddComponent<ShadowMonsterObserver>();
+                    observer.Setup(this, monsterComponent);
+                }
+            }
+        }
+        
+        // Unified monster unregistration
+        public void UnregisterMonster(ShadowMonster monster)
+        {
+            if (monster == null) return;
+            
+            // Remove from ShadowMonster list
+            if (activeMonsters.Contains(monster))
+            {
+                activeMonsters.Remove(monster);
+            }
+            
+            // Remove from GameObject list
+            GameObject monsterObject = monster.gameObject;
+            if (monsterData.activeMonsters.Contains(monsterObject))
+            {
+                monsterData.activeMonsters.Remove(monsterObject);
+            }
+            
+            Log($"Monster unregistered. Active count: {activeMonsters.Count}");
+        }
+        
+        // Also support GameObject-based unregistration
+        public void UnregisterMonster(GameObject monster)
+        {
+            if (monster == null) return;
+            
+            // Remove from GameObject list
+            if (monsterData.activeMonsters.Contains(monster))
+            {
+                monsterData.activeMonsters.Remove(monster);
+            }
+            
+            // Find and remove from ShadowMonster list
+            ShadowMonster monsterComponent = monster.GetComponent<ShadowMonster>();
+            if (monsterComponent != null && activeMonsters.Contains(monsterComponent))
+            {
+                activeMonsters.Remove(monsterComponent);
+            }
+        }
+        
+        // For TreeOfLightPot to call
+        public void NotifyMonsterSpawned(GameObject monster)
+        {
+            RegisterMonster(monster);
+        }
+
+        // Wave-based spawning
         private IEnumerator SpawnWaves()
         {
             while (true)
             {
                 yield return new WaitForSeconds(timeBetweenWaves);
 
-                if (!spawnAtNightOnly || IsNightTime())
+                // Only spawn if tree conditions are met and it's nighttime if required
+                if (canSpawnBasedOnTree && (!spawnAtNightOnly || IsNightTime()))
                 {
                     currentWave++;
                     int monstersToSpawn = baseWaveSize + (additionalMonstersPerWave * (currentWave - 1));
-
-                    for (int i = 0; i < monstersToSpawn; i++)
+                    
+                    // Cap the number of monsters to our maximum
+                    int actualSpawnCount = Mathf.Min(monstersToSpawn, maxMonstersAlive - activeMonsters.Count);
+                    
+                    Log($"Starting Wave {currentWave} with {actualSpawnCount} monsters");
+                    
+                    for (int i = 0; i < actualSpawnCount; i++)
                     {
                         SpawnMonster();
                         yield return new WaitForSeconds(1f); // Slight delay between spawns in a wave
@@ -152,13 +313,18 @@ namespace Enemies
             }
         }
 
+        // Manual spawning control methods
         public void StartSpawning()
         {
-            if (!isSpawning)
+            if (!isSpawning && canSpawnBasedOnTree)
             {
                 isSpawning = true;
                 spawnCoroutine = StartCoroutine(SpawnMonsters());
-                Debug.Log("Monster spawning started");
+                Log("Manual monster spawning started");
+            }
+            else if (!canSpawnBasedOnTree)
+            {
+                LogWarning("Cannot start spawning - Tree of Light hasn't started growing yet");
             }
         }
 
@@ -173,7 +339,7 @@ namespace Enemies
                     spawnCoroutine = null;
                 }
 
-                Debug.Log("Monster spawning stopped");
+                Log("Monster spawning stopped");
             }
         }
 
@@ -185,40 +351,28 @@ namespace Enemies
                 float delay = Random.Range(minSpawnDelay, maxSpawnDelay);
                 yield return new WaitForSeconds(delay);
 
-                if (isSpawning && spawnPoints.Length > 0 && monsterPrefab != null)
+                if (isSpawning && spawnPoints.Length > 0 && monsterPrefab != null && CanSpawnMore())
                 {
                     // Choose random spawn point
                     Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
 
                     // Spawn monster
                     GameObject monster = Instantiate(monsterPrefab, spawnPoint.position, spawnPoint.rotation);
-                    Debug.Log("Shadow monster spawned at " + spawnPoint.name);
+                    RegisterMonster(monster);
                 }
             }
         }
 
-
-        // This method is called when a new monster is spawned
-        private void RegisterMonster(ShadowMonster monster)
-        {
-            if (!activeMonsters.Contains(monster))
-            {
-                activeMonsters.Add(monster);
-            }
-        }
-
-        // This method is called when a monster dies
-        public void UnregisterMonster(ShadowMonster monster)
-        {
-            if (activeMonsters.Contains(monster))
-            {
-                activeMonsters.Remove(monster);
-            }
-        }
-
-
         private Vector3 FindValidSpawnPosition()
         {
+            // Use spawn points if available and not empty
+            if (spawnPoints != null && spawnPoints.Length > 0)
+            {
+                Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
+                return spawnPoint.position;
+            }
+            
+            // Otherwise use dynamic position around player
             // Try to find a valid spawn position
             for (int i = 0; i < 10; i++) // Try 10 times
             {
@@ -288,8 +442,7 @@ namespace Enemies
         {
             // This is a placeholder. In your actual game, you should
             // check your day/night cycle system to determine if it's night
-            // For testing, you could just always return true
-
+            // TODO: Implement actual day/night check
             return true;
         }
 
@@ -305,17 +458,44 @@ namespace Enemies
             // Max spawn distance
             Gizmos.color = Color.red;
             Gizmos.DrawWireSphere(player.position, maxSpawnDistance);
+            
+            // Draw spawn points
+            if (spawnPoints != null && spawnPoints.Length > 0)
+            {
+                Gizmos.color = Color.green;
+                foreach (Transform spawnPoint in spawnPoints)
+                {
+                    if (spawnPoint != null)
+                    {
+                        Gizmos.DrawSphere(spawnPoint.position, 1f);
+                        Gizmos.DrawLine(spawnPoint.position, spawnPoint.position + spawnPoint.forward * 2f);
+                    }
+                }
+            }
         }
 
         // Public method to trigger a wave manually
         public void TriggerWave(int extraMonsters = 0)
         {
-            if (!useWaves)
+            if (canSpawnBasedOnTree)
             {
                 currentWave++;
                 int monstersToSpawn = baseWaveSize + (additionalMonstersPerWave * (currentWave - 1)) + extraMonsters;
-
-                StartCoroutine(SpawnWaveCoroutine(monstersToSpawn));
+                int actualSpawnCount = Mathf.Min(monstersToSpawn, maxMonstersAlive - activeMonsters.Count);
+                
+                if (actualSpawnCount > 0)
+                {
+                    StartCoroutine(SpawnWaveCoroutine(actualSpawnCount));
+                    Log($"Manual wave triggered with {actualSpawnCount} monsters");
+                }
+                else
+                {
+                    Log("Cannot spawn more monsters - at capacity");
+                }
+            }
+            else
+            {
+                LogWarning("Cannot trigger wave - Tree of Light hasn't started growing yet");
             }
         }
 
@@ -332,6 +512,25 @@ namespace Enemies
         public int GetActiveMonsterCount()
         {
             return activeMonsters.Count;
+        }
+        
+        // Conditional logging methods
+        private void Log(string message)
+        {
+            if (debugLogs)
+            {
+                Debug.Log($"[ShadowMonsterSpawner] {message}");
+            }
+        }
+        
+        private void LogWarning(string message)
+        {
+            Debug.LogWarning($"[ShadowMonsterSpawner] {message}");
+        }
+        
+        private void LogError(string message)
+        {
+            Debug.LogError($"[ShadowMonsterSpawner] {message}");
         }
     }
 }

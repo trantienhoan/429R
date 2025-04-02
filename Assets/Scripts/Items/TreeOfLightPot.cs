@@ -6,6 +6,18 @@ using Items;
 
 public class TreeOfLightPot : MonoBehaviour
 {
+    // Add these methods
+        public void UpdateTreeGrowthProgress(float progress) { /* Implementation */ }
+        public void OnTreeGrowthStarted() { /* Implementation */ }
+        public void OnTreeGrowthPaused() { /* Implementation */ }
+        public void OnTreeGrowthResumed() { /* Implementation */ }
+        public void OnTreeGrowthCompleted() { /* Implementation */ }
+        public void PrepareForDestruction() { /* Implementation */ }
+        
+        // These seem to be already implemented
+        public void OnTreeDamaged(float damage) { /* Implementation */ }
+        public void OnTreeDestroyed() { /* Implementation */ }
+
     [Header("References")]
     [SerializeField] private GameObject treeModel;
     [SerializeField] private ParticleSystem growthParticles;
@@ -17,8 +29,8 @@ public class TreeOfLightPot : MonoBehaviour
     [SerializeField] private GameObject treeOfLightPrefab;
     [SerializeField] private float treeGrowthDuration = 5f;
     [SerializeField] private float seedShrinkDuration = 2f;
-    [SerializeField] private string[] validSeedNames = { "magical_seed", "seed_of_light" };
-    [SerializeField] private string magicalSeedTag = "magical_seed";
+    [SerializeField] private string[] validSeedNames = { "Magical_Seed", "seed_of_light" };
+    [SerializeField] private string magicalSeedTag = "MagicalSeed";
     
     [Header("Physics Settings")]
     [SerializeField] private float baseMass = 5f; // Make it heavy at the bottom
@@ -60,10 +72,10 @@ public class TreeOfLightPot : MonoBehaviour
         }
         
         // Find or set tree spawn point
-        if (treeSpawnPoint == null)
+        if (!treeSpawnPoint)
         {
             treeSpawnPoint = transform.Find("TreeSpawnPoint");
-            if (treeSpawnPoint == null)
+            if (!treeSpawnPoint)
             {
                 Debug.LogWarning("TreeOfLightPot: No TreeSpawnPoint found, using pot's position");
                 treeSpawnPoint = transform;
@@ -286,7 +298,7 @@ public class TreeOfLightPot : MonoBehaviour
     /// </summary>
     private bool IsValidSeed(GameObject item)
     {
-        if (item.CompareTag(magicalSeedTag)) return true;
+        if (item.CompareTag("MagicalSeed")) return true;
         
         foreach (string validName in validSeedNames)
         {
@@ -410,16 +422,19 @@ public class TreeOfLightPot : MonoBehaviour
     {
         if (treeSpawnPoint != null && treeOfLightPrefab != null)
         {
-            // Spawn the tree at the specified spawn point
+            // Create only one instance of the tree
             spawnedTree = Instantiate(treeOfLightPrefab, treeSpawnPoint.position, treeSpawnPoint.rotation);
             spawnedTree.transform.SetParent(transform);
-            
+        
+            // Activate the tree GameObject
+            spawnedTree.gameObject.SetActive(true);
+        
             // Get the TreeOfLight component and trigger growth
             TreeOfLight treeOfLight = spawnedTree.GetComponent<TreeOfLight>();
             if (treeOfLight != null)
             {
                 treeOfLight.StartGrowing(treeGrowthDuration, OnTreeGrowthComplete);
-                
+            
                 // Link tree health with pot health - do this after spawning the tree
                 LinkTreeHealth();
             }
@@ -427,7 +442,7 @@ public class TreeOfLightPot : MonoBehaviour
             {
                 Debug.LogError("TreeOfLightPot: TreeOfLight component not found on prefab");
             }
-            
+        
             // Start pot's growth animation or effects
             StartPotGrowth();
         }

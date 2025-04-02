@@ -1,255 +1,284 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using Core;
 
-public class JiggleBreakableBigObject : InstantBreakableObject
+[RequireComponent(typeof(BoxCollider))]
+[RequireComponent(typeof(Rigidbody))]
+public class JiggleBreakableBigObject : BreakableObject
 {
-    [System.Serializable]
-    public class DropItem
-    {
-        public GameObject itemPrefab;
-        [Range(0, 100)]
-        public float dropChance = 100f;
-    }
-    
-    // Event for item drop notifications
-    public delegate void ItemDroppedHandler(GameObject droppedItem, Vector3 position);
-    public event ItemDroppedHandler OnItemDropped;
-    
-    [Header("Jiggle Effect Settings")]
+    [Header("Jiggle Settings")]
     [SerializeField] private float jiggleAmount = 0.1f;
-    [SerializeField] private float jiggleRecoverySpeed = 2f;
     [SerializeField] private float jiggleDuration = 0.5f;
-    [SerializeField] private bool useScaleEffect = true;
+    [SerializeField] private AnimationCurve jiggleCurve;
     
-    [Header("Item Drop Settings")]
-    [SerializeField] private bool canDropItems = true;
-    [SerializeField] private List<DropItem> possibleDropItems = new List<DropItem>();
-    [SerializeField] private int minDropCount = 1;
-    [SerializeField] private int maxDropCount = 3;
-    [SerializeField] private float dropSpread = 0.5f;
-    [SerializeField] private float jiggleItemForce = 2f; // Renamed from itemdropForce
+    [Header("Physics Settings")]
+    [SerializeField] private float objectMass = 5f;
+    [SerializeField] private float minimumImpactForce = 5f;
+    [SerializeField] private bool breakOnlyFromWeapons = true;
+    [SerializeField] private bool useImpactForce = true;
+    [SerializeField] private LayerMask collisionLayers = -1; // -1 means all layers
+    [SerializeField] private float damageMultiplier = 1f;
     
-    [Header("Magical Seed Settings")]
-    [SerializeField] private float magicalSeedDropChance = 0.25f;
-    [SerializeField] private GameObject magicalSeedPrefab;
-    
-    // Jiggle state tracking
-    private bool isJiggling = false;
-    private Vector3 originalScale;
-    private float jiggleStartTime;
-    
-    public bool GetIsBroken()
-    {
-        // This accesses the parent class's isBroken field/property
-        return base.isBroken;
-    }
+    [Header("Effects")]
+    [SerializeField] private GameObject dustParticlePrefab;
+    [SerializeField] private GameObject breakParticlePrefab;
 
+    private BoxCollider boxCollider;
+    private Rigidbody rigidBody;
+    private Vector3 originalPosition;
+    private Quaternion originalRotation;
+    private float jiggleTimer = 0f;
+    private bool isJiggling = false;
+    private Vector3 jiggleDirection;
 
     protected override void Awake()
     {
         base.Awake();
-        originalScale = transform.localScale;
-    }
-
-    private void OnCollisionEnter(Collision collision)
-    {
-        if (isBroken) return;
         
-        // Check collision force against breaking threshold
-        float impactForce = collision.impulse.magnitude;
-        if (impactForce >= minimumImpactForce)
+        // Cache components
+        boxCollider = GetComponent<BoxCollider>();
+        rigidBody = GetComponent<Rigidbody>();
+        
+        // Store initial values
+        originalPosition = transform.position;
+        originalRotation = transform.rotation;
+
+        // Setup physics
+        SetupPhysics();
+
+        // Add the health bar if needed
+        GameObject healthBarPrefab = Resources.Load<GameObject>("Prefabs/BreakableHealthBar");
+        if (healthBarPrefab != null)
         {
-            // If force is enough to break, handle breaking
-            Vector3 hitPoint = collision.contacts[0].point;
-            Vector3 hitDirection = collision.contacts[0].normal;
-            TakeDamage(impactForce, hitPoint, hitDirection);
-        }
-        // For smaller impacts, just jiggle
-        else if (impactForce > 1.0f)
-        {
-            Vector3 hitDirection = collision.contacts[0].normal;
-            TriggerJiggleEffect(hitDirection);
+            GameObject healthBar = Instantiate(healthBarPrefab, transform);
+            healthBar.GetComponent<BreakableHealthBar>().Initialize(this);
         }
     }
 
-    public override void TakeDamage(float damage, Vector3 hitPoint, Vector3 hitDirection)
+    private void SetupPhysics()
     {
-        if (isBroken) return;
-        
-        // Apply damage using base implementation
-        base.TakeDamage(damage, hitPoint, hitDirection);
-        
-        // If the damage wasn't enough to break the object, trigger a jiggle
-        if (health > 0)
-        {
-            TriggerJiggleEffect(hitDirection);
-        }
-    }
+        // Configure rigidbody
+        rigidBody.useGravity = true;
+        rigidBody.isKinematic = false;
+        rigidBody.mass = objectMass;
+        rigidBody.linearDamping = 0.5f;
+        rigidBody.interpolation = RigidbodyInterpolation.Interpolate;
+        rigidBody.collisionDetectionMode = CollisionDetectionMode.Continuous;
+        rigidBody.maxAngularVelocity = 50f;
+        rigidBody.solverIterations = 8;
+        rigidBody.solverVelocityIterations = 3;
 
-    private void TriggerJiggleEffect(Vector3 hitDirection)
-    {
-        if (useScaleEffect)
-        {
-            HandleScaleEffect(hitDirection);
-        }
-        
-        // Could add other effect types here (rotation, position offset, etc.)
-    }
-
-    private void HandleScaleEffect(Vector3 hitDirection)
-    {
-        // Don't stack jiggle effects
-        if (isJiggling) return;
-        
-        // Calculate scale change based on hit direction
-        Vector3 scaleChange = Vector3.Scale(hitDirection.normalized, originalScale) * jiggleAmount;
-        
-        // Apply the squish effect opposite to hit direction
-        transform.localScale = originalScale - scaleChange;
-        
-        // Start the recovery process
-        isJiggling = true;
-        jiggleStartTime = Time.time;
+        // Configure collider
+        boxCollider.isTrigger = false;
+        // Collider size should be set manually in the editor
     }
 
     private void Update()
     {
+        // Handle jiggle animation if active
         if (isJiggling)
         {
-            // Calculate progress using jiggleRecoverySpeed
-            float elapsedTime = (Time.time - jiggleStartTime) * jiggleRecoverySpeed;
-            float normalizedTime = Mathf.Clamp01(elapsedTime / jiggleDuration);
+            jiggleTimer += Time.deltaTime;
+            float progress = jiggleTimer / jiggleDuration;
             
-            // Smoothly interpolate back to original scale
-            transform.localScale = Vector3.Lerp(
-                transform.localScale,
-                originalScale,
-                normalizedTime
-            );
-            
-            // Check if jiggle effect is complete
-            if (normalizedTime >= 1.0f)
+            if (progress < 1.0f)
             {
-                transform.localScale = originalScale;
+                float curveValue = jiggleCurve != null ? jiggleCurve.Evaluate(progress) : Mathf.Sin(progress * Mathf.PI * 4);
+                Vector3 offset = jiggleDirection * jiggleAmount * curveValue;
+                transform.position = originalPosition + offset;
+            }
+            else
+            {
+                // Reset position when jiggle is complete
+                transform.position = originalPosition;
+                transform.rotation = originalRotation;
                 isJiggling = false;
             }
         }
     }
 
-    protected override void HandleBreaking()
+    protected void OnCollisionEnter(Collision collision)
     {
-        if (isBroken) return;
-        isBroken = true;
-        
-        // Stop any jiggle effects
-        isJiggling = false;
-        transform.localScale = originalScale;
-        
-        // Drop items if configured to do so
-        if (canDropItems && (possibleDropItems.Count > 0 || magicalSeedPrefab != null))
-        {
-            StartCoroutine(DropAllItemsCoroutine());
-        }
-        
-        // Call the base implementation to handle destruction effects
-        base.HandleBreaking();
-    }
-
-    private IEnumerator DropAllItemsCoroutine()
-    {
-        // Determine how many items to drop (random between min and max)
-        int itemCount = Random.Range(minDropCount, maxDropCount + 1);
-        
-        for (int i = 0; i < itemCount; i++)
-        {
-            DropRandomItem();
-            
-            // Add a small delay between drops for visual effect
-            yield return new WaitForSeconds(0.1f);
-        }
-    }
-
-    private void DropRandomItem()
-    {
-        // First try magical seed drop
-        if (magicalSeedPrefab != null && Random.value <= magicalSeedDropChance)
-        {
-            SpawnItem(magicalSeedPrefab);
+        // Skip if collision layer is not in our mask
+        if ((collisionLayers.value & (1 << collision.gameObject.layer)) == 0)
             return;
-        }
-        
-        // Exit if no regular items to drop
-        if (possibleDropItems.Count == 0) return;
-        
-        // Calculate total weight for weighted random selection
-        float totalWeight = 0f;
-        foreach (DropItem item in possibleDropItems)
+
+        bool isWeapon = collision.gameObject.CompareTag("Weapon");
+        float impactForce = collision.impulse.magnitude;
+
+        // Check break conditions
+        bool shouldBreak = false;
+
+        if (breakOnlyFromWeapons)
         {
-            if (item.itemPrefab != null)
-                totalWeight += item.dropChance;
+            shouldBreak = isWeapon && (!useImpactForce || impactForce >= minimumImpactForce);
         }
-        
-        // Exit if no valid items (zero total weight)
-        if (totalWeight <= 0) return;
-        
-        // Select an item using weighted probabilities
-        float randomValue = Random.Range(0f, totalWeight);
-        float currentWeight = 0f;
-        
-        foreach (DropItem item in possibleDropItems)
+        else
         {
-            if (item.itemPrefab == null) continue;
+            shouldBreak = isWeapon || (useImpactForce && impactForce >= minimumImpactForce);
+        }
+
+        if (shouldBreak)
+        {
+            Vector3 hitPoint = collision.contacts[0].point;
+            Vector3 hitDirection = collision.contacts[0].normal;
             
-            currentWeight += item.dropChance;
-            if (randomValue <= currentWeight)
+            // Trigger jiggle effect
+            TriggerJiggleEffect(hitDirection);
+            
+            // Spawn dust particles
+            SpawnDustParticles(hitPoint);
+            
+            // Calculate damage based on impact force and weapon status
+            float damage;
+            if (useImpactForce)
             {
-                SpawnItem(item.itemPrefab);
-                break;
+                // Scale damage based on impact force, with a minimum damage
+                damage = Mathf.Max(impactForce * damageMultiplier, minimumImpactForce);
+            }
+            else
+            {
+                // If not using impact force, apply fixed damage
+                damage = health * 0.2f; // Take 20% of health as damage
+            }
+            
+            // Apply damage
+            TakeDamage(damage, hitPoint, hitDirection);
+        }
+    }
+
+    private void SpawnDustParticles(Vector3 position)
+    {
+        if (dustParticlePrefab != null)
+        {
+            GameObject dustEffect = Instantiate(dustParticlePrefab, position, Quaternion.identity);
+            // Auto-destroy particles after they finish playing
+            if (dustEffect.TryGetComponent<ParticleSystem>(out ParticleSystem ps))
+            {
+                Destroy(dustEffect, ps.main.duration + 1f);
+            }
+            else
+            {
+                Destroy(dustEffect, 3f); // Fallback destroy after 3 seconds
             }
         }
     }
-    
-    private void SpawnItem(GameObject itemPrefab)
+
+    private void SpawnBreakParticles()
     {
-        Vector3 spawnPos = GetRandomDropPosition();
-        GameObject droppedItem = Instantiate(itemPrefab, spawnPos, Random.rotation);
-        
-        // Add force if the item has a rigidbody
-        Rigidbody rb = droppedItem.GetComponent<Rigidbody>();
-        if (rb != null)
+        if (breakParticlePrefab != null)
         {
-            // Use the renamed variable here
-            rb.AddForce(GetRandomDropDirection() * jiggleItemForce, ForceMode.Impulse);
+            GameObject breakEffect = Instantiate(breakParticlePrefab, transform.position, Quaternion.identity);
+            // Auto-destroy particles after they finish playing
+            if (breakEffect.TryGetComponent<ParticleSystem>(out ParticleSystem ps))
+            {
+                Destroy(breakEffect, ps.main.duration + 1f);
+            }
+            else
+            {
+                Destroy(breakEffect, 3f); // Fallback destroy after 3 seconds
+            }
+        }
+    }
+
+    public override void TakeDamage(float damage, Vector3 hitPoint, Vector3 hitDirection)
+    {
+        base.TakeDamage(damage, hitPoint, hitDirection);
+    }
+
+    private void TriggerJiggleEffect(Vector3 hitDirection)
+    {
+        // Reset jiggle timer and set direction
+        jiggleTimer = 0f;
+        jiggleDirection = -hitDirection.normalized; // Jiggle away from hit
+        isJiggling = true;
+        
+        // Store original position and rotation
+        originalPosition = transform.position;
+        originalRotation = transform.rotation;
+    }
+
+    protected override void HandleDestruction()
+    {
+        // Disable collider immediately
+        if (boxCollider != null)
+        {
+            boxCollider.enabled = false;
+        }
+
+        base.HandleDestruction();
+    }
+
+    protected override void HandleBreaking()
+    {
+        // Spawn breaking particles
+        SpawnBreakParticles();
+        
+        // Drop items - using the original method from the base class
+        DropItems(transform.position);
+        
+        // Let the base class handle the rest
+        Break();
+    }
+
+    protected override void Break()
+    {
+        base.Break(); // This will handle destroying the object
+    }
+
+    // Helper method to setup the object in editor
+    private void Reset()
+    {
+        // Default values for easy testing
+        health = 500f; // More health since it's a big object
+        dropForce = 5f;
+        destroyDelay = 2f;
+        
+        // Set default jiggle settings
+        jiggleAmount = 0.1f;
+        jiggleDuration = 0.5f;
+        
+        // Create a default jiggle curve if none exists
+        if (jiggleCurve == null || jiggleCurve.keys.Length == 0)
+        {
+            jiggleCurve = new AnimationCurve(
+                new Keyframe(0, 0),
+                new Keyframe(0.25f, 1),
+                new Keyframe(0.5f, -0.8f),
+                new Keyframe(0.75f, 0.6f),
+                new Keyframe(1, 0)
+            );
         }
         
-        // Notify listeners about the dropped item
-        OnItemDropped?.Invoke(droppedItem, spawnPos);
-    }
+        // Set break parameters
+        minimumImpactForce = 5f;
+        breakOnlyFromWeapons = true;
+        useImpactForce = true;
+        damageMultiplier = 1f;
+        
+        // Set the tag to "Breakable"
+        gameObject.tag = "Breakable";
 
-    private Vector3 GetRandomDropPosition()
-    {
-        // Random position within the object's bounds plus some spread
-        return transform.position + new Vector3(
-            Random.Range(-dropSpread, dropSpread),
-            0.1f, // Slight upward offset to prevent clipping
-            Random.Range(-dropSpread, dropSpread)
-        );
+        // Ensure components
+        if (!TryGetComponent<BoxCollider>(out _))
+        {
+            gameObject.AddComponent<BoxCollider>();
+        }
+        
+        if (!TryGetComponent<Rigidbody>(out _))
+        {
+            Rigidbody rb = gameObject.AddComponent<Rigidbody>();
+            rb.useGravity = true;
+            rb.isKinematic = false;
+            rb.mass = objectMass;
+            rb.linearDamping = 0.5f;
+        }
     }
-
-    private Vector3 GetRandomDropDirection()
+    
+    // Public method to set break settings
+    public void SetBreakSettings(float impactForce, bool onlyWeapons, bool useForce)
     {
-        // Random horizontal direction with upward component
-        return new Vector3(
-            Random.Range(-1f, 1f),
-            Random.Range(0.5f, 1.5f), // Upward force
-            Random.Range(-1f, 1f)
-        ).normalized;
-    }
-
-    public new float GetCurrentHealth()
-    {
-        return health;
+        minimumImpactForce = impactForce;
+        breakOnlyFromWeapons = onlyWeapons;
+        useImpactForce = useForce;
     }
 }

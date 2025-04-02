@@ -19,7 +19,7 @@ namespace Core
             useImpactForce = useForce;
         }
 
-        private void OnCollisionEnter(Collision collision)
+        protected virtual void OnCollisionEnter(Collision collision)
         {
             // Skip if collision layer is not in our mask
             if ((collisionLayers.value & (1 << collision.gameObject.layer)) == 0)

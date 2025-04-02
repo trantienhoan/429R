@@ -29,6 +29,10 @@ public class SpiderPivot : MonoBehaviour
     {
         List<(Vector3 pos, Quaternion rot, float weight)> points = scan.Points();
 
+        // If there are no points, don't update the pivot
+        if (points.Count == 0)
+            return;
+
         Quaternion rotAvg;
         List<Quaternion> rots = new List<Quaternion>();
         List<float> weights = new List<float>();
@@ -44,11 +48,15 @@ public class SpiderPivot : MonoBehaviour
             nbPoint++;
         }
 
-        posAvg /= nbPoint;
-        rotAvg = MathExtension.QuatAvgApprox(rots.ToArray(), weights.ToArray());
+        // Only calculate average if we have at least one point
+        if (nbPoint > 0)
+        {
+            posAvg /= nbPoint;
+            rotAvg = MathExtension.QuatAvgApprox(rots.ToArray(), weights.ToArray());
 
-        pivot.position = Vector3   .Lerp(transform.position, posAvg, positionWeight);
-        pivot.rotation = Quaternion.Lerp(transform.rotation, rotAvg, rotationWeight);
+            pivot.position = Vector3.Lerp(transform.position, posAvg, positionWeight);
+            pivot.rotation = Quaternion.Lerp(transform.rotation, rotAvg, rotationWeight);
+        }
     }
 }
 }

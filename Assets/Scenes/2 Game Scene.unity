@@ -860,12 +860,12 @@ PrefabInstance:
     - target: {fileID: 7511605435283446951, guid: 94eb2dcbd0ee8a245bda1bcbbbbc53c9,
         type: 3}
       propertyPath: minimumImpactForce
-      value: 5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7511605435283446951, guid: 94eb2dcbd0ee8a245bda1bcbbbbc53c9,
         type: 3}
       propertyPath: collisionLayers.m_Bits
-      value: 1879105721
+      value: 4294967295
       objectReference: {fileID: 0}
     - target: {fileID: 7511605435283446951, guid: 94eb2dcbd0ee8a245bda1bcbbbbc53c9,
         type: 3}
@@ -1045,10 +1045,20 @@ PrefabInstance:
       propertyPath: m_UseDynamicAttach
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6832099836593185224, guid: 19f5c0ffbbddfe0488c8dda87135b30e,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 5da81fd9a9494974d8ee008bec125773, type: 2}
     - target: {fileID: 6891814520054160059, guid: 19f5c0ffbbddfe0488c8dda87135b30e,
         type: 3}
       propertyPath: growthDuration
       value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 6891814520054160059, guid: 19f5c0ffbbddfe0488c8dda87135b30e,
+        type: 3}
+      propertyPath: magicalSeedTag
+      value: MagicalSeed
       objectReference: {fileID: 0}
     - target: {fileID: 6891814520054160059, guid: 19f5c0ffbbddfe0488c8dda87135b30e,
         type: 3}
@@ -1063,8 +1073,35 @@ PrefabInstance:
         type: 3}
     - target: {fileID: 6891814520054160059, guid: 19f5c0ffbbddfe0488c8dda87135b30e,
         type: 3}
+      propertyPath: plantingEffect
+      value: 
+      objectReference: {fileID: 4033412786151888120, guid: 49057b33ea71fbb4da4e8f02a8db9f28,
+        type: 3}
+    - target: {fileID: 6891814520054160059, guid: 19f5c0ffbbddfe0488c8dda87135b30e,
+        type: 3}
+      propertyPath: potActiveMaterial
+      value: 
+      objectReference: {fileID: 6985902616826465156, guid: 54db8f2156cbca84b91d14bbfaa76071,
+        type: 3}
+    - target: {fileID: 6891814520054160059, guid: 19f5c0ffbbddfe0488c8dda87135b30e,
+        type: 3}
       propertyPath: wallLayers.m_Bits
       value: 16384
+      objectReference: {fileID: 0}
+    - target: {fileID: 6891814520054160059, guid: 19f5c0ffbbddfe0488c8dda87135b30e,
+        type: 3}
+      propertyPath: treeGrowthDuration
+      value: 150
+      objectReference: {fileID: 0}
+    - target: {fileID: 6891814520054160059, guid: 19f5c0ffbbddfe0488c8dda87135b30e,
+        type: 3}
+      propertyPath: validSeedNames.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6891814520054160059, guid: 19f5c0ffbbddfe0488c8dda87135b30e,
+        type: 3}
+      propertyPath: 'validSeedNames.Array.data[0]'
+      value: Magical_Seed
       objectReference: {fileID: 0}
     - target: {fileID: 9009260404841559303, guid: 19f5c0ffbbddfe0488c8dda87135b30e,
         type: 3}
@@ -2273,7 +2310,7 @@ PrefabInstance:
     - target: {fileID: 7891206273984349464, guid: 489d99e8a8f1c0a4b8fd66c1804e2567,
         type: 3}
       propertyPath: minimumImpactForce
-      value: 200
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 7891206273984349464, guid: 489d99e8a8f1c0a4b8fd66c1804e2567,
         type: 3}
