@@ -51,27 +51,6 @@ namespace Core
 
             // Setup rigidbody
             SetupRigidbody();
-
-            // Log item drop prefabs
-            if (itemDropPrefabs != null && itemDropPrefabs.Length > 0)
-            {
-                Debug.Log($"BreakableObject: {gameObject.name} has {itemDropPrefabs.Length} item drop prefabs assigned");
-                foreach (var prefab in itemDropPrefabs)
-                {
-                    if (prefab != null)
-                    {
-                        Debug.Log($"BreakableObject: Drop prefab assigned: {prefab.name}");
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"BreakableObject: Null drop prefab found in {gameObject.name}");
-                    }
-                }
-            }
-            else
-            {
-                Debug.LogWarning($"BreakableObject: No item drop prefabs assigned to {gameObject.name}");
-            }
         }
 
         protected virtual void SetupRigidbody()
@@ -146,7 +125,7 @@ namespace Core
                 
                 // Apply a small upward force to prevent falling through
                 rb.AddForce(Vector3.up * breakUpwardForce, ForceMode.Impulse);
-                Debug.Log($"BreakableObject: Applied upward force {breakUpwardForce} to {gameObject.name}");
+                //Debug.Log($"BreakableObject: Applied upward force {breakUpwardForce} to {gameObject.name}");
             }
             
             // Schedule destruction

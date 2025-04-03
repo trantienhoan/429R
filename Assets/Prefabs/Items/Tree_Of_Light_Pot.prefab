@@ -598,14 +598,15 @@ MonoBehaviour:
   - Magical_Seed
   - seed_of_light
   magicalSeedTag: MagicalSeed
-  baseMass: 5
-  centerOfMassYOffset: -0.2
+  baseMass: 50
+  centerOfMassYOffset: -0.001
   healthComponent: {fileID: 5698044415995147322}
   maxHealth: 100
   brokenPotPrefab: {fileID: 0}
   brokenTreePrefab: {fileID: 0}
-  potActiveMaterial: {fileID: 0}
-  plantingEffect: {fileID: 0}
+  potActiveMaterial: {fileID: 2100000, guid: ee82f60f75c1c924087cbde1d7784440, type: 2}
+  plantingEffect: {fileID: 4033412786151888120, guid: 49057b33ea71fbb4da4e8f02a8db9f28,
+    type: 3}
   onTreeFullyGrown:
     m_PersistentCalls:
       m_Calls: []
@@ -613,6 +614,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   socketInteractor: {fileID: 9009260404841559303}
+  potMaxHealth: 100
 --- !u!114 &1849177776797559712
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -625,8 +627,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd2ae3da4290e914fb8c0299e7686140, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  treeOfLight: {fileID: 0}
+  treeOfLight: {fileID: 4629441708497010085, guid: 7b5f58ba9d7ee8d4c992737dff1e8a38,
+    type: 3}
   onlySpawnAfterTreeGrowth: 1
+  treeOfLightPot: {fileID: 6891814520054160059}
   maxMonstersAlive: 25
   spawnInterval: 5
   minSpawnDistance: 10
@@ -637,7 +641,8 @@ MonoBehaviour:
   minimumLightLevelToSpawn: 0.3
   minSpawnDelay: 5
   maxSpawnDelay: 15
-  spawnPoints: []
+  spawnPoints:
+  - {fileID: 5664211420611074727}
   monsterPrefab: {fileID: 641341794854005767, guid: 74ff73dedb8bc7b4083e2753e9ada44f,
     type: 3}
   spiderPrefab: {fileID: 641341794854005767, guid: 74ff73dedb8bc7b4083e2753e9ada44f,
@@ -666,7 +671,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2883e4c1dfd15bf43a546e9d36e341bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100
+  maxHealth: 1000
   currentHealth: 0
 --- !u!4 &5664211420611074727 stripped
 Transform:

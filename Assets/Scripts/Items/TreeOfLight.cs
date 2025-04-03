@@ -47,6 +47,8 @@ namespace Items
         public UnityEvent OnTreeHit;
         public UnityEvent OnTreeBroken;
         
+        private TreeOfLightPot _parentPot;
+
         // State tracking
         private bool isFullyGrown = false;
         private bool isGrowing = false;
@@ -73,9 +75,15 @@ namespace Items
 
         private void Awake()
         {
+            OnGrowthStarted = new UnityEvent();
+
             // Get components
             animator = GetComponent<Animator>();
-            healthComponent = GetComponent<HealthComponent>();
+            _healthComponent = GetComponent<HealthComponent>();
+            if (_healthComponent == null)
+            {
+                _healthComponent = gameObject.AddComponent<HealthComponent>();
+            }
             
             // Initialize default curves if needed
             if (lightIntensityCurve == null || lightIntensityCurve.keys.Length == 0)
@@ -96,48 +104,44 @@ namespace Items
             // Initialize scale
             transform.localScale = startScale;
         }
-        
+        private HealthComponent _healthComponent;
+        private void HandleTreeHealthChanged(float currentHealth, float maxHealth)
+        {
+            // This is a stub for the method that already exists in your code
+            // Its implementation will depend on your requirements
+        }
         private void OnHealthChanged(float currentHealth, float maxHealth)
         {
-            // Only calculate damage if health decreased
+            // Implement your health changed logic here
+            // For example:
             if (currentHealth < lastRecordedHealth)
             {
-                float damage = lastRecordedHealth - currentHealth;
-        
-                Debug.Log($"Tree took {damage} damage. Health: {currentHealth}/{maxHealth}");
-                
-                // Play hit effects
+                // Tree took damage
                 OnHit();
-        
-                // Notify parent pot
-                if (parentPot != null)
-                {
-                    parentPot.OnTreeDamaged(damage);
-                }
             }
     
-            // Update the last recorded health for next time
+            // Update last recorded health
             lastRecordedHealth = currentHealth;
         }
-
+        
         private void OnEnable()
         {
             // Subscribe to health events if health component exists
             if (healthComponent != null)
             {
-                healthComponent.OnHealthChanged += OnHealthChanged;
-                healthComponent.OnDeath += OnHealthDepleted;
-                lastRecordedHealth = healthComponent.Health; // Fixed: removed parentheses
+                _healthComponent.OnHealthChanged += OnHealthChanged;
+                _healthComponent.OnDeath += OnHealthDepleted;
+                lastRecordedHealth = _healthComponent.Health; // Fixed: removed parentheses
             }
         }
 
         private void OnDisable()
         {
             // Unsubscribe from health events
-            if (healthComponent != null)
+            if (_healthComponent != null)
             {
-                healthComponent.OnHealthChanged -= OnHealthChanged;
-                healthComponent.OnDeath -= OnHealthDepleted;
+                _healthComponent.OnHealthChanged -= OnHealthChanged;
+                _healthComponent.OnDeath -= OnHealthDepleted;
             }
         }
 
@@ -146,7 +150,7 @@ namespace Items
         /// </summary>
         public void SetParentPot(TreeOfLightPot pot)
         {
-            parentPot = pot;
+            _parentPot = pot;
             Debug.Log($"TreeOfLight: Parent pot reference set: {(parentPot != null ? "success" : "failed")}");
         }
 

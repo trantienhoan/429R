@@ -128,6 +128,8 @@ GameObject:
   - component: {fileID: 236362439406470804}
   - component: {fileID: 6099460090083903843}
   - component: {fileID: 6295822192867916643}
+  - component: {fileID: 873665917567671697}
+  - component: {fileID: 3692762106454728171}
   m_Layer: 0
   m_Name: Stool
   m_TagString: Destroyer
@@ -355,3 +357,67 @@ MonoBehaviour:
   m_StartingMultipleGrabTransformers: []
   m_AddDefaultGrabTransformers: 1
   m_FarAttachMode: 0
+--- !u!65 &873665917567671697
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1749444026899031873}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.35424498, y: 0.5661971, z: 0.35424507}
+  m_Center: {x: -0.000000059604645, y: 0.2830986, z: -0.00000021606684}
+--- !u!114 &3692762106454728171
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1749444026899031873}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 03b8aa64f4f44e34f8c8dd4287e8b8d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  health: 20
+  isBreakable: 1
+  itemDropPrefabs: []
+  dropForce: 5
+  destroyDelay: 0.1
+  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+    type: 3}
+  breakSound: {fileID: 0}
+  mass: 10
+  drag: 2
+  angularDrag: 2
+  useGravity: 1
+  breakUpwardForce: 2
+  onBreak:
+    m_PersistentCalls:
+      m_Calls: []
+  onDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  minimumImpactForce: 0.5
+  breakOnlyFromWeapons: 1
+  useImpactForce: 1
+  collisionLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  damageMultiplier: 1
+  intactMaterial: {fileID: 0}
+  breakingMaterial: {fileID: 0}
+  boxMass: 1
+  boxSize: {x: 1, y: 1, z: 1}
+  boxMaterial: {fileID: 0}

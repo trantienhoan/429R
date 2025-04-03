@@ -141,6 +141,8 @@ GameObject:
   - component: {fileID: 2677329038312625167}
   - component: {fileID: 5991436749550057516}
   - component: {fileID: 2987765235204848036}
+  - component: {fileID: 6111746410154310423}
+  - component: {fileID: 1866306553883664739}
   m_Layer: 0
   m_Name: Small_Chair
   m_TagString: Destroyer
@@ -368,6 +370,70 @@ MonoBehaviour:
   m_StartingMultipleGrabTransformers: []
   m_AddDefaultGrabTransformers: 1
   m_FarAttachMode: 0
+--- !u!65 &6111746410154310423
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4478606505982686682}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.4533412, y: 0.92200816, z: 0.43608153}
+  m_Center: {x: -0.00000017136335, y: 0.47216773, z: 0.012954131}
+--- !u!114 &1866306553883664739
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4478606505982686682}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 03b8aa64f4f44e34f8c8dd4287e8b8d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  health: 200
+  isBreakable: 1
+  itemDropPrefabs: []
+  dropForce: 5
+  destroyDelay: 0.1
+  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+    type: 3}
+  breakSound: {fileID: 0}
+  mass: 10
+  drag: 2
+  angularDrag: 2
+  useGravity: 1
+  breakUpwardForce: 2
+  onBreak:
+    m_PersistentCalls:
+      m_Calls: []
+  onDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  minimumImpactForce: 0.5
+  breakOnlyFromWeapons: 1
+  useImpactForce: 1
+  collisionLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  damageMultiplier: 1
+  intactMaterial: {fileID: 0}
+  breakingMaterial: {fileID: 0}
+  boxMass: 1
+  boxSize: {x: 1, y: 1, z: 1}
+  boxMaterial: {fileID: 0}
 --- !u!1 &5519278883483952131
 GameObject:
   m_ObjectHideFlags: 0

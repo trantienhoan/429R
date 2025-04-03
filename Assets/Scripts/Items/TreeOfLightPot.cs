@@ -52,6 +52,114 @@ public class TreeOfLightPot : MonoBehaviour
     
     [SerializeField] private UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor socketInteractor;
     
+    [SerializeField] private float potMaxHealth = 100f;
+    private HealthComponent _healthComponent;
+    private TreeOfLight _plantedTree;
+    private bool _seedPlanted = false;
+
+    // This method will be called when a seed is planted
+    public void PlantSeed(TreeOfLight tree)
+    {
+        if (_seedPlanted)
+            return;
+            
+        _seedPlanted = true;
+        _plantedTree = tree;
+        
+        // Link the tree back to this pot
+        tree.SetParentPot(this);
+        
+        // Only add a health component when the seed is planted
+        if (_healthComponent == null)
+        {
+            _healthComponent = gameObject.AddComponent<HealthComponent>();
+        }
+        
+        // Configure the health component
+        if (_healthComponent != null)
+        {
+            // Set the health using the existing methods from your HealthComponent
+            _healthComponent.SetMaxHealth(maxHealth);
+            //_healthComponent.ResetHealth(); // Assuming this method exists to set current health to max
+        
+            // Subscribe to the health component's events using the pattern from your code
+            _healthComponent.OnHealthChanged += OnPotHealthChanged;
+            _healthComponent.OnDeath += OnPotHealthDepleted;
+        }
+    }
+    
+    // This method will be called when the pot's health changes
+    private void OnPotHealthChanged(float currentHealth, float maxHealth)
+    {
+        // If the tree exists, update its health to match the pot's health
+        if (_plantedTree != null)
+        {
+            HealthComponent treeHealth = _plantedTree.GetComponent<HealthComponent>();
+            if (treeHealth != null)
+            {
+                // Use existing methods - disable event handlers temporarily to prevent feedback loops
+                treeHealth.OnHealthChanged -= HandleTreeHealthChanged;
+            
+                // Set the health directly - adjust based on your actual API
+                float healthPercentage = currentHealth / maxHealth;
+                // Calculate target health for the tree
+                float targetTreeHealth = healthPercentage * treeHealth.MaxHealth;
+                float currentTreeHealth = treeHealth.Health;
+            
+                // Apply damage or healing as needed
+                if (targetTreeHealth < currentTreeHealth)
+                {
+                    float damage = currentTreeHealth - targetTreeHealth;
+                    treeHealth.TakeDamage(damage);
+                }
+                else if (targetTreeHealth > currentTreeHealth)
+                {
+                    float healing = targetTreeHealth - currentTreeHealth;
+                    treeHealth.Heal(healing);
+                }
+                // Re-enable event handlers
+                treeHealth.OnHealthChanged += HandleTreeHealthChanged;
+            }
+        }
+    }
+    
+    // This method will be called when the pot's health is depleted
+    private void OnPotHealthDepleted()
+    {
+        // Handle pot destruction here
+        if (_plantedTree != null)
+        {
+            // Call a public method on the tree instead of the private OnHealthDepleted
+            _plantedTree.Break(); // This is a public method in your TreeOfLight class
+        }
+    
+        // Use your existing Break method
+        Break();
+    }
+
+    // Method to directly access the health component (if needed by external scripts)
+    public HealthComponent GetHealthComponent()
+    {
+        return _healthComponent;
+    }
+    
+    // Method to check if a seed has been planted
+    public bool HasSeed()
+    {
+        return _seedPlanted;
+    }
+    
+    // Expose a method to take damage, which will only work if the seed is planted
+    public void TakeDamage(float damage)
+    {
+        if (_seedPlanted && _healthComponent != null)
+        {
+            _healthComponent.TakeDamage(damage);
+        }
+        // If no seed is planted or no health component, the pot is invulnerable
+        // so we just ignore the damage
+    }
+
     // State tracking
     private bool seedPlaced;
     private bool isGrowing;
