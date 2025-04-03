@@ -45,7 +45,7 @@ Light:
   m_Type: 2
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Intensity: 1
-  m_Range: 10
+  m_Range: 3
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
   m_CookieSize: 10
@@ -199,6 +199,11 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -208555045765400427, guid: 9bf704212dd54494aa85de0e9a4ead01,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 6d3d8c2f1a0f27d4fa9ee303292ef682, type: 2}
     - target: {fileID: 919132149155446097, guid: 9bf704212dd54494aa85de0e9a4ead01,
         type: 3}
       propertyPath: m_Name
@@ -273,18 +278,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   treeLight: {fileID: 6572412913515238074}
-  maxLightIntensity: 15
+  maxLightIntensity: 3
   initialLightIntensity: 0
   growingLightIntensity: 1
   finalLightIntensityMultiplier: 3
-  finalLightPulseSpeed: 1
+  finalLightPulseSpeed: 7
   finalLightPulseAmount: 0.2
-  lightWavePrefab: {fileID: 4033412786151888123, guid: 49057b33ea71fbb4da4e8f02a8db9f28,
-    type: 3}
-  lightWaveRadius: 30
-  lightWaveSpeed: 10
-  lightWaveDuration: 3
-  lightWaveColor: {r: 1, g: 1, b: 1, a: 1}
   startScale: {x: 0, y: 0, z: 0}
   targetScale: {x: 1, y: 1, z: 1}
   growthCurve:
@@ -313,17 +312,54 @@ MonoBehaviour:
     m_RotationOrder: 4
   lightIntensityCurve:
     serializedVersion: 2
-    m_Curve: []
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.9804112
+      value: 0.47382885
+      inSlope: 1.4050268
+      outSlope: 1.4050268
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.08343616
+      outWeight: 1
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 2
+      outSlope: 2
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  growthDuration: 60
+  growthDuration: 30
   completionEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
   completionEffectDuration: 0.5
-  keyPrefab: {fileID: 784072565763923235, guid: 3d53f2553dcf2974aab5868bc1a85582,
+  keyPrefab: {fileID: 6616067871869890980, guid: edf9132d0728dd349854d6653c1e11a0,
     type: 3}
   destroyPotOnCompletion: 1
+  hitParticleEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+    type: 3}
+  breakParticleEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+    type: 3}
+  breakSound: {fileID: 0}
+  intactModel: {fileID: 0}
+  destroyDelayAfterBreak: 0.1
+  OnGrowthStarted:
+    m_PersistentCalls:
+      m_Calls: []
   OnGrowthStart:
     m_PersistentCalls:
       m_Calls: []
@@ -336,6 +372,9 @@ MonoBehaviour:
   OnGrowthComplete:
     m_PersistentCalls:
       m_Calls: []
-  OnLightWaveCreated:
+  OnTreeHit:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTreeBroken:
     m_PersistentCalls:
       m_Calls: []

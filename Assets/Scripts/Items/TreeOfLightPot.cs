@@ -117,6 +117,13 @@ public class TreeOfLightPot : MonoBehaviour
                     float healing = targetTreeHealth - currentTreeHealth;
                     treeHealth.Heal(healing);
                 }
+                
+     		  	if (currentHealth <= 0 && _plantedTree != null)
+    	 		{
+     	  		    _plantedTree.Break(); // Ensure the tree breaks
+      		 	    OnPotHealthDepleted(); // Handle pot destruction
+    		  	}
+	
                 // Re-enable event handlers
                 treeHealth.OnHealthChanged += HandleTreeHealthChanged;
             }

@@ -64,7 +64,7 @@ namespace Items
         private Animator animator;
         private TreeOfLightPot parentPot;
         private HealthComponent healthComponent;
-        
+         
         // Animation parameters
         private static readonly int GrowTrigger = Animator.StringToHash("Grow");
         private static readonly int GrowthSpeed = Animator.StringToHash("GrowthSpeed");
@@ -151,7 +151,7 @@ namespace Items
         public void SetParentPot(TreeOfLightPot pot)
         {
             _parentPot = pot;
-            Debug.Log($"TreeOfLight: Parent pot reference set: {(parentPot != null ? "success" : "failed")}");
+            Debug.Log($"TreeOfLight: Parent pot reference set: {(_parentPot != null ? "success" : "failed")}");
         }
 
         /// <summary>
@@ -207,9 +207,9 @@ namespace Items
             growthRoutine = StartCoroutine(GrowthRoutine());
             
             // Notify the parent pot that growth has started
-            if (parentPot != null)
+            if (_parentPot != null)
             {
-                parentPot.OnTreeGrowthStarted();
+                _parentPot.OnTreeGrowthStarted();
             }
         }
 
@@ -253,9 +253,9 @@ namespace Items
                     UpdateGrowthProgress(growthProgress);
                     
                     // Notify parent pot about growth progress
-                    if (parentPot != null)
+                    if (_parentPot != null)
                     {
-                        parentPot.UpdateTreeGrowthProgress(growthProgress);
+                        _parentPot.UpdateTreeGrowthProgress(growthProgress);
                     }
                     
                     // Check if growth is complete
@@ -286,9 +286,9 @@ namespace Items
                 OnGrowthPaused?.Invoke();
                 
                 // Notify parent pot
-                if (parentPot != null)
+                if (_parentPot != null)
                 {
-                    parentPot.OnTreeGrowthPaused();
+                    _parentPot.OnTreeGrowthPaused();
                 }
                 
                 Debug.Log("Tree growth paused");
@@ -313,9 +313,9 @@ namespace Items
                 OnGrowthResumed?.Invoke();
                 
                 // Notify parent pot
-                if (parentPot != null)
+                if (_parentPot != null)
                 {
-                    parentPot.OnTreeGrowthResumed();
+                    _parentPot.OnTreeGrowthResumed();
                 }
                 
                 Debug.Log("Tree growth resumed");
@@ -414,11 +414,15 @@ namespace Items
                 }
                 
                 // Notify parent pot that growth is complete
-                if (parentPot != null)
+                if (_parentPot != null)
                 {
-                    parentPot.OnTreeGrowthCompleted();
+                    _parentPot.OnTreeGrowthCompleted();
                 }
                 
+                if (destroyTreeOnCompletion)
+                {
+                    break();
+                }
                 // Start the sequence to drop key and handle completion
                 StartCoroutine(CompletionSequence());
             }
@@ -529,9 +533,9 @@ namespace Items
             }
             
             // Destroy parent pot if configured to do so
-            if (destroyPotOnCompletion && parentPot != null)
+            if (destroyPotOnCompletion && _parentPot != null)
             {
-                parentPot.Break();
+                _parentPot.Break();
             }
         }
         
@@ -589,9 +593,9 @@ namespace Items
             OnTreeBroken?.Invoke();
             
             // Notify parent pot if it exists
-            if (parentPot != null)
+            if (_parentPot != null)
             {
-                parentPot.OnTreeBroken();
+                _parentPot.OnTreeBroken();
             }
             
             // Disable this component
