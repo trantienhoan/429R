@@ -152,7 +152,7 @@ namespace Enemies
             // This is a placeholder - you need to implement the actual event in TreeOfLight
             if (treeOfLight != null)
             {
-                treeOfLight.OnGrowthStarted.AddListener(HandleTreeGrowthStarted);
+                treeOfLight.onGrowthStarted.AddListener(HandleTreeGrowthStarted);
             }
         }
         
@@ -160,7 +160,7 @@ namespace Enemies
         {
             if (treeOfLight != null)
             {
-                treeOfLight.OnGrowthStarted.RemoveListener(HandleTreeGrowthStarted);
+                treeOfLight.onGrowthStarted.RemoveListener(HandleTreeGrowthStarted);
             }
         }
 	

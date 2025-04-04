@@ -230,6 +230,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 4629441708497010085}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 9bf704212dd54494aa85de0e9a4ead01,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8504284643089678891}
   m_SourcePrefab: {fileID: 100100000, guid: 9bf704212dd54494aa85de0e9a4ead01, type: 3}
 --- !u!4 &5795585386713436073 stripped
 Transform:
@@ -344,12 +348,12 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   growthDuration: 30
-  completionEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+  rotateWhileGrowing: 1
+  rotationSpeed: 30
+  completionEffectPrefab: {fileID: 4938095755617958529, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
-  completionEffectDuration: 0.5
   keyPrefab: {fileID: 6616067871869890980, guid: edf9132d0728dd349854d6653c1e11a0,
     type: 3}
-  destroyPotOnCompletion: 1
   hitParticleEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
   breakParticleEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
@@ -357,24 +361,38 @@ MonoBehaviour:
   breakSound: {fileID: 0}
   intactModel: {fileID: 0}
   destroyDelayAfterBreak: 0.1
-  OnGrowthStarted:
+  onGrowthStarted:
     m_PersistentCalls:
       m_Calls: []
-  OnGrowthStart:
+  onGrowthStart:
     m_PersistentCalls:
       m_Calls: []
-  OnGrowthPaused:
+  onGrowthPaused:
     m_PersistentCalls:
       m_Calls: []
-  OnGrowthResumed:
+  onGrowthResumed:
     m_PersistentCalls:
       m_Calls: []
-  OnGrowthComplete:
+  onGrowthComplete:
     m_PersistentCalls:
       m_Calls: []
-  OnTreeHit:
+  onTreeHit:
     m_PersistentCalls:
       m_Calls: []
-  OnTreeBroken:
+  onTreeBroken:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &8504284643089678891
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8368527830041989588}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2883e4c1dfd15bf43a546e9d36e341bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 10000
+  currentHealth: 0

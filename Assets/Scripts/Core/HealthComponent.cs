@@ -20,7 +20,10 @@ namespace Core
         {
             currentHealth = maxHealth;
         }
-        
+        public void ResetHealth()
+        {
+            currentHealth = maxHealth;
+        }
         public void TakeDamage(float damage)
         {
             if (isDead) return;
@@ -70,7 +73,11 @@ namespace Core
         }
         
         // New helper properties/methods
-        public float Health => currentHealth;
+        public float Health
+        {
+            get { return currentHealth; }
+            set { currentHealth = value; }
+        }
         public float MaxHealth => maxHealth;
         
         public void SetMaxHealth(float newMaxHealth)

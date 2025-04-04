@@ -20,13 +20,13 @@ RenderSettings:
   m_FogDensity: 0.1
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
-  m_AmbientSkyColor: {r: 0, g: 0, b: 0, a: 1}
+  m_AmbientSkyColor: {r: 0.63910645, g: 0.74026734, b: 0.8113208, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
   m_AmbientIntensity: 1
   m_AmbientMode: 3
   m_SubtractiveShadowColor: {r: 0.23584908, g: 0.23584908, b: 0.23584908, a: 1}
-  m_SkyboxMaterial: {fileID: 2100000, guid: c494c335823f54b52b2e87e1b7a63a23, type: 2}
+  m_SkyboxMaterial: {fileID: 2100000, guid: 7416536dbe0334cfd888dd1beb75a9fb, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -992,8 +992,29 @@ PrefabInstance:
         type: 3}
       propertyPath: keyPrefab
       value: 
-      objectReference: {fileID: 784072565763923235, guid: 52b0efbba0ab54548af1006d60566fe1,
+      objectReference: {fileID: 6616067871869890980, guid: edf9132d0728dd349854d6653c1e11a0,
         type: 3}
+    - target: {fileID: 100238126782910374, guid: 19f5c0ffbbddfe0488c8dda87135b30e,
+        type: 3}
+      propertyPath: completionEffectPrefab
+      value: 
+      objectReference: {fileID: 4938095755617958529, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+        type: 3}
+    - target: {fileID: 100238126782910374, guid: 19f5c0ffbbddfe0488c8dda87135b30e,
+        type: 3}
+      propertyPath: onGrowthStarted.m_PersistentCalls.m_Calls.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 100238126782910374, guid: 19f5c0ffbbddfe0488c8dda87135b30e,
+        type: 3}
+      propertyPath: onGrowthStarted.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1181174279}
+    - target: {fileID: 100238126782910374, guid: 19f5c0ffbbddfe0488c8dda87135b30e,
+        type: 3}
+      propertyPath: onGrowthStarted.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 265967999501900189, guid: 19f5c0ffbbddfe0488c8dda87135b30e,
         type: 3}
       propertyPath: m_LocalPosition.y
@@ -1223,7 +1244,8 @@ PrefabInstance:
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 5da81fd9a9494974d8ee008bec125773, type: 2}
+      objectReference: {fileID: -6876244939097876697, guid: 759495541453f324992f30c8713fa4db,
+        type: 3}
     - target: {fileID: 6891814520054160059, guid: 19f5c0ffbbddfe0488c8dda87135b30e,
         type: 3}
       propertyPath: baseMass
@@ -1270,7 +1292,8 @@ PrefabInstance:
         type: 3}
       propertyPath: potActiveMaterial
       value: 
-      objectReference: {fileID: 2100000, guid: ee82f60f75c1c924087cbde1d7784440, type: 2}
+      objectReference: {fileID: -6876244939097876697, guid: 759495541453f324992f30c8713fa4db,
+        type: 3}
     - target: {fileID: 6891814520054160059, guid: 19f5c0ffbbddfe0488c8dda87135b30e,
         type: 3}
       propertyPath: wallLayers.m_Bits
@@ -1295,6 +1318,11 @@ PrefabInstance:
         type: 3}
       propertyPath: 'validSeedNames.Array.data[0]'
       value: Magical_Seed
+      objectReference: {fileID: 0}
+    - target: {fileID: 8584443714189330369, guid: 19f5c0ffbbddfe0488c8dda87135b30e,
+        type: 3}
+      propertyPath: m_CullingMode
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9009260404841559303, guid: 19f5c0ffbbddfe0488c8dda87135b30e,
         type: 3}
@@ -3463,6 +3491,12 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.075
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &1181174279 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3853375965171311575, guid: 19f5c0ffbbddfe0488c8dda87135b30e,
+    type: 3}
+  m_PrefabInstance: {fileID: 558479001}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1263090873
 PrefabInstance:
   m_ObjectHideFlags: 0
