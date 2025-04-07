@@ -1,613 +1,296 @@
-using System;
 using UnityEngine;
-using UnityEngine.Events;
 using System.Collections;
-using Core;
-using Enemies; // Added missing namespace for ShadowMonsterSpawner
+using Core; // Assuming HealthComponent is in the Core namespace
+using Items; // Assuming ItemDropHandler is in the Items namespace
+using UnityEngine.Events;
 
-namespace Items
+public class TreeOfLight : MonoBehaviour
 {
-    public class TreeOfLight : MonoBehaviour
+    [Header("Configuration")]
+    [SerializeField] private float growthSpeed = 1f;
+
+    [Header("Animation")]
+    [SerializeField] private Animator animator;
+    [SerializeField] private string growthAnimationName = "TreeGrowth";
+
+    [Header("Light Effects")]
+    [SerializeField] private Light treeLight;
+    [SerializeField] private float maxLightIntensity = 2f;
+    [SerializeField] private float pulseSpeed = 1f;
+
+    [Header("References")]
+    [SerializeField] private TreeOfLightPot parentPot;
+    [SerializeField] public ShadowMonsterSpawner monsterSpawner;
+    [SerializeField] private ItemDropHandler itemDropHandler; // Reference to the ItemDropHandler
+    [SerializeField] private HealthComponent healthComponent;
+    [SerializeField] private float maxHealth = 100f;
+    [SerializeField] private UnityEvent onGrowthComplete;
+    private bool isGrowing = false;
+    private bool isComplete = false;
+    private bool isBlinding = false;
+
+    // Cache the ID of the "Growth" animation parameter
+    private int growthProgressID;
+    private Coroutine pulseCoroutine;
+
+    private void Start()
     {
-        [Header("Light Settings")]
-        [SerializeField] private Light treeLight;
-        [SerializeField] private float maxLightIntensity = 2f;
-        [SerializeField] private float initialLightIntensity = 0.1f;
-        [SerializeField] private float growingLightIntensity = 0.5f;
-        [SerializeField] private float finalLightIntensityMultiplier = 3f;
-        [SerializeField] private float finalLightPulseSpeed = 1f;
-        [SerializeField] private float finalLightPulseAmount = 0.2f;
+        //Get parent pot
+        //Get ShadowMonsterSpawner
 
-        [Header("Growth Settings")]
-        [SerializeField] private Vector3 startScale = Vector3.zero;
-        [SerializeField] private Vector3 targetScale = Vector3.one;
-        [SerializeField] private AnimationCurve growthCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
-        [SerializeField] private AnimationCurve lightIntensityCurve;
-        [SerializeField] private float growthDuration = 60f;
-        [SerializeField] private bool rotateWhileGrowing = true;
-        [SerializeField] private float rotationSpeed = 30f;
-
-        [Header("Completion Effect")]
-        [SerializeField] private GameObject completionEffectPrefab; // Changed to GameObject
-        private ParticleSystem completionEffect;
-        private bool isComplete = false;
-
-        private TreeOfLightPot _treeOfLightPot;
-
-        //[SerializeField] private float completionEffectDuration = 3f;
-        [SerializeField] public GameObject keyPrefab;
-        //[SerializeField] private bool destroyPotOnCompletion = true;
-
-        [Header("Breaking Effects")]
-        [SerializeField] private ParticleSystem hitParticleEffect;
-        [SerializeField] private ParticleSystem breakParticleEffect;
-        [SerializeField] private AudioClip breakSound;
-        [SerializeField] private GameObject intactModel;
-        [SerializeField] private float destroyDelayAfterBreak = 2.0f;
-
-        [Header("Events")]
-        public UnityEvent onGrowthStarted; // Added for compatibility with ShadowMonsterSpawner
-        public UnityEvent onGrowthStart;   // Keep for backward compatibility
-        public UnityEvent onGrowthPaused;
-        public UnityEvent onGrowthResumed;
-        public UnityEvent onGrowthComplete;
-        public UnityEvent onTreeHit;
-        public UnityEvent onTreeBroken;
-
-        private TreeOfLightPot parentPot;
-
-        // State tracking
-        private bool isFullyGrown;
-        private bool isGrowing;
-        private bool isPaused;
-        private float growthProgress;
-        private float animationSpeed = 1f;
-
-        // Coroutines
-        private Coroutine growthRoutine;
-        private Coroutine finalEffectRoutine;
-
-        // Components
-        private Animator animator;
-        private HealthComponent healthComponent;
-
-        // Animation parameters
-        private static readonly int GrowTrigger = Animator.StringToHash("GrowTrigger");
-        private static readonly int GrowthSpeed = Animator.StringToHash("GrowthSpeed");
-
-        // Callbacks
-        private Action onGrowthCompleteCallback;
-        private float lastRecordedHealth;
-
-        private void Start()
+        if(onGrowthComplete == null)
         {
-            // Instantiate the completionEffect from the prefab
-            if (completionEffectPrefab != null)
-            {
-                GameObject go = Instantiate(completionEffectPrefab, transform); // Instantiate the prefab
-                completionEffect = go.GetComponent<ParticleSystem>();
+            onGrowthComplete = new UnityEvent();
+        }
+    }
 
-                if (completionEffect != null)
-                {
-                    completionEffect.Stop(); // Ensure it's stopped, not just paused
-                    completionEffect.transform.localPosition = Vector3.zero;
-                    completionEffect.transform.localRotation = Quaternion.identity;
-                }
-                else
-                {
-                    Debug.LogError("ParticleSystem component not found on instantiated prefab!");
-                }
-            }
-            else
+    private void Awake()
+    {
+        growthProgressID = Animator.StringToHash("GrowTrigger");
+        if (animator == null)
+        {
+            animator = GetComponent<Animator>();
+            if (animator == null)
             {
-                Debug.LogError("Completion Effect Prefab not assigned!");
+                Debug.LogError("Animator is missing on TreeOfLight!");
+                enabled = false;
+                return;
             }
         }
 
-        private void Awake()
+        if (treeLight == null)
         {
-            onGrowthStarted = new UnityEvent();
+            treeLight = GetComponentInChildren<Light>();
+            if (treeLight == null)
+            {
+                Debug.LogWarning("TreeLight not found on TreeOfLight or its children.");
+            }
+        }
 
-            // Get components
-            animator = GetComponent<Animator>();
+        if (healthComponent == null)
+        {
             healthComponent = GetComponent<HealthComponent>();
             if (healthComponent == null)
             {
                 healthComponent = gameObject.AddComponent<HealthComponent>();
             }
-
-            // Initialize default curves if needed
-            if (lightIntensityCurve == null || lightIntensityCurve.keys.Length == 0)
-            {
-                lightIntensityCurve = new AnimationCurve();
-                lightIntensityCurve.AddKey(0f, 0f);
-                lightIntensityCurve.AddKey(0.7f, 0.3f);
-                lightIntensityCurve.AddKey(0.9f, 0.5f);
-                lightIntensityCurve.AddKey(1f, 1f);
-            }
-
-            // Initialize light
-            if (treeLight != null)
-            {
-                treeLight.intensity = initialLightIntensity;
-            }
-
-            // Initialize scale
-            transform.localScale = startScale;
         }
-        private void OnHealthChanged(float currentHealth, float maxHealth)
+        healthComponent.SetMaxHealth(maxHealth);
+        healthComponent.OnDeath += Break;
+
+        if (itemDropHandler == null)
         {
-            // Implement your health changed logic here
-            // For example:
-            if (currentHealth < lastRecordedHealth)
+            itemDropHandler = GetComponent<ItemDropHandler>();
+            if (itemDropHandler == null)
             {
-                // Tree took damage
-                OnHit();
-            }
-
-            // Update last recorded health
-            lastRecordedHealth = currentHealth;
-        }
-
-        private void OnEnable()
-        {
-            // Subscribe to health events if health component exists
-            if (healthComponent != null)
-            {
-                healthComponent.OnHealthChanged += OnHealthChanged;
-                healthComponent.OnDeath += OnHealthDepleted;
-                lastRecordedHealth = healthComponent.Health; // Fixed: removed parentheses
-            }
-        }
-
-        private void OnDisable()
-        {
-            // Unsubscribe from health events
-            if (healthComponent != null)
-            {
-                healthComponent.OnHealthChanged -= OnHealthChanged;
-                healthComponent.OnDeath -= OnHealthDepleted;
-            }
-        }
-
-        /// <summary>
-        /// Links this tree to its parent pot
-        /// </summary>
-        public void SetParentPot(TreeOfLightPot pot)
-        {
-            parentPot = pot;
-            Debug.Log($"TreeOfLight: Parent pot reference set: {(parentPot != null ? "success" : "failed")}");
-        }
-
-        /// <summary>
-        /// Adjusts the speed of tree growth
-        /// </summary>
-        public void SetGrowthSpeed(float speed)
-        {
-            if (speed <= 0)
-            {
-                Debug.LogWarning("Attempted to set growth speed to zero or negative value");
-                speed = 0.01f; // Set to minimal value instead
-            }
-
-            animationSpeed = speed;
-            if (animator != null)
-            {
-                animator.SetFloat(GrowthSpeed, speed);
-            }
-        }
-
-        /// <summary>
-        /// Starts the tree growth process
-        /// </summary>
-        
-        /// <summary>
-        /// Starts growing with specified duration and completion callback
-        /// </summary>
-        
-        // Keep this for backward compatibility
-        public void StartGrowing(float duration, Action onComplete = null)
-        {
-            // Return if already growing or fully grown
-            if (isGrowing || isFullyGrown)
+                Debug.LogError("ItemDropHandler is missing on TreeOfLight!");
+                enabled = false;
                 return;
+            }
+        }
+    }
 
-            Debug.Log("TreeOfLight: Starting growth process");
+    private void OnHealthChanged(float currentHealth, float maxHealth)
+    {
+        Debug.Log($"Tree Health Changed: {currentHealth} / {maxHealth}");
+    }
 
-            // Set growth state
+    private void OnEnable()
+    {
+        healthComponent.OnHealthChanged += OnHealthChanged;
+    }
+
+    private void OnDisable()
+    {
+        healthComponent.OnHealthChanged -= OnHealthChanged;
+    }
+
+    public void SetParentPot(TreeOfLightPot pot)
+    {
+        parentPot = pot;
+    }
+
+    public void SetGrowthSpeed(float speed)
+    {
+        growthSpeed = speed;
+    }
+
+    public void BeginGrowth(float duration)
+    {
+        if (animator == null)
+        {
+            Debug.LogError("Animator not found!");
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(growthAnimationName))
+        {
             isGrowing = true;
-            isPaused = false;
-            growthProgress = 0f;
-
-            // Set the callback to be triggered when growth completes
-            onGrowthCompleteCallback = onComplete;
-
-            // Override growth duration if needed
-            growthDuration = duration > 0 ? duration : growthDuration;
-
-            // Start growth animation
-            if (animator != null)
+            animator.speed = growthSpeed;
+            animator.Play(growthAnimationName);
+            animator.SetTrigger(growthProgressID);
+            if (pulseCoroutine == null)
             {
-                Debug.Log("animationSpeed: " + animationSpeed);
-                animator.SetTrigger(GrowTrigger);
-                animator.SetFloat(GrowthSpeed, animationSpeed);
+                pulseCoroutine = StartCoroutine(PulseLight());
             }
 
-            // Notify listeners - invoke both events for compatibility
-            onGrowthStart?.Invoke();
-            onGrowthStarted?.Invoke();
+            // Assuming the growth animation length is equal to duration
 
-            // Start the actual growth coroutine
-            if (growthRoutine != null)
+            // Get animation state information
+            AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+            float clipLength = stateInfo.length; // Get the clip length
+
+            AnimatorClipInfo[] animatorClipInfo = animator.GetCurrentAnimatorClipInfo(0);
+            float animationSpeed = 1f; // Assuming default speed of 1, get the animation speed set inside the animator controller
+            if(animatorClipInfo.Length > 0)
             {
-                StopCoroutine(growthRoutine);
+                animationSpeed = animatorClipInfo[0].clip.frameRate;
             }
-            growthRoutine = StartCoroutine(GrowthRoutine());
 
-            // Notify the parent pot that growth has started
+            float visualDuration = clipLength / animator.speed;
+
+            Invoke(nameof(CompleteVisualGrowth), visualDuration);
+        }
+        else
+        {
+            Debug.LogError("Growth animation name is null or empty!");
+        }
+    }
+
+    public void PauseAnimation()
+    {
+        animator.speed = 0;
+        StopCoroutine(PulseLight());
+    }
+
+    public void ResumeAnimation()
+    {
+        animator.speed = growthSpeed;
+        StartCoroutine(PulseLight());
+    }
+
+    public void UpdateVisualGrowth(float progress)
+    {
+        if (animator != null)
+        {
+            animator.SetFloat(growthProgressID, progress);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (isGrowing)
+        {
+            CancelInvoke(nameof(CompleteVisualGrowth));
+        }
+
+        if (pulseCoroutine != null)
+        {
+            StopCoroutine(PulseLight());
+        }
+    }
+
+    public void CompleteVisualGrowth()
+    {
+        if (!isComplete)
+        {
+            isGrowing = false;
+            isComplete = true;
+            if (monsterSpawner != null)
+            {
+                monsterSpawner.StopSpawning(); // Stop monster spawning
+                monsterSpawner.CleanupMonsterLists(); //Kill the current shadow monsters
+            }
+            itemDropHandler.SetHasGrown(true);
+
             if (parentPot != null)
             {
-                parentPot.OnTreeGrowthStarted();
-            }
-        }
-
-        private IEnumerator GrowthRoutine()
-        {
-            float elapsedGrowthTime = 0f;
-
-            while (isGrowing && growthProgress < 1.0f)
-            {
-                if (!isPaused)
+                ItemDropHandler potItemDrop = parentPot.GetComponent<ItemDropHandler>();
+                if (potItemDrop != null)
                 {
-                    // Update elapsed time and progress
-                    elapsedGrowthTime += Time.deltaTime * animationSpeed;
-                    growthProgress = Mathf.Clamp01(elapsedGrowthTime / growthDuration);
-
-                    // Update visuals
-                    UpdateGrowthProgress(growthProgress);
-
-                    // Notify parent pot about growth progress
-                    if (parentPot != null)
-                    {
-                        parentPot.UpdateTreeGrowthProgress(growthProgress);
-                    }
-
-                    // Check if growth is complete
-                    if (growthProgress >= 1.0f && !isFullyGrown)
-                    {
-                        CompleteGrowth();
-                    }
+                    potItemDrop.SetHasGrown(true);
                 }
-                yield return null;
-            }
-        }
-
-        /// <summary>
-        /// Pauses the growth process
-        /// </summary>
-        public void PauseGrowth()
-        {
-            if (isGrowing && !isPaused)
-            {
-                isPaused = true;
-
-                // Pause animation
-                if (animator != null)
+                HealthComponent potHealth = parentPot.GetComponent<HealthComponent>();
+                if (potHealth != null)
                 {
-                    animator.speed = 0;
-                }
-
-                onGrowthPaused?.Invoke();
-
-                // Notify parent pot
-                if (parentPot != null)
-                {
-                    parentPot.OnTreeGrowthPaused();
-                }
-
-                Debug.Log("Tree growth paused");
-            }
-        }
-
-        /// <summary>
-        /// Resumes the growth process after pause
-        /// </summary>
-        public void ResumeGrowth()
-        {
-            if (isGrowing && isPaused)
-            {
-                isPaused = false;
-
-                // Resume animation
-                if (animator != null)
-                {
-                    animator.speed = animationSpeed;
-                }
-
-                onGrowthResumed?.Invoke();
-
-                // Notify parent pot
-                if (parentPot != null)
-                {
-                    parentPot.OnTreeGrowthResumed();
-                }
-
-                Debug.Log("Tree growth resumed");
-            }
-        }
-
-        /// <summary>
-        /// Updates the visual representation of growth progress
-        /// </summary>
-        public void UpdateGrowthProgress(float progress)
-        {
-            // Scale the tree based on progress
-            Vector3 newScale = Vector3.Lerp(startScale, targetScale, growthCurve.Evaluate(progress));
-            if (IsValidScale(newScale))
-            {
-                transform.localScale = newScale;
-            }
-            if (isGrowing && !isPaused && rotateWhileGrowing)
-            {
-                // Rotate the tree around its Y-axis
-                transform.Rotate(Vector3.up, rotationSpeed * Time.deltaTime);
-            }
-
-            // Update light intensity based on the special curve
-            if (treeLight != null)
-            {
-                // Use the custom curve for light intensity
-                float intensityProgress = lightIntensityCurve.Evaluate(progress);
-
-                // Calculate final intensity value
-                float targetIntensity = initialLightIntensity;
-
-                // For the last 10% of growth, dramatically increase light
-                if (progress < 0.9f)
-                {
-                    targetIntensity = Mathf.Lerp(initialLightIntensity, growingLightIntensity, intensityProgress);
-                }
-                else
-                {
-                    // Map 0.9-1.0 range to 0-1 for dramatic increase
-                    float finalProgress = (progress - 0.9f) / 0.1f;
-                    targetIntensity = Mathf.Lerp(growingLightIntensity, maxLightIntensity * finalLightIntensityMultiplier, finalProgress);
-                }
-
-                treeLight.intensity = targetIntensity;
-            }
-        }
-        private void OnDestroy()
-        {
-            StopAllCoroutines();
-            if (completionEffect != null && completionEffect.gameObject != null)
-            {
-                Destroy(completionEffect.gameObject);
-            }
-        }
-
-
-        /// <summary>
-        /// Gets the current growth progress (0-1)
-        /// </summary>
-        public float GetGrowthProgress()
-        {
-            return growthProgress;
-        }
-
-        /// <summary>
-        /// Checks if the tree is currently in growing state
-        /// </summary>
-        public bool IsGrowing()
-        {
-            return isGrowing && !isFullyGrown;
-        }
-
-        /// <summary>
-        /// Checks if growth is currently paused
-        /// </summary>
-        public bool IsPaused()
-        {
-            return isPaused;
-        }
-
-        /// <summary>
-        /// Completes the growth process immediately
-        /// </summary>
-        public void CompleteGrowth()
-        {
-            if (!isComplete)
-            {
-                isGrowing = false;
-                isComplete = true;
-                StartCoroutine(CompletionSequence());
-                parentPot?.OnTreeGrowthCompleted();
-            }
-        }
-
-        /// <summary>
-        /// Kills all shadow monsters when the tree is fully grown
-        /// </summary>
-        private void KillAllShadowMonsters()
-        {
-            // Find the ShadowMonsterSpawner
-            ShadowMonsterSpawner spawner = FindFirstObjectByType<ShadowMonsterSpawner>();
-            if (spawner != null)
-            {
-                // Stop the spawner from creating new monsters
-                spawner.StopSpawning();
-
-                // Find all active ShadowMonster objects in the scene
-                ShadowMonster[] monsters = FindObjectsByType<ShadowMonster>(FindObjectsSortMode.None);
-                foreach (ShadowMonster monster in monsters)
-                {
-                    // Kill/destroy each monster
-                    Destroy(monster.gameObject);
-                }
-
-                Debug.Log($"TreeOfLight: Destroyed {monsters.Length} shadow monsters");
-            }
-            else
-            {
-                Debug.LogWarning("TreeOfLight: ShadowMonsterSpawner not found in scene");
-            }
-        }
-
-        private IEnumerator BlindingLightEffect()
-        {
-            if (treeLight != null)
-            {
-                // Create a blinding flash
-                float startIntensity = treeLight.intensity;
-                float maxBlindingIntensity = maxLightIntensity * 2f;
-
-                // Quickly increase intensity for blinding effect
-                float flashDuration = 0.5f;
-                float elapsed = 0f;
-
-                while (elapsed < flashDuration)
-                {
-                    elapsed += Time.deltaTime;
-                    float t = elapsed / flashDuration;
-                    treeLight.intensity = Mathf.Lerp(startIntensity, maxBlindingIntensity, t);
-                    yield return null;
-                }
-
-                // Gradually return to normal brightness
-                elapsed = 0f;
-                float fadeDuration = 1.5f;
-
-                while (elapsed < fadeDuration)
-                {
-                    elapsed += Time.deltaTime;
-                    float t = elapsed / fadeDuration;
-                    treeLight.intensity = Mathf.Lerp(maxBlindingIntensity, maxLightIntensity, t);
-                    yield return null;
-                }
-
-                // Start pulsing light effect
-                StartCoroutine(PulseLight());
-            }
-        }
-
-        private IEnumerator PulseLight()
-        {
-            if (treeLight != null)
-            {
-                float baseIntensity = maxLightIntensity;
-
-                while (isFullyGrown)
-                {
-                    // Create pulsing effect
-                    float pulseFactor = Mathf.Sin(Time.time * finalLightPulseSpeed) * finalLightPulseAmount + 1.0f;
-                    treeLight.intensity = baseIntensity * pulseFactor;
-                    yield return null;
+                    //DO NOT KILL THE POT.  COMMENT OUT OR REMOVE THIS LINE
+                    //potHealth.TakeDamage(potHealth.MaxHealth);
                 }
             }
+            StartCoroutine(CompletionSequence());
+            onGrowthComplete?.Invoke();
         }
+    }
+    IEnumerator BlindingLightEffect()
+    {
+        isBlinding = true;
+        float originalIntensity = treeLight.intensity;
+        float elapsedTime = 0f;
 
-        private IEnumerator CompletionSequence()
+        while (elapsedTime < 1f)
         {
-            if (completionEffect != null)
-            {
-                completionEffect.Play();
-                Debug.Log("Particle Effect Played!");
-            }
-            else
-            {
-                Debug.LogError("Completion Effect is null!");
-            }
-
-            yield return new WaitForSeconds(5f);
-            Debug.Log("Sequence Complete");
-            Destroy(completionEffect.gameObject);
+            elapsedTime += Time.deltaTime;
+            treeLight.intensity = Mathf.Lerp(originalIntensity, maxLightIntensity * 4f, elapsedTime);
+            yield return null;
         }
 
-        /// <summary>
-        /// Called when the tree takes damage
-        /// </summary>
-        public void OnHit()
+        elapsedTime = 0f;
+
+        while (elapsedTime < 1f)
         {
-            // Play hit particle effect
-            if (hitParticleEffect != null)
-            {
-                hitParticleEffect.Play();
-            }
-
-            // Trigger hit event
-            onTreeHit?.Invoke();
+            elapsedTime += Time.deltaTime;
+            treeLight.intensity = Mathf.Lerp(maxLightIntensity * 4f, originalIntensity, elapsedTime);
+            yield return null;
         }
-
-        /// <summary>
-        /// Called when tree health is depleted
-        /// </summary>
-        private void OnHealthDepleted()
+        isBlinding = false;
+    }
+    IEnumerator PulseLight()
+    {
+        float startIntensity = treeLight.intensity;
+        while (true)
         {
-            Break();
+            float sin = Mathf.Sin(Time.time * pulseSpeed);
+            treeLight.intensity = startIntensity + (sin * maxLightIntensity);
+            yield return null;
         }
+    }
+    IEnumerator CompletionSequence()
+    {
+        yield return BlindingLightEffect();
+        yield return new WaitForSeconds(1f);
+        // Drop items before destorying
+        itemDropHandler.DropItems();
 
-        /// <summary>
-        /// Breaks the tree using particle effects similar to JiggleBreakableBigObject
-        /// </summary>
-        public void Break()
+        // Destroy the TreeOfLight GameObject.
+        Destroy(gameObject);
+    }
+    public void OnHit()
+    {
+        if (!isBlinding)
         {
-            // Don't allow breaking twice
-            if (!enabled)
-                return;
-
-            // Play break particle effect
-            if (breakParticleEffect != null)
-            {
-                breakParticleEffect.Play();
-            }
-
-            // Play breaking sound
-            if (breakSound != null)
-            {
-                AudioSource.PlayClipAtPoint(breakSound, transform.position);
-            }
-
-            // Hide the intact model
-            if (intactModel != null)
-            {
-                intactModel.SetActive(false);
-            }
-
-            // Trigger broken event
-            onTreeBroken?.Invoke();
-
-            TreeOfLightPot parentPot = this.parentPot;
-            this.parentPot = null;
-
-            // Notify parent pot if it exists
-            if (parentPot != null)
-            {
-                parentPot.OnTreeBroken();
-                parentPot.Break();
-            }
-
-            // Disable this component
-            this.enabled = false;
-
-            // Optional: Destroy this object after a delay
-            Destroy(gameObject, destroyDelayAfterBreak);
+            StartCoroutine(BlindingLightEffect());
         }
-
-        /// <summary>
-        /// Validates a scale value to prevent errors
-        /// </summary>
-        private bool IsValidScale(Vector3 scale)
+    }
+    public void OnHealthDepleted()
+    {
+        Break();
+    }
+    public void Break()
+    {
+        // Handle what happens when the tree is destroyed.
+        if(healthComponent != null)
         {
-            // Check for NaN or infinity
-            if (float.IsNaN(scale.x) || float.IsInfinity(scale.x) ||
-                float.IsNaN(scale.y) || float.IsInfinity(scale.y) ||
-                float.IsNaN(scale.z) || float.IsInfinity(scale.z))
-            {
-                Debug.LogWarning("Invalid scale detected: " + scale);
-                return false;
-            }
-
-            return true;
+            healthComponent.OnDeath -= Break;
         }
+        // May need to trigger item drop based on tree growth state using the ItemDropHandler
+        itemDropHandler.DropItems();
+        Destroy(gameObject);
+    }
+
+    private bool IsValidScale(Vector3 scale)
+    {
+        float minComponent = Mathf.Min(scale.x, scale.y, scale.z);
+        float maxComponent = Mathf.Max(scale.x, scale.y, scale.z);
+        return minComponent > 0f && maxComponent < 100f;
     }
 }

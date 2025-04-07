@@ -49,6 +49,11 @@ namespace Core
             // Trigger health changed event
             OnHealthChanged?.Invoke(currentHealth, maxHealth);
         }
+        public void Kill()
+        {
+            Die();
+            Destroy(gameObject);
+        }
         
         protected virtual void Die()
         {

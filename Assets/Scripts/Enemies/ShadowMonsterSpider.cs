@@ -1,322 +1,186 @@
-//using System.Collections;
-//using System.Collections.Generic;
-using Enemies;
 using UnityEngine;
-//using UnityEngine.AI;
+using System.Collections;
 
 namespace Enemies
 {
-    public enum SpiderState
+    public class ShadowMonsterSpider : ShadowMonster
     {
-        Spawning,
-        Wandering,
-        Targeting,
-        Attacking,
-        Damaged,
-        Dead
-    }
+        [Header("Movement Settings")]
+        [SerializeField] private float patrolSpeed = 5f;
+        [SerializeField] private float chaseSpeed = 10f;
+        [SerializeField] private float slowdownDistance = 2f; // Distance to slow down before attacking
+        [SerializeField] private float attackSpeedMultiplier = 0.5f; // Speed multiplier during attack
+        [SerializeField] private float reTargetingRange = 20f; //Range to find a new tree
 
-    [DefaultExecutionOrder(1)]
-    public class ShadowMonsterSpider : MonoBehaviour
-    {
-        // References
-        [SerializeField] private SpiderController controller;
-        [SerializeField] private Animator animator;
-        [SerializeField] private Spider spiderIK;
-        
-        // Animation hashes - replacing string lookups
-        private readonly int hashIsWalkingParam = Animator.StringToHash("isWalking");
-        private readonly int hashIsAttackingParam = Animator.StringToHash("isAttacking");
-        private readonly int hashIsDamagedParam = Animator.StringToHash("isDamaged");
-        private readonly int hashIsDeadParam = Animator.StringToHash("isDead");
-        
-        // AI Settings
-        [SerializeField] private float targetingRange = 10f;
-        [SerializeField] private float attackRange = 2f;
-        [SerializeField] private float wanderRadius = 5f;
-        [SerializeField] private float minDistanceToWanderPoint = 1f;
-        [SerializeField] private float maxWanderDistance = 20f;
-        #pragma warning disable 0649
-        [SerializeField] private Vector3 startPosition;
-        #pragma warning restore 0649
-        
-        // Movement settings
-        [SerializeField] private float normalSpeed = 1f;
-        [SerializeField] private float chaseSpeed = 1.5f;
-        
-        // Attack settings
-        [SerializeField] private float attackDuration = 1f;
-        [SerializeField] private float attackCooldown = 0.5f;
-        [SerializeField] private float damageRecoveryTime = 0.5f;
-        
-        // State management
-        [SerializeField] private SpiderState currentState;
-        private float stateTimer;
-        
-        [SerializeField] private float detectionRadius = 10f;
-        [SerializeField] private LayerMask targetLayer;
-        
-        // Target management
-        private Transform currentTarget;
-        private Vector3 wanderPoint;
-        private Vector3 originalPosition;
-        
-        // Health system
-        [SerializeField] private float maxHealth = 100f;
-        private float currentHealth;
-        [SerializeField] private float knockbackForce = 5f;
-        
-        private void Awake()
-        {
-            currentHealth = maxHealth;
-            originalPosition = transform.position;
-            startPosition = originalPosition;
-            SetNewWanderPoint();
-        }
-        
+        [Header("Attack Settings")]
+        [SerializeField] private float attackDamage = 20f;
+        [SerializeField] private float jumpHeight = 2f; // Height of the jump during the attack
+
+        private GameObject _treeOfLightPot; // The TreeOfLightPot target.
+        private Vector2 _currentDirection; // Current movement direction if no tree
+        private bool _isAttacking = false;
+        private SpiderController _spiderController;
+        private Rigidbody _rb;
+
         private void Start()
         {
-            // Initialize components if not set
-            if (controller == null)
-                controller = GetComponent<SpiderController>();
-                
-            if (animator == null)
-                animator = GetComponentInChildren<Animator>();
-                
-            if (spiderIK == null)
-                spiderIK = GetComponent<Spider>();
+            _spiderController = GetComponent<SpiderController>();
+            _rb = GetComponent<Rigidbody>(); // Get the Rigidbody
+            if (_spiderController == null)
+            {
+                Debug.LogError("SpiderController not found on ShadowMonsterSpider!");
+                enabled = false;
+                return;
+            }
+
+            // Find the TreeOfLightPot (you might want to use a more robust method)
+            FindTreeOfLightPot();
+
+            if (_treeOfLightPot == null)
+            {
+                Debug.LogWarning("TreeOfLightPot not found. Spider will patrol randomly.");
+                SetRandomDirection();
+            }
+            else
+            {
+                SetMovementDirection(_treeOfLightPot.transform.position, patrolSpeed); // Start patrolling
+            }
         }
-        
+
         private void Update()
         {
-            if (currentState == SpiderState.Dead)
-                return;
-                
-            // Update state machine
-            UpdateStateMachine();
-            
-            // Handle movement based on current state
-            HandleMovement();
-            
-            // Update animations
-            UpdateAnimations();
-        }
-        
-        private void UpdateStateMachine()
-        {
-            stateTimer += Time.deltaTime;
-            
-            switch (currentState)
+            if (_treeOfLightPot != null)
             {
-                case SpiderState.Spawning:
-                    if (stateTimer > 2f) // Spawn animation time
-                    {
-                        currentState = SpiderState.Wandering;
-                        stateTimer = 0f;
-                    }
-                    break;
-                    
-                case SpiderState.Wandering:
-                    // Look for targets
-                    FindTarget();
-                    
-                    // Check if we reached the wander point
-                    if (Vector3.Distance(transform.position, wanderPoint) < minDistanceToWanderPoint)
-                    {
-                        SetNewWanderPoint();
-                    }
-                    
-                    // Return to original position if wandered too far
-                    if (Vector3.Distance(transform.position, originalPosition) > maxWanderDistance)
-                    {
-                        wanderPoint = originalPosition;
-                    }
-                    break;
-                    
-                case SpiderState.Targeting:
-                    // Check if target is still valid
-                    if (currentTarget == null || Vector3.Distance(transform.position, currentTarget.position) > targetingRange * 1.5f)
-                    {
-                        currentState = SpiderState.Wandering;
-                        currentTarget = null;
-                        break;
-                    }
-                    
-                    // Check if we're in attack range
-                    if (Vector3.Distance(transform.position, currentTarget.position) < attackRange)
-                    {
-                        currentState = SpiderState.Attacking;
-                        stateTimer = 0f;
-                    }
-                    break;
-                    
-                case SpiderState.Attacking:
-                    // Attack animation time
-                    if (stateTimer > attackDuration)
-                    {
-                        // Apply damage to target at appropriate time in animation
-                        if (stateTimer > attackDuration * 0.5f && currentTarget != null)
-                        {
-                            // Damage logic would go here
-                        }
-                        
-                        // End attack state
-                        if (stateTimer > attackDuration + attackCooldown)
-                        {
-                            currentState = currentTarget != null ? SpiderState.Targeting : SpiderState.Wandering;
-                            stateTimer = 0f;
-                        }
-                    }
-                    break;
-                    
-                case SpiderState.Damaged:
-                    // Damage recovery time
-                    if (stateTimer > damageRecoveryTime)
-                    {
-                        currentState = currentTarget != null ? SpiderState.Targeting : SpiderState.Wandering;
-                        stateTimer = 0f;
-                    }
-                    break;
-            }
-        }
-        
-        private void HandleMovement()
-        {
-            Vector3 targetPosition = Vector3.zero;
-            float speedMultiplier = normalSpeed;
-            
-            switch (currentState)
-            {
-                case SpiderState.Wandering:
-                    targetPosition = wanderPoint;
-                    break;
-                    
-                case SpiderState.Targeting:
-                    if (currentTarget != null)
-                    {
-                        targetPosition = currentTarget.position;
-                        speedMultiplier = chaseSpeed;
-                    }
-                    break;
-                    
-                case SpiderState.Attacking:
-                case SpiderState.Damaged:
-                case SpiderState.Dead:
-                    // Don't move
-                    controller.SetMovementDirection(Vector2.zero);
-                    return;
-            }
-            
-            // Calculate direction to target in world space
-            Vector3 direction = targetPosition - transform.position;
-            
-            if (direction.magnitude > 0.1f)
-            {
-                // Convert world direction to local direction (relative to current orientation)
-                Vector3 localDirection = transform.InverseTransformDirection(direction);
-                Vector2 movementDirection = new Vector2(localDirection.x, localDirection.z).normalized;
-                
-                // Apply to controller
-                controller.SetMovementDirection(movementDirection * speedMultiplier);
-                
-                // Rotate toward target
-                if (currentState != SpiderState.Damaged)
+                float distanceToTarget = Vector3.Distance(transform.position, _treeOfLightPot.transform.position);
+
+                if (distanceToTarget <= slowdownDistance && !_isAttacking)
                 {
-                    Quaternion lookRotation = Quaternion.LookRotation(direction);
-                    transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * 5f);
+                    // Slow down before attacking
+                    SetMovementDirection(_treeOfLightPot.transform.position, patrolSpeed * attackSpeedMultiplier);
+                    _isAttacking = true;
+                    Attack(); // Initiate the attack
+                }
+                else
+                {
+                    // Chase the target at full speed
+                    SetMovementDirection(_treeOfLightPot.transform.position, chaseSpeed);
                 }
             }
             else
             {
-                controller.SetMovementDirection(Vector2.zero);
-            }
-        }
-        
-        private void UpdateAnimations()
-        {
-            // Using cached property IDs instead of strings
-            animator.SetBool(hashIsWalkingParam, controller.Speed > 0.1f);
-            animator.SetBool(hashIsAttackingParam, currentState == SpiderState.Attacking);
-            animator.SetBool(hashIsDamagedParam, currentState == SpiderState.Damaged);
-            animator.SetBool(hashIsDeadParam, currentState == SpiderState.Dead);
-        }
-        
-        private void FindTarget()
-        {
-            // Pre-allocate array for efficiency
-            Collider[] colliderArray = new Collider[10]; // Adjust size as needed
-    
-            // Use non-allocating version of OverlapSphere
-            int hitCount = Physics.OverlapSphereNonAlloc(transform.position, detectionRadius, colliderArray, targetLayer);
-    
-            // Process only valid hits
-            for (int i = 0; i < hitCount; i++)
-            {
-                var hitObject = colliderArray[i];
-                if (hitObject.CompareTag("Player"))
+                // No TreeOfLightPot found, move in a random direction
+                SetMovementDirection(_currentDirection, patrolSpeed);
+
+                // Periodically check for the tree
+                if (Random.value < 0.01f) // Check every so often
                 {
-                    currentTarget = hitObject.transform;
-                    currentState = SpiderState.Targeting;
-                    return;
+                    FindTreeOfLightPot();
+
+                    //If the tree is found but out of range, move to a random direction so that monster dont chase infinitely
+                    if (_treeOfLightPot != null && Vector3.Distance(transform.position, _treeOfLightPot.transform.position) > reTargetingRange)
+                    {
+                        SetRandomDirection();
+                        _treeOfLightPot = null;
+                    }
+                    else if (_treeOfLightPot != null)
+                    {
+                        SetMovementDirection(_treeOfLightPot.transform.position, patrolSpeed);
+                    }
                 }
             }
         }
-        
-        private void SetNewWanderPoint()
+
+        private void FindTreeOfLightPot()
         {
-            // Generate random point within wander radius
-            Vector2 randomCirclePoint = Random.insideUnitCircle * wanderRadius;
-            Vector3 randomDirection = new Vector3(randomCirclePoint.x, 0, randomCirclePoint.y);
-            wanderPoint = transform.position + randomDirection;
-            
-            // Make sure the wander point is not too far from original position
-            if (Vector3.Distance(wanderPoint, originalPosition) > maxWanderDistance)
+            // Find the TreeOfLightPot (you might want to use a more robust method, like a tag or a dedicated manager)
+            _treeOfLightPot = GameObject.FindGameObjectWithTag("TreeOfLightPot");
+        }
+
+        private void SetMovementDirection(Vector3 targetPosition, float speed)
+        {
+            Vector2 direction = (targetPosition - transform.position).normalized;
+            SetMovementDirection(direction, speed);
+        }
+
+        private void SetMovementDirection(Vector2 direction, float speed)
+        {
+            Debug.Log("SetMovementDirection called: direction=" + direction + ", speed=" + speed);
+            _spiderController.SetMovementDirection(direction * speed); // Use SpiderController
+        }
+
+        private void SetRandomDirection()
+        {
+            _currentDirection = Random.insideUnitCircle.normalized;
+        }
+
+        private void Attack()
+        {
+            // Implement Attack logic:
+            Debug.Log("Spider Attack!");
+            // Determine if jump or run
+            if (jumpHeight > 0 && Random.value > 0.5f)
             {
-                Vector3 directionToOriginal = originalPosition - transform.position;
-                wanderPoint = transform.position + directionToOriginal.normalized * wanderRadius;
+                JumpAttack();
+            }
+            else
+            {
+                RunAttack();
             }
         }
-        
-        public void TakeDamage(float damage)
+
+        private void JumpAttack()
         {
-            if (currentState == SpiderState.Dead)
-                return;
-                
-            // Apply damage
-            currentHealth -= damage;
-            
-            // Check for death
-            if (currentHealth <= 0)
+            // Implement jump attack logic:
+            Debug.Log("Spider Jump Attack!");
+
+            // Calculate the required velocity to reach the target
+            //Vector3 velocity = CalculateJumpVelocity(_targetPosition - transform.position, timeToTarget, jumpHeight);
+
+            // Apply the velocity to the rigidbody
+            if (_rb != null)
             {
-                Die();
-                return;
+                //_rb.linearVelocity = velocity;
             }
-            
-            // Enter damaged state
-            currentState = SpiderState.Damaged;
-            stateTimer = 0f;
-            
-            // Apply knockback if there's a target
-            if (currentTarget != null)
-            {
-                Vector3 knockbackDirection = transform.position - currentTarget.position;
-                controller.AddVelocity(new Vector2(knockbackDirection.x, knockbackDirection.z).normalized * knockbackForce);
-            }
+
+            // Subscribe to collision, to apply damage to the target.
+            //StartCoroutine(OnCollisionCoroutine(timeToTarget));
         }
-        
-        private void Die()
+
+        //private IEnumerator OnCollisionCoroutine(float delay)
+        //{
+        //    yield return new WaitForSeconds(delay);
+        //
+        //    // Apply damage to TreeOfLightPot (assuming it has a HealthComponent)
+        //    Core.HealthComponent health = _treeOfLightPot.GetComponent<Core.HealthComponent>();
+        //    if (health != null)
+        //    {
+        //        health.TakeDamage(attackDamage);
+        //    }
+        //
+        //    //ReEnable the navmesh
+        //    //_spiderController.SetMovementDirection(Vector2.zero); // Stop movement after attack - REMOVE THIS LINE
+        //    _isAttacking = false;
+        //}
+
+        private Vector3 CalculateJumpVelocity(Vector3 displacement, float timeToTarget, float jumpHeight)
         {
-            currentState = SpiderState.Dead;
-            controller.SetMovementDirection(Vector2.zero);
-            
-            // Disable colliders
-            Collider[] colliders = GetComponentsInChildren<Collider>();
-            foreach (Collider col in colliders)
-            {
-                col.enabled = false;
-            }
-            
-            // Additional death logic could go here
+            float gravity = Physics.gravity.y;
+            float verticalVelocity = (jumpHeight * 2) / timeToTarget - (gravity * timeToTarget) / 2;
+            Vector3 horizontalVelocity = displacement / timeToTarget;
+            return new Vector3(horizontalVelocity.x, verticalVelocity, horizontalVelocity.z);
+        }
+
+        private void RunAttack()
+        {
+            // Implement run attack logic:
+            Debug.Log("Spider Run Attack!");
+            _isAttacking = false;
+        }
+
+        //IK Implementation for legs to walk around
+        private void OnAnimatorIK(int layerIndex)
+        {
+           //No need to use NavMeshAgent here
         }
     }
 }

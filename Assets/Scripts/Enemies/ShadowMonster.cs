@@ -6,88 +6,27 @@ using Core;
 
 public class ShadowMonster : MonoBehaviour
 {
-    [Header("Stats")]
-    [SerializeField] private float health = 100f;
-    [SerializeField] private float speed = 3.5f;
-    [SerializeField] private float damage = 10f;
-    
-    [Header("Attack Settings")]
-    [SerializeField] private float attackRange = 1.5f;
-    [SerializeField] private float attackCooldown = 2f;
-    [SerializeField] private float detectionRadius = 10f;
-    
-    [Header("Effects")]
-    [SerializeField] private ParticleSystem deathEffect;
-    [SerializeField] private AudioClip deathSound;
-    [SerializeField] private AudioClip attackSound;
-    [SerializeField] private AudioSource audioSource;
-    
     [Header("Light Weakness")]
     [SerializeField] private float lightDamageMultiplier = 2f;
     [SerializeField] private float minLightIntensityToDamage = 0.5f;
     
     // References
     private NavMeshAgent agent;
-    private Animator animator;
     private GameObject player;
     private HealthComponent playerHealth;
-    //private bool isDead = false;
     private float lastAttackTime;
-    
-    // Delegate for spawner to listen to
-    public delegate void MonsterEventHandler(ShadowMonster monster);
-    
-    // Events
-    public event MonsterEventHandler MonsterSpawned;
-    public event MonsterEventHandler MonsterDeath;
-    public event Action OnMonsterDeath;
     
     // Animation hashes
     private static readonly int Speed = Animator.StringToHash("Speed");
     private static readonly int Attack = Animator.StringToHash("Attack");
     private static readonly int IsDeadHash = Animator.StringToHash("IsDead");
+
+    [SerializeField] private float detectionRadius = 10f;
     
     private void Awake()
     {
         // Set up references
         agent = GetComponent<NavMeshAgent>();
-        animator = GetComponent<Animator>();
-        
-        if (audioSource == null)
-        {
-            audioSource = gameObject.AddComponent<AudioSource>();
-        }
-        
-        // Configure NavMeshAgent
-        if (agent != null)
-        {
-            agent.speed = speed;
-            agent.stoppingDistance = attackRange * 0.8f;
-        }
-    }
-    
-    private void Start()
-    {
-        // Find player
-        player = GameObject.FindGameObjectWithTag("Player");
-        if (player == null)
-        {
-            Debug.LogWarning("Player not found. Make sure it has the 'Player' tag.");
-        }
-        else
-        {
-            playerHealth = player.GetComponent<HealthComponent>();
-            if (playerHealth == null)
-            {
-                Debug.LogWarning("Player does not have a PlayerHealth component");
-            }
-        }
-        
-        // Notify that monster has spawned
-        if (MonsterSpawned != null)
-        {
-            MonsterSpawned(this);
-        }
     }
     
     private void Update()
@@ -96,25 +35,13 @@ public class ShadowMonster : MonoBehaviour
         {
             // Check if player is within detection range
             float distanceToPlayer = Vector3.Distance(transform.position, player.transform.position);
-            
+
             if (distanceToPlayer <= detectionRadius)
             {
                 // Move toward player
                 if (agent != null)
                 {
                     agent.SetDestination(player.transform.position);
-                }
-                
-                // Update animation
-                if (animator != null)
-                {
-                    animator.SetFloat(Speed, agent.velocity.magnitude);
-                }
-                
-                // Check if in attack range and cooldown has elapsed
-                if (distanceToPlayer <= attackRange && Time.time >= lastAttackTime + attackCooldown)
-                {
-                    AttackPlayer();
                 }
             }
             else
@@ -124,60 +51,17 @@ public class ShadowMonster : MonoBehaviour
                 {
                     agent.SetDestination(transform.position);
                 }
-                
-                // Update animation to idle
-                if (animator != null)
-                {
-                    animator.SetFloat(Speed, 0);
-                }
             }
         }
         
         // Check for light damage
         CheckForLightDamage();
     }
-    
-    private void AttackPlayer()
-    {
-        // Update last attack time
-        lastAttackTime = Time.time;
-        
-        // Play attack animation
-        if (animator != null)
-        {
-            animator.SetTrigger(Attack);
-        }
-        
-        // Play attack sound
-        if (audioSource != null && attackSound != null)
-        {
-            audioSource.PlayOneShot(attackSound);
-        }
-        
-        // Apply damage to player
-        if (playerHealth != null)
-        {
-            // Allow a small delay before applying damage to match animation
-            StartCoroutine(DealDamageWithDelay(0.5f));
-        }
-    }
-    
-    private IEnumerator DealDamageWithDelay(float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        
-        if (playerHealth != null && !isDead)
-        {
-            // Check if still in range before applying damage
-            float distanceToPlayer = Vector3.Distance(transform.position, player.transform.position);
-            if (distanceToPlayer <= attackRange * 1.5f)
-            {
-                playerHealth.TakeDamage(damage);
-            }
-        }
-    }
-    
-    public void TakeDamage(float damageAmount)
+
+    public float damage;
+    public float health = 100f;
+
+    public virtual void TakeDamage(float damageAmount)
     {
         if (isDead) return;
         
@@ -190,7 +74,7 @@ public class ShadowMonster : MonoBehaviour
     }
     private bool isDead = false;
 
-    private void Die()
+    protected virtual void Die()
     {
         isDead = true;
         
@@ -200,39 +84,6 @@ public class ShadowMonster : MonoBehaviour
             agent.isStopped = true;
             agent.enabled = false;
         }
-        
-        // Play death animation
-        if (animator != null)
-        {
-            animator.SetBool(IsDeadHash, true);
-        }
-        
-        // Play death effects
-        if (deathEffect != null)
-        {
-            Instantiate(deathEffect, transform.position, Quaternion.identity);
-        }
-        
-        // Play death sound
-        if (audioSource != null && deathSound != null)
-        {
-            audioSource.PlayOneShot(deathSound);
-        }
-        
-        // Disable colliders
-        Collider[] colliders = GetComponents<Collider>();
-        foreach (Collider collider in colliders)
-        {
-            collider.enabled = false;
-        }
-        
-        // Notify that monster has died
-        if (MonsterDeath != null)
-        {
-            MonsterDeath(this);
-        }
-        
-        OnMonsterDeath?.Invoke();
 
         // Destroy after a delay
         StartCoroutine(DestroyAfterDelay(3f));
@@ -241,16 +92,6 @@ public class ShadowMonster : MonoBehaviour
     public virtual bool IsDead()
     {
         return isDead;
-    }
-    public void SetDead(bool value)
-    {
-        isDead = value;
-        
-        // Update animator
-        if (animator != null)
-        {
-            animator.SetBool(IsDeadHash, isDead);
-        }
     }
 
     private IEnumerator DestroyAfterDelay(float delay)
@@ -334,9 +175,5 @@ public class ShadowMonster : MonoBehaviour
         // Detection radius
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, detectionRadius);
-        
-        // Attack range
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, attackRange);
     }
 }

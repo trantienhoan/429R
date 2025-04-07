@@ -1,82 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &4831464777116399248
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4855709451906669287}
-  - component: {fileID: 8922939456493463548}
-  - component: {fileID: 3875308471228042706}
-  m_Layer: 0
-  m_Name: Collider
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &4855709451906669287
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4831464777116399248}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 265967999501900189}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!136 &8922939456493463548
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4831464777116399248}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.015
-  m_Height: 0.08
-  m_Direction: 1
-  m_Center: {x: 0, y: -0.03, z: 0}
---- !u!135 &3875308471228042706
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4831464777116399248}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 0.03
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &5443108850151768967
 GameObject:
   m_ObjectHideFlags: 0
@@ -106,9 +29,7 @@ Transform:
   m_LocalPosition: {x: 0, y: 0.286, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 4855709451906669287}
-  - {fileID: 4481681596111403373}
+  m_Children: []
   m_Father: {fileID: 5664211420611074727}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &7786792460739829345
@@ -124,80 +45,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_ControllingInteractor: {fileID: 9009260404841559303}
---- !u!1001 &4709369651548647939
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 265967999501900189}
-    m_Modifications:
-    - target: {fileID: 8368527830041989588, guid: 7b5f58ba9d7ee8d4c992737dff1e8a38,
-        type: 3}
-      propertyPath: m_Name
-      value: Tree_of_Light
-      objectReference: {fileID: 0}
-    - target: {fileID: 9180916686716390254, guid: 7b5f58ba9d7ee8d4c992737dff1e8a38,
-        type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9180916686716390254, guid: 7b5f58ba9d7ee8d4c992737dff1e8a38,
-        type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9180916686716390254, guid: 7b5f58ba9d7ee8d4c992737dff1e8a38,
-        type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9180916686716390254, guid: 7b5f58ba9d7ee8d4c992737dff1e8a38,
-        type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 9180916686716390254, guid: 7b5f58ba9d7ee8d4c992737dff1e8a38,
-        type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9180916686716390254, guid: 7b5f58ba9d7ee8d4c992737dff1e8a38,
-        type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9180916686716390254, guid: 7b5f58ba9d7ee8d4c992737dff1e8a38,
-        type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9180916686716390254, guid: 7b5f58ba9d7ee8d4c992737dff1e8a38,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9180916686716390254, guid: 7b5f58ba9d7ee8d4c992737dff1e8a38,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9180916686716390254, guid: 7b5f58ba9d7ee8d4c992737dff1e8a38,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 7b5f58ba9d7ee8d4c992737dff1e8a38, type: 3}
---- !u!4 &4481681596111403373 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 9180916686716390254, guid: 7b5f58ba9d7ee8d4c992737dff1e8a38,
-    type: 3}
-  m_PrefabInstance: {fileID: 4709369651548647939}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5265248080768712012
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -318,10 +165,6 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 6891814520054160059}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 90ead29ec06b9784e832b9c538d6641a,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1849177776797559712}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 90ead29ec06b9784e832b9c538d6641a,
         type: 3}
       insertIndex: -1
@@ -583,80 +426,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1281fa446ed55b34ab02c06d60cb2673, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  treeModel: {fileID: 8368527830041989588, guid: 7b5f58ba9d7ee8d4c992737dff1e8a38,
-    type: 3}
-  growthParticles: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+  treeOfLightPrefab: {fileID: 4431514908729328411, guid: c99d2be7e985de644a0adaecdc76989b,
     type: 3}
   treeSpawnPoint: {fileID: 265967999501900189}
-  potRenderer: {fileID: 6832099836593185224}
-  growthAudioSource: {fileID: 0}
-  treeOfLightPrefab: {fileID: 8368527830041989588, guid: 7b5f58ba9d7ee8d4c992737dff1e8a38,
+  growthParticles: {fileID: 7938384439400024400, guid: b6e54acc881a03c4a9719b161a25a3e3,
     type: 3}
-  treeGrowthDuration: 5
-  seedShrinkDuration: 2
-  validSeedNames:
-  - Magical_Seed
-  - seed_of_light
-  magicalSeedTag: MagicalSeed
-  baseMass: 50
-  centerOfMassYOffset: -0.001
-  healthComponent: {fileID: 5698044415995147322}
-  maxHealth: 100
-  brokenPotPrefab: {fileID: 0}
-  brokenTreePrefab: {fileID: 0}
-  potActiveMaterial: {fileID: 2100000, guid: ee82f60f75c1c924087cbde1d7784440, type: 2}
-  plantingEffect: {fileID: 4033412786151888120, guid: 49057b33ea71fbb4da4e8f02a8db9f28,
-    type: 3}
-  onTreeFullyGrown:
-    m_PersistentCalls:
-      m_Calls: []
-  onSeedPlaced:
-    m_PersistentCalls:
-      m_Calls: []
-  socketInteractor: {fileID: 9009260404841559303}
+  monsterSpawner: {fileID: 0}
+  growthStartDelay: 0.25
+  seedMoveDuration: 1
   potMaxHealth: 100
---- !u!114 &1849177776797559712
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5030664726389686301}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bd2ae3da4290e914fb8c0299e7686140, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  treeOfLight: {fileID: 4629441708497010085, guid: 7b5f58ba9d7ee8d4c992737dff1e8a38,
-    type: 3}
-  onlySpawnAfterTreeGrowth: 1
-  treeOfLightPot: {fileID: 6891814520054160059}
-  maxMonstersAlive: 25
-  spawnInterval: 5
-  minSpawnDistance: 10
-  maxSpawnDistance: 25
-  player: {fileID: 0}
-  spawnAtNightOnly: 1
-  spawnAwayFromLight: 1
-  minimumLightLevelToSpawn: 0.3
-  minSpawnDelay: 5
-  maxSpawnDelay: 15
-  spawnPoints:
-  - {fileID: 5664211420611074727}
-  monsterPrefab: {fileID: 641341794854005767, guid: 74ff73dedb8bc7b4083e2753e9ada44f,
-    type: 3}
-  spiderPrefab: {fileID: 641341794854005767, guid: 74ff73dedb8bc7b4083e2753e9ada44f,
-    type: 3}
-  spiderSpawnChance: 0.2
-  useWaves: 1
-  baseWaveSize: 3
-  additionalMonstersPerWave: 1
-  timeBetweenWaves: 30
-  showSpawnPoints: 1
-  debugLogs: 0
-  monsterData:
-    activeMonsters: []
-  OnGrowthStarted:
+  onGrowthStarted:
+    m_PersistentCalls:
+      m_Calls: []
+  onGrowthCompleted:
     m_PersistentCalls:
       m_Calls: []
 --- !u!114 &5698044415995147322
@@ -676,12 +458,6 @@ MonoBehaviour:
 --- !u!4 &5664211420611074727 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 90ead29ec06b9784e832b9c538d6641a,
-    type: 3}
-  m_PrefabInstance: {fileID: 5265248080768712012}
-  m_PrefabAsset: {fileID: 0}
---- !u!23 &6832099836593185224 stripped
-MeshRenderer:
-  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 90ead29ec06b9784e832b9c538d6641a,
     type: 3}
   m_PrefabInstance: {fileID: 5265248080768712012}
   m_PrefabAsset: {fileID: 0}

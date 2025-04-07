@@ -1,105 +1,75 @@
 using UnityEngine;
-using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
 namespace Items
 {
     public class MagicalSeed : MonoBehaviour
     {
-        private UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable grabInteractable;
-        private Rigidbody rb;
-        
-        // Removed the unused isBeingHeld field
+        [Tooltip("The XRGrabInteractable component attached to this GameObject.")]
+        [SerializeField] private XRGrabInteractable seedGrabInteractable;
+
+        [Tooltip("The Rigidbody component attached to this GameObject.")]
+        [SerializeField] private Rigidbody seedRigidbody;
+
+        [Tooltip("The Collider component attached to this GameObject.")]
+        [SerializeField] private Collider seedCollider;
 
         private void Awake()
         {
-            // Set the layer to Default
-            gameObject.layer = LayerMask.NameToLayer("Default");
-            
-            // Setup Rigidbody
-            rb = GetComponent<Rigidbody>();
-            if (rb == null)
+            // Ensure Rigidbody exists
+            if (seedRigidbody == null)
             {
-                rb = gameObject.AddComponent<Rigidbody>();
+                seedRigidbody = GetComponent<Rigidbody>();
+                if (seedRigidbody == null)
+                {
+                    Debug.LogError("Rigidbody is missing on MagicalSeed! Please add one manually.");
+                    enabled = false; // Disable script if critical component is missing
+                    return;
+                }
             }
-            rb.useGravity = true;
-            rb.isKinematic = false;
-            rb.interpolation = RigidbodyInterpolation.Interpolate;
-            rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+            seedRigidbody.useGravity = true;
+            seedRigidbody.isKinematic = false;
 
-            // Setup Grab Interactable
-            grabInteractable = GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
-            if (grabInteractable == null)
+            // Ensure Grab Interactable exists
+            if (seedGrabInteractable == null)
             {
-                grabInteractable = gameObject.AddComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
-            }
-            
-            // Configure the grab interactable
-            grabInteractable.movementType = UnityEngine.XR.Interaction.Toolkit.Interactables.XRBaseInteractable.MovementType.VelocityTracking;
-            grabInteractable.throwOnDetach = true;
-            grabInteractable.interactionLayers = InteractionLayerMask.GetMask("Default");
-            
-            // Set up attach transform if it doesn't exist
-            Transform attachTransform = transform.Find("Attach");
-            if (attachTransform == null)
-            {
-                GameObject attachPoint = new GameObject("Attach");
-                attachPoint.transform.SetParent(transform);
-                attachPoint.transform.localPosition = new Vector3(0, 0, 0.0256f);
-                attachPoint.transform.localRotation = Quaternion.Euler(0, -180, 0);
-                attachTransform = attachPoint.transform;
-            }
-            grabInteractable.attachTransform = attachTransform;
-
-            // Add collider if it doesn't exist
-            if (GetComponent<Collider>() == null)
-            {
-                // Fixed variable name to avoid hiding Component.collider property
-                BoxCollider boxCollider = gameObject.AddComponent<BoxCollider>();
-                boxCollider.isTrigger = false;
-                boxCollider.size = new Vector3(0.0068977354f, 0.051325835f, 0.13071556f);
-                boxCollider.center = new Vector3(0.000000007683411f, 0, -0.03785309f);
+                seedGrabInteractable = GetComponent<XRGrabInteractable>();
+                if (seedGrabInteractable == null)
+                {
+                    Debug.LogError("XRGrabInteractable is missing on MagicalSeed! Please add one manually.");
+                    enabled = false; // Disable script if critical component is missing
+                    return;
+                }
             }
 
-            // Subscribe to grab events - simplified since we're not tracking isBeingHeld anymore
-            grabInteractable.selectEntered.AddListener(OnGrab);
-            grabInteractable.selectExited.AddListener(OnRelease);
-        }
-
-        private void OnDestroy()
-        {
-            // Clean up event listeners
-            if (grabInteractable != null)
+            // Ensure Collider exists
+            if (seedCollider == null)
             {
-                grabInteractable.selectEntered.RemoveListener(OnGrab);
-                grabInteractable.selectExited.RemoveListener(OnRelease);
+                seedCollider = GetComponent<Collider>();
+                if (seedCollider == null)
+                {
+                    Debug.LogError("Collider is missing on MagicalSeed! Please add one manually.");
+                    enabled = false; // Disable script if critical component is missing
+                    return;
+                }
             }
         }
-        
-        public void OnPlantedInPot()
+
+        private void OnEnable()
         {
-            // This method will be called by the TreeOfLightPot when the seed is placed
-            Debug.Log("Seed has been planted in pot!");
-            
-            // Make sure the seed can't be grabbed again
-            if (grabInteractable != null)
+            if (seedRigidbody != null)
             {
-                grabInteractable.enabled = false;
+                seedRigidbody.isKinematic = false;
+                seedRigidbody.useGravity = true;
             }
-            
-            // The actual destruction will be handled by the TreeOfLightPot
-            // as part of its growth sequence
-        }
-
-        private void OnGrab(SelectEnterEventArgs args)
-        {
-            // Visual feedback when grabbed could be added here if needed
-            Debug.Log("Seed grabbed");
-        }
-
-        private void OnRelease(SelectExitEventArgs args)
-        {
-            // Visual feedback when released could be added here if needed
-            Debug.Log("Seed released");
+            if (seedGrabInteractable != null)
+            {
+                seedGrabInteractable.enabled = true;
+            }
+            if (seedCollider != null)
+            {
+                seedCollider.enabled = true;
+            }
         }
     }
 }
