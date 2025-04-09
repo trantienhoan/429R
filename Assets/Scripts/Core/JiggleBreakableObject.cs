@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic; // Add this line
 
 namespace Core
 {
@@ -8,13 +9,13 @@ namespace Core
         [Header("Jiggle Settings")]
         [SerializeField] private float jiggleAmount = 0.05f;
         [SerializeField] private float jiggleSpeed = 30f;
-        [SerializeField] private float jiggleDamping = 8f;
+        [SerializeField] private float jiggleDamping = 0.3f;
         [SerializeField] private float jiggleRecoverySpeed = 2f;
         [SerializeField] private float hitScaleAmount = 0.8f;
         [SerializeField] private float hitScaleSpeed = 10f;
         [SerializeField] private float jiggleDuration = 1.5f;
         [SerializeField] private int jiggleCount = 3;
-        [SerializeField] private float itemDropInterval = 0.5f;
+        [SerializeField] private int maxItemsToDrop = 3; // Limit items dropped
 
         [Header("Collider Settings")]
         [SerializeField] private bool useChildColliders = true;
@@ -24,11 +25,12 @@ namespace Core
         [SerializeField] private GameObject hitParticlePrefab;
         [SerializeField] private GameObject breakParticlePrefab;
         [SerializeField] private AudioClip hitSound;
-        [SerializeField] private new AudioClip breakSound;
+        //[SerializeField] private AudioClip breakSound; // Overriding base class
         [SerializeField] private float particleScale = 1f;
         [SerializeField] private float soundVolume = 1f;
 
-        private new AudioSource audioSource;
+        private new AudioSource audioSource; // Shadowing base class
+
         private Vector3 originalPosition;
         private Vector3 originalScale;
         private Vector3 targetPosition;
@@ -40,10 +42,12 @@ namespace Core
         private Collider[] childColliders;
         private float jiggleTimer = 0f;
         private Vector3 jiggleVelocity = Vector3.zero;
+        private int itemsDropped = 0;
 
         protected override void Awake()
         {
             base.Awake();
+
             originalPosition = transform.localPosition;
             originalScale = transform.localScale;
             targetPosition = originalPosition;
@@ -69,16 +73,17 @@ namespace Core
         private void SetupChildColliders()
         {
             // Get all colliders in children
-            childColliders = GetComponentsInChildren<Collider>();
-            
-            // Tag child colliders if needed
-            foreach (Collider col in childColliders)
+            Collider[] cols = GetComponentsInChildren<Collider>();
+            List<Collider> validColliders = new List<Collider>();
+            foreach (Collider col in cols)
             {
-                if (col.gameObject != gameObject) // Skip the main object
+                if (col.gameObject != gameObject && col.enabled) // Skip the main object and disabled colliders
                 {
                     col.gameObject.tag = childColliderTag;
+                    validColliders.Add(col);
                 }
             }
+            childColliders = validColliders.ToArray();
         }
 
         public override void TakeDamage(float damage, Vector3 hitPoint, Vector3 hitDirection)
@@ -94,9 +99,16 @@ namespace Core
 
             if (currentHealth <= 0 && !isJiggling)
             {
-                StartCoroutine(JiggleAndBreak());
+                HandleBreaking(); // Start breaking sequence
             }
+            else
+            {
+                PlayHitEffects(hitPoint, hitDirection);
+            }
+        }
 
+        private void PlayHitEffects(Vector3 hitPoint, Vector3 hitDirection)
+        {
             // Play hit particle effect
             if (hitParticlePrefab != null)
             {
@@ -105,8 +117,8 @@ namespace Core
                 Destroy(hitEffect, 2f);
             }
 
-            // Play hit sound
-            if (hitSound != null && audioSource != null)
+            // Play hit sound if not already playing
+            if (hitSound != null && audioSource != null && !audioSource.isPlaying)
             {
                 audioSource.PlayOneShot(hitSound, soundVolume);
             }
@@ -117,40 +129,43 @@ namespace Core
             scaleProgress = 0f;
         }
 
+        protected override void HandleBreaking()
+        {
+            StartCoroutine(JiggleAndBreak());
+        }
+
         private IEnumerator JiggleAndBreak()
         {
             isJiggling = true;
+            itemsDropped = 0;
             float elapsedTime = 0f;
-            int itemsDropped = 0;
-            float nextItemDropTime = itemDropInterval;
+            Vector3 originalPos = transform.position;
 
             while (elapsedTime < jiggleDuration)
             {
                 elapsedTime += Time.deltaTime;
                 float jiggleProgress = elapsedTime / jiggleDuration;
-                
+
                 // Calculate jiggle offset
                 float xOffset = Mathf.Sin(jiggleProgress * jiggleCount * 2 * Mathf.PI) * jiggleAmount;
                 float zOffset = Mathf.Cos(jiggleProgress * jiggleCount * 2 * Mathf.PI) * jiggleAmount;
-                
+
                 // Apply jiggle to main object
-                transform.position = originalPosition + new Vector3(xOffset, 0, zOffset);
+                transform.position = originalPos + new Vector3(xOffset, 0, zOffset);
 
                 // Drop items periodically during the jiggle
-                if (elapsedTime >= nextItemDropTime && itemsDropped < itemDropPrefabs.Length)
+                if (itemsDropped < maxItemsToDrop && itemsDropped < itemDropPrefabs.Length)
                 {
-                    Vector3 dropPoint = transform.position + Vector3.up;
-                    DropSingleItem(dropPoint, itemsDropped);
+                    DropSingleItem(originalPos + Vector3.up, itemsDropped);
                     itemsDropped++;
-                    nextItemDropTime += itemDropInterval;
                 }
 
                 yield return null;
             }
 
             // Return to original position before breaking
-            transform.position = originalPosition;
-            
+            transform.position = originalPos;
+
             // Trigger the break
             Break();
         }
@@ -166,11 +181,13 @@ namespace Core
                 randomDirection.y = Mathf.Abs(randomDirection.y);
 
                 GameObject droppedItem = Instantiate(itemPrefab, dropPoint, Random.rotation);
-                droppedItem.transform.localScale = Vector3.one;
-                
-                if (droppedItem.TryGetComponent<Rigidbody>(out Rigidbody rb))
+                if(droppedItem != null)
                 {
-                    rb.AddForce(randomDirection * dropForce, ForceMode.Impulse);
+                    droppedItem.transform.localScale = Vector3.one;
+                    if (droppedItem.TryGetComponent<Rigidbody>(out Rigidbody rb))
+                    {
+                        rb.AddForce(randomDirection * dropForce, ForceMode.Impulse);
+                    }
                 }
             }
         }
@@ -191,11 +208,11 @@ namespace Core
             // Play break sound
             if (breakSound != null && audioSource != null)
             {
-                AudioSource.PlayClipAtPoint(breakSound, transform.position, soundVolume);
+                audioSource.PlayOneShot(breakSound, soundVolume);
             }
 
             onBreak?.Invoke();
-            
+
             // Handle destruction
             HandleDestruction();
         }
@@ -207,7 +224,7 @@ namespace Core
             {
                 foreach (Collider col in childColliders)
                 {
-                    col.enabled = false;
+                    if(col != null) col.enabled = false;
                 }
             }
             else if (TryGetComponent<Collider>(out Collider mainCollider))
@@ -219,13 +236,14 @@ namespace Core
             MeshRenderer[] renderers = GetComponentsInChildren<MeshRenderer>();
             foreach (MeshRenderer renderer in renderers)
             {
-                renderer.enabled = false;
+                if(renderer != null) renderer.enabled = false;
             }
 
+            jiggleVelocity = Vector3.zero;
             base.HandleDestruction();
         }
 
-        private void Update()
+        private void FixedUpdate()
         {
             // Update position (jiggle effect)
             transform.localPosition = Vector3.SmoothDamp(
@@ -234,29 +252,19 @@ namespace Core
                 ref currentVelocity,
                 jiggleDamping,
                 Mathf.Infinity,
-                Time.deltaTime
+                Time.fixedDeltaTime // Use fixedDeltaTime
             );
 
             // Gradually return to original position
-            targetPosition = Vector3.Lerp(targetPosition, originalPosition, Time.deltaTime * jiggleRecoverySpeed);
+            targetPosition = Vector3.Lerp(targetPosition, originalPosition, Time.fixedDeltaTime * jiggleRecoverySpeed);
+        }
 
+        private void Update()
+        {
             // Update scale (squash and stretch effect)
             scaleProgress = Mathf.MoveTowards(scaleProgress, 1f, Time.deltaTime * hitScaleSpeed);
             float currentScale = Mathf.Lerp(hitScaleAmount, 1f, scaleProgress);
             transform.localScale = originalScale * currentScale;
-
-            // Update jiggle effect
-            if (jiggleTimer < jiggleDamping)
-            {
-                jiggleTimer += Time.deltaTime;
-                Rigidbody rb = GetComponent<Rigidbody>();
-                if (rb != null)
-                {
-                    // Apply damping to jiggle velocity
-                    jiggleVelocity *= (1 - (jiggleTimer / jiggleDamping));
-                    rb.linearVelocity = Vector3.Lerp(rb.linearVelocity, Vector3.zero, Time.deltaTime * jiggleDamping);
-                }
-            }
         }
 
         public void SetJiggleSettings(float amount, float damping, float speed)
@@ -264,7 +272,6 @@ namespace Core
             this.jiggleAmount = amount;
             this.jiggleDamping = damping;
             this.jiggleSpeed = speed;
-            Debug.Log($"JiggleBreakableObject: Jiggle settings updated on {gameObject.name}");
         }
     }
-} 
+}

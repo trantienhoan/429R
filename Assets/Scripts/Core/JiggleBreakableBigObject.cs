@@ -9,15 +9,15 @@ public class JiggleBreakableBigObject : BreakableObject
     [SerializeField] private float jiggleAmount = 0.1f;
     [SerializeField] private float jiggleDuration = 0.5f;
     [SerializeField] private AnimationCurve jiggleCurve;
-    
+
     [Header("Physics Settings")]
-    [SerializeField] private float objectMass = 5f;
-    [SerializeField] private float minimumImpactForce = 5f;
-    [SerializeField] private bool breakOnlyFromWeapons = true;
-    [SerializeField] private bool useImpactForce = true;
-    [SerializeField] private LayerMask collisionLayers = -1; // -1 means all layers
-    [SerializeField] private float damageMultiplier = 1f;
-    
+    [SerializeField] private float objectMass = 50f; // Increased mass
+    //[SerializeField] private float minimumImpactForce = 5f;
+    //[SerializeField] private bool breakOnlyFromWeapons = true;
+    //[SerializeField] private bool useImpactForce = true;
+    //[SerializeField] private LayerMask collisionLayers = -1; // -1 means all layers
+    //[SerializeField] private float damageMultiplier = 1f;
+
     [Header("Effects")]
     [SerializeField] private GameObject dustParticlePrefab;
     [SerializeField] private GameObject breakParticlePrefab;
@@ -33,11 +33,11 @@ public class JiggleBreakableBigObject : BreakableObject
     protected override void Awake()
     {
         base.Awake();
-        
+
         // Cache components
         boxCollider = GetComponent<BoxCollider>();
         rigidBody = GetComponent<Rigidbody>();
-        
+
         // Store initial values
         originalPosition = transform.position;
         originalRotation = transform.rotation;
@@ -79,7 +79,7 @@ public class JiggleBreakableBigObject : BreakableObject
         {
             jiggleTimer += Time.deltaTime;
             float progress = jiggleTimer / jiggleDuration;
-            
+
             if (progress < 1.0f)
             {
                 float curveValue = jiggleCurve != null ? jiggleCurve.Evaluate(progress) : Mathf.Sin(progress * Mathf.PI * 4);
@@ -96,7 +96,7 @@ public class JiggleBreakableBigObject : BreakableObject
         }
     }
 
-    protected void OnCollisionEnter(Collision collision)
+    protected override void OnCollisionEnter(Collision collision)
     {
         // Skip if collision layer is not in our mask
         if ((collisionLayers.value & (1 << collision.gameObject.layer)) == 0)
@@ -121,13 +121,13 @@ public class JiggleBreakableBigObject : BreakableObject
         {
             Vector3 hitPoint = collision.contacts[0].point;
             Vector3 hitDirection = collision.contacts[0].normal;
-            
+
             // Trigger jiggle effect
             TriggerJiggleEffect(hitDirection);
-            
+
             // Spawn dust particles
             SpawnDustParticles(hitPoint);
-            
+
             // Calculate damage based on impact force and weapon status
             float damage;
             if (useImpactForce)
@@ -140,7 +140,7 @@ public class JiggleBreakableBigObject : BreakableObject
                 // If not using impact force, apply fixed damage
                 damage = health * 0.2f; // Take 20% of health as damage
             }
-            
+
             // Apply damage
             TakeDamage(damage, hitPoint, hitDirection);
         }
@@ -191,7 +191,7 @@ public class JiggleBreakableBigObject : BreakableObject
         jiggleTimer = 0f;
         jiggleDirection = -hitDirection.normalized; // Jiggle away from hit
         isJiggling = true;
-        
+
         // Store original position and rotation
         originalPosition = transform.position;
         originalRotation = transform.rotation;
@@ -212,10 +212,10 @@ public class JiggleBreakableBigObject : BreakableObject
     {
         // Spawn breaking particles
         SpawnBreakParticles();
-        
+
         // Drop items - using the original method from the base class
         DropItems(transform.position);
-        
+
         // Let the base class handle the rest
         Break();
     }
@@ -232,11 +232,11 @@ public class JiggleBreakableBigObject : BreakableObject
         health = 500f; // More health since it's a big object
         dropForce = 5f;
         destroyDelay = 2f;
-        
+
         // Set default jiggle settings
         jiggleAmount = 0.1f;
         jiggleDuration = 0.5f;
-        
+
         // Create a default jiggle curve if none exists
         if (jiggleCurve == null || jiggleCurve.keys.Length == 0)
         {
@@ -248,13 +248,7 @@ public class JiggleBreakableBigObject : BreakableObject
                 new Keyframe(1, 0)
             );
         }
-        
-        // Set break parameters
-        minimumImpactForce = 5f;
-        breakOnlyFromWeapons = true;
-        useImpactForce = true;
-        damageMultiplier = 1f;
-        
+
         // Set the tag to "Breakable"
         gameObject.tag = "Breakable";
 
@@ -263,7 +257,7 @@ public class JiggleBreakableBigObject : BreakableObject
         {
             gameObject.AddComponent<BoxCollider>();
         }
-        
+
         if (!TryGetComponent<Rigidbody>(out _))
         {
             Rigidbody rb = gameObject.AddComponent<Rigidbody>();
@@ -273,12 +267,6 @@ public class JiggleBreakableBigObject : BreakableObject
             rb.linearDamping = 0.5f;
         }
     }
-    
+
     // Public method to set break settings
-    public void SetBreakSettings(float impactForce, bool onlyWeapons, bool useForce)
-    {
-        minimumImpactForce = impactForce;
-        breakOnlyFromWeapons = onlyWeapons;
-        useImpactForce = useForce;
-    }
 }

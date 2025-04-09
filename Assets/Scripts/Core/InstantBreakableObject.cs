@@ -4,25 +4,17 @@ namespace Core
 {
     public class InstantBreakableObject : BreakableObject
     {
-        [Header("Instant Break Settings")]
-        [SerializeField] protected float minimumImpactForce = 5f;
-        [SerializeField] protected bool breakOnlyFromWeapons = true;
-        [SerializeField] protected bool useImpactForce = true;
-        [SerializeField] protected LayerMask collisionLayers = -1; // -1 means all layers
-        [SerializeField] protected float damageMultiplier = 1f; // New field to control damage scaling
+        //[Header("Instant Break Settings")]
+        //[SerializeField] protected float minimumImpactForce = 5f;
+        //[SerializeField] protected bool breakOnlyFromWeapons = true;
+        //[SerializeField] protected bool useImpactForce = true;
+        //[SerializeField] protected LayerMask collisionLayers = -1; // -1 means all layers
+        //[SerializeField] protected float damageMultiplier = 1f; // New field to control damage scaling
 
-        // Public methods to modify settings
-        public void SetBreakSettings(float impactForce, bool onlyWeapons, bool useForce)
-        {
-            minimumImpactForce = impactForce;
-            breakOnlyFromWeapons = onlyWeapons;
-            useImpactForce = useForce;
-        }
-
-        protected virtual void OnCollisionEnter(Collision collision)
+        protected override void OnCollisionEnter(Collision collision)
         {
             // Skip if collision layer is not in our mask
-            if ((collisionLayers.value & (1 << collision.gameObject.layer)) == 0)
+            if ((base.collisionLayers.value & (1 << collision.gameObject.layer)) == 0)
                 return;
 
             bool isWeapon = collision.gameObject.CompareTag("Weapon");
@@ -35,11 +27,11 @@ namespace Core
 
             if (breakOnlyFromWeapons)
             {
-                shouldBreak = isWeapon && (!useImpactForce || impactForce >= minimumImpactForce);
+                shouldBreak = isWeapon && (!base.useImpactForce || impactForce >= base.minimumImpactForce);
             }
             else
             {
-                shouldBreak = isWeapon || (useImpactForce && impactForce >= minimumImpactForce);
+                shouldBreak = isWeapon || (base.useImpactForce && impactForce >= base.minimumImpactForce);
             }
 
             if (shouldBreak)
@@ -53,7 +45,7 @@ namespace Core
                 if (useImpactForce)
                 {
                     // Scale damage based on impact force, with a minimum damage
-                    damage = Mathf.Max(impactForce * damageMultiplier, minimumImpactForce);
+                    damage = Mathf.Max(impactForce * base.damageMultiplier, base.minimumImpactForce);
                     Debug.Log($"Calculated damage: {damage} (Impact force: {impactForce}, Multiplier: {damageMultiplier})");
                 }
                 else
@@ -71,15 +63,14 @@ namespace Core
         protected override void HandleDestruction()
         {
             // Disable collider immediately
-            if (TryGetComponent<Collider>(out Collider col))
+            if (TryGetComponent(out Collider col))
             {
                 col.enabled = false;
             }
 
-            // Disable mesh renderer immediately
-            if (TryGetComponent<MeshRenderer>(out MeshRenderer renderer))
+            if (TryGetComponent(out MeshRenderer meshRenderer))
             {
-                renderer.enabled = false;
+                meshRenderer.enabled = false;
             }
 
             base.HandleDestruction();

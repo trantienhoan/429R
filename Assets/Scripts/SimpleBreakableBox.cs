@@ -9,7 +9,7 @@ public class SimpleBreakableBox : InstantBreakableObject
     [Header("Visual Settings")]
     [SerializeField] private Material intactMaterial;
     [SerializeField] private Material breakingMaterial;
-    
+
     private MeshRenderer meshRenderer;
     private BoxCollider boxCollider;
     private float initialHealth;
@@ -23,11 +23,11 @@ public class SimpleBreakableBox : InstantBreakableObject
     {
         Debug.Log($"SimpleBreakableBox: Awake called on {gameObject.name}");
         base.Awake();
-        
+
         // Get components
         meshRenderer = GetComponent<MeshRenderer>();
         boxCollider = GetComponent<BoxCollider>();
-        
+
         if (meshRenderer == null)
         {
             Debug.LogError("SimpleBreakableBox requires a MeshRenderer component!");
@@ -86,7 +86,7 @@ public class SimpleBreakableBox : InstantBreakableObject
         }
 
         // Optional: Add particle effects, sound, etc. here
-        
+
         // Make the object invisible
         if (meshRenderer != null)
         {
@@ -121,9 +121,9 @@ public class SimpleBreakableBox : InstantBreakableObject
         health = 100f;
         dropForce = 3f;
         destroyDelay = 1f;
-        
-        // Set break settings
-        SetBreakSettings(5f, true, true);
+
+        // Set break settings - REMOVE THIS LINE
+        //SetBreakSettings(5f, true, true);
 
         // Ensure components
         if (!TryGetComponent<BoxCollider>(out _))
@@ -131,7 +131,7 @@ public class SimpleBreakableBox : InstantBreakableObject
             Debug.Log("SimpleBreakableBox: Adding BoxCollider");
             gameObject.AddComponent<BoxCollider>();
         }
-        
+
         if (!TryGetComponent<Rigidbody>(out _))
         {
             Debug.Log("SimpleBreakableBox: Adding Rigidbody");
@@ -162,22 +162,3 @@ public class SimpleBreakableBox : InstantBreakableObject
         Debug.Log($"SimpleBreakableBox: Start called on {gameObject.name}");
     }
 }
-
-/* Prefab Setup Instructions:
-1. Create a new Cube in your scene
-2. Add this SimpleBreakableBox script
-3. Ensure it has these components:
-   - Box Collider
-   - Mesh Filter (should be added with cube)
-   - Mesh Renderer (should be added with cube)
-4. Set up materials:
-   - Create/assign an intact material (e.g., blue)
-   - Create/assign a breaking material (e.g., red)
-5. Configure the Rigidbody:
-   - Add Rigidbody component
-   - Mass: 1
-   - Use Gravity: true
-   - Is Kinematic: false
-6. Set the tag to "Breakable"
-7. Create prefab by dragging to Project window
-*/ 
