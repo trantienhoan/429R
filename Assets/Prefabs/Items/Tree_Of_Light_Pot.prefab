@@ -169,6 +169,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 5698044415995147322}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 90ead29ec06b9784e832b9c538d6641a,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5611500707809933979}
   m_SourcePrefab: {fileID: 100100000, guid: 90ead29ec06b9784e832b9c538d6641a, type: 3}
 --- !u!1 &5030664726389686301 stripped
 GameObject:
@@ -428,6 +432,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   treeOfLightPrefab: {fileID: 4431514908729328411, guid: c99d2be7e985de644a0adaecdc76989b,
     type: 3}
+  seedSocket: {fileID: 9009260404841559303}
   treeSpawnPoint: {fileID: 265967999501900189}
   growthParticles: {fileID: 7938384439400024400, guid: b6e54acc881a03c4a9719b161a25a3e3,
     type: 3}
@@ -453,8 +458,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2883e4c1dfd15bf43a546e9d36e341bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 1000
+  maxHealth: 1e+12
   currentHealth: 0
+--- !u!114 &5611500707809933979
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5030664726389686301}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2380d6a6e9dc3254d95d638321e4362a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  keyItemPrefab: {fileID: 6616067871869890980, guid: edf9132d0728dd349854d6653c1e11a0,
+    type: 3}
+  bombItemPrefab: {fileID: 641341794854005767, guid: 74ff73dedb8bc7b4083e2753e9ada44f,
+    type: 3}
+  dropForce: 200
+  hasGrown: 0
 --- !u!4 &5664211420611074727 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 90ead29ec06b9784e832b9c538d6641a,

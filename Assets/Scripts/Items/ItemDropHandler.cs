@@ -3,48 +3,47 @@ using Core; // Assuming HealthComponent is in the Core namespace
 
 namespace Items
 {
+    [RequireComponent(typeof(HealthComponent))]
     public class ItemDropHandler : MonoBehaviour
     {
         [Header("Item Prefabs")]
         [SerializeField] private GameObject keyItemPrefab;
         [SerializeField] private GameObject bombItemPrefab;
 
-        private bool hasGrown = false; // A flag to indicate if growth was completed
         [SerializeField] private float dropForce = 200f;
+        [SerializeField] private bool hasGrown = false; // A flag to indicate if growth was completed
+        private HealthComponent health;
+
+        private void OnEnable()
+        {
+            if (keyItemPrefab == null)
+            {
+                Debug.LogError("ItemDropHandler: keyItemPrefab is not assigned in the Inspector!");
+            }
+            if (bombItemPrefab == null)
+            {
+                Debug.LogError("ItemDropHandler: bombItemPrefab is not assigned in the Inspector!");
+            }
+        }
 
         // Attach this script to both the TreeOfLight and TreeOfLightPot
         private void Start()
         {
             // Find the components
-            HealthComponent health = GetComponent<HealthComponent>();
+            health = GetComponent<HealthComponent>();
 
-            // Make sure health exists on both the objects
-            if (health != null)
-            {
-                // Assign the method to the death event on the object
-                health.OnDeath += HandleDeath;
-            }
-            else
-            {
-                Debug.LogError("ItemDropHandler: No HealthComponent found on this GameObject.");
-                enabled = false; // Disable the script if no HealthComponent is found
-            }
+            // Assign the method to the death event on the object
+            health.OnDeath += HandleDeath;
         }
+
         public void SetHasGrown(bool grown)
         {
             hasGrown = grown;
         }
 
-        private void HandleDeath()
+        private void HandleDeath(HealthComponent healthComponent)
         {
-            if (hasGrown)
-            {
-                DropItem(keyItemPrefab);
-            }
-            else
-            {
-                DropItem(bombItemPrefab);
-            }
+            DropItems();
         }
 
         public void DropItems()
@@ -70,10 +69,22 @@ namespace Items
                     // Apply an impulse force to the instantiated object
                     rb.AddForce(Vector3.up * dropForce);
                 }
+                else
+                {
+                    Debug.LogWarning("ItemDropHandler: Dropped item prefab has no Rigidbody component.");
+                }
             }
             else
             {
                 Debug.LogWarning("ItemDropHandler: Item prefab is not assigned.");
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (health != null)
+            {
+                health.OnDeath -= HandleDeath;
             }
         }
     }

@@ -16,6 +16,7 @@ namespace Items
         [SerializeField] private ParticleSystem growthParticles;
         [Tooltip("Set to the ShadowMonsterSpawner from the scene to connect spawner and tree")]
         [SerializeField] private ShadowMonsterSpawner monsterSpawner;
+        public ShadowMonsterSpawner MonsterSpawner { get { return monsterSpawner; } set { monsterSpawner = value; } }
 
         [Header("Timings")]
         [SerializeField] private float growthStartDelay = 0.5f;
@@ -38,6 +39,7 @@ namespace Items
         private HealthComponent healthComponent;
         private ItemDropHandler itemDropHandler;
         private GameObject treeInstance;
+        private const string OnSeedSocketEnteredMethodName = "OnSeedSocketEntered";
 
         private void Awake()
         {
@@ -55,7 +57,7 @@ namespace Items
             itemDropHandler = GetComponent<ItemDropHandler>();
             if (itemDropHandler == null)
             {
-                itemDropHandler = gameObject.AddComponent<ItemDropHandler>();
+                Debug.LogError("ItemDropHandler not found on TreeOfLightPot!");
             }
 
             if (seedSocket != null)
@@ -144,6 +146,15 @@ namespace Items
 
             yield return null;
 
+            if (monsterSpawner != null)
+            {
+                monsterSpawner.BeginSpawning();
+            }
+            else
+            {
+                Debug.LogWarning("Monster Spawner is null.  Assign in the Inspector on the TreeOfLightPot.");
+            }
+
             // Set tree's parentPot
             if (treeInstance != null)
             {
@@ -151,9 +162,10 @@ namespace Items
                 if (tree != null)
                 {
                     tree.SetParentPot(this); //Connect the parent pot
-                    tree.monsterSpawner = monsterSpawner; // Connect monster spawner
+                                              //tree.monsterSpawner = monsterSpawner; // Connect monster spawner
                     Debug.Log("Calling tree.BeginGrowth");
                     tree.BeginGrowth(seedMoveDuration); // Pass the duration
+
                     onGrowthStarted.Invoke();
                 }
                 else
@@ -169,7 +181,6 @@ namespace Items
             //StartGrowth(); The growth are now being handled by BeginGrowth
         }
 
-
         private IEnumerator SetKinematicDelayed(Rigidbody rb)
         {
             yield return new WaitForSeconds(0.1f); // A short delay
@@ -180,14 +191,14 @@ namespace Items
         {
             if (treeOfLightPrefab != null)
             {
-                GameObject treeInstance = Instantiate(treeOfLightPrefab, treeSpawnPoint.position, Quaternion.identity);
+                GameObject newTreeInstance = Instantiate(treeOfLightPrefab, treeSpawnPoint.position, Quaternion.identity);
 
                 // Parent the tree to the treeSpawnPoint
-                treeInstance.transform.SetParent(treeSpawnPoint, false);
+                newTreeInstance.transform.SetParent(treeSpawnPoint, false);
 
-                treeInstance.transform.localPosition = Vector3.zero; // keep tree within spawnPoint
-                treeInstance.transform.localRotation = Quaternion.identity; // keep tree within spawnPoint
-                return treeInstance; // Return the instance
+                newTreeInstance.transform.localPosition = Vector3.zero; // keep tree within spawnPoint
+                newTreeInstance.transform.localRotation = Quaternion.identity; // keep tree within spawnPoint
+                return newTreeInstance; // Return the instance
             }
             else
             {
@@ -226,12 +237,21 @@ namespace Items
             seed.transform.SetParent(treeSpawnPoint);
         }
 
-        private void OnPotDeath()
+        private void OnPotDeath(HealthComponent healthComponent)
         {
             Debug.Log("TreeOfLightPot: has died!");
             // Handle what happens when the pot is destroyed.
             // May need to trigger item drop based on tree growth state using the new ItemDropHandler
-            itemDropHandler.DropItems();
+            if (itemDropHandler != null)
+            {
+                itemDropHandler.DropItems();
+            }
+
+            if (treeInstance != null)
+            {
+                Destroy(treeInstance.gameObject);
+            }
+
             Destroy(gameObject);
         }
         private void OnDestroy()
@@ -240,9 +260,9 @@ namespace Items
             {
                 healthComponent.OnDeath -= OnPotDeath;
             }
-            if (treeInstance != null)
+            if (treeInstance != null && treeSpawnPoint != null)
             {
-                Destroy(treeInstance);
+                Destroy(treeInstance.gameObject);
             }
         }
     }

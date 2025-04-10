@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-//using System.Linq;
+using System;
 
 namespace Core
 {
@@ -7,91 +7,130 @@ namespace Core
     {
         [SerializeField] private float maxHealth = 100f;
         [SerializeField] private float currentHealth;
-        
-        public delegate void OnHealthChangedDelegate(float currentHealth, float maxHealth);
+
+        public class HealthChangedEventArgs : EventArgs
+        {
+            public float CurrentHealth { get; set; }
+            public float MaxHealth { get; set; }
+            public GameObject DamageSource { get; set; }
+            public float DamageAmount { get; set; } // Add damage amount
+        }
+
+        public delegate void OnHealthChangedDelegate(object sender, HealthChangedEventArgs e);
         public event OnHealthChangedDelegate OnHealthChanged;
-        
-        public delegate void OnDeathDelegate();
+
+        public delegate void OnTakeDamageDelegate(object sender, HealthChangedEventArgs e); // New event
+        public event OnTakeDamageDelegate OnTakeDamage;
+
+        public delegate void OnDeathDelegate(HealthComponent health);
         public event OnDeathDelegate OnDeath;
 
         private bool isDead = false;
-        
+
         private void Start()
         {
             currentHealth = maxHealth;
         }
+
         public void ResetHealth()
         {
             currentHealth = maxHealth;
         }
-        public void TakeDamage(float damage)
+
+        public void TakeDamage(float damage, GameObject damageSource = null)
         {
             if (isDead) return;
-            
+
             currentHealth -= damage;
-            
-            // Trigger health changed event
-            OnHealthChanged?.Invoke(currentHealth, maxHealth);
-            
+
             if (currentHealth <= 0)
             {
                 currentHealth = 0;
-                Die();
+                Die(damageSource, damage);
             }
+
+            currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+
+            HealthChangedEventArgs eventArgs = new HealthChangedEventArgs
+            {
+                CurrentHealth = currentHealth,
+                MaxHealth = maxHealth,
+                DamageSource = damageSource,
+                DamageAmount = damage //Set damage amount
+            };
+
+            OnTakeDamage?.Invoke(this, eventArgs); // Invoke OnTakeDamage first
+
+            // Trigger health changed event
+            OnHealthChanged?.Invoke(this, eventArgs);
         }
-        
+
         public void Heal(float amount)
         {
             if (isDead) return;
-            
+
             currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
-            
+
+            HealthChangedEventArgs eventArgs = new HealthChangedEventArgs
+            {
+                CurrentHealth = currentHealth,
+                MaxHealth = maxHealth,
+                DamageSource = null,
+                DamageAmount = 0 // No damage when healing
+            };
+
             // Trigger health changed event
-            OnHealthChanged?.Invoke(currentHealth, maxHealth);
+            OnHealthChanged?.Invoke(this, eventArgs);
         }
-        public void Kill()
-        {
-            Die();
-            Destroy(gameObject);
-        }
-        
-        protected virtual void Die()
+        protected virtual void Die(GameObject damageSource, float damage)
         {
             if (isDead) return;
-            
+
+            HealthChangedEventArgs eventArgs = new HealthChangedEventArgs
+            {
+                CurrentHealth = currentHealth,
+                MaxHealth = maxHealth,
+                DamageSource = damageSource,
+                DamageAmount = damage // Use the damage value passed to Die
+            };
+
+            OnDeath?.Invoke(this);
             isDead = true;
-            
-            // Trigger death event
-            OnDeath?.Invoke();
-            
+
             Debug.Log($"{gameObject.name} has died!");
+            Destroy(gameObject);
         }
-        
+
         public float GetHealthPercentage()
         {
             return currentHealth / maxHealth;
         }
-        
+
         public bool IsDead()
         {
             return isDead;
         }
-        
-        // New helper properties/methods
+
         public float Health
         {
             get { return currentHealth; }
             set { currentHealth = value; }
         }
         public float MaxHealth => maxHealth;
-        
+
         public void SetMaxHealth(float newMaxHealth)
         {
             maxHealth = newMaxHealth;
             if (currentHealth > maxHealth)
                 currentHealth = maxHealth;
-                
-            OnHealthChanged?.Invoke(currentHealth, maxHealth);
+
+            OnHealthChanged?.Invoke(this, new HealthChangedEventArgs
+            {
+                CurrentHealth = currentHealth,
+                MaxHealth = maxHealth,
+                DamageSource = null,
+                DamageAmount = 0
+            });
         }
     }
 }

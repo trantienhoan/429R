@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Enemies;
+using Core;
 
 public class MonsterTrackerData
 {
@@ -23,12 +24,11 @@ public class ShadowMonsterSpawner : MonoBehaviour
     [Header("Wave Settings")]
     [SerializeField] private int monstersPerWave = 3;
     [SerializeField] private float timeBetweenWaves = 10f;
-    
+
     [Header("Spawn Points")]
     [SerializeField] private List<Transform> spawnPoints = new List<Transform>();
 
     [Header("References")]
-    //public GameObject player;
     [SerializeField] private TreeOfLight tree; // Reference to the TreeOfLight
     private List<MonsterTrackerData> _activeMonsters = new List<MonsterTrackerData>();
 
@@ -38,11 +38,17 @@ public class ShadowMonsterSpawner : MonoBehaviour
     {
         if (tree == null)
         {
-            Debug.LogError("Tree not assigned on ShadowMonsterSpawner!");
+            LogError("Tree not assigned on ShadowMonsterSpawner!");
             enabled = false;
             return;
         }
         InitializeSpawningSystem();
+    }
+    public void BeginSpawning()
+    {
+        // Add the code here that starts the monster spawning process
+        // For example, if you have a coroutine that handles spawning:
+        StartCoroutine(SpawnMonsters());
     }
 
     private void OnDestroy()
@@ -84,47 +90,48 @@ public class ShadowMonsterSpawner : MonoBehaviour
         return monsterInstance;
     }
 
-    private void RegisterMonster(GameObject monsterInstance)
+    public void RegisterMonster(GameObject monster)
     {
-        if (monsterInstance == null)
+        ShadowMonsterSpider spider = monster.GetComponent<ShadowMonsterSpider>();
+        if (spider != null)
         {
-            Debug.LogError("Trying to register a null monster instance!");
+            // Spider-specific registration: Increase health
+            HealthComponent health = monster.GetComponent<HealthComponent>();
+            if (health != null)
+            {
+                health.SetMaxHealth(health.MaxHealth * 1.5f); // 50% more health
+            }
+            Debug.Log("Registered a ShadowMonsterSpider with increased health!");
             return;
         }
 
-        ShadowMonster monster = monsterInstance.GetComponent<ShadowMonster>();
-
-        if (monster == null)
+        ShadowMonster shadowMonster = monster.GetComponent<ShadowMonster>();
+        if (shadowMonster != null)
         {
-            Debug.LogError("Monster instance does not have a ShadowMonster component!");
+            // Generic ShadowMonster registration
+            Debug.Log("Registered a ShadowMonster");
             return;
         }
 
-        ShadowMonsterSpider spider = monster as ShadowMonsterSpider;
-
-        MonsterTrackerData newMonster = new MonsterTrackerData
-        {
-            MonsterObject = monsterInstance,
-            SpiderReference = spider
-        };
-
-        _activeMonsters.Add(newMonster);
-
-        //Register to onDeath
-        var health = monsterInstance.GetComponent<Core.HealthComponent>();
-        health.OnDeath += () => UnregisterMonster(monsterInstance);
+        Debug.LogError("Monster is not a recognized ShadowMonster type!");
     }
 
-    public void UnregisterMonster(GameObject monsterInstance)
+    private void OnMonsterDeath(HealthComponent health)
     {
-        if (monsterInstance == null)
+        UnregisterMonster(health);
+    }
+    public void UnregisterMonster(HealthComponent health)
+    {
+        if (health == null)
         {
-            Debug.LogWarning("Trying to unregister a null monster instance!");
+            Debug.LogWarning("Trying to unregister a null health component!");
             return;
         }
 
+        health.OnDeath -= OnMonsterDeath;
+
         //Check if monster is on the list
-        var itemToRemove = _activeMonsters.FirstOrDefault(x => x.MonsterObject == monsterInstance);
+        var itemToRemove = _activeMonsters.FirstOrDefault(x => x.MonsterObject == health.gameObject);
 
         if (itemToRemove != null)
         {
@@ -145,6 +152,11 @@ public class ShadowMonsterSpawner : MonoBehaviour
             TriggerWave(monstersPerWave);
             yield return new WaitForSeconds(timeBetweenWaves);
         }
+    }
+    private IEnumerator SpawnMonsters()
+    {
+        StartSpawning();
+        yield return null;
     }
 
     private void StartSpawning()
@@ -171,19 +183,30 @@ public class ShadowMonsterSpawner : MonoBehaviour
     {
         if (spawnPoints == null || spawnPoints.Count == 0)
         {
-            Debug.LogWarning("No spawn points defined. Spawning at spawner's position.");
+            LogWarning("No spawn points defined. Spawning at spawner's position.");
             return transform.position; // Fallback to spawner's position
         }
 
         int randomIndex = Random.Range(0, spawnPoints.Count);
         return spawnPoints[randomIndex].position;
     }
-
     private void OnDrawGizmosSelected()
     {
-        //Draw a sphere to show the spawn radius
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, spawnRadius);
+        if (spawnPoints != null)
+        {
+            foreach (var point in spawnPoints)
+            {
+                if (point != null)
+                {
+                    Gizmos.DrawWireSphere(point.position, spawnRadius);
+                }
+            }
+        }
+        else
+        {
+            Gizmos.DrawWireSphere(transform.position, spawnRadius);
+        }
     }
 
     private void TriggerWave(int extraMonsters = 0)
@@ -216,10 +239,10 @@ public class ShadowMonsterSpawner : MonoBehaviour
         {
             if (monster.MonsterObject != null)
             {
-                var health = monster.MonsterObject.GetComponent<Core.HealthComponent>();
+                var health = monster.MonsterObject.GetComponent<HealthComponent>();
                 if (health != null)
                 {
-                    health.Kill(); // Or Despawn() or whatever appropriate method
+                    health.TakeDamage(Mathf.Infinity); // Or Despawn() or whatever appropriate method
                 }
                 else
                 {

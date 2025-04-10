@@ -316,9 +316,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   lightDamageMultiplier: 2
   minLightIntensityToDamage: 0.5
+  maxHealth: 100
   detectionRadius: 0.3
   damage: 10
-  health: 100
 --- !u!1 &641341795188840196
 GameObject:
   m_ObjectHideFlags: 0
@@ -368,6 +368,7 @@ GameObject:
   - component: {fileID: 1628042531746758124}
   - component: {fileID: 5768088528361585141}
   - component: {fileID: 4450452925798802707}
+  - component: {fileID: 8156019473082431753}
   m_Layer: 0
   m_Name: Player3D
   m_TagString: Untagged
@@ -406,9 +407,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   lightDamageMultiplier: 2
   minLightIntensityToDamage: 0.5
+  maxHealth: 100
   detectionRadius: 0.63
   damage: 10
-  health: 100
   patrolSpeed: 0.01
   chaseSpeed: 0.02
   slowdownDistance: 2
@@ -437,10 +438,6 @@ MonoBehaviour:
   arcLayer:
     serializedVersion: 2
     m_Bits: 2097152
-  minimumVRComfortDistance: 0.01
-  vrPlayerCollisionLayer:
-    serializedVersion: 2
-    m_Bits: 536870912
 --- !u!114 &945281892079234732
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -631,7 +628,7 @@ Rigidbody:
   m_IsKinematic: 0
   m_Interpolate: 1
   m_Constraints: 0
-  m_CollisionDetection: 1
+  m_CollisionDetection: 0
 --- !u!136 &5768088528361585141
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -777,6 +774,20 @@ MonoBehaviour:
   m_StartingMultipleGrabTransformers: []
   m_AddDefaultGrabTransformers: 1
   m_FarAttachMode: 0
+--- !u!114 &8156019473082431753
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 945281892079234704}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2883e4c1dfd15bf43a546e9d36e341bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 100
+  currentHealth: 0
 --- !u!1 &1733122373779532858
 GameObject:
   m_ObjectHideFlags: 0

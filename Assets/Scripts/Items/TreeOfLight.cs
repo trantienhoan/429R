@@ -1,8 +1,8 @@
 using UnityEngine;
 using System.Collections;
 using Core; // Assuming HealthComponent is in the Core namespace
-using Items; // Assuming ItemDropHandler is in the Items namespace
 using UnityEngine.Events;
+using Items;
 
 public class TreeOfLight : MonoBehaviour
 {
@@ -11,17 +11,18 @@ public class TreeOfLight : MonoBehaviour
 
     [Header("Animation")]
     [SerializeField] private Animator animator;
+    [SerializeField] private AnimationClip growthAnimClip;
     [SerializeField] private string growthAnimationName = "TreeGrowth";
 
     [Header("Light Effects")]
     [SerializeField] private Light treeLight;
     [SerializeField] private float maxLightIntensity = 2f;
     [SerializeField] private float pulseSpeed = 1f;
+    [SerializeField] private float blindingIntensityMultiplier = 4f;
 
     [Header("References")]
     [SerializeField] private TreeOfLightPot parentPot;
-    [SerializeField] public ShadowMonsterSpawner monsterSpawner;
-    [SerializeField] private ItemDropHandler itemDropHandler; // Reference to the ItemDropHandler
+    [SerializeField] private ShadowMonsterSpawner monsterSpawner;
     [SerializeField] private HealthComponent healthComponent;
     [SerializeField] private float maxHealth = 100f;
     [SerializeField] private UnityEvent onGrowthComplete;
@@ -30,9 +31,10 @@ public class TreeOfLight : MonoBehaviour
     private bool isBlinding = false;
 
     // Cache the ID of the "Growth" animation parameter
-    private int growthProgressID;
+    private int _growthProgressID;
     private Coroutine pulseCoroutine;
-
+    public TreeOfLightPot ParentPot {get { return parentPot; }}
+    
     private void Start()
     {
         //Get parent pot
@@ -46,7 +48,12 @@ public class TreeOfLight : MonoBehaviour
 
     private void Awake()
     {
-        growthProgressID = Animator.StringToHash("GrowTrigger");
+        if(growthAnimClip == null)
+        {
+            Debug.LogError("No growth animation attached to the Tree!");
+        }
+
+        _growthProgressID = Animator.StringToHash("GrowTrigger");
         if (animator == null)
         {
             animator = GetComponent<Animator>();
@@ -76,40 +83,40 @@ public class TreeOfLight : MonoBehaviour
             }
         }
         healthComponent.SetMaxHealth(maxHealth);
-        healthComponent.OnDeath += Break;
-
-        if (itemDropHandler == null)
-        {
-            itemDropHandler = GetComponent<ItemDropHandler>();
-            if (itemDropHandler == null)
-            {
-                Debug.LogError("ItemDropHandler is missing on TreeOfLight!");
-                enabled = false;
-                return;
-            }
-        }
     }
 
-    private void OnHealthChanged(float currentHealth, float maxHealth)
+    private void OnHealthChanged(object sender, HealthComponent.HealthChangedEventArgs e)
     {
-        Debug.Log($"Tree Health Changed: {currentHealth} / {maxHealth}");
+        Debug.Log($"Tree Health Changed: {e.CurrentHealth} / {e.MaxHealth}");
     }
 
     private void OnEnable()
     {
         healthComponent.OnHealthChanged += OnHealthChanged;
+        healthComponent.OnDeath += OnDeathHandler; // Subscribe to OnDeath
     }
 
     private void OnDisable()
     {
         healthComponent.OnHealthChanged -= OnHealthChanged;
+        healthComponent.OnDeath -= OnDeathHandler; // Unsubscribe from OnDeath
     }
-
     public void SetParentPot(TreeOfLightPot pot)
     {
         parentPot = pot;
     }
 
+    private void OnDeathHandler(HealthComponent health)
+    {
+        // Handle the death of the TreeOfLight here
+        Debug.Log("TreeOfLight has died!");
+        //Potentially despawn monsters
+        monsterSpawner.CleanupMonsterLists();
+        // You might want to trigger some visual effects or game logic here
+        StopAllCoroutines();
+        Destroy(gameObject); // Or play a destruction animation before destroying
+    }
+    
     public void SetGrowthSpeed(float speed)
     {
         growthSpeed = speed;
@@ -128,7 +135,7 @@ public class TreeOfLight : MonoBehaviour
             isGrowing = true;
             animator.speed = growthSpeed;
             animator.Play(growthAnimationName);
-            animator.SetTrigger(growthProgressID);
+            animator.SetTrigger(_growthProgressID);
             if (pulseCoroutine == null)
             {
                 pulseCoroutine = StartCoroutine(PulseLight());
@@ -173,7 +180,7 @@ public class TreeOfLight : MonoBehaviour
     {
         if (animator != null)
         {
-            animator.SetFloat(growthProgressID, progress);
+            animator.SetFloat(_growthProgressID, progress);
         }
     }
 
@@ -196,12 +203,6 @@ public class TreeOfLight : MonoBehaviour
         {
             isGrowing = false;
             isComplete = true;
-            if (monsterSpawner != null)
-            {
-                monsterSpawner.StopSpawning(); // Stop monster spawning
-                monsterSpawner.CleanupMonsterLists(); //Kill the current shadow monsters
-            }
-            itemDropHandler.SetHasGrown(true);
 
             if (parentPot != null)
             {
@@ -230,7 +231,7 @@ public class TreeOfLight : MonoBehaviour
         while (elapsedTime < 1f)
         {
             elapsedTime += Time.deltaTime;
-            treeLight.intensity = Mathf.Lerp(originalIntensity, maxLightIntensity * 4f, elapsedTime);
+            treeLight.intensity = Mathf.Lerp(originalIntensity, maxLightIntensity * blindingIntensityMultiplier, elapsedTime);
             yield return null;
         }
 
@@ -239,7 +240,7 @@ public class TreeOfLight : MonoBehaviour
         while (elapsedTime < 1f)
         {
             elapsedTime += Time.deltaTime;
-            treeLight.intensity = Mathf.Lerp(maxLightIntensity * 4f, originalIntensity, elapsedTime);
+            treeLight.intensity = Mathf.Lerp(maxLightIntensity * blindingIntensityMultiplier, originalIntensity, elapsedTime);
             yield return null;
         }
         isBlinding = false;
@@ -256,41 +257,23 @@ public class TreeOfLight : MonoBehaviour
     }
     IEnumerator CompletionSequence()
     {
-        yield return BlindingLightEffect();
+        yield return StartCoroutine(BlindingLightEffect());
         yield return new WaitForSeconds(1f);
-        // Drop items before destorying
-        itemDropHandler.DropItems();
-
         // Destroy the TreeOfLight GameObject.
         Destroy(gameObject);
     }
     public void OnHit()
     {
-        if (!isBlinding)
+        if (isBlinding)
         {
-            StartCoroutine(BlindingLightEffect());
+            StopCoroutine(BlindingLightEffect());
+            isBlinding = false;
         }
+
+        StartCoroutine(BlindingLightEffect());
     }
     public void OnHealthDepleted()
     {
-        Break();
-    }
-    public void Break()
-    {
-        // Handle what happens when the tree is destroyed.
-        if(healthComponent != null)
-        {
-            healthComponent.OnDeath -= Break;
-        }
-        // May need to trigger item drop based on tree growth state using the ItemDropHandler
-        itemDropHandler.DropItems();
-        Destroy(gameObject);
-    }
 
-    private bool IsValidScale(Vector3 scale)
-    {
-        float minComponent = Mathf.Min(scale.x, scale.y, scale.z);
-        float maxComponent = Mathf.Max(scale.x, scale.y, scale.z);
-        return minComponent > 0f && maxComponent < 100f;
     }
 }

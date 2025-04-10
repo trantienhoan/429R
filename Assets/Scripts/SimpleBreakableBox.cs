@@ -21,7 +21,7 @@ public class SimpleBreakableBox : InstantBreakableObject
 
     protected override void Awake()
     {
-        Debug.Log($"SimpleBreakableBox: Awake called on {gameObject.name}");
+        //Debug.Log($"SimpleBreakableBox: Awake called on {gameObject.name}");
         base.Awake();
 
         // Get components
@@ -30,7 +30,7 @@ public class SimpleBreakableBox : InstantBreakableObject
 
         if (meshRenderer == null)
         {
-            Debug.LogError("SimpleBreakableBox requires a MeshRenderer component!");
+            //Debug.LogError("SimpleBreakableBox requires a MeshRenderer component!");
             return;
         }
 

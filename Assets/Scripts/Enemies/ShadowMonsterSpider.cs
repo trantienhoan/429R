@@ -1,5 +1,7 @@
 using UnityEngine;
 using System.Collections;
+using Core;
+using System;
 
 namespace Enemies
 {
@@ -8,92 +10,117 @@ namespace Enemies
         [Header("Movement Settings")]
         [SerializeField] private float patrolSpeed = 5f;
         [SerializeField] private float chaseSpeed = 10f;
-        [SerializeField] private float slowdownDistance = 2f; // Distance to slow down before attacking
-        [SerializeField] private float attackSpeedMultiplier = 0.5f; // Speed multiplier during attack
-        [SerializeField] private float reTargetingRange = 20f; //Range to find a new tree
+        [SerializeField] private float slowdownDistance = 2f;
+        [SerializeField] private float attackSpeedMultiplier = 0.5f;
+        [SerializeField] private float reTargetingRange = 20f;
 
         [Header("Attack Settings")]
         [SerializeField] private float attackDamage = 20f;
-        [SerializeField] private float jumpHeight = 2f; // Height of the jump during the attack
+        [SerializeField] private float jumpHeight = 2f;
 
-        private GameObject _treeOfLightPot; // The TreeOfLightPot target.
-        private Vector2 _currentDirection; // Current movement direction if no tree
-        private bool _isAttacking = false;
-        private SpiderController _spiderController;
-        private Rigidbody _rb;
+        private GameObject target;
+        private Vector2 currentDirection;
+        private bool isAttacking = false;
+        private SpiderController spiderController;
+        private GameObject player;
+
+        private void Awake()
+        {
+            healthComponent = GetComponent<HealthComponent>();
+            if (healthComponent == null)
+            {
+                Debug.LogError("HealthComponent not found on " + gameObject.name);
+                enabled = false;
+                return;
+            }
+        }
 
         private void Start()
         {
-            _spiderController = GetComponent<SpiderController>();
-            _rb = GetComponent<Rigidbody>(); // Get the Rigidbody
-            if (_spiderController == null)
+            spiderController = GetComponent<SpiderController>();
+
+            if (spiderController == null)
             {
                 Debug.LogError("SpiderController not found on ShadowMonsterSpider!");
                 enabled = false;
                 return;
             }
 
-            // Find the TreeOfLightPot (you might want to use a more robust method)
-            FindTreeOfLightPot();
+            FindTarget();
 
-            if (_treeOfLightPot == null)
+            if (target == null)
             {
                 Debug.LogWarning("TreeOfLightPot not found. Spider will patrol randomly.");
                 SetRandomDirection();
             }
             else
             {
-                SetMovementDirection(_treeOfLightPot.transform.position, patrolSpeed); // Start patrolling
+                SetMovementDirection(target.transform.position, patrolSpeed);
             }
+
+            healthComponent.OnTakeDamage += OnTakeDamage; // Subscribe to OnTakeDamage
+        }
+
+        private void OnDestroy()
+        {
+            healthComponent.OnTakeDamage -= OnTakeDamage; // Unsubscribe
         }
 
         private void Update()
         {
-            if (_treeOfLightPot != null)
-            {
-                float distanceToTarget = Vector3.Distance(transform.position, _treeOfLightPot.transform.position);
+            if (healthComponent.IsDead()) return;
 
-                if (distanceToTarget <= slowdownDistance && !_isAttacking)
+            if (target != null)
+            {
+                float distanceToTarget = Vector3.Distance(transform.position, target.transform.position);
+
+                if (distanceToTarget <= slowdownDistance && !isAttacking)
                 {
-                    // Slow down before attacking
-                    SetMovementDirection(_treeOfLightPot.transform.position, patrolSpeed * attackSpeedMultiplier);
-                    _isAttacking = true;
-                    Attack(); // Initiate the attack
+                    SetMovementDirection(target.transform.position, patrolSpeed * attackSpeedMultiplier);
+                    isAttacking = true;
+                    Attack();
                 }
                 else
                 {
-                    // Chase the target at full speed
-                    SetMovementDirection(_treeOfLightPot.transform.position, chaseSpeed);
+                    SetMovementDirection(target.transform.position, chaseSpeed);
                 }
             }
             else
             {
-                // No TreeOfLightPot found, move in a random direction
-                SetMovementDirection(_currentDirection, patrolSpeed);
+                SetMovementDirection(currentDirection, patrolSpeed);
 
-                // Periodically check for the tree
-                if (Random.value < 0.01f) // Check every so often
+                if (UnityEngine.Random.value < 0.01f)
                 {
-                    FindTreeOfLightPot();
+                    FindTarget();
 
-                    //If the tree is found but out of range, move to a random direction so that monster dont chase infinitely
-                    if (_treeOfLightPot != null && Vector3.Distance(transform.position, _treeOfLightPot.transform.position) > reTargetingRange)
+                    if (target != null && Vector3.Distance(transform.position, target.transform.position) > reTargetingRange)
                     {
                         SetRandomDirection();
-                        _treeOfLightPot = null;
+                        target = null;
                     }
-                    else if (_treeOfLightPot != null)
+                    else if (target != null)
                     {
-                        SetMovementDirection(_treeOfLightPot.transform.position, patrolSpeed);
+                        SetMovementDirection(target.transform.position, patrolSpeed);
                     }
                 }
             }
         }
 
-        private void FindTreeOfLightPot()
+        private void FindTarget()
         {
-            // Find the TreeOfLightPot (you might want to use a more robust method, like a tag or a dedicated manager)
-            _treeOfLightPot = GameObject.FindGameObjectWithTag("TreeOfLightPot");
+            GameObject treeOfLightPot = GameObject.FindGameObjectWithTag("TreeOfLightPot");
+            if (treeOfLightPot != null)
+            {
+                target = treeOfLightPot;
+                return;
+            }
+
+            if (player == null)
+            {
+                player = GameObject.FindGameObjectWithTag("Player");
+            }
+
+            target = player;
         }
 
         private void SetMovementDirection(Vector3 targetPosition, float speed)
@@ -104,21 +131,19 @@ namespace Enemies
 
         private void SetMovementDirection(Vector2 direction, float speed)
         {
-            Debug.Log("SetMovementDirection called: direction=" + direction + ", speed=" + speed);
-            _spiderController.SetMovementDirection(direction * speed); // Use SpiderController
+            spiderController.SetMovementDirection(direction * speed);
         }
 
         private void SetRandomDirection()
         {
-            _currentDirection = Random.insideUnitCircle.normalized;
+            currentDirection = UnityEngine.Random.insideUnitCircle.normalized;
         }
 
         private void Attack()
         {
-            // Implement Attack logic:
             Debug.Log("Spider Attack!");
-            // Determine if jump or run
-            if (jumpHeight > 0 && Random.value > 0.5f)
+
+            if (jumpHeight > 0 && UnityEngine.Random.value > 0.5f)
             {
                 JumpAttack();
             }
@@ -130,57 +155,36 @@ namespace Enemies
 
         private void JumpAttack()
         {
-            // Implement jump attack logic:
             Debug.Log("Spider Jump Attack!");
-
-            // Calculate the required velocity to reach the target
-            //Vector3 velocity = CalculateJumpVelocity(_targetPosition - transform.position, timeToTarget, jumpHeight);
-
-            // Apply the velocity to the rigidbody
-            if (_rb != null)
-            {
-                //_rb.linearVelocity = velocity;
-            }
-
-            // Subscribe to collision, to apply damage to the target.
-            //StartCoroutine(OnCollisionCoroutine(timeToTarget));
-        }
-
-        //private IEnumerator OnCollisionCoroutine(float delay)
-        //{
-        //    yield return new WaitForSeconds(delay);
-        //
-        //    // Apply damage to TreeOfLightPot (assuming it has a HealthComponent)
-        //    Core.HealthComponent health = _treeOfLightPot.GetComponent<Core.HealthComponent>();
-        //    if (health != null)
-        //    {
-        //        health.TakeDamage(attackDamage);
-        //    }
-        //
-        //    //ReEnable the navmesh
-        //    //_spiderController.SetMovementDirection(Vector2.zero); // Stop movement after attack - REMOVE THIS LINE
-        //    _isAttacking = false;
-        //}
-
-        private Vector3 CalculateJumpVelocity(Vector3 displacement, float timeToTarget, float jumpHeight)
-        {
-            float gravity = Physics.gravity.y;
-            float verticalVelocity = (jumpHeight * 2) / timeToTarget - (gravity * timeToTarget) / 2;
-            Vector3 horizontalVelocity = displacement / timeToTarget;
-            return new Vector3(horizontalVelocity.x, verticalVelocity, horizontalVelocity.z);
+            isAttacking = false;
         }
 
         private void RunAttack()
         {
-            // Implement run attack logic:
             Debug.Log("Spider Run Attack!");
-            _isAttacking = false;
+            isAttacking = false;
         }
 
-        //IK Implementation for legs to walk around
-        private void OnAnimatorIK(int layerIndex)
+        private void OnTakeDamage(object sender, HealthComponent.HealthChangedEventArgs e)
         {
-           //No need to use NavMeshAgent here
+            // Retarget to the damage source
+            if (e.DamageSource != null)
+            {
+                target = e.DamageSource;
+            }
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (other.gameObject == target)
+            {
+                HealthComponent targetHealth = target.GetComponent<HealthComponent>();
+                if (targetHealth != null)
+                {
+                    targetHealth.TakeDamage(attackDamage, gameObject);
+                }
+                isAttacking = false;
+            }
         }
     }
 }
