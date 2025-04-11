@@ -58,6 +58,8 @@ namespace Enemies
         // Called by ShadowMonsterSpider to set the direction
         public void SetMovementDirection(Vector2 direction)
         {
+            direction.x = 0;
+
             movementDirection = direction.normalized;
         }
 
@@ -110,19 +112,20 @@ namespace Enemies
 
             float arcRadius = speed * Time.deltaTime;
             Vector3 worldVelocity = arcTransformRotation.TransformVector(Velocity3);
-            Debug.Log($"velocity: {velocity}, speed: {speed}, worldVelocity: {worldVelocity}");
+            worldVelocity.x = 0;
+            //Debug.Log($"velocity: {velocity}, speed: {speed}, worldVelocity: {worldVelocity}");
 
             if (PhysicsExtension.ArcCast(transform.position, Quaternion.LookRotation(worldVelocity, arcTransformRotation.up), arcAngle, arcRadius, arcResolution, arcLayer, out RaycastHit hit))
             {
-                Debug.Log("ArcCast hit something!");
-                Debug.Log("Hit Point: " + hit.point);
-                Debug.Log("Hit Normal: " + hit.normal);
+                //Debug.Log("ArcCast hit something!");
+                //Debug.Log("Hit Point: " + hit.point);
+                //Debug.Log("Hit Normal: " + hit.normal);
                 transform.position = hit.point;
                 transform.MatchUp(hit.normal);
             }
             else
             {
-                Debug.Log("ArcCast did not hit anything!");
+                //Debug.Log("ArcCast did not hit anything!");
             }
             Vector3 clampedRotation = transform.eulerAngles;
             transform.rotation = Quaternion.Euler(clampedRotation);

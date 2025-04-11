@@ -54,15 +54,23 @@ MonoBehaviour:
   - {fileID: 2061228985669117825, guid: 0fd62c8c352ceaa4589e2c49dd306f4a, type: 3}
   - {fileID: 6094110933056598107, guid: 210ac6b31acd6624f8da0bc7d650acf6, type: 3}
   dropForce: 5
+  itemSpawnHeightOffset: 0.5
   destroyDelay: 0.1
   breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
   breakSound: {fileID: 0}
-  mass: 500
+  mass: 100
   drag: 1
   angularDrag: 1
   useGravity: 1
   breakUpwardForce: 2
+  collisionLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  minimumImpactForce: 5
+  breakOnlyFromWeapons: 1
+  useImpactForce: 1
+  damageMultiplier: 1
   onBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -77,8 +85,8 @@ MonoBehaviour:
     - serializedVersion: 3
       time: 0
       value: 0
-      inSlope: 0
-      outSlope: 0
+      inSlope: 2
+      outSlope: 2
       tangentMode: 0
       weightedMode: 0
       inWeight: 0
@@ -86,8 +94,8 @@ MonoBehaviour:
     - serializedVersion: 3
       time: 1
       value: 1
-      inSlope: 2
-      outSlope: 2
+      inSlope: 0
+      outSlope: 0
       tangentMode: 0
       weightedMode: 0
       inWeight: 0
@@ -95,14 +103,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  objectMass: 500
-  minimumImpactForce: 5
-  breakOnlyFromWeapons: 1
-  useImpactForce: 1
-  collisionLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  damageMultiplier: 1
+  objectMass: 100
   dustParticlePrefab: {fileID: 4938095755617958529, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
   breakParticlePrefab: {fileID: 5700784828077083704, guid: ed962e35f7fa6f34f8d27aa6d19ea293,
@@ -136,9 +137,9 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3062815891499484277}
   serializedVersion: 4
-  m_Mass: 60
-  m_Drag: 3
-  m_AngularDrag: 0.05
+  m_Mass: 100
+  m_Drag: 1
+  m_AngularDrag: 1
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}

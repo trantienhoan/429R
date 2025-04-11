@@ -261,11 +261,12 @@ namespace Enemies
             Quaternion rot = Quaternion.LookRotation(velocityForward, orbit.up);
 
             float dist = spiderController.Speed * stepTime / 2;
+            dist *= 0.7f; // Reduced distance by 30%
 
             if (gizmo)
                 Gizmos.color = new Color(1, 0, 0, 0.3f);
 
-            for (int stepCount = 0; stepCount < 100; stepCount++)
+            for (int stepCount = 0; stepCount < 50; stepCount++) // Reduced max iteration
             {
                 if (PhysicsExtension.ArcCast(pos, rot, arcAngle, arcRadius, arcResolution, arcLayer,
                         out RaycastHit hit))

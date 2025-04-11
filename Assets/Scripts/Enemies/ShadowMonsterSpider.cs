@@ -141,7 +141,7 @@ namespace Enemies
 
         private void Attack()
         {
-            Debug.Log("Spider Attack!");
+            //Debug.Log("Spider Attack!");
 
             if (jumpHeight > 0 && UnityEngine.Random.value > 0.5f)
             {
@@ -155,13 +155,13 @@ namespace Enemies
 
         private void JumpAttack()
         {
-            Debug.Log("Spider Jump Attack!");
+            //Debug.Log("Spider Jump Attack!");
             isAttacking = false;
         }
 
         private void RunAttack()
         {
-            Debug.Log("Spider Run Attack!");
+            //Debug.Log("Spider Run Attack!");
             isAttacking = false;
         }
 

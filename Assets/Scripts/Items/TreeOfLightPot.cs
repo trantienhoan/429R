@@ -148,6 +148,7 @@ namespace Items
 
             if (monsterSpawner != null)
             {
+                monsterSpawner.enabled = true;
                 monsterSpawner.BeginSpawning();
             }
             else

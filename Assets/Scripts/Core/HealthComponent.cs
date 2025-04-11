@@ -7,19 +7,21 @@ namespace Core
     {
         [SerializeField] private float maxHealth = 100f;
         [SerializeField] private float currentHealth;
+        [SerializeField] private ParticleSystem deathParticleSystem;
+        [SerializeField] private ParticleSystem takeDamageParticleSystem; // Add this line
 
         public class HealthChangedEventArgs : EventArgs
         {
             public float CurrentHealth { get; set; }
             public float MaxHealth { get; set; }
             public GameObject DamageSource { get; set; }
-            public float DamageAmount { get; set; } // Add damage amount
+            public float DamageAmount { get; set; }
         }
 
         public delegate void OnHealthChangedDelegate(object sender, HealthChangedEventArgs e);
         public event OnHealthChangedDelegate OnHealthChanged;
 
-        public delegate void OnTakeDamageDelegate(object sender, HealthChangedEventArgs e); // New event
+        public delegate void OnTakeDamageDelegate(object sender, HealthChangedEventArgs e);
         public event OnTakeDamageDelegate OnTakeDamage;
 
         public delegate void OnDeathDelegate(HealthComponent health);
@@ -41,6 +43,12 @@ namespace Core
         {
             if (isDead) return;
 
+            // Play take damage particle system if assigned
+            if (takeDamageParticleSystem != null)
+            {
+                takeDamageParticleSystem.Play();
+            }
+
             currentHealth -= damage;
 
             if (currentHealth <= 0)
@@ -56,12 +64,11 @@ namespace Core
                 CurrentHealth = currentHealth,
                 MaxHealth = maxHealth,
                 DamageSource = damageSource,
-                DamageAmount = damage //Set damage amount
+                DamageAmount = damage
             };
 
-            OnTakeDamage?.Invoke(this, eventArgs); // Invoke OnTakeDamage first
+            OnTakeDamage?.Invoke(this, eventArgs);
 
-            // Trigger health changed event
             OnHealthChanged?.Invoke(this, eventArgs);
         }
 
@@ -76,10 +83,9 @@ namespace Core
                 CurrentHealth = currentHealth,
                 MaxHealth = maxHealth,
                 DamageSource = null,
-                DamageAmount = 0 // No damage when healing
+                DamageAmount = 0
             };
 
-            // Trigger health changed event
             OnHealthChanged?.Invoke(this, eventArgs);
         }
         protected virtual void Die(GameObject damageSource, float damage)
@@ -91,14 +97,23 @@ namespace Core
                 CurrentHealth = currentHealth,
                 MaxHealth = maxHealth,
                 DamageSource = damageSource,
-                DamageAmount = damage // Use the damage value passed to Die
+                DamageAmount = damage
             };
 
             OnDeath?.Invoke(this);
             isDead = true;
 
             Debug.Log($"{gameObject.name} has died!");
-            Destroy(gameObject);
+
+            if (deathParticleSystem != null)
+            {
+                deathParticleSystem.Play();
+                Destroy(gameObject, deathParticleSystem.main.duration);
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
         }
 
         public float GetHealthPercentage()
