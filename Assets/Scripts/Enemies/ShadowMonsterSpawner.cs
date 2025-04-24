@@ -109,11 +109,11 @@ public class ShadowMonsterSpawner : MonoBehaviour
         if (shadowMonster != null)
         {
             // Generic ShadowMonster registration
-            Debug.Log("Registered a ShadowMonster");
+            //Debug.Log("Registered a ShadowMonster");
             return;
         }
 
-        Debug.LogError("Monster is not a recognized ShadowMonster type!");
+        //Debug.LogError("Monster is not a recognized ShadowMonster type!");
     }
 
     private void OnMonsterDeath(HealthComponent health)
@@ -124,7 +124,7 @@ public class ShadowMonsterSpawner : MonoBehaviour
     {
         if (health == null)
         {
-            Debug.LogWarning("Trying to unregister a null health component!");
+            //Debug.LogWarning("Trying to unregister a null health component!");
             return;
         }
 
@@ -242,7 +242,7 @@ public class ShadowMonsterSpawner : MonoBehaviour
                 var health = monster.MonsterObject.GetComponent<HealthComponent>();
                 if (health != null)
                 {
-                    health.TakeDamage(Mathf.Infinity); // Or Despawn() or whatever appropriate method
+                    health.TakeDamage(Mathf.Infinity, monster.MonsterObject.transform.position, gameObject);
                 }
                 else
                 {

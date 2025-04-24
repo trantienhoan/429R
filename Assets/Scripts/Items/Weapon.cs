@@ -178,7 +178,7 @@ namespace Items
             var treeOfLight = collision.gameObject.GetComponentInChildren<TreeOfLight>();
             if (treeOfLight != null)
             {
-                treeOfLight.GetComponent<HealthComponent>().TakeDamage(damageAmount * treeOfLightDamageMultiplier);
+                treeOfLight.GetComponent<HealthComponent>().TakeDamage(damageAmount * treeOfLightDamageMultiplier, collisionPoint, gameObject);
                 return;
             }
 

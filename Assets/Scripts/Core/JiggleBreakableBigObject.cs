@@ -3,6 +3,7 @@ using Core;
 
 [RequireComponent(typeof(BoxCollider))]
 [RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(HealthComponent))]
 public class JiggleBreakableBigObject : BreakableObject
 {
     [Header("Jiggle Settings")]
@@ -12,15 +13,6 @@ public class JiggleBreakableBigObject : BreakableObject
 
     [Header("Physics Settings")]
     [SerializeField] private float objectMass = 50f; // Increased mass
-    //[SerializeField] private float minimumImpactForce = 5f;
-    //[SerializeField] private bool breakOnlyFromWeapons = true;
-    //[SerializeField] private bool useImpactForce = true;
-    //[SerializeField] private LayerMask collisionLayers = -1; // -1 means all layers
-    //[SerializeField] private float damageMultiplier = 1f;
-
-    [Header("Effects")]
-    [SerializeField] private GameObject dustParticlePrefab;
-    [SerializeField] private GameObject breakParticlePrefab;
 
     private BoxCollider boxCollider;
     private Rigidbody rigidBody;
@@ -37,6 +29,7 @@ public class JiggleBreakableBigObject : BreakableObject
         // Cache components
         boxCollider = GetComponent<BoxCollider>();
         rigidBody = GetComponent<Rigidbody>();
+		healthComponent = GetComponent<HealthComponent>();
 
         // Store initial values
         originalPosition = transform.position;
@@ -52,7 +45,12 @@ public class JiggleBreakableBigObject : BreakableObject
             GameObject healthBar = Instantiate(healthBarPrefab, transform);
             healthBar.GetComponent<BreakableHealthBar>().Initialize(this);
         }
+
+		// Subscribe to OnDeath event
+        healthComponent.OnDeath += HandleHealthDeath; // SUBSCRIBE TO ONDEATH
     }
+
+	private HealthComponent healthComponent;
 
     private void SetupPhysics()
     {
@@ -125,9 +123,6 @@ public class JiggleBreakableBigObject : BreakableObject
             // Trigger jiggle effect
             TriggerJiggleEffect(hitDirection);
 
-            // Spawn dust particles
-            SpawnDustParticles(hitPoint);
-
             // Calculate damage based on impact force and weapon status
             float damage;
             if (useImpactForce)
@@ -138,7 +133,7 @@ public class JiggleBreakableBigObject : BreakableObject
             else
             {
                 // If not using impact force, apply fixed damage
-                damage = health * 0.2f; // Take 20% of health as damage
+                damage = 100f * 0.2f; // Take 20% of health as damage
             }
 
             // Apply damage
@@ -146,43 +141,9 @@ public class JiggleBreakableBigObject : BreakableObject
         }
     }
 
-    private void SpawnDustParticles(Vector3 position)
+    public override void TakeDamage(float damage, Vector3 hitPoint, Vector3 hitDirection) // ADD hitPoint PARAMETER
     {
-        if (dustParticlePrefab != null)
-        {
-            GameObject dustEffect = Instantiate(dustParticlePrefab, position, Quaternion.identity);
-            // Auto-destroy particles after they finish playing
-            if (dustEffect.TryGetComponent<ParticleSystem>(out ParticleSystem ps))
-            {
-                Destroy(dustEffect, ps.main.duration + 1f);
-            }
-            else
-            {
-                Destroy(dustEffect, 3f); // Fallback destroy after 3 seconds
-            }
-        }
-    }
-
-    private void SpawnBreakParticles()
-    {
-        if (breakParticlePrefab != null)
-        {
-            GameObject breakEffect = Instantiate(breakParticlePrefab, transform.position, Quaternion.identity);
-            // Auto-destroy particles after they finish playing
-            if (breakEffect.TryGetComponent<ParticleSystem>(out ParticleSystem ps))
-            {
-                Destroy(breakEffect, ps.main.duration + 1f);
-            }
-            else
-            {
-                Destroy(breakEffect, 3f); // Fallback destroy after 3 seconds
-            }
-        }
-    }
-
-    public override void TakeDamage(float damage, Vector3 hitPoint, Vector3 hitDirection)
-    {
-        base.TakeDamage(damage, hitPoint, hitDirection);
+        healthComponent.TakeDamage(damage, hitPoint, this.gameObject);
     }
 
     private void TriggerJiggleEffect(Vector3 hitDirection)
@@ -207,12 +168,13 @@ public class JiggleBreakableBigObject : BreakableObject
 
         base.HandleDestruction();
     }
+	private void HandleHealthDeath(HealthComponent health)
+	{
+		HandleBreaking();
+	}
 
     protected override void HandleBreaking()
     {
-        // Spawn breaking particles
-        SpawnBreakParticles();
-
         // Drop items - using the original method from the base class
         DropItems(transform.position);
 
@@ -222,14 +184,12 @@ public class JiggleBreakableBigObject : BreakableObject
 
     protected override void Break()
     {
-        base.Break(); // This will handle destroying the object
+        base.Break();
     }
 
     // Helper method to setup the object in editor
     private void Reset()
     {
-        // Default values for easy testing
-        health = 500f; // More health since it's a big object
         dropForce = 5f;
         destroyDelay = 2f;
 
@@ -269,4 +229,11 @@ public class JiggleBreakableBigObject : BreakableObject
     }
 
     // Public method to set break settings
+	private void OnDestroy()
+	{
+		if (healthComponent != null)
+        {
+            healthComponent.OnDeath -= HandleHealthDeath;
+        }
+	}
 }

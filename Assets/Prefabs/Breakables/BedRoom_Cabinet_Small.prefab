@@ -201,8 +201,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -0.5509994, y: 0.31399998, z: 1.9691377}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.75, y: 0.75, z: 0.75}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 9222274538979129616}
   m_Father: {fileID: 0}
@@ -226,6 +226,7 @@ MonoBehaviour:
   - {fileID: 2061228985669117825, guid: 0fd62c8c352ceaa4589e2c49dd306f4a, type: 3}
   - {fileID: 6094110933056598107, guid: 210ac6b31acd6624f8da0bc7d650acf6, type: 3}
   dropForce: 5
+  itemSpawnHeightOffset: 0.5
   destroyDelay: 0.1
   breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
@@ -235,6 +236,13 @@ MonoBehaviour:
   angularDrag: 1
   useGravity: 1
   breakUpwardForce: 2
+  collisionLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  minimumImpactForce: 5
+  breakOnlyFromWeapons: 1
+  useImpactForce: 1
+  damageMultiplier: 1
   onBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -268,13 +276,6 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   objectMass: 100
-  minimumImpactForce: 5
-  breakOnlyFromWeapons: 1
-  useImpactForce: 1
-  collisionLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  damageMultiplier: 1
   dustParticlePrefab: {fileID: 4938095755617958529, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
   breakParticlePrefab: {fileID: 5700784828077083704, guid: ed962e35f7fa6f34f8d27aa6d19ea293,
@@ -298,8 +299,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.48, y: 0.6723497, z: 0.55}
-  m_Center: {x: 0, y: 0.28417635, z: 0}
+  m_Size: {x: 0.5923207, y: 0.72188866, z: 0.5929888}
+  m_Center: {x: -0.049553275, y: 0.37061214, z: -0.000000029802322}
 --- !u!54 &2042166546271021172
 Rigidbody:
   m_ObjectHideFlags: 0

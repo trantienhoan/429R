@@ -12,7 +12,7 @@ public class SimpleBreakableBox : InstantBreakableObject
 
     private MeshRenderer meshRenderer;
     private BoxCollider boxCollider;
-    private float initialHealth;
+    private HealthComponent healthComponent;
 
     [Header("Box Settings")]
     [SerializeField] private float boxMass = 1f;
@@ -27,6 +27,7 @@ public class SimpleBreakableBox : InstantBreakableObject
         // Get components
         meshRenderer = GetComponent<MeshRenderer>();
         boxCollider = GetComponent<BoxCollider>();
+        healthComponent = GetComponent<HealthComponent>();
 
         if (meshRenderer == null)
         {
@@ -39,8 +40,6 @@ public class SimpleBreakableBox : InstantBreakableObject
         {
             meshRenderer.material = intactMaterial;
         }
-
-        initialHealth = health;
 
         // Ensure proper physics setup
         Rigidbody rb = GetComponent<Rigidbody>();
@@ -66,6 +65,16 @@ public class SimpleBreakableBox : InstantBreakableObject
             GameObject healthBar = Instantiate(healthBarPrefab, transform);
             healthBar.GetComponent<BreakableHealthBar>().Initialize(this);
         }
+
+        // Subscribe to the OnDeath event of the HealthComponent
+        if (healthComponent != null)
+        {
+            healthComponent.OnDeath += OnDeathHandler;
+        }
+    }
+    private void OnDeathHandler(HealthComponent healthComponent)
+    {
+        HandleBreaking(); // Call HandleBreaking when the HealthComponent's OnDeath event is triggered
     }
 
     protected override void OnBreakingStart()
@@ -100,30 +109,13 @@ public class SimpleBreakableBox : InstantBreakableObject
     public override void TakeDamage(float damage, Vector3 hitPoint, Vector3 hitDirection)
     {
         Debug.Log($"SimpleBreakableBox: Taking damage: {damage} on {gameObject.name}");
-        base.TakeDamage(damage, hitPoint, hitDirection);
-
-        // Visual feedback
-        if (meshRenderer != null && breakingMaterial != null)
-        {
-            float healthPercentage = currentHealth / initialHealth;
-            if (healthPercentage < 0.5f && meshRenderer.material != breakingMaterial)
-            {
-                meshRenderer.material = breakingMaterial;
-            }
-        }
+        healthComponent.TakeDamage(damage, hitPoint, gameObject);
     }
 
     // Helper method to setup the box in editor
     private void Reset()
     {
         Debug.Log("SimpleBreakableBox: Reset called in editor");
-        // Default values for easy testing
-        health = 100f;
-        dropForce = 3f;
-        destroyDelay = 1f;
-
-        // Set break settings - REMOVE THIS LINE
-        //SetBreakSettings(5f, true, true);
 
         // Ensure components
         if (!TryGetComponent<BoxCollider>(out _))
@@ -150,6 +142,13 @@ public class SimpleBreakableBox : InstantBreakableObject
             meshFilter.mesh = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
             gameObject.AddComponent<MeshRenderer>();
         }
+
+        // Ensure HealthComponent exists
+        if (!TryGetComponent<HealthComponent>(out _))
+        {
+            Debug.Log("SimpleBreakableBox: Adding HealthComponent");
+            gameObject.AddComponent<HealthComponent>();
+        }
     }
 
     private void OnEnable()
@@ -160,5 +159,12 @@ public class SimpleBreakableBox : InstantBreakableObject
     private void Start()
     {
         Debug.Log($"SimpleBreakableBox: Start called on {gameObject.name}");
+    }
+    private void OnDestroy()
+    {
+        if (healthComponent != null)
+        {
+            healthComponent.OnDeath -= OnDeathHandler;
+        }
     }
 }

@@ -1,6 +1,6 @@
 using UnityEngine;
 using System.Collections;
-using System.Collections.Generic; // Add this line
+using System.Collections.Generic;
 
 namespace Core
 {
@@ -21,16 +21,6 @@ namespace Core
         [SerializeField] private bool useChildColliders = true;
         [SerializeField] private string childColliderTag = "BreakablePart";
 
-        [Header("Effects")]
-        [SerializeField] private GameObject hitParticlePrefab;
-        [SerializeField] private GameObject breakParticlePrefab;
-        [SerializeField] private AudioClip hitSound;
-        //[SerializeField] private AudioClip breakSound; // Overriding base class
-        [SerializeField] private float particleScale = 1f;
-        [SerializeField] private float soundVolume = 1f;
-
-        private new AudioSource audioSource; // Shadowing base class
-
         private Vector3 originalPosition;
         private Vector3 originalScale;
         private Vector3 targetPosition;
@@ -43,6 +33,7 @@ namespace Core
         private float jiggleTimer = 0f;
         private Vector3 jiggleVelocity = Vector3.zero;
         private int itemsDropped = 0;
+        private HealthComponent healthComponent;
 
         protected override void Awake()
         {
@@ -56,17 +47,6 @@ namespace Core
             if (useChildColliders)
             {
                 SetupChildColliders();
-            }
-
-            // Add AudioSource component if not present
-            audioSource = GetComponent<AudioSource>();
-            if (audioSource == null)
-            {
-                audioSource = gameObject.AddComponent<AudioSource>();
-                audioSource.spatialBlend = 1f;
-                audioSource.rolloffMode = AudioRolloffMode.Linear;
-                audioSource.minDistance = 1f;
-                audioSource.maxDistance = 20f;
             }
         }
 
@@ -97,38 +77,12 @@ namespace Core
             // Call base class TakeDamage to ensure events are triggered
             base.TakeDamage(damage, hitPoint, hitDirection);
 
-            if (currentHealth <= 0 && !isJiggling)
+            if (healthComponent != null && healthComponent.Health <= 0 && !isJiggling)
             {
                 HandleBreaking(); // Start breaking sequence
             }
-            else
-            {
-                PlayHitEffects(hitPoint, hitDirection);
-            }
         }
-
-        private void PlayHitEffects(Vector3 hitPoint, Vector3 hitDirection)
-        {
-            // Play hit particle effect
-            if (hitParticlePrefab != null)
-            {
-                GameObject hitEffect = Instantiate(hitParticlePrefab, hitPoint, Quaternion.LookRotation(hitDirection));
-                hitEffect.transform.localScale *= particleScale;
-                Destroy(hitEffect, 2f);
-            }
-
-            // Play hit sound if not already playing
-            if (hitSound != null && audioSource != null && !audioSource.isPlaying)
-            {
-                audioSource.PlayOneShot(hitSound, soundVolume);
-            }
-
-            // Apply jiggle effect
-            Vector3 randomOffset = Random.insideUnitSphere * jiggleAmount;
-            targetPosition = originalPosition + randomOffset;
-            scaleProgress = 0f;
-        }
-
+        
         protected override void HandleBreaking()
         {
             StartCoroutine(JiggleAndBreak());
@@ -196,30 +150,14 @@ namespace Core
         {
             if (isBroken) return;
             isBroken = true;
-
-            // Spawn break particle effect
-            if (breakParticlePrefab != null)
-            {
-                GameObject breakEffect = Instantiate(breakParticlePrefab, transform.position, Quaternion.identity);
-                breakEffect.transform.localScale *= particleScale;
-                Destroy(breakEffect, 3f);
-            }
-
-            // Play break sound
-            if (breakSound != null && audioSource != null)
-            {
-                audioSource.PlayOneShot(breakSound, soundVolume);
-            }
-
+            
             onBreak?.Invoke();
-
-            // Handle destruction
+            
             HandleDestruction();
         }
 
         protected override void HandleDestruction()
         {
-            // Disable all colliders (main and children)
             if (useChildColliders && childColliders != null)
             {
                 foreach (Collider col in childColliders)
@@ -232,7 +170,6 @@ namespace Core
                 mainCollider.enabled = false;
             }
 
-            // Disable mesh renderers (main and children)
             MeshRenderer[] renderers = GetComponentsInChildren<MeshRenderer>();
             foreach (MeshRenderer renderer in renderers)
             {

@@ -2795,6 +2795,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1109231764364310682, guid: 489d99e8a8f1c0a4b8fd66c1804e2567,
+        type: 3}
+      propertyPath: m_Constraints
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2859092720707406988, guid: 489d99e8a8f1c0a4b8fd66c1804e2567,
         type: 3}
       propertyPath: m_Name
@@ -3616,7 +3621,7 @@ PrefabInstance:
     - target: {fileID: 2042166546271021172, guid: 885999134c87f1048b69be9adc4a1af1,
         type: 3}
       propertyPath: m_Constraints
-      value: 84
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5596699236826790164, guid: 885999134c87f1048b69be9adc4a1af1,
         type: 3}
@@ -3654,10 +3659,45 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 3777597441533160902, guid: fc1b8c6522694e64eb1f3fc2edd03bd5,
         type: 3}
+    - target: {fileID: 7312342074747217645, guid: 885999134c87f1048b69be9adc4a1af1,
+        type: 3}
+      propertyPath: m_Size.x
+      value: 0.5855652
+      objectReference: {fileID: 0}
+    - target: {fileID: 7312342074747217645, guid: 885999134c87f1048b69be9adc4a1af1,
+        type: 3}
+      propertyPath: m_Size.y
+      value: 0.7154008
+      objectReference: {fileID: 0}
+    - target: {fileID: 7312342074747217645, guid: 885999134c87f1048b69be9adc4a1af1,
+        type: 3}
+      propertyPath: m_Center.x
+      value: -0.0490759
+      objectReference: {fileID: 0}
+    - target: {fileID: 7312342074747217645, guid: 885999134c87f1048b69be9adc4a1af1,
+        type: 3}
+      propertyPath: m_Center.y
+      value: 0.36821604
+      objectReference: {fileID: 0}
     - target: {fileID: 7543794215303788279, guid: 885999134c87f1048b69be9adc4a1af1,
         type: 3}
       propertyPath: m_Name
       value: BedRoom_Cabinet_Small
+      objectReference: {fileID: 0}
+    - target: {fileID: 8933442492352111719, guid: 885999134c87f1048b69be9adc4a1af1,
+        type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8933442492352111719, guid: 885999134c87f1048b69be9adc4a1af1,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8933442492352111719, guid: 885999134c87f1048b69be9adc4a1af1,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8933442492352111719, guid: 885999134c87f1048b69be9adc4a1af1,
         type: 3}
@@ -7674,6 +7714,9 @@ MonoBehaviour:
   currentHealth: 10
   deathParticleSystem: {fileID: 0}
   takeDamageParticleSystem: {fileID: 0}
+  breakEffect: {fileID: 0}
+  breakSound: {fileID: 0}
+  dustParticlePrefab: {fileID: 0}
 --- !u!1 &1910992778
 GameObject:
   m_ObjectHideFlags: 0

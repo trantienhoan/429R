@@ -8,7 +8,7 @@ namespace Core
     public abstract class BreakableObject : MonoBehaviour
     {
         [Header("Breakable Object Settings")]
-        [SerializeField] protected float health = 100f;
+        //[SerializeField] protected float health = 100f;
         [SerializeField] protected bool isBreakable = true;
 
         [Header("Item Drop Settings")]
@@ -19,9 +19,9 @@ namespace Core
         [Header("Destruction Settings")]
         [SerializeField] protected float destroyDelay = 2f;
 
-        [Header("Effects")]
-        [SerializeField] protected ParticleSystem breakEffect;
-        [SerializeField] protected AudioClip breakSound;
+        // [Header("Effects")]
+        // [SerializeField] protected ParticleSystem breakEffect;
+        // [SerializeField] protected AudioClip breakSound;
 
         [Header("Physics Settings")]
         [SerializeField] protected float mass = 1000f;
@@ -43,21 +43,13 @@ namespace Core
 
         protected AudioSource audioSource;
         protected bool isBroken = false;
-        protected float currentHealth;
+        //protected float currentHealth;
         protected Rigidbody rb;
-
-        public float GetCurrentHealth()
-        {
-            return currentHealth;
-        }
-
+        
         protected virtual void Awake()
         {
-            currentHealth = health;
-
-            // Setup audio source
             audioSource = GetComponent<AudioSource>();
-            if (audioSource == null && breakSound != null)
+            if (audioSource == null)
             {
                 audioSource = gameObject.AddComponent<AudioSource>();
             }
@@ -91,20 +83,8 @@ namespace Core
 
         public virtual void TakeDamage(float damage, Vector3 hitPoint, Vector3 hitDirection)
         {
-            if (!isBreakable || isBroken)
-            {
-                return; // Damage is ignored
-            }
-
-            currentHealth -= damage;
-            onDamage?.Invoke();
-
-            if (currentHealth <= 0)
-            {
-                HandleBreaking();
-            }
+            
         }
-
         protected virtual void OnCollisionEnter(Collision collision)
         {
             // Skip if collision layer is not in our mask
@@ -140,7 +120,7 @@ namespace Core
                 }
                 else
                 {
-                    damage = health * 0.2f; // Take 20% of health as damage
+                    damage = 100f * 0.2f; // Take 20% of health as damage
                 }
 
                 // Apply damage
@@ -227,20 +207,6 @@ namespace Core
             // Drop items first
             DropItems(transform.position);
 
-            // Spawn break effect
-            if (breakEffect != null)
-            {
-                var effect = Instantiate(breakEffect, transform.position, Quaternion.identity);
-                effect.Play();
-                Destroy(effect.gameObject, effect.main.duration);
-            }
-
-            // Play break sound
-            if (audioSource != null && breakSound != null)
-            {
-                audioSource.PlayOneShot(breakSound);
-            }
-
             onBreak?.Invoke();
 
             // Handle destruction
@@ -252,11 +218,6 @@ namespace Core
             yield return new WaitForSeconds(destroyDelay);
             Destroy(gameObject);
         }
-
-        public void SetHealth(float newHealth)
-        {
-            health = newHealth;
-            currentHealth = newHealth;
-        }
+        
     }
 }

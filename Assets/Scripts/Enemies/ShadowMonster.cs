@@ -42,11 +42,18 @@ public class ShadowMonster : MonoBehaviour
         // Subscribe to the OnDeath event
         healthComponent.OnDeath += OnDeathHandler;
         player = GameObject.FindGameObjectWithTag("Player");
+
+        if (player == null)
+        {
+            Debug.LogError("Player not found. Make sure the player has the 'Player' tag.");
+        }
     }
 
     private void Update()
     {
-        if (healthComponent.IsDead())
+        if (player == null) return;
+
+        if (!healthComponent.IsDead())
         {
             // Check if player is within detection range
             float distanceToPlayer = Vector3.Distance(transform.position, player.transform.position);
@@ -54,7 +61,7 @@ public class ShadowMonster : MonoBehaviour
             if (distanceToPlayer <= detectionRadius)
             {
                 // Move toward player
-                if (agent != null)
+                if (agent != null && agent.enabled)
                 {
                     agent.SetDestination(player.transform.position);
                 }
@@ -62,7 +69,7 @@ public class ShadowMonster : MonoBehaviour
             else
             {
                 // Stop moving if player is out of detection range
-                if (agent != null)
+                if (agent != null && agent.enabled)
                 {
                     agent.SetDestination(transform.position);
                 }
@@ -75,22 +82,19 @@ public class ShadowMonster : MonoBehaviour
 
     public float damage;
 
-    public virtual void TakeDamage(float damageAmount)
+    public virtual void TakeDamage(float damageAmount, Vector3 hitPoint = default, GameObject damageSource = null)
     {
-        healthComponent?.TakeDamage(damageAmount); // Use the HealthComponent's TakeDamage
+        healthComponent?.TakeDamage(damageAmount, hitPoint, damageSource); // Use the HealthComponent's TakeDamage
     }
 
     private void OnDeathHandler(HealthComponent healthComponent)
     {
-        // This is the code that was previously in the Die() method
-        // Stop movement
         if (agent != null)
         {
             agent.isStopped = true;
             agent.enabled = false;
         }
 
-        // Destroy after a delay
         StartCoroutine(DestroyAfterDelay(3f));
     }
 
@@ -159,14 +163,14 @@ public class ShadowMonster : MonoBehaviour
             float lightDamage = light.intensity * lightDamageMultiplier * distanceFactor * Time.deltaTime;
 
             // Apply damage
-            TakeDamage(lightDamage);
+            TakeDamage(lightDamage, transform.position, gameObject);
         }
     }
 
     // Called by light wave effect to instantly kill monster
     public void OnHitByLightWave()
     {
-        TakeDamage(healthComponent.MaxHealth); // Instantly kill
+        TakeDamage(healthComponent.MaxHealth, transform.position, gameObject); // Instantly kill
     }
 
     // Draw gizmos for visualization in the editor

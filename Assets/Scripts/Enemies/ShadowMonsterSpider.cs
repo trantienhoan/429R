@@ -181,7 +181,7 @@ namespace Enemies
                 HealthComponent targetHealth = target.GetComponent<HealthComponent>();
                 if (targetHealth != null)
                 {
-                    targetHealth.TakeDamage(attackDamage, gameObject);
+                    targetHealth.TakeDamage(attackDamage, target.transform.position, gameObject);
                 }
                 isAttacking = false;
             }

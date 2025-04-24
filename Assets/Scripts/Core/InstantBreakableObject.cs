@@ -4,15 +4,23 @@ namespace Core
 {
     public class InstantBreakableObject : BreakableObject
     {
-        //[Header("Instant Break Settings")]
-        //[SerializeField] protected float minimumImpactForce = 5f;
-        //[SerializeField] protected bool breakOnlyFromWeapons = true;
-        //[SerializeField] protected bool useImpactForce = true;
-        //[SerializeField] protected LayerMask collisionLayers = -1; // -1 means all layers
-        //[SerializeField] protected float damageMultiplier = 1f; // New field to control damage scaling
+        private HealthComponent healthComponent;
+
+        protected override void Awake()
+        {
+            base.Awake();
+            healthComponent = GetComponent<HealthComponent>();
+
+            if (healthComponent == null)
+            {
+                Debug.LogError("HealthComponent not found on " + gameObject.name);
+            }
+        }
 
         protected override void OnCollisionEnter(Collision collision)
         {
+            if (healthComponent == null) return;
+
             // Skip if collision layer is not in our mask
             if ((base.collisionLayers.value & (1 << collision.gameObject.layer)) == 0)
                 return;
@@ -51,7 +59,7 @@ namespace Core
                 else
                 {
                     // If not using impact force, apply full health as damage
-                    damage = health;
+                    damage = healthComponent.MaxHealth;
                     Debug.Log($"Using full health as damage: {damage}");
                 }
                 
