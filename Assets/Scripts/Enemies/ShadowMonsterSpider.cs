@@ -1,7 +1,7 @@
 using UnityEngine;
-using System.Collections;
+//using System.Collections;
 using Core;
-using System;
+//using System;
 
 namespace Enemies
 {
@@ -126,7 +126,7 @@ namespace Enemies
         private void SetMovementDirection(Vector3 targetPosition, float speed)
         {
             Vector2 direction = (targetPosition - transform.position).normalized;
-            SetMovementDirection(direction, speed);
+            //SetMovementDirection(direction, speed);
         }
 
         private void SetMovementDirection(Vector2 direction, float speed)

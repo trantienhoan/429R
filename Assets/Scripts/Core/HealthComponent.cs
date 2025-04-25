@@ -7,15 +7,14 @@ namespace Core
     {
         [SerializeField] private float maxHealth = 100f;
         [SerializeField] private float currentHealth;
-        [SerializeField] private ParticleSystem deathParticleSystem;
-        [SerializeField] private ParticleSystem takeDamageParticleSystem;
         
         [Header("Breaking Effects")]
         [SerializeField] private ParticleSystem breakEffect;
         [SerializeField] private AudioClip breakSound;
 
         [Header("Damage Effects")]
-        [SerializeField] private GameObject dustParticlePrefab;
+        [SerializeField] private ParticleSystem dustParticlePrefab;
+        [SerializeField] private AudioClip hitSound;
         public class HealthChangedEventArgs : EventArgs
         {
             public float CurrentHealth { get; set; }
@@ -55,12 +54,6 @@ namespace Core
         {
             if (isDead) return;
 
-            // Play take damage particle system if assigned
-            if (takeDamageParticleSystem != null)
-            {
-                takeDamageParticleSystem.Play();
-            }
-
             SpawnDustParticles(hitPoint);
 
             currentHealth -= damage;
@@ -79,7 +72,7 @@ namespace Core
                 MaxHealth = maxHealth,
                 DamageSource = damageSource,
                 DamageAmount = damage,
-                HitPoint = hitPoint // SET HitPoint
+                HitPoint = hitPoint
             };
 
             OnTakeDamage?.Invoke(this, eventArgs);
@@ -120,7 +113,7 @@ namespace Core
             OnDeath?.Invoke(this);
             isDead = true;
 
-            Debug.Log($"{gameObject.name} has died!");
+            //Debug.Log($"{gameObject.name} has died!");
             
             if (breakEffect != null)
             {
@@ -134,22 +127,23 @@ namespace Core
             {
                 audioSource.PlayOneShot(breakSound);
             }
-
-            if (deathParticleSystem != null)
-            {
-                deathParticleSystem.Play();
-                Destroy(gameObject, deathParticleSystem.main.duration);
-            }
             else
             {
                 Destroy(gameObject);
             }
         }
-        private void SpawnDustParticles(Vector3 position) // ADD THIS METHOD
+        private void SpawnDustParticles(Vector3 position)
         {
             if (dustParticlePrefab != null)
             {
-                GameObject dustEffect = Instantiate(dustParticlePrefab, position, Quaternion.identity);
+                ParticleSystem dustEffect = Instantiate(dustParticlePrefab, position, Quaternion.identity); // Instantiate the ParticleSystem
+                dustEffect.Play();
+
+                // Play hit sound
+                if (audioSource != null && hitSound != null)
+                {
+                    audioSource.PlayOneShot(hitSound);
+                }
                 // Auto-destroy particles after they finish playing
                 if (dustEffect.TryGetComponent<ParticleSystem>(out ParticleSystem ps))
                 {
@@ -161,7 +155,7 @@ namespace Core
                 }
             }
         }
-
+        
         public float GetHealthPercentage()
         {
             return currentHealth / maxHealth;

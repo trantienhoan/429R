@@ -44,7 +44,7 @@ namespace Items
         private void Awake()
         {
             seedSocket = GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor>();
-            Debug.Log("seedSocket is null: " + (seedSocket == null));
+            //Debug.Log("seedSocket is null: " + (seedSocket == null));
 
             healthComponent = GetComponent<HealthComponent>();
             if (healthComponent == null)
@@ -63,11 +63,7 @@ namespace Items
             if (seedSocket != null)
             {
                 seedSocket.selectEntered.AddListener(OnSeedSocketEntered);
-                Debug.Log("Added listener to seedSocket.selectEntered");
-            }
-            else
-            {
-                Debug.LogError("XRSocketInteractor not found on this GameObject!");
+                //Debug.Log("Added listener to seedSocket.selectEntered");
             }
         }
 

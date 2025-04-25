@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 8195358145704464515}
   - component: {fileID: 5779680882218527816}
   - component: {fileID: 1109231764364310682}
+  - component: {fileID: 1023080063528626966}
   m_Layer: 14
   m_Name: BedRoom_Table
   m_TagString: Untagged
@@ -51,17 +52,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c63e449bee2a27e4092f0b298d2b4946, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  health: 6000
   isBreakable: 1
   itemDropPrefabs:
   - {fileID: 2061228985669117825, guid: e8a523e631ff48a4d84ebea3669a9d90, type: 3}
   - {fileID: 2061228985669117825, guid: 0fd62c8c352ceaa4589e2c49dd306f4a, type: 3}
+  - {fileID: 3777597441533160902, guid: fc1b8c6522694e64eb1f3fc2edd03bd5, type: 3}
   dropForce: 5
   itemSpawnHeightOffset: 0.5
   destroyDelay: 0.1
-  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
-    type: 3}
-  breakSound: {fileID: 0}
   mass: 300
   drag: 1
   angularDrag: 1
@@ -106,11 +104,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  objectMass: 75
-  dustParticlePrefab: {fileID: 4938095755617958529, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
-    type: 3}
-  breakParticlePrefab: {fileID: 5700784828077083704, guid: ed962e35f7fa6f34f8d27aa6d19ea293,
-    type: 3}
+  objectMass: 300
 --- !u!65 &2850564568630138174
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -224,10 +218,10 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2859092720707406988}
   serializedVersion: 4
-  m_Mass: 75
+  m_Mass: 300
   m_Drag: 0
   m_AngularDrag: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_CenterOfMass: {x: 0, y: -0.07, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
   m_IncludeLayers:
@@ -236,13 +230,33 @@ Rigidbody:
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 0
-  m_ImplicitCom: 1
+  m_ImplicitCom: 0
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 14
   m_CollisionDetection: 0
+--- !u!114 &1023080063528626966
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2859092720707406988}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2883e4c1dfd15bf43a546e9d36e341bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 50000
+  currentHealth: 50000
+  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+    type: 3}
+  breakSound: {fileID: 0}
+  dustParticlePrefab: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+    type: 3}
+  hitSound: {fileID: 0}
 --- !u!1001 &4822244270194777681
 PrefabInstance:
   m_ObjectHideFlags: 0

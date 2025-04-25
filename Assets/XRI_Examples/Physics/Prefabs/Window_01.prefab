@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6950633952934208882}
+  - component: {fileID: 2537468497834429758}
   m_Layer: 0
   m_Name: Window_01
   m_TagString: Untagged
@@ -32,6 +33,27 @@ Transform:
   - {fileID: 4419185173551876180}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2537468497834429758
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1308265130741877079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd2ae3da4290e914fb8c0299e7686140, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  monsterPrefab: {fileID: 641341794854005767, guid: 74ff73dedb8bc7b4083e2753e9ada44f,
+    type: 3}
+  spawnRadius: 10
+  spawnInterval: 5
+  maxMonsters: 10
+  monstersPerWave: 10
+  timeBetweenWaves: 10
+  spawnPoints: []
+  tree: {fileID: 6142557452688276773, guid: c99d2be7e985de644a0adaecdc76989b, type: 3}
 --- !u!1001 &4242004907995361215
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -137,7 +159,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3476358075106738479, guid: 5079b45197d4f31468ef1ef2f528fb1c,
         type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 1501461009118561787, guid: ebded67754857684092b2d63186f9a49,
         type: 3}
@@ -236,13 +258,13 @@ HingeJoint:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 502328958617599460}
+  serializedVersion: 3
   m_ConnectedBody: {fileID: 0}
   m_ConnectedArticulationBody: {fileID: 0}
   m_Anchor: {x: 0, y: -0.02, z: 0}
   m_Axis: {x: 0, y: 1, z: 0}
   m_AutoConfigureConnectedAnchor: 1
   m_ConnectedAnchor: {x: 0.37980777, y: 2.1593924, z: -0.00021080574}
-  serializedVersion: 2
   m_UseSpring: 0
   m_Spring:
     spring: 10

@@ -147,6 +147,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1694697524349427833}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6fc33d8efccb2d44f83ad11d1567cef9,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6660931856038498862}
   m_SourcePrefab: {fileID: 100100000, guid: 6fc33d8efccb2d44f83ad11d1567cef9, type: 3}
 --- !u!1 &2873185459364158363 stripped
 GameObject:
@@ -166,7 +170,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c63e449bee2a27e4092f0b298d2b4946, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  health: 10000
   isBreakable: 1
   itemDropPrefabs:
   - {fileID: 2061228985669117825, guid: e8a523e631ff48a4d84ebea3669a9d90, type: 3}
@@ -178,9 +181,6 @@ MonoBehaviour:
   dropForce: 5
   itemSpawnHeightOffset: 0.5
   destroyDelay: 0.1
-  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
-    type: 3}
-  breakSound: {fileID: 0}
   mass: 1000
   drag: 10
   angularDrag: 1
@@ -189,7 +189,7 @@ MonoBehaviour:
   collisionLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  minimumImpactForce: 5
+  minimumImpactForce: 100
   breakOnlyFromWeapons: 1
   useImpactForce: 1
   damageMultiplier: 1
@@ -225,11 +225,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  objectMass: 5
-  dustParticlePrefab: {fileID: 4938095755617958529, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
-    type: 3}
-  breakParticlePrefab: {fileID: 5700784828077083704, guid: ed962e35f7fa6f34f8d27aa6d19ea293,
-    type: 3}
+  objectMass: 1000
 --- !u!65 &7739054573268763685
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -259,10 +255,10 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2873185459364158363}
   serializedVersion: 4
-  m_Mass: 75
-  m_Drag: 3
-  m_AngularDrag: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_Mass: 1000
+  m_Drag: 1
+  m_AngularDrag: 1
+  m_CenterOfMass: {x: 0, y: -0.1, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
   m_IncludeLayers:
@@ -271,13 +267,33 @@ Rigidbody:
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 0
-  m_ImplicitCom: 1
+  m_ImplicitCom: 0
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 1
-  m_Constraints: 14
+  m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &6660931856038498862
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2873185459364158363}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2883e4c1dfd15bf43a546e9d36e341bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 100000
+  currentHealth: 100000
+  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+    type: 3}
+  breakSound: {fileID: 0}
+  dustParticlePrefab: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+    type: 3}
+  hitSound: {fileID: 0}
 --- !u!4 &3212274207405080865 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 6fc33d8efccb2d44f83ad11d1567cef9,
