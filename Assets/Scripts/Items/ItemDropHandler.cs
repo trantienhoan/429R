@@ -43,11 +43,15 @@ namespace Items
 
         private void HandleDeath(HealthComponent healthComponent)
         {
+            Debug.Log("HandleDeath called on TreeOfLight!");
+
             DropItems();
         }
 
         public void DropItems()
         {
+            Debug.Log("DropItem called! Item prefab: ");
+
             if (hasGrown)
             {
                 DropItem(keyItemPrefab);

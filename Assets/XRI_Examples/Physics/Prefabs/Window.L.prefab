@@ -9,9 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6950633952934208882}
-  - component: {fileID: 2537468497834429758}
   m_Layer: 0
-  m_Name: Window_01
+  m_Name: Window.L
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -33,27 +32,6 @@ Transform:
   - {fileID: 4419185173551876180}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2537468497834429758
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1308265130741877079}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bd2ae3da4290e914fb8c0299e7686140, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  monsterPrefab: {fileID: 641341794854005767, guid: 74ff73dedb8bc7b4083e2753e9ada44f,
-    type: 3}
-  spawnRadius: 10
-  spawnInterval: 5
-  maxMonsters: 10
-  monstersPerWave: 10
-  timeBetweenWaves: 10
-  spawnPoints: []
-  tree: {fileID: 6142557452688276773, guid: c99d2be7e985de644a0adaecdc76989b, type: 3}
 --- !u!1001 &4242004907995361215
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -150,7 +128,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 5079b45197d4f31468ef1ef2f528fb1c,
         type: 3}
       propertyPath: m_Name
-      value: Window_01_Visual
+      value: Window_02_Visual
       objectReference: {fileID: 0}
     - target: {fileID: 3476358075106738479, guid: 5079b45197d4f31468ef1ef2f528fb1c,
         type: 3}
@@ -177,7 +155,7 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Mesh
       value: 
-      objectReference: {fileID: 2075875727174988983, guid: a318e4c46802b42439c7c4135872f9b8,
+      objectReference: {fileID: 6480154574549560987, guid: 2f0f7008a3cd20d49aefaff16e2eadac,
         type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects:
@@ -249,8 +227,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.616777, y: 1.5037129, z: 0.080678806}
-  m_Center: {x: 0.29226133, y: 0.0008660257, z: 0.05287931}
+  m_Size: {x: 0.6192531, y: 1.5037129, z: 0.080678806}
+  m_Center: {x: -0.2933598, y: 0.0008660555, z: 0.05287931}
 --- !u!59 &4731520106948969076
 HingeJoint:
   m_ObjectHideFlags: 0
@@ -264,7 +242,7 @@ HingeJoint:
   m_Anchor: {x: 0, y: -0.02, z: 0}
   m_Axis: {x: 0, y: 1, z: 0}
   m_AutoConfigureConnectedAnchor: 1
-  m_ConnectedAnchor: {x: 0.37980777, y: 2.1593924, z: -0.00021080574}
+  m_ConnectedAnchor: {x: 0, y: -0.02, z: 0}
   m_UseSpring: 0
   m_Spring:
     spring: 10
@@ -279,8 +257,8 @@ HingeJoint:
   m_ExtendedLimits: 0
   m_UseAcceleration: 0
   m_Limits:
-    min: 0
-    max: 135
+    min: -135
+    max: 0
     bounciness: 0
     bounceMinVelocity: 0.2
     contactDistance: 0

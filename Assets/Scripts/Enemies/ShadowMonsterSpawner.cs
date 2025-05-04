@@ -15,21 +15,24 @@ public class ShadowMonsterSpawner : MonoBehaviour
 {
     [Header("Monster Prefab")]
     [SerializeField] private GameObject monsterPrefab;
-
+    
+    [Header("Scale Settings")]
+    [SerializeField] private float initialScaleMultiplier = 0.01f;
+    [SerializeField] private float scaleDuration = 1.0f;
+    
     [Header("Spawn Settings")]
     [SerializeField] private float spawnRadius = 10f;
     [SerializeField] private float spawnInterval = 5f;
     [SerializeField] private int maxMonsters = 10;
 
-    [Header("Wave Settings")]
-    [SerializeField] private int monstersPerWave = 3;
-    [SerializeField] private float timeBetweenWaves = 10f;
-
-    [Header("Spawn Points")]
-    [SerializeField] private List<Transform> spawnPoints = new List<Transform>();
-
     [Header("References")]
-    [SerializeField] private TreeOfLight tree; // Reference to the TreeOfLight
+    [SerializeField] private TreeOfLight tree;
+    [SerializeField] private List<GameObject> windows;
+
+    [Header("Window Rotation Settings")]
+    [SerializeField] private float minRotationInterval = 2f;
+    [SerializeField] private float maxRotationInterval = 5f;
+
     private List<MonsterTrackerData> _activeMonsters = new List<MonsterTrackerData>();
 
     private bool isSpawning = false;
@@ -42,30 +45,19 @@ public class ShadowMonsterSpawner : MonoBehaviour
             enabled = false;
             return;
         }
-        InitializeSpawningSystem();
     }
+
     public void BeginSpawning()
     {
-        // Add the code here that starts the monster spawning process
-        // For example, if you have a coroutine that handles spawning:
-        StartCoroutine(SpawnMonsters());
+        OpenWindows();
+        StartSpawning(); // Start the actual spawning coroutine
+        StartCoroutine(RandomlyOpenWindows()); // Start the random window opening
     }
 
     private void OnDestroy()
     {
         StopAllCoroutines();
         CleanupMonsterLists();
-    }
-
-    private void InitializeSpawningSystem()
-    {
-        StartCoroutine(DelayedStartSpawning());
-    }
-
-    private IEnumerator DelayedStartSpawning()
-    {
-        yield return null; // Wait one frame
-        StartSpawning();
     }
 
     private void Update()
@@ -83,11 +75,33 @@ public class ShadowMonsterSpawner : MonoBehaviour
         Vector3 spawnPosition = FindValidSpawnPosition();
         GameObject monsterInstance = Instantiate(monsterPrefab, spawnPosition, Quaternion.identity);
 
-        // Rotate the monster to the desired initial orientation.
-        monsterInstance.transform.rotation = Quaternion.Euler(0, -90, 0); // Adjust these values as needed
+        // Set initial scale
+        monsterInstance.transform.localScale = monsterPrefab.transform.localScale * initialScaleMultiplier;
+
+        monsterInstance.transform.rotation = Quaternion.Euler(0, -90, 0);
 
         RegisterMonster(monsterInstance);
+
+        // Start scaling coroutine
+        StartCoroutine(ScaleMonster(monsterInstance.transform, monsterPrefab.transform.localScale, scaleDuration));
+
         return monsterInstance;
+    }
+    private IEnumerator ScaleMonster(Transform monsterTransform, Vector3 targetScale, float duration)
+    {
+        Vector3 startScale = monsterTransform.localScale;
+        float timer = 0;
+
+        while (timer < duration)
+        {
+            timer += Time.deltaTime;
+            float progress = timer / duration;
+            monsterTransform.localScale = Vector3.Lerp(startScale, targetScale, progress);
+            yield return null;
+        }
+
+        // Ensure it reaches the exact target scale
+        monsterTransform.localScale = targetScale;
     }
 
     public void RegisterMonster(GameObject monster)
@@ -95,11 +109,10 @@ public class ShadowMonsterSpawner : MonoBehaviour
         ShadowMonsterSpider spider = monster.GetComponent<ShadowMonsterSpider>();
         if (spider != null)
         {
-            // Spider-specific registration: Increase health
             HealthComponent health = monster.GetComponent<HealthComponent>();
             if (health != null)
             {
-                health.SetMaxHealth(health.MaxHealth * 1.5f); // 50% more health
+                health.SetMaxHealth(health.MaxHealth * 1.5f);
             }
             Debug.Log("Registered a ShadowMonsterSpider with increased health!");
             return;
@@ -108,29 +121,24 @@ public class ShadowMonsterSpawner : MonoBehaviour
         ShadowMonster shadowMonster = monster.GetComponent<ShadowMonster>();
         if (shadowMonster != null)
         {
-            // Generic ShadowMonster registration
-            //Debug.Log("Registered a ShadowMonster");
             return;
         }
-
-        //Debug.LogError("Monster is not a recognized ShadowMonster type!");
     }
 
     private void OnMonsterDeath(HealthComponent health)
     {
         UnregisterMonster(health);
     }
+
     public void UnregisterMonster(HealthComponent health)
     {
         if (health == null)
         {
-            //Debug.LogWarning("Trying to unregister a null health component!");
             return;
         }
 
         health.OnDeath -= OnMonsterDeath;
 
-        //Check if monster is on the list
         var itemToRemove = _activeMonsters.FirstOrDefault(x => x.MonsterObject == health.gameObject);
 
         if (itemToRemove != null)
@@ -144,19 +152,21 @@ public class ShadowMonsterSpawner : MonoBehaviour
         }
     }
 
-
-    private IEnumerator SpawnWaves()
-    {
-        while (isSpawning && tree != null)
-        {
-            TriggerWave(monstersPerWave);
-            yield return new WaitForSeconds(timeBetweenWaves);
-        }
-    }
     private IEnumerator SpawnMonsters()
     {
-        StartSpawning();
-        yield return null;
+        while (isSpawning)
+        {
+            if (CanSpawnMore())
+            {
+                SpawnMonster();
+                yield return new WaitForSeconds(spawnInterval);
+            }
+            else
+            {
+                LogWarning("Reached max monster limit. Cannot spawn more.");
+                yield return null;
+            }
+        }
     }
 
     private void StartSpawning()
@@ -164,7 +174,7 @@ public class ShadowMonsterSpawner : MonoBehaviour
         if (!isSpawning)
         {
             isSpawning = true;
-            StartCoroutine(SpawnWaves());
+            StartCoroutine(SpawnMonsters());
             Log("Monster spawning started.");
         }
     }
@@ -181,77 +191,37 @@ public class ShadowMonsterSpawner : MonoBehaviour
 
     private Vector3 FindValidSpawnPosition()
     {
-        if (spawnPoints == null || spawnPoints.Count == 0)
+        List<Transform> childSpawnPoints = new List<Transform>();
+        foreach (Transform child in transform)
         {
-            LogWarning("No spawn points defined. Spawning at spawner's position.");
-            return transform.position; // Fallback to spawner's position
+            childSpawnPoints.Add(child);
         }
 
-        int randomIndex = Random.Range(0, spawnPoints.Count);
-        return spawnPoints[randomIndex].position;
+        if (childSpawnPoints == null || childSpawnPoints.Count == 0)
+        {
+            LogWarning("No spawn points defined. Spawning at spawner's position.");
+            return transform.position;
+        }
+
+        int randomIndex = Random.Range(0, childSpawnPoints.Count);
+        return childSpawnPoints[randomIndex].position;
     }
+
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;
-        if (spawnPoints != null)
-        {
-            foreach (var point in spawnPoints)
-            {
-                if (point != null)
-                {
-                    Gizmos.DrawWireSphere(point.position, spawnRadius);
-                }
-            }
-        }
-        else
-        {
-            Gizmos.DrawWireSphere(transform.position, spawnRadius);
-        }
-    }
-
-    private void TriggerWave(int extraMonsters = 0)
-    {
-        StartCoroutine(SpawnWaveCoroutine(monstersPerWave + extraMonsters));
-    }
-
-    private IEnumerator SpawnWaveCoroutine(int count)
-    {
-        //Spawn a wave of monsters
-        for (int i = 0; i < count; i++)
-        {
-            if (CanSpawnMore())
-            {
-                SpawnMonster();
-                yield return new WaitForSeconds(spawnInterval);
-            }
-            else
-            {
-                LogWarning("Reached max monster limit. Cannot spawn more.");
-                break;
-            }
-        }
     }
 
     public void CleanupMonsterLists()
     {
-        //Iterate and kill all active monsters
-        foreach (var monster in _activeMonsters.ToList()) // Iterate over a copy to avoid modification issues
+        foreach (var monster in _activeMonsters.ToList())
         {
             if (monster.MonsterObject != null)
             {
-                var health = monster.MonsterObject.GetComponent<HealthComponent>();
-                if (health != null)
-                {
-                    health.TakeDamage(Mathf.Infinity, monster.MonsterObject.transform.position, gameObject);
-                }
-                else
-                {
-                    Destroy(monster.MonsterObject); // Fallback if no health component
-                }
+                Destroy(monster.MonsterObject);
             }
         }
 
-        //Clear the active monster list
         _activeMonsters.Clear();
     }
 
@@ -268,5 +238,48 @@ public class ShadowMonsterSpawner : MonoBehaviour
     private void LogError(string message)
     {
         Debug.LogError($"[MonsterSpawner] {message}");
+    }
+
+    private void OpenWindows()
+    {
+        if (windows == null || windows.Count != 2)
+        {
+            LogWarning("Two windows must be assigned to the Monster Spawner!");
+            return;
+        }
+
+        GameObject windowL = windows[0];
+        GameObject windowR = windows[1];
+
+        if (windowL != null)
+        {
+            windowL.SetActive(true);
+            windowL.transform.Rotate(Vector3.up, 14f); // Rotate Window.L 147 degrees around Y
+        }
+        else
+        {
+            LogWarning("Window L is null!");
+        }
+
+        if (windowR != null)
+        {
+            windowR.SetActive(true);
+            windowR.transform.Rotate(Vector3.up, -14f); // Rotate Window.R -147 degrees around Y
+        }
+        else
+        {
+            LogWarning("Window R is null!");
+        }
+    }
+
+    private IEnumerator RandomlyOpenWindows()
+    {
+        while (isSpawning)
+        {
+            float interval = Random.Range(minRotationInterval, maxRotationInterval);
+            yield return new WaitForSeconds(interval);
+
+            OpenWindows();
+        }
     }
 }

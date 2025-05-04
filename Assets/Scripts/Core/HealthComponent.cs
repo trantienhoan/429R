@@ -52,6 +52,8 @@ namespace Core
 
         public void TakeDamage(float damage, Vector3 hitPoint, GameObject damageSource = null) // MODIFY THIS LINE
         {
+            Debug.Log($"TreeOfLight TakeDamage: Damage = {damage}, currentHealth = {currentHealth}");
+
             if (isDead) return;
 
             SpawnDustParticles(hitPoint);
@@ -113,7 +115,7 @@ namespace Core
             OnDeath?.Invoke(this);
             isDead = true;
 
-            //Debug.Log($"{gameObject.name} has died!");
+            Debug.Log($"{gameObject.name} has died!");
             
             if (breakEffect != null)
             {

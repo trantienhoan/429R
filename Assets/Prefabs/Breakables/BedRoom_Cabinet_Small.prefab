@@ -184,6 +184,7 @@ GameObject:
   - component: {fileID: 5596699236826790164}
   - component: {fileID: 7312342074747217645}
   - component: {fileID: 2042166546271021172}
+  - component: {fileID: 8281296840075832706}
   m_Layer: 0
   m_Name: BedRoom_Cabinet_Small
   m_TagString: Furniture
@@ -219,7 +220,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c63e449bee2a27e4092f0b298d2b4946, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  health: 1000
   isBreakable: 1
   itemDropPrefabs:
   - {fileID: 2061228985669117825, guid: e8a523e631ff48a4d84ebea3669a9d90, type: 3}
@@ -228,10 +228,7 @@ MonoBehaviour:
   dropForce: 5
   itemSpawnHeightOffset: 0.5
   destroyDelay: 0.1
-  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
-    type: 3}
-  breakSound: {fileID: 0}
-  mass: 100
+  mass: 150
   drag: 1
   angularDrag: 1
   useGravity: 1
@@ -239,7 +236,7 @@ MonoBehaviour:
   collisionLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  minimumImpactForce: 5
+  minimumImpactForce: 50
   breakOnlyFromWeapons: 1
   useImpactForce: 1
   damageMultiplier: 1
@@ -275,11 +272,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  objectMass: 100
-  dustParticlePrefab: {fileID: 4938095755617958529, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
-    type: 3}
-  breakParticlePrefab: {fileID: 5700784828077083704, guid: ed962e35f7fa6f34f8d27aa6d19ea293,
-    type: 3}
+  objectMass: 150
 --- !u!65 &7312342074747217645
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -328,6 +321,26 @@ Rigidbody:
   m_Interpolate: 1
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &8281296840075832706
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7543794215303788279}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2883e4c1dfd15bf43a546e9d36e341bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 5000
+  currentHealth: 5000
+  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+    type: 3}
+  breakSound: {fileID: 0}
+  dustParticlePrefab: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+    type: 3}
+  hitSound: {fileID: 0}
 --- !u!1 &7635502743404714455
 GameObject:
   m_ObjectHideFlags: 0

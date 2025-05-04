@@ -10,6 +10,21 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 1bca6060b0173b64ab0a49c7d8811640,
         type: 3}
+      propertyPath: m_LocalScale.x
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 1bca6060b0173b64ab0a49c7d8811640,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 1bca6060b0173b64ab0a49c7d8811640,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 1bca6060b0173b64ab0a49c7d8811640,
+        type: 3}
       propertyPath: m_LocalPosition.x
       value: -0
       objectReference: {fileID: 0}
@@ -57,6 +72,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 1bca6060b0173b64ab0a49c7d8811640,
+        type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -7511558181221131132, guid: 1bca6060b0173b64ab0a49c7d8811640,
         type: 3}
@@ -151,7 +171,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 1bca6060b0173b64ab0a49c7d8811640,
         type: 3}
       propertyPath: m_Name
-      value: Magical_Seed
+      value: Bomb
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 1bca6060b0173b64ab0a49c7d8811640,
         type: 3}
@@ -287,11 +307,11 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1bca6060b0173b64ab0a49c7d8811640,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 3608908808364529689}
+      addedObject: {fileID: 3394943184988473773}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1bca6060b0173b64ab0a49c7d8811640,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 3394943184988473773}
+      addedObject: {fileID: 5404840998696643673}
   m_SourcePrefab: {fileID: 100100000, guid: 1bca6060b0173b64ab0a49c7d8811640, type: 3}
 --- !u!1 &3777597441533160902 stripped
 GameObject:
@@ -469,21 +489,6 @@ MonoBehaviour:
   m_StartingMultipleGrabTransformers: []
   m_AddDefaultGrabTransformers: 1
   m_FarAttachMode: 0
---- !u!114 &3608908808364529689
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3777597441533160902}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: deaa2e625936d2943ae57355fa1d7d95, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  seedGrabInteractable: {fileID: 2648095480573965488}
-  seedRigidbody: {fileID: 8567166966575057009}
-  seedCollider: {fileID: 4862175093498260800}
 --- !u!95 &3394943184988473773
 Animator:
   serializedVersion: 7
@@ -506,3 +511,18 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &5404840998696643673
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3777597441533160902}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b5b943f14121474eb1b55d3f7e9402e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  delay: 4
+  damageAmount: 100
+  sceneIndexToReturnTo: 1
