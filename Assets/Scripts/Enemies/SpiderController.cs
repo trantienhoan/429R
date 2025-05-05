@@ -9,6 +9,10 @@ namespace Enemies
         [SerializeField] private float maxSpeed = 5f;
         [SerializeField] private float acceleration = 40f;
         [SerializeField] private float friction = 5f;
+        
+        // Z-axis movement
+        [SerializeField] private float zMoveSpeed = 2f; // Speed for Z-axis movement
+        private float currentZVelocity = 0f;
 
         // Internal state
         private Vector2 velocityNoAdd = Vector2.zero;
@@ -23,13 +27,14 @@ namespace Enemies
         [SerializeField] private int arcResolution = 6;
         [SerializeField] private LayerMask arcLayer;
 
+        // Direction control
+        private Vector2 movementDirection = Vector2.zero;
+        private float zMovementInput = 0f; // Input for Z-axis movement
+        
         public Vector2 Velocity { get => velocity; }
         public Vector3 Velocity3 { get => new Vector3(velocity.x, 0, velocity.y); }
         public float Speed { get => speed; }
         public float SpeedProgress { get => speedProgress; }
-
-        // Direction control
-        private Vector2 movementDirection = Vector2.zero;
 
         private void Awake()
         {
@@ -53,6 +58,7 @@ namespace Enemies
             ApplyMovementDirection();
             ApplyFriction();
             UpdateVelocity();
+            ApplyZMovement();
         }
 
         // Called by ShadowMonsterSpider to set the direction
@@ -129,6 +135,18 @@ namespace Enemies
             }
             Vector3 clampedRotation = transform.eulerAngles;
             transform.rotation = Quaternion.Euler(clampedRotation);
+        }
+        private void ApplyZMovement()
+        {
+            // Calculate the target Z velocity based on input
+            float targetZVelocity = zMovementInput * zMoveSpeed;
+
+            // Smoothly interpolate the current Z velocity towards the target velocity
+            currentZVelocity = Mathf.Lerp(currentZVelocity, targetZVelocity, Time.fixedDeltaTime * 10f); // You can adjust the smoothing factor (10f)
+
+            // Apply the Z movement
+            Vector3 zMovement = transform.forward * currentZVelocity * Time.fixedDeltaTime;
+            transform.position += zMovement;
         }
     }
 }

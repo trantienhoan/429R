@@ -30,8 +30,9 @@ public class ShadowMonsterSpawner : MonoBehaviour
     [SerializeField] private List<GameObject> windows = new List<GameObject>(); // Initialize list
 
     [Header("Window Rotation Settings")]
-    [SerializeField] private Vector3 openWindowRotation = new Vector3(0f, 147f, 0f);
-    [SerializeField] private Vector3 closedWindowRotation = Vector3.zero; // Or whatever the closed rotation should be
+    [SerializeField] private float openWindowRotationL = -147f;
+    [SerializeField] private float openWindowRotationR = 147f;
+    [SerializeField] private float closedWindowRotation = 0f;
 
     private List<MonsterTrackerData> _activeMonsters = new List<MonsterTrackerData>();
 
@@ -261,7 +262,7 @@ public class ShadowMonsterSpawner : MonoBehaviour
         if (windowL != null)
         {
             windowL.SetActive(true);
-            windowL.transform.rotation = Quaternion.Euler(openWindowRotation); // Set absolute rotation
+            windowL.transform.rotation = Quaternion.Euler(0, openWindowRotationL, 0); // Set absolute rotation
         }
         else
         {
@@ -271,7 +272,7 @@ public class ShadowMonsterSpawner : MonoBehaviour
         if (windowR != null)
         {
             windowR.SetActive(true);
-            windowR.transform.rotation = Quaternion.Euler(openWindowRotation); // Set absolute rotation
+            windowR.transform.rotation = Quaternion.Euler(0, openWindowRotationR, 0); // Set absolute rotation
         }
         else
         {
@@ -292,7 +293,7 @@ public class ShadowMonsterSpawner : MonoBehaviour
         if (windowL != null)
         {
             windowL.SetActive(false); // Deactivate the window
-            windowL.transform.rotation = Quaternion.Euler(closedWindowRotation); // Set absolute rotation
+            windowL.transform.rotation = Quaternion.Euler(0, closedWindowRotation, 0); // Set absolute rotation
         }
         else
         {
@@ -302,7 +303,7 @@ public class ShadowMonsterSpawner : MonoBehaviour
         if (windowR != null)
         {
             windowR.SetActive(false); // Deactivate the window
-            windowR.transform.rotation = Quaternion.Euler(closedWindowRotation); // Set absolute rotation
+            windowR.transform.rotation = Quaternion.Euler(0, closedWindowRotation, 0); // Set absolute rotation
         }
         else
         {
@@ -310,3 +311,4 @@ public class ShadowMonsterSpawner : MonoBehaviour
         }
     }
 }
+

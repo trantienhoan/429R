@@ -1,7 +1,6 @@
 using UnityEngine;
-//using System.Collections;
 using Core;
-//using System;
+using System.Collections;
 
 namespace Enemies
 {
@@ -13,16 +12,36 @@ namespace Enemies
         [SerializeField] private float slowdownDistance = 2f;
         [SerializeField] private float attackSpeedMultiplier = 0.5f;
         [SerializeField] private float reTargetingRange = 20f;
+        [SerializeField] private float findTargetInterval = 2f;
 
         [Header("Attack Settings")]
         [SerializeField] private float attackDamage = 20f;
         [SerializeField] private float jumpHeight = 2f;
+        [SerializeField] private float attackBodyMoveSpeed = 5f;
+        [SerializeField] private float attackCooldown = 5f; // Cooldown duration in seconds
+
+        [Header("SpiderPivot Offset")]
+        [SerializeField] private float pivotOffsetX = 2f; // Offset in the X direction
+
+        [Header("Jump Attack Settings")]
+        [SerializeField] private float blowbackDistance = 3f; // Distance to move back before jumping
+        [SerializeField] private float blowbackDuration = 0.3f; // Duration of the blowback
 
         private GameObject target;
         private Vector2 currentDirection;
         private bool isAttacking = false;
         private SpiderController spiderController;
+        private SpiderPivot spiderPivot; // Reference to SpiderPivot
         private GameObject player;
+        private float lastFindTargetTime;
+        private float lastAttackTime; // Time of last attack
+
+        private HealthComponent targetHealth;
+
+        [Header("Pull To Light")]
+        [SerializeField] private float pullSpeed = 10f;
+        private bool isBeingPulled = false;
+        private Vector3 pullTarget;
 
         private void Awake()
         {
@@ -38,6 +57,7 @@ namespace Enemies
         private void Start()
         {
             spiderController = GetComponent<SpiderController>();
+            spiderPivot = GetComponent<SpiderPivot>(); // Get SpiderPivot component
 
             if (spiderController == null)
             {
@@ -45,6 +65,18 @@ namespace Enemies
                 enabled = false;
                 return;
             }
+
+            if (spiderPivot == null) // Check for SpiderPivot
+            {
+                Debug.LogError("SpiderPivot not found on ShadowMonsterSpider!");
+                enabled = false;
+                return;
+            }
+
+            // Apply the initial offset
+            Vector3 pivotPosition = spiderPivot.transform.localPosition;
+            pivotPosition.x = pivotOffsetX;
+            spiderPivot.transform.localPosition = pivotPosition;
 
             FindTarget();
 
@@ -58,29 +90,53 @@ namespace Enemies
                 SetMovementDirection(target.transform.position, patrolSpeed);
             }
 
-            healthComponent.OnTakeDamage += OnTakeDamage; // Subscribe to OnTakeDamage
+            healthComponent.OnTakeDamage += OnTakeDamage;
+            lastFindTargetTime = Time.time;
         }
 
         private void OnDestroy()
         {
-            healthComponent.OnTakeDamage -= OnTakeDamage; // Unsubscribe
+            healthComponent.OnTakeDamage -= OnTakeDamage;
         }
 
         private void Update()
         {
-            if (healthComponent.IsDead()) return;
+            if (healthComponent.IsDead())
+            {
+                Die(); // Call Die function
+                return;
+            }
+
+            if (isBeingPulled)
+            {
+                PullToTarget();
+                return;
+            }
+
+            // Periodically attempt to find the target
+            if (Time.time - lastFindTargetTime > findTargetInterval)
+            {
+                FindTarget();
+                lastFindTargetTime = Time.time;
+            }
 
             if (target != null)
             {
                 float distanceToTarget = Vector3.Distance(transform.position, target.transform.position);
 
-                if (distanceToTarget <= slowdownDistance && !isAttacking)
+                // Check if within reTargetingRange, NOT already being pulled, and attack is off cooldown
+                if (distanceToTarget <= reTargetingRange && !isBeingPulled && Time.time - lastAttackTime > attackCooldown)
                 {
-                    SetMovementDirection(target.transform.position, patrolSpeed * attackSpeedMultiplier);
-                    isAttacking = true;
-                    Attack();
+                    if (jumpHeight > 0 && UnityEngine.Random.value > 0.5f)
+                    {
+                        JumpAttack();
+                    }
+                    else
+                    {
+                        PullToPosition(target.transform.position); // Directly pull for regular attack
+                    }
                 }
-                else
+                else if (!isBeingPulled)
                 {
                     SetMovementDirection(target.transform.position, chaseSpeed);
                 }
@@ -126,7 +182,7 @@ namespace Enemies
         private void SetMovementDirection(Vector3 targetPosition, float speed)
         {
             Vector2 direction = (targetPosition - transform.position).normalized;
-            //SetMovementDirection(direction, speed);
+            SetMovementDirection(direction, speed);
         }
 
         private void SetMovementDirection(Vector2 direction, float speed)
@@ -139,30 +195,45 @@ namespace Enemies
             currentDirection = UnityEngine.Random.insideUnitCircle.normalized;
         }
 
-        private void Attack()
-        {
-            //Debug.Log("Spider Attack!");
-
-            if (jumpHeight > 0 && UnityEngine.Random.value > 0.5f)
-            {
-                JumpAttack();
-            }
-            else
-            {
-                RunAttack();
-            }
-        }
-
         private void JumpAttack()
         {
-            //Debug.Log("Spider Jump Attack!");
+            StartCoroutine(PerformJumpAttack());
+        }
+
+        private System.Collections.IEnumerator PerformJumpAttack()
+        {
+            isAttacking = true;
+
+            // 1. Blowback
+            Vector3 blowbackDirection = (transform.position - target.transform.position).normalized;
+            Vector3 blowbackPosition = transform.position + blowbackDirection * blowbackDistance;
+
+            float blowbackTime = 0f;
+            Vector3 startPosition = transform.position;
+            while (blowbackTime < blowbackDuration)
+            {
+                blowbackTime += Time.deltaTime;
+                transform.position = Vector3.Lerp(startPosition, blowbackPosition, blowbackTime / blowbackDuration);
+                yield return null;
+            }
+
+            // 2. Pull to Target
+            PullToPosition(target.transform.position);
+
             isAttacking = false;
         }
 
-        private void RunAttack()
+        //This function is called from Animation event
+        public void ApplyDamage()
         {
-            //Debug.Log("Spider Run Attack!");
-            isAttacking = false;
+            if (target != null)
+            {
+                targetHealth = target.GetComponent<HealthComponent>();
+                if (targetHealth != null)
+                {
+                    targetHealth.TakeDamage(attackDamage, transform.position, gameObject);
+                }
+            }
         }
 
         private void OnTakeDamage(object sender, HealthComponent.HealthChangedEventArgs e)
@@ -174,16 +245,79 @@ namespace Enemies
             }
         }
 
-        private void OnTriggerEnter(Collider other)
+        private void OnCollisionEnter(Collision collision)
         {
-            if (other.gameObject == target)
+            // Check if colliding with the TreeOfLight or Player and is not currently attacking
+            if ((collision.gameObject == target || collision.gameObject.CompareTag("Player")) && !isAttacking)
             {
-                HealthComponent targetHealth = target.GetComponent<HealthComponent>();
-                if (targetHealth != null)
+                ApplyDamage(); // Deal damage
+                lastAttackTime = Time.time; // Record the time of the attack
+
+                // If TreeOfLight is target, stop being pulled and clear the target
+                if (collision.gameObject == target)
                 {
-                    targetHealth.TakeDamage(attackDamage, target.transform.position, gameObject);
+                    isBeingPulled = false; // Stop being pulled
+                    target = null; // Clear the target
+
+                    // Move away from the TreeOfLight
+                    SetRandomDirection();
+                    SetMovementDirection(currentDirection, patrolSpeed);
                 }
-                isAttacking = false;
+
+                //If colliding with player, apply the regular logic and cooldown
+            }
+        }
+
+        private void Die()
+        {
+            // Disable SpiderController to stop movement
+            spiderController.enabled = false;
+
+            // Apply forces to legs to simulate collapse
+            Transform[] legs = GetComponent<Spider>().legsArray; // Get leg array
+            foreach (Transform leg in legs)
+            {
+                if (leg != null)
+                {
+                    Rigidbody rb = leg.GetComponent<Rigidbody>();
+                    if (rb == null)
+                    {
+                        rb = leg.gameObject.AddComponent<Rigidbody>(); // Add Rigidbody if it doesn't exist
+                        rb.mass = 10f;
+                    }
+
+                    // Apply a random force to each leg
+                    rb.AddForce(Random.insideUnitSphere * 5f, ForceMode.Impulse);
+                }
+            }
+        }
+
+        // Public method to pull the spider to a specific position
+        public void PullToPosition(Vector3 position)
+        {
+            isBeingPulled = true;
+            pullTarget = position;
+        }
+
+        private void PullToTarget()
+        {
+            if (spiderPivot != null)
+            {
+                // Rotate the spiderPivot to face the pullTarget
+                Quaternion targetRotation = Quaternion.LookRotation(pullTarget - spiderPivot.transform.position);
+                spiderPivot.transform.rotation = Quaternion.Slerp(spiderPivot.transform.rotation, targetRotation, Time.deltaTime * pullSpeed);
+
+                // Move the spiderPivot towards the pullTarget
+                spiderPivot.transform.position = Vector3.MoveTowards(spiderPivot.transform.position, pullTarget, pullSpeed * Time.deltaTime);
+
+                if (Vector3.Distance(spiderPivot.transform.position, pullTarget) < 0.1f)
+                {
+                    isBeingPulled = false;
+                }
+            }
+            else
+            {
+                isBeingPulled = false;
             }
         }
     }
