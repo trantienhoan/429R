@@ -43,7 +43,7 @@ namespace Items
 
         private void HandleDeath(HealthComponent healthComponent)
         {
-            Debug.Log("HandleDeath called on TreeOfLight!");
+            //Debug.Log("HandleDeath called on TreeOfLight!");
 
             DropItems();
         }

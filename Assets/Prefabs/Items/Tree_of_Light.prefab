@@ -261,18 +261,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   growthSpeed: 1
-  animator: {fileID: 0}
+  growthStartDelay: 5
+  animator: {fileID: 5380660309609758459}
   growthAnimationName: Seed_Grow
   parentPot: {fileID: 6891814520054160059, guid: 19f5c0ffbbddfe0488c8dda87135b30e,
     type: 3}
-  healthComponent: {fileID: 0}
+  healthComponent: {fileID: 8558845874768669244}
   onGrowthComplete:
     m_PersistentCalls:
       m_Calls: []
   monsterSpawner: {fileID: 0}
-  growthParticlePrefab: {fileID: 7938384439400024403, guid: b6e54acc881a03c4a9719b161a25a3e3,
-    type: 3}
-  treeSpawnPoint: {fileID: 0}
   audioSource: {fileID: 0}
   growthSound: {fileID: 0}
 --- !u!114 &8558845874768669244
@@ -307,7 +305,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2380d6a6e9dc3254d95d638321e4362a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  keyItemPrefab: {fileID: 0}
-  bombItemPrefab: {fileID: 0}
+  keyItemPrefab: {fileID: 6616067871869890980, guid: edf9132d0728dd349854d6653c1e11a0,
+    type: 3}
+  bombItemPrefab: {fileID: 3777597441533160902, guid: 1a8b377c483bfa843b196e7f3dbd816d,
+    type: 3}
   dropForce: 200
   hasGrown: 0

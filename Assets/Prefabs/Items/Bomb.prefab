@@ -11,17 +11,17 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 1bca6060b0173b64ab0a49c7d8811640,
         type: 3}
       propertyPath: m_LocalScale.x
-      value: 6
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1bca6060b0173b64ab0a49c7d8811640,
         type: 3}
       propertyPath: m_LocalScale.y
-      value: 6
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1bca6060b0173b64ab0a49c7d8811640,
         type: 3}
       propertyPath: m_LocalScale.z
-      value: 6
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1bca6060b0173b64ab0a49c7d8811640,
         type: 3}
@@ -307,10 +307,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1bca6060b0173b64ab0a49c7d8811640,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 3394943184988473773}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1bca6060b0173b64ab0a49c7d8811640,
-        type: 3}
-      insertIndex: -1
       addedObject: {fileID: 5404840998696643673}
   m_SourcePrefab: {fileID: 100100000, guid: 1bca6060b0173b64ab0a49c7d8811640, type: 3}
 --- !u!1 &3777597441533160902 stripped
@@ -489,28 +485,6 @@ MonoBehaviour:
   m_StartingMultipleGrabTransformers: []
   m_AddDefaultGrabTransformers: 1
   m_FarAttachMode: 0
---- !u!95 &3394943184988473773
-Animator:
-  serializedVersion: 7
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3777597441533160902}
-  m_Enabled: 1
-  m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: aedd8f4ca1a638a4ab0b3fa57a6648eb, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_AnimatePhysics: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
 --- !u!114 &5404840998696643673
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -524,5 +498,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   delay: 4
-  damageAmount: 100
-  sceneIndexToReturnTo: 1
+  particleDelay: 2
+  explosionEffectPrefab: {fileID: 6403252182692130911, guid: 4e12b3c53c0f8ee4da83655d8d2770d5,
+    type: 3}
+  scaleDuration: 7
+  maxScale: {x: 45, y: 45, z: 45}

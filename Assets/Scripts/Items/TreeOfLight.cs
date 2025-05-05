@@ -22,12 +22,6 @@ public class TreeOfLight : MonoBehaviour
     [SerializeField] private UnityEvent onGrowthComplete;
     [SerializeField] private ShadowMonsterSpawner monsterSpawner;
 
-    [Header("Particles")]
-    [SerializeField] private ParticleSystem growthParticlePrefab; // Direct reference to ParticleSystem
-    [SerializeField] private Transform treeSpawnPoint;
-    
-    private ParticleSystem growthParticleInstance;
-
     [Header("Audio")]
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip growthSound;
@@ -108,7 +102,6 @@ public class TreeOfLight : MonoBehaviour
 
     public void BeginGrowth(bool canGrow = true)
     {
-        Debug.Log("BeginGrowth called");
         if (hasBegunGrowth)
         {
             Debug.LogWarning("BeginGrowth called multiple times!");
@@ -154,7 +147,6 @@ public class TreeOfLight : MonoBehaviour
             {
                 float animationLength = clip.length;
                 Debug.Log("Animation Length: " + animationLength);
-                PlayGrowthParticles();
                 monsterSpawner?.BeginSpawning();
                 float growthSpeed = this.growthSpeed;
                 float delay = animationLength / growthSpeed;
@@ -190,7 +182,6 @@ public class TreeOfLight : MonoBehaviour
         {
             CancelInvoke(nameof(CompleteVisualGrowth));
         }
-        StopGrowthParticles();
     }
 
     public void CompleteVisualGrowth()
@@ -201,17 +192,6 @@ public class TreeOfLight : MonoBehaviour
             Debug.Log("CompleteVisualGrowth: isComplete is false, proceeding"); // ADDED LOG
             isGrowing = false;
             isComplete = true;
-
-            ItemDropHandler itemDrop = GetComponent<ItemDropHandler>();
-            if (itemDrop != null)
-            {
-                Debug.Log("CompleteVisualGrowth: ItemDropHandler found, dropping items"); // ADDED LOG
-                itemDrop.DropItems();
-            }
-            else
-            {
-                Debug.LogWarning("No ItemDropHandler found on TreeOfLight to drop items.");
-            }
 
             if (parentPot != null)
             {
@@ -258,50 +238,8 @@ public class TreeOfLight : MonoBehaviour
     {
         Debug.Log("TreeOfLight has died!");
         StopAllCoroutines();
-        StopGrowthParticles();
         monsterSpawner?.StopSpawning();
         StartCoroutine(DelayedDestruction());
-    }
-
-    private void PlayGrowthParticles()
-    {
-        if (growthParticlePrefab != null && treeSpawnPoint != null)
-        {
-            growthParticleInstance = treeSpawnPoint.GetComponentInChildren<ParticleSystem>();
-            if(growthParticleInstance == null)
-            {
-                Debug.LogError("Growth Particle Instance is null, because it is not child of Tree Spawn Point");
-                return;
-            }
-            growthParticleInstance.Play();
-        }
-        else
-        {
-            if (growthParticlePrefab == null)
-            {
-                Debug.LogWarning("Growth Particles Prefab not assigned!");
-            }
-            if (treeSpawnPoint == null)
-            {
-                Debug.LogWarning("Tree Spawn Point not assigned!");
-            }
-        }
-    }
-
-    private void StopGrowthParticles()
-    {
-        if (growthParticlePrefab != null)
-        {
-            growthParticlePrefab.Stop();
-        }
-    }
-    private void DestroyGrowthParticles()
-    {
-        if (growthParticleInstance != null)
-        {
-            Destroy(growthParticleInstance.gameObject);
-            growthParticleInstance = null;
-        }
     }
 
     private IEnumerator DelayedDestruction()

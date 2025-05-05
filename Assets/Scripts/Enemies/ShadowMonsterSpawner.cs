@@ -15,11 +15,11 @@ public class ShadowMonsterSpawner : MonoBehaviour
 {
     [Header("Monster Prefab")]
     [SerializeField] private GameObject monsterPrefab;
-    
+
     [Header("Scale Settings")]
     [SerializeField] private float initialScaleMultiplier = 0.01f;
-    [SerializeField] private float scaleDuration = 1.0f;
-    
+    [SerializeField] private float scaleDuration = 2.0f;
+
     [Header("Spawn Settings")]
     [SerializeField] private float spawnRadius = 10f;
     [SerializeField] private float spawnInterval = 5f;
@@ -27,11 +27,11 @@ public class ShadowMonsterSpawner : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private TreeOfLight tree;
-    [SerializeField] private List<GameObject> windows;
+    [SerializeField] private List<GameObject> windows = new List<GameObject>(); // Initialize list
 
     [Header("Window Rotation Settings")]
-    [SerializeField] private float minRotationInterval = 2f;
-    [SerializeField] private float maxRotationInterval = 5f;
+    [SerializeField] private Vector3 openWindowRotation = new Vector3(0f, 147f, 0f);
+    [SerializeField] private Vector3 closedWindowRotation = Vector3.zero; // Or whatever the closed rotation should be
 
     private List<MonsterTrackerData> _activeMonsters = new List<MonsterTrackerData>();
 
@@ -45,19 +45,24 @@ public class ShadowMonsterSpawner : MonoBehaviour
             enabled = false;
             return;
         }
+
+        if (windows == null || windows.Count != 2)
+        {
+            LogWarning("Two windows must be assigned to the Monster Spawner!");
+        }
     }
 
     public void BeginSpawning()
     {
         OpenWindows();
         StartSpawning(); // Start the actual spawning coroutine
-        StartCoroutine(RandomlyOpenWindows()); // Start the random window opening
     }
 
     private void OnDestroy()
     {
         StopAllCoroutines();
         CleanupMonsterLists();
+        CloseWindows();
     }
 
     private void Update()
@@ -87,6 +92,7 @@ public class ShadowMonsterSpawner : MonoBehaviour
 
         return monsterInstance;
     }
+
     private IEnumerator ScaleMonster(Transform monsterTransform, Vector3 targetScale, float duration)
     {
         Vector3 startScale = monsterTransform.localScale;
@@ -185,6 +191,7 @@ public class ShadowMonsterSpawner : MonoBehaviour
         {
             isSpawning = false;
             StopAllCoroutines();
+            CloseWindows(); // Close windows when spawning stops
             Log("Monster spawning stopped.");
         }
     }
@@ -254,7 +261,7 @@ public class ShadowMonsterSpawner : MonoBehaviour
         if (windowL != null)
         {
             windowL.SetActive(true);
-            windowL.transform.Rotate(Vector3.up, 14f); // Rotate Window.L 147 degrees around Y
+            windowL.transform.rotation = Quaternion.Euler(openWindowRotation); // Set absolute rotation
         }
         else
         {
@@ -264,7 +271,7 @@ public class ShadowMonsterSpawner : MonoBehaviour
         if (windowR != null)
         {
             windowR.SetActive(true);
-            windowR.transform.Rotate(Vector3.up, -14f); // Rotate Window.R -147 degrees around Y
+            windowR.transform.rotation = Quaternion.Euler(openWindowRotation); // Set absolute rotation
         }
         else
         {
@@ -272,14 +279,34 @@ public class ShadowMonsterSpawner : MonoBehaviour
         }
     }
 
-    private IEnumerator RandomlyOpenWindows()
+    private void CloseWindows()
     {
-        while (isSpawning)
+        if (windows == null || windows.Count != 2)
         {
-            float interval = Random.Range(minRotationInterval, maxRotationInterval);
-            yield return new WaitForSeconds(interval);
+            return;
+        }
 
-            OpenWindows();
+        GameObject windowL = windows[0];
+        GameObject windowR = windows[1];
+
+        if (windowL != null)
+        {
+            windowL.SetActive(false); // Deactivate the window
+            windowL.transform.rotation = Quaternion.Euler(closedWindowRotation); // Set absolute rotation
+        }
+        else
+        {
+            LogWarning("Window L is null!");
+        }
+
+        if (windowR != null)
+        {
+            windowR.SetActive(false); // Deactivate the window
+            windowR.transform.rotation = Quaternion.Euler(closedWindowRotation); // Set absolute rotation
+        }
+        else
+        {
+            LogWarning("Window R is null!");
         }
     }
 }
