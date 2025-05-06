@@ -133,12 +133,14 @@ namespace Enemies
                     }
                     else
                     {
-                        PullToPosition(target.transform.position); // Directly pull for regular attack
+                        if (target != null)
+                            PullToPosition(target.transform.position); // Directly pull for regular attack
                     }
                 }
                 else if (!isBeingPulled)
                 {
-                    SetMovementDirection(target.transform.position, chaseSpeed);
+                    if (target != null)
+                        SetMovementDirection(target.transform.position, chaseSpeed);
                 }
             }
             else
@@ -203,11 +205,11 @@ namespace Enemies
         private System.Collections.IEnumerator PerformJumpAttack()
         {
             isAttacking = true;
-
+    
             // 1. Blowback
             Vector3 blowbackDirection = (transform.position - target.transform.position).normalized;
             Vector3 blowbackPosition = transform.position + blowbackDirection * blowbackDistance;
-
+    
             float blowbackTime = 0f;
             Vector3 startPosition = transform.position;
             while (blowbackTime < blowbackDuration)
@@ -216,10 +218,13 @@ namespace Enemies
                 transform.position = Vector3.Lerp(startPosition, blowbackPosition, blowbackTime / blowbackDuration);
                 yield return null;
             }
-
+    
             // 2. Pull to Target
-            PullToPosition(target.transform.position);
-
+            if (target != null) // Add this null check
+            {
+                PullToPosition(target.transform.position);
+            }
+    
             isAttacking = false;
         }
 

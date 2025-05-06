@@ -1,5 +1,6 @@
 using UnityEngine.Events;
 using UnityEngine.XR.Interaction.Toolkit;
+using System.Collections;
 
 namespace UnityEngine.XR.Content.Interaction
 {
@@ -56,6 +57,10 @@ namespace UnityEngine.XR.Content.Interaction
         /// Events to fire when the door is unlocked.
         /// </summary>
         public UnityEvent onUnlock => m_OnUnlock;
+
+        [Header("Item Drop")]
+        [SerializeField] private GameObject itemToDrop;
+        [SerializeField] private Transform dropPosition;
 
         void Start()
         {
@@ -144,6 +149,7 @@ namespace UnityEngine.XR.Content.Interaction
             {
                 m_DoorJoint.limits = m_OpenDoorLimits;
                 m_Closed = false;
+                StartCoroutine(DropItemAfterDelay(0.5f)); // Drop the item after door is open
             }
         }
 
@@ -186,6 +192,20 @@ namespace UnityEngine.XR.Content.Interaction
         public void KeyLockDeselect(SelectExitEventArgs args)
         {
             // No need to reset references here as it's handled in the Update method when the key is removed
+        }
+
+        private IEnumerator DropItemAfterDelay(float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            DropItem();
+        }
+
+        private void DropItem()
+        {
+            if (itemToDrop != null && dropPosition != null)
+            {
+                Instantiate(itemToDrop, dropPosition.position, dropPosition.rotation);
+            }
         }
     }
 }
