@@ -52,8 +52,6 @@ namespace Core
 
         public void TakeDamage(float damage, Vector3 hitPoint, GameObject damageSource = null) // MODIFY THIS LINE
         {
-            Debug.Log($"TreeOfLight TakeDamage: Damage = {damage}, currentHealth = {currentHealth}");
-
             if (isDead) return;
 
             SpawnDustParticles(hitPoint);
