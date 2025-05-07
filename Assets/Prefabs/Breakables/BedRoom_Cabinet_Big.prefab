@@ -18,9 +18,9 @@ GameObject:
   - component: {fileID: 6740761116087109067}
   - component: {fileID: 2669039205993156658}
   - component: {fileID: 8979052161194438988}
-  m_Layer: 14
+  m_Layer: 0
   m_Name: BedRoom_Cabinet_Big
-  m_TagString: Untagged
+  m_TagString: Furniture
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -33,7 +33,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3062815891499484277}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.5739994, y: 0.25, z: -2.250348}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
@@ -66,7 +66,7 @@ MonoBehaviour:
   drag: 1
   angularDrag: 1
   useGravity: 1
-  breakUpwardForce: 20
+  breakUpwardForce: 100
   collisionLayers:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -272,12 +272,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2883e4c1dfd15bf43a546e9d36e341bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 50000
-  currentHealth: 50000
+  maxHealth: 100000
+  currentHealth: 100000
   breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
   breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+  dustParticlePrefab: {fileID: 9169966119468206341, guid: ed962e35f7fa6f34f8d27aa6d19ea293,
     type: 3}
   hitSound: {fileID: 0}
 --- !u!1001 &6423928274725469422
@@ -338,6 +338,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: 8ea45239850e8104ebee2e478201827e,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 251b9d515e82f3845ae2cd62d0eb2138, type: 2}
     - target: {fileID: 919132149155446097, guid: 8ea45239850e8104ebee2e478201827e,
         type: 3}
       propertyPath: m_Name
