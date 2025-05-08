@@ -237,7 +237,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   weaponType: 1
-  baseDamage: 10
+  baseDamage: 100
   weaponMass: 0.9
   impactForceMultiplier: 1
   treeOfLightDamageMultiplier: 0.5
@@ -288,7 +288,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7959706718310578160}
   - component: {fileID: 5794620776873535425}
-  - component: {fileID: 8774903705451841203}
+  - component: {fileID: 6526215100868533164}
   m_Layer: 0
   m_Name: Collision
   m_TagString: Untagged
@@ -334,8 +334,8 @@ CapsuleCollider:
   m_Height: 0.8469963
   m_Direction: 2
   m_Center: {x: 0, y: 0, z: 0.29849815}
---- !u!65 &8774903705451841203
-BoxCollider:
+--- !u!135 &6526215100868533164
+SphereCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -353,8 +353,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.3, y: 0.2272996, z: 0.32}
-  m_Center: {x: 0, y: 0.00033591688, z: 0.87}
+  m_Radius: 0.24
+  m_Center: {x: 0, y: 0, z: 0.93}
 --- !u!1001 &1098360034074927897
 PrefabInstance:
   m_ObjectHideFlags: 0
