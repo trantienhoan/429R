@@ -25,7 +25,7 @@ Transform:
   m_GameObject: {fileID: 1848557495026546441}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071069, y: -0.0000006258487, z: -0.70710677, w: -0.00000010646376}
-  m_LocalPosition: {x: -0, y: 0.116, z: -0}
+  m_LocalPosition: {x: -0.008, y: 0.071, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -42,11 +42,12 @@ GameObject:
   - component: {fileID: 1843490536137035828}
   - component: {fileID: 627956263598655002}
   - component: {fileID: 8508430040790421382}
+  - component: {fileID: 6840809881865909389}
   - component: {fileID: 5965408621462430143}
+  - component: {fileID: 4996165906591236279}
   - component: {fileID: 5499714219526123263}
   - component: {fileID: 4343736084110806299}
   - component: {fileID: 8599132305962659985}
-  - component: {fileID: 6840809881865909389}
   m_Layer: 0
   m_Name: BreakableSword
   m_TagString: Untagged
@@ -123,6 +124,27 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &6840809881865909389
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2061228985669117825}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.067383476, y: 0.17757957, z: 0.04}
+  m_Center: {x: -0.0004718272, y: 0.15015946, z: 0.0008453559}
 --- !u!65 &5965408621462430143
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -142,8 +164,29 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.1456197, y: 0.65864414, z: 0.04}
-  m_Center: {x: -0.00049015926, y: -0.27764636, z: 0.0008453559}
+  m_Size: {x: 0.1456197, y: 0.5661295, z: 0.04}
+  m_Center: {x: -0.00049079204, y: -0.3239037, z: 0.0008453559}
+--- !u!65 &4996165906591236279
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2061228985669117825}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.31, y: 0.09822416, z: 0.04}
+  m_Center: {x: -0.0004907921, y: 0.010504603, z: 0.0008453559}
 --- !u!54 &5499714219526123263
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -281,9 +324,9 @@ MonoBehaviour:
   m_StartingHoverFilters: []
   m_StartingSelectFilters: []
   m_StartingInteractionStrengthFilters: []
-  m_AttachTransform: {fileID: 0}
+  m_AttachTransform: {fileID: 5280854478125958641}
   m_SecondaryAttachTransform: {fileID: 0}
-  m_UseDynamicAttach: 1
+  m_UseDynamicAttach: 0
   m_MatchAttachPosition: 1
   m_MatchAttachRotation: 1
   m_SnapToColliderVolume: 1
@@ -331,24 +374,3 @@ MonoBehaviour:
   m_StartingMultipleGrabTransformers: []
   m_AddDefaultGrabTransformers: 1
   m_FarAttachMode: 0
---- !u!65 &6840809881865909389
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2061228985669117825}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 0.067383476, y: 0.17599234, z: 0.04}
-  m_Center: {x: -0.0004719831, y: 0.15095289, z: 0.0008453559}
