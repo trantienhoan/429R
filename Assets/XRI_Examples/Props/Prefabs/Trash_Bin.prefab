@@ -78,7 +78,7 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 742403f1c9a242a4d901548a92575fc3,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 7397414067917844233}
+      addedObject: {fileID: 242149208430386402}
   m_SourcePrefab: {fileID: 100100000, guid: 742403f1c9a242a4d901548a92575fc3, type: 3}
 --- !u!1 &8300867779407895969 stripped
 GameObject:
@@ -235,8 +235,8 @@ MonoBehaviour:
   m_StartingMultipleGrabTransformers: []
   m_AddDefaultGrabTransformers: 1
   m_FarAttachMode: 0
---- !u!65 &7397414067917844233
-BoxCollider:
+--- !u!64 &242149208430386402
+MeshCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -253,6 +253,7 @@ BoxCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 0.24, y: 0.3563478, z: 0.24}
-  m_Center: {x: 0.000000007450581, y: 0.18542919, z: 0}
+  serializedVersion: 5
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 4863174980734236577, guid: 742403f1c9a242a4d901548a92575fc3, type: 3}
