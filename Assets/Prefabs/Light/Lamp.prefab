@@ -145,13 +145,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8362622794759031252}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.7933536, y: -0.00000029136737, z: 0.0000003427835, w: 0.6087612}
-  m_LocalPosition: {x: 0, y: 0.1326, z: -0.0207}
+  m_LocalRotation: {x: 0.0000020489097, y: -0.79335326, z: -0.6087616, w: 0.000001899898}
+  m_LocalPosition: {x: 0, y: 0.13260001, z: -0.020699978}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2044640195109111001}
-  m_LocalEulerAnglesHint: {x: 180, y: 90, z: 0}
+  m_LocalEulerAnglesHint: {x: 255, y: 0.0010070801, z: 179.999}
 --- !u!1001 &2011626968336540466
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -220,6 +220,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Lamp
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 5a2fe9217ba6a0549bd044f4b3cfe4bd,
+        type: 3}
+      propertyPath: m_TagString
+      value: Furniture
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -244,6 +249,14 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 3244885309254591075}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 5a2fe9217ba6a0549bd044f4b3cfe4bd,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8474201799261662996}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 5a2fe9217ba6a0549bd044f4b3cfe4bd,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4550558678133933261}
   m_SourcePrefab: {fileID: 100100000, guid: 5a2fe9217ba6a0549bd044f4b3cfe4bd, type: 3}
 --- !u!1 &1669663108291272291 stripped
 GameObject:
@@ -421,6 +434,115 @@ MonoBehaviour:
   m_StartingMultipleGrabTransformers: []
   m_AddDefaultGrabTransformers: 1
   m_FarAttachMode: 0
+--- !u!114 &8474201799261662996
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1669663108291272291}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2883e4c1dfd15bf43a546e9d36e341bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 5000
+  currentHealth: 5000
+  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+    type: 3}
+  breakSound: {fileID: 0}
+  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+    type: 3}
+  hitSound: {fileID: 0}
+--- !u!114 &4550558678133933261
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1669663108291272291}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c63e449bee2a27e4092f0b298d2b4946, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isBreakable: 1
+  itemDropPrefabs: []
+  dropForce: 5
+  itemSpawnHeightOffset: 0.5
+  destroyDelay: 2
+  mass: 1000
+  drag: 1
+  angularDrag: 1
+  useGravity: 1
+  breakUpwardForce: 2
+  collisionLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  minimumImpactForce: 5
+  breakOnlyFromWeapons: 1
+  useImpactForce: 1
+  damageMultiplier: 1
+  onBreak:
+    m_PersistentCalls:
+      m_Calls: []
+  onDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  jiggleAmount: 0.1
+  jiggleDuration: 0.5
+  jiggleCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.25
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.5
+      value: -0.8
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.75
+      value: 0.6
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  objectMass: 50
 --- !u!4 &2044640195109111001 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5a2fe9217ba6a0549bd044f4b3cfe4bd,

@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
 
 namespace UnityEngine.XR.Content.Interaction
 {
@@ -58,10 +60,11 @@ namespace UnityEngine.XR.Content.Interaction
         /// <param name="key">The key to be removed from the keychain</param>
         public void RemoveKey(Key key)
         {
-            m_Keys.Remove(key);
+            if (key == null)
+                return;
 
-            if (key != null)
-                m_KeysHashSet.Remove(key.GetInstanceID());
+            m_Keys.Remove(key);
+            m_KeysHashSet.Remove(key.GetInstanceID());
         }
 
         /// <inheritdoc />
@@ -71,3 +74,4 @@ namespace UnityEngine.XR.Content.Interaction
         }
     }
 }
+

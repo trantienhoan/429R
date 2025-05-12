@@ -225,12 +225,20 @@ public class TreeOfLight : MonoBehaviour
         OnGrowthComplete?.Invoke(this, EventArgs.Empty); // Invoke the event
         onGrowthComplete?.Invoke(); // Invoke the UnityEvent as well
 
-        // Kill all monsters
+        // Find all monsters and deal damage
         GameObject[] monsters = GameObject.FindGameObjectsWithTag("Monster"); // Replace "Monster" with your monster's tag
-        Debug.Log($"CompleteVisualGrowth: Found {monsters.Length} monsters, destroying them."); // ADDED LOG
+        Debug.Log($"CompleteVisualGrowth: Found {monsters.Length} monsters, applying fatal damage."); // ADDED LOG
         foreach (GameObject monster in monsters)
         {
-            Destroy(monster);
+            HealthComponent monsterHealth = monster.GetComponent<HealthComponent>();
+            if (monsterHealth != null)
+            {
+                monsterHealth.TakeDamage(monsterHealth.MaxHealth, transform.position, gameObject); // Apply fatal damage
+            }
+            else
+            {
+                Debug.LogWarning($"Monster {monster.name} has no HealthComponent!");
+            }
         }
     }
 
@@ -245,17 +253,10 @@ public class TreeOfLight : MonoBehaviour
     private IEnumerator DelayedDestruction()
     {
         yield return new WaitForSeconds(2f);
-        try
+        if (parentPot != null)
         {
-            if (parentPot != null)
-            {
-                Destroy(parentPot.gameObject);
-            }
-            Destroy(gameObject);
+            Destroy(parentPot.gameObject);
         }
-        finally
-        {
-            // This block will always execute, even if an exception occurs
-        }
+        Destroy(gameObject);
     }
 }

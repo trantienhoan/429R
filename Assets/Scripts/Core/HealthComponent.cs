@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System;
+using System.Collections;
 
 namespace Core
 {
@@ -7,7 +8,7 @@ namespace Core
     {
         [SerializeField] private float maxHealth = 100f;
         [SerializeField] private float currentHealth;
-        
+
         [Header("Breaking Effects")]
         [SerializeField] private ParticleSystem breakEffect;
         [SerializeField] private AudioClip breakSound;
@@ -15,6 +16,12 @@ namespace Core
         [Header("Damage Effects")]
         [SerializeField] private ParticleSystem dustParticlePrefab;
         [SerializeField] private AudioClip hitSound;
+
+        [Header("Scaling")]
+        [SerializeField] private bool scaleOnDeath = true;
+        [SerializeField] private float scaleDuration = 0.5f;
+        [SerializeField] private Vector3 minScale = Vector3.zero;
+
         public class HealthChangedEventArgs : EventArgs
         {
             public float CurrentHealth { get; set; }
@@ -56,7 +63,11 @@ namespace Core
 
             SpawnDustParticles(hitPoint);
 
+            float initialHealth = currentHealth;
+
             currentHealth -= damage;
+
+            Debug.Log($"{gameObject.name} took {damage} damage from {damageSource?.name ?? "an unknown source"} at {hitPoint}. Initial health: {initialHealth}, New health: {currentHealth}");
 
             if (currentHealth <= 0)
             {
@@ -114,7 +125,35 @@ namespace Core
             isDead = true;
 
             Debug.Log($"{gameObject.name} has died!");
-            
+
+            if (scaleOnDeath)
+            {
+                StartCoroutine(ScaleDownAndDestroy());
+            }
+            else
+            {
+                DestroyObject();
+            }
+        }
+
+        private IEnumerator ScaleDownAndDestroy()
+        {
+            Vector3 startScale = transform.localScale;
+            float timer = 0;
+
+            while (timer < scaleDuration)
+            {
+                timer += Time.deltaTime;
+                float progress = timer / scaleDuration;
+                transform.localScale = Vector3.Lerp(startScale, minScale, progress);
+                yield return null;
+            }
+
+            DestroyObject();
+        }
+
+        private void DestroyObject()
+        {
             if (breakEffect != null)
             {
                 var effect = Instantiate(breakEffect, transform.position, Quaternion.identity);
@@ -127,11 +166,10 @@ namespace Core
             {
                 audioSource.PlayOneShot(breakSound);
             }
-            else
-            {
-                Destroy(gameObject);
-            }
+
+            Destroy(gameObject);
         }
+
         private void SpawnDustParticles(Vector3 position)
         {
             if (dustParticlePrefab != null)
@@ -155,7 +193,7 @@ namespace Core
                 }
             }
         }
-        
+
         public float GetHealthPercentage()
         {
             return currentHealth / maxHealth;
@@ -188,7 +226,7 @@ namespace Core
                 HitPoint = transform.position
             });
         }
-        
+
         public ParticleSystem BreakEffect => breakEffect;
         public AudioClip BreakSound => breakSound;
     }
