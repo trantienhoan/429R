@@ -56,7 +56,7 @@ public class ShadowMonsterSpawner : MonoBehaviour
     public void BeginSpawning()
     {
         OpenWindows();
-        StartSpawning(); // Start the actual spawning coroutine
+        Invoke("StartSpawning", 7f);
     }
 
     private void OnDestroy()

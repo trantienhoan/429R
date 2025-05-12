@@ -17,9 +17,9 @@ GameObject:
   - component: {fileID: 5779680882218527816}
   - component: {fileID: 1109231764364310682}
   - component: {fileID: 1023080063528626966}
-  m_Layer: 14
+  m_Layer: 0
   m_Name: BedRoom_Table
-  m_TagString: Untagged
+  m_TagString: Furniture
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -60,7 +60,7 @@ MonoBehaviour:
   dropForce: 5
   itemSpawnHeightOffset: 0.5
   destroyDelay: 0.1
-  mass: 300
+  mass: 100
   drag: 1
   angularDrag: 1
   useGravity: 1
@@ -68,7 +68,7 @@ MonoBehaviour:
   collisionLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  minimumImpactForce: 5
+  minimumImpactForce: 2
   breakOnlyFromWeapons: 1
   useImpactForce: 1
   damageMultiplier: 1
@@ -104,7 +104,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  objectMass: 300
+  objectMass: 100
 --- !u!65 &2850564568630138174
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -124,8 +124,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.47096005, y: 0.1060418, z: 0.95974356}
-  m_Center: {x: -0.0006641333, y: 0.26925194, z: -0.00086527603}
+  m_Size: {x: 0.48773706, y: 0.10265136, z: 0.99534327}
+  m_Center: {x: -0.00079518557, y: 0.2760328, z: 0.0016775429}
 --- !u!65 &7813620707346106421
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -145,8 +145,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.06643557, y: 0.21637638, z: 0.060282856}
-  m_Center: {x: 0.1766984, y: 0.10623407, z: 0.40507105}
+  m_Size: {x: 0.066435575, y: 0.2243003, z: 0.06109476}
+  m_Center: {x: 0.1766984, y: 0.111589536, z: 0.420933}
 --- !u!65 &1748588278928771797
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -166,8 +166,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.062416058, y: 0.21654744, z: 0.059563108}
-  m_Center: {x: -0.17691045, y: 0.10631961, z: 0.40543094}
+  m_Size: {x: 0.062416047, y: 0.22385702, z: 0.060947776}
+  m_Center: {x: -0.17691045, y: 0.11157717, z: 0.4207309}
 --- !u!65 &8195358145704464515
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -187,8 +187,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.060828123, y: 0.2181354, z: 0.05906243}
-  m_Center: {x: -0.17770436, y: 0.107113585, z: -0.40574694}
+  m_Size: {x: 0.06020379, y: 0.22338036, z: 0.06108892}
+  m_Center: {x: -0.1848849, y: 0.1124997, z: -0.42094553}
 --- !u!65 &5779680882218527816
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -208,8 +208,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.064626426, y: 0.2174731, z: 0.058058135}
-  m_Center: {x: 0.17760302, y: 0.10678244, z: -0.4061429}
+  m_Size: {x: 0.0627532, y: 0.22443318, z: 0.06143564}
+  m_Center: {x: 0.1847837, y: 0.11215395, z: -0.420666}
 --- !u!54 &1109231764364310682
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -219,9 +219,9 @@ Rigidbody:
   m_GameObject: {fileID: 2859092720707406988}
   serializedVersion: 4
   m_Mass: 300
-  m_Drag: 0
-  m_AngularDrag: 0.05
-  m_CenterOfMass: {x: 0, y: -0.07, z: 0}
+  m_Drag: 0.1
+  m_AngularDrag: 0.1
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
   m_IncludeLayers:
@@ -230,13 +230,13 @@ Rigidbody:
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 0
-  m_ImplicitCom: 0
+  m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 0
-  m_Constraints: 14
-  m_CollisionDetection: 0
+  m_Interpolate: 1
+  m_Constraints: 0
+  m_CollisionDetection: 1
 --- !u!114 &1023080063528626966
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -249,12 +249,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2883e4c1dfd15bf43a546e9d36e341bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 50000
-  currentHealth: 50000
-  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+  maxHealth: 10000
+  currentHealth: 10000
+  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
   breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
   hitSound: {fileID: 0}
 --- !u!1001 &4822244270194777681
@@ -392,7 +392,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: e46350e886be81a49b057f4514cd582b,
         type: 3}
       propertyPath: m_Layer
-      value: 14
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1107724965495866339, guid: e46350e886be81a49b057f4514cd582b,
         type: 3}
