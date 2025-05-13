@@ -26,6 +26,7 @@ public class TreeOfLight : MonoBehaviour
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip growthSound;
 
+    
     private bool isGrowing = false;
     private bool isComplete = false;
 
@@ -34,6 +35,7 @@ public class TreeOfLight : MonoBehaviour
     public TreeOfLightPot ParentPot { get { return parentPot; } }
 
     public event EventHandler OnGrowthComplete;
+    public event Action OnPotDeath;
 
     private void Start()
     {
@@ -247,16 +249,16 @@ public class TreeOfLight : MonoBehaviour
         Debug.Log("TreeOfLight has died!");
         StopAllCoroutines();
         monsterSpawner?.StopSpawning();
+
+        OnPotDeath?.Invoke();
+
         StartCoroutine(DelayedDestruction());
     }
 
     private IEnumerator DelayedDestruction()
     {
         yield return new WaitForSeconds(2f);
-        if (parentPot != null)
-        {
-            Destroy(parentPot.gameObject);
-        }
+
         Destroy(gameObject);
     }
 }

@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.XR.Interaction.Toolkit;
-//using Core;
+using Core;
 //using Items;
 
 namespace Items
@@ -31,6 +31,7 @@ namespace Items
         private Vector3 initialSeedScale;
         private GameObject treeInstance;
         private TreeOfLight tree;
+        private HealthComponent healthComponent;
 
         private ParticleSystem growthParticleInstance;
 
@@ -59,6 +60,14 @@ namespace Items
             }
 
             growthParticleInstance = growthParticlePrefab;
+            
+            // Get the HealthComponent
+            healthComponent = GetComponent<HealthComponent>();
+            if (healthComponent == null)
+            {
+                healthComponent = gameObject.AddComponent<HealthComponent>();
+                Debug.LogWarning("HealthComponent is not assigned on TreeOfLightPot! Adding one automatically.");
+            }
         }
 
         private void OnSeedSocketEntered(SelectEnterEventArgs args)
@@ -94,7 +103,7 @@ namespace Items
 
             // Get the XRGrabInteractable, Rigidbody, and Collider components
             UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable grabInteractable = seed.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
-            Rigidbody rb = seed.GetComponent<Rigidbody>();
+            Rigidbody rb = seed.GetComponent<Rigidbody>();  
 
             // Turn off interaction and set Rigidbody to kinematic IMMEDIATELY
             if (grabInteractable != null)
@@ -148,7 +157,7 @@ namespace Items
 
         private IEnumerator SetKinematicDelayed(Rigidbody rb)
         {
-            yield return new WaitForSeconds(0.0001f); // A short delay
+            yield return new WaitForSeconds(0.0f); // A short delay
             rb.isKinematic = true;
         }
 
@@ -248,6 +257,36 @@ namespace Items
             {
                 growthParticleInstance.Stop();
                 growthParticleInstance.gameObject.SetActive(false);
+            }
+        }
+        private void HandlePotDeath()
+        {
+            Debug.Log("Tree is dead! Applying fatal damage to TreeOfLightPot.");
+            StopGrowthParticles();
+
+            // Unsubscribe from the event to prevent memory leaks
+            if (tree != null)
+            {
+                tree.OnPotDeath -= HandlePotDeath;
+            }
+
+            // Apply fatal damage to the TreeOfLightPot's HealthComponent
+            if (healthComponent != null)
+            {
+                healthComponent.TakeDamage(healthComponent.MaxHealth, transform.position, gameObject);
+            }
+            else
+            {
+                Debug.LogError("HealthComponent is null on TreeOfLightPot! Cannot apply damage.");
+            }
+        }
+
+        private void OnDestroy()
+        {
+            // Ensure the event is unsubscribed when the pot is destroyed
+            if (tree != null)
+            {
+                tree.OnPotDeath -= HandlePotDeath;
             }
         }
     }

@@ -166,19 +166,51 @@ namespace Enemies
 
         private void FindTarget()
         {
-            GameObject treeOfLightPot = GameObject.FindGameObjectWithTag("TreeOfLightPot");
-            if (treeOfLightPot != null)
+            //Check if our target is dead, if so null it
+            if(target != null)
             {
-                target = treeOfLightPot;
-                return;
+                HealthComponent targetHealth = target.GetComponent<HealthComponent>();
+                if(targetHealth != null && targetHealth.IsDead())
+                {
+                    target = null;
+                }
             }
 
-            if (player == null)
+            // // Prioritize TreeOfLight
+            // if (target == null)
+            // {
+            //     GameObject treeOfLight = GameObject.FindGameObjectWithTag("TreeOfLightPot");
+            //     if (treeOfLight != null)
+            //     {
+            //         target = treeOfLight;
+            //     }
+            // }
+
+            //Then check for TreeOfLightPot
+            if (target == null)
+            {
+                GameObject treeOfLightPot = GameObject.FindGameObjectWithTag("TreeOfLightPot");
+                if (treeOfLightPot != null)
+                {
+                    target = treeOfLightPot;
+                }
+            }
+
+            // If still no target, target the player
+            if (target == null && player == null)
             {
                 player = GameObject.FindGameObjectWithTag("Player");
             }
 
-            target = player;
+            if(target == null && player != null)
+            {
+                target = player;
+            }
+
+            if(target == null)
+            {
+                Debug.LogWarning("No target found, patroling randomly");
+            }
         }
 
         private void SetMovementDirection(Vector3 targetPosition, float speed)

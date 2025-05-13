@@ -145,13 +145,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8362622794759031252}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.0000020489097, y: -0.79335326, z: -0.6087616, w: 0.000001899898}
-  m_LocalPosition: {x: 0, y: 0.13260001, z: -0.020699978}
+  m_LocalRotation: {x: -0, y: -1, z: -0.00000037252897, w: 0}
+  m_LocalPosition: {x: -0.001, y: 0.133, z: -0.009}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2044640195109111001}
-  m_LocalEulerAnglesHint: {x: 255, y: 0.0010070801, z: 179.999}
+  m_LocalEulerAnglesHint: {x: 180, y: 0, z: 180}
 --- !u!1001 &2011626968336540466
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -309,9 +309,9 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 0
+  m_Interpolate: 1
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
 --- !u!114 &3244885309254591075
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -454,6 +454,9 @@ MonoBehaviour:
   dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
   hitSound: {fileID: 0}
+  scaleOnDeath: 1
+  scaleDuration: 0.5
+  minScale: {x: 0, y: 0, z: 0}
 --- !u!114 &4550558678133933261
 MonoBehaviour:
   m_ObjectHideFlags: 0
