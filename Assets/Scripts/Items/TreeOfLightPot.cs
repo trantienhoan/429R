@@ -142,6 +142,15 @@ namespace Items
             if (tree != null)
             {
                 tree.SetParentPot(this); //Connect the parent pot
+                tree.OnPotDeath += HandlePotDeath; // Subscribe to the OnPotDeath event
+                if (tree.healthComponent != null)
+                {
+                    tree.healthComponent.OnDeath += HandleTreeOfDeath; // Subscribe to Tree's OnDeath event
+                }
+                else
+                {
+                    Debug.LogError("TreeOfLight's HealthComponent is null!");
+                }
                 StartGrowthParticles(); // moved start particle here
                 tree.BeginGrowth(); // Start tree growth, pass the growthSpeed
                 onGrowthStarted.Invoke();
@@ -274,6 +283,7 @@ namespace Items
             if (healthComponent != null)
             {
                 healthComponent.TakeDamage(healthComponent.MaxHealth, transform.position, gameObject);
+                Destroy(gameObject);
             }
             else
             {
@@ -284,9 +294,34 @@ namespace Items
         private void OnDestroy()
         {
             // Ensure the event is unsubscribed when the pot is destroyed
-            if (tree != null)
+            if (tree != null && tree.healthComponent != null)
             {
+                tree.healthComponent.OnDeath -= HandleTreeOfDeath;
                 tree.OnPotDeath -= HandlePotDeath;
+            }
+        }
+        
+        private void HandleTreeOfDeath(HealthComponent health)
+        {
+            Debug.Log("TreeOfLight has died! Applying fatal damage to TreeOfLightPot.");
+            StopGrowthParticles();
+
+            // Unsubscribe from the event to prevent memory leaks
+            if (tree != null && tree.healthComponent != null)
+            {
+                tree.healthComponent.OnDeath -= HandleTreeOfDeath;
+                tree.OnPotDeath -= HandlePotDeath;
+            }
+
+            // Apply fatal damage to the TreeOfLightPot's HealthComponent
+            if (healthComponent != null)
+            {
+                healthComponent.TakeDamage(healthComponent.MaxHealth, transform.position, gameObject);
+                Destroy(gameObject); // Destroy the pot after taking damage
+            }
+            else
+            {
+                Debug.LogError("HealthComponent is null on TreeOfLightPot! Cannot apply damage.");
             }
         }
     }

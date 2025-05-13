@@ -2019,18 +2019,33 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 974694c6b5250df468f0ffc4bb858f87,
         type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.77019
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 974694c6b5250df468f0ffc4bb858f87,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.77019
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 974694c6b5250df468f0ffc4bb858f87,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.77019
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 974694c6b5250df468f0ffc4bb858f87,
+        type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1.8997934
+      value: 2.85
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 974694c6b5250df468f0ffc4bb858f87,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 2.3408782
+      value: 1.963
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 974694c6b5250df468f0ffc4bb858f87,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -1.6653413
+      value: -1.092
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 974694c6b5250df468f0ffc4bb858f87,
         type: 3}
@@ -2040,7 +2055,7 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 974694c6b5250df468f0ffc4bb858f87,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 974694c6b5250df468f0ffc4bb858f87,
         type: 3}
@@ -2076,6 +2091,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Weed_Pot
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 974694c6b5250df468f0ffc4bb858f87,
+        type: 3}
+      propertyPath: m_TagString
+      value: Weapon
       objectReference: {fileID: 0}
     - target: {fileID: 4006327701009069451, guid: 974694c6b5250df468f0ffc4bb858f87,
         type: 3}
@@ -2233,6 +2253,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 4957949115463050696}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 974694c6b5250df468f0ffc4bb858f87,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8352083687296726306}
   m_SourcePrefab: {fileID: 100100000, guid: 974694c6b5250df468f0ffc4bb858f87, type: 3}
 --- !u!1 &3591547664376516683 stripped
 GameObject:
@@ -2360,7 +2384,7 @@ MonoBehaviour:
   m_StartingHoverFilters: []
   m_StartingSelectFilters: []
   m_StartingInteractionStrengthFilters: []
-  m_AttachTransform: {fileID: 2362504062148945825}
+  m_AttachTransform: {fileID: 0}
   m_SecondaryAttachTransform: {fileID: 0}
   m_UseDynamicAttach: 0
   m_MatchAttachPosition: 1
@@ -2431,6 +2455,29 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.04, y: 0.2845771, z: 0.04}
   m_Center: {x: 0.00000023216862, y: 0.43483493, z: 0.00000023216862}
+--- !u!114 &8352083687296726306
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3591547664376516683}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2883e4c1dfd15bf43a546e9d36e341bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 600
+  currentHealth: 600
+  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+    type: 3}
+  breakSound: {fileID: 0}
+  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+    type: 3}
+  hitSound: {fileID: 0}
+  scaleOnDeath: 1
+  scaleDuration: 0.5
+  minScale: {x: 0, y: 0, z: 0}
 --- !u!4 &4223370667711236849 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 974694c6b5250df468f0ffc4bb858f87,

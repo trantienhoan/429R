@@ -18,7 +18,7 @@ public class TreeOfLight : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private TreeOfLightPot parentPot;
-    [SerializeField] private HealthComponent healthComponent;
+    [SerializeField] public HealthComponent healthComponent;
     [SerializeField] private UnityEvent onGrowthComplete;
     [SerializeField] private ShadowMonsterSpawner monsterSpawner;
 
@@ -258,6 +258,10 @@ public class TreeOfLight : MonoBehaviour
     private IEnumerator DelayedDestruction()
     {
         yield return new WaitForSeconds(2f);
+        if (parentPot != null)
+        {
+            Destroy(parentPot.gameObject);
+        }
 
         Destroy(gameObject);
     }

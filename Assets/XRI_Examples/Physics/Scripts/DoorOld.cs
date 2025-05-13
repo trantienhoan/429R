@@ -90,37 +90,37 @@ namespace UnityEngine.XR.Content.Interaction
             }
 
             // Handle key removal logic
-            if (m_KnobInteractor != null && m_KnobInteractorAttachTransform != null)
-            {
-                var distance = (m_KnobInteractorAttachTransform.position - m_KeyKnob.transform.position).magnitude;
-
-                // If over threshold, break and grant the key back to the interactor
-                if (distance > m_KeyPullDistance)
-                {
-                    var newKeyInteractor = m_KnobInteractor;
-                    m_KeySocket.SetActive(true);
-                    m_Key.transform.gameObject.SetActive(true);
-                    newKeyInteractor.interactionManager.SelectEnter(newKeyInteractor, m_Key);
-                    m_KeyKnob.SetActive(false);
-                    
-                    // Lock the door when key is removed
-                    if (!m_Locked)
-                    {
-                        m_Locked = true;
-                        // Only force the door closed if it's already in a near-closed position
-                        if (Mathf.Abs(m_DoorJoint.angle) < m_HingeCloseAngle)
-                        {
-                            m_DoorJoint.limits = m_ClosedDoorLimits;
-                            m_Closed = true;
-                        }
-                        m_OnLock.Invoke();
-                    }
-                    
-                    // Reset references after key is removed
-                    m_KnobInteractor = null;
-                    m_KnobInteractorAttachTransform = null;
-                }
-            }
+            // if (m_KnobInteractor != null && m_KnobInteractorAttachTransform != null)
+            // {
+            //     var distance = (m_KnobInteractorAttachTransform.position - m_KeyKnob.transform.position).magnitude;
+            //
+            //     // If over threshold, break and grant the key back to the interactor
+            //     if (distance > m_KeyPullDistance)
+            //     {
+            //         var newKeyInteractor = m_KnobInteractor;
+            //         m_KeySocket.SetActive(true);
+            //         m_Key.transform.gameObject.SetActive(true);
+            //         newKeyInteractor.interactionManager.SelectEnter(newKeyInteractor, m_Key);
+            //         m_KeyKnob.SetActive(false);
+            //         
+            //         // Lock the door when key is removed
+            //         if (!m_Locked)
+            //         {
+            //             m_Locked = true;
+            //             // Only force the door closed if it's already in a near-closed position
+            //             if (Mathf.Abs(m_DoorJoint.angle) < m_HingeCloseAngle)
+            //             {
+            //                 m_DoorJoint.limits = m_ClosedDoorLimits;
+            //                 m_Closed = true;
+            //             }
+            //             m_OnLock.Invoke();
+            //         }
+            //         
+            //         // Reset references after key is removed
+            //         m_KnobInteractor = null;
+            //         m_KnobInteractorAttachTransform = null;
+            //     }
+            // }
         }
 
         public void BeginDoorPulling(SelectEnterEventArgs args)
