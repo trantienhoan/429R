@@ -22,6 +22,7 @@ namespace Enemies
 
         [Header("SpiderPivot Offset")]
         [SerializeField] private float pivotOffsetX = 2f; // Offset in the X direction
+        [SerializeField] private float maxDistanceFromPlayer = 50f;
 
         [Header("Jump Attack Settings")]
         [SerializeField] private float blowbackDistance = 3f; // Distance to move back before jumping
@@ -111,6 +112,17 @@ namespace Enemies
             {
                 PullToTarget();
                 return;
+            }
+            // Check distance from player
+            if (player != null)
+            {
+                float distanceToPlayer = Vector3.Distance(transform.position, player.transform.position);
+                if (distanceToPlayer > maxDistanceFromPlayer)
+                {
+                    Debug.Log("Spider is too far from the player, dying.");
+                    healthComponent.TakeDamage(healthComponent.Health, transform.position, gameObject); // Kill the spider using TakeDamage
+                    return;
+                }
             }
 
             // Periodically attempt to find the target

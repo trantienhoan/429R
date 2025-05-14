@@ -157,6 +157,16 @@ namespace UnityEngine.XR.Content.Interaction
         {
             m_KeySocket = args.interactorObject.transform.gameObject;
             m_Key = args.interactableObject;
+
+            // Get the Rigidbody component from the key
+            Rigidbody keyRigidbody = m_Key.transform.gameObject.GetComponent<Rigidbody>();
+            if (keyRigidbody != null)
+            {
+                // Set the Rigidbody to kinematic so it's not grabbable
+                keyRigidbody.isKinematic = true;
+            }
+
+            // Disable the original key and socket, and enable the key knob
             m_KeySocket.SetActive(false);
             m_Key.transform.gameObject.SetActive(false);
             m_KeyKnob.SetActive(true);
