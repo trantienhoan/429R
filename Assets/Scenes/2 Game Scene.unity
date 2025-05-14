@@ -2644,7 +2644,7 @@ PrefabInstance:
     - target: {fileID: 7730068476911068087, guid: 19f5c0ffbbddfe0488c8dda87135b30e,
         type: 3}
       propertyPath: growthSpeed
-      value: 0.5
+      value: 0.1
       objectReference: {fileID: 0}
     - target: {fileID: 7730068476911068087, guid: 19f5c0ffbbddfe0488c8dda87135b30e,
         type: 3}
@@ -8962,8 +8962,18 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2669039205993156658, guid: e3566b062f5d45e46b52e3aaedb558d7,
         type: 3}
+      propertyPath: m_Mass
+      value: 50000
+      objectReference: {fileID: 0}
+    - target: {fileID: 2669039205993156658, guid: e3566b062f5d45e46b52e3aaedb558d7,
+        type: 3}
       propertyPath: m_Constraints
       value: 14
+      objectReference: {fileID: 0}
+    - target: {fileID: 2669039205993156658, guid: e3566b062f5d45e46b52e3aaedb558d7,
+        type: 3}
+      propertyPath: m_CollisionDetection
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2755844653025117605, guid: e3566b062f5d45e46b52e3aaedb558d7,
         type: 3}
@@ -9034,6 +9044,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: BedRoom_Cabinet_Big
+      objectReference: {fileID: 0}
+    - target: {fileID: 7702117508954438840, guid: e3566b062f5d45e46b52e3aaedb558d7,
+        type: 3}
+      propertyPath: minimumImpactForce
+      value: 3000
       objectReference: {fileID: 0}
     - target: {fileID: 7702117508954438840, guid: e3566b062f5d45e46b52e3aaedb558d7,
         type: 3}

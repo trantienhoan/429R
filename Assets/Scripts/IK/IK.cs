@@ -52,6 +52,7 @@ public class IK : MonoBehaviour
             return;
 
         Vector3 toTarget = target.position - transform.position;
+        
         float dstToTarget = toTarget.magnitude;
 
         // set angle
