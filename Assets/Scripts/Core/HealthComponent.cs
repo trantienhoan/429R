@@ -9,6 +9,9 @@ namespace Core
         [SerializeField] private float maxHealth = 100f;
         [SerializeField] private float currentHealth;
 
+        [Header("Light Integration")]
+        [SerializeField] private Light healthLight; // Assign the light here
+
         [Header("Breaking Effects")]
         [SerializeField] private ParticleSystem breakEffect;
         [SerializeField] private AudioClip breakSound;
@@ -50,11 +53,15 @@ namespace Core
             {
                 audioSource = gameObject.AddComponent<AudioSource>();
             }
+
+            // Initialize light intensity
+            UpdateLightIntensity();
         }
 
         public void ResetHealth()
         {
             currentHealth = maxHealth;
+            UpdateLightIntensity();
         }
 
         public void TakeDamage(float damage, Vector3 hitPoint, GameObject damageSource = null) // MODIFY THIS LINE
@@ -89,6 +96,8 @@ namespace Core
             OnTakeDamage?.Invoke(this, eventArgs);
 
             OnHealthChanged?.Invoke(this, eventArgs);
+
+            UpdateLightIntensity(); // Update light after taking damage
         }
 
         public void Heal(float amount)
@@ -107,6 +116,8 @@ namespace Core
             };
 
             OnHealthChanged?.Invoke(this, eventArgs);
+
+            UpdateLightIntensity(); // Update light after healing
         }
         protected virtual void Die(GameObject damageSource, float damage)
         {
@@ -125,6 +136,8 @@ namespace Core
             isDead = true;
 
             Debug.Log($"{gameObject.name} has died!");
+
+            UpdateLightIntensity(); // Ensure light is off when dead
 
             if (scaleOnDeath)
             {
@@ -194,6 +207,14 @@ namespace Core
             }
         }
 
+        private void UpdateLightIntensity()
+        {
+            if (healthLight != null)
+            {
+                healthLight.intensity = GetHealthPercentage();
+            }
+        }
+
         public float GetHealthPercentage()
         {
             return currentHealth / maxHealth;
@@ -225,6 +246,8 @@ namespace Core
                 DamageAmount = 0,
                 HitPoint = transform.position
             });
+
+            UpdateLightIntensity(); //Update light after setting max health
         }
 
         public ParticleSystem BreakEffect => breakEffect;
