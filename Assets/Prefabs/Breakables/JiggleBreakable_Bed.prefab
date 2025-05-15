@@ -145,6 +145,7 @@ MonoBehaviour:
   - {fileID: 2061228985669117825, guid: 8f568340892899741926341ce56b7594, type: 3}
   - {fileID: 6791078792911687941, guid: 05e1091b4730bbc4289581b887c1a6ed, type: 3}
   - {fileID: 5030664726389686301, guid: 19f5c0ffbbddfe0488c8dda87135b30e, type: 3}
+  - {fileID: 641341794854005767, guid: 74ff73dedb8bc7b4083e2753e9ada44f, type: 3}
   dropForce: 5
   itemSpawnHeightOffset: 0.5
   destroyDelay: 0.1
@@ -212,8 +213,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2.310705, y: 0.7162248, z: 1.6679192}
-  m_Center: {x: 0.008986016, y: 0.4007692, z: -0.00000008210006}
+  m_Size: {x: 2.310705, y: 0.7078672, z: 1.5118203}
+  m_Center: {x: 0.008986016, y: 0.3437353, z: 0.00000016420012}
 --- !u!54 &1694697524349427833
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -261,6 +262,9 @@ MonoBehaviour:
   dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
   hitSound: {fileID: 0}
+  scaleOnDeath: 1
+  scaleDuration: 0.5
+  minScale: {x: 0, y: 0, z: 0}
 --- !u!65 &917397243033593960
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -280,5 +284,5 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.11144262, y: 0.51082236, z: 1.6321672}
-  m_Center: {x: 1.0918186, y: 1.0139577, z: 0}
+  m_Size: {x: 0.11144262, y: 0.5108223, z: 1.5127977}
+  m_Center: {x: 1.0918186, y: 1.0139577, z: -0.00000012315009}

@@ -24,9 +24,9 @@ namespace Items
         public UnityEvent onGrowthStarted;
         public UnityEvent onGrowthCompleted;
 
-        private bool isGrowing = false;
-        private bool hasGrown = false;
-        private MagicalSeed plantedSeed = null;
+        private bool isGrowing;
+        private bool hasGrown;
+        private MagicalSeed plantedSeed;
         private Quaternion initialSeedRotation;
         private Vector3 initialSeedScale;
         private GameObject treeInstance;
@@ -223,29 +223,29 @@ namespace Items
         }
 
         // NEW: Method to handle the growth finished event
-        private void HandleGrowthFinished()
-        {
-            Debug.Log("Tree growth finished!");
-            onGrowthCompleted.Invoke();
-            StartCoroutine(DeactivateTreeAfterDelay());
-        }
+        // private void HandleGrowthFinished()
+        // {
+        //     Debug.Log("Tree growth finished!");
+        //     onGrowthCompleted.Invoke();
+        //     StartCoroutine(DeactivateTreeAfterDelay());
+        // }
 
         // NEW: Coroutine to deactivate the tree after a delay
-        private IEnumerator DeactivateTreeAfterDelay()
-        {
-            Debug.Log($"Deactivating tree in {deactivationDelay} seconds...");
-            yield return new WaitForSeconds(deactivationDelay);
-            Debug.Log("Deactivating tree now.");
-            StopGrowthParticles();
-            if (treeInstance != null)
-            {
-                treeInstance.SetActive(false);
-            }
-            else
-            {
-                Debug.LogWarning("treeInstance is null, cannot deactivate.");
-            }
-        }
+        // private IEnumerator DeactivateTreeAfterDelay()
+        // {
+        //     Debug.Log($"Deactivating tree in {deactivationDelay} seconds...");
+        //     yield return new WaitForSeconds(deactivationDelay);
+        //     Debug.Log("Deactivating tree now.");
+        //     StopGrowthParticles();
+        //     if (treeInstance != null)
+        //     {
+        //         treeInstance.SetActive(false);
+        //     }
+        //     else
+        //     {
+        //         Debug.LogWarning("treeInstance is null, cannot deactivate.");
+        //     }
+        // }
 
         private void StartGrowthParticles()
         {
