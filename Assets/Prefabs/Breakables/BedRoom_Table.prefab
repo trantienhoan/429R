@@ -124,8 +124,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.48773706, y: 0.10265136, z: 0.99534327}
-  m_Center: {x: -0.00079518557, y: 0.2760328, z: 0.0016775429}
+  m_Size: {x: 0.48773706, y: 0.102650985, z: 0.9953432}
+  m_Center: {x: -0.00079519476, y: 0.22268921, z: 0.0016775498}
 --- !u!65 &7813620707346106421
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -145,8 +145,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.066435575, y: 0.2243003, z: 0.06109476}
-  m_Center: {x: 0.1766984, y: 0.111589536, z: 0.420933}
+  m_Size: {x: 0.062030923, y: 0.17285623, z: 0.06109476}
+  m_Center: {x: 0.18529291, y: 0.08586751, z: 0.420933}
 --- !u!65 &1748588278928771797
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -166,8 +166,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.062416047, y: 0.22385702, z: 0.060947776}
-  m_Center: {x: -0.17691045, y: 0.11157717, z: 0.4207309}
+  m_Size: {x: 0.06031128, y: 0.17193575, z: 0.06094777}
+  m_Center: {x: -0.18427767, y: 0.08561653, z: 0.4207309}
 --- !u!65 &8195358145704464515
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -187,8 +187,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.06020379, y: 0.22338036, z: 0.06108892}
-  m_Center: {x: -0.1848849, y: 0.1124997, z: -0.42094553}
+  m_Size: {x: 0.06020381, y: 0.17051202, z: 0.061088894}
+  m_Center: {x: -0.1848849, y: 0.08606553, z: -0.42094553}
 --- !u!65 &5779680882218527816
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -208,8 +208,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.0627532, y: 0.22443318, z: 0.06143564}
-  m_Center: {x: 0.1847837, y: 0.11215395, z: -0.420666}
+  m_Size: {x: 0.06275319, y: 0.17232703, z: 0.06143561}
+  m_Center: {x: 0.18478371, y: 0.086100884, z: -0.420666}
 --- !u!54 &1109231764364310682
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -251,12 +251,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 10000
   currentHealth: 10000
+  healthLight: {fileID: 0}
   breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
   breakSound: {fileID: 0}
   dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
   hitSound: {fileID: 0}
+  scaleOnDeath: 1
+  scaleDuration: 0.5
+  minScale: {x: 0, y: 0, z: 0}
 --- !u!1001 &4822244270194777681
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -486,7 +490,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5633268989394313984}
-  m_Mesh: {fileID: -6692290496178104961, guid: 5a649ac197b646b43a88b87996dca8de, type: 3}
+  m_Mesh: {fileID: -6692290496178104961, guid: 35da061e1b79adf4eac32df7f37108f6, type: 3}
 --- !u!23 &373048443700310044
 MeshRenderer:
   m_ObjectHideFlags: 0
