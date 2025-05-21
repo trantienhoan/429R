@@ -378,14 +378,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3449286181070959477}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.49992964, y: 0.49984455, z: -0.50007033, w: 0.50015545}
-  m_LocalPosition: {x: 0.511, y: 0.193, z: 0}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 622122095747888433}
   m_Father: {fileID: 7128215835568584494}
-  m_LocalEulerAnglesHint: {x: -0.01, y: 89.974, z: -90}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &7379060450533812592
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -393,7 +393,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3449286181070959477}
-  m_Mesh: {fileID: -2399906523527245305, guid: 974694c6b5250df468f0ffc4bb858f87, type: 3}
+  m_Mesh: {fileID: 1680223643413966327, guid: 27b33771ae370ac4bb89650cc882a5be, type: 3}
 --- !u!23 &986390354382669497
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -417,7 +417,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 251b9d515e82f3845ae2cd62d0eb2138, type: 2}
+  - {fileID: 2100000, guid: 61b911b3cfc2119429562f2bd28e3730, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -495,8 +495,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4414846825475710180}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -1, z: -0, w: 0.0000029504295}
-  m_LocalPosition: {x: -0, y: 0, z: 0}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0, y: 0, z: -0.1495}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -590,7 +590,7 @@ Transform:
   m_GameObject: {fileID: 7025650377286697919}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0.513, y: 0.194, z: -0.046}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -796,10 +796,10 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 0
-  m_IsKinematic: 0
+  m_IsKinematic: 1
   m_Interpolate: 1
   m_Constraints: 0
-  m_CollisionDetection: 2
+  m_CollisionDetection: 0
 --- !u!65 &2276311747619742402
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1164,6 +1164,16 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 188490433769314898}
     m_Modifications:
+    - target: {fileID: 561703583852295138, guid: edf9132d0728dd349854d6653c1e11a0,
+        type: 3}
+      propertyPath: m_IsKinematic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 561703583852295138, guid: edf9132d0728dd349854d6653c1e11a0,
+        type: 3}
+      propertyPath: m_CollisionDetection
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2458208034496977516, guid: edf9132d0728dd349854d6653c1e11a0,
         type: 3}
       propertyPath: 'm_Colliders.Array.data[0]'

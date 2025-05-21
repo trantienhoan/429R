@@ -1,6 +1,6 @@
 using UnityEngine;
 using Core;
-using System.Collections;
+//using System.Collections;
 
 namespace Enemies
 {
@@ -30,7 +30,7 @@ namespace Enemies
 
         private GameObject target;
         private Vector2 currentDirection;
-        private bool isAttacking = false;
+        private bool isAttacking;
         private SpiderController spiderController;
         private SpiderPivot spiderPivot; // Reference to SpiderPivot
         private GameObject player;
@@ -41,7 +41,7 @@ namespace Enemies
 
         [Header("Pull To Light")]
         [SerializeField] private float pullSpeed = 10f;
-        private bool isBeingPulled = false;
+        private bool isBeingPulled;
         private Vector3 pullTarget;
 
         private void Awake()
@@ -51,7 +51,6 @@ namespace Enemies
             {
                 Debug.LogError("HealthComponent not found on " + gameObject.name);
                 enabled = false;
-                return;
             }
         }
 
@@ -113,10 +112,16 @@ namespace Enemies
                 PullToTarget();
                 return;
             }
+            
+            FindTarget();
+
             // Check distance from player
+            Debug.Log("Player object: " + player);
+
             if (player != null)
             {
                 float distanceToPlayer = Vector3.Distance(transform.position, player.transform.position);
+                Debug.Log("Distance to player: " + distanceToPlayer + ", Max distance: " + maxDistanceFromPlayer);
                 if (distanceToPlayer > maxDistanceFromPlayer)
                 {
                     Debug.Log("Spider is too far from the player, dying.");
@@ -128,7 +133,6 @@ namespace Enemies
             // Periodically attempt to find the target
             if (Time.time - lastFindTargetTime > findTargetInterval)
             {
-                FindTarget();
                 lastFindTargetTime = Time.time;
             }
 
@@ -178,6 +182,9 @@ namespace Enemies
 
         private void FindTarget()
         {
+            // Always try to find the player
+            player = GameObject.FindGameObjectWithTag("Player");
+
             //Check if our target is dead, if so null it
             if(target != null)
             {
@@ -188,33 +195,13 @@ namespace Enemies
                 }
             }
 
-            // // Prioritize TreeOfLight
-            // if (target == null)
-            // {
-            //     GameObject treeOfLight = GameObject.FindGameObjectWithTag("TreeOfLightPot");
-            //     if (treeOfLight != null)
-            //     {
-            //         target = treeOfLight;
-            //     }
-            // }
-
             //Then check for TreeOfLightPot
-            if (target == null)
+            GameObject treeOfLightPot = GameObject.FindGameObjectWithTag("TreeOfLightPot");
+            if (treeOfLightPot != null)
             {
-                GameObject treeOfLightPot = GameObject.FindGameObjectWithTag("TreeOfLightPot");
-                if (treeOfLightPot != null)
-                {
-                    target = treeOfLightPot;
-                }
+                target = treeOfLightPot;
             }
-
-            // If still no target, target the player
-            if (target == null && player == null)
-            {
-                player = GameObject.FindGameObjectWithTag("Player");
-            }
-
-            if(target == null && player != null)
+            else if (player != null && target == null) //if treeOfLightPot not found, target the player if no target is assigned
             {
                 target = player;
             }
@@ -306,7 +293,7 @@ namespace Enemies
                 if (collision.gameObject == target)
                 {
                     isBeingPulled = false; // Stop being pulled
-                    target = null; // Clear the target
+                    //target = null; // Clear the target - REMOVE THIS LINE
 
                     // Move away from the TreeOfLight
                     SetRandomDirection();
@@ -319,6 +306,7 @@ namespace Enemies
 
         private void Die()
         {
+            Debug.Log("Die() function called!");
             // Disable SpiderController to stop movement
             spiderController.enabled = false;
 
@@ -339,6 +327,7 @@ namespace Enemies
                     rb.AddForce(Random.insideUnitSphere * 5f, ForceMode.Impulse);
                 }
             }
+            Destroy(gameObject);
         }
 
         // Public method to pull the spider to a specific position

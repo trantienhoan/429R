@@ -395,11 +395,11 @@ MonoBehaviour:
   attackDamage: 66
   jumpHeight: 5
   attackBodyMoveSpeed: 2
-  attackCooldown: 1.5
+  attackCooldown: 2
   pivotOffsetX: 2
-  maxDistanceFromPlayer: 5
+  maxDistanceFromPlayer: 15
   blowbackDistance: 1
-  blowbackDuration: 2
+  blowbackDuration: 1
   pullSpeed: 12
 --- !u!114 &3595760298217139877
 MonoBehaviour:
@@ -413,10 +413,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e16795754551ec4a832daf7975bb7c2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxSpeed: 3
-  acceleration: 3
-  friction: 0.5
-  zMoveSpeed: 3
+  maxSpeed: 5
+  acceleration: 5
+  friction: 1
+  zMoveSpeed: 2
   arcTransformRotation: {fileID: 945281892079234707}
   arcAngle: 270
   arcResolution: 6
@@ -437,8 +437,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   pivot: {fileID: 641341793704794528}
   scan: {fileID: 6735881763639930273}
-  positionWeight: 0.399
-  rotationWeight: 0.399
+  positionWeight: 0.1
+  rotationWeight: 0.1
 --- !u!114 &6735881763639930273
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -462,7 +462,7 @@ MonoBehaviour:
   arcResolution: 4
   arcLayer:
     serializedVersion: 2
-    m_Bits: 2121728
+    m_Bits: 2105344
   gizmoDrawPoint: 1
   gizmoDrawLink: 1
 --- !u!114 &945281892079234729
@@ -509,8 +509,8 @@ MonoBehaviour:
   - {fileID: 3064963574539391327}
   - {fileID: 3933685120993303692}
   - {fileID: 1218962021230890147}
-  stepTime: 0.25
-  stepHeight: 0.7
+  stepTime: 0.1
+  stepHeight: 0.25
   stepHeightCurve:
     serializedVersion: 2
     m_Curve:
@@ -551,7 +551,7 @@ MonoBehaviour:
   arcResolution: 4
   arcLayer:
     serializedVersion: 2
-    m_Bits: 2121728
+    m_Bits: 2105344
   stepStartSounds: []
   stepMoveSounds: []
   stepEndSounds: []
@@ -595,10 +595,10 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 945281892079234704}
   serializedVersion: 4
-  m_Mass: 50
+  m_Mass: 500
   m_Drag: 0
   m_AngularDrag: 0.05
-  m_CenterOfMass: {x: 0, y: -0.25, z: 0}
+  m_CenterOfMass: {x: 0, y: -0.15, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
   m_IncludeLayers:
@@ -633,10 +633,10 @@ CapsuleCollider:
   m_ProvidesContacts: 1
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.28
-  m_Height: 0.26
-  m_Direction: 1
-  m_Center: {x: 0, y: 0.3, z: -0.12}
+  m_Radius: 0.27
+  m_Height: 0.56
+  m_Direction: 2
+  m_Center: {x: 0, y: 0.24, z: -0.15}
 --- !u!114 &6114277603652108544
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -660,7 +660,7 @@ MonoBehaviour:
   hitSound: {fileID: 0}
   scaleOnDeath: 1
   scaleDuration: 1
-  minScale: {x: 0, y: 0, z: 0}
+  minScale: {x: 3, y: 3, z: 3}
 --- !u!114 &9216987061920968116
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3778,7 +3778,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7368889995128297668}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.09944123, y: -0.09592093, z: -0.061758038, w: -0.988482}
+  m_LocalRotation: {x: 0.09944152, y: -0.0959209, z: -0.061758064, w: -0.98848194}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
