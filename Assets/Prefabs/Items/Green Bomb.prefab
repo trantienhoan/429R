@@ -567,10 +567,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1bca6060b0173b64ab0a49c7d8811640,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 5404840998696643673}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1bca6060b0173b64ab0a49c7d8811640,
-        type: 3}
-      insertIndex: -1
       addedObject: {fileID: 3570413068041165699}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1bca6060b0173b64ab0a49c7d8811640,
         type: 3}
@@ -757,24 +753,6 @@ MonoBehaviour:
   m_StartingMultipleGrabTransformers: []
   m_AddDefaultGrabTransformers: 1
   m_FarAttachMode: 0
---- !u!114 &5404840998696643673
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3777597441533160902}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1b5b943f14121474eb1b55d3f7e9402e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  delay: 3
-  particleDelay: 2
-  explosionEffectPrefab: {fileID: 6403252182692130911, guid: 4e12b3c53c0f8ee4da83655d8d2770d5,
-    type: 3}
-  scaleDuration: 7
-  maxScale: {x: 13, y: 13, z: 13}
 --- !u!33 &3570413068041165699
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -842,7 +820,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   delay: 3
   particleDelay: 2
-  explosionEffectPrefab: {fileID: 0}
+  explosionEffectPrefab: {fileID: 6403252182692130911, guid: 053f1ee3fa8c02047934bccbe095d981,
+    type: 3}
   scaleDuration: 7
   maxScale: {x: 13, y: 13, z: 13}
   sceneToLoad: 2

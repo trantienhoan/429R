@@ -78,6 +78,8 @@ namespace Enemies
             pivotPosition.x = pivotOffsetX;
             spiderPivot.transform.localPosition = pivotPosition;
 
+            player = GameObject.FindGameObjectWithTag("Player"); //Find the player here to avoid doing it every frame
+
             FindTarget();
 
             if (target == null)
@@ -182,9 +184,6 @@ namespace Enemies
 
         private void FindTarget()
         {
-            // Always try to find the player
-            player = GameObject.FindGameObjectWithTag("Player");
-
             //Check if our target is dead, if so null it
             if(target != null)
             {
