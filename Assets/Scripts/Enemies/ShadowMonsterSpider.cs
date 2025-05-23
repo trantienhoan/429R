@@ -184,29 +184,54 @@ namespace Enemies
 
         private void FindTarget()
         {
-            //Check if our target is dead, if so null it
-            if(target != null)
+            // Check if our target is dead, if so null it
+            if (target != null)
             {
                 HealthComponent targetHealth = target.GetComponent<HealthComponent>();
-                if(targetHealth != null && targetHealth.IsDead())
+                if (targetHealth != null && targetHealth.IsDead())
                 {
                     target = null;
                 }
             }
 
-            //Then check for TreeOfLightPot
-            GameObject treeOfLightPot = GameObject.FindGameObjectWithTag("TreeOfLightPot");
+            GameObject treeOfLightPot = null;
+            GameObject furniture = null;
+            GameObject player = null;
+
+            // Find all potential targets
+            GameObject[] pots = GameObject.FindGameObjectsWithTag("TreeOfLightPot");
+            if (pots.Length > 0)
+            {
+                treeOfLightPot = pots[0]; // Take the first one
+            }
+
+            GameObject[] furnitures = GameObject.FindGameObjectsWithTag("Furniture");
+            if (furnitures.Length > 0)
+            {
+                furniture = furnitures[0]; // Take the first one
+            }
+
+            if (player == null)
+            {
+                player = GameObject.FindGameObjectWithTag("Player");
+            }
+
+            // Prioritize targets
             if (treeOfLightPot != null)
             {
                 target = treeOfLightPot;
             }
-            else if (player != null && target == null) //if treeOfLightPot not found, target the player if no target is assigned
+            else if (furniture != null)
+            {
+                target = furniture;
+            }
+            else if (player != null)
             {
                 target = player;
             }
-
-            if(target == null)
+            else
             {
+                target = null;
                 Debug.LogWarning("No target found, patroling randomly");
             }
         }
