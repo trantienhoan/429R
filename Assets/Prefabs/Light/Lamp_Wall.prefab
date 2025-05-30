@@ -43,7 +43,7 @@ Light:
   m_Enabled: 1
   serializedVersion: 11
   m_Type: 2
-  m_Color: {r: 0.9245283, g: 0.83964324, b: 0.75444996, a: 1}
+  m_Color: {r: 0.80392164, g: 0.9176471, b: 0.8470589, a: 1}
   m_Intensity: 0.12
   m_Range: 1.48
   m_SpotAngle: 70.842155
@@ -83,7 +83,7 @@ Light:
     serializedVersion: 2
     m_Bits: 4294967295
   m_RenderingLayerMask: 1
-  m_Lightmapping: 4
+  m_Lightmapping: 1
   m_LightShadowCasterMode: 0
   m_AreaSize: {x: 1, y: 1}
   m_BounceIntensity: 2
@@ -148,7 +148,7 @@ Transform:
   m_GameObject: {fileID: 4381928494460488913}
   serializedVersion: 2
   m_LocalRotation: {x: 0.70704764, y: -0, z: -0, w: 0.70716596}
-  m_LocalPosition: {x: 0, y: 0.344, z: -0.189}
+  m_LocalPosition: {x: -0, y: 0.554, z: -0.189}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -164,7 +164,7 @@ Light:
   m_Enabled: 1
   serializedVersion: 11
   m_Type: 2
-  m_Color: {r: 0.9245283, g: 0.83964324, b: 0.75444996, a: 1}
+  m_Color: {r: 0.80392164, g: 0.9176471, b: 0.8470589, a: 1}
   m_Intensity: 0.12
   m_Range: 1.16
   m_SpotAngle: 70.842155
@@ -204,7 +204,7 @@ Light:
     serializedVersion: 2
     m_Bits: 4294967295
   m_RenderingLayerMask: 1
-  m_Lightmapping: 4
+  m_Lightmapping: 1
   m_LightShadowCasterMode: 0
   m_AreaSize: {x: 1, y: 1}
   m_BounceIntensity: 2
@@ -418,6 +418,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 500
   currentHealth: 500
+  healthLight: {fileID: 0}
   breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
   breakSound: {fileID: 0}
