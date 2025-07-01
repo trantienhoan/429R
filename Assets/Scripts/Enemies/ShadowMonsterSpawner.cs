@@ -19,11 +19,16 @@ public class ShadowMonsterSpawner : MonoBehaviour
     [Header("Scale Settings")]
     [SerializeField] private float initialScaleMultiplier = 0.01f;
     [SerializeField] private float scaleDuration = 2.0f;
+    [SerializeField] private float dropDuration = 1.0f;
 
     [Header("Spawn Settings")]
     [SerializeField] private float spawnRadius = 10f;
     [SerializeField] private float spawnInterval = 5f;
     [SerializeField] private int maxMonsters = 10;
+    [SerializeField] private float spawnHeight = 5f;
+
+    [Header("Spawn Points")]
+    [SerializeField] private List<Transform> cornerSpawnPoints = new List<Transform>();
 
     [Header("References")]
     [SerializeField] private TreeOfLight tree;
@@ -50,6 +55,11 @@ public class ShadowMonsterSpawner : MonoBehaviour
         if (windows == null || windows.Count != 2)
         {
             LogWarning("Two windows must be assigned to the Monster Spawner!");
+        }
+
+        if (cornerSpawnPoints == null || cornerSpawnPoints.Count == 0)
+        {
+            LogWarning("No corner spawn points defined. Please add some!");
         }
     }
 
@@ -79,36 +89,53 @@ public class ShadowMonsterSpawner : MonoBehaviour
     private GameObject SpawnMonster()
     {
         Vector3 spawnPosition = FindValidSpawnPosition();
-        GameObject monsterInstance = Instantiate(monsterPrefab, spawnPosition, Quaternion.identity);
+        return SpawnMonsterAt(spawnPosition, spawnPosition);
+    }
+
+    public GameObject SpawnMonsterAt(Vector3 startPosition, Vector3 endPosition)
+    {
+        GameObject monsterInstance = Instantiate(monsterPrefab, startPosition, Quaternion.identity);
 
         // Set initial scale
         monsterInstance.transform.localScale = monsterPrefab.transform.localScale * initialScaleMultiplier;
-
         monsterInstance.transform.rotation = Quaternion.Euler(0, -90, 0);
 
         RegisterMonster(monsterInstance);
 
         // Start scaling coroutine
-        StartCoroutine(ScaleMonster(monsterInstance.transform, monsterPrefab.transform.localScale, scaleDuration));
+        StartCoroutine(ScaleAndDropMonster(monsterInstance.transform, monsterPrefab.transform.localScale, endPosition, scaleDuration, dropDuration));
 
         return monsterInstance;
     }
 
-    private IEnumerator ScaleMonster(Transform monsterTransform, Vector3 targetScale, float duration)
+    private IEnumerator ScaleAndDropMonster(Transform monsterTransform, Vector3 targetScale, Vector3 targetPosition, float scaleDuration, float dropDuration)
     {
         Vector3 startScale = monsterTransform.localScale;
+        Vector3 startPosition = monsterTransform.position;
         float timer = 0;
 
-        while (timer < duration)
+        // Scaling Phase
+        while (timer < scaleDuration)
         {
             timer += Time.deltaTime;
-            float progress = timer / duration;
+            float progress = timer / scaleDuration;
             monsterTransform.localScale = Vector3.Lerp(startScale, targetScale, progress);
             yield return null;
         }
 
-        // Ensure it reaches the exact target scale
         monsterTransform.localScale = targetScale;
+        timer = 0;
+
+        // Drop Phase
+        while (timer < dropDuration)
+        {
+            timer += Time.deltaTime;
+            float progress = timer / dropDuration;
+            monsterTransform.position = Vector3.Lerp(startPosition, targetPosition, progress);
+            yield return null;
+        }
+
+        monsterTransform.position = targetPosition;
     }
 
     public void RegisterMonster(GameObject monster)
@@ -199,20 +226,15 @@ public class ShadowMonsterSpawner : MonoBehaviour
 
     private Vector3 FindValidSpawnPosition()
     {
-        List<Transform> childSpawnPoints = new List<Transform>();
-        foreach (Transform child in transform)
+        if (cornerSpawnPoints == null || cornerSpawnPoints.Count == 0)
         {
-            childSpawnPoints.Add(child);
-        }
-
-        if (childSpawnPoints == null || childSpawnPoints.Count == 0)
-        {
-            LogWarning("No spawn points defined. Spawning at spawner's position.");
+            LogWarning("No corner spawn points defined. Spawning at spawner's position.");
             return transform.position;
         }
 
-        int randomIndex = Random.Range(0, childSpawnPoints.Count);
-        return childSpawnPoints[randomIndex].position;
+        int randomIndex = Random.Range(0, cornerSpawnPoints.Count);
+        Vector3 chosenPosition = cornerSpawnPoints[randomIndex].position;
+        return new Vector3(chosenPosition.x, chosenPosition.y + spawnHeight, chosenPosition.z);
     }
 
     private void OnDrawGizmosSelected()
@@ -311,4 +333,3 @@ public class ShadowMonsterSpawner : MonoBehaviour
         }
     }
 }
-

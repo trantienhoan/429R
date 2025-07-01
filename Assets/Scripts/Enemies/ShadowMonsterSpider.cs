@@ -123,7 +123,7 @@ namespace Enemies
             if (player != null)
             {
                 float distanceToPlayer = Vector3.Distance(transform.position, player.transform.position);
-                Debug.Log("Distance to player: " + distanceToPlayer + ", Max distance: " + maxDistanceFromPlayer);
+                //Debug.Log("Distance to player: " + distanceToPlayer + ", Max distance: " + maxDistanceFromPlayer);
                 if (distanceToPlayer > maxDistanceFromPlayer)
                 {
                     Debug.Log("Spider is too far from the player, dying.");
