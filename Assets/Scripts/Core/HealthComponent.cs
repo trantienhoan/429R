@@ -10,7 +10,7 @@ namespace Core
         [SerializeField] private float currentHealth;
 
         [Header("Light Integration")]
-        [SerializeField] private Light healthLight; // Assign the light here
+        [SerializeField] private Light healthLight;
 
         [Header("Breaking Effects")]
         [SerializeField] private ParticleSystem breakEffect;
@@ -45,46 +45,39 @@ namespace Core
 
         private bool isDead = false;
         private AudioSource audioSource;
+
         private void Start()
         {
             currentHealth = maxHealth;
             audioSource = GetComponent<AudioSource>();
-            if (audioSource == null && breakSound != null)
+            if (audioSource == null && (breakSound != null || hitSound != null))
             {
                 audioSource = gameObject.AddComponent<AudioSource>();
             }
 
-            // Initialize light intensity
             UpdateLightIntensity();
         }
 
         public void ResetHealth()
         {
+            isDead = false;
             currentHealth = maxHealth;
             UpdateLightIntensity();
         }
 
-        public void TakeDamage(float damage, Vector3 hitPoint, GameObject damageSource = null) // MODIFY THIS LINE
+        public void TakeDamage(float damage, Vector3 hitPoint, GameObject damageSource = null)
         {
             if (isDead) return;
 
             SpawnDustParticles(hitPoint);
 
             float initialHealth = currentHealth;
-
             currentHealth -= damage;
-
-            Debug.Log($"{gameObject.name} took {damage} damage from {damageSource?.name ?? "an unknown source"} at {hitPoint}. Initial health: {initialHealth}, New health: {currentHealth}");
-
-            if (currentHealth <= 0)
-            {
-                currentHealth = 0;
-                Die(damageSource, damage);
-            }
-
             currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
 
-            HealthChangedEventArgs eventArgs = new HealthChangedEventArgs
+            Debug.Log($"{gameObject.name} took {damage} damage from {damageSource?.name ?? "Unknown"} at {hitPoint}. Health: {initialHealth} → {currentHealth}");
+
+            var args = new HealthChangedEventArgs
             {
                 CurrentHealth = currentHealth,
                 MaxHealth = maxHealth,
@@ -93,11 +86,15 @@ namespace Core
                 HitPoint = hitPoint
             };
 
-            OnTakeDamage?.Invoke(this, eventArgs);
+            OnTakeDamage?.Invoke(this, args);
+            OnHealthChanged?.Invoke(this, args);
 
-            OnHealthChanged?.Invoke(this, eventArgs);
+            UpdateLightIntensity();
 
-            UpdateLightIntensity(); // Update light after taking damage
+            if (currentHealth <= 0 && !isDead)
+            {
+                Die(damageSource, damage);
+            }
         }
 
         public void Heal(float amount)
@@ -106,7 +103,7 @@ namespace Core
 
             currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
 
-            HealthChangedEventArgs eventArgs = new HealthChangedEventArgs
+            var args = new HealthChangedEventArgs
             {
                 CurrentHealth = currentHealth,
                 MaxHealth = maxHealth,
@@ -115,57 +112,48 @@ namespace Core
                 HitPoint = transform.position
             };
 
-            OnHealthChanged?.Invoke(this, eventArgs);
-
-            UpdateLightIntensity(); // Update light after healing
+            OnHealthChanged?.Invoke(this, args);
+            UpdateLightIntensity();
         }
+
         protected virtual void Die(GameObject damageSource, float damage)
         {
             if (isDead) return;
 
-            HealthChangedEventArgs eventArgs = new HealthChangedEventArgs
-            {
-                CurrentHealth = currentHealth,
-                MaxHealth = maxHealth,
-                DamageSource = damageSource,
-                DamageAmount = damage,
-                HitPoint = transform.position
-            };
-
-            OnDeath?.Invoke(this);
             isDead = true;
 
-            Debug.Log($"{gameObject.name} has died! Killed by {damageSource?.name ?? "an unknown source"} with {damage} damage.");
+            Debug.Log($"{gameObject.name} has died. Killed by {damageSource?.name ?? "Unknown"} with {damage} damage.");
 
-            UpdateLightIntensity(); // Ensure light is off when dead
+            UpdateLightIntensity();
+
+            OnDeath?.Invoke(this);
 
             if (scaleOnDeath)
             {
-                StartCoroutine(ScaleDownAndDestroy());
+                StartCoroutine(ScaleDownAndHandleDestroy());
             }
             else
             {
-                DestroyObject();
+                HandleDestroy();
             }
         }
 
-        private IEnumerator ScaleDownAndDestroy()
+        private IEnumerator ScaleDownAndHandleDestroy()
         {
             Vector3 startScale = transform.localScale;
-            float timer = 0;
+            float timer = 0f;
 
             while (timer < scaleDuration)
             {
                 timer += Time.deltaTime;
-                float progress = timer / scaleDuration;
-                transform.localScale = Vector3.Lerp(startScale, minScale, progress);
+                transform.localScale = Vector3.Lerp(startScale, minScale, timer / scaleDuration);
                 yield return null;
             }
 
-            DestroyObject();
+            HandleDestroy();
         }
 
-        private void DestroyObject()
+        private void HandleDestroy()
         {
             if (breakEffect != null)
             {
@@ -174,36 +162,35 @@ namespace Core
                 Destroy(effect.gameObject, effect.main.duration);
             }
 
-            // Play break sound
             if (audioSource != null && breakSound != null)
             {
                 audioSource.PlayOneShot(breakSound);
             }
 
-            Destroy(gameObject);
+            // Pooling-friendly destroy logic
+            if (Enemies.SpiderPool.Instance != null && gameObject.CompareTag("Enemy"))
+            {
+                Enemies.SpiderPool.Instance.ReturnSpider(gameObject);
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
         }
 
         private void SpawnDustParticles(Vector3 position)
         {
             if (dustParticlePrefab != null)
             {
-                ParticleSystem dustEffect = Instantiate(dustParticlePrefab, position, Quaternion.identity); // Instantiate the ParticleSystem
-                dustEffect.Play();
+                var dust = Instantiate(dustParticlePrefab, position, Quaternion.identity);
+                dust.Play();
 
-                // Play hit sound
                 if (audioSource != null && hitSound != null)
                 {
                     audioSource.PlayOneShot(hitSound);
                 }
-                // Auto-destroy particles after they finish playing
-                if (dustEffect.TryGetComponent<ParticleSystem>(out ParticleSystem ps))
-                {
-                    Destroy(dustEffect, ps.main.duration + 1f);
-                }
-                else
-                {
-                    Destroy(dustEffect, 3f); // Fallback destroy after 3 seconds
-                }
+
+                Destroy(dust.gameObject, dust.main.duration + 1f);
             }
         }
 
@@ -215,21 +202,14 @@ namespace Core
             }
         }
 
-        public float GetHealthPercentage()
-        {
-            return currentHealth / maxHealth;
-        }
-
-        public bool IsDead()
-        {
-            return isDead;
-        }
-
+        public float GetHealthPercentage() => currentHealth / maxHealth;
+        public bool IsDead() => isDead;
         public float Health
         {
-            get { return currentHealth; }
-            set { currentHealth = value; }
+            get => currentHealth;
+            set => currentHealth = value;
         }
+
         public float MaxHealth => maxHealth;
 
         public void SetMaxHealth(float newMaxHealth)
@@ -247,7 +227,7 @@ namespace Core
                 HitPoint = transform.position
             });
 
-            UpdateLightIntensity(); //Update light after setting max health
+            UpdateLightIntensity();
         }
 
         public ParticleSystem BreakEffect => breakEffect;

@@ -117,10 +117,20 @@ public class ShadowMonsterSpawner : MonoBehaviour
         // Scaling Phase
         while (timer < scaleDuration)
         {
+            if (monsterTransform == null) // Check if the transform has been destroyed
+            {
+                yield break; // Exit the coroutine if the transform is null
+            }
+
             timer += Time.deltaTime;
             float progress = timer / scaleDuration;
             monsterTransform.localScale = Vector3.Lerp(startScale, targetScale, progress);
             yield return null;
+        }
+
+        if (monsterTransform == null) // Check one more time after scaling
+        {
+            yield break;
         }
 
         monsterTransform.localScale = targetScale;
@@ -129,10 +139,20 @@ public class ShadowMonsterSpawner : MonoBehaviour
         // Drop Phase
         while (timer < dropDuration)
         {
+             if (monsterTransform == null) // Check if the transform has been destroyed
+            {
+                yield break; // Exit the coroutine if the transform is null
+            }
+
             timer += Time.deltaTime;
             float progress = timer / dropDuration;
             monsterTransform.position = Vector3.Lerp(startPosition, targetPosition, progress);
             yield return null;
+        }
+
+        if (monsterTransform == null) // Final check
+        {
+            yield break;
         }
 
         monsterTransform.position = targetPosition;

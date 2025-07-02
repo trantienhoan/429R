@@ -182,11 +182,24 @@ namespace Items
                 return;
             }
 
-            // Shadow Monster - takes more damage
-            var shadowMonster = collision.gameObject.GetComponentInChildren<ShadowMonster>();
-            if (shadowMonster != null)
+            var spiderHealth = collision.gameObject.GetComponent<HealthComponent>();
+            if (spiderHealth != null && collision.gameObject.CompareTag("Enemy"))
             {
-                shadowMonster.TakeDamage(damageAmount * shadowMonsterDamageMultiplier);
+                spiderHealth.TakeDamage(
+                    damageAmount * shadowMonsterDamageMultiplier,
+                    collisionPoint,
+                    gameObject // the weapon
+                );
+
+                // Optional: Apply extra force manually
+                Rigidbody spiderRb = collision.gameObject.GetComponent<Rigidbody>();
+                if (spiderRb != null && !spiderRb.isKinematic)
+                {
+                    Vector3 forceDir = (collision.transform.position - transform.position).normalized;
+                    forceDir.y = 0.5f;
+                    spiderRb.AddForce(forceDir * 15f, ForceMode.Impulse); // tweak multiplier
+                }
+
                 return;
             }
         }

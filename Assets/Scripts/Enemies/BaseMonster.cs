@@ -93,6 +93,14 @@ public abstract class BaseMonster : MonoBehaviour
     yield return null;
    }
 
+   HandlePostFade();
+  }
+
+  /// <summary>
+  /// Default behavior after fade-out. Can be overridden by subclasses (e.g., pooled enemies).
+  /// </summary>
+  protected virtual void HandlePostFade()
+  {
    Destroy(gameObject);
   }
      protected virtual void OnDestroy()

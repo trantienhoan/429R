@@ -13,7 +13,7 @@ namespace Enemies
         [SerializeField] private string idleAnimationName = "Idle";
         [SerializeField] private string idleOnAirAnimationName = "Spider_Idle_On_Air";
         [SerializeField] private string chargeAnimationName = "Spider_Charge";
-        [SerializeField] private string attackAnimationName = "Spider_Attack"; // Single attack animation
+        [SerializeField] private string attackAnimationName = "Spider_Attack";
         [SerializeField] private string walkAnimationName = "Spider_Walk_Cycle";
         [SerializeField] private string hurtLightAnimationName = "Spider_Hurt_Light";
         [SerializeField] private string hurtAnimationName = "Spider_Hurt";
@@ -23,18 +23,23 @@ namespace Enemies
         [SerializeField] private float chaseRange = 10f;
         [SerializeField] private float attackRange = 2f;
         [SerializeField] private float chargeDelay = 0.75f;
-        [SerializeField] private float rotationSpeed = 5f; // Add rotation speed
+        [SerializeField] private float rotationSpeed = 5f;
         [SerializeField] private float damageAmount = 10f;
 
         [Header("Target")]
         [SerializeField] private string treeOfLightTag = "TreeOfLight";
+
+        [Header("Ragdoll Death")]
+        [SerializeField] private Rigidbody[] ragdollRigidbodies;
+        [SerializeField] private float spinForce = 300f;
+        [SerializeField] private float delayBeforePooling = 2.5f;
+
         private GameObject target;
-        private int attackIndex = 0;
         private bool isGrounded;
         private bool isCharging = false;
-        private bool isAttacking = false; // Add attacking state
-        private NavMeshAgent agent;
-        private bool isMoving = false; // Add moving state
+        private bool isAttacking = false;
+        private bool isDead = false;
+        private bool isMoving = false;
 
         private void Awake()
         {
@@ -57,80 +62,76 @@ namespace Enemies
                 Debug.LogError("NavMeshAgent not found on " + gameObject.name);
                 enabled = false;
             }
+
+            healthComponent.OnDeath += Die;
+        }
+
+        private void OnEnable()
+        {
+            ResetSpider();
         }
 
         private void Start()
         {
-            // Initial state
             PlayIdleAnimation();
         }
 
         private void Update()
         {
+            if (isDead || agent == null || !agent.enabled) return;
+
             isGrounded = Physics.Raycast(transform.position, Vector3.down, 0.1f);
 
             if (!isGrounded)
             {
                 PlayAnimation(idleOnAirAnimationName);
                 isMoving = false;
+                return;
             }
-            else
+
+            FindTarget();
+
+            if (target != null)
             {
-                // Find the target
-                FindTarget();
+                float distanceToTarget = Vector3.Distance(transform.position, target.transform.position);
 
-                if (target != null)
+                if (distanceToTarget <= attackRange && !isCharging && !isAttacking)
                 {
-                    float distanceToTarget = Vector3.Distance(transform.position, target.transform.position);
-
-                    if (distanceToTarget <= attackRange && !isCharging && !isAttacking) //Added !isAttacking condition
-                    {
-                        StartCoroutine(Attack());
-                    }
-                    else if (distanceToTarget <= chaseRange)
-                    {
-                        ChaseTarget();
-                    }
-                    else
-                    {
-                        PlayIdleAnimation();
-                        agent.isStopped = true;
-                        isMoving = false;
-                    }
+                    StartCoroutine(Attack());
+                }
+                else if (distanceToTarget <= chaseRange)
+                {
+                    ChaseTarget();
                 }
                 else
                 {
-                    PlayIdleAnimation();
-                    agent.isStopped = true;
-                    isMoving = false;
+                    StopMovement();
                 }
 
-                // Handle movement animation
-                if (agent.velocity.magnitude != 0f && isGrounded && !isCharging && !isAttacking) // Disable movement animation during charge/attack
-                {
-                    if (!isMoving)
-                    {
-                        PlayAnimation(walkAnimationName);
-                        isMoving = true;
-                    }
-                }
-                else if (isMoving)
-                {
-                    PlayIdleAnimation();
-                    isMoving = false;
-                }
+                RotateTowardsTarget();
+            }
+            else
+            {
+                StopMovement();
+            }
 
-                // Rotate to face the target, but only during charge or attack
-                if ((isCharging || isAttacking) && target != null)
+            if (agent.velocity.magnitude > 0.1f && isGrounded && !isCharging && !isAttacking)
+            {
+                if (!isMoving)
                 {
-                    RotateTowardsTarget();
+                    PlayAnimation(walkAnimationName);
+                    isMoving = true;
                 }
+            }
+            else if (isMoving)
+            {
+                PlayIdleAnimation();
+                isMoving = false;
             }
         }
 
         private void FindTarget()
         {
-            // Prioritize TreeOfLight
             GameObject treeOfLight = GameObject.FindGameObjectWithTag(treeOfLightTag);
             if (treeOfLight != null)
             {
@@ -138,75 +139,78 @@ namespace Enemies
                 return;
             }
 
-            // If no TreeOfLight, target the Player
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null)
+            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+            if (playerObj != null)
             {
-                target = player;
+                target = playerObj;
                 return;
             }
 
-            // No target found
             target = null;
         }
 
         private void ChaseTarget()
         {
+            if (target == null || !agent.isOnNavMesh || !agent.enabled) return;
             agent.isStopped = false;
-            agent.destination = target.transform.position;
-            if (!isMoving)
-            {
-                PlayAnimation(walkAnimationName);
-                isMoving = true;
-            }
+            agent.SetDestination(target.transform.position);
         }
 
         private IEnumerator Attack()
         {
             isCharging = true;
             PlayAnimation(chargeAnimationName);
-            agent.isStopped = true; // Stop moving during charge
+            agent.isStopped = true;
 
             yield return new WaitForSeconds(chargeDelay);
 
             isCharging = false;
-            isAttacking = true; // Set attacking state
+            isAttacking = true;
 
             if (target != null)
             {
                 float distanceToTarget = Vector3.Distance(transform.position, target.transform.position);
                 if (distanceToTarget <= attackRange)
                 {
-                    PlayAnimation(attackAnimationName); // Play attack animation
-                    // Apply damage
+                    PlayAnimation(attackAnimationName);
                     HealthComponent targetHealth = target.GetComponent<HealthComponent>();
                     if (targetHealth != null)
                     {
                         targetHealth.TakeDamage(damageAmount, Vector3.zero, gameObject);
                     }
 
-                    yield return new WaitForSeconds(1f); // Adjust to match attack animation duration.
+                    yield return new WaitForSeconds(1f);
                 }
             }
 
-            isAttacking = false; // Clear attacking state
+            isAttacking = false;
         }
-        
+
         private void RotateTowardsTarget()
         {
+            if (target == null) return;
             Vector3 direction = (target.transform.position - transform.position).normalized;
-            Quaternion lookRotation = Quaternion.LookRotation(direction);
-            transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * rotationSpeed);
+            if (direction != Vector3.zero)
+            {
+                Quaternion lookRotation = Quaternion.LookRotation(direction);
+                transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * rotationSpeed);
+            }
         }
-
-        public void OnPickup()
+        protected override void HandlePostFade()
         {
-            PlayPickupAnimation();
+            if (SpiderPool.Instance != null)
+                SpiderPool.Instance.ReturnSpider(gameObject);
+            else
+                Destroy(gameObject);
         }
-
-        private void PlayPickupAnimation()
+        private void StopMovement()
         {
-            PlayAnimation(pickupAnimationName);
+            if (agent != null && agent.enabled)
+            {
+                agent.isStopped = true;
+            }
+            PlayIdleAnimation();
+            isMoving = false;
         }
 
         private void PlayIdleAnimation()
@@ -214,25 +218,118 @@ namespace Enemies
             PlayAnimation(idleAnimationName);
         }
 
+        private void PlayPickupAnimation()
+        {
+            PlayAnimation(pickupAnimationName);
+        }
+
         private void PlayAnimation(string animationName)
         {
-            animator.CrossFade(animationName, 0.2f);
+            if (animator != null && !string.IsNullOrEmpty(animationName))
+            {
+                animator.CrossFade(animationName, 0.2f);
+            }
+        }
+
+        public void OnPickup()
+        {
+            PlayPickupAnimation();
+            if (agent != null) agent.enabled = false;
+        }
+
+        private void Die(HealthComponent _)
+        {
+            if (isDead) return;
+            isDead = true;
+
+            if (animator != null) animator.enabled = false;
+            if (agent != null && agent.enabled) agent.isStopped = true;
+
+            EnableRagdoll(true);
+            ApplySpinOnDeath();
+
+            StartCoroutine(DelayedReturnToPool());
+        }
+
+        private void EnableRagdoll(bool enabled)
+        {
+            foreach (var rb in ragdollRigidbodies)
+            {
+                rb.isKinematic = !enabled;
+                rb.detectCollisions = enabled;
+            }
+        }
+
+        private void ApplySpinOnDeath()
+        {
+            foreach (var rb in ragdollRigidbodies)
+            {
+                Vector3 randomTorque = new Vector3(
+                    Random.Range(-1f, 1f),
+                    Random.Range(-1f, 1f),
+                    Random.Range(-1f, 1f)
+                ).normalized * spinForce;
+
+                rb.AddTorque(randomTorque, ForceMode.Impulse);
+            }
+        }
+
+        private IEnumerator DelayedReturnToPool()
+        {
+            yield return new WaitForSeconds(delayBeforePooling);
+
+            if (SpiderPool.Instance != null)
+            {
+                SpiderPool.Instance.ReturnSpider(gameObject);
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        public void ResetSpider()
+        {
+            isDead = false;
+            isCharging = false;
+            isAttacking = false;
+            isMoving = false;
+            target = null;
+
+            EnableRagdoll(false);
+
+            if (animator != null)
+            {
+                animator.enabled = true;
+                animator.Rebind();
+                animator.Update(0f);
+            }
+
+            if (agent != null)
+            {
+                if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 1f, NavMesh.AllAreas))
+                {
+                    agent.enabled = true;
+                    agent.Warp(hit.position);
+                    agent.ResetPath();
+                    agent.isStopped = false;
+                }
+                else
+                {
+                    agent.enabled = false;
+                }
+            }
+
+            transform.localScale = Vector3.one;
+            PlayIdleAnimation();
         }
 
         private void OnCollisionEnter(Collision collision)
         {
-            //Example of the logic to detect the Player pickup the monster
             if (collision.gameObject.CompareTag("Player"))
             {
                 OnPickup();
             }
-        }
-
-        private void Die()
-        {
-            PlayAnimation(dieAnimationName);
-            // Disable the spider or destroy it after the animation
-            Destroy(gameObject, 2f); // Destroy after 2 seconds
         }
     }
 }
