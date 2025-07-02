@@ -135,7 +135,7 @@ namespace Core
             OnDeath?.Invoke(this);
             isDead = true;
 
-            Debug.Log($"{gameObject.name} has died!");
+            Debug.Log($"{gameObject.name} has died! Killed by {damageSource?.name ?? "an unknown source"} with {damage} damage.");
 
             UpdateLightIntensity(); // Ensure light is off when dead
 

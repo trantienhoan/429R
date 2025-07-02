@@ -118,7 +118,7 @@ namespace Enemies
             FindTarget();
 
             // Check distance from player
-            Debug.Log("Player object: " + player);
+            //Debug.Log("Player object: " + player);
 
             if (player != null)
             {

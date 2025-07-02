@@ -13,23 +13,28 @@ namespace Enemies
         [SerializeField] private string idleAnimationName = "Idle";
         [SerializeField] private string idleOnAirAnimationName = "Spider_Idle_On_Air";
         [SerializeField] private string chargeAnimationName = "Spider_Charge";
+        [SerializeField] private string attackAnimationName = "Spider_Attack"; // Single attack animation
+        [SerializeField] private string walkAnimationName = "Spider_Walk_Cycle";
         [SerializeField] private string hurtLightAnimationName = "Spider_Hurt_Light";
         [SerializeField] private string hurtAnimationName = "Spider_Hurt";
         [SerializeField] private string dieAnimationName = "Spider_Die";
+
         [Header("Attack")]
         [SerializeField] private float chaseRange = 10f;
         [SerializeField] private float attackRange = 2f;
         [SerializeField] private float chargeDelay = 0.75f;
-        [SerializeField] private string[] attackAnimationNames = { "Spider_Attack1", "Spider_Attack2", "Spider_Attack3" };
+        [SerializeField] private float rotationSpeed = 5f; // Add rotation speed
         [SerializeField] private float damageAmount = 10f;
+
         [Header("Target")]
         [SerializeField] private string treeOfLightTag = "TreeOfLight";
         private GameObject target;
         private int attackIndex = 0;
         private bool isGrounded;
         private bool isCharging = false;
+        private bool isAttacking = false; // Add attacking state
         private NavMeshAgent agent;
-        private HealthComponent healthComponent;
+        private bool isMoving = false; // Add moving state
 
         private void Awake()
         {
@@ -67,6 +72,7 @@ namespace Enemies
             if (!isGrounded)
             {
                 PlayAnimation(idleOnAirAnimationName);
+                isMoving = false;
             }
             else
             {
@@ -77,7 +83,7 @@ namespace Enemies
                 {
                     float distanceToTarget = Vector3.Distance(transform.position, target.transform.position);
 
-                    if (distanceToTarget <= attackRange && !isCharging)
+                    if (distanceToTarget <= attackRange && !isCharging && !isAttacking) //Added !isAttacking condition
                     {
                         StartCoroutine(Attack());
                     }
@@ -89,12 +95,35 @@ namespace Enemies
                     {
                         PlayIdleAnimation();
                         agent.isStopped = true;
+                        isMoving = false;
                     }
                 }
                 else
                 {
                     PlayIdleAnimation();
                     agent.isStopped = true;
+                    isMoving = false;
+                }
+
+                // Handle movement animation
+                if (agent.velocity.magnitude != 0f && isGrounded && !isCharging && !isAttacking) // Disable movement animation during charge/attack
+                {
+                    if (!isMoving)
+                    {
+                        PlayAnimation(walkAnimationName);
+                        isMoving = true;
+                    }
+                }
+                else if (isMoving)
+                {
+                    PlayIdleAnimation();
+                    isMoving = false;
+                }
+
+                // Rotate to face the target, but only during charge or attack
+                if ((isCharging || isAttacking) && target != null)
+                {
+                    RotateTowardsTarget();
                 }
             }
         }
@@ -125,8 +154,13 @@ namespace Enemies
         {
             agent.isStopped = false;
             agent.destination = target.transform.position;
-            // Consider playing a "Run" animation here
+            if (!isMoving)
+            {
+                PlayAnimation(walkAnimationName);
+                isMoving = true;
+            }
         }
+
         private IEnumerator Attack()
         {
             isCharging = true;
@@ -135,20 +169,34 @@ namespace Enemies
 
             yield return new WaitForSeconds(chargeDelay);
 
+            isCharging = false;
+            isAttacking = true; // Set attacking state
+
             if (target != null)
             {
-                PlayAnimation(attackAnimationNames[attackIndex]);
-                // Apply damage (you'll need a reference to the target's HealthComponent)
-                HealthComponent targetHealth = target.GetComponent<HealthComponent>();
-                if (targetHealth != null)
+                float distanceToTarget = Vector3.Distance(transform.position, target.transform.position);
+                if (distanceToTarget <= attackRange)
                 {
-                    targetHealth.TakeDamage(damageAmount);
-                }
+                    PlayAnimation(attackAnimationName); // Play attack animation
+                    // Apply damage
+                    HealthComponent targetHealth = target.GetComponent<HealthComponent>();
+                    if (targetHealth != null)
+                    {
+                        targetHealth.TakeDamage(damageAmount, Vector3.zero, gameObject);
+                    }
 
-                attackIndex = (attackIndex + 1) % attackAnimationNames.Length; // Cycle through attacks
+                    yield return new WaitForSeconds(1f); // Adjust to match attack animation duration.
+                }
             }
 
-            isCharging = false;
+            isAttacking = false; // Clear attacking state
+        }
+        
+        private void RotateTowardsTarget()
+        {
+            Vector3 direction = (target.transform.position - transform.position).normalized;
+            Quaternion lookRotation = Quaternion.LookRotation(direction);
+            transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * rotationSpeed);
         }
 
         public void OnPickup()
@@ -177,26 +225,6 @@ namespace Enemies
             if (collision.gameObject.CompareTag("Player"))
             {
                 OnPickup();
-            }
-        }
-        public void TakeDamage(float damage)
-        {
-            float damagePercentage = damage / healthComponent.currentHealth;
-
-            if (damagePercentage < 0.01f)
-            {
-                PlayAnimation(hurtLightAnimationName);
-            }
-            else
-            {
-                PlayAnimation(hurtAnimationName);
-            }
-
-            healthComponent.TakeDamage(damage);
-
-            if (healthComponent.currentHealth <= 0)
-            {
-                Die();
             }
         }
 

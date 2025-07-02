@@ -27,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 7982032076961347932}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0.202, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -45,7 +45,7 @@ Light:
   m_Type: 2
   m_Color: {r: 1, g: 0.84652716, b: 0.7122642, a: 1}
   m_Intensity: 1
-  m_Range: 10
+  m_Range: 0.33
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
   m_CookieSize: 10
@@ -83,7 +83,7 @@ Light:
     serializedVersion: 2
     m_Bits: 4294967295
   m_RenderingLayerMask: 1
-  m_Lightmapping: 4
+  m_Lightmapping: 2
   m_LightShadowCasterMode: 0
   m_AreaSize: {x: 1, y: 1}
   m_BounceIntensity: 1
@@ -192,7 +192,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 09d655e700cbe0d458cf0094dc339752,
         type: 3}
       propertyPath: m_TagString
-      value: Untagged
+      value: TreeOfLight
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -265,7 +265,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 22731eb86359813489b42a20c19a8504, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  growthSpeed: 1
+  growthSpeed: 0.2
   growthStartDelay: 5
   animator: {fileID: 5380660309609758459}
   growthAnimationName: Seed_Grow
@@ -292,7 +292,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 1000
   currentHealth: 1000
-  healthLight: {fileID: 0}
+  healthLight: {fileID: 8413506884237989682}
   breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
   breakSound: {fileID: 0}
