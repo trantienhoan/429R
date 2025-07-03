@@ -33,6 +33,9 @@ namespace Enemies
         [SerializeField] private Rigidbody[] ragdollRigidbodies;
         [SerializeField] private float spinForce = 300f;
         [SerializeField] private float delayBeforePooling = 2.5f;
+        
+        [SerializeField] private LayerMask groundLayer;
+        [SerializeField] private float groundCheckDistance = 0.2f;
 
         private GameObject target;
         private bool isGrounded;
@@ -77,83 +80,77 @@ namespace Enemies
         }
 
         private void Update()
+{
+    isGrounded = IsGrounded();
+    animator.SetBool("isGrounded", isGrounded);
+    animator.SetBool("isMoving", agent.velocity.magnitude > 0.1f && isGrounded && !isCharging && !isAttacking);
+
+    if (!isGrounded)
+    {
+        // Only trigger this if it's not already playing
+        if (!IsCurrentAnimation(idleOnAirAnimationName))
+            PlayAnimation(idleOnAirAnimationName);
+        isMoving = false;
+        return;
+    }
+
+    FindTarget();
+
+    if (target != null)
+    {
+        Vector3 directionToTarget = (target.transform.position - transform.position).normalized;
+        float distanceToTarget = Vector3.Distance(transform.position, target.transform.position);
+
+        if (Physics.Raycast(transform.position + Vector3.up * 0.5f, directionToTarget, out RaycastHit hit, chaseRange))
         {
-            if (isDead || agent == null || !agent.enabled) return;
-
-            isGrounded = Physics.Raycast(transform.position + Vector3.up * 0.1f, Vector3.down, 0.3f) 
-                         || (agent != null && agent.isOnNavMesh && !agent.isOnOffMeshLink);
-
-            if (!isGrounded)
+            if (hit.collider.gameObject == target)
             {
-                PlayAnimation(idleOnAirAnimationName);
-                isMoving = false;
-                return;
-            }
-
-            FindTarget();
-
-            if (target != null)
-            {
-                Vector3 directionToTarget = (target.transform.position - transform.position).normalized;
-                float distanceToTarget = Vector3.Distance(transform.position, target.transform.position);
-
-                // Raycast toward target to check visibility
-                if (Physics.Raycast(transform.position + Vector3.up * 0.5f, directionToTarget, out RaycastHit hit, chaseRange))
+                if (distanceToTarget <= attackRange)
                 {
-                    if (hit.collider.gameObject == target)
-                    {
-                        if (distanceToTarget <= attackRange)
-                        {
-                            agent.isStopped = true; // Stop before attacking
-                            if (!isCharging && !isAttacking)
-                                StartCoroutine(Attack());
-                        }
-                        else if (distanceToTarget <= chaseRange)
-                        {
-                            ChaseTarget();
-                        }
-                        else
-                        {
-                            StopMovement();
-                        }
-                    }
-                    else
-                    {
-                        StopMovement(); // Obstructed
-                    }
+                    agent.isStopped = true;
+                    if (!isCharging && !isAttacking)
+                        StartCoroutine(Attack());
+                }
+                else if (distanceToTarget <= chaseRange)
+                {
+                    ChaseTarget();
                 }
                 else
                 {
-                    StopMovement(); // Nothing hit
+                    StopMovement();
                 }
-
-                RotateTowardsTarget();
             }
             else
             {
-                StopMovement();
-            }
-
-            if (agent.enabled == false && !isDead && !isAttacking)
-            {
-                PlayAnimation(idleOnAirAnimationName); // if being held
-            }
-
-            if (agent.velocity.magnitude > 0.1f && isGrounded && !isCharging && !isAttacking)
-            {
-                if (!isMoving)
-                {
-                    PlayAnimation(walkAnimationName);
-                    isMoving = true;
-                }
-            }
-            else if (isMoving)
-            {
-                PlayIdleAnimation();
-                isMoving = false;
+                StopMovement(); // Obstructed
             }
         }
+        else
+        {
+            StopMovement(); // Nothing hit
+        }
 
+        RotateTowardsTarget();
+    }
+    else
+    {
+        StopMovement();
+    }
+
+    // Held in air fallback animation
+    if (!agent.enabled && !isDead && !isAttacking)
+    {
+        if (!IsCurrentAnimation(idleOnAirAnimationName))
+            PlayAnimation(idleOnAirAnimationName);
+    }
+
+    // Fallback: idle if not moving
+    if (agent.velocity.magnitude <= 0.1f && !isCharging && !isAttacking && isGrounded)
+    {
+        if (!IsCurrentAnimation(idleAnimationName))
+            PlayIdleAnimation();
+    }
+}
         private void FindTarget()
         {
             if (target != null) return; // prevent from searching the same target again and again.
@@ -185,29 +182,40 @@ namespace Enemies
         private IEnumerator Attack()
         {
             isCharging = true;
-            PlayAnimation(chargeAnimationName);
             agent.isStopped = true;
 
+            // Play charge animation
+            PlayAnimation(chargeAnimationName);
             yield return new WaitForSeconds(chargeDelay);
 
             isCharging = false;
             isAttacking = true;
 
-            if (target != null)
+            // Play attack animation
+            PlayAnimation(attackAnimationName);
+
+            // Wait until halfway through the attack animation (tweak timing as needed)
+            yield return new WaitForSeconds(0.5f);
+
+            // Apply damage if conditions are still met
+            if (target != null && !isDead)
             {
                 float distanceToTarget = Vector3.Distance(transform.position, target.transform.position);
-                if (distanceToTarget <= attackRange)
+                Vector3 toTarget = (target.transform.position - transform.position).normalized;
+                float dot = Vector3.Dot(transform.forward, toTarget);
+
+                if (distanceToTarget <= attackRange && dot > 0.5f)
                 {
-                    PlayAnimation(attackAnimationName);
                     HealthComponent targetHealth = target.GetComponent<HealthComponent>();
                     if (targetHealth != null)
                     {
                         targetHealth.TakeDamage(damageAmount, Vector3.zero, gameObject);
                     }
-
-                    yield return new WaitForSeconds(1f);
                 }
             }
+
+            // Wait for the rest of the animation to finish
+            yield return new WaitForSeconds(0.5f); // Adjust if your attack anim is longer/shorter
 
             isAttacking = false;
         }
@@ -219,7 +227,7 @@ namespace Enemies
             Vector3 direction = (target.transform.position - transform.position).normalized;
             direction.y = 0;
 
-            Quaternion lookRotation = Quaternion.LookRotation(-direction); // ← use -direction if spider faces backwards
+            Quaternion lookRotation = Quaternion.LookRotation(direction); // ← use -direction if spider faces backwards
             transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * rotationSpeed);
         }
         protected override void HandlePostFade()
@@ -251,7 +259,9 @@ namespace Enemies
 
         private void PlayAnimation(string animationName)
         {
-            if (animator != null && !string.IsNullOrEmpty(animationName) && !IsCurrentAnimation(animationName))
+            if (animator == null || string.IsNullOrEmpty(animationName)) return;
+
+            if (!IsCurrentAnimation(animationName))
             {
                 animator.CrossFade(animationName, 0.2f);
             }
@@ -272,6 +282,7 @@ namespace Enemies
 
         private void Die(HealthComponent _)
         {
+            Debug.Log("Die() method called");
             if (isDead) return;
             isDead = true;
 
@@ -366,11 +377,24 @@ namespace Enemies
                 OnPickup();
             }
         }
+
+        private bool IsGrounded()
+        {
+            return Physics.Raycast(transform.position, Vector3.down, groundCheckDistance, groundLayer);
+        }
         private void OnDrawGizmosSelected()
         {
+            // Draw ground check ray
+            Gizmos.color = Color.green;
+            Gizmos.DrawLine(transform.position, transform.position + Vector3.down * groundCheckDistance);
+
+            // Draw forward chase range ray
             Gizmos.color = Color.yellow;
-            Vector3 direction = transform.forward * chaseRange; // Use chaseRange here
+            Vector3 direction = transform.forward * chaseRange;
             Gizmos.DrawRay(transform.position, direction);
+            
+            Gizmos.color = Color.red;
+            Gizmos.DrawLine(transform.position, transform.position + transform.forward * 2f);
         }
     }
 }
