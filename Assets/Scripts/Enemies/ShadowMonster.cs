@@ -8,7 +8,7 @@ public class ShadowMonster : BaseMonster
     [SerializeField] private float lightDamageMultiplier = 2f;
     [SerializeField] private float minLightIntensityToDamage = 0.5f;
     [SerializeField] private float detectionRadius = 10f;
-
+    
     protected override void Start()
     {
         base.Start();
@@ -44,24 +44,7 @@ public class ShadowMonster : BaseMonster
 
             float distanceFactor = 1 - (distanceToLight / lightRange);
             float lightDamage = light.intensity * lightDamageMultiplier * distanceFactor * Time.deltaTime;
-
-        //We don't have currentHealth, healthComponent.TakeDamage
-        //How can we damage?
-            //if (lightDamage > 0)
-            //{
-            //    TakeDamage(lightDamage, transform.position, gameObject);
-            //}
+            
         }
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, detectionRadius);
-    }
-
-    protected override void OnDestroy()
-    {
-        base.OnDestroy();
     }
 }
