@@ -178,6 +178,13 @@ public class JiggleBreakableBigObject : BreakableObject
         // Drop items - using the original method from the base class
         DropItems(transform.position);
 
+        // Trigger Lamp.OnLampBroken event
+        Lamp lamp = GetComponent<Lamp>();
+        if (lamp != null && !lamp.isBroken)
+        {
+            lamp.Break();
+        }
+
         // Let the base class handle the rest
         Break();
     }
@@ -185,6 +192,7 @@ public class JiggleBreakableBigObject : BreakableObject
     protected override void Break()
     {
         base.Break();
+		Destroy(gameObject);
     }
 
     // Helper method to setup the object in editor

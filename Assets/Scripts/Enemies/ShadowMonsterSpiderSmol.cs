@@ -22,21 +22,25 @@ namespace Enemies
         [Header("Attack")]
         [SerializeField] private float chaseRange = 10f;
         [SerializeField] private float attackRange = 2f;
+		[SerializeField] private float attackAngleThreshold = 0.5f; //dot product value for attack cone
         [SerializeField] private float chargeDelay = 0.75f;
         [SerializeField] private float rotationSpeed = 5f;
         [SerializeField] private float damageAmount = 10f;
+        [SerializeField] private float attackCooldown = 1.5f;
 
         [Header("Target")]
-        [SerializeField] private string treeOfLightTag = "TreeOfLight";
+        [SerializeField] private string targetTag = "Player"; // Make target tag configurable
 
         [Header("Ragdoll Death")]
         [SerializeField] private Rigidbody[] ragdollRigidbodies;
         [SerializeField] private float spinForce = 300f;
         [SerializeField] private float delayBeforePooling = 2.5f;
-        
+
+        [Header("Ground Check")]
         [SerializeField] private LayerMask groundLayer;
         [SerializeField] private float groundCheckDistance = 0.2f;
 
+        private float lastAttackTime;
         private GameObject target;
         private bool isGrounded;
         private bool isCharging = false;
@@ -47,70 +51,57 @@ namespace Enemies
         private void Awake()
         {
             healthComponent = GetComponent<HealthComponent>();
-            if (healthComponent == null)
+            if (healthComponent == null || animator == null || (agent = GetComponent<NavMeshAgent>()) == null)
             {
-                Debug.LogError("HealthComponent not found on " + gameObject.name);
+                Debug.LogError("Missing required component(s)");
                 enabled = false;
-            }
-
-            if (animator == null)
-            {
-                Debug.LogError("Animator not assigned on " + gameObject.name);
-                enabled = false;
-            }
-
-            agent = GetComponent<NavMeshAgent>();
-            if (agent == null)
-            {
-                Debug.LogError("NavMeshAgent not found on " + gameObject.name);
-                enabled = false;
+                return;
             }
 
             healthComponent.OnDeath += Die;
         }
 
-        private void OnEnable()
-        {
-            ResetSpider();
-        }
-
-        private void Start()
-        {
-            PlayIdleAnimation();
-        }
+        private void OnEnable() => ResetSpider();
+        private void Start() => PlayIdleAnimation();
 
         private void Update()
-{
-    isGrounded = IsGrounded();
-    animator.SetBool("isGrounded", isGrounded);
-    animator.SetBool("isMoving", agent.velocity.magnitude > 0.1f && isGrounded && !isCharging && !isAttacking);
-
-    if (!isGrounded)
-    {
-        // Only trigger this if it's not already playing
-        if (!IsCurrentAnimation(idleOnAirAnimationName))
-            PlayAnimation(idleOnAirAnimationName);
-        isMoving = false;
-        return;
-    }
-
-    FindTarget();
-
-    if (target != null)
-    {
-        Vector3 directionToTarget = (target.transform.position - transform.position).normalized;
-        float distanceToTarget = Vector3.Distance(transform.position, target.transform.position);
-
-        if (Physics.Raycast(transform.position + Vector3.up * 0.5f, directionToTarget, out RaycastHit hit, chaseRange))
         {
-            if (hit.collider.gameObject == target)
+            isGrounded = IsGrounded();
+            if (!isGrounded)
             {
-                if (distanceToTarget <= attackRange)
+                PlayAnimation(idleOnAirAnimationName);
+                agent.isStopped = true;
+                return;
+            }
+
+            if (isDead || agent == null || !agent.enabled) return;
+
+            FindTarget();
+            if (target == null)
+            {
+                StopMovement();
+                return;
+            }
+
+            Vector3 directionToTarget = (target.transform.position - transform.position).normalized;
+            RotateTowardsTarget();
+
+            float distanceToTarget = Vector3.Distance(transform.position, target.transform.position);
+			bool isInAttackRange = distanceToTarget <= attackRange;
+			bool canAttack = Time.time - lastAttackTime > attackCooldown && !isAttacking && !isCharging;
+
+            if (Physics.Raycast(transform.position + Vector3.up * 0.5f, directionToTarget, out RaycastHit hit, chaseRange))
+            {
+                if (hit.collider.gameObject != target)
                 {
-                    agent.isStopped = true;
-                    if (!isCharging && !isAttacking)
-                        StartCoroutine(Attack());
+                    StopMovement();
+                    return;
                 }
+
+				if (isInAttackRange && canAttack)
+				{
+					StartCoroutine(Attack());
+				}
                 else if (distanceToTarget <= chaseRange)
                 {
                     ChaseTarget();
@@ -120,55 +111,49 @@ namespace Enemies
                     StopMovement();
                 }
             }
-            else
+
+            if (agent.velocity.magnitude > 0.1f && isGrounded && !isCharging && !isAttacking)
             {
-                StopMovement(); // Obstructed
+                if (!isMoving)
+                {
+                    PlayAnimation(walkAnimationName);
+                    isMoving = true;
+                }
+            }
+            else if (isMoving)
+            {
+                PlayIdleAnimation();
+                isMoving = false;
             }
         }
-        else
-        {
-            StopMovement(); // Nothing hit
-        }
 
-        RotateTowardsTarget();
-    }
-    else
-    {
-        StopMovement();
-    }
-
-    // Held in air fallback animation
-    if (!agent.enabled && !isDead && !isAttacking)
-    {
-        if (!IsCurrentAnimation(idleOnAirAnimationName))
-            PlayAnimation(idleOnAirAnimationName);
-    }
-
-    // Fallback: idle if not moving
-    if (agent.velocity.magnitude <= 0.1f && !isCharging && !isAttacking && isGrounded)
-    {
-        if (!IsCurrentAnimation(idleAnimationName))
-            PlayIdleAnimation();
-    }
-}
         private void FindTarget()
         {
-            if (target != null) return; // prevent from searching the same target again and again.
-
-            GameObject treeOfLight = GameObject.FindGameObjectWithTag(treeOfLightTag);
-            if (treeOfLight != null)
-            {
-                target = treeOfLight;
-                Debug.Log("Target acquired: " + target.name); // Debug log
+            if (target != null && Vector3.Distance(transform.position, target.transform.position) <= chaseRange)
                 return;
+
+            GameObject[] potentialTargets = GameObject.FindGameObjectsWithTag(targetTag); // Use FindGameObjectsWithTag
+            if (potentialTargets.Length > 0)
+            {
+                // Find the closest target
+                float closestDistance = Mathf.Infinity;
+                GameObject closestTarget = null;
+                foreach (GameObject potentialTarget in potentialTargets)
+                {
+                    float distance = Vector3.Distance(transform.position, potentialTarget.transform.position);
+                    if (distance < closestDistance)
+                    {
+                        closestDistance = distance;
+                        closestTarget = potentialTarget;
+                    }
+                }
+
+                target = closestTarget;
+                Debug.Log("Target acquired: " + target.name);
             }
-
-            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-            if (playerObj != null)
+            else
             {
-                target = playerObj;
-                 Debug.Log("Target acquired: " + target.name); // Debug log
-                return;
+                target = null; // Ensure target is null if no target is found
             }
         }
 
@@ -182,42 +167,43 @@ namespace Enemies
         private IEnumerator Attack()
         {
             isCharging = true;
+            PlayAnimation(chargeAnimationName);
             agent.isStopped = true;
 
-            // Play charge animation
-            PlayAnimation(chargeAnimationName);
             yield return new WaitForSeconds(chargeDelay);
 
             isCharging = false;
             isAttacking = true;
-
-            // Play attack animation
             PlayAnimation(attackAnimationName);
 
-            // Wait until halfway through the attack animation (tweak timing as needed)
             yield return new WaitForSeconds(0.5f);
 
-            // Apply damage if conditions are still met
             if (target != null && !isDead)
             {
-                float distanceToTarget = Vector3.Distance(transform.position, target.transform.position);
+                float distance = Vector3.Distance(transform.position, target.transform.position);
                 Vector3 toTarget = (target.transform.position - transform.position).normalized;
                 float dot = Vector3.Dot(transform.forward, toTarget);
 
-                if (distanceToTarget <= attackRange && dot > 0.5f)
+                if (distance <= attackRange && dot > attackAngleThreshold)
                 {
                     HealthComponent targetHealth = target.GetComponent<HealthComponent>();
                     if (targetHealth != null)
-                    {
-                        targetHealth.TakeDamage(damageAmount, Vector3.zero, gameObject);
-                    }
+					{
+						Vector3 hitDirection = toTarget; // Direction from attacker to target
+                        targetHealth.TakeDamage(damageAmount, hitDirection, gameObject);
+					}
                 }
             }
 
-            // Wait for the rest of the animation to finish
-            yield return new WaitForSeconds(0.5f); // Adjust if your attack anim is longer/shorter
+            yield return new WaitForSeconds(1f);
 
             isAttacking = false;
+            lastAttackTime = Time.time;
+
+            if (!isDead && isGrounded)
+            {
+                agent.isStopped = false;
+            }
         }
 
         private void RotateTowardsTarget()
@@ -227,9 +213,10 @@ namespace Enemies
             Vector3 direction = (target.transform.position - transform.position).normalized;
             direction.y = 0;
 
-            Quaternion lookRotation = Quaternion.LookRotation(direction); // ← use -direction if spider faces backwards
+            Quaternion lookRotation = Quaternion.LookRotation(direction);
             transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * rotationSpeed);
         }
+
         protected override void HandlePostFade()
         {
             if (SpiderPool.Instance != null)
@@ -237,6 +224,7 @@ namespace Enemies
             else
                 Destroy(gameObject);
         }
+
         private void StopMovement()
         {
             if (agent != null && agent.enabled)
@@ -247,42 +235,28 @@ namespace Enemies
             isMoving = false;
         }
 
-        private void PlayIdleAnimation()
-        {
-            PlayAnimation(idleAnimationName);
-        }
-
-        private void PlayPickupAnimation()
-        {
-            PlayAnimation(pickupAnimationName);
-        }
+        private void PlayIdleAnimation() => PlayAnimation(idleAnimationName);
+        private void PlayPickupAnimation() => PlayAnimation(pickupAnimationName);
 
         private void PlayAnimation(string animationName)
         {
             if (animator == null || string.IsNullOrEmpty(animationName)) return;
-
             if (!IsCurrentAnimation(animationName))
-            {
                 animator.CrossFade(animationName, 0.2f);
-            }
         }
-        private bool IsCurrentAnimation(string animationName)
-        {
-            return animator.GetCurrentAnimatorStateInfo(0).IsName(animationName);
-        }
+
+        private bool IsCurrentAnimation(string animationName) =>
+            animator.GetCurrentAnimatorStateInfo(0).IsName(animationName);
 
         public void OnPickup()
         {
             PlayPickupAnimation();
             if (agent != null)
-            {
                 agent.enabled = false;
-            }
         }
 
         private void Die(HealthComponent _)
         {
-            Debug.Log("Die() method called");
             if (isDead) return;
             isDead = true;
 
@@ -291,7 +265,6 @@ namespace Enemies
 
             EnableRagdoll(true);
             ApplySpinOnDeath();
-
             StartCoroutine(DelayedReturnToPool());
         }
 
@@ -305,16 +278,12 @@ namespace Enemies
                 rb.angularVelocity = Vector3.zero;
             }
         }
+
         private void ApplySpinOnDeath()
         {
             foreach (var rb in ragdollRigidbodies)
             {
-                Vector3 randomTorque = new Vector3(
-                    Random.Range(-1f, 1f),
-                    Random.Range(-1f, 1f),
-                    Random.Range(-1f, 1f)
-                ).normalized * spinForce;
-
+                Vector3 randomTorque = new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), Random.Range(-1f, 1f)).normalized * spinForce;
                 rb.AddTorque(randomTorque, ForceMode.Impulse);
             }
         }
@@ -322,15 +291,10 @@ namespace Enemies
         private IEnumerator DelayedReturnToPool()
         {
             yield return new WaitForSeconds(delayBeforePooling);
-
             if (SpiderPool.Instance != null)
-            {
                 SpiderPool.Instance.ReturnSpider(gameObject);
-            }
             else
-            {
                 Destroy(gameObject);
-            }
         }
 
         public void ResetSpider()
@@ -347,7 +311,7 @@ namespace Enemies
             {
                 animator.enabled = true;
                 animator.Rebind();
-                animator.Update(0f); // apply immediately
+                animator.Update(0f);
             }
 
             if (agent != null)
@@ -373,26 +337,23 @@ namespace Enemies
         private void OnCollisionEnter(Collision collision)
         {
             if (collision.gameObject.CompareTag("Player"))
-            {
                 OnPickup();
-            }
         }
 
         private bool IsGrounded()
         {
-            return Physics.Raycast(transform.position, Vector3.down, groundCheckDistance, groundLayer);
+            Ray ray = new Ray(transform.position + Vector3.up * 0.1f, Vector3.down);
+            bool grounded = Physics.Raycast(ray, out RaycastHit hit, groundCheckDistance + 0.2f, groundLayer);
+            Debug.DrawRay(ray.origin, ray.direction * (groundCheckDistance + 0.2f), grounded ? Color.green : Color.red);
+            return grounded;
         }
+
         private void OnDrawGizmosSelected()
         {
-            // Draw ground check ray
             Gizmos.color = Color.green;
             Gizmos.DrawLine(transform.position, transform.position + Vector3.down * groundCheckDistance);
-
-            // Draw forward chase range ray
             Gizmos.color = Color.yellow;
-            Vector3 direction = transform.forward * chaseRange;
-            Gizmos.DrawRay(transform.position, direction);
-            
+            Gizmos.DrawRay(transform.position, transform.forward * chaseRange);
             Gizmos.color = Color.red;
             Gizmos.DrawLine(transform.position, transform.position + transform.forward * 2f);
         }
