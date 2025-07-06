@@ -9,6 +9,10 @@ namespace Core
         [SerializeField] private float maxHealth = 100f;
         [SerializeField] private float currentHealth;
 
+        [Header("Invulnerability")]
+        [SerializeField] private float invulnerabilityDuration = 1f;
+        private bool isInvulnerable = false;
+
         [Header("Light Integration")]
         [SerializeField] private Light healthLight;
 
@@ -61,13 +65,15 @@ namespace Core
         public void ResetHealth()
         {
             isDead = false;
+            isInvulnerable = false;
             currentHealth = maxHealth;
+            StopAllCoroutines(); //Stops any existing invulnerability coroutine
             UpdateLightIntensity();
         }
 
         public void TakeDamage(float damage, Vector3 hitPoint, GameObject damageSource = null)
         {
-            if (isDead) return;
+            if (isDead || isInvulnerable) return;
 
             SpawnDustParticles(hitPoint);
 
@@ -95,6 +101,17 @@ namespace Core
             {
                 Die(damageSource, damage);
             }
+            else
+            {
+                StartCoroutine(InvulnerabilityRoutine());
+            }
+        }
+
+        private IEnumerator InvulnerabilityRoutine()
+        {
+            isInvulnerable = true;
+            yield return new WaitForSeconds(invulnerabilityDuration);
+            isInvulnerable = false;
         }
 
         public void Heal(float amount)

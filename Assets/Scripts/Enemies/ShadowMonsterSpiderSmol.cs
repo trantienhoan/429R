@@ -39,7 +39,11 @@ namespace Enemies
         [Header("Ground Check")]
         [SerializeField] private LayerMask groundLayer;
         [SerializeField] private float groundCheckDistance = 0.2f;
+        
+        [SerializeField] private float wanderRadius = 5f;
+        [SerializeField] private float wanderDelay = 5f;
 
+        private float lastWanderTime;
         private float lastAttackTime;
         private GameObject target;
         private bool isGrounded;
@@ -79,7 +83,11 @@ namespace Enemies
             FindTarget();
             if (target == null)
             {
-                StopMovement();
+                if (Time.time - lastWanderTime > wanderDelay)
+                {
+                    Wander();
+                    lastWanderTime = Time.time;
+                }
                 return;
             }
 
@@ -129,32 +137,33 @@ namespace Enemies
 
         private void FindTarget()
         {
-            if (target != null && Vector3.Distance(transform.position, target.transform.position) <= chaseRange)
-                return;
+            GameObject closest = null;
+            float closestDistance = Mathf.Infinity;
 
-            GameObject[] potentialTargets = GameObject.FindGameObjectsWithTag(targetTag); // Use FindGameObjectsWithTag
-            if (potentialTargets.Length > 0)
+            string[] priorityTags = { targetTag, "TreeOfLight", "Furniture" };
+
+            foreach (string tag in priorityTags)
             {
-                // Find the closest target
-                float closestDistance = Mathf.Infinity;
-                GameObject closestTarget = null;
-                foreach (GameObject potentialTarget in potentialTargets)
+                GameObject[] candidates = GameObject.FindGameObjectsWithTag(tag);
+                foreach (GameObject obj in candidates)
                 {
-                    float distance = Vector3.Distance(transform.position, potentialTarget.transform.position);
-                    if (distance < closestDistance)
+                    float dist = Vector3.Distance(transform.position, obj.transform.position);
+                    if (dist < closestDistance)
                     {
-                        closestDistance = distance;
-                        closestTarget = potentialTarget;
+                        closest = obj;
+                        closestDistance = dist;
                     }
                 }
 
-                target = closestTarget;
-                Debug.Log("Target acquired: " + target.name);
+                if (closest != null)
+                {
+                    target = closest;
+                    Debug.Log("Target found: " + target.name);
+                    return;
+                }
             }
-            else
-            {
-                target = null; // Ensure target is null if no target is found
-            }
+
+            target = null;
         }
 
         private void ChaseTarget()
@@ -162,6 +171,21 @@ namespace Enemies
             if (target == null || !agent.isOnNavMesh || !agent.enabled) return;
             agent.isStopped = false;
             agent.SetDestination(target.transform.position);
+        }
+        private void Wander()
+        {
+            if (!agent.enabled || !agent.isOnNavMesh) return;
+
+            Vector3 randomDirection = Random.insideUnitSphere * wanderRadius;
+            randomDirection += transform.position;
+
+            if (NavMesh.SamplePosition(randomDirection, out NavMeshHit hit, wanderRadius, NavMesh.AllAreas))
+            {
+                agent.SetDestination(hit.position);
+                agent.isStopped = false;
+                PlayAnimation(walkAnimationName);
+                isMoving = true;
+            }
         }
 
         private IEnumerator Attack()

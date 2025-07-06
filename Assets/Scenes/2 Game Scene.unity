@@ -1100,6 +1100,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 1000
   currentHealth: 0
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 0}
   breakSound: {fileID: 0}
@@ -1387,6 +1388,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 2000
   currentHealth: 2000
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
@@ -1453,7 +1455,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 178787973}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Point1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1986,6 +1988,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 500
   currentHealth: 0
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
@@ -2895,6 +2898,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   currentHealth: 0
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 0}
   breakSound: {fileID: 0}
@@ -3012,6 +3016,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   currentHealth: 0
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 0}
   breakSound: {fileID: 0}
@@ -4828,9 +4833,9 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 1
-  m_Interpolate: 0
+  m_Interpolate: 1
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
 --- !u!4 &498047902 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 67621380692456023, guid: ad68a3b93b2021b4e978bbc81328a11d,
@@ -5047,6 +5052,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 2000
   currentHealth: 2000
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 0}
   breakSound: {fileID: 0}
@@ -5361,6 +5367,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 500
   currentHealth: 500
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
@@ -5588,6 +5595,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 2000
   currentHealth: 2000
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
@@ -5944,6 +5952,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   currentHealth: 0
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 0}
   breakSound: {fileID: 0}
@@ -6109,6 +6118,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   currentHealth: 0
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 0}
   breakSound: {fileID: 0}
@@ -6396,6 +6406,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 350
   currentHealth: 0
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 0}
   breakSound: {fileID: 0}
@@ -6828,6 +6839,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 5000
   currentHealth: 5000
+  invulnerabilityDuration: 1
   healthLight: {fileID: 503263190}
   breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
@@ -8087,6 +8099,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 200
   currentHealth: 200
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
@@ -8995,6 +9008,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 5000
   currentHealth: 5000
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
@@ -9136,7 +9150,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 830480566}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Point2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9791,6 +9805,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 1000
   currentHealth: 1000
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
@@ -9931,6 +9946,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 50000
   currentHealth: 50000
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
@@ -10176,6 +10192,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 1500
   currentHealth: 1500
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
@@ -10316,6 +10333,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 5000
   currentHealth: 5000
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
@@ -10510,6 +10528,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   currentHealth: 0
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 0}
   breakSound: {fileID: 0}
@@ -11337,6 +11356,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 5000
   currentHealth: 5000
+  invulnerabilityDuration: 1
   healthLight: {fileID: 43143291}
   breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
@@ -12065,6 +12085,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 3000
   currentHealth: 3000
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
@@ -12295,6 +12316,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   currentHealth: 0
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 0}
   breakSound: {fileID: 0}
@@ -12576,6 +12598,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 5
   currentHealth: 0
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
@@ -12766,6 +12789,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   currentHealth: 0
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 0}
   breakSound: {fileID: 0}
@@ -12953,7 +12977,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1223793804}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Point3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -13282,6 +13306,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 3000
   currentHealth: 0
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
@@ -16349,6 +16374,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   currentHealth: 0
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 0}
   breakSound: {fileID: 0}
@@ -16636,6 +16662,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 500
   currentHealth: 500
+  invulnerabilityDuration: 1
   healthLight: {fileID: 635618113}
   breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
@@ -17009,6 +17036,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 5000
   currentHealth: 5000
+  invulnerabilityDuration: 1
   healthLight: {fileID: 1964693644}
   breakEffect: {fileID: 6331275906715107348, guid: 690951f4781b19649bc5c7892414ff37,
     type: 3}
@@ -17161,6 +17189,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 2000
   currentHealth: 2000
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
@@ -17456,6 +17485,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 200
   currentHealth: 0
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 0}
   breakSound: {fileID: 0}
@@ -17737,6 +17767,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 1000
   currentHealth: 1000
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
@@ -18062,6 +18093,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 200
   currentHealth: 0
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 0}
   breakSound: {fileID: 0}
@@ -18767,6 +18799,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 500
   currentHealth: 0
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
@@ -18850,6 +18883,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 2000
   currentHealth: 2000
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
@@ -19574,6 +19608,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 1500
   currentHealth: 1500
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
@@ -19878,6 +19913,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   currentHealth: 0
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 0}
   breakSound: {fileID: 0}
@@ -20490,6 +20526,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   currentHealth: 0
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 0}
   breakSound: {fileID: 0}
@@ -20872,6 +20909,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 200
   currentHealth: 200
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
@@ -21309,6 +21347,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 200
   currentHealth: 0
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 0}
   breakSound: {fileID: 0}
@@ -21629,6 +21668,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 200
   currentHealth: 200
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
@@ -22350,6 +22390,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 200
   currentHealth: 0
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 0}
   breakSound: {fileID: 0}
@@ -22415,7 +22456,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1746982445}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Point4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -22546,6 +22587,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 3000
   currentHealth: 3000
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
@@ -22835,6 +22877,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 3000
   currentHealth: 3000
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
@@ -23097,6 +23140,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 3000
   currentHealth: 3000
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
@@ -23583,6 +23627,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 10000
   currentHealth: 10000
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 0}
   breakSound: {fileID: 0}
@@ -23740,6 +23785,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   currentHealth: 0
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 0}
   breakSound: {fileID: 0}
@@ -24027,6 +24073,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 500
   currentHealth: 0
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
@@ -24300,6 +24347,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 2000
   currentHealth: 2000
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 0}
   breakSound: {fileID: 0}
@@ -24899,6 +24947,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 5000
   currentHealth: 5000
+  invulnerabilityDuration: 1
   healthLight: {fileID: 359323845}
   breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
@@ -25420,6 +25469,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 5000
   currentHealth: 5000
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
@@ -25798,6 +25848,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 1500
   currentHealth: 1500
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
     type: 3}
@@ -26022,6 +26073,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   currentHealth: 0
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 0}
   breakSound: {fileID: 0}
@@ -26479,6 +26531,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 500
   currentHealth: 0
+  invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
@@ -29560,6 +29613,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3161569431691186199, guid: 98f33dce55e98574bb6bd02fd309cbf4,
         type: 3}
+      propertyPath: m_Layer
+      value: 14
+      objectReference: {fileID: 0}
+    - target: {fileID: 3161569431691186199, guid: 98f33dce55e98574bb6bd02fd309cbf4,
+        type: 3}
       propertyPath: m_StaticEditorFlags
       value: 0
       objectReference: {fileID: 0}
@@ -29637,6 +29695,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7273726484644668713, guid: 98f33dce55e98574bb6bd02fd309cbf4,
         type: 3}
+      propertyPath: m_Layer
+      value: 14
+      objectReference: {fileID: 0}
+    - target: {fileID: 7273726484644668713, guid: 98f33dce55e98574bb6bd02fd309cbf4,
+        type: 3}
       propertyPath: m_StaticEditorFlags
       value: 0
       objectReference: {fileID: 0}
@@ -29644,6 +29707,16 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Shadow Monster Spawner
+      objectReference: {fileID: 0}
+    - target: {fileID: 7304744200883531375, guid: 98f33dce55e98574bb6bd02fd309cbf4,
+        type: 3}
+      propertyPath: m_Layer
+      value: 14
+      objectReference: {fileID: 0}
+    - target: {fileID: 7304744200883531375, guid: 98f33dce55e98574bb6bd02fd309cbf4,
+        type: 3}
+      propertyPath: m_TagString
+      value: Wall
       objectReference: {fileID: 0}
     - target: {fileID: 7304744200883531375, guid: 98f33dce55e98574bb6bd02fd309cbf4,
         type: 3}
