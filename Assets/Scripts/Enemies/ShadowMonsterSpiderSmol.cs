@@ -1,3 +1,4 @@
+
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
@@ -9,37 +10,29 @@ namespace Enemies
     {
         [Header("Animation")]
         [SerializeField] private Animator animator;
-        [SerializeField] private string pickupAnimationName = "Pickup";
         [SerializeField] private string idleAnimationName = "Idle";
         [SerializeField] private string idleOnAirAnimationName = "Spider_Idle_On_Air";
         [SerializeField] private string chargeAnimationName = "Spider_Charge";
         [SerializeField] private string attackAnimationName = "Spider_Attack";
         [SerializeField] private string walkAnimationName = "Spider_Walk_Cycle";
-        [SerializeField] private string hurtLightAnimationName = "Spider_Hurt_Light";
-        [SerializeField] private string hurtAnimationName = "Spider_Hurt";
         [SerializeField] private string dieAnimationName = "Spider_Die";
 
         [Header("Attack")]
         [SerializeField] private float chaseRange = 10f;
         [SerializeField] private float attackRange = 2f;
-		[SerializeField] private float attackAngleThreshold = 0.5f; //dot product value for attack cone
+        [SerializeField] private float attackAngleThreshold = 0.5f;
         [SerializeField] private float chargeDelay = 0.75f;
         [SerializeField] private float rotationSpeed = 5f;
         [SerializeField] private float damageAmount = 10f;
         [SerializeField] private float attackCooldown = 1.5f;
 
         [Header("Target")]
-        [SerializeField] private string targetTag = "Player"; // Make target tag configurable
-
-        [Header("Ragdoll Death")]
-        [SerializeField] private Rigidbody[] ragdollRigidbodies;
-        [SerializeField] private float spinForce = 300f;
-        [SerializeField] private float delayBeforePooling = 2.5f;
+        [SerializeField] private string targetTag = "Player";
 
         [Header("Ground Check")]
         [SerializeField] private LayerMask groundLayer;
         [SerializeField] private float groundCheckDistance = 0.2f;
-        
+
         [SerializeField] private float wanderRadius = 5f;
         [SerializeField] private float wanderDelay = 5f;
 
@@ -51,6 +44,7 @@ namespace Enemies
         private bool isAttacking = false;
         private bool isDead = false;
         private bool isMoving = false;
+        private bool isBeingHeld = false;
 
         private void Awake()
         {
@@ -71,16 +65,34 @@ namespace Enemies
         private void Update()
         {
             isGrounded = IsGrounded();
-            if (!isGrounded)
+            animator.SetBool("IsGrounded", isGrounded);
+
+            if (isDead)
+                return;
+
+            if (isBeingHeld)
             {
                 PlayAnimation(idleOnAirAnimationName);
-                agent.isStopped = true;
                 return;
             }
 
-            if (isDead || agent == null || !agent.enabled) return;
+            if (!isGrounded)
+            {
+                agent.isStopped = true;
+                PlayAnimation(idleOnAirAnimationName);
+                return;
+            }
 
+            // Agent can re-enable if grounded and not being held
+            if (!agent.enabled && isGrounded && !isBeingHeld)
+            {
+                agent.enabled = true;
+                agent.Warp(transform.position);
+            }
+
+            // Target finding & chasing
             FindTarget();
+
             if (target == null)
             {
                 if (Time.time - lastWanderTime > wanderDelay)
@@ -88,49 +100,23 @@ namespace Enemies
                     Wander();
                     lastWanderTime = Time.time;
                 }
-                return;
+            }
+            else
+            {
+                HandleCombat();
             }
 
-            Vector3 directionToTarget = (target.transform.position - transform.position).normalized;
-            RotateTowardsTarget();
-
-            float distanceToTarget = Vector3.Distance(transform.position, target.transform.position);
-			bool isInAttackRange = distanceToTarget <= attackRange;
-			bool canAttack = Time.time - lastAttackTime > attackCooldown && !isAttacking && !isCharging;
-
-            if (Physics.Raycast(transform.position + Vector3.up * 0.5f, directionToTarget, out RaycastHit hit, chaseRange))
+            // Movement animation
+            if (agent.enabled && agent.velocity.magnitude > 0.1f)
             {
-                if (hit.collider.gameObject != target)
-                {
-                    StopMovement();
-                    return;
-                }
-
-				if (isInAttackRange && canAttack)
-				{
-					StartCoroutine(Attack());
-				}
-                else if (distanceToTarget <= chaseRange)
-                {
-                    ChaseTarget();
-                }
-                else
-                {
-                    StopMovement();
-                }
-            }
-
-            if (agent.velocity.magnitude > 0.1f && isGrounded && !isCharging && !isAttacking)
-            {
-                if (!isMoving)
-                {
-                    PlayAnimation(walkAnimationName);
-                    isMoving = true;
-                }
+                PlayAnimation(walkAnimationName);
+                animator.SetBool("IsMoving", true);
+                isMoving = true;
             }
             else if (isMoving)
             {
                 PlayIdleAnimation();
+                animator.SetBool("IsMoving", false);
                 isMoving = false;
             }
         }
@@ -158,7 +144,6 @@ namespace Enemies
                 if (closest != null)
                 {
                     target = closest;
-                    Debug.Log("Target found: " + target.name);
                     return;
                 }
             }
@@ -172,12 +157,12 @@ namespace Enemies
             agent.isStopped = false;
             agent.SetDestination(target.transform.position);
         }
+
         private void Wander()
         {
             if (!agent.enabled || !agent.isOnNavMesh) return;
 
-            Vector3 randomDirection = Random.insideUnitSphere * wanderRadius;
-            randomDirection += transform.position;
+            Vector3 randomDirection = Random.insideUnitSphere * wanderRadius + transform.position;
 
             if (NavMesh.SamplePosition(randomDirection, out NavMeshHit hit, wanderRadius, NavMesh.AllAreas))
             {
@@ -185,6 +170,31 @@ namespace Enemies
                 agent.isStopped = false;
                 PlayAnimation(walkAnimationName);
                 isMoving = true;
+            }
+        }
+        private void HandleCombat()
+        {
+            if (target == null) return;
+
+            Vector3 directionToTarget = (target.transform.position - transform.position).normalized;
+            RotateTowardsTarget();
+
+            float distanceToTarget = Vector3.Distance(transform.position, target.transform.position);
+            bool isInAttackRange = distanceToTarget <= attackRange;
+            bool canAttack = Time.time - lastAttackTime > attackCooldown && !isAttacking && !isCharging;
+
+            if (Physics.Raycast(transform.position + Vector3.up * 0.5f, directionToTarget, out RaycastHit hit, chaseRange))
+            {
+                if (hit.collider.gameObject != target)
+                {
+                    StopMovement();
+                    return;
+                }
+
+                if (isInAttackRange && canAttack)
+                    StartCoroutine(Attack());
+                else
+                    ChaseTarget();
             }
         }
 
@@ -212,10 +222,10 @@ namespace Enemies
                 {
                     HealthComponent targetHealth = target.GetComponent<HealthComponent>();
                     if (targetHealth != null)
-					{
-						Vector3 hitDirection = toTarget; // Direction from attacker to target
+                    {
+                        Vector3 hitDirection = toTarget;
                         targetHealth.TakeDamage(damageAmount, hitDirection, gameObject);
-					}
+                    }
                 }
             }
 
@@ -223,7 +233,6 @@ namespace Enemies
 
             isAttacking = false;
             lastAttackTime = Time.time;
-
             if (!isDead && isGrounded)
             {
                 agent.isStopped = false;
@@ -241,14 +250,6 @@ namespace Enemies
             transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * rotationSpeed);
         }
 
-        protected override void HandlePostFade()
-        {
-            if (SpiderPool.Instance != null)
-                SpiderPool.Instance.ReturnSpider(gameObject);
-            else
-                Destroy(gameObject);
-        }
-
         private void StopMovement()
         {
             if (agent != null && agent.enabled)
@@ -260,7 +261,6 @@ namespace Enemies
         }
 
         private void PlayIdleAnimation() => PlayAnimation(idleAnimationName);
-        private void PlayPickupAnimation() => PlayAnimation(pickupAnimationName);
 
         private void PlayAnimation(string animationName)
         {
@@ -274,9 +274,40 @@ namespace Enemies
 
         public void OnPickup()
         {
-            PlayPickupAnimation();
+            isBeingHeld = true;
+
             if (agent != null)
                 agent.enabled = false;
+
+            Rigidbody rb = GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.isKinematic = false;
+                rb.useGravity = true;
+            }
+
+            PlayAnimation(idleOnAirAnimationName);
+        }
+
+        public void OnRelease()
+        {
+            isBeingHeld = false;
+
+            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 1f, NavMesh.AllAreas))
+            {
+                if (agent != null)
+                {
+                    agent.enabled = true;
+                    agent.Warp(hit.position);
+                }
+            }
+
+            Rigidbody rb = GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.isKinematic = true;
+                rb.useGravity = false;
+            }
         }
 
         private void Die(HealthComponent _)
@@ -284,37 +315,28 @@ namespace Enemies
             if (isDead) return;
             isDead = true;
 
-            if (animator != null) animator.enabled = false;
-            if (agent != null && agent.enabled) agent.isStopped = true;
-
-            EnableRagdoll(true);
-            ApplySpinOnDeath();
-            StartCoroutine(DelayedReturnToPool());
-        }
-
-        private void EnableRagdoll(bool enabled)
-        {
-            foreach (var rb in ragdollRigidbodies)
+            if (agent != null) agent.enabled = false;
+            if (animator != null)
             {
-                rb.isKinematic = !enabled;
-                rb.detectCollisions = enabled;
-                rb.linearVelocity = Vector3.zero;
-                rb.angularVelocity = Vector3.zero;
+                animator.CrossFade(dieAnimationName, 0.1f);
             }
+
+            StartCoroutine(ScaleDownAndDestroy());
         }
 
-        private void ApplySpinOnDeath()
+        private IEnumerator ScaleDownAndDestroy()
         {
-            foreach (var rb in ragdollRigidbodies)
+            float duration = 0.5f;
+            Vector3 originalScale = transform.localScale;
+            float t = 0;
+
+            while (t < duration)
             {
-                Vector3 randomTorque = new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), Random.Range(-1f, 1f)).normalized * spinForce;
-                rb.AddTorque(randomTorque, ForceMode.Impulse);
+                t += Time.deltaTime;
+                transform.localScale = Vector3.Lerp(originalScale, Vector3.zero, t / duration);
+                yield return null;
             }
-        }
 
-        private IEnumerator DelayedReturnToPool()
-        {
-            yield return new WaitForSeconds(delayBeforePooling);
             if (SpiderPool.Instance != null)
                 SpiderPool.Instance.ReturnSpider(gameObject);
             else
@@ -329,8 +351,6 @@ namespace Enemies
             isMoving = false;
             target = null;
 
-            EnableRagdoll(false);
-
             if (animator != null)
             {
                 animator.enabled = true;
@@ -338,30 +358,16 @@ namespace Enemies
                 animator.Update(0f);
             }
 
-            if (agent != null)
+            if (agent != null && NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 1f, NavMesh.AllAreas))
             {
-                if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 1f, NavMesh.AllAreas))
-                {
-                    agent.enabled = true;
-                    agent.Warp(hit.position);
-                    agent.ResetPath();
-                    agent.isStopped = true;
-                }
-                else
-                {
-                    Debug.LogWarning("Could not find a valid NavMesh position for the spider.");
-                    agent.enabled = false;
-                }
+                agent.enabled = true;
+                agent.Warp(hit.position);
+                agent.ResetPath();
+                agent.isStopped = true;
             }
 
             transform.localScale = Vector3.one;
             PlayIdleAnimation();
-        }
-
-        private void OnCollisionEnter(Collision collision)
-        {
-            if (collision.gameObject.CompareTag("Player"))
-                OnPickup();
         }
 
         private bool IsGrounded()
@@ -370,16 +376,6 @@ namespace Enemies
             bool grounded = Physics.Raycast(ray, out RaycastHit hit, groundCheckDistance + 0.2f, groundLayer);
             Debug.DrawRay(ray.origin, ray.direction * (groundCheckDistance + 0.2f), grounded ? Color.green : Color.red);
             return grounded;
-        }
-
-        private void OnDrawGizmosSelected()
-        {
-            Gizmos.color = Color.green;
-            Gizmos.DrawLine(transform.position, transform.position + Vector3.down * groundCheckDistance);
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawRay(transform.position, transform.forward * chaseRange);
-            Gizmos.color = Color.red;
-            Gizmos.DrawLine(transform.position, transform.position + transform.forward * 2f);
         }
     }
 }

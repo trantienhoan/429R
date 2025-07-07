@@ -75,6 +75,13 @@ namespace Core
         {
             if (isDead || isInvulnerable) return;
 
+            // Prevent self-damage
+            if (damageSource != null && damageSource == gameObject)
+            {
+                Debug.Log($"{gameObject.name} attempted to self-damage but was prevented.");
+                return;
+            }
+
             SpawnDustParticles(hitPoint);
 
             float initialHealth = currentHealth;

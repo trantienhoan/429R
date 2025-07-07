@@ -137,13 +137,13 @@ public class JiggleBreakableBigObject : BreakableObject
             }
 
             // Apply damage
-            TakeDamage(damage, hitPoint, hitDirection);
+            TakeDamage(damage, hitPoint, collision.gameObject, hitDirection);
         }
     }
 
-    public override void TakeDamage(float damage, Vector3 hitPoint, Vector3 hitDirection) // ADD hitPoint PARAMETER
+    public void TakeDamage(float damage, Vector3 hitPoint, GameObject damageSource, Vector3 hitDirection)
     {
-        healthComponent.TakeDamage(damage, hitPoint, this.gameObject);
+        healthComponent.TakeDamage(damage, hitPoint, damageSource);
     }
 
     private void TriggerJiggleEffect(Vector3 hitDirection)
