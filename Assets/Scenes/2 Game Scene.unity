@@ -4320,6 +4320,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 7609633742523881503, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
+        type: 3}
+      propertyPath: m_UseDynamicAttach
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8314641946612675146, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -9857,11 +9862,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isBreakable: 1
-  itemDropPrefabs: []
+  itemDropPrefabs:
+  - {fileID: 1603563952}
   dropForce: 5
   itemSpawnHeightOffset: 0.5
   destroyDelay: 0.1
-  mass: 500
+  mass: 100
   drag: 1
   angularDrag: 1
   useGravity: 1
@@ -9869,7 +9875,7 @@ MonoBehaviour:
   collisionLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  minimumImpactForce: 3000
+  minimumImpactForce: 10
   breakOnlyFromWeapons: 1
   useImpactForce: 1
   damageMultiplier: 1
@@ -9879,7 +9885,7 @@ MonoBehaviour:
   onDamage:
     m_PersistentCalls:
       m_Calls: []
-  jiggleAmount: 0.00001
+  jiggleAmount: 0.1
   jiggleDuration: 0.1
   jiggleCurve:
     serializedVersion: 2
@@ -9905,7 +9911,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  objectMass: 500
+  objectMass: 100
 --- !u!114 &945905626
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16825,27 +16831,27 @@ PrefabInstance:
     - target: {fileID: 4807449582191205079, guid: dbeb3f89513365c489b7eef744c5f7fb,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1.9790261
+      value: 1.001
       objectReference: {fileID: 0}
     - target: {fileID: 4807449582191205079, guid: dbeb3f89513365c489b7eef744c5f7fb,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.366
+      value: 1.041
       objectReference: {fileID: 0}
     - target: {fileID: 4807449582191205079, guid: dbeb3f89513365c489b7eef744c5f7fb,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.7920338
+      value: -1.956
       objectReference: {fileID: 0}
     - target: {fileID: 4807449582191205079, guid: dbeb3f89513365c489b7eef744c5f7fb,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0.7071068
       objectReference: {fileID: 0}
     - target: {fileID: 4807449582191205079, guid: dbeb3f89513365c489b7eef744c5f7fb,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: 0.7071068
       objectReference: {fileID: 0}
     - target: {fileID: 4807449582191205079, guid: dbeb3f89513365c489b7eef744c5f7fb,
         type: 3}
@@ -16860,7 +16866,7 @@ PrefabInstance:
     - target: {fileID: 4807449582191205079, guid: dbeb3f89513365c489b7eef744c5f7fb,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
+      value: 90
       objectReference: {fileID: 0}
     - target: {fileID: 4807449582191205079, guid: dbeb3f89513365c489b7eef744c5f7fb,
         type: 3}
@@ -19052,7 +19058,7 @@ MonoBehaviour:
   dropForce: 5
   itemSpawnHeightOffset: 0.5
   destroyDelay: 0.1
-  mass: 300
+  mass: 100
   drag: 1
   angularDrag: 1
   useGravity: 1
@@ -19070,7 +19076,7 @@ MonoBehaviour:
   onDamage:
     m_PersistentCalls:
       m_Calls: []
-  jiggleAmount: 0.00001
+  jiggleAmount: 0.1
   jiggleDuration: 0.1
   jiggleCurve:
     serializedVersion: 2
@@ -19096,7 +19102,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  objectMass: 50
+  objectMass: 100
 --- !u!54 &1505699229
 Rigidbody:
   m_ObjectHideFlags: 0

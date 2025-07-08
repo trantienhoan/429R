@@ -1721,16 +1721,13 @@ MonoBehaviour:
   minLightIntensityToDamage: 0.5
   detectionRadius: 0
   animator: {fileID: 3885325605593910892}
-  pickupAnimationName: Spider_Idle
   idleAnimationName: Spider_Idle
-  idleOnAirAnimationName: Spider_Idle
+  idleOnAirAnimationName: Spider_Idle_On_Air
   chargeAnimationName: Spider_Charge
   attackAnimationName: Spider_Attack
   walkAnimationName: Spider_Walk_Cycle
-  hurtLightAnimationName: Spider_Hurt_Light
-  hurtAnimationName: Spider_Hurt
   dieAnimationName: Spider_Die
-  chaseRange: 4.28
+  chaseRange: 5
   attackRange: 0.5
   attackAngleThreshold: 0.5
   chargeDelay: 0.75
@@ -1738,13 +1735,10 @@ MonoBehaviour:
   damageAmount: 100
   attackCooldown: 1.5
   targetTag: Player
-  ragdollRigidbodies: []
-  spinForce: 10
-  delayBeforePooling: 3
   groundLayer:
     serializedVersion: 2
     m_Bits: 2097152
-  groundCheckDistance: 0.2
+  groundCheckDistance: 0.1
   wanderRadius: 5
   wanderDelay: 5
 --- !u!114 &1953590547031063503
