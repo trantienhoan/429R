@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 4807449582191205079}
   - component: {fileID: 4933578997498543890}
   - component: {fileID: 398670456967341933}
-  - component: {fileID: 3853888096984683075}
   - component: {fileID: 4940320352082019240}
   m_Layer: 0
   m_Name: Hammer_Boong
@@ -212,18 +211,6 @@ Rigidbody:
   m_Interpolate: 1
   m_Constraints: 0
   m_CollisionDetection: 1
---- !u!114 &3853888096984683075
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 168243530322359989}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 62fb9fb1177925e4b8a383be2b9db66c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &4940320352082019240
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -245,7 +232,8 @@ MonoBehaviour:
   swingDetectionThreshold: 2.5
   verticalSwingThreshold: 0.8
   horizontalSwingThreshold: 0.8
-  groundImpactEffectPrefab: {fileID: 0}
+  groundImpactEffectPrefab: {fileID: 8846737274113074935, guid: 81a74a0aefeb7674ca32535d1a269b4a,
+    type: 3}
   airSlashEffectPrefab: {fileID: 0}
 --- !u!1 &408592640218454495
 GameObject:

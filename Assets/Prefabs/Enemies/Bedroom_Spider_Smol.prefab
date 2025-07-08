@@ -1099,10 +1099,10 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 1
-  m_IsKinematic: 1
-  m_Interpolate: 0
+  m_IsKinematic: 0
+  m_Interpolate: 1
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
 --- !u!1 &2841483956170677753 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6019000614100535384, guid: eea07b0f474e5d44c85bbaded1d24bf4,
@@ -1589,10 +1589,10 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 1
-  m_IsKinematic: 1
-  m_Interpolate: 0
+  m_IsKinematic: 0
+  m_Interpolate: 1
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
 --- !u!1 &7847372644349795193 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -7489973922872291624, guid: eea07b0f474e5d44c85bbaded1d24bf4,
@@ -1700,7 +1700,7 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 1
-  m_IsKinematic: 1
+  m_IsKinematic: 0
   m_Interpolate: 1
   m_Constraints: 0
   m_CollisionDetection: 1
@@ -1760,9 +1760,10 @@ MonoBehaviour:
   breakEffect: {fileID: 8176850701479282266, guid: b219c04f384e7f345bb8ae1fef443965,
     type: 3}
   breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 0}
+  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+    type: 3}
   hitSound: {fileID: 0}
-  scaleOnDeath: 0
+  scaleOnDeath: 1
   scaleDuration: 0.5
   minScale: {x: 3, y: 3, z: 3}
 --- !u!114 &7609633742523881503
@@ -1839,7 +1840,7 @@ MonoBehaviour:
   m_StartingInteractionStrengthFilters: []
   m_AttachTransform: {fileID: 0}
   m_SecondaryAttachTransform: {fileID: 0}
-  m_UseDynamicAttach: 0
+  m_UseDynamicAttach: 1
   m_MatchAttachPosition: 1
   m_MatchAttachRotation: 1
   m_SnapToColliderVolume: 1

@@ -534,7 +534,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &77931437
 Transform:
@@ -1024,8 +1024,8 @@ Transform:
   m_GameObject: {fileID: 99200297}
   serializedVersion: 2
   m_LocalRotation: {x: 0.10367235, y: -0.78112173, z: -0.13047613, w: 0.6017282}
-  m_LocalPosition: {x: 0.0092, y: 0.3118, z: -0.0029}
-  m_LocalScale: {x: 0.4975373, y: 0.30575547, z: 0.4975373}
+  m_LocalPosition: {x: 0.009613457, y: 0.17391877, z: -0.0019668913}
+  m_LocalScale: {x: 0.4975373, y: 0.30575544, z: 0.49753737}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2063095168}
@@ -1033,7 +1033,7 @@ Transform:
   - {fileID: 1589692832}
   - {fileID: 1336281345}
   - {fileID: 820754404}
-  m_Father: {fileID: 1314696709}
+  m_Father: {fileID: 764618619}
   m_LocalEulerAnglesHint: {x: -4.535, y: -104.038, z: -18.662}
 --- !u!23 &99200299
 MeshRenderer:
@@ -1412,7 +1412,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   jiggleAmount: 0.1
-  jiggleDuration: 0.5
+  jiggleDuration: 0.1
   jiggleCurve:
     serializedVersion: 2
     m_Curve:
@@ -1477,14 +1477,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2883e4c1dfd15bf43a546e9d36e341bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 2000
-  currentHealth: 2000
+  maxHealth: 500
+  currentHealth: 500
   invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
   breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 0}
+  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+    type: 3}
   hitSound: {fileID: 0}
   scaleOnDeath: 1
   scaleDuration: 0.5
@@ -2250,13 +2251,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 500
-  currentHealth: 0
+  currentHealth: 500
   invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
   breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 0}
+  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+    type: 3}
   hitSound: {fileID: 0}
   scaleOnDeath: 1
   scaleDuration: 0.5
@@ -2336,8 +2338,8 @@ Transform:
   m_GameObject: {fileID: 285189458}
   serializedVersion: 2
   m_LocalRotation: {x: -0.1773109, y: 0.8046685, z: -0.052743636, w: 0.5641699}
-  m_LocalPosition: {x: 0.0007, y: 0.2198, z: -0.0004}
-  m_LocalScale: {x: 0.7164824, y: 0.5868929, z: 0.7164824}
+  m_LocalPosition: {x: 0.0011133575, y: 0.08191876, z: 0.00053310633}
+  m_LocalScale: {x: 0.71648246, y: 0.58689284, z: 0.71648234}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1694418512}
@@ -2345,7 +2347,7 @@ Transform:
   - {fileID: 639003500}
   - {fileID: 2057427609}
   - {fileID: 549282156}
-  m_Father: {fileID: 1314696709}
+  m_Father: {fileID: 764618619}
   m_LocalEulerAnglesHint: {x: -6.614, y: 111.116, z: -20.315}
 --- !u!23 &285189460
 MeshRenderer:
@@ -2768,7 +2770,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &318874895
 Transform:
@@ -2953,7 +2955,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &346392666
 Transform:
@@ -3768,7 +3770,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &398572748
 Transform:
@@ -3986,8 +3988,8 @@ Transform:
   m_GameObject: {fileID: 426637483}
   serializedVersion: 2
   m_LocalRotation: {x: 0.19917685, y: -0.82486874, z: -0.18700172, w: 0.4949249}
-  m_LocalPosition: {x: 0.0016, y: 0.2393, z: -0.0004}
-  m_LocalScale: {x: 0.63761, y: 0.44465017, z: 0.63761}
+  m_LocalPosition: {x: 0.0020133876, y: 0.10141878, z: 0.00053310633}
+  m_LocalScale: {x: 0.63760996, y: 0.44465017, z: 0.63761}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1360538978}
@@ -3995,7 +3997,7 @@ Transform:
   - {fileID: 898916590}
   - {fileID: 1901601827}
   - {fileID: 1667118040}
-  m_Father: {fileID: 1314696709}
+  m_Father: {fileID: 764618619}
   m_LocalEulerAnglesHint: {x: -6.393, y: -116.29, z: -31.125}
 --- !u!23 &426637485
 MeshRenderer:
@@ -4320,10 +4322,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 7609633742523881503, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
+    - target: {fileID: 3030980029734817786, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
         type: 3}
-      propertyPath: m_UseDynamicAttach
-      value: 1
+      propertyPath: targetTag
+      value: TreeOfLight
       objectReference: {fileID: 0}
     - target: {fileID: 8314641946612675146, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
         type: 3}
@@ -5140,7 +5142,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &549282156
 Transform:
@@ -5226,7 +5228,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &550210862
 Transform:
@@ -5606,7 +5608,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   jiggleAmount: 0.1
-  jiggleDuration: 0.5
+  jiggleDuration: 0.1
   jiggleCurve:
     serializedVersion: 2
     m_Curve:
@@ -5671,13 +5673,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2883e4c1dfd15bf43a546e9d36e341bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100
-  currentHealth: 0
+  maxHealth: 500
+  currentHealth: 500
   invulnerabilityDuration: 1
   healthLight: {fileID: 0}
-  breakEffect: {fileID: 0}
+  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+    type: 3}
   breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 0}
+  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+    type: 3}
   hitSound: {fileID: 0}
   scaleOnDeath: 1
   scaleDuration: 0.5
@@ -7696,7 +7700,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &639003500
 Transform:
@@ -8456,6 +8460,12 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 757872255}
   m_PrefabAsset: {fileID: 0}
+--- !u!4 &764618619 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8643787925284763685, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
+    type: 3}
+  m_PrefabInstance: {fileID: 1261005732}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &793039415 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -6189323474573987466, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
@@ -8756,7 +8766,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &797138158
 Transform:
@@ -8842,7 +8852,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &797145895
 Transform:
@@ -9050,7 +9060,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &820754404
 Transform:
@@ -9773,7 +9783,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &898916590
 Transform:
@@ -10425,9 +10435,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 967860514}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.21909384, y: 0.14676252, z: -0.19860433, w: 0.943936}
-  m_LocalPosition: {x: 0.0074, y: 0.2939, z: -0.0022}
-  m_LocalScale: {x: 0.63761, y: 0.3312459, z: 0.63761}
+  m_LocalRotation: {x: -0.21909381, y: 0.1467625, z: -0.1986043, w: 0.9439359}
+  m_LocalPosition: {x: 0.007813397, y: 0.15601878, z: -0.0012668944}
+  m_LocalScale: {x: 0.63761, y: 0.33124593, z: 0.6376101}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 346392666}
@@ -10435,7 +10445,7 @@ Transform:
   - {fileID: 318874895}
   - {fileID: 77931437}
   - {fileID: 797145895}
-  m_Father: {fileID: 1314696709}
+  m_Father: {fileID: 764618619}
   m_LocalEulerAnglesHint: {x: -20.813, y: 22.924, z: -28.029}
 --- !u!23 &967860516
 MeshRenderer:
@@ -11796,7 +11806,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &1128951381
 Transform:
@@ -12135,7 +12145,7 @@ MonoBehaviour:
   dropForce: 5
   itemSpawnHeightOffset: 0.5
   destroyDelay: 2
-  mass: 1000
+  mass: 5
   drag: 1
   angularDrag: 1
   useGravity: 1
@@ -12154,7 +12164,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   jiggleAmount: 0.1
-  jiggleDuration: 0.5
+  jiggleDuration: 0.1
   jiggleCurve:
     serializedVersion: 2
     m_Curve:
@@ -12206,7 +12216,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  objectMass: 50
+  objectMass: 5
 --- !u!114 &1146258531
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12219,13 +12229,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2883e4c1dfd15bf43a546e9d36e341bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100
-  currentHealth: 0
+  maxHealth: 500
+  currentHealth: 500
   invulnerabilityDuration: 1
   healthLight: {fileID: 0}
-  breakEffect: {fileID: 0}
+  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+    type: 3}
   breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 0}
+  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+    type: 3}
   hitSound: {fileID: 0}
   scaleOnDeath: 1
   scaleDuration: 0.5
@@ -12397,9 +12409,9 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 0
+  m_Interpolate: 1
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
 --- !u!114 &1202094425
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13864,6 +13876,11 @@ PrefabInstance:
       propertyPath: m_LocalPosition.z
       value: -2.1056848
       objectReference: {fileID: 0}
+    - target: {fileID: -5395734835111941018, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
+        type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: -5212412648017600320, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_TagString
@@ -14892,22 +14909,6 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 2138706022}
-    - targetCorrespondingSourceObject: {fileID: 8774342171358283553, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
-        type: 3}
-      insertIndex: 1
-      addedObject: {fileID: 426637484}
-    - targetCorrespondingSourceObject: {fileID: 8774342171358283553, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
-        type: 3}
-      insertIndex: 2
-      addedObject: {fileID: 285189459}
-    - targetCorrespondingSourceObject: {fileID: 8774342171358283553, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
-        type: 3}
-      insertIndex: 3
-      addedObject: {fileID: 967860515}
-    - targetCorrespondingSourceObject: {fileID: 8774342171358283553, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
-        type: 3}
-      insertIndex: 4
-      addedObject: {fileID: 99200298}
     - targetCorrespondingSourceObject: {fileID: 6551542301616638662, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       insertIndex: -1
@@ -14924,6 +14925,22 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 220164500}
+    - targetCorrespondingSourceObject: {fileID: 8643787925284763685, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 426637484}
+    - targetCorrespondingSourceObject: {fileID: 8643787925284763685, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 285189459}
+    - targetCorrespondingSourceObject: {fileID: 8643787925284763685, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 967860515}
+    - targetCorrespondingSourceObject: {fileID: 8643787925284763685, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 99200298}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 4621608193042330005, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
@@ -16794,12 +16811,6 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 1271051401}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &1314696709 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8774342171358283553, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
-    type: 3}
-  m_PrefabInstance: {fileID: 1261005732}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1316548477
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -16890,7 +16901,8 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c,
         type: 3}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 3853888096984683075, guid: dbeb3f89513365c489b7eef744c5f7fb, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
@@ -17361,7 +17373,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &1336281345
 Transform:
@@ -17459,7 +17471,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &1360538978
 Transform:
@@ -17855,15 +17867,15 @@ MonoBehaviour:
   dropForce: 5
   itemSpawnHeightOffset: 0.5
   destroyDelay: 0.1
-  mass: 50
+  mass: 5
   drag: 1
   angularDrag: 1
   useGravity: 1
-  breakUpwardForce: 100
+  breakUpwardForce: 5
   collisionLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  minimumImpactForce: 25
+  minimumImpactForce: 5
   breakOnlyFromWeapons: 1
   useImpactForce: 1
   damageMultiplier: 1
@@ -17873,7 +17885,7 @@ MonoBehaviour:
   onDamage:
     m_PersistentCalls:
       m_Calls: []
-  jiggleAmount: 0.00001
+  jiggleAmount: 0.1
   jiggleDuration: 0.1
   jiggleCurve:
     serializedVersion: 2
@@ -17899,7 +17911,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  objectMass: 50
+  objectMass: 5
 --- !u!114 &1425434744
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17949,9 +17961,9 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 0
+  m_Interpolate: 1
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
 --- !u!65 &1425434746
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -18860,7 +18872,7 @@ MonoBehaviour:
   dropForce: 5
   itemSpawnHeightOffset: 0.5
   destroyDelay: 2
-  mass: 10
+  mass: 5
   drag: 1
   angularDrag: 1
   useGravity: 1
@@ -18879,7 +18891,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   jiggleAmount: 0.1
-  jiggleDuration: 0.5
+  jiggleDuration: 0.1
   jiggleCurve:
     serializedVersion: 2
     m_Curve:
@@ -18945,13 +18957,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 500
-  currentHealth: 0
+  currentHealth: 500
   invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
   breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 0}
+  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+    type: 3}
   hitSound: {fileID: 0}
   scaleOnDeath: 1
   scaleDuration: 0.5
@@ -20440,7 +20453,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &1589692832
 Transform:
@@ -21861,7 +21874,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &1667118040
 Transform:
@@ -22200,7 +22213,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &1694418512
 Transform:
@@ -23925,7 +23938,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &1901601827
 Transform:
@@ -24325,7 +24338,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   jiggleAmount: 0.1
-  jiggleDuration: 0.5
+  jiggleDuration: 0.1
   jiggleCurve:
     serializedVersion: 2
     m_Curve:
@@ -24391,13 +24404,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 500
-  currentHealth: 0
+  currentHealth: 500
   invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
   breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 0}
+  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+    type: 3}
   hitSound: {fileID: 0}
   scaleOnDeath: 1
   scaleDuration: 0.5
@@ -24426,9 +24440,9 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 0
+  m_Interpolate: 1
   m_Constraints: 126
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
 --- !u!65 &1905102047
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -25973,7 +25987,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &2057427609
 Transform:
@@ -26059,7 +26073,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &2063095168
 Transform:
@@ -26764,7 +26778,7 @@ MonoBehaviour:
   dropForce: 5
   itemSpawnHeightOffset: 0.5
   destroyDelay: 2
-  mass: 10
+  mass: 5
   drag: 1
   angularDrag: 1
   useGravity: 1
@@ -26783,7 +26797,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   jiggleAmount: 0.1
-  jiggleDuration: 0.5
+  jiggleDuration: 0.1
   jiggleCurve:
     serializedVersion: 2
     m_Curve:
@@ -26849,13 +26863,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 500
-  currentHealth: 0
+  currentHealth: 500
   invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
   breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 0}
+  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+    type: 3}
   hitSound: {fileID: 0}
   scaleOnDeath: 1
   scaleDuration: 0.5
