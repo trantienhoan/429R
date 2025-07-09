@@ -32,15 +32,14 @@ public class ShadowMonsterSpawner : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private TreeOfLight tree;
-    [SerializeField] private List<GameObject> windows = new List<GameObject>(); // Initialize list
+    [SerializeField] private List<GameObject> windows = new List<GameObject>();
 
     [Header("Window Rotation Settings")]
     [SerializeField] private float openWindowRotationL = -147f;
     [SerializeField] private float openWindowRotationR = 147f;
     [SerializeField] private float closedWindowRotation = 0f;
 
-    private List<MonsterTrackerData> _activeMonsters = new List<MonsterTrackerData>();
-
+    private List<MonsterTrackerData> activeMonsters = new List<MonsterTrackerData>();
     private bool isSpawning = false;
 
     private void Start()
@@ -66,7 +65,7 @@ public class ShadowMonsterSpawner : MonoBehaviour
     public void BeginSpawning()
     {
         OpenWindows();
-        Invoke("StartSpawning", 7f);
+        Invoke(nameof(StartSpawning), 7f);
     }
 
     private void OnDestroy()
@@ -76,35 +75,22 @@ public class ShadowMonsterSpawner : MonoBehaviour
         CloseWindows();
     }
 
-    private void Update()
-    {
-        // You can add logic here to adjust spawning based on game state
-    }
-
-    private bool CanSpawnMore()
-    {
-        return _activeMonsters.Count < maxMonsters;
-    }
+    private bool CanSpawnMore() => activeMonsters.Count < maxMonsters;
 
     private GameObject SpawnMonster()
     {
         Vector3 spawnPosition = FindValidSpawnPosition();
-        return SpawnMonsterAt(spawnPosition, spawnPosition);
+        GameObject monster = SpawnMonsterAt(spawnPosition, spawnPosition);
+        return monster;
     }
 
     public GameObject SpawnMonsterAt(Vector3 startPosition, Vector3 endPosition)
     {
-        GameObject monsterInstance = Instantiate(monsterPrefab, startPosition, Quaternion.identity);
-
-        // Set initial scale
+        GameObject monsterInstance = SpiderPool.Instance.GetSpider(startPosition, Quaternion.Euler(0, -90, 0));
         monsterInstance.transform.localScale = monsterPrefab.transform.localScale * initialScaleMultiplier;
-        monsterInstance.transform.rotation = Quaternion.Euler(0, -90, 0);
 
         RegisterMonster(monsterInstance);
-
-        // Start scaling coroutine
         StartCoroutine(ScaleAndDropMonster(monsterInstance.transform, monsterPrefab.transform.localScale, endPosition, scaleDuration, dropDuration));
-
         return monsterInstance;
     }
 
@@ -114,95 +100,73 @@ public class ShadowMonsterSpawner : MonoBehaviour
         Vector3 startPosition = monsterTransform.position;
         float timer = 0;
 
-        // Scaling Phase
         while (timer < scaleDuration)
         {
-            if (monsterTransform == null) // Check if the transform has been destroyed
-            {
-                yield break; // Exit the coroutine if the transform is null
-            }
-
+            if (monsterTransform == null) yield break;
             timer += Time.deltaTime;
-            float progress = timer / scaleDuration;
-            monsterTransform.localScale = Vector3.Lerp(startScale, targetScale, progress);
+            monsterTransform.localScale = Vector3.Lerp(startScale, targetScale, timer / scaleDuration);
             yield return null;
         }
 
-        if (monsterTransform == null) // Check one more time after scaling
-        {
-            yield break;
-        }
-
+        if (monsterTransform == null) yield break;
         monsterTransform.localScale = targetScale;
         timer = 0;
 
-        // Drop Phase
         while (timer < dropDuration)
         {
-             if (monsterTransform == null) // Check if the transform has been destroyed
-            {
-                yield break; // Exit the coroutine if the transform is null
-            }
-
+            if (monsterTransform == null) yield break;
             timer += Time.deltaTime;
-            float progress = timer / dropDuration;
-            monsterTransform.position = Vector3.Lerp(startPosition, targetPosition, progress);
+            monsterTransform.position = Vector3.Lerp(startPosition, targetPosition, timer / dropDuration);
             yield return null;
         }
 
-        if (monsterTransform == null) // Final check
-        {
-            yield break;
-        }
-
-        monsterTransform.position = targetPosition;
+        if (monsterTransform != null)
+            monsterTransform.position = targetPosition;
     }
 
     public void RegisterMonster(GameObject monster)
     {
-        ShadowMonsterSpider spider = monster.GetComponent<ShadowMonsterSpider>();
-        if (spider != null)
+        ShadowMonster shadowMonster = monster.GetComponent<ShadowMonster>();
+        if (shadowMonster != null)
         {
             HealthComponent health = monster.GetComponent<HealthComponent>();
             if (health != null)
             {
                 health.SetMaxHealth(health.MaxHealth * 1.5f);
+                health.OnDeath += OnMonsterDeath;
             }
-            Debug.Log("Registered a ShadowMonsterSpider with increased health!");
-            return;
-        }
 
-        ShadowMonster shadowMonster = monster.GetComponent<ShadowMonster>();
-        if (shadowMonster != null)
-        {
-            return;
-        }
-    }
+            activeMonsters.Add(new MonsterTrackerData
+            {
+                MonsterObject = monster,
+                SpiderReference = shadowMonster
+            });
 
-    private void OnMonsterDeath(HealthComponent health)
-    {
-        UnregisterMonster(health);
-    }
-
-    public void UnregisterMonster(HealthComponent health)
-    {
-        if (health == null)
-        {
-            return;
-        }
-
-        health.OnDeath -= OnMonsterDeath;
-
-        var itemToRemove = _activeMonsters.FirstOrDefault(x => x.MonsterObject == health.gameObject);
-
-        if (itemToRemove != null)
-        {
-            _activeMonsters.Remove(itemToRemove);
-            Log($"Monster unregistered. Active monster count: {_activeMonsters.Count}");
+            Log("Registered a ShadowMonster!");
         }
         else
         {
-            LogWarning($"Trying to unregister a monster that wasnt registered");
+            LogWarning("Tried to register a monster without ShadowMonster component.");
+        }
+    }
+
+    private void OnMonsterDeath(HealthComponent health) => UnregisterMonster(health);
+
+    public void UnregisterMonster(HealthComponent health)
+    {
+        if (health == null) return;
+        health.OnDeath -= OnMonsterDeath;
+
+        var itemToRemove = activeMonsters.FirstOrDefault(x => x.MonsterObject == health.gameObject);
+
+        if (itemToRemove != null)
+        {
+            activeMonsters.Remove(itemToRemove);
+            Log($"Monster unregistered. Active monster count: {activeMonsters.Count}");
+        }
+        else
+        {
+            LogWarning("Trying to unregister a monster that wasn't registered");
         }
     }
 
@@ -239,7 +203,7 @@ public class ShadowMonsterSpawner : MonoBehaviour
         {
             isSpawning = false;
             StopAllCoroutines();
-            CloseWindows(); // Close windows when spawning stops
+            CloseWindows();
             Log("Monster spawning stopped.");
         }
     }
@@ -264,31 +228,20 @@ public class ShadowMonsterSpawner : MonoBehaviour
 
     public void CleanupMonsterLists()
     {
-        foreach (var monster in _activeMonsters.ToList())
+        foreach (var monster in activeMonsters.ToList())
         {
             if (monster.MonsterObject != null)
             {
-                Destroy(monster.MonsterObject);
+                SpiderPool.Instance.ReturnSpider(monster.MonsterObject);
             }
         }
 
-        _activeMonsters.Clear();
+        activeMonsters.Clear();
     }
 
-    private void Log(string message)
-    {
-        Debug.Log($"[MonsterSpawner] {message}");
-    }
-
-    private void LogWarning(string message)
-    {
-        Debug.LogWarning($"[MonsterSpawner] {message}");
-    }
-
-    private void LogError(string message)
-    {
-        Debug.LogError($"[MonsterSpawner] {message}");
-    }
+    private void Log(string message) => Debug.Log($"[MonsterSpawner] {message}");
+    private void LogWarning(string message) => Debug.LogWarning($"[MonsterSpawner] {message}");
+    private void LogError(string message) => Debug.LogError($"[MonsterSpawner] {message}");
 
     private void OpenWindows()
     {
@@ -304,52 +257,37 @@ public class ShadowMonsterSpawner : MonoBehaviour
         if (windowL != null)
         {
             windowL.SetActive(true);
-            windowL.transform.rotation = Quaternion.Euler(0, openWindowRotationL, 0); // Set absolute rotation
+            windowL.transform.rotation = Quaternion.Euler(0, openWindowRotationL, 0);
         }
-        else
-        {
-            LogWarning("Window L is null!");
-        }
+        else LogWarning("Window L is null!");
 
         if (windowR != null)
         {
             windowR.SetActive(true);
-            windowR.transform.rotation = Quaternion.Euler(0, openWindowRotationR, 0); // Set absolute rotation
+            windowR.transform.rotation = Quaternion.Euler(0, openWindowRotationR, 0);
         }
-        else
-        {
-            LogWarning("Window R is null!");
-        }
+        else LogWarning("Window R is null!");
     }
 
     private void CloseWindows()
     {
-        if (windows == null || windows.Count != 2)
-        {
-            return;
-        }
+        if (windows == null || windows.Count != 2) return;
 
         GameObject windowL = windows[0];
         GameObject windowR = windows[1];
 
         if (windowL != null)
         {
-            windowL.SetActive(false); // Deactivate the window
-            windowL.transform.rotation = Quaternion.Euler(0, closedWindowRotation, 0); // Set absolute rotation
+            windowL.SetActive(false);
+            windowL.transform.rotation = Quaternion.Euler(0, closedWindowRotation, 0);
         }
-        else
-        {
-            LogWarning("Window L is null!");
-        }
+        else LogWarning("Window L is null!");
 
         if (windowR != null)
         {
-            windowR.SetActive(false); // Deactivate the window
-            windowR.transform.rotation = Quaternion.Euler(0, closedWindowRotation, 0); // Set absolute rotation
+            windowR.SetActive(false);
+            windowR.transform.rotation = Quaternion.Euler(0, closedWindowRotation, 0);
         }
-        else
-        {
-            LogWarning("Window R is null!");
-        }
+        else LogWarning("Window R is null!");
     }
 }
