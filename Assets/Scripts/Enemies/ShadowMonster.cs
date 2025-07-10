@@ -18,6 +18,7 @@ namespace Enemies
         private static readonly int IsMovingHash = Animator.StringToHash("IsMoving");
         private static readonly int IsAttackingHash = Animator.StringToHash("IsAttacking");
         private static readonly int IsDeadHash = Animator.StringToHash("IsDead");
+        private static readonly int IsInAttackRangeHash = Animator.StringToHash("IsInAttackRange");
         private static readonly int IdleHash = Animator.StringToHash("Idle");
         private static readonly int IdleOnAirHash = Animator.StringToHash("Spider_Idle_On_Air");
         private static readonly int ChargeHash = Animator.StringToHash("Spider_Charge");
@@ -33,6 +34,7 @@ namespace Enemies
         [SerializeField] private float rotationSpeed = 5f;
         [SerializeField] private float damageAmount = 10f;
         [SerializeField] private float attackCooldown = 1.5f;
+        [SerializeField] private GameObject attackHitbox;
 
         [Header("Ground Check")]
         [SerializeField] private LayerMask groundLayer;
@@ -45,21 +47,30 @@ namespace Enemies
         private GameObject target;
         private bool isDead;
         private bool isGrounded;
+        private Transform hitboxTransform;
 
-        private void Awake()
+        private new void Awake()
         {
             base.Awake();
             agent = GetComponent<NavMeshAgent>();
+
+            if (attackHitbox != null)
+            {
+                hitboxTransform = attackHitbox.transform;
+                attackHitbox.SetActive(false);
+            }
         }
 
         private void OnEnable() => ResetMonster();
 
         private void Update()
         {
-            if (isDead) return;
+            if (isDead || currentState == MonsterState.Attacking || currentState == MonsterState.Charging) return;
 
             isGrounded = IsGrounded();
             animator.SetBool(IsGroundedHash, isGrounded);
+            bool inAttackRange = IsInAttackRange();
+            animator.SetBool(IsInAttackRangeHash, inAttackRange);
 
             if (currentState == MonsterState.Held)
             {
@@ -96,8 +107,6 @@ namespace Enemies
                     if (IsInAttackRange()) ChangeState(MonsterState.Charging);
                     else ChaseTarget();
                     break;
-                case MonsterState.Attacking:
-                    break;
             }
 
             if (agent.enabled && agent.velocity.magnitude > 0.1f)
@@ -126,9 +135,11 @@ namespace Enemies
                     Wander();
                     break;
                 case MonsterState.Charging:
+                    agent.isStopped = true;
                     StartCoroutine(AttackSequence());
                     break;
                 case MonsterState.Attacking:
+                    agent.isStopped = true;
                     animator.SetBool(IsAttackingHash, true);
                     PlayAnimation(AttackHash);
                     break;
@@ -196,6 +207,7 @@ namespace Enemies
         {
             agent.isStopped = true;
             PlayAnimation(ChargeHash);
+
             yield return new WaitForSeconds(chargeDelay);
 
             if (!isGrounded || isDead)
@@ -205,7 +217,23 @@ namespace Enemies
             }
 
             ChangeState(MonsterState.Attacking);
-            yield return new WaitForSeconds(0.5f);
+            yield return PerformAttack();
+        }
+
+        private IEnumerator PerformAttack()
+        {
+            attackHitbox.SetActive(true);
+            float t = 0f;
+            float duration = 0.35f;
+            float maxScale = 0.003f;
+
+            while (t < duration)
+            {
+                t += Time.deltaTime;
+                float scale = Mathf.Lerp(0f, maxScale, t / duration);
+                hitboxTransform.localScale = Vector3.one * scale;
+                yield return null;
+            }
 
             if (target != null)
             {
@@ -221,18 +249,37 @@ namespace Enemies
                 }
             }
 
-            yield return new WaitForSeconds(attackCooldown);
+            yield return new WaitForSeconds(0.15f);
+            attackHitbox.SetActive(false);
+            hitboxTransform.localScale = Vector3.zero;
+
             animator.SetBool(IsAttackingHash, false);
             ChangeState(MonsterState.Idle);
+            yield return new WaitForSeconds(attackCooldown);
         }
 
         private void PlayIdleAnimation() => PlayAnimation(IdleHash);
 
         private void PlayAnimation(int animationHash)
         {
-            if (animator == null) return;
-            if (!animator.IsInTransition(0) && animator.GetCurrentAnimatorStateInfo(0).shortNameHash != animationHash)
-                animator.CrossFade(animationHash, 0.2f);
+            if (animator == null || !animator.isActiveAndEnabled || animator.layerCount == 0) return;
+            if (!HasAnimationState(animationHash)) return;
+
+            AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+            if (!animator.IsInTransition(0) && stateInfo.shortNameHash != animationHash)
+            {
+                animator.CrossFade(animationHash, 0.2f, 0);
+            }
+        }
+
+        private bool HasAnimationState(int hash)
+        {
+            for (int i = 0; i < animator.layerCount; i++)
+            {
+                if (animator.HasState(i, hash))
+                    return true;
+            }
+            return false;
         }
 
         public void OnPickup()
@@ -253,7 +300,7 @@ namespace Enemies
 
         private IEnumerator WaitForLandingThenReset()
         {
-            yield return new WaitUntil(() => IsGrounded());
+            yield return new WaitUntil(IsGrounded);
 
             if (NavMesh.SamplePosition(transform.position, out NavMeshHit navHit, 1f, NavMesh.AllAreas))
             {

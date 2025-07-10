@@ -1554,7 +1554,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &157064670
 Transform:
@@ -1847,7 +1847,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &220164500
 Transform:
@@ -4250,7 +4250,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &437440925
 Transform:
@@ -4332,6 +4332,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Speed
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4478516609795976183, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
+        type: 3}
+      propertyPath: m_AngularSpeed
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 8314641946612675146, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
         type: 3}
@@ -8161,6 +8166,12 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e367714f162349d48a5cb6f00133e149, type: 3}
+--- !u!1 &705780039 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7304744200883531375, guid: 98f33dce55e98574bb6bd02fd309cbf4,
+    type: 3}
+  m_PrefabInstance: {fileID: 7552531205614386090}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &706134514
 GameObject:
   m_ObjectHideFlags: 0
@@ -9504,12 +9515,27 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 7552531205614386090}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 705780039}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bd2ae3da4290e914fb8c0299e7686140, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &852293153
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 705780039}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f268793c3874974794bc06770bbf2df, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  spiderPrefab: {fileID: 8658269655017285872, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
+    type: 3}
+  initialPoolSize: 10
 --- !u!1 &865621712 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -3091470597600009152, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
@@ -14470,7 +14496,7 @@ PrefabInstance:
     - target: {fileID: 2541463324673714278, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 2147483647
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2706002124688521451, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
@@ -19376,7 +19402,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &1539648699
 Transform:
@@ -30119,7 +30145,11 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1746982445}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7304744200883531375, guid: 98f33dce55e98574bb6bd02fd309cbf4,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 852293153}
   m_SourcePrefab: {fileID: 100100000, guid: 98f33dce55e98574bb6bd02fd309cbf4, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
