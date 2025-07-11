@@ -23,7 +23,7 @@ namespace Items
                 if (seedRigidbody == null)
                 {
                     Debug.LogError("Rigidbody is missing on MagicalSeed! Please add one manually.");
-                    enabled = false; // Disable script if critical component is missing
+                    enabled = false;
                     return;
                 }
             }
@@ -37,7 +37,7 @@ namespace Items
                 if (seedGrabInteractable == null)
                 {
                     Debug.LogError("XRGrabInteractable is missing on MagicalSeed! Please add one manually.");
-                    enabled = false; // Disable script if critical component is missing
+                    enabled = false;
                     return;
                 }
             }
@@ -49,8 +49,8 @@ namespace Items
                 if (seedCollider == null)
                 {
                     Debug.LogError("Collider is missing on MagicalSeed! Please add one manually.");
-                    enabled = false; // Disable script if critical component is missing
-                    return;
+                    enabled = false;
+                    //return;
                 }
             }
         }

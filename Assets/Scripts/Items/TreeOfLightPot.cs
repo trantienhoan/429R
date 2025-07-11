@@ -3,7 +3,6 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.XR.Interaction.Toolkit;
 using Core;
-//using Items;
 
 namespace Items
 {
@@ -11,7 +10,7 @@ namespace Items
     {
         [Header("Prefabs and References")]
         [SerializeField] private GameObject existingTreeOfLight;
-        [SerializeField] private ParticleSystem growthParticlePrefab; // Add this line
+        [SerializeField] private ParticleSystem growthParticlePrefab;
         [SerializeField] private UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor seedSocket;
         public Transform treeSpawnPoint;
 
@@ -37,8 +36,13 @@ namespace Items
 
         private void Awake()
         {
-            seedSocket = GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor>();
+            if (treeSpawnPoint == null)
+            {
+                Debug.LogError("Tree spawn point not assigned on TreeOfLightPot!");
+                return;
+            }
 
+            seedSocket = GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor>();
             if (seedSocket != null)
             {
                 seedSocket.selectEntered.AddListener(OnSeedSocketEntered);
@@ -49,19 +53,19 @@ namespace Items
                 existingTreeOfLight = treeSpawnPoint.GetComponentInChildren<TreeOfLight>()?.gameObject;
                 if (existingTreeOfLight == null)
                 {
-                    Debug.LogError("Could not find TreeOfLight as a child of treeSpawnPoint.  Please assign it in the Inspector.");
+                    Debug.LogError("Could not find TreeOfLight as a child of treeSpawnPoint. Please assign it in the Inspector.");
                 }
             }
 
-            // Initialize growthParticleInstance here
             if (growthParticlePrefab == null)
             {
                 Debug.LogError("Growth Particle is not assigned in TreeOfLightPot!");
             }
+            else
+            {
+                growthParticleInstance = Instantiate(growthParticlePrefab, treeSpawnPoint.position, Quaternion.identity, transform);
+            }
 
-            growthParticleInstance = growthParticlePrefab;
-            
-            // Get the HealthComponent
             healthComponent = GetComponent<HealthComponent>();
             if (healthComponent == null)
             {
@@ -72,15 +76,12 @@ namespace Items
 
         private void OnSeedSocketEntered(SelectEnterEventArgs args)
         {
-            Debug.Log("OnSeedSocketEntered called!");
-
             if (args.interactableObject is UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable grabInteractable)
             {
                 MagicalSeed seed = grabInteractable.GetComponent<MagicalSeed>();
                 if (seed != null)
                 {
-                    Debug.Log("Seed found, calling PlaceSeed");
-                    StartCoroutine(PlaceSeed(seed));  // Add this line to start the PlaceSeed coroutine
+                    StartCoroutine(PlaceSeed(seed));
                 }
                 else
                 {
@@ -95,78 +96,45 @@ namespace Items
 
         private IEnumerator PlaceSeed(MagicalSeed seed)
         {
-            Debug.Log("PlaceSeed called!");
-
-            // Save initial properties
             initialSeedRotation = seed.transform.rotation;
             initialSeedScale = seed.transform.localScale;
 
-            // Get the XRGrabInteractable, Rigidbody, and Collider components
-            UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable grabInteractable = seed.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
-            Rigidbody rb = seed.GetComponent<Rigidbody>();  
+            var grabInteractable = seed.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
+            var rb = seed.GetComponent<Rigidbody>();
 
-            // Turn off interaction and set Rigidbody to kinematic IMMEDIATELY
-            if (grabInteractable != null)
-            {
-                grabInteractable.enabled = false;
-            }
-            else
-            {
-                Debug.LogWarning("XRGrabInteractable is null on the seed!");
-            }
+            if (grabInteractable != null) grabInteractable.enabled = false;
+            if (rb != null) StartCoroutine(SetKinematicDelayed(rb));
 
-            if (rb != null)
-            {
-                StartCoroutine(SetKinematicDelayed(rb));
-            }
-            else
-            {
-                Debug.LogWarning("Rigidbody is null on the seed!");
-            }
-
-            // Make sure seed is not re-planted
             seedSocket.socketActive = false;
-
-            // Assign planted Seed to be used on other functions
             plantedSeed = seed;
 
-            // Activate the tree FIRST
             treeInstance = ActivateExistingTree();
-            if (treeInstance == null)
-            {
-                Debug.LogError("Failed to activate tree.  Aborting PlaceSeed.");
-                yield break;
-            }
+            if (treeInstance == null) yield break;
 
-            tree = treeInstance.GetComponent<TreeOfLight>(); // Get the TreeOfLight component
+            tree = treeInstance.GetComponent<TreeOfLight>();
             if (tree != null)
             {
-                tree.SetParentPot(this); //Connect the parent pot
-                tree.OnPotDeath += HandlePotDeath; // Subscribe to the OnPotDeath event
+                tree.SetParentPot(this);
+                tree.OnPotDeath += HandlePotDeath;
                 if (tree.healthComponent != null)
                 {
-                    tree.healthComponent.OnDeath += HandleTreeOfDeath; // Subscribe to Tree's OnDeath event
+                    tree.healthComponent.OnDeath += HandleTreeOfDeath;
                 }
                 else
                 {
                     Debug.LogError("TreeOfLight's HealthComponent is null!");
                 }
-                StartGrowthParticles(); // moved start particle here
-                tree.BeginGrowth(); // Start tree growth, pass the growthSpeed
+                StartGrowthParticles();
+                tree.BeginGrowth();
                 onGrowthStarted.Invoke();
             }
-            else
-            {
-                Debug.LogWarning("Tree component is null on instantiated tree!");
-            }
 
-            // Start the smooth movement coroutine AFTER activating the tree
             yield return StartCoroutine(MoveSeedToSpawnPoint(seed, seedMoveDuration));
         }
 
         private IEnumerator SetKinematicDelayed(Rigidbody rb)
         {
-            yield return new WaitForSeconds(0.0f); // A short delay
+            yield return new WaitForSeconds(0.0f);
             rb.isKinematic = true;
         }
 
@@ -174,13 +142,13 @@ namespace Items
         {
             if (existingTreeOfLight != null)
             {
-                existingTreeOfLight.SetActive(true); // Activate the existing instance
-                return existingTreeOfLight; // Return the existing instance
+                existingTreeOfLight.SetActive(true);
+                return existingTreeOfLight;
             }
             else
             {
                 Debug.LogError("existingTreeOfLight is not assigned in TreeOfLightPot!");
-                return null; // Return null in case of error
+                return null;
             }
         }
 
@@ -188,64 +156,31 @@ namespace Items
         {
             Vector3 startPosition = seed.transform.position;
             Quaternion startRotation = seed.transform.rotation;
-            Vector3 targetScale = Vector3.zero; // Target scale is now zero
+            Vector3 targetPosition = treeSpawnPoint.position - Vector3.up * 0.1f;
+            Vector3 targetScale = Vector3.zero;
 
             float timeElapsed = 0;
 
             while (timeElapsed < duration)
             {
                 float t = timeElapsed / duration;
-                // Smooth the movement with SmoothStep
                 t = t * t * (3f - 2f * t);
 
-                seed.transform.position = Vector3.Lerp(startPosition, treeSpawnPoint.position, t);
+                seed.transform.position = Vector3.Lerp(startPosition, targetPosition, t);
                 seed.transform.rotation = Quaternion.Slerp(startRotation, treeSpawnPoint.rotation, t);
-                seed.transform.localScale = Vector3.Lerp(initialSeedScale, targetScale, t); // Smoothly scale towards targetScale
+                seed.transform.localScale = Vector3.Lerp(initialSeedScale, targetScale, t);
 
                 timeElapsed += Time.deltaTime;
                 yield return null;
             }
 
-            // Ensure the final position, rotation, and scale are EXACTLY correct
-            seed.transform.position = treeSpawnPoint.position;
+            seed.transform.position = targetPosition;
             seed.transform.rotation = treeSpawnPoint.rotation;
-            seed.transform.localScale = targetScale; // Apply target scale
+            seed.transform.localScale = targetScale;
 
-            Renderer treeRenderer = treeInstance.GetComponentInChildren<Renderer>();
-            if (treeRenderer != null)
-            {
-                treeRenderer.enabled = true; // Make the tree visible
-            }
-            else
-            {
-                Debug.LogWarning("Renderer component not found on the tree or its children!");
-            }
+            var treeRenderer = treeInstance.GetComponentInChildren<Renderer>();
+            if (treeRenderer != null) treeRenderer.enabled = true;
         }
-
-        // NEW: Method to handle the growth finished event
-        // private void HandleGrowthFinished()
-        // {
-        //     Debug.Log("Tree growth finished!");
-        //     onGrowthCompleted.Invoke();
-        //     StartCoroutine(DeactivateTreeAfterDelay());
-        // }
-
-        // NEW: Coroutine to deactivate the tree after a delay
-        // private IEnumerator DeactivateTreeAfterDelay()
-        // {
-        //     Debug.Log($"Deactivating tree in {deactivationDelay} seconds...");
-        //     yield return new WaitForSeconds(deactivationDelay);
-        //     Debug.Log("Deactivating tree now.");
-        //     StopGrowthParticles();
-        //     if (treeInstance != null)
-        //     {
-        //         treeInstance.SetActive(false);
-        //     }
-        //     else
-        //     {
-        //         Debug.LogWarning("treeInstance is null, cannot deactivate.");
-        //     }
-        // }
 
         private void StartGrowthParticles()
         {
@@ -253,10 +188,6 @@ namespace Items
             {
                 growthParticleInstance.gameObject.SetActive(true);
                 growthParticleInstance.Play();
-            }
-            else
-            {
-                Debug.LogError("Growth Particle Instance not found!");
             }
         }
 
@@ -268,60 +199,40 @@ namespace Items
                 growthParticleInstance.gameObject.SetActive(false);
             }
         }
+
         private void HandlePotDeath()
         {
-            Debug.Log("Tree is dead! Applying fatal damage to TreeOfLightPot.");
             StopGrowthParticles();
-
-            // Unsubscribe from the event to prevent memory leaks
-            if (tree != null)
-            {
-                tree.OnPotDeath -= HandlePotDeath;
-            }
-
-            // Apply fatal damage to the TreeOfLightPot's HealthComponent
+            if (tree != null) tree.OnPotDeath -= HandlePotDeath;
             if (healthComponent != null)
             {
                 healthComponent.TakeDamage(healthComponent.MaxHealth, transform.position, gameObject);
                 Destroy(gameObject);
             }
-            else
-            {
-                Debug.LogError("HealthComponent is null on TreeOfLightPot! Cannot apply damage.");
-            }
         }
 
         private void OnDestroy()
         {
-            // Ensure the event is unsubscribed when the pot is destroyed
             if (tree != null && tree.healthComponent != null)
             {
                 tree.healthComponent.OnDeath -= HandleTreeOfDeath;
                 tree.OnPotDeath -= HandlePotDeath;
             }
         }
-        
+
         private void HandleTreeOfDeath(HealthComponent health)
         {
-            Debug.Log("TreeOfLight has died! Applying fatal damage to TreeOfLightPot.");
             StopGrowthParticles();
-
-            // Unsubscribe from the event to prevent memory leaks
             if (tree != null && tree.healthComponent != null)
             {
                 tree.healthComponent.OnDeath -= HandleTreeOfDeath;
                 tree.OnPotDeath -= HandlePotDeath;
             }
 
-            // Apply fatal damage to the TreeOfLightPot's HealthComponent
             if (healthComponent != null)
             {
                 healthComponent.TakeDamage(healthComponent.MaxHealth, transform.position, gameObject);
-                Destroy(gameObject); // Destroy the pot after taking damage
-            }
-            else
-            {
-                Debug.LogError("HealthComponent is null on TreeOfLightPot! Cannot apply damage.");
+                Destroy(gameObject);
             }
         }
     }

@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
-using UnityEngine.AI;
+//using UnityEngine.AI;
 using Core;
 
 namespace Items
@@ -37,8 +37,8 @@ namespace Items
         {
             Sword,
             Hammer,
-            Axe,
-            Spear
+            //Axe,
+            //Spear
         }
 
         private void Awake()
@@ -94,7 +94,6 @@ namespace Items
 
             float damageAmount = baseDamage * (currentSpeed / 5f);
             Vector3 collisionPoint = collision.contacts[0].point;
-            Vector3 collisionNormal = collision.contacts[0].normal;
 
             if (weaponType == WeaponType.Hammer &&
                 Vector3.Dot(movementDirection, -Vector3.up) > verticalSwingThreshold &&
@@ -102,7 +101,7 @@ namespace Items
             {
                 if (groundImpactEffectPrefab != null)
                 {
-                    Instantiate(groundImpactEffectPrefab, collisionPoint, Quaternion.LookRotation(collisionNormal));
+                    Instantiate(groundImpactEffectPrefab, collisionPoint, Quaternion.LookRotation(collision.contacts[0].normal));
                 }
                 ApplyAreaDamage(collisionPoint, 3f, damageAmount * 1.5f);
             }
@@ -119,17 +118,21 @@ namespace Items
                 }
             }
 
-            var breakableObject = collision.gameObject.GetComponent<JiggleBreakableObject>();
+            var breakableObject = collision.gameObject.GetComponent<JiggleBreakableBigObject>();
             if (breakableObject != null)
             {
-                breakableObject.TakeDamage(damageAmount, collisionPoint, collisionNormal);
+                HealthComponent healthComponent = breakableObject.GetComponent<HealthComponent>();
+                if (healthComponent != null)
+                {
+                    healthComponent.TakeDamage(damageAmount, collisionPoint, gameObject);
+                }
                 return;
             }
 
             var treeOfLight = collision.gameObject.GetComponentInChildren<TreeOfLight>();
             if (treeOfLight != null)
             {
-                treeOfLight.GetComponent<HealthComponent>().TakeDamage(treeOfLightDamageMultiplier * damageAmount, collisionPoint, gameObject);
+                treeOfLight.GetComponent<HealthComponent>().TakeDamage(damageAmount * treeOfLightDamageMultiplier, collisionPoint, gameObject);
                 return;
             }
 
@@ -153,13 +156,16 @@ namespace Items
             int count = Physics.OverlapSphereNonAlloc(center, radius, hitColliders);
             for (int i = 0; i < count; i++)
             {
-                var breakable = hitColliders[i].GetComponent<JiggleBreakableObject>();
+                var breakable = hitColliders[i].GetComponent<JiggleBreakableBigObject>();
                 if (breakable != null)
                 {
-                    float distance = Vector3.Distance(center, hitColliders[i].transform.position);
-                    float damageWithFalloff = damage * (1f - (distance / radius));
-                    Vector3 direction = (hitColliders[i].transform.position - center).normalized;
-                    breakable.TakeDamage(damageWithFalloff, hitColliders[i].transform.position, direction);
+                    HealthComponent healthComponent = breakable.GetComponent<HealthComponent>();
+                    if (healthComponent != null)
+                    {
+                        float distance = Vector3.Distance(center, hitColliders[i].transform.position);
+                        float damageWithFalloff = damage * (1f - (distance / radius));
+                        healthComponent.TakeDamage(damageWithFalloff, hitColliders[i].transform.position, gameObject);
+                    }
                 }
             }
         }
@@ -179,7 +185,7 @@ namespace Items
         private Vector3 direction;
         private float speed;
         private float damage;
-        private float lifespan = 1.5f;
+        private readonly float lifespan = 1.5f;
 
         public void Initialize(Vector3 dir, float spd, float dmg)
         {
@@ -196,10 +202,14 @@ namespace Items
 
         private void OnTriggerEnter(Collider other)
         {
-            var breakable = other.GetComponent<JiggleBreakableObject>();
+            var breakable = other.GetComponent<JiggleBreakableBigObject>();
             if (breakable != null)
             {
-                breakable.TakeDamage(damage, transform.position, direction);
+                HealthComponent healthComponent = breakable.GetComponent<HealthComponent>();
+                if (healthComponent != null)
+                {
+                    healthComponent.TakeDamage(damage, transform.position, gameObject);
+                }
             }
             Destroy(gameObject);
         }
