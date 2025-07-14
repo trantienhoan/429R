@@ -103,7 +103,7 @@ namespace Items
         {
             if (isGrowing && !isComplete)
             {
-                transform.Rotate(Vector3.up * 30f * Time.deltaTime);
+                transform.Rotate(Vector3.up * (30f * Time.deltaTime));
             }
         }
 

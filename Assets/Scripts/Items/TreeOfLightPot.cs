@@ -14,10 +14,10 @@ namespace Items
         [SerializeField] private UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor seedSocket;
         public Transform treeSpawnPoint;
 
-        [Header("Timings")]
-        [Tooltip("Duration of seed transition to spawn point.")]
+        //[Header("Timings")]
+        //[Tooltip("Duration of seed transition to spawn point.")]
         [SerializeField] private float seedMoveDuration = 1.0f;
-        [SerializeField] private float deactivationDelay = 5f;
+        //[SerializeField] private float deactivationDelay = 5f;
 
         [Header("Events")]
         public UnityEvent onGrowthStarted;

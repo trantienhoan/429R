@@ -1,90 +1,91 @@
-using UnityEngine;
 using System.Collections;
-using UnityEngine.SceneManagement;
+using UnityEngine;
 
-public class Bomb : MonoBehaviour
+//using UnityEngine.SceneManagement;
+
+namespace Items
 {
-    [SerializeField] private float delay = 4f;
-    [SerializeField] private float particleDelay = 2f;
-    [SerializeField] private ParticleSystem explosionEffectPrefab;
-    [SerializeField] private float scaleDuration = 2f;
-    [SerializeField] private Vector3 maxScale = Vector3.one * 5f;
-
-    private bool _isArmed = false;
-    private Vector3 _initialScale;
-
-    void Start()
+    public class Bomb : MonoBehaviour
     {
-        _initialScale = transform.localScale;
-        ArmBomb(); // Immediately arm the bomb when it's in the scene
-    }
+        [SerializeField] private float delay = 4f;
+        [SerializeField] private float particleDelay = 2f;
+        [SerializeField] private ParticleSystem explosionEffectPrefab;
+        [SerializeField] private float scaleDuration = 2f;
+        [SerializeField] private Vector3 maxScale = Vector3.one * 5f;
 
-    private void ArmBomb()
-    {
-        if (!_isArmed)
+        private bool isArmed;
+
+        void Start()
         {
-            _isArmed = true;
-            StartCoroutine(BombSequence());
-        }
-    }
-
-    private IEnumerator BombSequence()
-    {
-        // Start scaling up immediately
-        StartCoroutine(ScaleBomb());
-
-        // Wait for the initial particle delay
-        yield return new WaitForSeconds(particleDelay);
-
-        // Play the particle effect
-        if (explosionEffectPrefab != null)
-        {
-            ParticleSystem explosionEffect = Instantiate(explosionEffectPrefab);
-            explosionEffect.transform.position = transform.position; // Set position
-            explosionEffect.transform.SetParent(null); // Detach from parent
-            explosionEffect.Play(); // Start the particle system
-        }
-        else
-        {
-            Debug.LogError("explosionEffect is null!  Make sure it's assigned in the Inspector.");
+            ArmBomb(); // Immediately arm the bomb when it's in the scene
         }
 
-
-        // Wait for the remaining time
-        if (delay > particleDelay)
+        private void ArmBomb()
         {
-            yield return new WaitForSeconds(delay - particleDelay);
-        }
-        else
-        {
-            Debug.LogWarning("Particle Delay is same or more than total delay");
-        }
-        RestartGame();
-    }
-
-    private IEnumerator ScaleBomb()
-    {
-        float timeElapsed = 0f;
-        Vector3 startScale = transform.localScale;
-
-        if (scaleDuration <= 0)
-        {
-            Debug.LogWarning("Scale duration is 0 or less. Scaling will not occur.");
-            yield break; // Exit the coroutine
+            if (!isArmed)
+            {
+                isArmed = true;
+                StartCoroutine(BombSequence());
+            }
         }
 
-        while (timeElapsed < scaleDuration)
+        private IEnumerator BombSequence()
         {
-            transform.localScale = Vector3.Lerp(startScale, maxScale, timeElapsed / scaleDuration);
-            timeElapsed += Time.deltaTime;
-            yield return null;
+            // Start scaling up immediately
+            StartCoroutine(ScaleBomb());
+
+            // Wait for the initial particle delay
+            yield return new WaitForSeconds(particleDelay);
+
+            // Play the particle effect
+            if (explosionEffectPrefab != null)
+            {
+                ParticleSystem explosionEffect = Instantiate(explosionEffectPrefab, null, true);
+                explosionEffect.transform.position = transform.position; // Set position
+                explosionEffect.Play(); // Start the particle system
+            }
+            else
+            {
+                Debug.LogError("explosionEffect is null!  Make sure it's assigned in the Inspector.");
+            }
+
+
+            // Wait for the remaining time
+            if (delay > particleDelay)
+            {
+                yield return new WaitForSeconds(delay - particleDelay);
+            }
+            else
+            {
+                Debug.LogWarning("Particle Delay is same or more than total delay");
+            }
+            RestartGame();
         }
 
-        transform.localScale = maxScale; // Ensure final scale is set
-    }
+        private IEnumerator ScaleBomb()
+        {
+            float timeElapsed = 0f;
+            Vector3 startScale = transform.localScale;
 
-    private void RestartGame()
-    {
-        SceneTransitionManager.Singleton.GoToSceneAsync(0);
+            if (scaleDuration <= 0)
+            {
+                Debug.LogWarning("Scale duration is 0 or less. Scaling will not occur.");
+                yield break; // Exit the coroutine
+            }
+
+            while (timeElapsed < scaleDuration)
+            {
+                transform.localScale = Vector3.Lerp(startScale, maxScale, timeElapsed / scaleDuration);
+                timeElapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            transform.localScale = maxScale;
+        }
+
+        private void RestartGame()
+        {
+            SceneTransitionManager.Singleton.GoToSceneAsync(0);
+        }
     }
 }

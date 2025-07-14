@@ -43,11 +43,17 @@ namespace Enemies
         [SerializeField] private float wanderRadius = 5f;
         [SerializeField] private float wanderDelay = 5f;
 
+        [SerializeField] private float stuckAttackTime = 2f;
+        [SerializeField] private float stuckVelocityThreshold = 0.05f;
+
         private float lastWanderTime;
+        private float stuckTimer;
         private GameObject target;
         private bool isDead;
         private bool isGrounded;
         private Transform hitboxTransform;
+        private Vector3 defaultHitboxLocalPosition;
+        private Quaternion defaultHitboxLocalRotation;
 
         private new void Awake()
         {
@@ -57,6 +63,8 @@ namespace Enemies
             if (attackHitbox != null)
             {
                 hitboxTransform = attackHitbox.transform;
+                defaultHitboxLocalPosition = hitboxTransform.localPosition;
+                defaultHitboxLocalRotation = hitboxTransform.localRotation;
                 attackHitbox.SetActive(false);
             }
         }
@@ -106,6 +114,22 @@ namespace Enemies
                     }
                     if (IsInAttackRange()) ChangeState(MonsterState.Charging);
                     else ChaseTarget();
+
+                    float currentSpeed = agent.velocity.magnitude;
+                    if (currentSpeed < stuckVelocityThreshold)
+                    {
+                        stuckTimer += Time.deltaTime;
+                        if (stuckTimer >= stuckAttackTime)
+                        {
+                            Debug.Log("Spider stuck too long — forcing attack.");
+                            ChangeState(MonsterState.Charging);
+                            stuckTimer = 0f;
+                        }
+                    }
+                    else
+                    {
+                        stuckTimer = 0f;
+                    }
                     break;
             }
 
@@ -252,10 +276,27 @@ namespace Enemies
             yield return new WaitForSeconds(0.15f);
             attackHitbox.SetActive(false);
             hitboxTransform.localScale = Vector3.zero;
+            ResetAttackHitbox();
 
             animator.SetBool(IsAttackingHash, false);
             ChangeState(MonsterState.Idle);
             yield return new WaitForSeconds(attackCooldown);
+        }
+
+        private void ResetAttackHitbox()
+        {
+            if (hitboxTransform == null) return;
+
+            hitboxTransform.localPosition = defaultHitboxLocalPosition;
+            hitboxTransform.localRotation = defaultHitboxLocalRotation;
+
+            Rigidbody rb = hitboxTransform.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+                rb.Sleep();
+            }
         }
 
         private void PlayIdleAnimation() => PlayAnimation(IdleHash);

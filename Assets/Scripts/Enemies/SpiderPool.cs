@@ -10,7 +10,7 @@ namespace Enemies
         [SerializeField] private GameObject spiderPrefab;
         [SerializeField] private int initialPoolSize = 10;
 
-        private Queue<GameObject> pool = new Queue<GameObject>();
+        private readonly Queue<GameObject> pool = new Queue<GameObject>();
 
         private void Awake()
         {
@@ -35,16 +35,7 @@ namespace Enemies
 
         public GameObject GetSpider(Vector3 position, Quaternion rotation)
         {
-            GameObject spider;
-
-            if (pool.Count > 0)
-            {
-                spider = pool.Dequeue();
-            }
-            else
-            {
-                spider = Instantiate(spiderPrefab);
-            }
+            var spider = pool.Count > 0 ? pool.Dequeue() : Instantiate(spiderPrefab);
 
             spider.transform.position = position;
             spider.transform.rotation = rotation;
