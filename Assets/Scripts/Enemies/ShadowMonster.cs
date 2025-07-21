@@ -1,13 +1,13 @@
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
-using Core;
+//using Core;
 
 namespace Enemies
 {
     public class ShadowMonster : BaseMonster
     {
-        private enum MonsterState { Held, Falling, Idle, Wandering, Chasing, Charging, Attacking, Dead }
+        private enum MonsterState { Held, Falling, Idle, Wandering, Chasing, Charging, Exploding, Dead }
         private MonsterState currentState = MonsterState.Falling;
 
         private NavMeshAgent agent;
@@ -16,9 +16,7 @@ namespace Enemies
         [SerializeField] private Animator animator;
         private static readonly int IsGroundedHash = Animator.StringToHash("IsGrounded");
         private static readonly int IsMovingHash = Animator.StringToHash("IsMoving");
-        private static readonly int IsAttackingHash = Animator.StringToHash("IsAttacking");
         private static readonly int IsDeadHash = Animator.StringToHash("IsDead");
-        private static readonly int IsInAttackRangeHash = Animator.StringToHash("IsInAttackRange");
         private static readonly int IdleHash = Animator.StringToHash("Idle");
         private static readonly int IdleOnAirHash = Animator.StringToHash("Spider_Idle_On_Air");
         private static readonly int ChargeHash = Animator.StringToHash("Spider_Charge");
@@ -26,28 +24,22 @@ namespace Enemies
         private static readonly int WalkHash = Animator.StringToHash("Spider_Walk_Cycle");
         private static readonly int DieHash = Animator.StringToHash("Spider_Die");
 
-        [Header("Attack")]
+        [Header("Explosion Attack")]
         [SerializeField] private float chaseRange = 10f;
         [SerializeField] private float attackRange = 2f;
-        [SerializeField] private float attackAngleThreshold = 0.5f;
-        [SerializeField] private float chargeDelay = 0.75f;
-        [SerializeField] private float rotationSpeed = 5f;
-        [SerializeField] private float damageAmount = 10f;
-        [SerializeField] private float attackCooldown = 1.5f;
+        [SerializeField] private float chargeDelay = 1f;
+        [SerializeField] private float damageAmount = 25f;
         [SerializeField] private GameObject attackHitbox;
+
+        [Header("Wandering")]
+        [SerializeField] private float wanderRadius = 5f;
+        [SerializeField] private float wanderDelay = 5f;
 
         [Header("Ground Check")]
         [SerializeField] private LayerMask groundLayer;
         [SerializeField] private float groundCheckDistance = 0.2f;
 
-        [SerializeField] private float wanderRadius = 5f;
-        [SerializeField] private float wanderDelay = 5f;
-
-        [SerializeField] private float stuckAttackTime = 2f;
-        [SerializeField] private float stuckVelocityThreshold = 0.05f;
-
         private float lastWanderTime;
-        private float stuckTimer;
         private GameObject target;
         private bool isDead;
         private bool isGrounded;
@@ -73,12 +65,11 @@ namespace Enemies
 
         private void Update()
         {
-            if (isDead || currentState == MonsterState.Attacking || currentState == MonsterState.Charging) return;
+            if (isDead || currentState == MonsterState.Exploding || currentState == MonsterState.Charging)
+                return;
 
             isGrounded = IsGrounded();
             animator.SetBool(IsGroundedHash, isGrounded);
-            bool inAttackRange = IsInAttackRange();
-            animator.SetBool(IsInAttackRangeHash, inAttackRange);
 
             if (currentState == MonsterState.Held)
             {
@@ -97,39 +88,32 @@ namespace Enemies
                 case MonsterState.Falling:
                     if (isGrounded) ChangeState(MonsterState.Idle);
                     break;
+
                 case MonsterState.Idle:
                     FindTarget();
                     if (target != null) ChangeState(MonsterState.Chasing);
                     else if (Time.time - lastWanderTime > wanderDelay) ChangeState(MonsterState.Wandering);
                     break;
+
                 case MonsterState.Wandering:
                     if (agent.remainingDistance < 0.5f) ChangeState(MonsterState.Idle);
                     FindTarget();
                     break;
+
                 case MonsterState.Chasing:
                     if (target == null)
                     {
                         ChangeState(MonsterState.Idle);
                         return;
                     }
-                    if (IsInAttackRange()) ChangeState(MonsterState.Charging);
-                    else ChaseTarget();
 
-                    float currentSpeed = agent.velocity.magnitude;
-                    if (currentSpeed < stuckVelocityThreshold)
+                    if (IsInAttackRange())
                     {
-                        stuckTimer += Time.deltaTime;
-                        if (stuckTimer >= stuckAttackTime)
-                        {
-                            Debug.Log("Spider stuck too long — forcing attack.");
-                            ChangeState(MonsterState.Charging);
-                            stuckTimer = 0f;
-                        }
+                        ChangeState(MonsterState.Charging);
+                        return;
                     }
-                    else
-                    {
-                        stuckTimer = 0f;
-                    }
+
+                    ChaseTarget();
                     break;
             }
 
@@ -154,22 +138,31 @@ namespace Enemies
                 case MonsterState.Idle:
                     PlayIdleAnimation();
                     break;
+
                 case MonsterState.Wandering:
                     lastWanderTime = Time.time;
                     Wander();
                     break;
+
+                case MonsterState.Chasing:
+                    agent.isStopped = false;
+                    break;
+
                 case MonsterState.Charging:
                     agent.isStopped = true;
-                    StartCoroutine(AttackSequence());
+                    PlayAnimation(ChargeHash);
+                    StartCoroutine(StartExplosionAfterDelay());
                     break;
-                case MonsterState.Attacking:
+
+                case MonsterState.Exploding:
                     agent.isStopped = true;
-                    animator.SetBool(IsAttackingHash, true);
-                    PlayAnimation(AttackHash);
+                    StartCoroutine(Explode());
                     break;
+
                 case MonsterState.Held:
                     agent.enabled = false;
                     break;
+
                 case MonsterState.Dead:
                     animator.SetBool(IsDeadHash, true);
                     Die();
@@ -180,8 +173,7 @@ namespace Enemies
         private bool IsInAttackRange()
         {
             if (target == null) return false;
-            float dist = Vector3.Distance(transform.position, target.transform.position);
-            return dist <= attackRange;
+            return Vector3.Distance(transform.position, target.transform.position) <= attackRange;
         }
 
         private void FindTarget()
@@ -190,9 +182,9 @@ namespace Enemies
             float closestDistance = Mathf.Infinity;
             string[] priorityTags = { "TreeOfLight", "Player", "Furniture" };
 
-            foreach (string searchTag in priorityTags)
+            foreach (string tag in priorityTags)
             {
-                GameObject[] candidates = GameObject.FindGameObjectsWithTag(searchTag);
+                GameObject[] candidates = GameObject.FindGameObjectsWithTag(tag);
                 foreach (GameObject obj in candidates)
                 {
                     float dist = Vector3.Distance(transform.position, obj.transform.position);
@@ -210,8 +202,7 @@ namespace Enemies
 
         private void ChaseTarget()
         {
-            if (target == null || !agent.isOnNavMesh || !agent.enabled) return;
-            agent.isStopped = false;
+            if (target == null || !agent.enabled || !agent.isOnNavMesh) return;
             agent.SetDestination(target.transform.position);
         }
 
@@ -227,60 +218,39 @@ namespace Enemies
             }
         }
 
-        private IEnumerator AttackSequence()
+        private IEnumerator StartExplosionAfterDelay()
         {
-            agent.isStopped = true;
-            PlayAnimation(ChargeHash);
-
             yield return new WaitForSeconds(chargeDelay);
 
-            if (!isGrounded || isDead)
+            if (!isDead && isGrounded)
+            {
+                ChangeState(MonsterState.Exploding);
+            }
+            else
             {
                 ChangeState(MonsterState.Idle);
-                yield break;
             }
-
-            ChangeState(MonsterState.Attacking);
-            yield return PerformAttack();
         }
 
-        private IEnumerator PerformAttack()
+        private IEnumerator Explode()
         {
+            PlayAnimation(AttackHash); // Optional explosion animation
+
+            // Enable hitbox and trigger the explosion logic
             attackHitbox.SetActive(true);
-            float t = 0f;
-            float duration = 0.35f;
-            float maxScale = 0.003f;
 
-            while (t < duration)
+            // Trigger explosion logic in SpiderAttackHitbox
+            var hitboxComponent = attackHitbox.GetComponent<SpiderAttackHitbox>();
+            if (hitboxComponent != null)
             {
-                t += Time.deltaTime;
-                float scale = Mathf.Lerp(0f, maxScale, t / duration);
-                hitboxTransform.localScale = Vector3.one * scale;
-                yield return null;
+                hitboxComponent.Initialize(gameObject, damageAmount, 5f); // optional force value
+                hitboxComponent.TriggerExplosion();
             }
 
-            if (target != null)
-            {
-                float dist = Vector3.Distance(transform.position, target.transform.position);
-                Vector3 toTarget = (target.transform.position - transform.position).normalized;
-                float dot = Vector3.Dot(transform.forward, toTarget);
+            yield return new WaitForSeconds(0.3f); // Let VFX/SFX settle in
 
-                if (dist <= attackRange && dot > attackAngleThreshold)
-                {
-                    HealthComponent hp = target.GetComponent<HealthComponent>();
-                    if (hp != null)
-                        hp.TakeDamage(damageAmount, toTarget, gameObject);
-                }
-            }
-
-            yield return new WaitForSeconds(0.15f);
             attackHitbox.SetActive(false);
-            hitboxTransform.localScale = Vector3.zero;
-            ResetAttackHitbox();
-
-            animator.SetBool(IsAttackingHash, false);
-            ChangeState(MonsterState.Idle);
-            yield return new WaitForSeconds(attackCooldown);
+            ChangeState(MonsterState.Dead);
         }
 
         private void ResetAttackHitbox()
@@ -392,7 +362,6 @@ namespace Enemies
             animator.Rebind();
             animator.Update(0f);
             animator.SetBool(IsDeadHash, false);
-            animator.SetBool(IsAttackingHash, false);
 
             if (NavMesh.SamplePosition(transform.position, out NavMeshHit navHit, 1f, NavMesh.AllAreas))
             {
