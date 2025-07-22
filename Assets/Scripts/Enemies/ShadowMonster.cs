@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
-//using Core;
 
 namespace Enemies
 {
@@ -27,8 +26,8 @@ namespace Enemies
         [Header("Explosion Attack")]
         [SerializeField] private float chaseRange = 10f;
         [SerializeField] private float attackRange = 2f;
-        [SerializeField] private float chargeDelay = 1f;
-        [SerializeField] private float damageAmount = 25f;
+        [SerializeField] private float chargeDelay = 2.5f;
+        [SerializeField] private float damageAmount = 100f;
         [SerializeField] private GameObject attackHitbox;
 
         [Header("Wandering")]
@@ -39,24 +38,21 @@ namespace Enemies
         [SerializeField] private LayerMask groundLayer;
         [SerializeField] private float groundCheckDistance = 0.2f;
 
-        private float lastWanderTime;
         private GameObject target;
+        private float lastWanderTime;
         private bool isDead;
         private bool isGrounded;
-        private Transform hitboxTransform;
-        private Vector3 defaultHitboxLocalPosition;
-        private Quaternion defaultHitboxLocalRotation;
+        private bool isCharging;
+        private Coroutine chargingRoutine;
+        private float lastExplosionTime;
+        [SerializeField] private float explosionCooldown = 1.5f;
 
-        private new void Awake()
+        protected override void Awake()
         {
-            base.Awake();
             agent = GetComponent<NavMeshAgent>();
 
             if (attackHitbox != null)
             {
-                hitboxTransform = attackHitbox.transform;
-                defaultHitboxLocalPosition = hitboxTransform.localPosition;
-                defaultHitboxLocalRotation = hitboxTransform.localRotation;
                 attackHitbox.SetActive(false);
             }
         }
@@ -107,13 +103,8 @@ namespace Enemies
                         return;
                     }
 
-                    if (IsInAttackRange())
-                    {
-                        ChangeState(MonsterState.Charging);
-                        return;
-                    }
-
-                    ChaseTarget();
+                    if (IsInAttackRange()) ChangeState(MonsterState.Charging);
+                    else ChaseTarget();
                     break;
             }
 
@@ -130,7 +121,7 @@ namespace Enemies
 
         private void ChangeState(MonsterState newState)
         {
-            if (currentState == newState) return;
+            if (currentState == newState || isDead) return;
             currentState = newState;
 
             switch (newState)
@@ -149,13 +140,22 @@ namespace Enemies
                     break;
 
                 case MonsterState.Charging:
+                    if (Time.time - lastExplosionTime < explosionCooldown)
+                    {
+                        ChangeState(MonsterState.Idle);
+                        return;
+                    }
+
+                    isCharging = true;
                     agent.isStopped = true;
                     PlayAnimation(ChargeHash);
-                    StartCoroutine(StartExplosionAfterDelay());
+                    chargingRoutine = StartCoroutine(StartExplosionAfterDelay());
                     break;
 
                 case MonsterState.Exploding:
+                    isCharging = false;
                     agent.isStopped = true;
+                    lastExplosionTime = Time.time;
                     StartCoroutine(Explode());
                     break;
 
@@ -172,8 +172,7 @@ namespace Enemies
 
         private bool IsInAttackRange()
         {
-            if (target == null) return false;
-            return Vector3.Distance(transform.position, target.transform.position) <= attackRange;
+            return target != null && Vector3.Distance(transform.position, target.transform.position) <= attackRange;
         }
 
         private void FindTarget()
@@ -220,53 +219,51 @@ namespace Enemies
 
         private IEnumerator StartExplosionAfterDelay()
         {
-            yield return new WaitForSeconds(chargeDelay);
+            float timer = 0f;
 
-            if (!isDead && isGrounded)
+            while (timer < chargeDelay)
+            {
+                if (!isCharging || isDead)
+                {
+                    Debug.Log("[ShadowMonster] Charging interrupted.");
+                    yield break;
+                }
+
+                timer += Time.deltaTime;
+                yield return null;
+            }
+
+            if (isCharging && !isDead && isGrounded)
             {
                 ChangeState(MonsterState.Exploding);
-            }
-            else
-            {
-                ChangeState(MonsterState.Idle);
             }
         }
 
         private IEnumerator Explode()
         {
-            PlayAnimation(AttackHash); // Optional explosion animation
-            Debug.Log($"[ShadowMonster] Exploding... attackHitbox: {attackHitbox}");
-            // Enable hitbox and trigger the explosion logic
-            attackHitbox.SetActive(true);
+            Debug.Log($"[ShadowMonster] Exploding at {transform.position}");
 
-            // Trigger explosion logic in SpiderAttackHitbox
-            var hitboxComponent = attackHitbox.GetComponent<SpiderAttackHitbox>();
-            if (hitboxComponent != null)
+            PlayAnimation(AttackHash);
+            isCharging = false;
+
+            if (attackHitbox != null)
             {
-                hitboxComponent.Initialize(gameObject, damageAmount, 5f); // optional force value
-                hitboxComponent.TriggerExplosion();
+                attackHitbox.SetActive(true);
+
+                var hitbox = attackHitbox.GetComponent<SpiderAttackHitbox>();
+                if (hitbox != null)
+                {
+                    hitbox.Initialize(gameObject, damageAmount, 5f);
+                    hitbox.TriggerExplosion();
+                }
             }
 
-            yield return new WaitForSeconds(0.3f); // Let VFX/SFX settle in
+            yield return new WaitForSeconds(0.3f);
 
-            attackHitbox.SetActive(false);
+            if (attackHitbox != null) attackHitbox.SetActive(false);
+
+            // Trigger death cleanly through state machine
             ChangeState(MonsterState.Dead);
-        }
-
-        private void ResetAttackHitbox()
-        {
-            if (hitboxTransform == null) return;
-
-            hitboxTransform.localPosition = defaultHitboxLocalPosition;
-            hitboxTransform.localRotation = defaultHitboxLocalRotation;
-
-            Rigidbody rb = hitboxTransform.GetComponent<Rigidbody>();
-            if (rb != null)
-            {
-                rb.linearVelocity = Vector3.zero;
-                rb.angularVelocity = Vector3.zero;
-                rb.Sleep();
-            }
         }
 
         private void PlayIdleAnimation() => PlayAnimation(IdleHash);
@@ -286,15 +283,15 @@ namespace Enemies
         private bool HasAnimationState(int hash)
         {
             for (int i = 0; i < animator.layerCount; i++)
-            {
-                if (animator.HasState(i, hash))
-                    return true;
-            }
+                if (animator.HasState(i, hash)) return true;
             return false;
         }
 
         public void OnPickup()
         {
+            isCharging = false;
+            if (chargingRoutine != null) StopCoroutine(chargingRoutine);
+
             ChangeState(MonsterState.Held);
             Rigidbody rb = GetComponent<Rigidbody>();
             rb.isKinematic = false;
@@ -330,6 +327,9 @@ namespace Enemies
         private void Die()
         {
             isDead = true;
+            isCharging = false;
+            if (chargingRoutine != null) StopCoroutine(chargingRoutine);
+
             agent.enabled = false;
             PlayAnimation(DieHash);
             StartCoroutine(ScaleDownAndDestroy());
@@ -357,7 +357,14 @@ namespace Enemies
         private void ResetMonster()
         {
             isDead = false;
+            isCharging = false;
             target = null;
+            currentState = MonsterState.Falling;
+
+            if (chargingRoutine != null) StopCoroutine(chargingRoutine);
+            chargingRoutine = null;
+
+            if (attackHitbox != null) attackHitbox.SetActive(false);
 
             animator.Rebind();
             animator.Update(0f);
@@ -372,7 +379,6 @@ namespace Enemies
             }
 
             transform.localScale = Vector3.one;
-            ChangeState(MonsterState.Falling);
         }
 
         private bool IsGrounded()

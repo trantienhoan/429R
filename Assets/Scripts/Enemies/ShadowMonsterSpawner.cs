@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Enemies;
+//using Enemies;
 using Core;
 
 namespace Enemies
@@ -79,20 +79,19 @@ namespace Enemies
 
         private bool CanSpawnMore() => activeMonsters.Count < maxMonsters;
 
-        private GameObject SpawnMonster()
+        private void SpawnMonster()
         {
             Vector3 spawnPosition = FindValidSpawnPosition();
-            return SpawnMonsterAt(spawnPosition, spawnPosition);
+            SpawnMonsterAt(spawnPosition, spawnPosition);
         }
 
-        private GameObject SpawnMonsterAt(Vector3 startPosition, Vector3 endPosition)
+        private void SpawnMonsterAt(Vector3 startPosition, Vector3 endPosition)
         {
             GameObject monsterInstance = SpiderPool.Instance.GetSpider(startPosition, Quaternion.Euler(0, -90, 0));
             monsterInstance.transform.localScale = monsterPrefab.transform.localScale * initialScaleMultiplier;
 
             RegisterMonster(monsterInstance);
             StartCoroutine(ScaleAndDropMonster(monsterInstance.transform, monsterPrefab.transform.localScale, endPosition));
-            return monsterInstance;
         }
 
         private IEnumerator ScaleAndDropMonster(Transform monsterTransform, Vector3 targetScale, Vector3 targetPosition)
