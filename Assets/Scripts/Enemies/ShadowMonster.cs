@@ -235,7 +235,7 @@ namespace Enemies
         private IEnumerator Explode()
         {
             PlayAnimation(AttackHash); // Optional explosion animation
-
+            Debug.Log($"[ShadowMonster] Exploding... attackHitbox: {attackHitbox}");
             // Enable hitbox and trigger the explosion logic
             attackHitbox.SetActive(true);
 

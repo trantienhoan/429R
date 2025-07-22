@@ -17,7 +17,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1740443824796398036
 Transform:
   m_ObjectHideFlags: 0
@@ -28,7 +28,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0.0015, z: -0}
-  m_LocalScale: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 7658882366548129132}
@@ -52,7 +52,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 1
+  m_Radius: 0.001
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &5078379185537246606
 MonoBehaviour:
@@ -68,7 +68,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   damage: 100
   pushForce: 100
-  lifeDuration: 0.5
+  explosionRadius: 5
   explosionVFX: {fileID: 9169966119468206341, guid: ac47b7785dfae4746bf0ec40640604d7,
     type: 3}
   explosionSFX: {fileID: 8300000, guid: 9118a3d703424a441a222ad5c2ea6971, type: 3}
@@ -1339,8 +1339,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2883e4c1dfd15bf43a546e9d36e341bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 2000
-  currentHealth: 2000
+  maxHealth: 200
+  currentHealth: 200
   invulnerabilityDuration: 1
   healthLight: {fileID: 0}
   breakEffect: {fileID: 8176850701479282266, guid: b219c04f384e7f345bb8ae1fef443965,
