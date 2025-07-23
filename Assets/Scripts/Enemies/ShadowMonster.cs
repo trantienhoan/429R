@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
-//using Core;
 
 namespace Enemies
 {
@@ -23,6 +22,7 @@ namespace Enemies
         private static readonly int AttackHash = Animator.StringToHash("Spider_Attack");
         private static readonly int WalkHash = Animator.StringToHash("Spider_Walk_Cycle");
         private static readonly int DieHash = Animator.StringToHash("Spider_Die");
+        private static readonly int HurtHash = Animator.StringToHash("Spider_Hurt");
 
         [Header("Explosion Attack")]
         [SerializeField] private float chaseRange = 10f;
@@ -40,18 +40,34 @@ namespace Enemies
         [SerializeField] private LayerMask groundLayer;
         [SerializeField] private float groundCheckDistance = 0.2f;
 
-        private GameObject target;
-        private float lastWanderTime;
+        [Header("Health & Damage")]
+        [SerializeField] private float maxHealth = 100f;
+        [SerializeField] private float invulnerabilityDuration = 0.5f;
+        [SerializeField] private ParticleSystem hitVFX;
+        [SerializeField] private AudioClip hitSFX;
+
+        private float currentHealth;
+        private bool isInvulnerable;
         private bool isDead;
         private bool isGrounded;
         private bool isCharging;
         private Coroutine chargingRoutine;
         private bool canExplode = true;
 
+        private GameObject target;
+        private float lastWanderTime;
+        private AudioSource audioSource;
+
         protected override void Awake()
         {
             agent = GetComponent<NavMeshAgent>();
             if (attackHitbox != null) attackHitbox.SetActive(false);
+
+            audioSource = GetComponent<AudioSource>();
+            if (audioSource == null && hitSFX != null)
+            {
+                audioSource = gameObject.AddComponent<AudioSource>();
+            }
         }
 
         private void OnEnable() => ResetMonster();
@@ -96,7 +112,7 @@ namespace Enemies
                     break;
             }
 
-            if (agent.enabled && agent.velocity.magnitude > 0.1f)
+            if (!isCharging && currentState != MonsterState.Attacking && agent.enabled && agent.velocity.magnitude > 0.1f)
             {
                 animator.SetBool(IsMovingHash, true);
                 PlayAnimation(WalkHash);
@@ -140,7 +156,9 @@ namespace Enemies
                     break;
                 case MonsterState.Dead:
                     animator.SetBool(IsDeadHash, true);
-                    Die();
+                    agent.enabled = false;
+                    PlayAnimation(DieHash);
+                    StartCoroutine(ScaleDownAndDestroy());
                     break;
             }
         }
@@ -158,8 +176,7 @@ namespace Enemies
 
             foreach (string tag in priorityTags)
             {
-                GameObject[] candidates = GameObject.FindGameObjectsWithTag(tag);
-                foreach (GameObject obj in candidates)
+                foreach (GameObject obj in GameObject.FindGameObjectsWithTag(tag))
                 {
                     float dist = Vector3.Distance(transform.position, obj.transform.position);
                     if (dist < closestDistance)
@@ -201,7 +218,7 @@ namespace Enemies
 
         private IEnumerator ExplodeDuringAttack()
         {
-            yield return new WaitForSeconds(0.3f); // Let attack animation wind up
+            yield return new WaitForSeconds(0.3f);
 
             if (attackHitbox != null)
             {
@@ -210,23 +227,148 @@ namespace Enemies
                 if (hitbox != null)
                 {
                     hitbox.Initialize(gameObject, damageAmount, 5f);
-                    hitbox.TriggerExplosion(); // Play VFX and apply force/damage
+                    hitbox.TriggerExplosion();
                 }
             }
 
-            yield return new WaitForSeconds(0.3f); // Keep hitbox active briefly
+            yield return new WaitForSeconds(0.3f);
             if (attackHitbox != null) attackHitbox.SetActive(false);
 
-            // Wait for remaining animation and post-explosion VFX
-            yield return new WaitForSeconds(postExplosionCooldown); // Example: 1.2f
+            yield return new WaitForSeconds(postExplosionCooldown);
+            Kill(gameObject);
 
-            // ✅ Proper death via Kill wrapper (triggers HealthComponent → pooling)
-            Debug.Log($"{gameObject.name} is attempting to self-kill after explosion.");
-            if (HealthComponent != null && !HealthComponent.IsDead())
+            yield return new WaitForSeconds(0.5f);
+            if (!isDead)
             {
-                HealthComponent.Kill(gameObject);
-                ChangeState(MonsterState.Dead);
+                Debug.LogWarning("Force-death fallback triggered.");
+                Die(gameObject, damageAmount);
             }
+        }
+
+        public void TakeDamage(float damage, Vector3 hitPoint, GameObject damageSource = null)
+        {
+            if (isDead || isInvulnerable) return;
+
+            Debug.Log($"{gameObject.name} took {damage} damage from {damageSource?.name ?? "Unknown"} at {hitPoint}");
+
+            currentHealth -= damage;
+            currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+
+            SpawnHitVFX(hitPoint);
+            PlayHurtAnimation();
+
+            if (currentHealth <= 0f)
+            {
+                Kill(damageSource);
+            }
+            else
+            {
+                StartCoroutine(InvulnerabilityRoutine());
+            }
+        }
+
+        private void SpawnHitVFX(Vector3 position)
+        {
+            if (hitVFX != null)
+            {
+                var vfx = Instantiate(hitVFX, position, Quaternion.identity);
+                vfx.Play();
+                Destroy(vfx.gameObject, vfx.main.duration + 1f);
+            }
+
+            if (audioSource != null && hitSFX != null)
+            {
+                audioSource.PlayOneShot(hitSFX);
+            }
+        }
+
+        private void PlayHurtAnimation()
+        {
+            if (animator == null || !HasAnimationState(HurtHash)) return;
+            animator.CrossFade(HurtHash, 0.05f);
+            StartCoroutine(ResetToIdleAfterHurt());
+        }
+
+        private IEnumerator ResetToIdleAfterHurt()
+        {
+            yield return new WaitForSeconds(0.4f);
+            if (!isDead && currentState != MonsterState.Charging && currentState != MonsterState.Attacking)
+            {
+                PlayIdleAnimation();
+            }
+        }
+
+        private IEnumerator InvulnerabilityRoutine()
+        {
+            isInvulnerable = true;
+            yield return new WaitForSeconds(invulnerabilityDuration);
+            isInvulnerable = false;
+        }
+
+        public void Kill(GameObject damageSource = null)
+        {
+            if (isDead) return;
+            Debug.Log($"{gameObject.name} is being forcefully killed by {damageSource?.name ?? "Unknown"}.");
+            Die(damageSource, maxHealth);
+        }
+
+        protected void Die(GameObject damageSource, float damage)
+        {
+            if (isDead) return;
+            Debug.Log($"{gameObject.name} has died. Killed by {damageSource?.name ?? "Unknown"} with {damage} damage.");
+            isDead = true;
+            isCharging = false;
+            if (chargingRoutine != null) StopCoroutine(chargingRoutine);
+            ChangeState(MonsterState.Dead);
+        }
+
+        private IEnumerator ScaleDownAndDestroy()
+        {
+            float duration = 0.5f;
+            Vector3 originalScale = transform.localScale;
+            float t = 0f;
+            while (t < duration)
+            {
+                t += Time.deltaTime;
+                transform.localScale = Vector3.Lerp(originalScale, Vector3.zero, t / duration);
+                yield return null;
+            }
+
+            if (SpiderPool.Instance != null)
+                SpiderPool.Instance.ReturnSpider(gameObject);
+            else
+                Destroy(gameObject);
+        }
+
+        private void ResetMonster()
+        {
+            isDead = false;
+            isCharging = false;
+            canExplode = true;
+            isInvulnerable = false;
+            currentHealth = maxHealth;
+            target = null;
+
+            animator.Rebind();
+            animator.Update(0f);
+            animator.SetBool(IsDeadHash, false);
+
+            if (NavMesh.SamplePosition(transform.position, out NavMeshHit navHit, 1f, NavMesh.AllAreas))
+            {
+                agent.enabled = true;
+                agent.Warp(navHit.position);
+                agent.ResetPath();
+                agent.isStopped = true;
+            }
+
+            transform.localScale = Vector3.one;
+            ChangeState(MonsterState.Falling);
+        }
+
+        private bool IsGrounded()
+        {
+            Ray ray = new Ray(transform.position + Vector3.up * 0.1f, Vector3.down);
+            return Physics.Raycast(ray, out _, groundCheckDistance + 0.2f, groundLayer);
         }
 
         private void PlayIdleAnimation() => PlayAnimation(IdleHash);
@@ -253,6 +395,7 @@ namespace Enemies
         public void OnPickup()
         {
             isCharging = false;
+            canExplode = false;
             if (chargingRoutine != null) StopCoroutine(chargingRoutine);
             ChangeState(MonsterState.Held);
             Rigidbody rb = GetComponent<Rigidbody>();
@@ -281,62 +424,6 @@ namespace Enemies
             rb.isKinematic = true;
             rb.useGravity = false;
             ChangeState(MonsterState.Idle);
-        }
-
-        private void Die()
-        {
-            isDead = true;
-            isCharging = false;
-            if (chargingRoutine != null) StopCoroutine(chargingRoutine);
-            agent.enabled = false;
-            PlayAnimation(DieHash);
-            StartCoroutine(ScaleDownAndDestroy());
-        }
-
-        private IEnumerator ScaleDownAndDestroy()
-        {
-            float duration = 0.5f;
-            Vector3 originalScale = transform.localScale;
-            float t = 0f;
-            while (t < duration)
-            {
-                t += Time.deltaTime;
-                transform.localScale = Vector3.Lerp(originalScale, Vector3.zero, t / duration);
-                yield return null;
-            }
-            if (SpiderPool.Instance != null)
-                SpiderPool.Instance.ReturnSpider(gameObject);
-            else
-                Destroy(gameObject);
-        }
-
-        private void ResetMonster()
-        {
-            isDead = false;
-            isCharging = false;
-            canExplode = true;
-            target = null;
-
-            animator.Rebind();
-            animator.Update(0f);
-            animator.SetBool(IsDeadHash, false);
-
-            if (NavMesh.SamplePosition(transform.position, out NavMeshHit navHit, 1f, NavMesh.AllAreas))
-            {
-                agent.enabled = true;
-                agent.Warp(navHit.position);
-                agent.ResetPath();
-                agent.isStopped = true;
-            }
-
-            transform.localScale = Vector3.one;
-            ChangeState(MonsterState.Falling);
-        }
-
-        private bool IsGrounded()
-        {
-            Ray ray = new Ray(transform.position + Vector3.up * 0.1f, Vector3.down);
-            return Physics.Raycast(ray, out _, groundCheckDistance + 0.2f, groundLayer);
         }
     }
 }

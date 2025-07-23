@@ -63,7 +63,7 @@ namespace Enemies
                     if (hp != null)
                     {
                         Vector3 hitPoint = hit.ClosestPoint(transform.position);
-                        hp.TakeDamage(damage, hitPoint, owner);
+                        hp.TakeDamage(damage, hitPoint, owner, true);
                     }
 
                     var rb = hit.attachedRigidbody;
