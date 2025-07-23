@@ -11,7 +11,7 @@ namespace Core
 
         [Header("Invulnerability")]
         [SerializeField] private float invulnerabilityDuration = 1f;
-        private bool isInvulnerable = false;
+        private bool isInvulnerable;
 
         [Header("Light Integration")]
         [SerializeField] private Light healthLight;
@@ -71,12 +71,12 @@ namespace Core
             UpdateLightIntensity();
         }
 
-        public void TakeDamage(float damage, Vector3 hitPoint, GameObject damageSource = null)
+        public void TakeDamage(float damage, Vector3 hitPoint, GameObject damageSource = null, bool bypassSelfDamage = false)
         {
             if (isDead || isInvulnerable) return;
 
-            // Prevent self-damage
-            if (damageSource != null && damageSource == gameObject)
+            // Prevent self-damage unless explicitly allowed
+            if (damageSource != null && damageSource == gameObject && !bypassSelfDamage)
             {
                 Debug.Log($"{gameObject.name} attempted to self-damage but was prevented.");
                 return;
@@ -252,6 +252,30 @@ namespace Core
             });
 
             UpdateLightIntensity();
+        }
+        public void Kill(GameObject damageSource = null)
+        {
+            if (isDead) return;
+
+            Debug.Log($"{gameObject.name} is being forcefully killed by {damageSource?.name ?? "Unknown"}.");
+
+            currentHealth = 0;
+            isDead = true;
+
+            var args = new HealthChangedEventArgs
+            {
+                CurrentHealth = 0,
+                MaxHealth = maxHealth,
+                DamageSource = damageSource,
+                DamageAmount = maxHealth,
+                HitPoint = transform.position
+            };
+
+            OnTakeDamage?.Invoke(this, args);
+            OnHealthChanged?.Invoke(this, args);
+            UpdateLightIntensity();
+
+            Die(damageSource, maxHealth); // This is your internal method that handles death logic.
         }
 
         public ParticleSystem BreakEffect => breakEffect;

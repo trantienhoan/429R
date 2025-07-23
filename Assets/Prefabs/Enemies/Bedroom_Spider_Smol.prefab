@@ -67,13 +67,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   damage: 100
-  pushForce: 100
-  explosionRadius: 5
-  explosionVFX: {fileID: 9169966119468206341, guid: ac47b7785dfae4746bf0ec40640604d7,
+  pushForce: 500
+  explosionRadius: 1
+  explosionVFX: {fileID: 1275427502020279462, guid: 9e0599f5a53c6ae4e91961edfdad1ce9,
     type: 3}
   explosionSFX: {fileID: 8300000, guid: 9118a3d703424a441a222ad5c2ea6971, type: 3}
-  shakeIntensity: 0.5
+  shakeIntensity: 0.05
   shakeDuration: 0.3
+  drawDebugGizmos: 1
+  gizmoColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1001 &2892365612308435589
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1317,10 +1319,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   animator: {fileID: 3885325605593910892}
   chaseRange: 10
-  attackRange: 1
+  attackRange: 0.5
   chargeDelay: 2
-  damageAmount: 100
+  damageAmount: 1000
   attackHitbox: {fileID: 4643109836980762304}
+  postExplosionCooldown: 2
   wanderRadius: 5
   wanderDelay: 5
   groundLayer:

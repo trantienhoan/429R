@@ -1,12 +1,13 @@
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
+//using Core;
 
 namespace Enemies
 {
     public class ShadowMonster : BaseMonster
     {
-        private enum MonsterState { Held, Falling, Idle, Wandering, Chasing, Charging, Exploding, Dead }
+        private enum MonsterState { Held, Falling, Idle, Wandering, Chasing, Charging, Attacking, Dead }
         private MonsterState currentState = MonsterState.Falling;
 
         private NavMeshAgent agent;
@@ -29,6 +30,7 @@ namespace Enemies
         [SerializeField] private float chargeDelay = 2.5f;
         [SerializeField] private float damageAmount = 100f;
         [SerializeField] private GameObject attackHitbox;
+        [SerializeField] private float postExplosionCooldown = 1.0f;
 
         [Header("Wandering")]
         [SerializeField] private float wanderRadius = 5f;
@@ -44,25 +46,19 @@ namespace Enemies
         private bool isGrounded;
         private bool isCharging;
         private Coroutine chargingRoutine;
-        private float lastExplosionTime;
-        [SerializeField] private float explosionCooldown = 1.5f;
+        private bool canExplode = true;
 
         protected override void Awake()
         {
             agent = GetComponent<NavMeshAgent>();
-
-            if (attackHitbox != null)
-            {
-                attackHitbox.SetActive(false);
-            }
+            if (attackHitbox != null) attackHitbox.SetActive(false);
         }
 
         private void OnEnable() => ResetMonster();
 
         private void Update()
         {
-            if (isDead || currentState == MonsterState.Exploding || currentState == MonsterState.Charging)
-                return;
+            if (isDead || currentState == MonsterState.Attacking || currentState == MonsterState.Charging) return;
 
             isGrounded = IsGrounded();
             animator.SetBool(IsGroundedHash, isGrounded);
@@ -84,26 +80,18 @@ namespace Enemies
                 case MonsterState.Falling:
                     if (isGrounded) ChangeState(MonsterState.Idle);
                     break;
-
                 case MonsterState.Idle:
                     FindTarget();
                     if (target != null) ChangeState(MonsterState.Chasing);
                     else if (Time.time - lastWanderTime > wanderDelay) ChangeState(MonsterState.Wandering);
                     break;
-
                 case MonsterState.Wandering:
                     if (agent.remainingDistance < 0.5f) ChangeState(MonsterState.Idle);
                     FindTarget();
                     break;
-
                 case MonsterState.Chasing:
-                    if (target == null)
-                    {
-                        ChangeState(MonsterState.Idle);
-                        return;
-                    }
-
-                    if (IsInAttackRange()) ChangeState(MonsterState.Charging);
+                    if (target == null) ChangeState(MonsterState.Idle);
+                    else if (IsInAttackRange()) ChangeState(MonsterState.Charging);
                     else ChaseTarget();
                     break;
             }
@@ -129,40 +117,27 @@ namespace Enemies
                 case MonsterState.Idle:
                     PlayIdleAnimation();
                     break;
-
                 case MonsterState.Wandering:
                     lastWanderTime = Time.time;
                     Wander();
                     break;
-
                 case MonsterState.Chasing:
                     agent.isStopped = false;
                     break;
-
                 case MonsterState.Charging:
-                    if (Time.time - lastExplosionTime < explosionCooldown)
-                    {
-                        ChangeState(MonsterState.Idle);
-                        return;
-                    }
-
                     isCharging = true;
                     agent.isStopped = true;
                     PlayAnimation(ChargeHash);
                     chargingRoutine = StartCoroutine(StartExplosionAfterDelay());
                     break;
-
-                case MonsterState.Exploding:
-                    isCharging = false;
+                case MonsterState.Attacking:
                     agent.isStopped = true;
-                    lastExplosionTime = Time.time;
-                    StartCoroutine(Explode());
+                    PlayAnimation(AttackHash);
+                    StartCoroutine(ExplodeDuringAttack());
                     break;
-
                 case MonsterState.Held:
                     agent.enabled = false;
                     break;
-
                 case MonsterState.Dead:
                     animator.SetBool(IsDeadHash, true);
                     Die();
@@ -219,51 +194,39 @@ namespace Enemies
 
         private IEnumerator StartExplosionAfterDelay()
         {
-            float timer = 0f;
-
-            while (timer < chargeDelay)
-            {
-                if (!isCharging || isDead)
-                {
-                    Debug.Log("[ShadowMonster] Charging interrupted.");
-                    yield break;
-                }
-
-                timer += Time.deltaTime;
-                yield return null;
-            }
-
-            if (isCharging && !isDead && isGrounded)
-            {
-                ChangeState(MonsterState.Exploding);
-            }
+            yield return new WaitForSeconds(chargeDelay);
+            if (isDead || !canExplode) yield break;
+            ChangeState(MonsterState.Attacking);
         }
 
-        private IEnumerator Explode()
+        private IEnumerator ExplodeDuringAttack()
         {
-            Debug.Log($"[ShadowMonster] Exploding at {transform.position}");
-
-            PlayAnimation(AttackHash);
-            isCharging = false;
+            yield return new WaitForSeconds(0.3f); // Let attack animation wind up
 
             if (attackHitbox != null)
             {
                 attackHitbox.SetActive(true);
-
                 var hitbox = attackHitbox.GetComponent<SpiderAttackHitbox>();
                 if (hitbox != null)
                 {
                     hitbox.Initialize(gameObject, damageAmount, 5f);
-                    hitbox.TriggerExplosion();
+                    hitbox.TriggerExplosion(); // Play VFX and apply force/damage
                 }
             }
 
-            yield return new WaitForSeconds(0.3f);
-
+            yield return new WaitForSeconds(0.3f); // Keep hitbox active briefly
             if (attackHitbox != null) attackHitbox.SetActive(false);
 
-            // Trigger death cleanly through state machine
-            ChangeState(MonsterState.Dead);
+            // Wait for remaining animation and post-explosion VFX
+            yield return new WaitForSeconds(postExplosionCooldown); // Example: 1.2f
+
+            // ✅ Proper death via Kill wrapper (triggers HealthComponent → pooling)
+            Debug.Log($"{gameObject.name} is attempting to self-kill after explosion.");
+            if (HealthComponent != null && !HealthComponent.IsDead())
+            {
+                HealthComponent.Kill(gameObject);
+                ChangeState(MonsterState.Dead);
+            }
         }
 
         private void PlayIdleAnimation() => PlayAnimation(IdleHash);
@@ -291,7 +254,6 @@ namespace Enemies
         {
             isCharging = false;
             if (chargingRoutine != null) StopCoroutine(chargingRoutine);
-
             ChangeState(MonsterState.Held);
             Rigidbody rb = GetComponent<Rigidbody>();
             rb.isKinematic = false;
@@ -309,18 +271,15 @@ namespace Enemies
         private IEnumerator WaitForLandingThenReset()
         {
             yield return new WaitUntil(IsGrounded);
-
             if (NavMesh.SamplePosition(transform.position, out NavMeshHit navHit, 1f, NavMesh.AllAreas))
             {
                 agent.enabled = true;
                 agent.Warp(navHit.position);
                 agent.isStopped = true;
             }
-
             Rigidbody rb = GetComponent<Rigidbody>();
             rb.isKinematic = true;
             rb.useGravity = false;
-
             ChangeState(MonsterState.Idle);
         }
 
@@ -329,7 +288,6 @@ namespace Enemies
             isDead = true;
             isCharging = false;
             if (chargingRoutine != null) StopCoroutine(chargingRoutine);
-
             agent.enabled = false;
             PlayAnimation(DieHash);
             StartCoroutine(ScaleDownAndDestroy());
@@ -340,14 +298,12 @@ namespace Enemies
             float duration = 0.5f;
             Vector3 originalScale = transform.localScale;
             float t = 0f;
-
             while (t < duration)
             {
                 t += Time.deltaTime;
                 transform.localScale = Vector3.Lerp(originalScale, Vector3.zero, t / duration);
                 yield return null;
             }
-
             if (SpiderPool.Instance != null)
                 SpiderPool.Instance.ReturnSpider(gameObject);
             else
@@ -358,13 +314,8 @@ namespace Enemies
         {
             isDead = false;
             isCharging = false;
+            canExplode = true;
             target = null;
-            currentState = MonsterState.Falling;
-
-            if (chargingRoutine != null) StopCoroutine(chargingRoutine);
-            chargingRoutine = null;
-
-            if (attackHitbox != null) attackHitbox.SetActive(false);
 
             animator.Rebind();
             animator.Update(0f);
@@ -379,14 +330,13 @@ namespace Enemies
             }
 
             transform.localScale = Vector3.one;
+            ChangeState(MonsterState.Falling);
         }
 
         private bool IsGrounded()
         {
             Ray ray = new Ray(transform.position + Vector3.up * 0.1f, Vector3.down);
-            bool grounded = Physics.Raycast(ray, out _, groundCheckDistance + 0.2f, groundLayer);
-            Debug.DrawRay(ray.origin, ray.direction * (groundCheckDistance + 0.2f), grounded ? Color.green : Color.red);
-            return grounded;
+            return Physics.Raycast(ray, out _, groundCheckDistance + 0.2f, groundLayer);
         }
     }
 }

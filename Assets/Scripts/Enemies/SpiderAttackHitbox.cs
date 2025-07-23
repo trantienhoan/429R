@@ -1,6 +1,7 @@
-using Core;
 using UnityEngine;
+//using System;
 using Cam;
+using Core;
 
 namespace Enemies
 {
@@ -17,6 +18,10 @@ namespace Enemies
         [SerializeField] private float shakeIntensity = 0.05f;
         [SerializeField] private float shakeDuration = 0.3f;
 
+        [Header("Debug")]
+        [SerializeField] private bool drawDebugGizmos = true;
+        [SerializeField] private Color gizmoColor = Color.red;
+
         private GameObject owner;
         private bool hasExploded;
 
@@ -30,7 +35,7 @@ namespace Enemies
 
         public void TriggerExplosion()
         {
-            if (hasExploded) return;
+            if (!isActiveAndEnabled || hasExploded) return;
             hasExploded = true;
 
             // 🔊 VFX & SFX
@@ -42,7 +47,9 @@ namespace Enemies
             }
 
             if (explosionSFX != null)
+            {
                 AudioSource.PlayClipAtPoint(explosionSFX, transform.position);
+            }
 
             VRRigShake.Instance?.Shake(shakeIntensity, shakeDuration);
 
@@ -55,18 +62,25 @@ namespace Enemies
                     var hp = hit.GetComponent<HealthComponent>();
                     if (hp != null)
                     {
-                        Vector3 hitDir = (hit.transform.position - transform.position).normalized;
-                        hp.TakeDamage(damage, hitDir, owner);
+                        Vector3 hitPoint = hit.ClosestPoint(transform.position);
+                        hp.TakeDamage(damage, hitPoint, owner);
                     }
 
                     var rb = hit.attachedRigidbody;
-                    if (rb != null)
+                    if (rb != null && rb.mass > 0f)
                     {
                         Vector3 pushDir = (hit.transform.position - transform.position).normalized;
                         rb.AddForce(pushDir * pushForce, ForceMode.Impulse);
                     }
                 }
             }
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            if (!drawDebugGizmos) return;
+            Gizmos.color = gizmoColor;
+            Gizmos.DrawWireSphere(transform.position, explosionRadius);
         }
     }
 }
