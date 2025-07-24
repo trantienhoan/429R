@@ -1,19 +1,21 @@
 using UnityEngine;
 using System.Linq;
-using Core;
+using Enemies; // <-- Needed to access ShadowMonster
 
 public class GameManager : MonoBehaviour
 {
+    [Header("Monster Settings")]
     [SerializeField] private string monsterTag = "Monster";
-    [SerializeField] private float healthIncreasePerLamp = 0.1f; // 10%
-    [SerializeField] private float sizeIncreasePerLamp = 0.1f; // 10%
+    [SerializeField] private float healthIncreasePerLamp = 0.1f; // 10% per lamp
+    [SerializeField] private float sizeIncreasePerLamp = 0.1f;    // 10% per lamp
+
     private GameObject monster;
-    private HealthComponent monsterHealth;
+    private ShadowMonster monsterScript;
     private Vector3 initialMonsterScale;
-    private float initialMaxHealth;
+    private float initialMaxHealth = 100f; // Default starting health
 
     private static GameManager _instance;
-    public static GameManager Instance { get { return _instance; } }
+    public static GameManager Instance => _instance;
 
     private int brokenLampsCount = 0;
 
@@ -29,28 +31,27 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    void Start()
+    private void Start()
     {
-        // Find the monster
         monster = GameObject.FindGameObjectWithTag(monsterTag);
         if (monster == null)
         {
-            Debug.LogError("No GameObject tagged as " + monsterTag + " found in the scene.");
+            Debug.LogError($"No GameObject tagged as \"{monsterTag}\" found in the scene.");
             return;
         }
 
-        monsterHealth = monster.GetComponent<HealthComponent>();
-        if (monsterHealth == null)
+        monsterScript = monster.GetComponent<ShadowMonster>();
+        if (monsterScript == null)
         {
-            Debug.LogError("No HealthComponent found on the monster.");
+            Debug.LogError("No ShadowMonster script found on the monster.");
             return;
         }
 
-        initialMaxHealth = monsterHealth.MaxHealth;
         initialMonsterScale = monster.transform.localScale;
+        initialMaxHealth = 100f; // Update this if your monster has another default
 
         Lamp.OnLampBroken += HandleLampBroken;
-        Debug.Log("Game Manager Started");
+        Debug.Log("Game Manager Started.");
     }
 
     private void HandleLampBroken(Lamp lamp)
@@ -61,15 +62,18 @@ public class GameManager : MonoBehaviour
 
     private void UpdateMonsterStats()
     {
-        if (monsterHealth == null) return;
+        if (monsterScript == null) return;
 
-        float healthIncreaseFactor = 1 + (brokenLampsCount * healthIncreasePerLamp);
-        float newMaxHealth = initialMaxHealth * healthIncreaseFactor;
-        monsterHealth.SetMaxHealth(newMaxHealth);
+        // Update health
+        float healthMultiplier = 1 + (brokenLampsCount * healthIncreasePerLamp);
+        float newMaxHealth = initialMaxHealth * healthMultiplier;
+        monsterScript.SetMaxHealth(newMaxHealth);
 
-        // Scale the monster's size
-        float sizeIncreaseFactor = 1 + (brokenLampsCount * sizeIncreasePerLamp);
-        monster.transform.localScale = initialMonsterScale * sizeIncreaseFactor;
+        // Update size
+        float sizeMultiplier = 1 + (brokenLampsCount * sizeIncreasePerLamp);
+        monster.transform.localScale = initialMonsterScale * sizeMultiplier;
+
+        Debug.Log($"Updated Monster: Health = {newMaxHealth}, Scale = {monster.transform.localScale}");
     }
 
     private void OnDestroy()

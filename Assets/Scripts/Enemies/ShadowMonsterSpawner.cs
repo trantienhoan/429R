@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 //using Enemies;
-using Core;
 
 namespace Enemies
 {
@@ -92,6 +91,7 @@ namespace Enemies
 
             RegisterMonster(monsterInstance);
             StartCoroutine(ScaleAndDropMonster(monsterInstance.transform, monsterPrefab.transform.localScale, endPosition));
+            StartCoroutine(WaitUntilGroundedThenEnableAI(monsterInstance));
         }
 
         private IEnumerator ScaleAndDropMonster(Transform monsterTransform, Vector3 targetScale, Vector3 targetPosition)
@@ -131,13 +131,7 @@ namespace Enemies
             ShadowMonster shadowMonster = monster.GetComponent<ShadowMonster>();
             if (shadowMonster != null)
             {
-                HealthComponent health = monster.GetComponent<HealthComponent>();
-                if (health != null)
-                {
-                    health.SetMaxHealth(health.MaxHealth * 1.5f);
-                    health.OnDeath += OnMonsterDeath;
-                }
-
+                shadowMonster.SetMaxHealth(150f);
                 activeMonsters.Add(new MonsterTrackerData
                 {
                     MonsterObject = monster,
@@ -149,25 +143,6 @@ namespace Enemies
             else
             {
                 LogWarning("Tried to register a monster without ShadowMonster component.");
-            }
-        }
-
-        private void OnMonsterDeath(HealthComponent health) => UnregisterMonster(health);
-
-        private void UnregisterMonster(HealthComponent health)
-        {
-            if (health == null) return;
-            health.OnDeath -= OnMonsterDeath;
-
-            var itemToRemove = activeMonsters.FirstOrDefault(x => x.MonsterObject == health.gameObject);
-            if (itemToRemove != null)
-            {
-                activeMonsters.Remove(itemToRemove);
-                Log($"Monster unregistered. Active monster count: {activeMonsters.Count}");
-            }
-            else
-            {
-                LogWarning("Trying to unregister a monster that wasn't registered");
             }
         }
 
@@ -220,11 +195,6 @@ namespace Enemies
             int randomIndex = Random.Range(0, cornerSpawnPoints.Count);
             Vector3 chosenPosition = cornerSpawnPoints[randomIndex].position;
             return new Vector3(chosenPosition.x, chosenPosition.y + spawnHeight, chosenPosition.z);
-        }
-
-        private void OnDrawGizmosSelected()
-        {
-            Gizmos.color = Color.red;
         }
 
         private void CleanupMonsterLists()
@@ -288,6 +258,19 @@ namespace Enemies
                 windowR.transform.rotation = Quaternion.Euler(0, closedWindowRotation, 0);
             }
             else LogWarning("Window R is null!");
+        }
+
+        private IEnumerator WaitUntilGroundedThenEnableAI(GameObject spider)
+        {
+            ShadowMonster sm = spider.GetComponent<ShadowMonster>();
+            if (sm == null) yield break;
+
+            while (!sm.IsGrounded())
+            {
+                yield return null;
+            }
+
+            sm.EnableAI();
         }
     }
 }

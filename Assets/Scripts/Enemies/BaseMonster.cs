@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using UnityEngine;
-using Core;
 
 namespace Enemies
 {
@@ -9,29 +8,14 @@ namespace Enemies
         private static readonly int Color1 = Shader.PropertyToID("_Color");
 
         protected GameObject Player;
-        protected HealthComponent HealthComponent;
 
         protected virtual void Awake()
         {
-            HealthComponent = GetComponent<HealthComponent>();
-            if (HealthComponent == null)
-            {
-                Debug.LogWarning($"{name} is missing a HealthComponent. Adding one.");
-                HealthComponent = gameObject.AddComponent<HealthComponent>();
-            }
+            // Nothing needed here for now
         }
 
         protected virtual void Start()
         {
-            if (HealthComponent != null)
-            {
-                HealthComponent.OnDeath += OnDeathHandler;
-            }
-            else
-            {
-                Debug.LogWarning($"{name} has no HealthComponent in BaseMonster.Start()!");
-            }
-
             Player = GameObject.FindGameObjectWithTag("Player");
             if (Player == null)
             {
@@ -39,12 +23,14 @@ namespace Enemies
             }
         }
 
+        // Optional override point if needed in child classes
         public virtual void TakeDamage(float damageAmount, Vector3 hitPoint = default, GameObject damageSource = null)
         {
-            HealthComponent?.TakeDamage(damageAmount, hitPoint, damageSource);
+            // No-op: HealthComponent removed
         }
 
-        protected virtual void OnDeathHandler(HealthComponent healthComponent)
+        // You can call this manually in child class when "death" is needed
+        protected virtual void OnDeathHandler()
         {
             StartCoroutine(DestroyAfterDelay(3f));
         }
@@ -90,14 +76,6 @@ namespace Enemies
         protected virtual void HandlePostFade()
         {
             Destroy(gameObject);
-        }
-
-        protected virtual void OnDestroy()
-        {
-            if (HealthComponent != null)
-            {
-                HealthComponent.OnDeath -= OnDeathHandler;
-            }
         }
     }
 }

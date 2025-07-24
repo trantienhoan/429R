@@ -5766,20 +5766,15 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 4301660074786869948, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
+    - target: {fileID: 3030980029734817786, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
         type: 3}
-      propertyPath: m_Interpolate
+      propertyPath: chaseRange
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3030980029734817786, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
+        type: 3}
+      propertyPath: attackRange
       value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 5078379185537246606, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
-        type: 3}
-      propertyPath: pushForce
-      value: 1000
-      objectReference: {fileID: 0}
-    - target: {fileID: 5078379185537246606, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
-        type: 3}
-      propertyPath: explosionRadius
-      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: 8314641946612675146, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
         type: 3}
@@ -8152,14 +8147,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2883e4c1dfd15bf43a546e9d36e341bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 5000
-  currentHealth: 5000
+  maxHealth: 150000
+  currentHealth: 150000
   invulnerabilityDuration: 1
   healthLight: {fileID: 503263190}
-  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   hitSound: {fileID: 0}
   scaleOnDeath: 1
@@ -10691,10 +10686,10 @@ MonoBehaviour:
   currentHealth: 5000
   invulnerabilityDuration: 1
   healthLight: {fileID: 0}
-  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   hitSound: {fileID: 0}
   scaleOnDeath: 1
@@ -11897,10 +11892,10 @@ MonoBehaviour:
   currentHealth: 3000
   invulnerabilityDuration: 1
   healthLight: {fileID: 0}
-  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   hitSound: {fileID: 0}
   scaleOnDeath: 1
@@ -12557,13 +12552,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2883e4c1dfd15bf43a546e9d36e341bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100
-  currentHealth: 0
+  maxHealth: 1000
+  currentHealth: 1000
   invulnerabilityDuration: 1
   healthLight: {fileID: 0}
-  breakEffect: {fileID: 0}
+  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
+    type: 3}
   breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 0}
+  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
+    type: 3}
   hitSound: {fileID: 0}
   scaleOnDeath: 1
   scaleDuration: 0.5
@@ -13767,7 +13764,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1051629505}
   - component: {fileID: 1051629504}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: NavMesh Surface
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -14375,10 +14372,10 @@ MonoBehaviour:
   currentHealth: 3000
   invulnerabilityDuration: 1
   healthLight: {fileID: 0}
-  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   hitSound: {fileID: 0}
   scaleOnDeath: 1
@@ -15774,10 +15771,10 @@ MonoBehaviour:
   currentHealth: 5000
   invulnerabilityDuration: 1
   healthLight: {fileID: 490464818}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   hitSound: {fileID: 0}
   scaleOnDeath: 1
@@ -15992,10 +15989,10 @@ MonoBehaviour:
   currentHealth: 0
   invulnerabilityDuration: 1
   healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   hitSound: {fileID: 0}
   scaleOnDeath: 1
@@ -16666,7 +16663,7 @@ PrefabInstance:
     - target: {fileID: -5606676697396164213, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.199
+      value: 0.013
       objectReference: {fileID: 0}
     - target: {fileID: -5606676697396164213, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
@@ -16676,7 +16673,7 @@ PrefabInstance:
     - target: {fileID: -5606676697396164213, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -1.695
+      value: -1.365
       objectReference: {fileID: 0}
     - target: {fileID: -5501013695792592023, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
@@ -17496,7 +17493,7 @@ PrefabInstance:
     - target: {fileID: 5988637085959506794, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.147
+      value: 0.253
       objectReference: {fileID: 0}
     - target: {fileID: 5988637085959506794, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
@@ -21913,10 +21910,10 @@ MonoBehaviour:
   currentHealth: 1000
   invulnerabilityDuration: 1
   healthLight: {fileID: 0}
-  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   hitSound: {fileID: 0}
   scaleOnDeath: 1
@@ -23037,10 +23034,10 @@ MonoBehaviour:
   currentHealth: 2000
   invulnerabilityDuration: 1
   healthLight: {fileID: 0}
-  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   hitSound: {fileID: 0}
   scaleOnDeath: 1
@@ -25861,10 +25858,10 @@ MonoBehaviour:
   currentHealth: 0
   invulnerabilityDuration: 1
   healthLight: {fileID: 2093901408}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   hitSound: {fileID: 0}
   scaleOnDeath: 1
@@ -27008,10 +27005,10 @@ MonoBehaviour:
   currentHealth: 3000
   invulnerabilityDuration: 1
   healthLight: {fileID: 0}
-  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   hitSound: {fileID: 0}
   scaleOnDeath: 1
@@ -30044,10 +30041,10 @@ MonoBehaviour:
   currentHealth: 5000
   invulnerabilityDuration: 1
   healthLight: {fileID: 0}
-  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   hitSound: {fileID: 0}
   scaleOnDeath: 1
@@ -30592,10 +30589,10 @@ MonoBehaviour:
   currentHealth: 1500
   invulnerabilityDuration: 1
   healthLight: {fileID: 0}
-  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
+  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   hitSound: {fileID: 0}
   scaleOnDeath: 1
@@ -34422,12 +34419,17 @@ PrefabInstance:
     - target: {fileID: 4836868040052509315, guid: 98f33dce55e98574bb6bd02fd309cbf4,
         type: 3}
       propertyPath: spawnHeight
-      value: 0
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 4836868040052509315, guid: 98f33dce55e98574bb6bd02fd309cbf4,
         type: 3}
       propertyPath: spawnRadius
-      value: 0.5
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4836868040052509315, guid: 98f33dce55e98574bb6bd02fd309cbf4,
+        type: 3}
+      propertyPath: dropDuration
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 4836868040052509315, guid: 98f33dce55e98574bb6bd02fd309cbf4,
         type: 3}
@@ -34438,7 +34440,7 @@ PrefabInstance:
     - target: {fileID: 4836868040052509315, guid: 98f33dce55e98574bb6bd02fd309cbf4,
         type: 3}
       propertyPath: scaleDuration
-      value: 4
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 4836868040052509315, guid: 98f33dce55e98574bb6bd02fd309cbf4,
         type: 3}
