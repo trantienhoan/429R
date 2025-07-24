@@ -50,10 +50,25 @@ namespace Enemies
         private static readonly int AttackHash = Animator.StringToHash("Spider_Attack");
         private static readonly int DieHash = Animator.StringToHash("Spider_Die");
         private static readonly int HurtHash = Animator.StringToHash("Spider_Hurt");
+        
+        private static readonly int IsGroundedParam = Animator.StringToHash("IsGrounded");
+        private static readonly int IsChargingParam = Animator.StringToHash("IsCharging");
+        private static readonly int IsDeadParam = Animator.StringToHash("IsDead");
+        private static readonly int StateParam = Animator.StringToHash("State");
+        private static readonly int TriggerHurtParam = Animator.StringToHash("TriggerHurt");
+        private static readonly int TriggerAttackParam = Animator.StringToHash("TriggerAttack");
+        
+        private static readonly int SpeedParam = Animator.StringToHash("Speed");
+        private static readonly int VelocityParam = Animator.StringToHash("Velocity");
+        
+        // Fix the walk animation hash
+        private static readonly int WalkHash = Animator.StringToHash("Spider_Walk_Cycle");
 
         private Coroutine chargingRoutine;
         private GameObject target;
         private float lastWanderTime;
+        private int currentAnimationHash = -1;
+        private bool isPlayingHurtAnimation = false;
 
         private void Awake()
         {
@@ -71,39 +86,72 @@ namespace Enemies
                 return;
 
             CheckGrounded();
+            UpdateAnimatorParameters();
 
-            // Transition between airborne and idle
-            if (!isGrounded && wasGroundedLastFrame)
-                ChangeState(MonsterState.OnAir);
-            else if (isGrounded && !wasGroundedLastFrame)
+            // Fix the grounding state transitions
+            if (currentState == MonsterState.OnAir && isGrounded)
+            {
                 ChangeState(MonsterState.Idle);
+            }
+            else if (currentState != MonsterState.OnAir && !isGrounded)
+            {
+                ChangeState(MonsterState.OnAir);
+            }
 
             wasGroundedLastFrame = isGrounded;
 
             switch (currentState)
             {
                 case MonsterState.OnAir:
-                    PlayAnimation(IdleOnAirHash);
                     break;
 
                 case MonsterState.Idle:
                     FindTarget();
-                    if (target != null) ChangeState(MonsterState.Chasing);
-                    else if (Time.time - lastWanderTime > wanderDelay) ChangeState(MonsterState.Wandering);
+                    if (target != null) 
+                    {
+                        Debug.Log($"Found target: {target.name}, changing to chasing");
+                        ChangeState(MonsterState.Chasing);
+                    }
+                    else if (Time.time - lastWanderTime > wanderDelay) 
+                    {
+                        Debug.Log("Starting to wander");
+                        ChangeState(MonsterState.Wandering);
+                    }
                     break;
 
                 case MonsterState.Wandering:
-                    if (agent.remainingDistance < 0.5f)
+                    if (agent.enabled && agent.remainingDistance < 0.5f)
+                    {
+                        Debug.Log("Wandering complete, returning to idle");
                         ChangeState(MonsterState.Idle);
+                    }
                     FindTarget();
+                    if (target != null)
+                    {
+                        Debug.Log("Found target while wandering, changing to chasing");
+                        ChangeState(MonsterState.Chasing);
+                    }
                     break;
 
                 case MonsterState.Chasing:
-                    if (target == null) ChangeState(MonsterState.Idle);
-                    else if (Vector3.Distance(transform.position, target.transform.position) <= attackRange)
-                        ChangeState(MonsterState.Charging);
-                    else
-                        ChaseTarget();
+                    if (target == null) 
+                    {
+                        Debug.Log("Lost target, returning to idle");
+                        ChangeState(MonsterState.Idle);
+                    }
+                    else 
+                    {
+                        float distToTarget = Vector3.Distance(transform.position, target.transform.position);
+                        if (distToTarget <= attackRange)
+                        {
+                            Debug.Log($"Target in attack range ({distToTarget}), charging");
+                            ChangeState(MonsterState.Charging);
+                        }
+                        else
+                        {
+                            ChaseTarget();
+                        }
+                    }
                     break;
             }
         }
@@ -128,48 +176,62 @@ namespace Enemies
             if (isDead || currentState == newState)
                 return;
 
+            Debug.Log($"ShadowMonster: Changing state from {currentState} to {newState}, isGrounded: {isGrounded}");
+
             currentState = newState;
+
+            // Update parameters first
+            UpdateAnimatorParameters();
 
             switch (newState)
             {
                 case MonsterState.OnAir:
                     if (agent.enabled) agent.enabled = false;
-                    PlayAnimation(IdleOnAirHash);
+                    PlayAnimation(IdleOnAirHash); // Restore this
                     break;
 
                 case MonsterState.Idle:
-                    if (!agent.enabled) agent.enabled = true;
-                    agent.isStopped = true;
-                    PlayAnimation(IdleHash);
+                    if (!agent.enabled && isGrounded) 
+                    {
+                        agent.enabled = true;
+                        if (!agent.isOnNavMesh && NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 1f, NavMesh.AllAreas))
+                        {
+                            agent.Warp(hit.position);
+                        }
+                    }
+                    if (agent.enabled) agent.isStopped = true;
+                    PlayAnimation(IdleHash); // Restore this
                     break;
 
                 case MonsterState.Wandering:
                     lastWanderTime = Time.time;
+                    if (!agent.enabled) agent.enabled = true;
+                    PlayAnimation(IdleHash); // Use Idle animation for wandering
                     Wander();
                     break;
 
                 case MonsterState.Chasing:
                     if (!agent.enabled) agent.enabled = true;
                     agent.isStopped = false;
+                    PlayAnimation(IdleHash); // Use Idle animation for chasing (or create a Walk animation)
                     break;
 
                 case MonsterState.Charging:
                     isCharging = true;
-                    agent.isStopped = true;
-                    PlayAnimation(ChargeHash);
+                    if (agent.enabled) agent.isStopped = true;
+                    PlayAnimation(ChargeHash); // Restore this
                     chargingRoutine = StartCoroutine(StartExplosionAfterDelay());
                     break;
 
                 case MonsterState.Attacking:
-                    agent.isStopped = true;
-                    PlayAnimation(AttackHash);
+                    if (agent.enabled) agent.isStopped = true;
+                    PlayAnimation(AttackHash); // Restore this
                     StartCoroutine(ExplodeDuringAttack());
                     break;
 
                 case MonsterState.Dead:
                     agent.enabled = false;
-                    PlayAnimation(DieHash);
-                    StartCoroutine(ScaleDownAndDestroy());
+                    PlayAnimation(DieHash); // Restore this
                     break;
 
                 case MonsterState.Held:
@@ -189,13 +251,19 @@ namespace Enemies
                 foreach (var obj in GameObject.FindGameObjectsWithTag(tag))
                 {
                     float dist = Vector3.Distance(transform.position, obj.transform.position);
-                    if (dist < closestDist)
+                    if (dist < chaseRange && dist < closestDist) // Add chase range check
                     {
                         closest = obj;
                         closestDist = dist;
                     }
                 }
                 if (closest != null) break;
+            }
+
+            // Debug target finding
+            if (closest != target)
+            {
+                Debug.Log($"Target changed from {(target ? target.name : "null")} to {(closest ? closest.name : "null")}, distance: {closestDist}");
             }
 
             target = closest;
@@ -270,9 +338,10 @@ namespace Enemies
 
         private void PlayHurtAnimation()
         {
-            if (animator != null && animator.HasState(0, HurtHash))
+            if (animator != null && !isPlayingHurtAnimation)
             {
-                animator.CrossFade(HurtHash, 0.1f);
+                isPlayingHurtAnimation = true;
+                animator.SetTrigger(TriggerHurtParam); // Use trigger instead of CrossFade
                 StartCoroutine(ResetToIdleAfterHurt());
             }
         }
@@ -280,8 +349,12 @@ namespace Enemies
         private IEnumerator ResetToIdleAfterHurt()
         {
             yield return new WaitForSeconds(0.4f);
+            isPlayingHurtAnimation = false;
             if (!isDead && currentState != MonsterState.Charging && currentState != MonsterState.Attacking)
+            {
+                currentAnimationHash = -1; // Reset to allow new animation
                 ChangeState(isGrounded ? MonsterState.Idle : MonsterState.OnAir);
+            }
         }
 
         private IEnumerator InvulnerabilityRoutine()
@@ -294,16 +367,33 @@ namespace Enemies
         public void Kill(GameObject source = null)
         {
             if (isDead) return;
+            
+            Debug.Log("Spider is being killed");
             isDead = true;
-            if (chargingRoutine != null) StopCoroutine(chargingRoutine);
+            isCharging = false;
+            canExplode = false;
+            
+            // Stop all running coroutines
+            if (chargingRoutine != null) 
+            {
+                StopCoroutine(chargingRoutine);
+                chargingRoutine = null;
+            }
+            
+            // Stop all other coroutines
+            StopAllCoroutines();
+            
             ChangeState(MonsterState.Dead);
         }
 
         private IEnumerator ScaleDownAndDestroy()
         {
+            Debug.Log("Starting death animation");
+            
             float duration = 0.5f;
             Vector3 original = transform.localScale;
             float t = 0;
+            
             while (t < duration)
             {
                 t += Time.deltaTime;
@@ -311,6 +401,8 @@ namespace Enemies
                 yield return null;
             }
 
+            Debug.Log("Death animation complete, destroying spider");
+            
             if (SpiderPool.Instance != null)
                 SpiderPool.Instance.ReturnSpider(gameObject);
             else
@@ -319,8 +411,57 @@ namespace Enemies
 
         private void PlayAnimation(int hash)
         {
-            if (animator != null && animator.layerCount > 0 && animator.HasState(0, hash))
-                animator.Play(hash, 0, 0);
+            if (animator == null || animator.layerCount == 0) return;
+
+            // Check if the animation state exists
+            if (!animator.HasState(0, hash)) 
+            {
+                Debug.LogWarning($"Animation state with hash {hash} not found in animator");
+                return;
+            }
+
+            // Don't restart the same animation if it's already playing
+            AnimatorStateInfo currentStateInfo = animator.GetCurrentAnimatorStateInfo(0);
+            if (currentStateInfo.shortNameHash == hash) return;
+
+            // Set appropriate parameters before playing animation
+            SetAnimationParameters(hash);
+            
+            // Play the animation
+            animator.Play(hash, 0, 0);
+            currentAnimationHash = hash;
+        }
+
+        private void SetAnimationParameters(int hash)
+        {
+            if (animator == null) return;
+
+            // Set parameters based on which animation we're playing
+            if (hash == IdleHash)
+            {
+                animator.SetBool(IsGroundedParam, true);
+                animator.SetFloat(SpeedParam, 0f);
+            }
+            else if (hash == IdleOnAirHash)
+            {
+                animator.SetBool(IsGroundedParam, false);
+                animator.SetFloat(SpeedParam, 0f);
+            }
+            else if (hash == ChargeHash)
+            {
+                animator.SetBool(IsChargingParam, true);
+                animator.SetFloat(SpeedParam, 0f);
+            }
+            else if (hash == AttackHash)
+            {
+                animator.SetBool(IsChargingParam, false);
+                animator.SetFloat(SpeedParam, 0f);
+            }
+            else if (hash == DieHash)
+            {
+                animator.SetBool(IsDeadParam, true);
+                animator.SetFloat(SpeedParam, 0f);
+            }
         }
         
         public void SetMaxHealth(float newMaxHealth)
@@ -384,7 +525,36 @@ namespace Enemies
             }
 
             transform.localScale = Vector3.one;
-            ChangeState(MonsterState.OnAir); // Let grounding logic kick in
+            
+            // Force a ground check and proper state initialization
+            CheckGrounded();
+            wasGroundedLastFrame = false; // Force state transition logic to work
+            ChangeState(isGrounded ? MonsterState.Idle : MonsterState.OnAir);
+        }
+
+        private void UpdateAnimatorParameters()
+        {
+            if (animator == null) return;
+            
+            animator.SetBool(IsGroundedParam, isGrounded);
+            animator.SetBool(IsChargingParam, isCharging);
+            animator.SetBool(IsDeadParam, isDead);
+            
+            animator.SetInteger(StateParam, (int)currentState);
+            
+            float currentSpeed = 0f;
+            if (agent != null && agent.enabled && agent.hasPath && !agent.isStopped)
+            {
+                currentSpeed = agent.velocity.magnitude;
+            }
+            
+            animator.SetFloat(SpeedParam, currentSpeed);
+            animator.SetFloat(VelocityParam, currentSpeed);
+            
+            if (currentState == MonsterState.Wandering || currentState == MonsterState.Chasing)
+            {
+                Debug.Log($"Movement - Speed: {currentSpeed}, Agent enabled: {agent.enabled}, Has path: {agent.hasPath}, Is stopped: {agent.isStopped}");
+            }
         }
     }
 }
