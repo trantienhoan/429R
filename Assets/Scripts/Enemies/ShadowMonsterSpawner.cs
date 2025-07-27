@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-//using Enemies;
+using UnityEngine.AI; // Added for NavMesh support
 
 namespace Enemies
 {
@@ -81,23 +81,34 @@ namespace Enemies
         private void SpawnMonster()
         {
             Vector3 spawnPosition = FindValidSpawnPosition();
-            SpawnMonsterAt(spawnPosition, spawnPosition);
+            SpawnMonsterAt(spawnPosition, spawnPosition); // endPosition is unused but kept for compatibility
         }
 
-        private void SpawnMonsterAt(Vector3 startPosition, Vector3 endPosition)
+        private void SpawnMonsterAt(Vector3 startPosition, Vector3 endPosition) // endPosition unused, consider removing
         {
             GameObject monsterInstance = SpiderPool.Instance.GetSpider(startPosition, Quaternion.Euler(0, -90, 0));
             monsterInstance.transform.localScale = monsterPrefab.transform.localScale * initialScaleMultiplier;
 
+            // Ensure the Rigidbody is set to fall naturally
+            Rigidbody rb = monsterInstance.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.isKinematic = false; // Allow physics to affect it
+                rb.useGravity = true;   // Ensure gravity is enabled
+            }
+            else
+            {
+                LogWarning("ShadowMonster prefab is missing a Rigidbody component!");
+            }
+
             RegisterMonster(monsterInstance);
-            StartCoroutine(ScaleAndDropMonster(monsterInstance.transform, monsterPrefab.transform.localScale, endPosition));
+            StartCoroutine(ScaleMonster(monsterInstance.transform, monsterPrefab.transform.localScale));
             StartCoroutine(WaitUntilGroundedThenEnableAI(monsterInstance));
         }
 
-        private IEnumerator ScaleAndDropMonster(Transform monsterTransform, Vector3 targetScale, Vector3 targetPosition)
+        private IEnumerator ScaleMonster(Transform monsterTransform, Vector3 targetScale)
         {
             Vector3 startScale = monsterTransform.localScale;
-            Vector3 startPosition = monsterTransform.position;
             float timer = 0;
 
             while (timer < scaleDuration)
@@ -108,21 +119,9 @@ namespace Enemies
                 yield return null;
             }
 
-            if (monsterTransform == null) yield break;
-            monsterTransform.localScale = targetScale;
-            timer = 0;
-
-            while (timer < dropDuration)
-            {
-                if (monsterTransform == null) yield break;
-                timer += Time.deltaTime;
-                monsterTransform.position = Vector3.Lerp(startPosition, targetPosition, timer / dropDuration);
-                yield return null;
-            }
-
             if (monsterTransform != null)
             {
-                monsterTransform.position = targetPosition;
+                monsterTransform.localScale = targetScale;
             }
         }
 
@@ -194,7 +193,18 @@ namespace Enemies
 
             int randomIndex = Random.Range(0, cornerSpawnPoints.Count);
             Vector3 chosenPosition = cornerSpawnPoints[randomIndex].position;
-            return new Vector3(chosenPosition.x, chosenPosition.y + spawnHeight, chosenPosition.z);
+
+            // Find the nearest valid NavMesh position within a radius (e.g., 10 units)
+            if (NavMesh.SamplePosition(chosenPosition, out NavMeshHit hit, 10f, NavMesh.AllAreas))
+            {
+                Vector3 navMeshPosition = hit.position;
+                return new Vector3(navMeshPosition.x, navMeshPosition.y + spawnHeight, navMeshPosition.z);
+            }
+            else
+            {
+                LogWarning("Could not find a valid NavMesh position near the chosen spawn point.");
+                return transform.position; // Fallback to spawner's position
+            }
         }
 
         private void CleanupMonsterLists()
@@ -265,12 +275,23 @@ namespace Enemies
             ShadowMonster sm = spider.GetComponent<ShadowMonster>();
             if (sm == null) yield break;
 
-            while (!sm.IsGrounded())
+            float timeout = 5f;
+            float elapsed = 0f;
+            while (!sm.IsGrounded() && elapsed < timeout)
             {
+                elapsed += Time.deltaTime;
                 yield return null;
             }
 
-            sm.EnableAI();
+            if (sm.IsGrounded())
+            {
+                sm.EnableAI();
+            }
+            else
+            {
+                LogWarning($"Monster {spider.name} failed to ground within {timeout}s. Forcing AI enable.");
+                sm.EnableAI(); // Force enable as a fallback
+            }
         }
     }
 }

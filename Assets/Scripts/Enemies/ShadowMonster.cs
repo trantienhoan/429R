@@ -36,7 +36,6 @@ namespace Enemies
         [SerializeField] private float groundCheckDistance = 0.3f;
         [SerializeField] private LayerMask groundLayer;
         private bool isGrounded;
-        private bool wasGroundedLastFrame;
 
         [Header("References")]
         [SerializeField] private Animator animator;
@@ -58,25 +57,19 @@ namespace Enemies
         private static readonly int TriggerHurtParam = Animator.StringToHash("TriggerHurt");
         private static readonly int TriggerAttackParam = Animator.StringToHash("TriggerAttack");
         private static readonly int SpeedParam = Animator.StringToHash("Speed");
-        private static readonly int VelocityParam = Animator.StringToHash("Velocity");
+        private static readonly int WalkCycleHash = Animator.StringToHash("Spider_Walk_Cycle");
 
         private Coroutine chargingRoutine;
         private GameObject target;
         private float lastWanderTime;
-        private int currentAnimationHash = -1;
-        private bool isPlayingHurtAnimation = false;
-        private static readonly int WalkCycleHash = Animator.StringToHash("Spider_Walk_Cycle");
 
         private void Awake()
         {
             currentHealth = maxHealth;
-            audioSource = GetComponent<AudioSource>();
-            if (audioSource == null && hitSFX != null)
-                audioSource = gameObject.AddComponent<AudioSource>();
-            
-            if (agent == null) agent = GetComponent<NavMeshAgent>();
-            if (animator == null) animator = GetComponent<Animator>();
-            grabInteractable = GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
+            audioSource = GetComponent<AudioSource>() ?? gameObject.AddComponent<AudioSource>();
+            agent = agent ?? GetComponent<NavMeshAgent>();
+            animator = animator ?? GetComponent<Animator>();
+            grabInteractable = grabInteractable ?? GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
 
             if (agent == null || animator == null || grabInteractable == null)
             {
@@ -85,7 +78,6 @@ namespace Enemies
                 return;
             }
 
-            Debug.Log($"IdleOnAirHash: {IdleOnAirHash} (Spider_Idle_On_Air)");
             grabInteractable.selectEntered.AddListener(OnGrabbed);
             grabInteractable.selectExited.AddListener(OnReleased);
         }
@@ -101,116 +93,159 @@ namespace Enemies
             }
         }
 
-        private void Update()
+        private void FixedUpdate() 
         {
-            if (isDead || currentState == MonsterState.Dead || currentState == MonsterState.Held)
-                return;
+    if (isDead || currentState == MonsterState.Dead || currentState == MonsterState.Held) return;
 
-            CheckGrounded();
-            UpdateAnimatorParameters();
+    CheckGrounded();
+    UpdateAnimatorParameters();
 
-            if (currentState == MonsterState.OnAir && isGrounded)
+    // Handle grounding state transitions
+    if (currentState == MonsterState.OnAir && isGrounded)
+        ChangeState(MonsterState.Idle);
+    else if (currentState != MonsterState.OnAir && !isGrounded)
+        ChangeState(MonsterState.OnAir);
+
+    switch (currentState)
+    {
+        case MonsterState.Idle:
+            FindTarget();
+            if (target != null && Vector3.Distance(transform.position, target.transform.position) <= chaseRange)
             {
-                Debug.Log("Transitioning from OnAir to Idle due to grounding");
+                ChangeState(MonsterState.Chasing);
+            }
+            else if (Time.time - lastWanderTime > wanderDelay)
+            {
+                ChangeState(MonsterState.Wandering);
+            }
+            break;
+
+        case MonsterState.Wandering:
+            if (!agent.enabled || !agent.isOnNavMesh)
+            {
+                if (TryWarpToNavMesh())
+                {
+                    agent.isStopped = false;
+                    Wander(); // Set initial wander destination
+                }
+            }
+            else if (agent.remainingDistance <= agent.stoppingDistance && !agent.pathPending)
+            {
+                // Only set new wander destination when current path is complete
+                if (Time.time - lastWanderTime > wanderDelay)
+                {
+                    Wander();
+                    lastWanderTime = Time.time;
+                }
+            }
+            // Check for target while wandering
+            FindTarget();
+            if (target != null && Vector3.Distance(transform.position, target.transform.position) <= chaseRange)
+            {
+                ChangeState(MonsterState.Chasing);
+            }
+            PlayAnimation(WalkCycleHash);
+            break;
+
+        case MonsterState.Chasing:
+            if (!agent.enabled || !agent.isOnNavMesh)
+            {
+                if (TryWarpToNavMesh())
+                {
+                    agent.isStopped = false;
+                    ChaseTarget(); // Set initial chase destination
+                }
+            }
+            else
+            {
+                ChaseTarget(); // Continuously update target position
+                if (target != null && Vector3.Distance(transform.position, target.transform.position) <= attackRange)
+                {
+                    ChangeState(MonsterState.Charging);
+                }
+                else if (target == null || Vector3.Distance(transform.position, target.transform.position) > chaseRange)
+                {
+                    ChangeState(MonsterState.Idle);
+                }
+            }
+            PlayAnimation(WalkCycleHash);
+            break;
+
+        case MonsterState.Charging:
+            if (target == null || Vector3.Distance(transform.position, target.transform.position) > attackRange)
+            {
+                isCharging = false;
+                if (chargingRoutine != null) StopCoroutine(chargingRoutine);
                 ChangeState(MonsterState.Idle);
             }
-            else if (currentState != MonsterState.OnAir && !isGrounded)
-            {
-                Debug.Log("Transitioning to OnAir due to no ground");
-                ChangeState(MonsterState.OnAir);
-            }
-
-            wasGroundedLastFrame = isGrounded;
-
-            switch (currentState)
-            {
-                case MonsterState.OnAir:
-                    break;
-
-                case MonsterState.Idle:
-                    FindTarget();
-                    if (target != null && Vector3.Distance(transform.position, target.transform.position) <= chaseRange)
-                    {
-                        Debug.Log($"Found target: {target.name}, changing to chasing");
-                        ChangeState(MonsterState.Chasing);
-                    }
-                    else if (Time.time - lastWanderTime > wanderDelay)
-                    {
-                        Debug.Log("Starting to wander");
-                        ChangeState(MonsterState.Wandering);
-                    }
-                    break;
-
-                case MonsterState.Wandering:
-                    lastWanderTime = Time.time;
-                    if (!agent.enabled && TryWarpToNavMesh())
-                    {
-                        Wander();
-                    }
-                    PlayAnimation(Animator.StringToHash("Spider_Walk_Cycle")); // Ensure walk animation exists
-                    break;
-
-                case MonsterState.Chasing:
-                    if (!agent.enabled && TryWarpToNavMesh())
-                    {
-                        agent.isStopped = false;
-                        ChaseTarget();
-                    }
-                    PlayAnimation(Animator.StringToHash("Spider_Walk_Cycle")); // Ensure walk animation exists
-                    break;
-
-                case MonsterState.Charging:
-                    if (target == null || Vector3.Distance(transform.position, target.transform.position) > attackRange)
-                    {
-                        Debug.Log("Lost target or target out of attack range, returning to idle");
-                        isCharging = false;
-                        if (chargingRoutine != null)
-                        {
-                            StopCoroutine(chargingRoutine);
-                            chargingRoutine = null;
-                        }
-                        ChangeState(MonsterState.Idle);
-                    }
-                    break;
-            }
-        }
+            break;
+    }
+}
 
         private void CheckGrounded()
         {
-            isGrounded = Physics.Raycast(groundCheckPoint.position, Vector3.down, groundCheckDistance, groundLayer);
-            Debug.DrawRay(groundCheckPoint.position, Vector3.down * groundCheckDistance, isGrounded ? Color.green : Color.red, 0.1f);
-        }
-
-        public bool IsGrounded() => isGrounded;
-
-        public void EnableAI()
-        {
-            if (!agent.enabled && TryWarpToNavMesh())
-            {
-                agent.isStopped = false;
-                ChangeState(isGrounded ? MonsterState.Idle : MonsterState.OnAir);
-            }
+            isGrounded = Physics.CheckSphere(groundCheckPoint.position, groundCheckDistance, groundLayer, QueryTriggerInteraction.Ignore);
+            Debug.Log($"Ground check: isGrounded={isGrounded}, position={groundCheckPoint.position}");
+            if (isGrounded)
+                Debug.DrawRay(groundCheckPoint.position, Vector3.down * groundCheckDistance, Color.green, 0.1f);
+            else
+                Debug.DrawRay(groundCheckPoint.position, Vector3.down * groundCheckDistance, Color.red, 0.1f);
         }
 
         private bool TryWarpToNavMesh()
         {
-            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 1f, NavMesh.AllAreas))
+            float searchRadius = 10f; // Increase radius for better chance of finding a spot
+            NavMeshAgent agent = GetComponent<NavMeshAgent>();
+
+            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, searchRadius, NavMesh.AllAreas))
             {
                 agent.enabled = true;
                 agent.Warp(hit.position);
-                agent.ResetPath();
-                return true;
+                if (agent.isOnNavMesh)
+                {
+                    agent.ResetPath();
+                    return true;
+                }
+                else
+                {
+                    agent.enabled = false; // Disable if warp didn't place on NavMesh
+                    Debug.LogWarning($"ShadowMonster at {transform.position} failed to warp to valid NavMesh position.");
+                    return false;
+                }
             }
-            Debug.LogError($"ShadowMonster at {transform.position} could not find a valid NavMesh position.");
-            agent.enabled = false;
-            return false;
+            else
+            {
+                // Fallback: Find the nearest NavMesh edge
+                if (NavMesh.FindClosestEdge(transform.position, out hit, NavMesh.AllAreas))
+                {
+                    agent.enabled = true;
+                    agent.Warp(hit.position);
+                    if (agent.isOnNavMesh)
+                    {
+                        agent.ResetPath();
+                        return true;
+                    }
+                    else
+                    {
+                        agent.enabled = false;
+                        Debug.LogWarning($"ShadowMonster at {transform.position} failed to warp to NavMesh edge.");
+                        return false;
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"ShadowMonster at {transform.position} could not find a valid NavMesh position within {searchRadius} units.");
+                    agent.enabled = false;
+                    return false;
+                }
+            }
         }
 
         private void ChangeState(MonsterState newState)
         {
     if (isDead || currentState == newState) return;
+    Debug.Log($"Changing state from {currentState} to {newState}, isGrounded={isGrounded}");
 
-    Debug.Log($"Changing state from {currentState} to {newState}, isGrounded: {isGrounded}");
     currentState = newState;
 
     if (animator != null)
@@ -240,28 +275,40 @@ namespace Enemies
             lastWanderTime = Time.time;
             if (!agent.enabled && TryWarpToNavMesh())
             {
+                agent.isStopped = false;
                 Wander();
             }
-            PlayAnimation(Animator.StringToHash("Spider_Walk_Cycle")); // Use walk animation
+            else if (agent.enabled && agent.isOnNavMesh)
+            {
+                agent.isStopped = false;
+                Wander();
+            }
+            PlayAnimation(WalkCycleHash);
             break;
 
         case MonsterState.Chasing:
             if (!agent.enabled && TryWarpToNavMesh())
             {
                 agent.isStopped = false;
+                ChaseTarget();
             }
-            PlayAnimation(Animator.StringToHash("Spider_Walk_Cycle")); // Use walk animation
+            else if (agent.enabled && agent.isOnNavMesh)
+            {
+                agent.isStopped = false;
+                ChaseTarget();
+            }
+            PlayAnimation(WalkCycleHash);
             break;
 
         case MonsterState.Charging:
             isCharging = true;
-            if (agent.enabled) agent.isStopped = true;
+            if (agent.enabled && agent.isOnNavMesh) agent.isStopped = true;
             PlayAnimation(ChargeHash);
             chargingRoutine = StartCoroutine(StartExplosionAfterDelay());
             break;
 
         case MonsterState.Attacking:
-            if (agent.enabled) agent.isStopped = true;
+            if (agent.enabled && agent.isOnNavMesh) agent.isStopped = true;
             PlayAnimation(AttackHash);
             StartCoroutine(ExplodeDuringAttack());
             break;
@@ -273,25 +320,24 @@ namespace Enemies
 
         case MonsterState.Held:
             if (agent.enabled) agent.enabled = false;
+            PlayAnimation(IdleOnAirHash);
             break;
     }
 }
+
         private void FindTarget()
         {
             GameObject closest = null;
             float closestDist = Mathf.Infinity;
             string[] priorityTags = { "Player", "TreeOfLight", "Furniture" };
 
-            Debug.Log("Searching for targets...");
             foreach (string tag in priorityTags)
             {
                 var objects = GameObject.FindGameObjectsWithTag(tag);
-                Debug.Log($"Found {objects.Length} objects with tag {tag}");
                 foreach (var obj in objects)
                 {
                     if (obj == null) continue;
                     float dist = Vector3.Distance(transform.position, obj.transform.position);
-                    Debug.Log($"Checking {obj.name} at distance {dist}");
                     if (dist < chaseRange && dist < closestDist)
                     {
                         closest = obj;
@@ -299,15 +345,6 @@ namespace Enemies
                     }
                 }
                 if (closest != null) break;
-            }
-
-            if (closest != target)
-            {
-                Debug.Log($"Target changed from {(target ? target.name : "null")} to {(closest ? closest.name : "null")}, distance: {closestDist}");
-            }
-            else if (closest == null)
-            {
-                Debug.Log("No valid target found within chase range");
             }
 
             target = closest;
@@ -318,11 +355,7 @@ namespace Enemies
             if (agent.enabled && target != null && agent.isOnNavMesh)
             {
                 agent.SetDestination(target.transform.position);
-                Debug.Log($"Chasing target {target.name} at {agent.destination}");
-            }
-            else
-            {
-                Debug.LogWarning("Chase failed: Agent disabled, no target, or not on NavMesh");
+                Debug.Log($"Chasing target at {target.transform.position}");
             }
         }
 
@@ -333,26 +366,19 @@ namespace Enemies
             if (NavMesh.SamplePosition(randomPoint, out NavMeshHit hit, wanderRadius, NavMesh.AllAreas))
             {
                 agent.SetDestination(hit.position);
-                Debug.Log($"Wandering to {hit.position}");
-            }
-            else
-            {
-                Debug.LogWarning("Wander failed: No valid NavMesh position");
+                Debug.Log($"Wander destination set to {hit.position}");
             }
         }
 
         private IEnumerator StartExplosionAfterDelay()
         {
-            Debug.Log("Starting charge delay");
             yield return new WaitForSeconds(chargeDelay);
             if (isDead || !canExplode || currentState != MonsterState.Charging)
             {
-                Debug.Log("Explosion aborted: Monster is dead, cannot explode, or not in Charging state");
                 isCharging = false;
                 ChangeState(MonsterState.Idle);
                 yield break;
             }
-            Debug.Log("Charge complete, transitioning to attacking");
             ChangeState(MonsterState.Attacking);
         }
 
@@ -361,7 +387,6 @@ namespace Enemies
             yield return new WaitForSeconds(0.3f);
             if (isDead || target == null || !canExplode)
             {
-                Debug.Log("Explosion aborted: Monster is dead or no target");
                 ChangeState(MonsterState.Idle);
                 yield break;
             }
@@ -379,10 +404,6 @@ namespace Enemies
                 hitbox.Initialize(gameObject, damageAmount, 5f);
                 hitbox.TriggerExplosion();
             }
-            else
-            {
-                Debug.LogError("SpiderAttackHitbox component missing on attack hitbox!");
-            }
 
             yield return new WaitForSeconds(0.3f);
             attackHitbox.SetActive(false);
@@ -399,6 +420,14 @@ namespace Enemies
             SpawnHitVFX(hitPoint);
             PlayHurtAnimation();
 
+            if (currentState == MonsterState.Charging)
+            {
+                isCharging = false;
+                canExplode = false;
+                if (chargingRoutine != null) StopCoroutine(chargingRoutine);
+                ChangeState(MonsterState.Idle);
+            }
+
             if (currentHealth <= 0)
                 Kill(source);
             else
@@ -413,15 +442,13 @@ namespace Enemies
                 fx.Play();
                 Destroy(fx.gameObject, fx.main.duration + 0.5f);
             }
-            if (audioSource && hitSFX)
-                audioSource.PlayOneShot(hitSFX);
+            if (audioSource && hitSFX) audioSource.PlayOneShot(hitSFX);
         }
 
         private void PlayHurtAnimation()
         {
-            if (animator != null && !isPlayingHurtAnimation)
+            if (animator != null && !animator.GetCurrentAnimatorStateInfo(0).IsName("Spider_Hurt"))
             {
-                isPlayingHurtAnimation = true;
                 animator.SetTrigger(TriggerHurtParam);
                 StartCoroutine(ResetToIdleAfterHurt());
             }
@@ -430,12 +457,8 @@ namespace Enemies
         private IEnumerator ResetToIdleAfterHurt()
         {
             yield return new WaitForSeconds(0.4f);
-            isPlayingHurtAnimation = false;
             if (!isDead && currentState != MonsterState.Charging && currentState != MonsterState.Attacking)
-            {
-                currentAnimationHash = -1;
                 ChangeState(isGrounded ? MonsterState.Idle : MonsterState.OnAir);
-            }
         }
 
         private IEnumerator InvulnerabilityRoutine()
@@ -449,17 +472,11 @@ namespace Enemies
         {
             if (isDead) return;
 
-            Debug.Log("Spider is being killed");
             isDead = true;
             isCharging = false;
             canExplode = false;
 
-            if (chargingRoutine != null)
-            {
-                StopCoroutine(chargingRoutine);
-                chargingRoutine = null;
-            }
-
+            if (chargingRoutine != null) StopCoroutine(chargingRoutine);
             StopAllCoroutines();
             ChangeState(MonsterState.Dead);
             StartCoroutine(ScaleDownAndDestroy());
@@ -467,7 +484,6 @@ namespace Enemies
 
         private IEnumerator ScaleDownAndDestroy()
         {
-            Debug.Log("Starting death animation");
             float duration = 0.5f;
             Vector3 original = transform.localScale;
             float t = 0;
@@ -479,134 +495,76 @@ namespace Enemies
                 yield return null;
             }
 
-            Debug.Log("Death animation complete, returning to pool");
             if (SpiderPool.Instance != null)
-            {
                 SpiderPool.Instance.ReturnSpider(gameObject);
-            }
             else
-            {
-                Debug.LogWarning("SpiderPool not found, destroying GameObject directly");
                 Destroy(gameObject);
-            }
         }
 
         private void PlayAnimation(int hash)
         {
-            if (animator == null || animator.layerCount == 0)
-            {
-                Debug.LogError("Animator is null or has no layers!");
-                return;
-            }
+            if (animator == null || !animator.HasState(0, hash)) return;
 
-            if (!animator.HasState(0, hash))
+            if (animator.GetCurrentAnimatorStateInfo(0).shortNameHash != hash)
             {
-                Debug.LogError($"Animation state with hash {hash} not found in animator");
-                return;
-            }
-
-            AnimatorStateInfo currentStateInfo = animator.GetCurrentAnimatorStateInfo(0);
-            if (currentStateInfo.shortNameHash == hash)
-            {
-                Debug.Log($"Animation {hash} already playing, skipping");
-                return;
-            }
-
-            Debug.Log($"Playing animation with hash {hash} for state {currentState}");
-            SetAnimationParameters(hash);
-            animator.Play(hash, 0, 0);
-            currentAnimationHash = hash;
-        }
-
-        private void SetAnimationParameters(int hash)
-        {
-            if (animator == null) return;
-
-            animator.SetBool(IsChargingParam, false);
-            animator.SetBool(IsDeadParam, false);
-            animator.SetFloat(SpeedParam, 0f);
-
-            if (hash == IdleHash)
-            {
-                animator.SetBool(IsGroundedParam, true);
-            }
-            else if (hash == IdleOnAirHash)
-            {
-                animator.SetBool(IsGroundedParam, false);
-            }
-            else if (hash == ChargeHash)
-            {
-                animator.SetBool(IsChargingParam, true);
-            }
-            else if (hash == AttackHash)
-            {
-                animator.SetTrigger(TriggerAttackParam);
-            }
-            else if (hash == DieHash)
-            {
-                animator.SetBool(IsDeadParam, true);
+                animator.Play(hash, 0, 0);
             }
         }
 
-        public void SetMaxHealth(float newMaxHealth)
-        {
-            maxHealth = newMaxHealth;
-            currentHealth = Mathf.Clamp(currentHealth, 0f, maxHealth);
-        }
-
-        private MonsterState previousState;
-        
         public void OnPickup()
         {
             if (isDead) return;
 
-            Debug.Log("ShadowMonster picked up");
-            previousState = currentState; // Store current state
             if (currentState == MonsterState.Charging)
             {
                 isCharging = false;
                 canExplode = false;
-                if (chargingRoutine != null)
-                {
-                    StopCoroutine(chargingRoutine);
-                    chargingRoutine = null;
-                }
+                if (chargingRoutine != null) StopCoroutine(chargingRoutine);
                 StopAllCoroutines();
             }
 
-            if (agent.enabled)
+            if (agent.enabled && agent.isOnNavMesh)
             {
                 agent.isStopped = true;
                 agent.enabled = false;
             }
 
             Rigidbody rb = GetComponent<Rigidbody>();
-            if (rb == null)
-            {
-                Debug.LogError("Rigidbody missing on ShadowMonster!");
-                return;
-            }
+            if (rb == null) { Debug.LogError("Rigidbody missing!"); return; }
             rb.isKinematic = false;
             rb.useGravity = true;
 
-            if (animator != null)
-            {
-                animator.SetBool(IsChargingParam, false);
-                animator.SetBool(IsGroundedParam, false);
-                PlayAnimation(IdleOnAirHash); // Play Spider_Idle_On_Air
-            }
-
+            PlayAnimation(IdleOnAirHash);
             ChangeState(MonsterState.Held);
+        }
+        
+        public void SetMaxHealth(float newMaxHealth)
+        {
+            maxHealth = newMaxHealth;
+            currentHealth = Mathf.Clamp(currentHealth, 0f, maxHealth); // Ensure current health stays within bounds
+        }
+
+        // Add this method to check if the monster is grounded
+        public bool IsGrounded()
+        {
+            float distanceToGround = 0.1f; // Adjust based on monster size
+            return Physics.Raycast(transform.position, Vector3.down, distanceToGround);
+        }
+
+        // Add this method to enable AI behavior
+        public void EnableAI()
+        {
+            if (!agent.enabled && TryWarpToNavMesh()) // Check if agent is disabled and warp if needed
+            {
+                agent.isStopped = false; // Start the agent's movement
+                // Optionally, set an initial state here if your monster uses state logic
+            }
         }
 
         public void OnRelease()
         {
             Rigidbody rb = GetComponent<Rigidbody>();
-            if (rb == null)
-            {
-                Debug.LogError("Rigidbody missing on ShadowMonster!");
-                return;
-            }
+            if (rb == null) { Debug.LogError("Rigidbody missing!"); return; }
             rb.isKinematic = false;
             rb.useGravity = true;
             StartCoroutine(WaitForLandingThenReset());
@@ -614,7 +572,7 @@ namespace Enemies
 
         private IEnumerator WaitForLandingThenReset()
         {
-            float timeout = 5f;
+            float timeout = 2f;
             float elapsed = 0f;
             while (!isGrounded && elapsed < timeout)
             {
@@ -624,57 +582,34 @@ namespace Enemies
 
             if (!isGrounded)
             {
-                Debug.LogWarning("Monster failed to land within timeout, forcing reset");
+                Debug.LogWarning($"ShadowMonster did not land within {timeout}s. Attempting to warp to NavMesh.");
             }
 
-            if (TryWarpToNavMesh())
+            if (TryWarpToNavMesh() && agent.enabled && agent.isOnNavMesh)
             {
                 agent.isStopped = true;
             }
+            else
+            {
+                Debug.LogWarning("Warp to NavMesh failed, transitioning to OnAir state.");
+            }
 
             Rigidbody rb = GetComponent<Rigidbody>();
-            rb.isKinematic = true;
-            rb.useGravity = false;
-
-            if (previousState == MonsterState.Charging && target != null && Vector3.Distance(transform.position, target.transform.position) <= attackRange)
+            if (rb != null)
             {
-                Debug.Log("Resuming charging after release");
-                ChangeState(MonsterState.Charging);
+                rb.isKinematic = true;
+                rb.useGravity = false;
             }
             else
             {
-                ChangeState(isGrounded ? MonsterState.Idle : MonsterState.OnAir);
+                Debug.LogError("Rigidbody missing!");
             }
+
+            ChangeState(isGrounded ? MonsterState.Idle : MonsterState.OnAir);
         }
 
         private void OnGrabbed(SelectEnterEventArgs args) => OnPickup();
         private void OnReleased(SelectExitEventArgs args) => OnRelease();
-
-        // private IEnumerator WaitForLandingThenReset()
-        // {
-        //     float timeout = 5f;
-        //     float elapsed = 0f;
-        //     while (!isGrounded && elapsed < timeout)
-        //     {
-        //         elapsed += Time.deltaTime;
-        //         yield return null;
-        //     }
-        //
-        //     if (!isGrounded)
-        //     {
-        //         Debug.LogWarning("Monster failed to land within timeout, forcing reset");
-        //     }
-        //
-        //     if (TryWarpToNavMesh())
-        //     {
-        //         agent.isStopped = true;
-        //     }
-        //
-        //     Rigidbody rb = GetComponent<Rigidbody>();
-        //     rb.isKinematic = true;
-        //     rb.useGravity = false;
-        //     ChangeState(MonsterState.Idle);
-        // }
 
         private void ResetSpider()
         {
@@ -691,14 +626,9 @@ namespace Enemies
                 animator.Update(0f);
             }
 
-            if (TryWarpToNavMesh())
-            {
-                agent.isStopped = true;
-            }
+            if (TryWarpToNavMesh()) agent.isStopped = true;
 
             transform.localScale = Vector3.one;
-            CheckGrounded();
-            wasGroundedLastFrame = false;
             ChangeState(isGrounded ? MonsterState.Idle : MonsterState.OnAir);
         }
 
@@ -710,14 +640,8 @@ namespace Enemies
             animator.SetBool(IsChargingParam, isCharging);
             animator.SetBool(IsDeadParam, isDead);
 
-            float currentSpeed = 0f;
-            if (agent != null && agent.enabled && agent.hasPath && !agent.isStopped)
-            {
-                currentSpeed = agent.velocity.magnitude;
-            }
-
+            float currentSpeed = agent?.velocity.magnitude ?? 0f;
             animator.SetFloat(SpeedParam, currentSpeed);
-            animator.SetFloat(VelocityParam, currentSpeed);
         }
 
         private void OnValidate()

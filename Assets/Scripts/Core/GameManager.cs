@@ -67,7 +67,7 @@ public class GameManager : MonoBehaviour
         // Update health
         float healthMultiplier = 1 + (brokenLampsCount * healthIncreasePerLamp);
         float newMaxHealth = initialMaxHealth * healthMultiplier;
-        monsterScript.SetMaxHealth(newMaxHealth);
+        //monsterScript.SetMaxHealth(newMaxHealth);
 
         // Update size
         float sizeMultiplier = 1 + (brokenLampsCount * sizeIncreasePerLamp);
