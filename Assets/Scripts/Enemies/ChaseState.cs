@@ -4,39 +4,52 @@ namespace Enemies
 {
     public class ChaseState : IState
     {
-        private readonly ShadowMonster monster;
-        private readonly Transform target;
+        private ShadowMonster monster;
 
-        public ChaseState(ShadowMonster monster, Transform target)
+        public ChaseState(ShadowMonster monster)
         {
             this.monster = monster;
-            this.target = target;
         }
 
         public void OnEnter()
         {
-            monster.animator.Play("Walk");
-            monster.agent.isStopped = false;
+            if (monster.agent != null && monster.agent.isActiveAndEnabled && monster.agent.isOnNavMesh)
+            {
+                monster.animator.SetBool("isRunning", true);
+            }
         }
 
         public void Tick()
         {
-            if (target == null)
+            if (!monster.isGrounded || monster.IsBeingHeld || monster.healthComponent.IsDead()) return;
+
+            Transform target = monster.GetClosestTarget();
+            float distance = monster.GetDistanceToTarget();
+
+            if (target == null || distance > monster.chaseRange)
             {
-                monster.SetState(new IdleState(monster));
-                return;
+                monster.stateMachine.ChangeState(new IdleState(monster));
             }
-
-            monster.agent.SetDestination(target.position);
-
-            float distance = Vector3.Distance(monster.transform.position, target.position);
-
-            if (distance < monster.attackRange)
+            else if (distance <= monster.attackRange && monster.healthComponent.GetHealthPercentage() >= 0.19f)
             {
-                monster.SetState(new ChargeState(monster, target));
+                monster.stateMachine.ChangeState(new ChargeState(monster, isKamikaze: false));
+            }
+            else if (distance <= monster.kamikazeRange && monster.healthComponent.GetHealthPercentage() < 0.19f)
+            {
+                monster.stateMachine.ChangeState(new ChargeState(monster, isKamikaze: true));
+            }
+            else
+            {
+                if (monster.agent != null && monster.agent.isActiveAndEnabled && monster.agent.isOnNavMesh)
+                {
+                    monster.agent.SetDestination(target.position);
+                }
             }
         }
 
-        public void OnExit() {}
+        public void OnExit()
+        {
+            monster.animator.SetBool("isRunning", false);
+        }
     }
 }

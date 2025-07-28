@@ -1,24 +1,32 @@
-﻿using Enemies;
-
-public class HeldState : IState
+﻿namespace Enemies
 {
-    private readonly ShadowMonster monster;
-
-    public HeldState(ShadowMonster monster)
+    public class HeldState : IState
     {
-        this.monster = monster;
-    }
+        private ShadowMonster monster;
 
-    public void OnEnter()
-    {
-        monster.agent.enabled = false;
-        monster.animator.Play("Spider_Idle_On_Air");
-    }
+        public HeldState(ShadowMonster monster)
+        {
+            this.monster = monster;
+        }
 
-    public void Tick() {}
+        public void OnEnter()
+        {
+            monster.animator.SetBool("isRunning", false);
+            monster.animator.SetBool("isCharging", false);
+            monster.animator.SetBool("isGrounded", false);
+        }
 
-    public void OnExit()
-    {
-        monster.agent.enabled = true;
+        public void Tick()
+        {
+            if (!monster.IsBeingHeld && monster.isGrounded)
+            {
+                monster.stateMachine.ChangeState(new IdleState(monster));
+            }
+        }
+
+        public void OnExit()
+        {
+            monster.animator.SetBool("isGrounded", monster.isGrounded);
+        }
     }
 }

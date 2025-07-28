@@ -1,19 +1,19 @@
-﻿using Enemies;
-
-public class StateMachine
+﻿namespace Enemies
 {
-    private IState currentState;
-
-    public void ChangeState(IState newState)
+    public class StateMachine
     {
-        if (currentState == newState) return;
-        currentState?.OnExit();
-        currentState = newState;
-        currentState.OnEnter();
-    }
+        public IState CurrentState { get; private set; }
 
-    public void Tick()
-    {
-        currentState?.Tick();
+        public void ChangeState(IState newState)
+        {
+            CurrentState?.OnExit();
+            CurrentState = newState;
+            CurrentState?.OnEnter();
+        }
+
+        public void Tick()
+        {
+            CurrentState?.Tick();
+        }
     }
 }

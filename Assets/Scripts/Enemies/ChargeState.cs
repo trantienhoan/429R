@@ -1,44 +1,66 @@
-﻿using UnityEngine;
-
-namespace Enemies
+﻿namespace Enemies
 {
     public class ChargeState : IState
     {
-        private readonly ShadowMonster monster;
-        private readonly Transform target;
-        private float chargeTimer;
+        private ShadowMonster monster;
+        private bool isKamikaze;
 
-        public ChargeState(ShadowMonster monster, Transform target)
+        public ChargeState(ShadowMonster monster, bool isKamikaze = false)
         {
             this.monster = monster;
-            this.target = target;
+            this.isKamikaze = isKamikaze;
         }
 
         public void OnEnter()
         {
-            monster.animator.Play("Charge");
-            monster.agent.isStopped = true;
-            chargeTimer = monster.chargeDelay;
+            if (monster.agent != null && monster.agent.isActiveAndEnabled && monster.agent.isOnNavMesh)
+            {
+                monster.agent.isStopped = true;
+            }
+            monster.StartCharge();
         }
 
         public void Tick()
         {
-            if (target == null)
+            if (!monster.isGrounded || monster.IsBeingHeld || monster.healthComponent.IsDead())
             {
-                monster.SetState(new IdleState(monster));
+                monster.stateMachine.ChangeState(new HurtState(monster)); // Transition to HurtState on conditions
                 return;
             }
 
-            chargeTimer -= Time.deltaTime;
-            
-            if (monster.IsBeingHeld) return;
-
-            if (chargeTimer <= 0f)
+            float distance = monster.GetDistanceToTarget();
+            if (isKamikaze)
             {
-                monster.Explode();
+                if (distance > monster.kamikazeRange || monster.healthComponent.GetHealthPercentage() >= 0.19f)
+                {
+                    monster.stateMachine.ChangeState(new ChaseState(monster));
+                }
+                else if (monster.IsChargeComplete())
+                {
+                    monster.Explode();
+                }
+            }
+            else
+            {
+                if (distance > monster.attackRange || monster.healthComponent.GetHealthPercentage() < 0.19f)
+                {
+                    monster.stateMachine.ChangeState(new ChaseState(monster));
+                }
+                else if (monster.IsChargeComplete())
+                {
+                    monster.PerformAttack();
+                    monster.stateMachine.ChangeState(new IdleState(monster));
+                }
             }
         }
 
-        public void OnExit() {}
+        public void OnExit()
+        {
+            if (monster.agent != null && monster.agent.isActiveAndEnabled && monster.agent.isOnNavMesh)
+            {
+                monster.agent.isStopped = false;
+            }
+            monster.animator.SetBool("isCharging", false);
+        }
     }
 }

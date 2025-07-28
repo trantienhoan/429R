@@ -1,30 +1,41 @@
-﻿using Enemies;
-using UnityEngine;
+﻿using UnityEngine;
 
-public class IdleState : IState
+namespace Enemies
 {
-    private readonly ShadowMonster monster;
-    private float idleTime;
-
-    public IdleState(ShadowMonster monster)
+    public class IdleState : IState
     {
-        this.monster = monster;
-    }
+        private ShadowMonster monster;
+        private float idleTimer;
 
-    public void OnEnter()
-    {
-        monster.animator.Play("Idle");
-        idleTime = Random.Range(1f, 3f);
-    }
-
-    public void Tick()
-    {
-        idleTime -= Time.deltaTime;
-        if (idleTime <= 0f)
+        public IdleState(ShadowMonster monster)
         {
-            monster.SetState(new WanderState(monster));
+            this.monster = monster;
         }
-    }
 
-    public void OnExit() {}
+        public void OnEnter()
+        {
+            monster.animator.SetBool("isRunning", false);
+            idleTimer = 0f;
+        }
+
+        public void Tick()
+        {
+            if (!monster.isGrounded || monster.IsBeingHeld || monster.healthComponent.IsDead()) return;
+
+            idleTimer += Time.deltaTime;
+            Transform target = monster.GetClosestTarget();
+            float distance = monster.GetDistanceToTarget();
+
+            if (target != null && distance <= monster.chaseRange)
+            {
+                monster.stateMachine.ChangeState(new ChaseState(monster));
+            }
+            else if (idleTimer >= monster.idleTimeBeforeDive)
+            {
+                monster.stateMachine.ChangeState(new DiveState(monster));
+            }
+        }
+
+        public void OnExit() { }
+    }
 }

@@ -1154,6 +1154,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 4478516609795976183}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: eea07b0f474e5d44c85bbaded1d24bf4,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2649278790831312482}
     - targetCorrespondingSourceObject: {fileID: 7068203765398826332, guid: eea07b0f474e5d44c85bbaded1d24bf4,
         type: 3}
       insertIndex: -1
@@ -1321,15 +1325,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   animator: {fileID: 3885325605593910892}
   agent: {fileID: 4478516609795976183}
-  wanderPoints: []
+  wanderPoints:
+  - {fileID: 0}
+  - {fileID: 0}
   attackHitbox: {fileID: 4643109836980762304}
   rb: {fileID: 4301660074786869948}
+  deathVFX: {fileID: 570832250925526149, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
+  deathSFX: {fileID: 0}
+  audioSource: {fileID: 0}
+  grabInteractable: {fileID: 7609633742523881503}
+  healthComponent: {fileID: 2649278790831312482}
   chaseRange: 15
   attackRange: 1
+  kamikazeRange: 5
   wanderDelay: 0
   chargeDelay: 2.5
   damageAmount: 1000
-  stuckTimeThreshold: 3
+  stuckTimeThreshold: 30
+  idleTimeBeforeDive: 5
   groundCheckPoint: {fileID: 2323047856565264533}
   groundCheckDistance: 0.1
   groundLayer:
@@ -1479,6 +1492,31 @@ NavMeshAgent:
   m_BaseOffset: 0
   m_WalkableMask: 1
   m_ObstacleAvoidanceType: 3
+--- !u!114 &2649278790831312482
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8658269655017285872}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2883e4c1dfd15bf43a546e9d36e341bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 200
+  currentHealth: 0
+  invulnerabilityDuration: 1
+  healthLight: {fileID: 0}
+  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
+    type: 3}
+  breakSound: {fileID: 0}
+  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
+    type: 3}
+  hitSound: {fileID: 0}
+  scaleOnDeath: 1
+  scaleDuration: 0.5
+  minScale: {x: 0, y: 0, z: 0}
 --- !u!4 &8980480744218514520 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 596762232435835385, guid: eea07b0f474e5d44c85bbaded1d24bf4,

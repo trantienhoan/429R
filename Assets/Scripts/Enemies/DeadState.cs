@@ -1,21 +1,26 @@
-﻿using Enemies;
-
-public class DeadState : IState
+﻿namespace Enemies
 {
-    private readonly ShadowMonster monster;
-
-    public DeadState(ShadowMonster monster)
+    public class DeadState : IState
     {
-        this.monster = monster;
-    }
+        private ShadowMonster monster;
 
-    public void OnEnter()
-    {
-        monster.animator.Play("Spider_Die");
-        monster.agent.enabled = false;
-        monster.StartCoroutine(monster.ScaleDownAndDisable());
-    }
+        public DeadState(ShadowMonster monster)
+        {
+            this.monster = monster;
+        }
 
-    public void Tick() {}
-    public void OnExit() {}
+        public void OnEnter()
+        {
+            if (monster.agent != null && monster.agent.isActiveAndEnabled)
+            {
+                monster.agent.enabled = false;
+            }
+            monster.rb.isKinematic = true;
+            monster.grabInteractable.enabled = false;
+            monster.PlayDeathEffects();
+        }
+
+        public void Tick() { }
+        public void OnExit() { }
+    }
 }
