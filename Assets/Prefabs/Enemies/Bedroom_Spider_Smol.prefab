@@ -1304,7 +1304,7 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 1
+  m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 1
 --- !u!114 &3030980029734817786
@@ -1319,25 +1319,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7827a43e46c569d4188c307419dc062c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  animator: {fileID: 3885325605593910892}
+  agent: {fileID: 4478516609795976183}
+  wanderPoints: []
+  attackHitbox: {fileID: 4643109836980762304}
+  rb: {fileID: 4301660074786869948}
   chaseRange: 15
   attackRange: 1
-  wanderRadius: 5
   wanderDelay: 0
   chargeDelay: 2.5
   damageAmount: 1000
-  attackHitbox: {fileID: 4643109836980762304}
-  postExplosionCooldown: 1
-  maxHealth: 100
-  invulnerabilityDuration: 0.5
+  stuckTimeThreshold: 3
   groundCheckPoint: {fileID: 2323047856565264533}
   groundCheckDistance: 0.1
   groundLayer:
     serializedVersion: 2
     m_Bits: 2097152
-  animator: {fileID: 3885325605593910892}
-  agent: {fileID: 4478516609795976183}
-  hitVFX: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e, type: 3}
-  hitSFX: {fileID: 8300000, guid: 9118a3d703424a441a222ad5c2ea6971, type: 3}
 --- !u!114 &7609633742523881503
 MonoBehaviour:
   m_ObjectHideFlags: 0
