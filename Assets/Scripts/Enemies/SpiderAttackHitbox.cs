@@ -1,5 +1,4 @@
 using UnityEngine;
-//using System;
 using Cam;
 using Core;
 
@@ -25,11 +24,21 @@ namespace Enemies
         private GameObject owner;
         private bool hasExploded;
 
-        public void Initialize(GameObject owner, float damage, float pushForce)
+        // Public property to expose damage for TreeOfLightPot
+        public float Damage => damage;
+
+        public void Initialize(GameObject owner, float damage = -1f, float pushForce = -1f)
         {
             this.owner = owner;
-            this.damage = damage;
-            this.pushForce = pushForce;
+            // Only override serialized values if parameters are provided (non-negative)
+            if (damage >= 0f)
+            {
+                this.damage = damage;
+            }
+            if (pushForce >= 0f)
+            {
+                this.pushForce = pushForce;
+            }
             hasExploded = false;
         }
 

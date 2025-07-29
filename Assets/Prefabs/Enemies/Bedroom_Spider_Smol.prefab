@@ -48,7 +48,7 @@ SphereCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -68,12 +68,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   damage: 1000
   pushForce: 1000
-  explosionRadius: 2
+  explosionRadius: 0.83
   explosionVFX: {fileID: 1275427502020279462, guid: 9e0599f5a53c6ae4e91961edfdad1ce9,
     type: 3}
   explosionSFX: {fileID: 8300000, guid: 9118a3d703424a441a222ad5c2ea6971, type: 3}
   shakeIntensity: 0.05
-  shakeDuration: 0.2
+  shakeDuration: 0.12
   drawDebugGizmos: 1
   gizmoColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1001 &2892365612308435589
@@ -220,18 +220,33 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: eea07b0f474e5d44c85bbaded1d24bf4,
         type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.78
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eea07b0f474e5d44c85bbaded1d24bf4,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.78
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eea07b0f474e5d44c85bbaded1d24bf4,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.78
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eea07b0f474e5d44c85bbaded1d24bf4,
+        type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.837
+      value: -0.36
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: eea07b0f474e5d44c85bbaded1d24bf4,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.003
+      value: 1.1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: eea07b0f474e5d44c85bbaded1d24bf4,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.72
+      value: -0.745
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: eea07b0f474e5d44c85bbaded1d24bf4,
         type: 3}
@@ -267,6 +282,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eea07b0f474e5d44c85bbaded1d24bf4,
+        type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8332930225947889998, guid: eea07b0f474e5d44c85bbaded1d24bf4,
         type: 3}
@@ -1025,8 +1045,13 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6112559002793178420, guid: eea07b0f474e5d44c85bbaded1d24bf4,
         type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.241
+      objectReference: {fileID: 0}
+    - target: {fileID: 6112559002793178420, guid: eea07b0f474e5d44c85bbaded1d24bf4,
+        type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.22099996
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6259421641327254599, guid: eea07b0f474e5d44c85bbaded1d24bf4,
         type: 3}
@@ -1292,10 +1317,10 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8658269655017285872}
   serializedVersion: 4
-  m_Mass: 1
+  m_Mass: 333
   m_Drag: 0
   m_AngularDrag: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_CenterOfMass: {x: 0, y: -0.1, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
   m_IncludeLayers:
@@ -1304,13 +1329,13 @@ Rigidbody:
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 0
-  m_ImplicitCom: 1
+  m_ImplicitCom: 0
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
-  m_CollisionDetection: 1
+  m_CollisionDetection: 0
 --- !u!114 &3030980029734817786
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1328,23 +1353,25 @@ MonoBehaviour:
   wanderPoints:
   - {fileID: 0}
   - {fileID: 0}
-  attackHitbox: {fileID: 4643109836980762304}
+  attackHitbox: {fileID: 5078379185537246606}
   rb: {fileID: 4301660074786869948}
   deathVFX: {fileID: 570832250925526149, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
   deathSFX: {fileID: 0}
   audioSource: {fileID: 0}
   grabInteractable: {fileID: 7609633742523881503}
   healthComponent: {fileID: 2649278790831312482}
-  chaseRange: 15
+  chaseRange: 5
   attackRange: 1
   kamikazeRange: 5
-  wanderDelay: 0
+  wanderDelay: 5
   chargeDelay: 2.5
-  damageAmount: 1000
+  attackDamage: 50
+  kamikazeDamage: 10000
+  pushForce: 500
   stuckTimeThreshold: 30
   idleTimeBeforeDive: 5
   groundCheckPoint: {fileID: 2323047856565264533}
-  groundCheckDistance: 0.1
+  groundCheckDistance: 0.5
   groundLayer:
     serializedVersion: 2
     m_Bits: 2097152

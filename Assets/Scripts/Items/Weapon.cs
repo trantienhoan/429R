@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
-//using UnityEngine.AI;
 using Core;
 
 namespace Items
@@ -84,8 +83,14 @@ namespace Items
             float verticalDot = Vector3.Dot(movementDirection, -Vector3.up);
             float horizontalDot = Mathf.Abs(Vector3.Dot(movementDirection, Vector3.right));
 
-            if (weaponType == WeaponType.Hammer && verticalDot > verticalSwingThreshold) { }
-            if (weaponType == WeaponType.Sword && horizontalDot > horizontalSwingThreshold) { }
+            if (weaponType == WeaponType.Hammer && verticalDot > verticalSwingThreshold)
+            {
+                Debug.Log("Hammer vertical swing detected!");
+            }
+            if (weaponType == WeaponType.Sword && horizontalDot > horizontalSwingThreshold)
+            {
+                Debug.Log("Sword horizontal swing detected!");
+            }
         }
 
         private void OnCollisionEnter(Collision collision)
@@ -125,14 +130,19 @@ namespace Items
                 if (healthComponent != null)
                 {
                     healthComponent.TakeDamage(damageAmount, collisionPoint, gameObject);
+                    Debug.Log($"Weapon: Applied {damageAmount} damage to {collision.gameObject.name}");
                 }
                 return;
             }
 
-            var treeOfLight = collision.gameObject.GetComponentInChildren<TreeOfLight>();
-            if (treeOfLight != null)
+            if (collision.gameObject.CompareTag("TreeOfLight"))
             {
-                treeOfLight.GetComponent<HealthComponent>().TakeDamage(damageAmount * treeOfLightDamageMultiplier, collisionPoint, gameObject);
+                var healthComponent = collision.gameObject.GetComponent<HealthComponent>();
+                if (healthComponent != null)
+                {
+                    healthComponent.TakeDamage(damageAmount * treeOfLightDamageMultiplier, collisionPoint, gameObject);
+                    Debug.Log($"Weapon: Applied {damageAmount * treeOfLightDamageMultiplier} damage to {collision.gameObject.name}");
+                }
                 return;
             }
 
@@ -140,6 +150,7 @@ namespace Items
             if (spiderHealth != null && collision.gameObject.CompareTag("Enemy"))
             {
                 spiderHealth.TakeDamage(shadowMonsterDamageMultiplier * damageAmount, collisionPoint, gameObject);
+                Debug.Log($"Weapon: Applied {shadowMonsterDamageMultiplier * damageAmount} damage to {collision.gameObject.name}");
                 Rigidbody spiderRb = collision.gameObject.GetComponent<Rigidbody>();
                 if (spiderRb != null && !spiderRb.isKinematic)
                 {
@@ -165,6 +176,7 @@ namespace Items
                         float distance = Vector3.Distance(center, hitColliders[i].transform.position);
                         float damageWithFalloff = damage * (1f - (distance / radius));
                         healthComponent.TakeDamage(damageWithFalloff, hitColliders[i].transform.position, gameObject);
+                        Debug.Log($"Weapon: Applied {damageWithFalloff} area damage to {hitColliders[i].gameObject.name}");
                     }
                 }
             }
@@ -197,7 +209,7 @@ namespace Items
 
         private void Update()
         {
-            transform.position += direction * speed * Time.deltaTime;
+            transform.position += direction * (speed * Time.deltaTime);
         }
 
         private void OnTriggerEnter(Collider other)
@@ -209,6 +221,7 @@ namespace Items
                 if (healthComponent != null)
                 {
                     healthComponent.TakeDamage(damage, transform.position, gameObject);
+                    Debug.Log($"Projectile: Applied {damage} damage to {other.gameObject.name}");
                 }
             }
             Destroy(gameObject);

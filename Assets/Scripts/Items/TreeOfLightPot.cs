@@ -1,44 +1,67 @@
+using System.Linq; // Added for FirstOrDefault
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.XR.Interaction.Toolkit;
 using Core;
+using Enemies;
 
 namespace Items
 {
     public class TreeOfLightPot : MonoBehaviour
     {
+        [Header("Configuration")]
+        [SerializeField] private float growthDuration = 50f;
+        [SerializeField] private float maxHealth = 100f;
+
+        [Header("Animation")]
+        [SerializeField] private Animator animator;
+        [SerializeField] private string growthAnimationName = "Seed_Grow";
+
         [Header("Prefabs and References")]
-        [SerializeField] private GameObject existingTreeOfLight;
         [SerializeField] private ParticleSystem growthParticlePrefab;
         [SerializeField] private UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor seedSocket;
-        public Transform treeSpawnPoint;
+        [SerializeField] private Transform treeSpawnPoint;
+        [SerializeField] private ShadowMonsterSpawner monsterSpawner;
 
-        //[Header("Timings")]
-        //[Tooltip("Duration of seed transition to spawn point.")]
-        [SerializeField] private float seedMoveDuration = 1.0f;
-        //[SerializeField] private float deactivationDelay = 5f;
+        [Header("Audio")]
+        [SerializeField] private AudioSource audioSource;
+        [SerializeField] private AudioClip growthSound;
 
         [Header("Events")]
         public UnityEvent onGrowthStarted;
         public UnityEvent onGrowthCompleted;
 
+        [SerializeField] private float seedMoveDuration = 1.0f;
+
         private bool isGrowing;
-        private bool hasGrown;
+        private bool isComplete;
+        private bool hasBegunGrowth;
         private MagicalSeed plantedSeed;
         private Quaternion initialSeedRotation;
         private Vector3 initialSeedScale;
-        private GameObject treeInstance;
-        private TreeOfLight tree;
         private HealthComponent healthComponent;
-
         private ParticleSystem growthParticleInstance;
+        private ItemDropHandler itemDropHandler;
+
+        public bool IsGrowing => isGrowing;
 
         private void Awake()
         {
+            gameObject.tag = "TreeOfLight";
+            Debug.Log($"TreeOfLightPot Awake: Tag = {gameObject.tag}, Active = {gameObject.activeInHierarchy}, Position = {transform.position}");
+
             if (treeSpawnPoint == null)
             {
-                Debug.LogError("Tree spawn point not assigned on TreeOfLightPot!");
+                treeSpawnPoint = transform;
+                Debug.LogWarning("TreeOfLightPot: treeSpawnPoint not assigned, using self transform");
+            }
+
+            animator ??= GetComponent<Animator>();
+            if (animator == null)
+            {
+                Debug.LogError("TreeOfLightPot: Animator is missing!");
+                enabled = false;
                 return;
             }
 
@@ -47,31 +70,65 @@ namespace Items
             {
                 seedSocket.selectEntered.AddListener(OnSeedSocketEntered);
             }
-
-            if (existingTreeOfLight == null && treeSpawnPoint != null)
+            else
             {
-                existingTreeOfLight = treeSpawnPoint.GetComponentInChildren<TreeOfLight>()?.gameObject;
-                if (existingTreeOfLight == null)
-                {
-                    Debug.LogError("Could not find TreeOfLight as a child of treeSpawnPoint. Please assign it in the Inspector.");
-                }
+                Debug.LogError("TreeOfLightPot: XRSocketInteractor is missing!");
             }
 
             if (growthParticlePrefab == null)
             {
-                Debug.LogError("Growth Particle is not assigned in TreeOfLightPot!");
+                Debug.LogError("TreeOfLightPot: Growth Particle is not assigned!");
             }
             else
             {
                 growthParticleInstance = Instantiate(growthParticlePrefab, treeSpawnPoint.position, Quaternion.identity, transform);
+                growthParticleInstance.gameObject.SetActive(false);
             }
 
             healthComponent = GetComponent<HealthComponent>();
             if (healthComponent == null)
             {
                 healthComponent = gameObject.AddComponent<HealthComponent>();
-                Debug.LogWarning("HealthComponent is not assigned on TreeOfLightPot! Adding one automatically.");
+                Debug.LogWarning("TreeOfLightPot: HealthComponent not assigned! Adding one automatically.");
             }
+            healthComponent.SetMaxHealth(maxHealth);
+
+            itemDropHandler = GetComponent<ItemDropHandler>();
+            if (itemDropHandler == null)
+            {
+                Debug.LogError("TreeOfLightPot: ItemDropHandler is missing!");
+            }
+
+            if (monsterSpawner == null)
+            {
+                Debug.LogWarning("TreeOfLightPot: Monster Spawner not assigned!");
+            }
+        }
+
+        private void OnEnable()
+        {
+            healthComponent.OnHealthChanged += OnHealthChanged;
+            healthComponent.OnDeath += OnDeathHandler;
+        }
+
+        private void OnDisable()
+        {
+            healthComponent.OnHealthChanged -= OnHealthChanged;
+            healthComponent.OnDeath -= OnDeathHandler;
+            if (seedSocket != null)
+            {
+                seedSocket.selectEntered.RemoveListener(OnSeedSocketEntered);
+            }
+        }
+
+        private void OnHealthChanged(object sender, HealthComponent.HealthChangedEventArgs e)
+        {
+            Debug.Log($"TreeOfLightPot: Health Changed: {e.CurrentHealth} / {e.MaxHealth}");
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            //
         }
 
         private void OnSeedSocketEntered(SelectEnterEventArgs args)
@@ -81,21 +138,23 @@ namespace Items
                 MagicalSeed seed = grabInteractable.GetComponent<MagicalSeed>();
                 if (seed != null)
                 {
+                    Debug.Log($"TreeOfLightPot: Seed {seed.name} detected in socket");
                     StartCoroutine(PlaceSeed(seed));
                 }
                 else
                 {
-                    Debug.LogWarning("Grabbed object is not a MagicalSeed!");
+                    Debug.LogWarning("TreeOfLightPot: Grabbed object is not a MagicalSeed!");
                 }
             }
             else
             {
-                Debug.LogWarning("Interactable is not XRGrabInteractable!");
+                Debug.LogWarning("TreeOfLightPot: Interactable is not XRGrabInteractable!");
             }
         }
 
         private IEnumerator PlaceSeed(MagicalSeed seed)
         {
+            Debug.Log($"TreeOfLightPot: Placing seed {seed.name}, TreeSpawnPoint = {treeSpawnPoint.position}");
             initialSeedRotation = seed.transform.rotation;
             initialSeedScale = seed.transform.localScale;
 
@@ -108,26 +167,9 @@ namespace Items
             seedSocket.socketActive = false;
             plantedSeed = seed;
 
-            treeInstance = ActivateExistingTree();
-            if (treeInstance == null) yield break;
-
-            tree = treeInstance.GetComponent<TreeOfLight>();
-            if (tree != null)
-            {
-                tree.SetParentPot(this);
-                tree.OnPotDeath += HandlePotDeath;
-                if (tree.healthComponent != null)
-                {
-                    tree.healthComponent.OnDeath += HandleTreeOfDeath;
-                }
-                else
-                {
-                    Debug.LogError("TreeOfLight's HealthComponent is null!");
-                }
-                StartGrowthParticles();
-                tree.BeginGrowth();
-                onGrowthStarted.Invoke();
-            }
+            StartGrowthParticles();
+            BeginGrowth();
+            onGrowthStarted.Invoke();
 
             yield return StartCoroutine(MoveSeedToSpawnPoint(seed, seedMoveDuration));
         }
@@ -138,22 +180,9 @@ namespace Items
             rb.isKinematic = true;
         }
 
-        private GameObject ActivateExistingTree()
-        {
-            if (existingTreeOfLight != null)
-            {
-                existingTreeOfLight.SetActive(true);
-                return existingTreeOfLight;
-            }
-            else
-            {
-                Debug.LogError("existingTreeOfLight is not assigned in TreeOfLightPot!");
-                return null;
-            }
-        }
-
         private IEnumerator MoveSeedToSpawnPoint(MagicalSeed seed, float duration)
         {
+            Debug.Log($"TreeOfLightPot: Moving seed to {treeSpawnPoint.position} over {duration}s");
             Vector3 startPosition = seed.transform.position;
             Quaternion startRotation = seed.transform.rotation;
             Vector3 targetPosition = treeSpawnPoint.position - Vector3.up * 0.1f;
@@ -178,8 +207,7 @@ namespace Items
             seed.transform.rotation = treeSpawnPoint.rotation;
             seed.transform.localScale = targetScale;
 
-            var treeRenderer = treeInstance.GetComponentInChildren<Renderer>();
-            if (treeRenderer != null) treeRenderer.enabled = true;
+            Debug.Log("TreeOfLightPot: Seed movement complete");
         }
 
         private void StartGrowthParticles()
@@ -188,6 +216,7 @@ namespace Items
             {
                 growthParticleInstance.gameObject.SetActive(true);
                 growthParticleInstance.Play();
+                Debug.Log("TreeOfLightPot: Growth particles started");
             }
         }
 
@@ -197,42 +226,130 @@ namespace Items
             {
                 growthParticleInstance.Stop();
                 growthParticleInstance.gameObject.SetActive(false);
+                Debug.Log("TreeOfLightPot: Growth particles stopped");
             }
         }
 
-        private void HandlePotDeath()
+        public void BeginGrowth()
         {
-            StopGrowthParticles();
-            if (tree != null) tree.OnPotDeath -= HandlePotDeath;
+            if (hasBegunGrowth)
+            {
+                Debug.LogWarning("TreeOfLightPot: BeginGrowth called multiple times!");
+                return;
+            }
+            hasBegunGrowth = true;
+
+            if (animator == null)
+            {
+                Debug.LogError("TreeOfLightPot: Animator is not assigned!");
+                return;
+            }
+
+            StartCoroutine(GrowthCoroutine());
+        }
+
+        private void Update()
+        {
+            if (isGrowing && !isComplete)
+            {
+                transform.Rotate(Vector3.up * (30f * Time.deltaTime));
+            }
+        }
+
+        private IEnumerator GrowthCoroutine()
+        {
+            Debug.Log($"TreeOfLightPot: Starting growth, Animation = {growthAnimationName}, Duration = {growthDuration}s");
+            if (!string.IsNullOrEmpty(growthAnimationName))
+            {
+                var clip = animator.runtimeAnimatorController.animationClips.FirstOrDefault(c => c.name == growthAnimationName);
+                if (clip != null)
+                {
+                    float clipDuration = clip.length;
+                    float animatorSpeed = clipDuration / growthDuration;
+                    animator.speed = animatorSpeed;
+                    Debug.Log($"TreeOfLightPot: Set Animator speed = {animatorSpeed}, Clip Duration = {clipDuration}s, Target Duration = {growthDuration}s");
+
+                    monsterSpawner?.BeginSpawning();
+                    Debug.Log("TreeOfLightPot: Triggered monsterSpawner.BeginSpawning");
+                    animator.Play(growthAnimationName);
+                    isGrowing = true;
+
+                    if (audioSource != null && growthSound != null)
+                    {
+                        audioSource.PlayOneShot(growthSound);
+                        Debug.Log("TreeOfLightPot: Playing growth sound");
+                    }
+
+                    yield return new WaitForSeconds(growthDuration);
+                    CompleteVisualGrowth();
+                }
+                else
+                {
+                    Debug.LogError($"TreeOfLightPot: Animation clip '{growthAnimationName}' not found!");
+                }
+            }
+            else
+            {
+                Debug.LogError("TreeOfLightPot: Growth animation name is null or empty!");
+            }
+        }
+
+        private void CompleteVisualGrowth()
+        {
+            if (isComplete) return;
+
+            isGrowing = false;
+            isComplete = true;
+
+            if (itemDropHandler != null)
+            {
+                itemDropHandler.SetHasGrown(true);
+                Debug.Log("TreeOfLightPot: Set hasGrown = true for ItemDropHandler");
+            }
+
+            onGrowthCompleted.Invoke();
+
+            var monsters = GameObject.FindGameObjectsWithTag("Monster");
+            foreach (var monster in monsters)
+            {
+                var monsterHealth = monster.GetComponent<HealthComponent>();
+                if (monsterHealth != null)
+                {
+                    monsterHealth.TakeDamage(monsterHealth.MaxHealth, transform.position, gameObject);
+                    Debug.Log($"TreeOfLightPot: Damaged {monster.name}, Health = {monsterHealth.Health}");
+                }
+            }
+
+            StartCoroutine(DelayedSelfDestruction(1f));
+        }
+
+        private IEnumerator DelayedSelfDestruction(float delay)
+        {
+            Debug.Log($"TreeOfLightPot: Delaying self-destruction for {delay}s");
+            yield return new WaitForSeconds(delay);
             if (healthComponent != null)
             {
                 healthComponent.TakeDamage(healthComponent.MaxHealth, transform.position, gameObject);
-                Destroy(gameObject);
+            }
+        }
+
+        private void OnDeathHandler(HealthComponent health)
+        {
+            StopAllCoroutines();
+            StopGrowthParticles();
+            monsterSpawner?.StopSpawning();
+            Debug.Log("TreeOfLightPot: OnDeathHandler called, stopping spawner and particles");
+            if (itemDropHandler != null && !isComplete)
+            {
+                itemDropHandler.DropItems();
             }
         }
 
         private void OnDestroy()
         {
-            if (tree != null && tree.healthComponent != null)
+            if (seedSocket != null)
             {
-                tree.healthComponent.OnDeath -= HandleTreeOfDeath;
-                tree.OnPotDeath -= HandlePotDeath;
-            }
-        }
-
-        private void HandleTreeOfDeath(HealthComponent health)
-        {
-            StopGrowthParticles();
-            if (tree != null && tree.healthComponent != null)
-            {
-                tree.healthComponent.OnDeath -= HandleTreeOfDeath;
-                tree.OnPotDeath -= HandlePotDeath;
-            }
-
-            if (healthComponent != null)
-            {
-                healthComponent.TakeDamage(healthComponent.MaxHealth, transform.position, gameObject);
-                Destroy(gameObject);
+                seedSocket.selectEntered.RemoveListener(OnSeedSocketEntered);
             }
         }
     }
