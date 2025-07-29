@@ -1,4 +1,4 @@
-using System.Linq; // Added for FirstOrDefault
+using System.Linq;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
@@ -11,7 +11,7 @@ namespace Items
     public class TreeOfLightPot : MonoBehaviour
     {
         [Header("Configuration")]
-        [SerializeField] private float growthDuration = 50f;
+        [SerializeField] private float growthDuration = 5f; // Keep short for testing
         [SerializeField] private float maxHealth = 100f;
 
         [Header("Animation")]
@@ -53,17 +53,19 @@ namespace Items
 
             if (treeSpawnPoint == null)
             {
-                treeSpawnPoint = transform;
-                Debug.LogWarning("TreeOfLightPot: treeSpawnPoint not assigned, using self transform");
+                treeSpawnPoint = transform.Find("SeedSocketAttach")?.transform ?? transform;
+                Debug.LogWarning($"TreeOfLightPot: treeSpawnPoint not assigned, using {(treeSpawnPoint == transform ? "self transform" : "SeedSocketAttach")}");
             }
 
-            animator ??= GetComponent<Animator>();
+            animator ??= transform.Find("Tree_Of_Light")?.GetComponent<Animator>();
             if (animator == null)
             {
-                Debug.LogError("TreeOfLightPot: Animator is missing!");
+                Debug.LogError("TreeOfLightPot: Animator is missing on Tree_Of_Light!");
                 enabled = false;
                 return;
             }
+            animator.enabled = false;
+            Debug.Log("TreeOfLightPot: Animator disabled on Awake");
 
             seedSocket = GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor>();
             if (seedSocket != null)
@@ -123,12 +125,7 @@ namespace Items
 
         private void OnHealthChanged(object sender, HealthComponent.HealthChangedEventArgs e)
         {
-            Debug.Log($"TreeOfLightPot: Health Changed: {e.CurrentHealth} / {e.MaxHealth}");
-        }
-
-        private void OnTriggerEnter(Collider other)
-        {
-            //
+            Debug.Log($"TreeOfLightPot: Health Changed: {e.CurrentHealth} / {e.MaxHealth} by {e.DamageSource?.name ?? "Unknown"}");
         }
 
         private void OnSeedSocketEntered(SelectEnterEventArgs args)
@@ -245,6 +242,9 @@ namespace Items
                 return;
             }
 
+            animator.enabled = true;
+            Debug.Log("TreeOfLightPot: Animator enabled for growth");
+
             StartCoroutine(GrowthCoroutine());
         }
 
@@ -271,7 +271,7 @@ namespace Items
 
                     monsterSpawner?.BeginSpawning();
                     Debug.Log("TreeOfLightPot: Triggered monsterSpawner.BeginSpawning");
-                    animator.Play(growthAnimationName);
+                    animator.Play(growthAnimationName, -1, 0f);
                     isGrowing = true;
 
                     if (audioSource != null && growthSound != null)
@@ -281,6 +281,7 @@ namespace Items
                     }
 
                     yield return new WaitForSeconds(growthDuration);
+                    Debug.Log("TreeOfLightPot: Growth duration completed, calling CompleteVisualGrowth");
                     CompleteVisualGrowth();
                 }
                 else
@@ -296,28 +297,54 @@ namespace Items
 
         private void CompleteVisualGrowth()
         {
-            if (isComplete) return;
+            if (isComplete)
+            {
+                Debug.LogWarning("TreeOfLightPot: CompleteVisualGrowth called multiple times!");
+                return;
+            }
 
             isGrowing = false;
             isComplete = true;
+            Debug.Log("TreeOfLightPot: Growth completed, isComplete = true");
 
             if (itemDropHandler != null)
             {
                 itemDropHandler.SetHasGrown(true);
-                Debug.Log("TreeOfLightPot: Set hasGrown = true for ItemDropHandler");
+                itemDropHandler.DropItems(); // Drop key on growth completion
+                Debug.Log("TreeOfLightPot: Called SetHasGrown and DropItems on ItemDropHandler");
+            }
+            else
+            {
+                Debug.LogError("TreeOfLightPot: ItemDropHandler is null!");
             }
 
             onGrowthCompleted.Invoke();
+            Debug.Log("TreeOfLightPot: onGrowthCompleted event invoked");
 
+            // Kill all ShadowMonsters
             var monsters = GameObject.FindGameObjectsWithTag("Monster");
+            Debug.Log($"TreeOfLightPot: Found {monsters.Length} objects tagged 'Monster'");
             foreach (var monster in monsters)
             {
                 var monsterHealth = monster.GetComponent<HealthComponent>();
                 if (monsterHealth != null)
                 {
                     monsterHealth.TakeDamage(monsterHealth.MaxHealth, transform.position, gameObject);
-                    Debug.Log($"TreeOfLightPot: Damaged {monster.name}, Health = {monsterHealth.Health}");
+                    Debug.Log($"TreeOfLightPot: Killed {monster.name}, Health = {monsterHealth.Health}");
                 }
+                else
+                {
+                    Debug.LogWarning($"TreeOfLightPot: {monster.name} tagged 'Monster' but has no HealthComponent!");
+                }
+            }
+
+            // Fallback: Kill all HealthComponents tagged as Enemy
+            var allEnemies = FindObjectsOfType<HealthComponent>().Where(h => h.gameObject.CompareTag("Enemy")).ToList();
+            Debug.Log($"TreeOfLightPot: Found {allEnemies.Count} HealthComponents tagged 'Enemy'");
+            foreach (var enemyHealth in allEnemies)
+            {
+                enemyHealth.TakeDamage(enemyHealth.MaxHealth, transform.position, gameObject);
+                Debug.Log($"TreeOfLightPot: Killed enemy {enemyHealth.gameObject.name}, Health = {enemyHealth.Health}");
             }
 
             StartCoroutine(DelayedSelfDestruction(1f));
@@ -329,7 +356,13 @@ namespace Items
             yield return new WaitForSeconds(delay);
             if (healthComponent != null)
             {
-                healthComponent.TakeDamage(healthComponent.MaxHealth, transform.position, gameObject);
+                healthComponent.TakeDamage(healthComponent.MaxHealth * 2f, transform.position, gameObject); // Ensure lethal damage
+                Debug.Log("TreeOfLightPot: Applied lethal damage for self-destruction");
+            }
+            else
+            {
+                Debug.LogError("TreeOfLightPot: HealthComponent is null during self-destruction!");
+                Destroy(gameObject); // Fallback destruction
             }
         }
 
@@ -339,9 +372,30 @@ namespace Items
             StopGrowthParticles();
             monsterSpawner?.StopSpawning();
             Debug.Log("TreeOfLightPot: OnDeathHandler called, stopping spawner and particles");
-            if (itemDropHandler != null && !isComplete)
+
+            // Disable Tree_Of_Light
+            var treeOfLight = transform.Find("Tree_Of_Light")?.gameObject;
+            if (treeOfLight != null)
+            {
+                treeOfLight.SetActive(false);
+                Debug.Log("TreeOfLightPot: Disabled Tree_Of_Light on death");
+            }
+
+            // Ensure key drop if growth completed
+            if (itemDropHandler != null && isComplete)
+            {
+                itemDropHandler.SetHasGrown(true); // Redundant but ensures consistency
+                itemDropHandler.DropItems();
+                Debug.Log("TreeOfLightPot: Dropped items on death after growth completion");
+            }
+            else if (itemDropHandler != null && !isComplete)
             {
                 itemDropHandler.DropItems();
+                Debug.Log("TreeOfLightPot: Dropped items due to death before completion");
+            }
+            else
+            {
+                Debug.LogWarning("TreeOfLightPot: ItemDropHandler is null or missing!");
             }
         }
 

@@ -1,5 +1,5 @@
 using UnityEngine;
-using Core; // Assuming HealthComponent is in the Core namespace
+using Core;
 
 namespace Items
 {
@@ -11,77 +11,89 @@ namespace Items
         [SerializeField] private GameObject bombItemPrefab;
 
         [SerializeField] private float dropForce = 200f;
-        [SerializeField] private bool hasGrown = false; // A flag to indicate if growth was completed
+        [SerializeField] private bool hasGrown = false;
         private HealthComponent health;
 
-        private void OnEnable()
+        private void Awake()
         {
+            health = GetComponent<HealthComponent>();
+            if (health == null)
+            {
+                Debug.LogError($"ItemDropHandler on {gameObject.name}: HealthComponent is missing!");
+            }
+
             if (keyItemPrefab == null)
             {
-                Debug.LogError("ItemDropHandler: keyItemPrefab is not assigned in the Inspector!");
+                Debug.LogError($"ItemDropHandler on {gameObject.name}: keyItemPrefab is not assigned!");
             }
             if (bombItemPrefab == null)
             {
-                Debug.LogError("ItemDropHandler: bombItemPrefab is not assigned in the Inspector!");
+                Debug.LogError($"ItemDropHandler on {gameObject.name}: bombItemPrefab is not assigned!");
             }
         }
 
-        // Attach this script to both the TreeOfLight and TreeOfLightPot
-        private void Start()
+        private void OnEnable()
         {
-            // Find the components
-            health = GetComponent<HealthComponent>();
+            if (health != null)
+            {
+                health.OnDeath += HandleDeath;
+            }
+        }
 
-            // Assign the method to the death event on the object
-            health.OnDeath += HandleDeath;
+        private void OnDisable()
+        {
+            if (health != null)
+            {
+                health.OnDeath -= HandleDeath;
+            }
         }
 
         public void SetHasGrown(bool grown)
         {
             hasGrown = grown;
-        }
-
-        private void HandleDeath(HealthComponent healthComponent)
-        {
-            //Debug.Log("HandleDeath called on TreeOfLight!");
-
-            DropItems();
+            Debug.Log($"ItemDropHandler on {gameObject.name}: hasGrown set to {grown}");
         }
 
         public void DropItems()
         {
-            Debug.Log("DropItem called! Item prefab: ");
-
+            Debug.Log($"ItemDropHandler on {gameObject.name}: DropItems called, hasGrown = {hasGrown}");
             if (hasGrown)
             {
-                DropItem(keyItemPrefab);
+                DropItem(keyItemPrefab, "Key");
             }
             else
             {
-                DropItem(bombItemPrefab);
+                DropItem(bombItemPrefab, "Bomb");
             }
         }
 
-        private void DropItem(GameObject itemPrefab)
+        private void DropItem(GameObject itemPrefab, string itemName)
         {
             if (itemPrefab != null)
             {
-                GameObject droppedItem = Instantiate(itemPrefab, transform.position, Quaternion.identity);
+                Vector3 dropPosition = transform.position + Vector3.up * 0.5f;
+                GameObject droppedItem = Instantiate(itemPrefab, dropPosition, Quaternion.identity);
                 Rigidbody rb = droppedItem.GetComponent<Rigidbody>();
                 if (rb != null)
                 {
-                    // Apply an impulse force to the instantiated object
-                    rb.AddForce(Vector3.up * dropForce);
+                    rb.AddForce(Vector3.up * dropForce, ForceMode.Impulse);
+                    Debug.Log($"ItemDropHandler on {gameObject.name}: Dropped {itemName} at {dropPosition}");
                 }
                 else
                 {
-                    Debug.LogWarning("ItemDropHandler: Dropped item prefab has no Rigidbody component.");
+                    Debug.LogWarning($"ItemDropHandler on {gameObject.name}: Dropped {itemName} has no Rigidbody component!");
                 }
             }
             else
             {
-                Debug.LogWarning("ItemDropHandler: Item prefab is not assigned.");
+                Debug.LogError($"ItemDropHandler on {gameObject.name}: {itemName} prefab is not assigned!");
             }
+        }
+
+        private void HandleDeath(HealthComponent healthComponent)
+        {
+            Debug.Log($"ItemDropHandler on {gameObject.name}: HandleDeath called, hasGrown = {hasGrown}");
+            DropItems();
         }
 
         private void OnDestroy()

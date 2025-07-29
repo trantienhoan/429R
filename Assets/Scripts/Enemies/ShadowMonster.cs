@@ -55,15 +55,15 @@ namespace Enemies
             {
                 animator.SetBool("isGrounded", grounded);
                 animator.Update(0f); // Force Animator update
-                Debug.Log($"Set isGrounded to {grounded} in Animator: {animator.name}, Actual Animator isGrounded: {animator.GetBool("isGrounded")}, GameObject: {gameObject.name}");
+                //Debug.Log($"Set isGrounded to {grounded} in Animator: {animator.name}, Actual Animator isGrounded: {animator.GetBool("isGrounded")}, GameObject: {gameObject.name}");
             }
             else
             {
                 Debug.LogError("Animator is not assigned!");
             }
             AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
-            Debug.Log($"IsGrounded: {grounded}, Position: {groundCheckPoint.position}, Hit: {(grounded ? hit.collider.name : "None")}, Animator isGrounded: {animator.GetBool("isGrounded")}, Current State: {stateInfo.fullPathHash} ({GetStateName(stateInfo.fullPathHash)})");
-            Debug.DrawRay(groundCheckPoint.position, Vector3.down * groundCheckDistance, grounded ? Color.green : Color.red, 1f);
+            //Debug.Log($"IsGrounded: {grounded}, Position: {groundCheckPoint.position}, Hit: {(grounded ? hit.collider.name : "None")}, Animator isGrounded: {animator.GetBool("isGrounded")}, Current State: {stateInfo.fullPathHash} ({GetStateName(stateInfo.fullPathHash)})");
+            //Debug.DrawRay(groundCheckPoint.position, Vector3.down * groundCheckDistance, grounded ? Color.green : Color.red, 1f);
             return grounded;
         }
 
@@ -142,6 +142,11 @@ namespace Enemies
             audioSource = GetComponent<AudioSource>();
             grabInteractable = GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
             healthComponent = GetComponent<HealthComponent>();
+            gameObject.tag = "Enemy";
+            if (!GetComponent<HealthComponent>())
+            {
+                gameObject.AddComponent<HealthComponent>();
+            }
             if (animator == null)
             {
                 animator = GetComponent<Animator>();
