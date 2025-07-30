@@ -788,6 +788,11 @@ PrefabInstance:
       propertyPath: m_LocalPosition.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7005199536145483079, guid: 6cdab26faed212a41a61983e50a222da,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7025650377286697919, guid: 6cdab26faed212a41a61983e50a222da,
         type: 3}
       propertyPath: m_StaticEditorFlags
@@ -3852,7 +3857,7 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 1
+  m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 1
 --- !u!1 &318874894
@@ -5791,6 +5796,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3030980029734817786, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
         type: 3}
+      propertyPath: attackCooldown
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3030980029734817786, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
+        type: 3}
       propertyPath: idleTimeBeforeDive
       value: 3
       objectReference: {fileID: 0}
@@ -5809,11 +5819,22 @@ PrefabInstance:
       propertyPath: 'wanderPoints.Array.data[1]'
       value: 
       objectReference: {fileID: 1899462287}
+    - target: {fileID: 4301660074786869948, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
+        type: 3}
+      propertyPath: m_Constraints
+      value: 126
+      objectReference: {fileID: 0}
     - target: {fileID: 4478516609795976183, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
         type: 3}
       propertyPath: m_Speed
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 5078379185537246606, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
+        type: 3}
+      propertyPath: explosionVFX
+      value: 
+      objectReference: {fileID: 570832250925526149, guid: dcd90c4976197424b9958a7c54b6bb8c,
+        type: 3}
     - target: {fileID: 8314641946612675146, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
         type: 3}
       propertyPath: m_LocalScale.x
@@ -8174,24 +8195,6 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 1261005732}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &601917983
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 601917979}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2380d6a6e9dc3254d95d638321e4362a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  keyItemPrefab: {fileID: 6616067871869890980, guid: edf9132d0728dd349854d6653c1e11a0,
-    type: 3}
-  bombItemPrefab: {fileID: 3777597441533160902, guid: 1a8b377c483bfa843b196e7f3dbd816d,
-    type: 3}
-  dropForce: 5
-  hasGrown: 0
 --- !u!114 &601917984
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8204,8 +8207,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2883e4c1dfd15bf43a546e9d36e341bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 150000
-  health: 100
+  maxHealth: 1500
+  health: 1500
   destroyOnDeath: 1
   scaleOnDeath: 1
   isInvulnerableByDefault: 0
@@ -8231,9 +8234,24 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   treeOfLight: {fileID: 956400512}
-  healthComponent: {fileID: 0}
-  itemDropHandler: {fileID: 0}
+  healthComponent: {fileID: 601917984}
+  treeSpawnPoint: {fileID: 509467690}
+  absorbDuration: 2
   growTime: 5
+  growingVFXPrefab: {fileID: 7938384439400024403, guid: b6e54acc881a03c4a9719b161a25a3e3,
+    type: 3}
+  deathVFX: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
+    type: 3}
+  growingSFX: {fileID: 0}
+  deathSFX: {fileID: 8300000, guid: 9118a3d703424a441a222ad5c2ea6971, type: 3}
+  sfxSource: {fileID: 0}
+  keyPrefab: {fileID: 6616067871869890980, guid: edf9132d0728dd349854d6653c1e11a0,
+    type: 3}
+  bombPrefab: {fileID: 3777597441533160902, guid: 1a8b377c483bfa843b196e7f3dbd816d,
+    type: 3}
+  potRigidbody: {fileID: 601917988}
+  explosionForce: 100
+  explosionRadius: 5
   OnTreeGrown:
     m_PersistentCalls:
       m_Calls: []
@@ -8429,9 +8447,9 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 1
+  m_Interpolate: 0
   m_Constraints: 0
-  m_CollisionDetection: 1
+  m_CollisionDetection: 0
 --- !u!65 &601917989
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -14971,7 +14989,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 1
-  m_Constraints: 0
+  m_Constraints: 126
   m_CollisionDetection: 1
 --- !u!65 &1202094428
 BoxCollider:
@@ -16724,7 +16742,7 @@ PrefabInstance:
     - target: {fileID: -5606676697396164213, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.013
+      value: 0.946
       objectReference: {fileID: 0}
     - target: {fileID: -5606676697396164213, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
@@ -16734,7 +16752,7 @@ PrefabInstance:
     - target: {fileID: -5606676697396164213, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -1.365
+      value: -1.041
       objectReference: {fileID: 0}
     - target: {fileID: -5501013695792592023, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
@@ -16874,7 +16892,7 @@ PrefabInstance:
     - target: {fileID: -2613314876222149395, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_TagString
-      value: Furniture
+      value: MagicalSeed
       objectReference: {fileID: 0}
     - target: {fileID: -2613314876222149395, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
@@ -18941,10 +18959,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1431228908900278799, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 601917983}
-    - targetCorrespondingSourceObject: {fileID: 1431228908900278799, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
-        type: 3}
-      insertIndex: -1
       addedObject: {fileID: 601917993}
     - targetCorrespondingSourceObject: {fileID: 648700765750518474, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
@@ -19532,7 +19546,7 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 1
+  m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 1
 --- !u!4 &1268381635 stripped
@@ -20022,7 +20036,7 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 1
+  m_Interpolate: 0
   m_Constraints: 126
   m_CollisionDetection: 1
 --- !u!65 &1330854904
@@ -23777,7 +23791,7 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 1
+  m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 1
 --- !u!65 &1546222040
@@ -29416,7 +29430,7 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 1
+  m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 1
 --- !u!1 &1964693641
@@ -31532,8 +31546,19 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_of_Light
       objectReference: {fileID: 0}
+    - target: {fileID: 4431514908729328411, guid: c99d2be7e985de644a0adaecdc76989b,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5380660309609758459, guid: c99d2be7e985de644a0adaecdc76989b,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 7982032076961347932, guid: c99d2be7e985de644a0adaecdc76989b, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c99d2be7e985de644a0adaecdc76989b, type: 3}

@@ -5,40 +5,46 @@ namespace Enemies
     public class DiveState : IState
     {
         private ShadowMonster monster;
+        private float diveTimer;
 
-        public DiveState(ShadowMonster monster)
-        {
-            this.monster = monster;
-        }
+        public DiveState(ShadowMonster monster) { this.monster = monster; }
 
         public void OnEnter()
         {
-            monster.animator.SetTrigger("Dive");
-            if (monster.agent != null && monster.agent.isActiveAndEnabled && monster.agent.isOnNavMesh)
+            diveTimer = 0f;
+            if (monster.animator != null)
             {
-                monster.agent.SetDestination(monster.transform.position + monster.transform.forward * 5f);
+                monster.animator.SetTrigger("Dive");
+                monster.animator.Update(0f);
+            }
+            if (monster.agent != null) monster.agent.enabled = false;
+            if (monster.rb != null)
+            {
+                monster.rb.isKinematic = false;
+                monster.rb.linearVelocity = monster.transform.forward * monster.diveSpeed;
             }
         }
 
         public void Tick()
         {
-            if (!monster.isGrounded || monster.IsBeingHeld || monster.healthComponent.IsDead())
+            diveTimer += Time.deltaTime;
+            if (Physics.Raycast(monster.transform.position, monster.transform.forward, out _, 1f))
             {
-                monster.stateMachine.ChangeState(new HurtState(monster)); // Transition to HurtState for consistency
+                if (monster.rb != null) monster.rb.linearVelocity = Vector3.zero;
+                monster.stateMachine.ChangeState(new IdleState(monster));
                 return;
             }
-
-            Transform target = monster.GetClosestTarget();
-            if (target != null && monster.GetDistanceToTarget() <= monster.chaseRange)
+            if (diveTimer > monster.diveTimeout)
             {
-                monster.stateMachine.ChangeState(new ChaseState(monster));
-            }
-            else if (!monster.agent.hasPath || monster.agent.remainingDistance < 0.5f)
-            {
+                if (monster.rb != null) monster.rb.linearVelocity = Vector3.zero;
                 monster.stateMachine.ChangeState(new IdleState(monster));
             }
         }
 
-        public void OnExit() { }
+        public void OnExit()
+        {
+            if (monster.rb != null) monster.rb.linearVelocity = Vector3.zero;
+            monster.EnsureAgentOnNavMesh();
+        }
     }
 }
