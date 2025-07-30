@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+//using Core;
 
 namespace Core
 {
@@ -45,8 +46,15 @@ namespace Core
                     bar.Initialize(this);
                 }
             }
+        }
 
-            healthComponent.OnDeath += HandleHealthDeath;
+        private void Start()
+        {
+            if (healthComponent != null)
+            {
+                healthComponent.OnDeath.AddListener(HandleHealthDeath);
+                Debug.Log($"[JiggleBreakableBigObject {gameObject.name}] Subscribed to OnDeath");
+            }
         }
 
         private void SetupPhysics()
@@ -132,6 +140,7 @@ namespace Core
         private void HandleHealthDeath(HealthComponent health)
         {
             HandleBreaking();
+            Debug.Log($"[JiggleBreakableBigObject {gameObject.name}] HandleHealthDeath called");
         }
 
         protected override void HandleBreaking()
@@ -150,7 +159,8 @@ namespace Core
         {
             if (healthComponent != null)
             {
-                healthComponent.OnDeath -= HandleHealthDeath;
+                healthComponent.OnDeath.RemoveListener(HandleHealthDeath);
+                Debug.Log($"[JiggleBreakableBigObject {gameObject.name}] Unsubscribed from OnDeath");
             }
         }
     }

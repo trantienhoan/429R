@@ -1,8 +1,9 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using Core;
 using System.Linq;
-using UnityEngine.AI; // Added for NavMesh support
+using UnityEngine.AI;
 
 namespace Enemies
 {
@@ -20,7 +21,6 @@ namespace Enemies
         [Header("Scale Settings")]
         [SerializeField] private float initialScaleMultiplier = 0.01f;
         [SerializeField] private float scaleDuration = 2.0f;
-        [SerializeField] private float dropDuration = 1.0f;
 
         [Header("Spawn Settings")]
         [SerializeField] private float spawnRadius = 10f;
@@ -42,63 +42,133 @@ namespace Enemies
 
         private readonly List<MonsterTrackerData> activeMonsters = new();
         private bool isSpawning;
+        private Coroutine spawnCoroutine;
+        private bool isInvokePending;
 
-        private void Start()
+        private void Awake()
         {
-            if (treeObject == null)
+            if (monsterPrefab == null || treeObject == null)
             {
-                LogError("Tree not assigned on ShadowMonsterSpawner!");
+                LogError($"Missing {(monsterPrefab == null ? "monsterPrefab" : "treeObject")}");
                 enabled = false;
                 return;
             }
 
             if (windows.Count != 2)
             {
-                LogWarning("Two windows must be assigned to the Monster Spawner!");
+                LogWarning("Two windows must be assigned!");
             }
 
             if (cornerSpawnPoints == null || cornerSpawnPoints.Count == 0)
             {
-                LogWarning("No corner spawn points defined. Please add some!");
+                LogWarning("No corner spawn points defined. Using spawner position.");
+                cornerSpawnPoints = new List<Transform> { transform };
             }
         }
 
         public void BeginSpawning()
         {
+            if (isSpawning)
+            {
+                LogWarning("BeginSpawning called while already spawning!");
+                return;
+            }
+            isInvokePending = true;
             OpenWindows();
             Invoke(nameof(StartSpawning), 7f);
         }
 
-        private void OnDestroy()
+        public void StopSpawning()
         {
-            StopAllCoroutines();
-            CleanupMonsterLists();
+            if (!isSpawning && !isInvokePending)
+            {
+                return;
+            }
+
+            isSpawning = false;
+            isInvokePending = false;
+            CancelInvoke(nameof(StartSpawning));
+
+            if (spawnCoroutine != null)
+            {
+                StopCoroutine(spawnCoroutine);
+                spawnCoroutine = null;
+            }
+
             CloseWindows();
+
+            foreach (var monsterData in activeMonsters.ToList())
+            {
+                if (monsterData.MonsterObject != null)
+                {
+                    var shadowMonster = monsterData.SpiderReference;
+                    var health = monsterData.MonsterObject.GetComponent<HealthComponent>();
+                    if (shadowMonster != null && health != null && !health.IsDead())
+                    {
+                        shadowMonster.DisableAI();
+                        health.Kill(gameObject);
+                    }
+                    if (SpiderPool.Instance != null)
+                    {
+                        SpiderPool.Instance.ReturnSpider(monsterData.MonsterObject);
+                    }
+                    else
+                    {
+                        DestroyImmediate(monsterData.MonsterObject);
+                    }
+                }
+            }
+            activeMonsters.Clear();
+            Log("Stopped spawning and cleared monsters");
         }
 
-        private bool CanSpawnMore() => activeMonsters.Count < maxMonsters;
-
-        private void SpawnMonster()
+        private void StartSpawning()
         {
-            Vector3 spawnPosition = FindValidSpawnPosition();
-            SpawnMonsterAt(spawnPosition, spawnPosition); // endPosition is unused but kept for compatibility
+            if (isSpawning)
+            {
+                return;
+            }
+            isSpawning = true;
+            isInvokePending = false;
+            spawnCoroutine = StartCoroutine(SpawnMonsters());
         }
 
-        private void SpawnMonsterAt(Vector3 startPosition, Vector3 endPosition) // endPosition unused, consider removing
+        private IEnumerator SpawnMonsters()
         {
+            while (isSpawning)
+            {
+                if (activeMonsters.Count < maxMonsters)
+                {
+                    Vector3 spawnPosition = FindValidSpawnPosition();
+                    SpawnMonsterAt(spawnPosition, spawnPosition);
+                }
+                yield return new WaitForSeconds(spawnInterval);
+            }
+        }
+
+        private void SpawnMonsterAt(Vector3 startPosition, Vector3 endPosition)
+        {
+            if (SpiderPool.Instance == null)
+            {
+                LogError("SpiderPool.Instance is null!");
+                return;
+            }
+
             GameObject monsterInstance = SpiderPool.Instance.GetSpider(startPosition, Quaternion.Euler(0, -90, 0));
-            monsterInstance.transform.localScale = monsterPrefab.transform.localScale * initialScaleMultiplier;
+            if (monsterInstance == null)
+            {
+                LogError("Failed to get monster from SpiderPool!");
+                return;
+            }
 
-            // Ensure the Rigidbody is set to fall naturally
+            monsterInstance.transform.localScale = monsterPrefab.transform.localScale * initialScaleMultiplier;
+            monsterInstance.tag = "Enemy";
+
             Rigidbody rb = monsterInstance.GetComponent<Rigidbody>();
             if (rb != null)
             {
-                rb.isKinematic = false; // Allow physics to affect it
-                rb.useGravity = true;   // Ensure gravity is enabled
-            }
-            else
-            {
-                LogWarning("ShadowMonster prefab is missing a Rigidbody component!");
+                rb.isKinematic = false;
+                rb.useGravity = true;
             }
 
             RegisterMonster(monsterInstance);
@@ -108,12 +178,13 @@ namespace Enemies
 
         private IEnumerator ScaleMonster(Transform monsterTransform, Vector3 targetScale)
         {
+            if (monsterTransform == null) yield break;
             Vector3 startScale = monsterTransform.localScale;
             float timer = 0;
 
             while (timer < scaleDuration)
             {
-                if (monsterTransform == null) yield break;
+                if (monsterTransform == null || !monsterTransform.gameObject.activeInHierarchy) yield break;
                 timer += Time.deltaTime;
                 monsterTransform.localScale = Vector3.Lerp(startScale, targetScale, timer / scaleDuration);
                 yield return null;
@@ -136,142 +207,23 @@ namespace Enemies
                     MonsterObject = monster,
                     SpiderReference = shadowMonster
                 });
-
-                Log("Registered a ShadowMonster!");
             }
             else
             {
-                LogWarning("Tried to register a monster without ShadowMonster component.");
-            }
-        }
-
-        private IEnumerator SpawnMonsters()
-        {
-            while (isSpawning)
-            {
-                if (CanSpawnMore())
+                if (SpiderPool.Instance != null)
                 {
-                    SpawnMonster();
-                    yield return new WaitForSeconds(spawnInterval);
+                    SpiderPool.Instance.ReturnSpider(monster);
                 }
                 else
                 {
-                    LogWarning("Reached max monster limit. Cannot spawn more.");
-                    yield return null;
+                    DestroyImmediate(monster);
                 }
             }
-        }
-
-        private void StartSpawning()
-        {
-            if (!isSpawning)
-            {
-                isSpawning = true;
-                StartCoroutine(SpawnMonsters());
-                Log("Monster spawning started.");
-            }
-        }
-
-        public void StopSpawning()
-        {
-            if (isSpawning)
-            {
-                isSpawning = false;
-                StopAllCoroutines();
-                CloseWindows();
-                Log("Monster spawning stopped.");
-            }
-        }
-
-        private Vector3 FindValidSpawnPosition()
-        {
-            if (cornerSpawnPoints == null || cornerSpawnPoints.Count == 0)
-            {
-                LogWarning("No corner spawn points defined. Spawning at spawner's position.");
-                return transform.position;
-            }
-
-            int randomIndex = Random.Range(0, cornerSpawnPoints.Count);
-            Vector3 chosenPosition = cornerSpawnPoints[randomIndex].position;
-
-            // Find the nearest valid NavMesh position within a radius (e.g., 10 units)
-            if (NavMesh.SamplePosition(chosenPosition, out NavMeshHit hit, 10f, NavMesh.AllAreas))
-            {
-                Vector3 navMeshPosition = hit.position;
-                return new Vector3(navMeshPosition.x, navMeshPosition.y + spawnHeight, navMeshPosition.z);
-            }
-            else
-            {
-                LogWarning("Could not find a valid NavMesh position near the chosen spawn point.");
-                return transform.position; // Fallback to spawner's position
-            }
-        }
-
-        private void CleanupMonsterLists()
-        {
-            foreach (var monster in activeMonsters.ToList())
-            {
-                if (monster.MonsterObject != null)
-                {
-                    SpiderPool.Instance.ReturnSpider(monster.MonsterObject);
-                }
-            }
-
-            activeMonsters.Clear();
-        }
-
-        private void Log(string message) => Debug.Log($"[MonsterSpawner] {message}");
-        private void LogWarning(string message) => Debug.LogWarning($"[MonsterSpawner] {message}");
-        private void LogError(string message) => Debug.LogError($"[MonsterSpawner] {message}");
-
-        private void OpenWindows()
-        {
-            if (windows.Count != 2)
-            {
-                LogWarning("Two windows must be assigned to the Monster Spawner!");
-                return;
-            }
-
-            if (windows[0] != null)
-            {
-                GameObject windowL = windows[0];
-                windowL.SetActive(true);
-                windowL.transform.rotation = Quaternion.Euler(0, openWindowRotationL, 0);
-            }
-            else LogWarning("Window L is null!");
-
-            if (windows[1] != null)
-            {
-                GameObject windowR = windows[1];
-                windowR.SetActive(true);
-                windowR.transform.rotation = Quaternion.Euler(0, openWindowRotationR, 0);
-            }
-            else LogWarning("Window R is null!");
-        }
-
-        private void CloseWindows()
-        {
-            if (windows.Count != 2) return;
-
-            if (windows[0] != null)
-            {
-                GameObject windowL = windows[0];
-                windowL.SetActive(false);
-                windowL.transform.rotation = Quaternion.Euler(0, closedWindowRotation, 0);
-            }
-            else LogWarning("Window L is null!");
-
-            if (windows[1] != null)
-            {
-                GameObject windowR = windows[1];
-                windowR.SetActive(false);
-                windowR.transform.rotation = Quaternion.Euler(0, closedWindowRotation, 0);
-            }
-            else LogWarning("Window R is null!");
         }
 
         private IEnumerator WaitUntilGroundedThenEnableAI(GameObject spider)
         {
+            if (spider == null) yield break;
             ShadowMonster sm = spider.GetComponent<ShadowMonster>();
             if (sm == null) yield break;
 
@@ -279,19 +231,67 @@ namespace Enemies
             float elapsed = 0f;
             while (!sm.IsGrounded() && elapsed < timeout)
             {
+                if (spider == null || !spider.activeInHierarchy) yield break;
                 elapsed += Time.deltaTime;
                 yield return null;
             }
 
-            if (sm.IsGrounded())
+            if (spider != null && sm.IsGrounded())
             {
                 sm.EnableAI();
             }
-            else
+        }
+
+        private Vector3 FindValidSpawnPosition()
+        {
+            Transform spawnPoint = cornerSpawnPoints[Random.Range(0, cornerSpawnPoints.Count)] ?? transform;
+            Vector3 basePosition = spawnPoint.position;
+            Vector3 randomOffset = Random.insideUnitSphere * spawnRadius;
+            randomOffset.y = 0;
+            Vector3 tryPosition = basePosition + randomOffset;
+
+            if (NavMesh.SamplePosition(tryPosition, out NavMeshHit hit, spawnRadius, NavMesh.AllAreas))
             {
-                LogWarning($"Monster {spider.name} failed to ground within {timeout}s. Forcing AI enable.");
-                sm.EnableAI(); // Force enable as a fallback
+                return hit.position + Vector3.up * spawnHeight;
+            }
+
+            return basePosition + Vector3.up * spawnHeight;
+        }
+
+        private void OpenWindows()
+        {
+            if (windows.Count != 2) return;
+            for (int i = 0; i < windows.Count; i++)
+            {
+                if (windows[i] != null)
+                {
+                    windows[i].SetActive(true);
+                    float rotation = i == 0 ? openWindowRotationL : openWindowRotationR;
+                    windows[i].transform.rotation = Quaternion.Euler(0, rotation, 0);
+                }
             }
         }
+
+        private void CloseWindows()
+        {
+            if (windows.Count != 2) return;
+            for (int i = 0; i < windows.Count; i++)
+            {
+                if (windows[i] != null)
+                {
+                    windows[i].SetActive(false);
+                    windows[i].transform.rotation = Quaternion.Euler(0, closedWindowRotation, 0);
+                }
+            }
+        }
+
+        private void OnDestroy()
+        {
+            StopSpawning();
+        }
+
+        private void Log(string message) => Debug.Log($"[ShadowMonsterSpawner {gameObject.name}] {message}");
+        private void LogWarning(string message) => Debug.LogWarning($"[ShadowMonsterSpawner {gameObject.name}] {message}");
+        private void LogError(string message) => Debug.LogError($"[ShadowMonsterSpawner {gameObject.name}] {message}");
     }
 }

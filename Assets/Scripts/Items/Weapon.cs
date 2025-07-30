@@ -10,6 +10,7 @@ namespace Items
         [Header("Weapon Base Settings")]
         [SerializeField] private WeaponType weaponType = WeaponType.Sword;
         [SerializeField] private float baseDamage = 10f;
+        [SerializeField] private float minDamage = 5f; // New: Minimum damage to prevent zero
         [SerializeField] private float weaponMass = 0.9f;
         [SerializeField] private float impactForceMultiplier = 1f;
         [SerializeField] private float treeOfLightDamageMultiplier = 0.5f;
@@ -36,8 +37,6 @@ namespace Items
         {
             Sword,
             Hammer,
-            //Axe,
-            //Spear
         }
 
         private void Awake()
@@ -50,18 +49,21 @@ namespace Items
 
             gameObject.tag = "Weapon";
             if (rb != null) rb.mass = weaponMass;
+            Debug.Log($"Weapon {gameObject.name}: Initialized with baseDamage={baseDamage}, minDamage={minDamage}, weaponType={weaponType}");
         }
 
         private void OnGrab(SelectEnterEventArgs args)
         {
             isGrabbed = true;
             rb.isKinematic = true;
+            Debug.Log($"Weapon {gameObject.name}: Grabbed, isKinematic=true");
         }
 
         private void OnRelease(SelectExitEventArgs args)
         {
             isGrabbed = false;
             rb.isKinematic = false;
+            Debug.Log($"Weapon {gameObject.name}: Released, isKinematic=false");
         }
 
         private void FixedUpdate()
@@ -71,6 +73,7 @@ namespace Items
             if (deltaPosition.magnitude > 0.001f) movementDirection = deltaPosition.normalized;
             velocityHistory = Vector3.Lerp(velocityHistory, deltaPosition / Time.fixedDeltaTime, 0.5f);
             lastPosition = transform.position;
+            //Debug.Log($"Weapon {gameObject.name}: currentSpeed={currentSpeed:F2}, movementDirection={movementDirection}");
 
             if (isGrabbed && currentSpeed > swingDetectionThreshold)
             {
@@ -85,11 +88,11 @@ namespace Items
 
             if (weaponType == WeaponType.Hammer && verticalDot > verticalSwingThreshold)
             {
-                Debug.Log("Hammer vertical swing detected!");
+                Debug.Log($"Weapon {gameObject.name}: Hammer vertical swing detected, verticalDot={verticalDot:F2}");
             }
             if (weaponType == WeaponType.Sword && horizontalDot > horizontalSwingThreshold)
             {
-                Debug.Log("Sword horizontal swing detected!");
+                Debug.Log($"Weapon {gameObject.name}: Sword horizontal swing detected, horizontalDot={horizontalDot:F2}");
             }
         }
 
@@ -97,8 +100,11 @@ namespace Items
         {
             if (!isGrabbed) return;
 
-            float damageAmount = baseDamage * (currentSpeed / 5f);
+            // Use Rigidbody velocity for more accurate damage calculation
+            float speed = rb.linearVelocity.magnitude > currentSpeed ? rb.linearVelocity.magnitude : currentSpeed;
+            float damageAmount = Mathf.Max(minDamage, baseDamage * (speed / 5f));
             Vector3 collisionPoint = collision.contacts[0].point;
+            Debug.Log($"Weapon {gameObject.name}: Collision with {collision.gameObject.name}, speed={speed:F2}, damageAmount={damageAmount:F2}");
 
             if (weaponType == WeaponType.Hammer &&
                 Vector3.Dot(movementDirection, -Vector3.up) > verticalSwingThreshold &&
@@ -107,6 +113,7 @@ namespace Items
                 if (groundImpactEffectPrefab != null)
                 {
                     Instantiate(groundImpactEffectPrefab, collisionPoint, Quaternion.LookRotation(collision.contacts[0].normal));
+                    Debug.Log($"Weapon {gameObject.name}: Spawned ground impact effect at {collisionPoint}");
                 }
                 ApplyAreaDamage(collisionPoint, 3f, damageAmount * 1.5f);
             }
@@ -120,6 +127,7 @@ namespace Items
                         Quaternion.LookRotation(movementDirection));
                     Projectile projectile = airSlash.AddComponent<Projectile>();
                     projectile.Initialize(movementDirection, 15f, damageAmount);
+                    Debug.Log($"Weapon {gameObject.name}: Spawned air slash projectile with damage={damageAmount}");
                 }
             }
 
@@ -127,10 +135,10 @@ namespace Items
             if (breakableObject != null)
             {
                 HealthComponent healthComponent = breakableObject.GetComponent<HealthComponent>();
-                if (healthComponent != null)
+                if (healthComponent != null && !healthComponent.IsDead())
                 {
                     healthComponent.TakeDamage(damageAmount, collisionPoint, gameObject);
-                    Debug.Log($"Weapon: Applied {damageAmount} damage to {collision.gameObject.name}");
+                    Debug.Log($"Weapon: Applied {damageAmount} damage to {collision.gameObject.name} (JiggleBreakable)");
                 }
                 return;
             }
@@ -138,25 +146,28 @@ namespace Items
             if (collision.gameObject.CompareTag("TreeOfLight"))
             {
                 var healthComponent = collision.gameObject.GetComponent<HealthComponent>();
-                if (healthComponent != null)
+                if (healthComponent != null && !healthComponent.IsDead())
                 {
-                    healthComponent.TakeDamage(damageAmount * treeOfLightDamageMultiplier, collisionPoint, gameObject);
-                    Debug.Log($"Weapon: Applied {damageAmount * treeOfLightDamageMultiplier} damage to {collision.gameObject.name}");
+                    float treeDamage = damageAmount * treeOfLightDamageMultiplier;
+                    healthComponent.TakeDamage(treeDamage, collisionPoint, gameObject);
+                    Debug.Log($"Weapon: Applied {treeDamage} damage to {collision.gameObject.name} (TreeOfLight)");
                 }
                 return;
             }
 
             var spiderHealth = collision.gameObject.GetComponent<HealthComponent>();
-            if (spiderHealth != null && collision.gameObject.CompareTag("Enemy"))
+            if (spiderHealth != null && collision.gameObject.CompareTag("Enemy") && !spiderHealth.IsDead())
             {
-                spiderHealth.TakeDamage(shadowMonsterDamageMultiplier * damageAmount, collisionPoint, gameObject);
-                Debug.Log($"Weapon: Applied {shadowMonsterDamageMultiplier * damageAmount} damage to {collision.gameObject.name}");
+                float spiderDamage = damageAmount * shadowMonsterDamageMultiplier;
+                spiderHealth.TakeDamage(spiderDamage, collisionPoint, gameObject);
+                Debug.Log($"Weapon: Applied {spiderDamage} damage to {collision.gameObject.name} (Enemy)");
                 Rigidbody spiderRb = collision.gameObject.GetComponent<Rigidbody>();
                 if (spiderRb != null && !spiderRb.isKinematic)
                 {
                     Vector3 forceDir = (collision.transform.position - transform.position).normalized;
                     forceDir.y = 0.5f;
-                    spiderRb.AddForce(forceDir * 15f, ForceMode.Impulse);
+                    spiderRb.AddForce(forceDir * 15f * impactForceMultiplier, ForceMode.Impulse);
+                    Debug.Log($"Weapon: Applied force to {collision.gameObject.name}, forceDir={forceDir}");
                 }
             }
         }
@@ -171,7 +182,7 @@ namespace Items
                 if (breakable != null)
                 {
                     HealthComponent healthComponent = breakable.GetComponent<HealthComponent>();
-                    if (healthComponent != null)
+                    if (healthComponent != null && !healthComponent.IsDead())
                     {
                         float distance = Vector3.Distance(center, hitColliders[i].transform.position);
                         float damageWithFalloff = damage * (1f - (distance / radius));
@@ -205,6 +216,7 @@ namespace Items
             speed = spd;
             damage = dmg;
             Destroy(gameObject, lifespan);
+            Debug.Log($"Projectile: Initialized with damage={damage}, speed={speed}, direction={direction}");
         }
 
         private void Update()
@@ -218,7 +230,7 @@ namespace Items
             if (breakable != null)
             {
                 HealthComponent healthComponent = breakable.GetComponent<HealthComponent>();
-                if (healthComponent != null)
+                if (healthComponent != null && !healthComponent.IsDead())
                 {
                     healthComponent.TakeDamage(damage, transform.position, gameObject);
                     Debug.Log($"Projectile: Applied {damage} damage to {other.gameObject.name}");

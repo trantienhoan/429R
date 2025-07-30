@@ -49,41 +49,24 @@ namespace Enemies
 
         public void Tick()
         {
-            if (!monster.isGrounded || monster.IsBeingHeld)
-            {
-                monster.stateMachine.ChangeState(new IdleState(monster));
-                Debug.Log("ChaseState: Exiting to IdleState (not grounded or held)");
-                return;
-            }
-
             target = monster.GetClosestTarget();
             float distance = monster.GetDistanceToTarget();
-            float remainingDistance = monster.agent != null && monster.agent.isActiveAndEnabled && monster.agent.isOnNavMesh ? monster.agent.remainingDistance : Mathf.Infinity;
-            Debug.Log($"ChaseState: Distance to target = {distance}, Target = {(target != null ? target.name : "None")}, NavMeshAgent Active = {(monster.agent != null ? monster.agent.isActiveAndEnabled : false)}, OnNavMesh = {(monster.agent != null ? monster.agent.isOnNavMesh : false)}, RemainingDistance = {remainingDistance}");
-
             if (target == null || distance > monster.chaseRange)
             {
+                Debug.Log($"[ChaseState {monster.gameObject.name}] Transitioning to IdleState (target: {target}, distance: {distance}, chaseRange: {monster.chaseRange})");
                 monster.stateMachine.ChangeState(new IdleState(monster));
-                Debug.Log("ChaseState: Exiting to IdleState (no target or out of chase range)");
                 return;
             }
-
-            if (distance <= monster.attackRange && !monster.animator.GetBool("isCharging"))
+            if (distance <= monster.attackRange && Time.time >= monster.lastAttackTime + monster.attackCooldown)
             {
-                monster.stateMachine.ChangeState(new ChargeState(monster));
-                Debug.Log("ChaseState: Transitioning to ChargeState (target in attack range)");
+                Debug.Log($"[ChaseState {monster.gameObject.name}] Transitioning to ChargeState (distance: {distance}, attackRange: {monster.attackRange})");
+                monster.stateMachine.ChangeState(new ChargeState(monster)); // Line 73
                 return;
             }
-
             if (monster.agent != null && monster.agent.isActiveAndEnabled && monster.agent.isOnNavMesh)
             {
                 monster.agent.SetDestination(target.position);
-                Debug.Log($"ChaseState: Updated NavMesh destination to {target.name} at {target.position}, Agent Active = {monster.agent.isActiveAndEnabled}, OnNavMesh = {monster.agent.isOnNavMesh}");
-            }
-            else
-            {
-                Debug.LogWarning($"ChaseState: NavMeshAgent is not active or not on NavMesh, Agent Active = {(monster.agent != null ? monster.agent.isActiveAndEnabled : false)}, OnNavMesh = {(monster.agent != null ? monster.agent.isOnNavMesh : false)}");
-                monster.stateMachine.ChangeState(new IdleState(monster));
+                Debug.Log($"[ChaseState {monster.gameObject.name}] Chasing target at {target.position}, distance: {distance}");
             }
         }
 
@@ -97,9 +80,9 @@ namespace Enemies
             if (monster.agent != null && monster.agent.isActiveAndEnabled && monster.agent.isOnNavMesh)
             {
                 monster.agent.isStopped = true;
-                Debug.Log("ChaseState OnExit: NavMeshAgent stopped");
+                Debug.Log($"[ChaseState {monster.gameObject.name}] OnExit: NavMeshAgent stopped");
             }
-            Debug.Log("Exiting ChaseState");
+            Debug.Log($"[ChaseState {monster.gameObject.name}] Exiting ChaseState");
         }
     }
 }

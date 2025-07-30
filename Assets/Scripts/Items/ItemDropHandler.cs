@@ -11,7 +11,7 @@ namespace Items
         [SerializeField] private GameObject bombItemPrefab;
 
         [SerializeField] private float dropForce = 200f;
-        [SerializeField] private bool hasGrown = false;
+        [SerializeField] private bool hasGrown;
         private HealthComponent health;
 
         private void Awake()
@@ -19,16 +19,16 @@ namespace Items
             health = GetComponent<HealthComponent>();
             if (health == null)
             {
-                Debug.LogError($"ItemDropHandler on {gameObject.name}: HealthComponent is missing!");
+                Debug.LogError($"[ItemDropHandler {gameObject.name}] HealthComponent is missing!");
             }
 
             if (keyItemPrefab == null)
             {
-                Debug.LogError($"ItemDropHandler on {gameObject.name}: keyItemPrefab is not assigned!");
+                Debug.LogError($"[ItemDropHandler {gameObject.name}] keyItemPrefab is not assigned!");
             }
             if (bombItemPrefab == null)
             {
-                Debug.LogError($"ItemDropHandler on {gameObject.name}: bombItemPrefab is not assigned!");
+                Debug.LogError($"[ItemDropHandler {gameObject.name}] bombItemPrefab is not assigned!");
             }
         }
 
@@ -36,7 +36,8 @@ namespace Items
         {
             if (health != null)
             {
-                health.OnDeath += HandleDeath;
+                health.OnDeath.AddListener(HandleDeath);
+                Debug.Log($"[ItemDropHandler {gameObject.name}] Subscribed to OnDeath");
             }
         }
 
@@ -44,19 +45,26 @@ namespace Items
         {
             if (health != null)
             {
-                health.OnDeath -= HandleDeath;
+                health.OnDeath.RemoveListener(HandleDeath);
+                Debug.Log($"[ItemDropHandler {gameObject.name}] Unsubscribed from OnDeath in OnDisable");
             }
         }
 
         public void SetHasGrown(bool grown)
         {
             hasGrown = grown;
-            Debug.Log($"ItemDropHandler on {gameObject.name}: hasGrown set to {grown}");
+            Debug.Log($"[ItemDropHandler {gameObject.name}] hasGrown set to {grown}");
         }
 
         public void DropItems()
         {
-            Debug.Log($"ItemDropHandler on {gameObject.name}: DropItems called, hasGrown = {hasGrown}");
+            if (!gameObject.activeInHierarchy)
+            {
+                Debug.LogWarning($"[ItemDropHandler {gameObject.name}] DropItems called but GameObject is inactive, skipping");
+                return;
+            }
+
+            Debug.Log($"[ItemDropHandler {gameObject.name}] DropItems called, hasGrown = {hasGrown}");
             if (hasGrown)
             {
                 DropItem(keyItemPrefab, "Key");
@@ -77,22 +85,22 @@ namespace Items
                 if (rb != null)
                 {
                     rb.AddForce(Vector3.up * dropForce, ForceMode.Impulse);
-                    Debug.Log($"ItemDropHandler on {gameObject.name}: Dropped {itemName} at {dropPosition}");
+                    Debug.Log($"[ItemDropHandler {gameObject.name}] Dropped {itemName} at {dropPosition}");
                 }
                 else
                 {
-                    Debug.LogWarning($"ItemDropHandler on {gameObject.name}: Dropped {itemName} has no Rigidbody component!");
+                    Debug.LogWarning($"[ItemDropHandler {gameObject.name}] Dropped {itemName} has no Rigidbody component!");
                 }
             }
             else
             {
-                Debug.LogError($"ItemDropHandler on {gameObject.name}: {itemName} prefab is not assigned!");
+                Debug.LogError($"[ItemDropHandler {gameObject.name}] {itemName} prefab is not assigned!");
             }
         }
 
         private void HandleDeath(HealthComponent healthComponent)
         {
-            Debug.Log($"ItemDropHandler on {gameObject.name}: HandleDeath called, hasGrown = {hasGrown}");
+            Debug.Log($"[ItemDropHandler {gameObject.name}] HandleDeath called, hasGrown = {hasGrown}");
             DropItems();
         }
 
@@ -100,7 +108,8 @@ namespace Items
         {
             if (health != null)
             {
-                health.OnDeath -= HandleDeath;
+                health.OnDeath.RemoveListener(HandleDeath);
+                Debug.Log($"[ItemDropHandler {gameObject.name}] Unsubscribed from OnDeath in OnDestroy");
             }
         }
     }

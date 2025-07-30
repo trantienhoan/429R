@@ -1,284 +1,166 @@
-﻿using UnityEngine;
-using System;
-using System.Collections;
+﻿using System;
+using UnityEngine;
+using UnityEngine.Events;
 
 namespace Core
 {
     public class HealthComponent : MonoBehaviour
     {
         [SerializeField] private float maxHealth = 100f;
-        [SerializeField] private float currentHealth;
+        [SerializeField] private float health = 100f;
+        [SerializeField] private bool destroyOnDeath = true;
+        [SerializeField] private bool scaleOnDeath = true; // Added for TreeOfLightPot
+        [SerializeField] private bool isInvulnerableByDefault = false; // Added for TreeOfLightPot
 
-        [Header("Invulnerability")]
-        [SerializeField] private float invulnerabilityDuration = 1f;
-        private bool isInvulnerable;
+        public UnityEvent<float> OnHealthChanged;
+        public UnityEvent<HealthChangedEventArgs> OnTakeDamage;
+        public UnityEvent<HealthComponent> OnDeath;
 
-        [Header("Light Integration")]
-        [SerializeField] private Light healthLight;
-
-        [Header("Breaking Effects")]
-        [SerializeField] private ParticleSystem breakEffect;
-        [SerializeField] private AudioClip breakSound;
-
-        [Header("Damage Effects")]
-        [SerializeField] private ParticleSystem dustParticlePrefab;
-        [SerializeField] private AudioClip hitSound;
-
-        [Header("Scaling")]
-        [SerializeField] private bool scaleOnDeath = true;
-        [SerializeField] private float scaleDuration = 0.5f;
-        [SerializeField] private Vector3 minScale = Vector3.zero;
+        private bool isDead;
 
         public class HealthChangedEventArgs : EventArgs
         {
+            public float PreviousHealth { get; set; }
             public float CurrentHealth { get; set; }
-            public float MaxHealth { get; set; }
-            public GameObject DamageSource { get; set; }
             public float DamageAmount { get; set; }
             public Vector3 HitPoint { get; set; }
+            public GameObject DamageSource { get; set; }
+            public bool WasCritical { get; set; }
         }
 
-        public delegate void OnHealthChangedDelegate(object sender, HealthChangedEventArgs e);
-        public event OnHealthChangedDelegate OnHealthChanged;
+        public bool IsInvulnerable { get; set; } // Added for isInvulnerableByDefault
 
-        public delegate void OnTakeDamageDelegate(object sender, HealthChangedEventArgs e);
-        public event OnTakeDamageDelegate OnTakeDamage;
-
-        public delegate void OnDeathDelegate(HealthComponent health);
-        public event OnDeathDelegate OnDeath;
-
-        private bool isDead = false;
-        private AudioSource audioSource;
-
-        private void Start()
+        private void Awake()
         {
-            currentHealth = maxHealth;
-            audioSource = GetComponent<AudioSource>();
-            if (audioSource == null && (breakSound != null || hitSound != null))
-            {
-                audioSource = gameObject.AddComponent<AudioSource>();
-            }
-
-            UpdateLightIntensity();
-        }
-
-        public void ResetHealth()
-        {
+            health = maxHealth;
             isDead = false;
-            isInvulnerable = false;
-            currentHealth = maxHealth;
-            StopAllCoroutines(); //Stops any existing invulnerability coroutine
-            UpdateLightIntensity();
+            IsInvulnerable = isInvulnerableByDefault;
+            Debug.Log($"[HealthComponent {gameObject.name}] Initialized with Health: {health}/{maxHealth}, Invulnerable: {IsInvulnerable}");
         }
 
-        public void TakeDamage(float damage, Vector3 hitPoint, GameObject damageSource = null, bool bypassSelfDamage = false)
+        public void SetMaxHealth(float value)
         {
-            if (isDead || isInvulnerable) return;
+            float previousMaxHealth = maxHealth;
+            maxHealth = Mathf.Max(0, value);
+            health = Mathf.Clamp(health, 0, maxHealth);
+            OnHealthChanged?.Invoke(health / maxHealth);
+            Debug.Log($"[HealthComponent {gameObject.name}] MaxHealth set to {maxHealth}, Health adjusted to {health}");
+        }
 
-            // Prevent self-damage unless explicitly allowed
-            if (damageSource != null && damageSource == gameObject && !bypassSelfDamage)
-            {
-                Debug.Log($"{gameObject.name} attempted to self-damage but was prevented.");
-                return;
-            }
+        public float GetHealthPercentage()
+        {
+            return maxHealth > 0 ? health / maxHealth : 0;
+        }
 
-            SpawnDustParticles(hitPoint);
+        public bool IsDead()
+        {
+            return isDead;
+        }
 
-            float initialHealth = currentHealth;
-            currentHealth -= damage;
-            currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+        public void TakeDamage(float damage, Vector3 hitPoint = default, GameObject damageSource = null, bool wasCritical = false)
+        {
+            if (isDead || IsInvulnerable) return;
 
-            Debug.Log($"{gameObject.name} took {damage} damage from {damageSource?.name ?? "Unknown"} at {hitPoint}. Health: {initialHealth} → {currentHealth}");
+            float previousHealth = health;
+            health = Mathf.Max(0, health - damage);
+            bool justDied = health <= 0 && !isDead;
 
             var args = new HealthChangedEventArgs
             {
-                CurrentHealth = currentHealth,
-                MaxHealth = maxHealth,
-                DamageSource = damageSource,
+                PreviousHealth = previousHealth,
+                CurrentHealth = health,
                 DamageAmount = damage,
-                HitPoint = hitPoint
+                HitPoint = hitPoint,
+                DamageSource = damageSource,
+                WasCritical = wasCritical
             };
 
-            OnTakeDamage?.Invoke(this, args);
-            OnHealthChanged?.Invoke(this, args);
+            OnHealthChanged?.Invoke(health / maxHealth);
+            OnTakeDamage?.Invoke(args);
 
-            UpdateLightIntensity();
+            Debug.Log($"[HealthComponent {gameObject.name}] Took {damage} damage, Health: {health}/{maxHealth}");
 
-            if (currentHealth <= 0 && !isDead)
+            if (justDied)
             {
-                Die(damageSource, damage);
+                isDead = true;
+                Die(damageSource);
             }
-            else
-            {
-                StartCoroutine(InvulnerabilityRoutine());
-            }
-        }
-
-        private IEnumerator InvulnerabilityRoutine()
-        {
-            isInvulnerable = true;
-            yield return new WaitForSeconds(invulnerabilityDuration);
-            isInvulnerable = false;
         }
 
         public void Heal(float amount)
         {
             if (isDead) return;
 
-            currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
+            float previousHealth = health;
+            health = Mathf.Min(maxHealth, health + amount);
 
             var args = new HealthChangedEventArgs
             {
-                CurrentHealth = currentHealth,
-                MaxHealth = maxHealth,
+                PreviousHealth = previousHealth,
+                CurrentHealth = health,
+                DamageAmount = -amount,
+                HitPoint = transform.position,
                 DamageSource = null,
-                DamageAmount = 0,
-                HitPoint = transform.position
+                WasCritical = false
             };
 
-            OnHealthChanged?.Invoke(this, args);
-            UpdateLightIntensity();
+            OnHealthChanged?.Invoke(health / maxHealth);
+            OnTakeDamage?.Invoke(args);
+
+            Debug.Log($"[HealthComponent {gameObject.name}] Healed for {amount}, Health: {health}/{maxHealth}");
         }
 
-        protected virtual void Die(GameObject damageSource, float damage)
+        public void ResetHealth()
         {
-            if (isDead) return;
-
-            isDead = true;
-
-            Debug.Log($"{gameObject.name} has died. Killed by {damageSource?.name ?? "Unknown"} with {damage} damage.");
-
-            UpdateLightIntensity();
-
-            OnDeath?.Invoke(this);
-
-            if (scaleOnDeath)
-            {
-                StartCoroutine(ScaleDownAndHandleDestroy());
-            }
-            else
-            {
-                HandleDestroy();
-            }
+            health = maxHealth;
+            isDead = false;
+            IsInvulnerable = isInvulnerableByDefault;
+            OnHealthChanged?.Invoke(health / maxHealth);
+            Debug.Log($"[HealthComponent {gameObject.name}] Health reset to {health}/{maxHealth}, Invulnerable: {IsInvulnerable}");
         }
 
-        private IEnumerator ScaleDownAndHandleDestroy()
-        {
-            Vector3 startScale = transform.localScale;
-            float timer = 0f;
-
-            while (timer < scaleDuration)
-            {
-                timer += Time.deltaTime;
-                transform.localScale = Vector3.Lerp(startScale, minScale, timer / scaleDuration);
-                yield return null;
-            }
-
-            HandleDestroy();
-        }
-
-        private void HandleDestroy()
-        {
-            if (breakEffect != null)
-            {
-                var effect = Instantiate(breakEffect, transform.position, Quaternion.identity);
-                effect.Play();
-                Destroy(effect.gameObject, effect.main.duration);
-            }
-
-            if (audioSource != null && breakSound != null)
-            {
-                audioSource.PlayOneShot(breakSound);
-            }
-
-            // Pooling-friendly destroy logic
-            if (Enemies.SpiderPool.Instance != null && gameObject.CompareTag("Enemy"))
-            {
-                Enemies.SpiderPool.Instance.ReturnSpider(gameObject);
-            }
-            else
-            {
-                Destroy(gameObject);
-            }
-        }
-
-        private void SpawnDustParticles(Vector3 position)
-        {
-            if (dustParticlePrefab != null)
-            {
-                var dust = Instantiate(dustParticlePrefab, position, Quaternion.identity);
-                dust.Play();
-
-                if (audioSource != null && hitSound != null)
-                {
-                    audioSource.PlayOneShot(hitSound);
-                }
-
-                Destroy(dust.gameObject, dust.main.duration + 1f);
-            }
-        }
-
-        private void UpdateLightIntensity()
-        {
-            if (healthLight != null)
-            {
-                healthLight.intensity = GetHealthPercentage();
-            }
-        }
-
-        public float GetHealthPercentage() => currentHealth / maxHealth;
-        public bool IsDead() => isDead;
-        public float Health
-        {
-            get => currentHealth;
-            set => currentHealth = value;
-        }
-
-        public float MaxHealth => maxHealth;
-
-        public void SetMaxHealth(float newMaxHealth)
-        {
-            maxHealth = newMaxHealth;
-            if (currentHealth > maxHealth)
-                currentHealth = maxHealth;
-
-            OnHealthChanged?.Invoke(this, new HealthChangedEventArgs
-            {
-                CurrentHealth = currentHealth,
-                MaxHealth = maxHealth,
-                DamageSource = null,
-                DamageAmount = 0,
-                HitPoint = transform.position
-            });
-
-            UpdateLightIntensity();
-        }
         public void Kill(GameObject damageSource = null)
         {
             if (isDead) return;
-
-            Debug.Log($"{gameObject.name} is being forcefully killed by {damageSource?.name ?? "Unknown"}.");
-
-            currentHealth = 0;
             isDead = true;
-
-            var args = new HealthChangedEventArgs
-            {
-                CurrentHealth = 0,
-                MaxHealth = maxHealth,
-                DamageSource = damageSource,
-                DamageAmount = maxHealth,
-                HitPoint = transform.position
-            };
-
-            OnTakeDamage?.Invoke(this, args);
-            OnHealthChanged?.Invoke(this, args);
-            UpdateLightIntensity();
-
-            Die(damageSource, maxHealth); // This is your internal method that handles death logic.
+            Die(damageSource, health);
+            Debug.Log($"[HealthComponent {gameObject.name}] Killed by {damageSource?.name ?? "unknown"}");
         }
 
-        public ParticleSystem BreakEffect => breakEffect;
-        public AudioClip BreakSound => breakSound;
+        private void Die(GameObject damageSource, float finalHealth = 0)
+        {
+            health = finalHealth;
+            OnHealthChanged?.Invoke(health / maxHealth);
+            OnDeath?.Invoke(this);
+
+            Debug.Log($"[HealthComponent {gameObject.name}] Died, invoking OnDeath");
+
+            if (destroyOnDeath)
+            {
+                StartCoroutine(HandleDestroy());
+            }
+        }
+
+        private System.Collections.IEnumerator HandleDestroy()
+        {
+            yield return new WaitForEndOfFrame();
+            if (gameObject != null)
+            {
+                if (scaleOnDeath)
+                {
+                    float timer = 0f;
+                    Vector3 startScale = transform.localScale;
+                    float duration = 3f; // Match ShadowMonster's ScaleDownAndDisable
+                    while (timer < duration)
+                    {
+                        timer += Time.deltaTime;
+                        transform.localScale = Vector3.Lerp(startScale, Vector3.zero, timer / duration);
+                        yield return null;
+                    }
+                }
+                Debug.Log($"[HealthComponent {gameObject.name}] Destroying GameObject");
+                UnityEngine.Object.Destroy(gameObject);
+            }
+        }
     }
 }

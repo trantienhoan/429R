@@ -5,7 +5,7 @@ namespace Enemies
     public class ChargeState : IState
     {
         private ShadowMonster monster;
-        private Transform target;
+        private float stuckTimer;
 
         public ChargeState(ShadowMonster monster)
         {
@@ -14,54 +14,72 @@ namespace Enemies
 
         public void OnEnter()
         {
-            target = monster.GetClosestTarget();
-            monster.StartCharge();
+            stuckTimer = 0f;
             if (monster.animator != null)
             {
                 monster.animator.SetBool("isCharging", true);
                 monster.animator.SetBool("isRunning", false);
                 monster.animator.SetBool("isGrounded", monster.isGrounded);
-                monster.animator.ResetTrigger("Attack");
-                monster.animator.Update(0f); // Force Animator update
-                Debug.Log($"ChargeState OnEnter: Set isCharging = true, isRunning = false, isGrounded = {monster.isGrounded}, Animator isCharging = {monster.animator.GetBool("isCharging")}, Current State = {monster.animator.GetCurrentAnimatorStateInfo(0).fullPathHash} ({monster.GetStateName(monster.animator.GetCurrentAnimatorStateInfo(0).fullPathHash)})");
+                monster.animator.ResetTrigger("Attack"); // Reset to avoid conflicts
+                monster.animator.Update(0f);
+                Debug.Log($"[ChargeState {monster.gameObject.name}] OnEnter: Set isCharging=true, isRunning=false, isGrounded={monster.isGrounded}");
             }
             if (monster.agent != null && monster.agent.isActiveAndEnabled && monster.agent.isOnNavMesh)
             {
                 monster.agent.isStopped = true;
-                Debug.Log("ChargeState OnEnter: NavMeshAgent stopped");
+                Debug.Log($"[ChargeState {monster.gameObject.name}] OnEnter: NavMeshAgent stopped");
             }
-            Debug.Log($"Entered ChargeState: Target = {(target != null ? target.name : "None")}, ChargeDelay = {monster.chargeDelay}");
+            monster.StartCharge();
+            Debug.Log($"[ChargeState {monster.gameObject.name}] Entered ChargeState");
         }
 
         public void Tick()
         {
             if (!monster.isGrounded || monster.IsBeingHeld)
             {
+                Debug.Log($"[ChargeState {monster.gameObject.name}] Transitioning to IdleState (isGrounded={monster.isGrounded}, IsBeingHeld={monster.IsBeingHeld})");
+                monster.animator.SetBool("isCharging", false);
                 monster.stateMachine.ChangeState(new IdleState(monster));
-                Debug.Log("ChargeState: Exiting to IdleState (not grounded or held)");
                 return;
             }
 
-            target = monster.GetClosestTarget();
+            Transform target = monster.GetClosestTarget();
             float distance = monster.GetDistanceToTarget();
-            if (monster.animator != null)
+            if (target == null || distance > monster.chaseRange)
             {
-                Debug.Log($"ChargeState Tick: Distance = {distance}, ChargeTimer = {monster.chargeTimer}, ChargeDelay = {monster.chargeDelay}, Target = {(target != null ? target.name : "None")}, Animator isCharging = {monster.animator.GetBool("isCharging")}, Current State = {monster.animator.GetCurrentAnimatorStateInfo(0).fullPathHash} ({monster.GetStateName(monster.animator.GetCurrentAnimatorStateInfo(0).fullPathHash)})");
-            }
-
-            if (target == null || distance > monster.attackRange)
-            {
+                Debug.Log($"[ChargeState {monster.gameObject.name}] Transitioning to ChaseState (target: {target?.name}, distance: {distance}, chaseRange: {monster.chaseRange})");
+                monster.animator.SetBool("isCharging", false);
                 monster.stateMachine.ChangeState(new ChaseState(monster));
-                Debug.Log("ChargeState: Exiting to ChaseState (no target or out of attack range)");
                 return;
             }
 
             if (monster.IsChargeComplete())
             {
-                monster.animator.SetBool("isCharging", false); // Ensure isCharging is false before Attack
-                monster.stateMachine.ChangeState(new AttackState(monster));
-                Debug.Log("ChargeState: Charge complete, transitioning to AttackState");
+                if (distance <= monster.attackRange)
+                {
+                    Debug.Log($"[ChargeState {monster.gameObject.name}] Charge complete, transitioning to AttackState (distance: {distance}, attackRange: {monster.attackRange})");
+                    monster.animator.SetBool("isCharging", false);
+                    monster.animator.SetTrigger("Attack"); // Set Attack trigger
+                    monster.stateMachine.ChangeState(new AttackState(monster));
+                }
+                else
+                {
+                    Debug.Log($"[ChargeState {monster.gameObject.name}] Charge complete, transitioning to IdleState (distance: {distance}, attackRange: {monster.attackRange})");
+                    monster.animator.SetBool("isCharging", false);
+                    monster.stateMachine.ChangeState(new IdleState(monster));
+                }
+                return;
             }
+
+            stuckTimer += Time.deltaTime;
+            if (stuckTimer >= 9f && !monster.isInKamikazeMode)
+            {
+                Debug.Log($"[ChargeState {monster.gameObject.name}] Stuck for 9s, transitioning to KamikazeState");
+                monster.animator.SetBool("isCharging", false);
+                monster.stateMachine.ChangeState(new KamikazeState(monster));
+            }
+
+            Debug.Log($"[ChargeState {monster.gameObject.name}] Charging, timer: {monster.chargeTimer}/{monster.chargeDelay}, distance: {distance}, stuckTimer: {stuckTimer}");
         }
 
         public void OnExit()
@@ -70,14 +88,14 @@ namespace Enemies
             {
                 monster.animator.SetBool("isCharging", false);
                 monster.animator.SetBool("isRunning", false);
-                Debug.Log($"ChargeState OnExit: Set isCharging = false, isRunning = false, Animator isCharging = {monster.animator.GetBool("isCharging")}");
+                monster.animator.ResetTrigger("Attack"); // Reset on exit
+                Debug.Log($"[ChargeState {monster.gameObject.name}] OnExit: Set isCharging=false, isRunning=false, Attack trigger reset");
             }
             if (monster.agent != null && monster.agent.isActiveAndEnabled && monster.agent.isOnNavMesh)
             {
                 monster.agent.isStopped = false;
-                Debug.Log("ChargeState OnExit: NavMeshAgent resumed");
+                Debug.Log($"[ChargeState {monster.gameObject.name}] OnExit: NavMeshAgent resumed");
             }
-            Debug.Log("Exiting ChargeState");
         }
     }
 }

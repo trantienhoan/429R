@@ -6,9 +6,6 @@ namespace Enemies
     {
         private ShadowMonster monster;
         private float idleTimer;
-        private Vector3 wanderTarget;
-        private bool isWandering;
-        private float wanderTimer;
 
         public IdleState(ShadowMonster monster)
         {
@@ -18,75 +15,43 @@ namespace Enemies
         public void OnEnter()
         {
             idleTimer = 0f;
-            wanderTimer = 0f;
-            isWandering = false;
+            monster.ResetChargeTimer();
             if (monster.animator != null)
             {
                 monster.animator.SetBool("isRunning", false);
                 monster.animator.SetBool("isCharging", false);
                 monster.animator.SetBool("isGrounded", monster.isGrounded);
                 monster.animator.ResetTrigger("Attack");
+                monster.animator.ResetTrigger("KamikazeAttack");
                 monster.animator.Update(0f);
-                Debug.Log($"IdleState OnEnter: Set isRunning = false, isCharging = false, isGrounded = {monster.isGrounded}, Animator isRunning = {monster.animator.GetBool("isRunning")}, isCharging = {monster.animator.GetBool("isCharging")}, Current State = {monster.animator.GetCurrentAnimatorStateInfo(0).fullPathHash} ({monster.GetStateName(monster.animator.GetCurrentAnimatorStateInfo(0).fullPathHash)})");
+                Debug.Log($"[IdleState {monster.gameObject.name}] OnEnter: Set isRunning=false, isCharging=false, isGrounded={monster.isGrounded}");
             }
             if (monster.agent != null && monster.agent.isActiveAndEnabled && monster.agent.isOnNavMesh)
             {
                 monster.agent.isStopped = true;
-                Debug.Log("IdleState OnEnter: NavMeshAgent stopped");
+                Debug.Log($"[IdleState {monster.gameObject.name}] OnEnter: NavMeshAgent stopped");
             }
-            Debug.Log("Entered IdleState");
+            Debug.Log($"[IdleState {monster.gameObject.name}] Entered IdleState");
         }
 
         public void Tick()
         {
             idleTimer += Time.deltaTime;
-            wanderTimer += Time.deltaTime;
 
             Transform target = monster.GetClosestTarget();
             float distance = monster.GetDistanceToTarget();
-            Debug.Log($"IdleState: Target = {(target != null ? target.name : "None")}, Distance = {distance}, ChaseRange = {monster.chaseRange}, IdleTimer = {idleTimer}, WanderTimer = {wanderTimer}, IsWandering = {isWandering}, NavMeshAgent Active = {(monster.agent != null ? monster.agent.isActiveAndEnabled : false)}, OnNavMesh = {(monster.agent != null ? monster.agent.isOnNavMesh : false)}");
-
-            if (target != null && distance <= monster.chaseRange && !monster.IsBeingHeld && monster.isGrounded)
+            if (target != null && distance <= monster.chaseRange && !monster.IsBeingHeld && monster.isGrounded && Time.time >= monster.lastAttackTime + monster.attackCooldown)
             {
                 if (monster.agent != null && monster.agent.isActiveAndEnabled && monster.agent.isOnNavMesh)
                 {
+                    Debug.Log($"[IdleState {monster.gameObject.name}] Transitioning to ChaseState (distance: {distance}, chaseRange: {monster.chaseRange})");
                     monster.stateMachine.ChangeState(new ChaseState(monster));
-                    Debug.Log("IdleState: Transitioning to ChaseState");
                 }
                 else
                 {
-                    Debug.LogWarning($"IdleState: Cannot transition to ChaseState, NavMeshAgent not ready, Agent Active = {(monster.agent != null ? monster.agent.isActiveAndEnabled : false)}, OnNavMesh = {(monster.agent != null ? monster.agent.isOnNavMesh : false)}");
+                    Debug.LogWarning($"[IdleState {monster.gameObject.name}] Cannot transition to ChaseState, NavMeshAgent not ready (Active: {(monster.agent != null ? monster.agent.isActiveAndEnabled : false)}, OnNavMesh: {(monster.agent != null ? monster.agent.isOnNavMesh : false)})");
                 }
                 return;
-            }
-
-            if (!isWandering && wanderTimer >= monster.wanderDelay && monster.isGrounded && monster.agent != null && monster.agent.isActiveAndEnabled && monster.agent.isOnNavMesh)
-            {
-                wanderTarget = monster.GetRandomWanderPoint();
-                monster.agent.SetDestination(wanderTarget);
-                monster.agent.isStopped = false;
-                monster.agent.speed = 3.5f;
-                isWandering = true;
-                if (monster.animator != null)
-                {
-                    monster.animator.SetBool("isRunning", true);
-                }
-                Debug.Log($"IdleState: Started wandering to {wanderTarget}, Agent Active = {monster.agent.isActiveAndEnabled}, OnNavMesh = {monster.agent.isOnNavMesh}");
-            }
-
-            if (isWandering && monster.agent != null && monster.agent.isActiveAndEnabled && monster.agent.isOnNavMesh)
-            {
-                if (monster.agent.remainingDistance <= monster.agent.stoppingDistance)
-                {
-                    isWandering = false;
-                    wanderTimer = 0f;
-                    monster.agent.isStopped = true;
-                    if (monster.animator != null)
-                    {
-                        monster.animator.SetBool("isRunning", false);
-                    }
-                    Debug.Log("IdleState: Reached wander point, stopping");
-                }
             }
 
             if (idleTimer >= monster.idleTimeBeforeDive && monster.isGrounded)
@@ -95,8 +60,8 @@ namespace Enemies
                 {
                     monster.animator.SetTrigger("Dive");
                 }
+                Debug.Log($"[IdleState {monster.gameObject.name}] Transitioning to DiveState");
                 monster.stateMachine.ChangeState(new DiveState(monster));
-                Debug.Log("IdleState: Transitioning to DiveState");
             }
         }
 
@@ -105,14 +70,14 @@ namespace Enemies
             if (monster.agent != null && monster.agent.isActiveAndEnabled && monster.agent.isOnNavMesh)
             {
                 monster.agent.isStopped = true;
-                Debug.Log("IdleState OnExit: NavMeshAgent stopped");
+                Debug.Log($"[IdleState {monster.gameObject.name}] OnExit: NavMeshAgent stopped");
             }
             if (monster.animator != null)
             {
                 monster.animator.SetBool("isRunning", false);
                 monster.animator.SetBool("isCharging", false);
             }
-            Debug.Log("Exiting IdleState");
+            Debug.Log($"[IdleState {monster.gameObject.name}] Exited IdleState");
         }
     }
 }

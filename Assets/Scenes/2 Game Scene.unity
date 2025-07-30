@@ -735,6 +735,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5045664677272387980, guid: 6cdab26faed212a41a61983e50a222da,
         type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5045664677272387980, guid: 6cdab26faed212a41a61983e50a222da,
+        type: 3}
       propertyPath: m_StaticEditorFlags
       value: 0
       objectReference: {fileID: 0}
@@ -1226,18 +1231,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 1000
-  currentHealth: 1000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &125547499
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1599,18 +1605,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 1000
-  currentHealth: 1000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &135761256
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1933,18 +1940,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 1000
-  currentHealth: 1000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &145673301
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2220,18 +2228,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 500
-  currentHealth: 500
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &153399028
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -2990,18 +2999,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 500
-  currentHealth: 500
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &229272876
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -3160,18 +3170,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
-  currentHealth: 100
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &273996208
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4276,16 +4287,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 200
-  currentHealth: 0
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 0}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 0}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &338682315
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -4870,18 +4884,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 1000
-  currentHealth: 1000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &387274562 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -3039239005371045628, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
@@ -4987,16 +5002,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
-  currentHealth: 0
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 0}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 0}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &387274568
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -5768,6 +5786,21 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3030980029734817786, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
         type: 3}
+      propertyPath: pushForce
+      value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 3030980029734817786, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
+        type: 3}
+      propertyPath: idleTimeBeforeDive
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3030980029734817786, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
+        type: 3}
+      propertyPath: kamikazeAttackDamage
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 3030980029734817786, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
+        type: 3}
       propertyPath: 'wanderPoints.Array.data[0]'
       value: 
       objectReference: {fileID: 601917980}
@@ -5776,6 +5809,26 @@ PrefabInstance:
       propertyPath: 'wanderPoints.Array.data[1]'
       value: 
       objectReference: {fileID: 1899462287}
+    - target: {fileID: 4478516609795976183, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
+        type: 3}
+      propertyPath: m_Speed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8314641946612675146, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
+        type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.27
+      objectReference: {fileID: 0}
+    - target: {fileID: 8314641946612675146, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.27
+      objectReference: {fileID: 0}
+    - target: {fileID: 8314641946612675146, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.27
+      objectReference: {fileID: 0}
     - target: {fileID: 8314641946612675146, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -5962,12 +6015,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 67621380692456023, guid: ad68a3b93b2021b4e978bbc81328a11d,
     type: 3}
   m_PrefabInstance: {fileID: 2150401455723328706}
-  m_PrefabAsset: {fileID: 0}
---- !u!108 &503263190 stripped
-Light:
-  m_CorrespondingSourceObject: {fileID: 8413506884237989682, guid: c99d2be7e985de644a0adaecdc76989b,
-    type: 3}
-  m_PrefabInstance: {fileID: 2138706021}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &504561821 stripped
 GameObject:
@@ -6169,18 +6216,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 2000
-  currentHealth: 2000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &504561828
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -6514,18 +6562,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 500
-  currentHealth: 500
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &533605560
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -6914,18 +6963,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 2000
-  currentHealth: 2000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &558333073
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7265,18 +7315,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 500
-  currentHealth: 500
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &567669810
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -7430,16 +7481,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
-  currentHealth: 0
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 0}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 0}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &574810520
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -7715,16 +7769,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 350
-  currentHealth: 0
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 0}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 0}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &576405584
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -8129,11 +8186,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2380d6a6e9dc3254d95d638321e4362a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  keyItemPrefab: {fileID: 7621060073968193995, guid: 7e10b0d5af1d06d418625e174f9317eb,
+  keyItemPrefab: {fileID: 6616067871869890980, guid: edf9132d0728dd349854d6653c1e11a0,
     type: 3}
   bombItemPrefab: {fileID: 3777597441533160902, guid: 1a8b377c483bfa843b196e7f3dbd816d,
     type: 3}
-  dropForce: 200
+  dropForce: 5
   hasGrown: 0
 --- !u!114 &601917984
 MonoBehaviour:
@@ -8148,18 +8205,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 150000
-  currentHealth: 150000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 503263190}
-  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &601917985
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8172,24 +8230,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1281fa446ed55b34ab02c06d60cb2673, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  growthDuration: 5
-  maxHealth: 1000
-  animator: {fileID: 2138706028}
-  growthAnimationName: Seed_Grow
-  growthParticlePrefab: {fileID: 4033412786151888120, guid: 49057b33ea71fbb4da4e8f02a8db9f28,
-    type: 3}
-  seedSocket: {fileID: 601917986}
-  treeSpawnPoint: {fileID: 2138706022}
-  monsterSpawner: {fileID: 852293152}
-  audioSource: {fileID: 0}
-  growthSound: {fileID: 0}
-  onGrowthStarted:
+  treeOfLight: {fileID: 956400512}
+  healthComponent: {fileID: 0}
+  itemDropHandler: {fileID: 0}
+  growTime: 5
+  OnTreeGrown:
     m_PersistentCalls:
       m_Calls: []
-  onGrowthCompleted:
-    m_PersistentCalls:
-      m_Calls: []
-  seedMoveDuration: 1.75
 --- !u!114 &601917986
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9512,17 +9559,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 200
-  currentHealth: 200
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 0}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &678226182
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -9995,18 +10044,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
-  currentHealth: 100
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &734122309
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -10689,18 +10739,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 5000
-  currentHealth: 5000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &797138157
 GameObject:
   m_ObjectHideFlags: 0
@@ -11443,18 +11494,6 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 7552531205614386090}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &852293152 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 4836868040052509315, guid: 98f33dce55e98574bb6bd02fd309cbf4,
-    type: 3}
-  m_PrefabInstance: {fileID: 7552531205614386090}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 705780039}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bd2ae3da4290e914fb8c0299e7686140, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &852293153
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11670,18 +11709,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 1000
-  currentHealth: 1000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &865621719
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -11895,18 +11935,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 3000
-  currentHealth: 3000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &945905627
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -11931,8 +11972,8 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 1
-  m_Constraints: 0
+  m_Interpolate: 0
+  m_Constraints: 126
   m_CollisionDetection: 1
 --- !u!65 &945905628
 BoxCollider:
@@ -12138,18 +12179,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 1500
-  currentHealth: 1500
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &947336785
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -12276,18 +12318,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 5000
-  currentHealth: 5000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.25
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &955537459
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -12559,18 +12602,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 1000
-  currentHealth: 1000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &989872089
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -13300,18 +13344,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
-  currentHealth: 100
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &1041082119 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 532175589901541015, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
@@ -13390,18 +13435,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 5000
-  currentHealth: 5000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 43143291}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &1041082122
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -13934,18 +13980,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
-  currentHealth: 100
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &1074474041
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -14375,18 +14422,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 3000
-  currentHealth: 3000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &1137030776
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -14411,8 +14459,8 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 1
-  m_Constraints: 0
+  m_Interpolate: 0
+  m_Constraints: 126
   m_CollisionDetection: 1
 --- !u!65 &1137030777
 BoxCollider:
@@ -14603,18 +14651,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 500
-  currentHealth: 500
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &1146258532
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -14884,18 +14933,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 5
-  currentHealth: 0
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &1202094427
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -15073,16 +15123,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
-  currentHealth: 0
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 0}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 0}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &1213260547
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -15774,18 +15827,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 5000
-  currentHealth: 5000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 490464818}
-  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &1251436033
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -15992,18 +16046,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 3000
-  currentHealth: 0
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &1254544372
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -19297,18 +19352,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
-  currentHealth: 0
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &1261005736
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -19584,18 +19640,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 500
-  currentHealth: 500
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 635618113}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &1268381638
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -19928,17 +19985,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 5000
-  currentHealth: 5000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 1964693644}
-  breakEffect: {fileID: 6331275906715107348, guid: 690951f4781b19649bc5c7892414ff37,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 0}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &1330854903
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -20078,18 +20137,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 2000
-  currentHealth: 2000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &1332034949
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -20484,18 +20544,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 1000
-  currentHealth: 1000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &1340278932
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -20955,18 +21016,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 1000
-  currentHealth: 1000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &1393735641
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -21300,18 +21362,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
-  currentHealth: 100
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &1407696312
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -21634,16 +21697,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 200
-  currentHealth: 0
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 0}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 0}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &1423784125
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -21913,18 +21979,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 1000
-  currentHealth: 1000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &1425434745
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -22236,16 +22303,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 200
-  currentHealth: 0
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 0}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 0}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &1432128265
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -22952,18 +23022,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 500
-  currentHealth: 500
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &1493478374
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -23037,18 +23108,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 2000
-  currentHealth: 2000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &1505699228
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -23133,8 +23205,8 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 1
-  m_Constraints: 0
+  m_Interpolate: 0
+  m_Constraints: 62
   m_CollisionDetection: 1
 --- !u!65 &1505699230
 BoxCollider:
@@ -23843,18 +23915,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 1500
-  currentHealth: 1500
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &1546222045
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -24145,16 +24218,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
-  currentHealth: 0
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 0}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 0}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &1553199915
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -24841,16 +24917,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
-  currentHealth: 0
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 0}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 0}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &1606368248
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -25221,18 +25300,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 200
-  currentHealth: 200
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &1608809639
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -25656,16 +25736,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 200
-  currentHealth: 0
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 0}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 0}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &1654595775
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -25861,18 +25944,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 300
-  currentHealth: 0
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 2093901408}
-  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &1660430850
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -26267,17 +26351,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 200
-  currentHealth: 200
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 0}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &1676804186
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -26814,16 +26900,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 200
-  currentHealth: 0
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 0}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 0}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &1745748942
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -27008,18 +27097,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 3000
-  currentHealth: 3000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &1747529138
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -27295,18 +27385,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 3000
-  currentHealth: 3000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &1820484837
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -27555,18 +27646,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 3000
-  currentHealth: 3000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &1846066901
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -28042,18 +28134,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100000
-  currentHealth: 100000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 9169966119468206341, guid: ac47b7785dfae4746bf0ec40640604d7,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 7
-  minScale: {x: 5, y: 5, z: 5}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &1899462302
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -28285,16 +28378,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
-  currentHealth: 0
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 0}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 0}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &1904605578
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -28570,18 +28666,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 500
-  currentHealth: 500
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &1905102046
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -28963,18 +29060,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 2000
-  currentHealth: 2000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &1953131841
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -29562,18 +29660,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 5000
-  currentHealth: 5000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 359323845}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &1979497188
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -30044,18 +30143,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 5000
-  currentHealth: 5000
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &2056673193
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -30592,18 +30692,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 1500
-  currentHealth: 1500
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &2071279942
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -30628,8 +30729,8 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 1
-  m_Constraints: 0
+  m_Interpolate: 0
+  m_Constraints: 126
   m_CollisionDetection: 1
 --- !u!65 &2071279943
 BoxCollider:
@@ -30814,16 +30915,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
-  currentHealth: 0
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 0}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 0}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &2091169272
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -31304,18 +31408,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 500
-  currentHealth: 500
-  invulnerabilityDuration: 1
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &2135059359
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -31427,19 +31532,7 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_of_Light
       objectReference: {fileID: 0}
-    - target: {fileID: 4431514908729328411, guid: c99d2be7e985de644a0adaecdc76989b,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 5380660309609758459, guid: c99d2be7e985de644a0adaecdc76989b,
-        type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents:
-    - {fileID: 3286840482125901717, guid: c99d2be7e985de644a0adaecdc76989b, type: 3}
-    - {fileID: 8558845874768669244, guid: c99d2be7e985de644a0adaecdc76989b, type: 3}
+    m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
@@ -31447,12 +31540,6 @@ PrefabInstance:
 --- !u!4 &2138706022 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3905808315482413473, guid: c99d2be7e985de644a0adaecdc76989b,
-    type: 3}
-  m_PrefabInstance: {fileID: 2138706021}
-  m_PrefabAsset: {fileID: 0}
---- !u!95 &2138706028 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 5380660309609758459, guid: c99d2be7e985de644a0adaecdc76989b,
     type: 3}
   m_PrefabInstance: {fileID: 2138706021}
   m_PrefabAsset: {fileID: 0}
@@ -32580,7 +32667,7 @@ PrefabInstance:
     - target: {fileID: 4836868040052509315, guid: 98f33dce55e98574bb6bd02fd309cbf4,
         type: 3}
       propertyPath: maxMonsters
-      value: 10
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4836868040052509315, guid: 98f33dce55e98574bb6bd02fd309cbf4,
         type: 3}

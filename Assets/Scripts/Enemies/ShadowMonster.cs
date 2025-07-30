@@ -12,7 +12,6 @@ namespace Enemies
         [Header("References")]
         [SerializeField] public Animator animator;
         [SerializeField] public NavMeshAgent agent;
-        [SerializeField] private Transform[] wanderPoints;
         [SerializeField] public SpiderAttackHitbox attackHitbox;
         [SerializeField] public Rigidbody rb;
         [SerializeField] private ParticleSystem deathVFX;
@@ -20,25 +19,35 @@ namespace Enemies
         [SerializeField] private AudioSource audioSource;
         [SerializeField] public UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable grabInteractable;
         [SerializeField] public HealthComponent healthComponent;
-
+        
         [Header("Settings")]
         public float chaseRange = 15f;
         public float attackRange = 2f;
         public float kamikazeRange = 5f;
-        public float wanderDelay = 3f;
+        public float attackCooldown = 2f;
         public float chargeDelay = 2.5f;
-        public float attackDamage = 50f;
-        public float kamikazeDamage = 10f;
+        public float normalAttackDamage = 10f;
+        public float kamikazeAttackDamage = 50f;
+        public float kamikazeHealthThreshold = 0.19f;
+        private float kamikazeRadiusMultiplier = 3f;
         public float pushForce = 5f;
-        public float stuckTimeThreshold = 5f;
+        public float stuckTimeThreshold = 9f; // Aligned with ChargeState
         public float idleTimeBeforeDive = 5f;
+        [SerializeField] private float growthTime = 30f; // Time to reach full size
+        [SerializeField] private Vector3 startScale = new Vector3(0.5f, 0.5f, 0.5f);
+        [SerializeField] private Vector3 fullScale = new Vector3(1f, 1f, 1f);
 
         private Transform currentTarget;
         private Vector3 lastPosition;
         private float stuckTimer;
         public float chargeTimer { get; private set; }
         private bool isCharging;
+        public bool isInKamikazeMode;
+        private float originalExplosionRadius;
+        public float lastAttackTime;
         public StateMachine stateMachine { get; private set; }
+        private Coroutine attackCoroutine;
+        private float growthTimer;
 
         public bool isGrounded { get; private set; }
         public bool IsBeingHeld { get; private set; }
@@ -54,16 +63,9 @@ namespace Enemies
             if (animator != null)
             {
                 animator.SetBool("isGrounded", grounded);
-                animator.Update(0f); // Force Animator update
-                //Debug.Log($"Set isGrounded to {grounded} in Animator: {animator.name}, Actual Animator isGrounded: {animator.GetBool("isGrounded")}, GameObject: {gameObject.name}");
+                animator.Update(0f);
+                Debug.Log($"[ShadowMonster {gameObject.name}] IsGrounded: {grounded}, groundCheckPoint: {groundCheckPoint.position}");
             }
-            else
-            {
-                Debug.LogError("Animator is not assigned!");
-            }
-            AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
-            //Debug.Log($"IsGrounded: {grounded}, Position: {groundCheckPoint.position}, Hit: {(grounded ? hit.collider.name : "None")}, Animator isGrounded: {animator.GetBool("isGrounded")}, Current State: {stateInfo.fullPathHash} ({GetStateName(stateInfo.fullPathHash)})");
-            //Debug.DrawRay(groundCheckPoint.position, Vector3.down * groundCheckDistance, grounded ? Color.green : Color.red, 1f);
             return grounded;
         }
 
@@ -77,6 +79,7 @@ namespace Enemies
             if (stateHash == Animator.StringToHash("Base Layer.Hurt")) return "Hurt";
             if (stateHash == Animator.StringToHash("Base Layer.Dive")) return "Dive";
             if (stateHash == Animator.StringToHash("Base Layer.Dead")) return "Dead";
+            if (stateHash == Animator.StringToHash("Base Layer.Kamikaze")) return "Kamikaze";
             return "Unknown";
         }
 
@@ -86,8 +89,8 @@ namespace Enemies
             {
                 agent.enabled = true;
                 agent.speed = 3.5f;
-                agent.stoppingDistance = 0.5f;
-                Debug.Log("EnsureAgentOnNavMesh: Enabled NavMeshAgent");
+                agent.stoppingDistance = 0f; // Changed to 0f for precise movement
+                Debug.Log($"[ShadowMonster {gameObject.name}] EnsureAgentOnNavMesh: Enabled NavMeshAgent");
             }
             if (agent != null && !agent.isOnNavMesh && isGrounded)
             {
@@ -96,43 +99,65 @@ namespace Enemies
                 {
                     transform.position = hit.position;
                     agent.Warp(hit.position);
-                    Debug.Log($"EnsureAgentOnNavMesh: Warped to NavMesh position {hit.position}, Agent Active = {agent.isActiveAndEnabled}, OnNavMesh = {agent.isOnNavMesh}");
+                    Debug.Log($"[ShadowMonster {gameObject.name}] EnsureAgentOnNavMesh: Warped to NavMesh position {hit.position}");
                 }
                 else
                 {
-                    Debug.LogWarning("EnsureAgentOnNavMesh: Failed to find NavMesh position");
+                    Debug.LogWarning($"[ShadowMonster {gameObject.name}] EnsureAgentOnNavMesh: Failed to find NavMesh position");
                 }
-            }
-            else if (agent != null)
-            {
-                Debug.Log($"EnsureAgentOnNavMesh: Agent Active = {agent.isActiveAndEnabled}, OnNavMesh = {agent.isOnNavMesh}");
             }
         }
 
         public void EnableAI()
         {
+            if (!enabled)
+            {
+                enabled = true;
+                Debug.Log($"[ShadowMonster {gameObject.name}] EnableAI: Enabled ShadowMonster script");
+            }
             EnsureAgentOnNavMesh();
             if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
             {
                 stateMachine.ChangeState(new IdleState(this));
-                Debug.Log("EnableAI: NavMeshAgent enabled, set to IdleState");
+                Debug.Log($"[ShadowMonster {gameObject.name}] EnableAI: Set to IdleState");
             }
             else
             {
-                Debug.LogWarning("EnableAI: NavMeshAgent is not active or not on NavMesh");
+                Debug.LogWarning($"[ShadowMonster {gameObject.name}] EnableAI: NavMeshAgent not ready");
             }
         }
 
-        public Vector3 GetRandomWanderPoint()
+        public void DisableAI()
         {
-            if (wanderPoints == null || wanderPoints.Length == 0)
+            enabled = false;
+            if (agent != null && agent.isActiveAndEnabled)
             {
-                Debug.LogWarning("No wander points set!");
-                return transform.position;
+                agent.enabled = false;
+                Debug.Log($"[ShadowMonster {gameObject.name}] DisableAI: Disabled NavMeshAgent");
             }
-            Vector3 wanderPoint = wanderPoints[Random.Range(0, wanderPoints.Length)].position;
-            Debug.Log($"GetRandomWanderPoint: Selected wander point at {wanderPoint}");
-            return wanderPoint;
+            if (attackHitbox != null)
+            {
+                attackHitbox.gameObject.SetActive(false);
+                Debug.Log($"[ShadowMonster {gameObject.name}] DisableAI: Deactivated attackHitbox");
+            }
+            if (attackCoroutine != null)
+            {
+                StopCoroutine(attackCoroutine);
+                attackCoroutine = null;
+                Debug.Log($"[ShadowMonster {gameObject.name}] DisableAI: Stopped attack coroutine");
+            }
+            if (animator != null)
+            {
+                animator.SetBool("isGrounded", false);
+                animator.SetBool("isRunning", false);
+                animator.SetBool("isCharging", false);
+                animator.ResetTrigger("Attack");
+                animator.ResetTrigger("KamikazeAttack");
+                animator.Update(0f);
+                Debug.Log($"[ShadowMonster {gameObject.name}] DisableAI: Reset animator");
+            }
+            stateMachine.ChangeState(null);
+            Debug.Log($"[ShadowMonster {gameObject.name}] DisableAI: Cleared state machine");
         }
 
         protected override void Awake()
@@ -143,14 +168,15 @@ namespace Enemies
             grabInteractable = GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
             healthComponent = GetComponent<HealthComponent>();
             gameObject.tag = "Enemy";
-            if (!GetComponent<HealthComponent>())
+            if (!healthComponent)
             {
-                gameObject.AddComponent<HealthComponent>();
+                healthComponent = gameObject.AddComponent<HealthComponent>();
+                Debug.Log($"[ShadowMonster {gameObject.name}] Awake: Added HealthComponent");
             }
             if (animator == null)
             {
                 animator = GetComponent<Animator>();
-                Debug.LogWarning("Animator fetched via GetComponent!");
+                Debug.LogWarning($"[ShadowMonster {gameObject.name}] Awake: Animator fetched via GetComponent");
             }
             if (rb != null)
             {
@@ -158,7 +184,8 @@ namespace Enemies
             }
             if (attackHitbox != null)
             {
-                attackHitbox.Initialize(gameObject, attackDamage, pushForce);
+                originalExplosionRadius = attackHitbox.GetComponent<SphereCollider>().radius;
+                attackHitbox.Initialize(gameObject, normalAttackDamage, pushForce);
             }
             if (animator != null)
             {
@@ -166,8 +193,11 @@ namespace Enemies
                 animator.SetBool("isRunning", false);
                 animator.SetBool("isCharging", false);
                 animator.ResetTrigger("Attack");
-                Debug.Log($"Awake: Set isGrounded = {isGrounded}, isRunning = false, isCharging = false, Attack trigger reset");
+                animator.ResetTrigger("KamikazeAttack");
+                Debug.Log($"[ShadowMonster {gameObject.name}] Awake: Set animator");
             }
+            transform.localScale = startScale; // Start small
+            growthTimer = 0f;
             EnsureAgentOnNavMesh();
         }
 
@@ -179,15 +209,10 @@ namespace Enemies
                 grabInteractable.selectEntered.AddListener(OnGrabbed);
                 grabInteractable.selectExited.AddListener(OnReleased);
             }
-            healthComponent.OnTakeDamage += OnHealthChanged;
-            healthComponent.OnDeath += OnDeath;
-            if (animator != null)
+            if (healthComponent != null)
             {
-                animator.SetBool("isGrounded", isGrounded);
-                animator.SetBool("isRunning", false);
-                animator.SetBool("isCharging", false);
-                animator.ResetTrigger("Attack");
-                Debug.Log($"Start: Set isGrounded = {isGrounded}, isRunning = false, isCharging = false, Attack trigger reset");
+                healthComponent.OnTakeDamage.AddListener(OnHealthChanged);
+                healthComponent.OnDeath.AddListener(OnDeath);
             }
             EnableAI();
         }
@@ -203,6 +228,12 @@ namespace Enemies
             EnsureAgentOnNavMesh();
             stateMachine.Tick();
             CheckIfStuck();
+            // Growth mechanic
+            growthTimer += Time.deltaTime;
+            float growthProgress = Mathf.Clamp01(growthTimer / growthTime);
+            transform.localScale = Vector3.Lerp(startScale, fullScale, growthProgress);
+            Debug.Log($"[ShadowMonster {gameObject.name}] Update: state={stateMachine.CurrentState?.GetType().Name}, chargeTimer={chargeTimer}, scale={transform.localScale}");
+#if UNITY_EDITOR
             if (Input.GetKeyDown(KeyCode.G) && isGrounded)
             {
                 if (animator != null)
@@ -211,15 +242,17 @@ namespace Enemies
                     animator.SetBool("isRunning", false);
                     animator.SetBool("isCharging", false);
                     animator.ResetTrigger("Attack");
+                    animator.ResetTrigger("KamikazeAttack");
                     stateMachine.ChangeState(new IdleState(this));
-                    Debug.Log("Forced isGrounded to true, isRunning to false, isCharging to false, Attack trigger reset, and Idle state");
+                    Debug.Log($"[ShadowMonster {gameObject.name}] Forced IdleState");
                 }
             }
             if (Input.GetKeyDown(KeyCode.C))
             {
                 stateMachine.ChangeState(new ChaseState(this));
-                Debug.Log("Forced ChaseState");
+                Debug.Log($"[ShadowMonster {gameObject.name}] Forced ChaseState");
             }
+#endif
         }
 
         private void CheckIfStuck()
@@ -227,13 +260,10 @@ namespace Enemies
             if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh && Vector3.Distance(transform.position, lastPosition) < 0.1f)
             {
                 stuckTimer += Time.deltaTime;
-                if (stuckTimer > stuckTimeThreshold)
+                if (stuckTimer > stuckTimeThreshold && !isInKamikazeMode)
                 {
-                    if (attackHitbox != null)
-                    {
-                        attackHitbox.Initialize(gameObject, kamikazeDamage, pushForce);
-                        attackHitbox.TriggerExplosion();
-                    }
+                    EnterKamikazeMode();
+                    Debug.Log($"[ShadowMonster {gameObject.name}] CheckIfStuck: Triggered Kamikaze mode");
                 }
             }
             else
@@ -245,78 +275,156 @@ namespace Enemies
 
         public override void TakeDamage(float damageAmount, Vector3 hitPoint = default, GameObject damageSource = null)
         {
-            healthComponent.TakeDamage(damageAmount, hitPoint, damageSource);
+            if (healthComponent != null)
+            {
+                healthComponent.TakeDamage(damageAmount, hitPoint, damageSource);
+            }
         }
 
-        private void OnHealthChanged(object sender, HealthComponent.HealthChangedEventArgs e)
+        private void OnHealthChanged(HealthComponent.HealthChangedEventArgs e)
         {
             if (e.DamageAmount > 0 && !healthComponent.IsDead() && stateMachine.CurrentState is not HurtState && !IsBeingHeld)
             {
                 isCharging = false;
                 stateMachine.ChangeState(new HurtState(this));
-            }
-
-            if (healthComponent.GetHealthPercentage() < 0.19f && stateMachine.CurrentState is not KamikazeState && !IsBeingHeld)
-            {
-                stateMachine.ChangeState(new KamikazeState(this));
+                Debug.Log($"[ShadowMonster {gameObject.name}] OnHealthChanged: Transitioned to HurtState");
             }
         }
 
         private void OnDeath(HealthComponent health)
         {
             stateMachine.ChangeState(new DeadState(this));
+            Debug.Log($"[ShadowMonster {gameObject.name}] OnDeath: Transitioned to DeadState");
         }
 
         protected override void OnDeathHandler()
         {
+            // Handled by HealthComponent and DeadState
         }
 
         public void SetMaxHealth(float value)
         {
-            healthComponent.SetMaxHealth(value);
+            if (healthComponent != null)
+            {
+                healthComponent.SetMaxHealth(value);
+                Debug.Log($"[ShadowMonster {gameObject.name}] SetMaxHealth: Set health to {value}");
+            }
         }
 
         public void SetState(IState newState)
         {
             stateMachine.ChangeState(newState);
+            Debug.Log($"[ShadowMonster {gameObject.name}] SetState: Changed to {newState?.GetType().Name ?? "null"}");
         }
 
-        public void Explode()
+        public void StartCharge()
         {
-            if (attackHitbox != null)
-            {
-                attackHitbox.Initialize(gameObject, kamikazeDamage, pushForce);
-                attackHitbox.TriggerExplosion();
-            }
-        }
-
-        public void ResetSpider()
-        {
-            stuckTimer = 0f;
+            isCharging = true;
             chargeTimer = 0f;
-            isCharging = false;
-            currentTarget = null;
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-            transform.localScale = Vector3.one;
             if (animator != null)
             {
-                animator.Rebind();
-                animator.Update(0f);
-                animator.SetBool("isGrounded", isGrounded);
+                animator.SetBool("isCharging", true);
                 animator.SetBool("isRunning", false);
-                animator.SetBool("isCharging", false);
+                animator.SetBool("isGrounded", isGrounded);
                 animator.ResetTrigger("Attack");
-                Debug.Log($"ResetSpider: Set isGrounded = {isGrounded}, isRunning = false, isCharging = false, Attack trigger reset, Cleared currentTarget");
+                animator.Update(0f);
+                Debug.Log($"[ShadowMonster {gameObject.name}] StartCharge: Set isCharging=true");
             }
-            EnsureAgentOnNavMesh();
-            healthComponent.ResetHealth();
+        }
+
+        public bool IsChargeComplete()
+        {
+            chargeTimer += Time.deltaTime;
+            Debug.Log($"[ShadowMonster {gameObject.name}] IsChargeComplete: chargeTimer={chargeTimer}, chargeDelay={chargeDelay}");
+            return chargeTimer >= chargeDelay;
+        }
+
+        public void PerformAttack()
+        {
+            if (Time.time < lastAttackTime + attackCooldown)
+            {
+                Debug.Log($"[ShadowMonster {gameObject.name}] PerformAttack: Blocked by cooldown, time={Time.time}, lastAttackTime={lastAttackTime}");
+                return;
+            }
+            lastAttackTime = Time.time;
+            isCharging = false;
             if (attackHitbox != null)
             {
-                attackHitbox.Initialize(gameObject, attackDamage, pushForce);
+                attackHitbox.GetComponent<SphereCollider>().radius = originalExplosionRadius;
+                attackHitbox.Initialize(gameObject, normalAttackDamage, pushForce);
+                attackCoroutine = StartCoroutine(PerformAttackCoroutine(false));
+                Debug.Log($"[ShadowMonster {gameObject.name}] PerformAttack: Started normal attack");
             }
-            stateMachine.ChangeState(new IdleState(this));
-            Debug.Log("ResetSpider: Transitioned to IdleState");
+            else
+            {
+                Debug.LogWarning($"[ShadowMonster {gameObject.name}] PerformAttack: attackHitbox is null");
+            }
+        }
+
+        public void PerformKamikazeAttack()
+        {
+            if (Time.time < lastAttackTime + attackCooldown)
+            {
+                Debug.Log($"[ShadowMonster {gameObject.name}] PerformKamikazeAttack: Blocked by cooldown, time={Time.time}, lastAttackTime={lastAttackTime}");
+                return;
+            }
+            lastAttackTime = Time.time;
+            if (attackHitbox != null)
+            {
+                attackHitbox.GetComponent<SphereCollider>().radius = originalExplosionRadius * kamikazeRadiusMultiplier;
+                attackHitbox.Initialize(gameObject, kamikazeAttackDamage, pushForce);
+                attackCoroutine = StartCoroutine(PerformAttackCoroutine(true));
+                Debug.Log($"[ShadowMonster {gameObject.name}] PerformKamikazeAttack: Started kamikaze attack");
+            }
+            else
+            {
+                Debug.LogWarning($"[ShadowMonster {gameObject.name}] PerformKamikazeAttack: attackHitbox is null");
+            }
+        }
+
+        private IEnumerator PerformAttackCoroutine(bool isKamikaze)
+        {
+            if (attackHitbox != null)
+            {
+                attackHitbox.gameObject.SetActive(true);
+                if (isKamikaze)
+                {
+                    if (animator != null)
+                    {
+                        animator.SetTrigger("KamikazeAttack");
+                    }
+                    attackHitbox.TriggerExplosion();
+                    healthComponent.Kill(gameObject);
+                    Debug.Log($"[ShadowMonster {gameObject.name}] PerformAttackCoroutine: Kamikaze self-destructed");
+                }
+                else
+                {
+                    if (animator != null)
+                    {
+                        animator.SetTrigger("Attack");
+                    }
+                    attackHitbox.TriggerExplosion();
+                    Debug.Log($"[ShadowMonster {gameObject.name}] PerformAttackCoroutine: Triggered normal attack explosion");
+                }
+                yield return new WaitForSeconds(0.5f);
+                if (attackHitbox != null)
+                {
+                    attackHitbox.gameObject.SetActive(false);
+                    Debug.Log($"[ShadowMonster {gameObject.name}] PerformAttackCoroutine: Deactivated attackHitbox");
+                }
+            }
+            attackCoroutine = null;
+        }
+
+        private void EnterKamikazeMode()
+        {
+            isInKamikazeMode = true;
+            if (agent != null)
+            {
+                agent.speed *= 1.5f;
+            }
+            stateMachine.ChangeState(new KamikazeState(this));
+            Debug.Log($"[ShadowMonster {gameObject.name}] EnterKamikazeMode: Transitioned to KamikazeState");
         }
 
         public void Pickup()
@@ -325,7 +433,15 @@ namespace Enemies
             if (agent != null && agent.isActiveAndEnabled)
             {
                 agent.enabled = false;
-                Debug.Log("Pickup: Disabled NavMeshAgent");
+            }
+            if (attackHitbox != null)
+            {
+                attackHitbox.gameObject.SetActive(false);
+            }
+            if (attackCoroutine != null)
+            {
+                StopCoroutine(attackCoroutine);
+                attackCoroutine = null;
             }
             if (animator != null)
             {
@@ -333,8 +449,10 @@ namespace Enemies
                 animator.SetBool("isRunning", false);
                 animator.SetBool("isCharging", false);
                 animator.ResetTrigger("Attack");
+                animator.ResetTrigger("KamikazeAttack");
+                animator.SetTrigger("IdleOnAir");
                 animator.Update(0f);
-                Debug.Log("Pickup: Set isGrounded = false, isRunning = false, isCharging = false, Attack trigger reset");
+                Debug.Log($"[ShadowMonster {gameObject.name}] Pickup: Set to IdleOnAir");
             }
             stateMachine.ChangeState(new HeldState(this));
         }
@@ -343,24 +461,30 @@ namespace Enemies
         {
             IsBeingHeld = false;
             currentTarget = null;
+            if (attackHitbox != null)
+            {
+                attackHitbox.gameObject.SetActive(false);
+            }
+            if (attackCoroutine != null)
+            {
+                StopCoroutine(attackCoroutine);
+                attackCoroutine = null;
+            }
             if (animator != null)
             {
                 animator.SetBool("isGrounded", isGrounded);
                 animator.SetBool("isRunning", false);
                 animator.SetBool("isCharging", false);
                 animator.ResetTrigger("Attack");
+                animator.ResetTrigger("KamikazeAttack");
                 animator.Update(0f);
-                Debug.Log($"Release: Set isGrounded = {isGrounded}, isRunning = false, isCharging = false, Attack trigger reset, Cleared currentTarget");
+                Debug.Log($"[ShadowMonster {gameObject.name}] Release: Reset animator");
             }
             EnsureAgentOnNavMesh();
             if (isGrounded && agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
             {
                 stateMachine.ChangeState(new IdleState(this));
-                Debug.Log("Release: Transitioned to IdleState");
-            }
-            else
-            {
-                Debug.LogWarning("Release: Cannot transition to IdleState, NavMeshAgent not ready");
+                Debug.Log($"[ShadowMonster {gameObject.name}] Release: Set to IdleState");
             }
         }
 
@@ -376,7 +500,7 @@ namespace Enemies
                 if (obj != null && obj.activeInHierarchy)
                 {
                     var treePot = obj.GetComponent<TreeOfLightPot>();
-                    if (treePot != null && treePot.IsGrowing) // Only target growing pot
+                    if (treePot != null && treePot.IsGrowing)
                     {
                         float distance = Vector3.Distance(transform.position, obj.transform.position);
                         if (distance < closestDistance)
@@ -405,54 +529,8 @@ namespace Enemies
             }
 
             currentTarget = closestTarget;
-            Debug.Log($"GetClosestTarget: Selected {(closestTarget != null ? closestTarget.name : "None")}, Distance = {closestDistance}, PlayersFound = {players.Length}, TreesFound = {trees.Length}");
+            Debug.Log($"[ShadowMonster {gameObject.name}] GetClosestTarget: Selected {closestTarget?.name ?? "null"} at distance {closestDistance}");
             return closestTarget;
-        }
-
-        public void StartCharge()
-        {
-            isCharging = true;
-            chargeTimer = 0f;
-            if (animator != null)
-            {
-                animator.SetBool("isCharging", true);
-                animator.SetBool("isRunning", false);
-                animator.SetBool("isGrounded", isGrounded);
-                animator.ResetTrigger("Attack");
-                animator.Update(0f);
-                Debug.Log($"StartCharge: Set isCharging = true, isRunning = false, isGrounded = {isGrounded}, chargeTimer = {chargeTimer}, Attack trigger reset, Animator isCharging = {animator.GetBool("isCharging")}, Current State = {animator.GetCurrentAnimatorStateInfo(0).fullPathHash} ({GetStateName(animator.GetCurrentAnimatorStateInfo(0).fullPathHash)})");
-            }
-        }
-
-        public bool IsChargeComplete()
-        {
-            chargeTimer += Time.deltaTime;
-            Debug.Log($"IsChargeComplete: chargeTimer = {chargeTimer}, chargeDelay = {chargeDelay}, Complete = {chargeTimer >= chargeDelay}");
-            return chargeTimer >= chargeDelay;
-        }
-
-        public void PerformAttack()
-        {
-            isCharging = false;
-            if (attackHitbox != null)
-            {
-                attackHitbox.Initialize(gameObject, attackDamage, pushForce);
-                attackHitbox.TriggerExplosion();
-                Debug.Log($"PerformAttack: Triggered explosion via SpiderAttackHitbox, Damage = {attackDamage}, PushForce = {pushForce}");
-            }
-            else
-            {
-                Debug.LogWarning("PerformAttack: attackHitbox is null");
-            }
-        }
-
-        private IEnumerator DisableHitboxAfterDelay(float delay)
-        {
-            yield return new WaitForSeconds(delay);
-            if (attackHitbox != null)
-            {
-                attackHitbox.gameObject.SetActive(false);
-            }
         }
 
         public float GetDistanceToTarget()
@@ -460,9 +538,10 @@ namespace Enemies
             if (currentTarget == null)
             {
                 currentTarget = GetClosestTarget();
-                Debug.Log("GetDistanceToTarget: currentTarget was null, re-acquired");
             }
-            return currentTarget != null ? Vector3.Distance(transform.position, currentTarget.position) : Mathf.Infinity;
+            float distance = currentTarget != null ? Vector3.Distance(transform.position, currentTarget.position) : Mathf.Infinity;
+            Debug.Log($"[ShadowMonster {gameObject.name}] GetDistanceToTarget: distance to {currentTarget?.name ?? "null"} = {distance}");
+            return distance;
         }
 
         public void PlayDeathEffects()
@@ -471,8 +550,71 @@ namespace Enemies
             {
                 animator.SetTrigger("Dead");
             }
-            if (deathVFX != null) deathVFX.Play();
-            if (deathSFX != null && audioSource != null) audioSource.PlayOneShot(deathSFX);
+            if (deathVFX != null)
+            {
+                deathVFX.Play();
+            }
+            if (deathSFX != null && audioSource != null)
+            {
+                audioSource.PlayOneShot(deathSFX);
+            }
+            Debug.Log($"[ShadowMonster {gameObject.name}] PlayDeathEffects: Triggered death effects");
+        }
+        
+        public void ResetChargeTimer()
+        {
+            chargeTimer = 0f;
+            isCharging = false;
+            if (animator != null)
+            {
+                animator.SetBool("isCharging", false);
+                Debug.Log($"[ShadowMonster {gameObject.name}] ResetChargeTimer: chargeTimer=0, isCharging=false");
+            }
+        }
+
+        public void ResetSpider()
+        {
+            if (stateMachine.CurrentState != null && !(stateMachine.CurrentState is DeadState))
+            {
+                Debug.LogWarning($"[ShadowMonster {gameObject.name}] ResetSpider: Skipped, not in DeadState (current: {stateMachine.CurrentState?.GetType().Name})");
+                return;
+            }
+            Debug.Log($"[ShadowMonster {gameObject.name}] ResetSpider: Resetting");
+            stuckTimer = 0f;
+            chargeTimer = 0f;
+            lastAttackTime = 0f;
+            isCharging = false;
+            isInKamikazeMode = false;
+            currentTarget = null;
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            transform.localScale = startScale; // Reset to small size
+            growthTimer = 0f;
+            if (attackCoroutine != null)
+            {
+                StopCoroutine(attackCoroutine);
+                attackCoroutine = null;
+            }
+            if (attackHitbox != null)
+            {
+                attackHitbox.gameObject.SetActive(false);
+            }
+            if (animator != null)
+            {
+                animator.Rebind();
+                animator.Update(0f);
+                animator.SetBool("isGrounded", isGrounded);
+                animator.SetBool("isRunning", false);
+                animator.SetBool("isCharging", false);
+                animator.ResetTrigger("Attack");
+                animator.ResetTrigger("KamikazeAttack");
+            }
+            EnsureAgentOnNavMesh();
+            if (healthComponent != null)
+            {
+                healthComponent.ResetHealth();
+            }
+            stateMachine.ChangeState(new IdleState(this));
         }
 
         private void OnGrabbed(SelectEnterEventArgs args)
@@ -492,8 +634,11 @@ namespace Enemies
                 grabInteractable.selectEntered.RemoveListener(OnGrabbed);
                 grabInteractable.selectExited.RemoveListener(OnReleased);
             }
-            healthComponent.OnTakeDamage -= OnHealthChanged;
-            healthComponent.OnDeath -= OnDeath;
+            if (healthComponent != null)
+            {
+                healthComponent.OnTakeDamage.RemoveListener(OnHealthChanged);
+                healthComponent.OnDeath.RemoveListener(OnDeath);
+            }
         }
 
         public IEnumerator ScaleDownAndDisable()
@@ -512,6 +657,7 @@ namespace Enemies
                 yield return null;
             }
             gameObject.SetActive(false);
+            Debug.Log($"[ShadowMonster {gameObject.name}] DestroyAfterDelay: Deactivated");
         }
     }
 }
