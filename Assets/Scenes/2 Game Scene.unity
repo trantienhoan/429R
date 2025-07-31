@@ -694,6 +694,16 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1992393634709716444, guid: 6cdab26faed212a41a61983e50a222da,
         type: 3}
+      propertyPath: doorKnob
+      value: 
+      objectReference: {fileID: 1169464086}
+    - target: {fileID: 1992393634709716444, guid: 6cdab26faed212a41a61983e50a222da,
+        type: 3}
+      propertyPath: doorHinge
+      value: 
+      objectReference: {fileID: 220920270}
+    - target: {fileID: 1992393634709716444, guid: 6cdab26faed212a41a61983e50a222da,
+        type: 3}
       propertyPath: m_KeyKnob
       value: 
       objectReference: {fileID: 1169464084}
@@ -705,14 +715,34 @@ PrefabInstance:
         type: 3}
     - target: {fileID: 1992393634709716444, guid: 6cdab26faed212a41a61983e50a222da,
         type: 3}
+      propertyPath: lockSocket
+      value: 
+      objectReference: {fileID: 1796977387}
+    - target: {fileID: 1992393634709716444, guid: 6cdab26faed212a41a61983e50a222da,
+        type: 3}
       propertyPath: m_DoorJoint
       value: 
       objectReference: {fileID: 220920270}
     - target: {fileID: 1992393634709716444, guid: 6cdab26faed212a41a61983e50a222da,
         type: 3}
+      propertyPath: unlockSound
+      value: 
+      objectReference: {fileID: 8300000, guid: 9118a3d703424a441a222ad5c2ea6971, type: 3}
+    - target: {fileID: 1992393634709716444, guid: 6cdab26faed212a41a61983e50a222da,
+        type: 3}
+      propertyPath: dropPosition
+      value: 
+      objectReference: {fileID: 662329998}
+    - target: {fileID: 1992393634709716444, guid: 6cdab26faed212a41a61983e50a222da,
+        type: 3}
       propertyPath: m_DoorPuller
       value: 
       objectReference: {fileID: 1402233215}
+    - target: {fileID: 1992393634709716444, guid: 6cdab26faed212a41a61983e50a222da,
+        type: 3}
+      propertyPath: doorKeyVisual
+      value: 
+      objectReference: {fileID: 736860380}
     - target: {fileID: 1992393634709716444, guid: 6cdab26faed212a41a61983e50a222da,
         type: 3}
       propertyPath: doorTransform
@@ -723,6 +753,17 @@ PrefabInstance:
       propertyPath: doorHingeJoint
       value: 
       objectReference: {fileID: 220920270}
+    - target: {fileID: 1992393634709716444, guid: 6cdab26faed212a41a61983e50a222da,
+        type: 3}
+      propertyPath: itemPrefabs.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1992393634709716444, guid: 6cdab26faed212a41a61983e50a222da,
+        type: 3}
+      propertyPath: 'itemPrefabs.Array.data[0]'
+      value: 
+      objectReference: {fileID: 3777597441533160902, guid: 55e7c8b7e8d7c354e9355383dbb8ce9d,
+        type: 3}
     - target: {fileID: 1992393634709716444, guid: 6cdab26faed212a41a61983e50a222da,
         type: 3}
       propertyPath: m_OnLock.m_PersistentCalls.m_Calls.Array.size
@@ -5881,6 +5922,26 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1962385869066354704, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
+        type: 3}
+      propertyPath: m_Radius
+      value: 0.003
+      objectReference: {fileID: 0}
+    - target: {fileID: 1962385869066354704, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
+        type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5078379185537246606, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
+        type: 3}
+      propertyPath: drawDebugGizmos
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5078379185537246606, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
+        type: 3}
+      propertyPath: explosionRadius
+      value: 0.13
+      objectReference: {fileID: 0}
     - target: {fileID: 8314641946612675146, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -9475,6 +9536,12 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 639003499}
   m_Mesh: {fileID: -6030222383815624267, guid: 4018ba78ab3b1f141ab7093cf179c0a9, type: 3}
+--- !u!4 &662329998 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5301896374067530598, guid: 6cdab26faed212a41a61983e50a222da,
+    type: 3}
+  m_PrefabInstance: {fileID: 80670241}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &678226178
 GameObject:
   m_ObjectHideFlags: 0
@@ -10332,6 +10399,12 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 734122305}
   m_Mesh: {fileID: -4214286567449124192, guid: 4018ba78ab3b1f141ab7093cf179c0a9, type: 3}
+--- !u!1 &736860380 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5045664677272387980, guid: 6cdab26faed212a41a61983e50a222da,
+    type: 3}
+  m_PrefabInstance: {fileID: 80670241}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &757872255
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -14892,6 +14965,18 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 80670241}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1169464086 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3299885152402928898, guid: 6cdab26faed212a41a61983e50a222da,
+    type: 3}
+  m_PrefabInstance: {fileID: 80670241}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1169464084}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65a8500fa86faa04596fb5f9d40efeae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &1202094425
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16792,7 +16877,7 @@ PrefabInstance:
     - target: {fileID: -5606676697396164213, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -1.031
+      value: -0.338
       objectReference: {fileID: 0}
     - target: {fileID: -5501013695792592023, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
@@ -27358,6 +27443,18 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &1796977387 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1938328786324727194, guid: 6cdab26faed212a41a61983e50a222da,
+    type: 3}
+  m_PrefabInstance: {fileID: 80670241}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eecc085bf63270540b2d9a418fb5f149, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1820484834 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -8889178961439530375, guid: 4018ba78ab3b1f141ab7093cf179c0a9,

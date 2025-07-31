@@ -4,7 +4,10 @@ namespace Enemies
 {
     public class ChaseState : IState
     {
-        private ShadowMonster monster;
+        private static readonly int IsRunning = Animator.StringToHash("isRunning");
+        private static readonly int IsCharging = Animator.StringToHash("isCharging");
+        private static readonly int IsGrounded = Animator.StringToHash("isGrounded");
+        private readonly ShadowMonster monster;
 
         public ChaseState(ShadowMonster monster) { this.monster = monster; }
 
@@ -12,9 +15,9 @@ namespace Enemies
         {
             if (monster.animator != null)
             {
-                monster.animator.SetBool("isRunning", true);
-                monster.animator.SetBool("isCharging", false);
-                monster.animator.SetBool("isGrounded", monster.isGrounded);
+                monster.animator.SetBool(IsRunning, true);
+                monster.animator.SetBool(IsCharging, false);
+                monster.animator.SetBool(IsGrounded, monster.isGrounded);
                 monster.animator.ResetTrigger("Attack");
                 monster.animator.Update(0f);
             }
@@ -36,6 +39,8 @@ namespace Enemies
                 return;
             }
             monster.agent.SetDestination(monster.currentTarget.position);
+            monster.IsGrounded();  // Re-check
+            if (!monster.isGrounded) monster.EnsureAgentOnNavMesh();
             float distance = monster.GetDistanceToTarget();
             Debug.Log($"[ChaseState Tick] Distance: {distance}, CooldownReady: {Time.time >= monster.lastAttackTime + monster.attackCooldown}");
             if (distance <= monster.attackRange && Time.time >= monster.lastAttackTime + monster.attackCooldown)
@@ -52,7 +57,7 @@ namespace Enemies
 
         public void OnExit()
         {
-            if (monster.animator != null) monster.animator.SetBool("isRunning", false);
+            if (monster.animator != null) monster.animator.SetBool(IsRunning, false);
             if (monster.agent != null && monster.agent.isActiveAndEnabled) // Add check
             {
                 monster.agent.isStopped = true;

@@ -9,6 +9,11 @@ namespace Enemies
 {
     public class ShadowMonster : BaseMonster
     {
+        private static readonly int Grounded = Animator.StringToHash("isGrounded");
+        private static readonly int IsRunning = Animator.StringToHash("isRunning");
+        private static readonly int IsCharging = Animator.StringToHash("isCharging");
+        private static readonly int KamikazeAttack = Animator.StringToHash("KamikazeAttack");
+
         [Header("References")]
         [SerializeField] public Animator animator;
         [SerializeField] public NavMeshAgent agent;
@@ -36,12 +41,16 @@ namespace Enemies
         [SerializeField] private float growthTime = 30f;
         [SerializeField] private Vector3 startScale = new Vector3(0.5f, 0.5f, 0.5f);
         [SerializeField] private Vector3 fullScale = new Vector3(1f, 1f, 1f);
+        
+        [Header("Dive Settings")]
+        [SerializeField] private LayerMask wallLayer;
+        [SerializeField] public float diveForceMultiplier = 1.5f; 
         public float diveSpeed = 10f;
         public float diveTimeout = 3f;
 
         public Transform currentTarget;
         private Vector3 lastPosition;
-        private float stuckTimer;
+        public float stuckTimer;
         public float chargeTimer { get; private set; }
         private bool isCharging;
         public bool isInKamikazeMode;
@@ -62,12 +71,19 @@ namespace Enemies
 
         public bool IsGrounded()
         {
-            bool grounded = Physics.Raycast(groundCheckPoint.position, Vector3.down, out RaycastHit hit, groundCheckDistance, groundLayer);
+            Collider[] hits = Physics.OverlapSphere(groundCheckPoint.position, 0.3f, groundLayer);  // Increase radius for tolerance
+            bool grounded = hits.Length > 0;
             isGrounded = grounded;
             if (animator != null)
             {
                 animator.SetBool("isGrounded", grounded);
                 animator.Update(0f);
+            }
+            if (!grounded)
+            {
+                int layerIndex = Mathf.RoundToInt(Mathf.Log(groundLayer.value + 1, 2)) - 1;  // Handle mask
+                string layerName = (layerIndex >= 0) ? LayerMask.LayerToName(layerIndex) : "Invalid";
+                Debug.LogWarning("[IsGrounded] Failed: Position=" + groundCheckPoint.position + ", Layer=" + layerName);
             }
             return grounded;
         }
@@ -94,13 +110,18 @@ namespace Enemies
                 agent.speed = 3.5f;
                 agent.stoppingDistance = 0f;
             }
-            if (agent != null && !agent.isOnNavMesh && isGrounded)
+            if (agent != null && !agent.isOnNavMesh)  // Remove && isGrounded – always try to fix
             {
                 NavMeshHit hit;
-                if (NavMesh.SamplePosition(transform.position, out hit, 2f, NavMesh.AllAreas))
+                if (NavMesh.SamplePosition(transform.position, out hit, 5f, NavMesh.AllAreas))  // Increase radius to 5f
                 {
                     transform.position = hit.position;
                     agent.Warp(hit.position);
+                    Debug.Log("[EnsureAgent] Warped to NavMesh: " + hit.position);
+                }
+                else
+                {
+                    Debug.LogWarning("[EnsureAgent] No NavMesh position found near " + transform.position);
                 }
             }
         }
@@ -133,9 +154,9 @@ namespace Enemies
             }
             if (animator != null)
             {
-                animator.SetBool("isGrounded", false);
-                animator.SetBool("isRunning", false);
-                animator.SetBool("isCharging", false);
+                animator.SetBool(Grounded, false);
+                animator.SetBool(IsRunning, false);
+                animator.SetBool(IsCharging, false);
                 animator.ResetTrigger("Attack");
                 animator.ResetTrigger("KamikazeAttack");
                 animator.Update(0f);
@@ -173,14 +194,15 @@ namespace Enemies
             }
             if (attackHitbox != null)
             {
-                originalExplosionRadius = attackHitbox.GetComponent<SphereCollider>().radius;
+                var collider = attackHitbox.GetComponent<SphereCollider>();
+                originalExplosionRadius = collider.radius;  // Cache the actual collider radius
                 attackHitbox.Initialize(gameObject, normalAttackDamage, pushForce);
             }
             if (animator != null)
             {
-                animator.SetBool("isGrounded", isGrounded);
-                animator.SetBool("isRunning", false);
-                animator.SetBool("isCharging", false);
+                animator.SetBool(Grounded, isGrounded);
+                animator.SetBool(IsRunning, false);
+                animator.SetBool(IsCharging, false);
                 animator.ResetTrigger("Attack");
                 animator.ResetTrigger("KamikazeAttack");
             }
@@ -202,6 +224,7 @@ namespace Enemies
                 healthComponent.OnTakeDamage.AddListener(OnHealthChanged);
                 healthComponent.OnDeath.AddListener(OnDeath);
             }
+            currentTarget = GetClosestTarget();
             EnableAI();
         }
 
@@ -230,9 +253,9 @@ namespace Enemies
             {
                 if (animator != null)
                 {
-                    animator.SetBool("isGrounded", true);
-                    animator.SetBool("isRunning", false);
-                    animator.SetBool("isCharging", false);
+                    animator.SetBool(Grounded, true);
+                    animator.SetBool(IsRunning, false);
+                    animator.SetBool(IsCharging, false);
                     animator.ResetTrigger("Attack");
                     animator.ResetTrigger("KamikazeAttack");
                     stateMachine.ChangeState(new IdleState(this));
@@ -243,16 +266,41 @@ namespace Enemies
                 stateMachine.ChangeState(new ChaseState(this));
             }
 #endif
+            if (animator != null)
+            {
+                string currentState = GetStateName(animator.GetCurrentAnimatorStateInfo(0).fullPathHash);
+                Debug.Log("[Animator] Current State: " + currentState + ", Grounded Bool: " + animator.GetBool("isGrounded"));
+            }
         }
 
         private void CheckIfStuck()
         {
-            if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh && Vector3.Distance(transform.position, lastPosition) < 0.1f)
+            if (!isGrounded) 
             {
-                stuckTimer += Time.deltaTime;
-                if (stuckTimer > stuckTimeThreshold && !isInKamikazeMode)
+                stuckTimer = 0f;  // Reset if in air – no stuck
+                return;
+            }
+            if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+            {
+                if (agent.hasPath || agent.remainingDistance > 0.1f)  // Only when should be moving
                 {
-                    EnterKamikazeMode();
+                    if (Vector3.Distance(transform.position, lastPosition) < 0.1f)
+                    {
+                        stuckTimer += Time.deltaTime;
+                        if (stuckTimer > stuckTimeThreshold && !isInKamikazeMode)
+                        {
+                            stateMachine.ChangeState(new DiveState(this));  // Dive instead of Kamikaze
+                        }
+                    }
+                    else
+                    {
+                        stuckTimer = 0f;
+                        lastPosition = transform.position;
+                    }
+                }
+                else
+                {
+                    stuckTimer = 0f;
                 }
             }
             else
@@ -261,7 +309,6 @@ namespace Enemies
                 lastPosition = transform.position;
             }
         }
-
         public override void TakeDamage(float damageAmount, Vector3 hitPoint = default, GameObject damageSource = null)
         {
             if (healthComponent != null)
@@ -270,6 +317,14 @@ namespace Enemies
             }
         }
 
+        private void OnCollisionEnter(Collision collision)
+        {
+            if (stateMachine.CurrentState is DiveState && ((1 << collision.gameObject.layer) & wallLayer) != 0)
+            {
+                Debug.Log("[Dive] Hit wall/border, exiting Dive");
+                stateMachine.ChangeState(new IdleState(this));  // Or Chase if target nearby
+            }
+        }
         private void OnHealthChanged(HealthComponent.HealthChangedEventArgs e)
         {
             if (e.DamageAmount > 0 && !healthComponent.IsDead() && stateMachine.CurrentState is not HurtState && !IsBeingHeld)
@@ -313,9 +368,9 @@ namespace Enemies
             chargeTimer = 0f;
             if (animator != null && isCharging)  // Explicit read to satisfy compiler
             {
-                animator.SetBool("isCharging", true);
-                animator.SetBool("isRunning", false);
-                animator.SetBool("isGrounded", isGrounded);
+                animator.SetBool(IsCharging, true);
+                animator.SetBool(IsRunning, false);
+                animator.SetBool(Grounded, isGrounded);
                 animator.ResetTrigger("Attack");
                 animator.Update(0f);
             }
@@ -352,8 +407,9 @@ namespace Enemies
             lastAttackTime = Time.time;
             if (attackHitbox != null)
             {
-                attackHitbox.GetComponent<SphereCollider>().radius = originalExplosionRadius * kamikazeRadiusMultiplier;
-                attackHitbox.Initialize(gameObject, kamikazeAttackDamage, pushForce);
+                var collider = attackHitbox.GetComponent<SphereCollider>();
+                collider.radius = originalExplosionRadius * kamikazeRadiusMultiplier;
+                attackHitbox.Initialize(gameObject, kamikazeAttackDamage, pushForce);  // No need for radius param yet
                 attackCoroutine = StartCoroutine(PerformAttackCoroutine(true));
             }
         }
@@ -367,7 +423,7 @@ namespace Enemies
                 {
                     if (animator != null && animator.GetCurrentAnimatorStateInfo(0).IsName("Kamikaze"))  // Gate to state
                     {
-                        animator.SetTrigger("KamikazeAttack");
+                        animator.SetTrigger(KamikazeAttack);
                     }
                     yield return new WaitForSeconds(0.2f);
                     attackHitbox.TriggerExplosion(); 
@@ -471,6 +527,7 @@ namespace Enemies
         {
             GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
             GameObject[] trees = GameObject.FindGameObjectsWithTag("TreeOfLight");
+            Debug.Log($"[GetClosestTarget] Found {trees.Length} trees and {players.Length} players");
             Transform closestTarget = null;
             float closestDistance = Mathf.Infinity;
 
@@ -507,6 +564,10 @@ namespace Enemies
                 }
             }
 
+            if (closestTarget == null)
+            {
+                Debug.LogWarning("[GetClosestTarget] No targets found! Monster will idle.");
+            }
             currentTarget = closestTarget;
             return closestTarget;
         }
@@ -533,6 +594,17 @@ namespace Enemies
             if (deathSfx != null && audioSource != null)
             {
                 audioSource.PlayOneShot(deathSfx);
+            }
+        }
+        public void Despawn()
+        {
+            if (healthComponent != null)
+            {
+                healthComponent.Kill(gameObject);  // Triggers OnDeath -> PlayDeathEffects -> ScaleDown
+            }
+            else
+            {
+                StartCoroutine(ScaleDownAndDisable());  // Fallback no VFX
             }
         }
         

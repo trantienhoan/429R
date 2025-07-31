@@ -35,7 +35,7 @@ namespace Core
             health = maxHealth;
             isDead = false;
             IsInvulnerable = isInvulnerableByDefault;
-            Debug.Log($"[HealthComponent {gameObject.name}] Initialized with Health: {health}/{maxHealth}, Invulnerable: {IsInvulnerable}");
+            //Debug.Log($"[HealthComponent {gameObject.name}] Initialized with Health: {health}/{maxHealth}, Invulnerable: {IsInvulnerable}");
         }
 
         public void SetMaxHealth(float value)
@@ -44,7 +44,7 @@ namespace Core
             maxHealth = Mathf.Max(0, value);
             health = Mathf.Clamp(health, 0, maxHealth);
             OnHealthChanged?.Invoke(health / maxHealth);
-            Debug.Log($"[HealthComponent {gameObject.name}] MaxHealth set to {maxHealth}, Health adjusted to {health}");
+            //Debug.Log($"[HealthComponent {gameObject.name}] MaxHealth set to {maxHealth}, Health adjusted to {health}");
         }
 
         public float GetHealthPercentage()

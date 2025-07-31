@@ -1,212 +1,136 @@
 using UnityEngine;
-using UnityEngine.Events;
+using UnityEngine.XR.Content.Interaction;
 using UnityEngine.XR.Interaction.Toolkit;
 
-namespace UnityEngine.XR.Content.Interaction
+public class DoorLock : MonoBehaviour
 {
-    public class DoorLock : MonoBehaviour
+    [Header("Door Settings")]
+    [SerializeField] private UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor lockSocket; // Socket for key insert
+    [SerializeField] private XRKnob doorKnob; // XRKnob on handle
+    [SerializeField] private GameObject doorKeyVisual; // Visual key in lock (disabled at start)
+    [SerializeField] private float turnThresholdDegrees = 45f; // Twist degrees to drop item
+
+    [Header("Item Drop")]
+    [SerializeField] private GameObject[] itemPrefabs; // List of random items (e.g., bombs)
+    [SerializeField] private Transform dropPosition; // Position to drop item
+
+    [Header("Audio")]
+    [SerializeField] private AudioClip unlockSound;
+    [SerializeField] private AudioSource audioSource;
+
+    [Header("Optional Hinge (for future open)")]
+    [SerializeField] private HingeJoint doorHinge; // Hinge on door body (limits locked at 0)
+
+    private bool isUnlocked = false;
+
+    private void Awake()
     {
-        [SerializeField]
-        HingeJoint m_DoorJoint;
+        Debug.Log($"DoorLock Awake on {gameObject.name} - Active: {gameObject.activeSelf}");
 
-        [SerializeField]
-        [Tooltip("Transform joint that pulls a door to follow an interactor")]
-        TransformJoint m_DoorPuller;
-
-        [SerializeField]
-        GameObject m_KeyKnob;
-
-        [SerializeField]
-        float m_HandleOpenValue = 0.1f;
-
-        [SerializeField]
-        float m_HandleCloseValue = 0.5f;
-
-        [SerializeField]
-        float m_HingeCloseAngle = 5.0f;
-
-        [SerializeField]
-        float m_KeyLockValue = 0.9f;
-
-        [SerializeField]
-        float m_KeyUnlockValue = 0.1f;
-
-        [SerializeField]
-        float m_KeyPullDistance = 0.1f;
-
-        [SerializeField]
-        [Tooltip("Events to fire when the door is locked.")]
-        UnityEvent m_OnLock = new UnityEvent();
-
-        [SerializeField]
-        [Tooltip("Events to fire when the door is unlocked.")]
-        UnityEvent m_OnUnlock = new UnityEvent();
-
-        // New fields for your bomb drop
-        [Header("Bomb Drop Settings")]
-        [SerializeField]
-        GameObject bombPrefab; // GreenBomb prefab
-
-        [SerializeField]
-        Transform bombDropPosition; // Position to drop bomb
-
-        [SerializeField]
-        float turnThresholdDegrees = 45f; // Twist degrees for bomb drop
-
-        JointLimits m_OpenDoorLimits;
-        JointLimits m_ClosedDoorLimits;
-        bool m_Closed = false;
-        float m_LastHandleValue = 1.0f;
-        bool m_Locked = false;
-
-        GameObject m_KeySocket;
-        UnityEngine.XR.Interaction.Toolkit.Interactables.IXRSelectInteractable m_Key;
-
-        UnityEngine.XR.Interaction.Toolkit.Interactors.XRBaseInteractor m_KnobInteractor;
-        Transform m_KnobInteractorAttachTransform;
-
-        /// <summary>
-        /// Events to fire when the door is locked.
-        /// </summary>
-        public UnityEvent onLock => m_OnLock;
-
-        /// <summary>
-        /// Events to fire when the door is unlocked.
-        /// </summary>
-        public UnityEvent onUnlock => m_OnUnlock;
-
-        void Start()
+        if (lockSocket != null)
         {
-            m_OpenDoorLimits = m_DoorJoint.limits;
-            m_ClosedDoorLimits = m_OpenDoorLimits;
-            m_ClosedDoorLimits.min = 0.0f;
-            m_ClosedDoorLimits.max = 0.0f;
-            m_DoorJoint.limits = m_ClosedDoorLimits;
-            m_KeyKnob.SetActive(false);
-            m_Closed = true;
+            lockSocket.selectEntered.AddListener(OnKeyInserted);
+        }
+        else
+        {
+            Debug.LogError("Lock Socket not assigned!");
         }
 
-        void Update()
+        if (doorKnob != null)
         {
-            // If the door is open, keep track of the hinge joint and see if it enters a state where it should close again
-            if (!m_Closed)
-            {
-                if (m_LastHandleValue < m_HandleCloseValue)
-                    return;
-
-                if (Mathf.Abs(m_DoorJoint.angle) < m_HingeCloseAngle)
-                {
-                    m_DoorJoint.limits = m_ClosedDoorLimits;
-                    m_Closed = true;
-                }
-            }
-
-            // If over threshold, break and grant the key back to the interactor
-            if (m_KnobInteractor != null && m_KnobInteractorAttachTransform != null)
-            {
-                var distance = (m_KnobInteractorAttachTransform.position - m_KeyKnob.transform.position).magnitude;
-                if (distance > m_KeyPullDistance)
-                {
-                    var newKeyInteractor = m_KnobInteractor;
-                    m_KeySocket.SetActive(true);
-                    m_Key.transform.gameObject.SetActive(true);
-                    newKeyInteractor.interactionManager.SelectEnter(newKeyInteractor, m_Key);
-                    m_KeyKnob.SetActive(false);
-                }
-            }
+            doorKnob.enabled = false; // Disabled until unlock
         }
 
-        public void BeginDoorPulling(SelectEnterEventArgs args)
+        if (doorKeyVisual != null)
         {
-            m_DoorPuller.connectedBody = args.interactorObject.GetAttachTransform(args.interactableObject);
-            m_DoorPuller.enabled = true;
+            doorKeyVisual.SetActive(false); // Hidden at start
         }
 
-        public void EndDoorPulling()
+        if (audioSource == null)
         {
-            m_DoorPuller.enabled = false;
-            m_DoorPuller.connectedBody = null;
+            audioSource = GetComponent<AudioSource>();
         }
 
-        public void DoorHandleUpdate(float handleValue)
+        if (doorHinge != null)
         {
-            m_LastHandleValue = handleValue;
-            Debug.Log($"Handle value updated: {handleValue} (angle approx: {handleValue * 90f} degrees)");
+            JointLimits limits = doorHinge.limits;
+            limits.min = 0f;
+            limits.max = 0f; // Locked, no open
+            doorHinge.limits = limits;
+        }
+    }
 
-            if (!m_Closed || m_Locked)
-                return;
+    private void OnEnable()
+    {
+        Debug.Log($"DoorLock OnEnable on {gameObject.name} - Reactivating knob if unlocked");
+        if (isUnlocked && doorKnob != null)
+        {
+            doorKnob.enabled = true;
+        }
+    }
 
-            // Check for bomb drop threshold (instead of opening door)
-            float currentAngle = handleValue * 90f; // Assume max 90 degrees - adjust if different
+    private void Update()
+    {
+        if (isUnlocked && doorKnob != null)
+        {
+            float currentAngle = doorKnob.value * (doorKnob.maxAngle - doorKnob.minAngle);
+            Debug.Log($"Current knob angle: {currentAngle} degrees (value: {doorKnob.value})");
+
             if (currentAngle >= turnThresholdDegrees)
             {
-                Debug.Log($"Handle twisted enough ({currentAngle} degrees) - dropping bomb");
-                DropBomb();
+                Debug.Log("Knob twisted enough - dropping random item");
+                DropRandomItem();
+                this.enabled = false; // Disable script only
             }
         }
+    }
 
-        public void KeyDropUpdate(SelectEnterEventArgs args)
+    private void OnKeyInserted(SelectEnterEventArgs args)
+    {
+        Debug.Log("Key inserted");
+
+        // Hide inserted key
+        var insertedKey = args.interactableObject.transform.gameObject;
+        insertedKey.SetActive(false); // Make "gone"
+
+        // Activate visual key
+        if (doorKeyVisual != null)
         {
-            m_KeySocket = args.interactorObject.transform.gameObject;
-            m_Key = args.interactableObject;
-
-            // Lock key in place to prevent falling
-            var keyTransform = m_Key.transform;
-            keyTransform.SetParent(m_KeySocket.transform); // Parent to socket
-            keyTransform.localPosition = Vector3.zero; // Snap to attach point
-            var keyRigidbody = keyTransform.GetComponent<Rigidbody>();
-            if (keyRigidbody != null)
-            {
-                keyRigidbody.isKinematic = true;
-                keyRigidbody.useGravity = false;
-            }
-
-            m_KeySocket.SetActive(false);
-            m_Key.transform.gameObject.SetActive(false);
-            m_KeyKnob.SetActive(true);
-            Debug.Log("Key inserted and locked in place");
+            doorKeyVisual.SetActive(true);
         }
 
-        public void KeyUpdate(float keyValue)
+        // Play sound
+        if (unlockSound != null && audioSource != null)
         {
-            Debug.Log($"Key value updated: {keyValue}");
-
-            if (!m_Locked && keyValue > m_KeyLockValue)
-            {
-                m_Locked = true;
-                m_OnLock.Invoke();
-            }
-
-            if (m_Locked && keyValue < m_KeyUnlockValue)
-            {
-                m_Locked = false;
-                m_OnUnlock.Invoke();
-            }
+            audioSource.PlayOneShot(unlockSound);
         }
 
-        public void KeyLockSelect(SelectEnterEventArgs args)
+        // Disable socket
+        if (lockSocket != null)
         {
-            m_KnobInteractor = args.interactorObject as UnityEngine.XR.Interaction.Toolkit.Interactors.XRBaseInteractor;
-            m_KnobInteractorAttachTransform = args.interactorObject.GetAttachTransform(args.interactableObject);
+            lockSocket.enabled = false;
         }
 
-        public void KeyLockDeselect(SelectExitEventArgs args)
+        // Enable knob
+        if (doorKnob != null)
         {
-            m_KnobInteractor = null;
-            m_KnobInteractorAttachTransform = null;
+            doorKnob.enabled = true;
         }
 
-        private void DropBomb()
+        isUnlocked = true;
+    }
+
+    private void DropRandomItem()
+    {
+        if (itemPrefabs.Length > 0 && dropPosition != null)
         {
-            if (bombPrefab != null && bombDropPosition != null)
-            {
-                Instantiate(bombPrefab, bombDropPosition.position, Quaternion.identity);
-                Debug.Log("Bomb dropped! GreenBomb will handle scene transition.");
-            }
-            else
-            {
-                Debug.LogError("Bomb prefab or drop position not assigned!");
-            }
+            int randomIndex = Random.Range(0, itemPrefabs.Length);
+            Instantiate(itemPrefabs[randomIndex], dropPosition.position, Quaternion.identity);
+            Debug.Log("Random item dropped!");
+        }
+        else
+        {
+            Debug.LogError("No item prefabs or drop position assigned!");
         }
     }
 }

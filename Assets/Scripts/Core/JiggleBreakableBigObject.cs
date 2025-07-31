@@ -53,7 +53,7 @@ namespace Core
             if (healthComponent != null)
             {
                 healthComponent.OnDeath.AddListener(HandleHealthDeath);
-                Debug.Log($"[JiggleBreakableBigObject {gameObject.name}] Subscribed to OnDeath");
+                //Debug.Log($"[JiggleBreakableBigObject {gameObject.name}] Subscribed to OnDeath");
             }
         }
 
@@ -140,7 +140,7 @@ namespace Core
         private void HandleHealthDeath(HealthComponent health)
         {
             HandleBreaking();
-            Debug.Log($"[JiggleBreakableBigObject {gameObject.name}] HandleHealthDeath called");
+            //Debug.Log($"[JiggleBreakableBigObject {gameObject.name}] HandleHealthDeath called");
         }
 
         protected override void HandleBreaking()
@@ -160,7 +160,7 @@ namespace Core
             if (healthComponent != null)
             {
                 healthComponent.OnDeath.RemoveListener(HandleHealthDeath);
-                Debug.Log($"[JiggleBreakableBigObject {gameObject.name}] Unsubscribed from OnDeath");
+                //Debug.Log($"[JiggleBreakableBigObject {gameObject.name}] Unsubscribed from OnDeath");
             }
         }
     }

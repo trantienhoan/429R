@@ -1,10 +1,15 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace Enemies
 {
     public class DiveState : IState
     {
-        private ShadowMonster monster;
+        private static readonly int IsCharging = Animator.StringToHash("isCharging");
+        private static readonly int IsRunning = Animator.StringToHash("isRunning");
+        private static readonly int Dive = Animator.StringToHash("Dive");
+        private static readonly int IsGrounded = Animator.StringToHash("isGrounded");
+        private readonly ShadowMonster monster;
         private float diveTimer;
 
         public DiveState(ShadowMonster monster) { this.monster = monster; }
@@ -12,39 +17,70 @@ namespace Enemies
         public void OnEnter()
         {
             diveTimer = 0f;
-            if (monster.animator != null)
+            monster.stuckTimer = 0f;  // Reset stuck
+
+            // Disable agent for physics dive
+            if (monster.agent != null && monster.agent.isActiveAndEnabled)
             {
-                monster.animator.SetTrigger("Dive");
-                monster.animator.Update(0f);
+                monster.agent.enabled = false;
             }
-            if (monster.agent != null) monster.agent.enabled = false;
+
+            // Apply forward dive force (use Force for acceleration)
             if (monster.rb != null)
             {
                 monster.rb.isKinematic = false;
-                monster.rb.linearVelocity = monster.transform.forward * monster.diveSpeed;
+                Vector3 diveDirection = monster.transform.forward;
+                monster.rb.AddForce(diveDirection * monster.diveSpeed * monster.diveForceMultiplier, ForceMode.VelocityChange);
+                Debug.Log("[DiveState] Diving forward with force: " + (monster.diveSpeed * monster.diveForceMultiplier));
+            }
+
+            // Animator
+            if (monster.animator != null)
+            {
+                monster.animator.SetBool(IsRunning, false);
+                monster.animator.SetBool(IsCharging, false);
+                monster.animator.SetTrigger(Dive);
+                monster.animator.Update(0f);
             }
         }
 
+        [Obsolete("Obsolete")]
         public void Tick()
         {
             diveTimer += Time.deltaTime;
-            if (Physics.Raycast(monster.transform.position, monster.transform.forward, out _, 1f))
+
+            // Exit if timeout or stopped (hit something, velocity low)
+            if (diveTimer >= monster.diveTimeout || (monster.rb != null && monster.rb.velocity.magnitude < 0.5f))
             {
-                if (monster.rb != null) monster.rb.linearVelocity = Vector3.zero;
-                monster.stateMachine.ChangeState(new IdleState(monster));
-                return;
-            }
-            if (diveTimer > monster.diveTimeout)
-            {
-                if (monster.rb != null) monster.rb.linearVelocity = Vector3.zero;
-                monster.stateMachine.ChangeState(new IdleState(monster));
+                monster.stateMachine.ChangeState(new IdleState(monster));  // Or new ChaseState if target still valid
             }
         }
 
+        [Obsolete("Obsolete")]
         public void OnExit()
         {
-            if (monster.rb != null) monster.rb.linearVelocity = Vector3.zero;
+            // Stop movement
+            if (monster.rb != null)
+            {
+                monster.rb.velocity = Vector3.zero;
+                monster.rb.angularVelocity = Vector3.zero;
+            }
+
+            // Re-enable and sync agent
             monster.EnsureAgentOnNavMesh();
+            if (monster.agent != null)
+            {
+                monster.agent.enabled = true;
+                monster.agent.isStopped = true;
+            }
+
+            // Reset animator
+            if (monster.animator != null)
+            {
+                monster.animator.ResetTrigger("Dive");
+                monster.animator.SetBool(IsGrounded, monster.IsGrounded());
+                monster.animator.Update(0f);
+            }
         }
     }
 }
