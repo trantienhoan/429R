@@ -3,15 +3,16 @@ using UnityEngine.Events;
 using Items;
 using Core;
 using System.Collections;
+using Enemies;
 
 namespace Items
 {
     public class TreeOfLightPot : MonoBehaviour
     {
-        [SerializeField] private GameObject treeOfLight;
         [SerializeField] private HealthComponent healthComponent;
         [SerializeField] private Transform treeSpawnPoint;
-        [SerializeField] private float absorbDuration = 2f;
+        [SerializeField] private GameObject treeChild; // Drag "Tree_Of_Light" child here in Inspector
+        [SerializeField] private float absorbDuration = 1f;
         [SerializeField] private float growTime = 5f;
         [SerializeField] private GameObject growingVFXPrefab;
         [SerializeField] private ParticleSystem deathVFX;
@@ -20,9 +21,12 @@ namespace Items
         [SerializeField] private AudioSource sfxSource;
         [SerializeField] private GameObject keyPrefab;
         [SerializeField] private GameObject bombPrefab;
-        [SerializeField] private Rigidbody potRigidbody;
         [SerializeField] private float explosionForce = 500f;
         [SerializeField] private float explosionRadius = 5f;
+        [SerializeField] private float treeRotationSpeed = 90f;
+        [SerializeField] private float particleScaleStartTime = 0.03f;
+        [SerializeField] private float minParticleScale = 0.1f;
+        [SerializeField] private float maxParticleScale = 0.3f;
 
         public UnityEvent OnTreeGrown;
 
@@ -32,6 +36,7 @@ namespace Items
         private GameObject currentSeed;
         private Coroutine absorbRoutine;
         private GameObject currentGrowingVFXInstance;
+        private ShadowMonsterSpawner monsterSpawner;
 
         public bool IsGrowing => isGrowing;
 
@@ -40,14 +45,6 @@ namespace Items
             if (healthComponent == null)
             {
                 healthComponent = GetComponent<HealthComponent>();
-            }
-            if (potRigidbody == null)
-            {
-                potRigidbody = GetComponent<Rigidbody>();
-            }
-            if (potRigidbody != null)
-            {
-                potRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
             }
             if (treeSpawnPoint == null)
             {
@@ -65,11 +62,21 @@ namespace Items
             {
                 healthComponent.IsInvulnerable = true;
             }
-            if (treeOfLight == null)
+            if (treeChild == null)
             {
-                Debug.LogWarning($"[TreeOfLightPot {gameObject.name}] TreeOfLight reference is not set!");
+                Debug.LogError($"[TreeOfLightPot {gameObject.name}] treeChild not assigned in Inspector! Tree growth will skip.");
+            }
+            else
+            {
+                treeChild.SetActive(false); // Ensure inactive at start
             }
             gameObject.tag = "TreeOfLight";
+
+            monsterSpawner = FindObjectOfType<ShadowMonsterSpawner>();
+            if (monsterSpawner == null)
+            {
+                Debug.LogError($"[TreeOfLightPot {gameObject.name}] No ShadowMonsterSpawner found in scene!");
+            }
         }
 
         private void Start()
@@ -109,11 +116,6 @@ namespace Items
             }
         }
 
-        private void OnCollisionEnter(Collision collision)
-        {
-            Debug.Log($"[TreeOfLightPot {gameObject.name}] Collision entered by {collision.gameObject.tag} on layer {collision.gameObject.layer} - this means Is Trigger is NOT enabled!");
-        }
-
         private void OnTriggerEnter(Collider other)
         {
             Debug.Log($"[TreeOfLightPot {gameObject.name}] Trigger entered by {other.tag} on layer {other.gameObject.layer}");
@@ -125,12 +127,6 @@ namespace Items
                 if (seedScript != null)
                 {
                     seedScript.DisablePhysics();
-                }
-                if (potRigidbody != null)
-                {
-                    potRigidbody.linearVelocity = Vector3.zero;
-                    potRigidbody.angularVelocity = Vector3.zero;
-                    potRigidbody.isKinematic = true;
                 }
                 absorbRoutine = StartCoroutine(AbsorbSeed());
             }
@@ -168,6 +164,20 @@ namespace Items
                 {
                     CompleteGrowth();
                 }
+                else
+                {
+                    if (currentTree != null)
+                    {
+                        currentTree.transform.Rotate(Vector3.up, treeRotationSpeed * Time.deltaTime);
+                    }
+
+                    if (currentGrowingVFXInstance != null && growTimer > particleScaleStartTime)
+                    {
+                        float progress = (growTimer - particleScaleStartTime) / (growTime - particleScaleStartTime);
+                        float scale = Mathf.Lerp(minParticleScale, maxParticleScale, progress);
+                        currentGrowingVFXInstance.transform.localScale = Vector3.one * scale;
+                    }
+                }
             }
         }
 
@@ -177,13 +187,20 @@ namespace Items
             isGrowing = true;
             growTimer = 0f;
 
-            if (potRigidbody != null)
+            if (monsterSpawner != null)
             {
-                potRigidbody.isKinematic = true;
+                monsterSpawner.BeginSpawning();
             }
 
-            currentTree = Instantiate(treeOfLight, treeSpawnPoint.position, treeSpawnPoint.rotation);
-            currentTree.SetActive(true); // Ensure active
+            if (treeChild == null)
+            {
+                Debug.LogError($"[TreeOfLightPot {gameObject.name}] No tree available to grow! Skipping.");
+                return;
+            }
+
+            currentTree = treeChild;
+            currentTree.SetActive(true);
+
             Rigidbody treeRb = currentTree.GetComponent<Rigidbody>();
             if (treeRb != null)
             {
@@ -193,11 +210,19 @@ namespace Items
                 treeRb.useGravity = false;
                 treeRb.interpolation = RigidbodyInterpolation.Interpolate;
             }
+
             var treeHealth = currentTree.GetComponent<HealthComponent>();
             if (treeHealth != null)
             {
                 treeHealth.OnDeath.AddListener(OnCurrentTreeDeath);
             }
+            else
+            {
+                treeHealth = currentTree.AddComponent<HealthComponent>();
+                treeHealth.SetMaxHealth(100f);
+                treeHealth.OnDeath.AddListener(OnCurrentTreeDeath);
+            }
+
             Animator anim = currentTree.GetComponentInChildren<Animator>();
             if (anim != null)
             {
@@ -211,7 +236,7 @@ namespace Items
                 }
                 anim.enabled = true;
                 anim.Rebind();
-                anim.Update(0f); // Force initial update
+                anim.Update(0f);
                 if (anim.HasState(0, Animator.StringToHash("SeedGrow")))
                 {
                     anim.Play("SeedGrow", -1, 0f);
@@ -225,13 +250,14 @@ namespace Items
             }
             else
             {
-                Debug.LogError($"[TreeOfLightPot {gameObject.name}] No Animator component found in TreeOfLight or its children!");
+                Debug.LogError($"[TreeOfLightPot {gameObject.name}] No Animator component found in treeChild or its children!");
             }
 
             if (growingVFXPrefab != null)
             {
-                currentGrowingVFXInstance = Instantiate(growingVFXPrefab, treeSpawnPoint.position, Quaternion.identity, treeSpawnPoint.parent);
+                currentGrowingVFXInstance = Instantiate(growingVFXPrefab, treeSpawnPoint.position + Vector3.up * 0.25f, Quaternion.identity, treeSpawnPoint.parent);
                 currentGrowingVFXInstance.SetActive(true);
+                currentGrowingVFXInstance.transform.localScale = Vector3.one * minParticleScale;
                 ParticleSystem ps = currentGrowingVFXInstance.GetComponent<ParticleSystem>();
                 if (ps != null)
                 {
@@ -240,7 +266,7 @@ namespace Items
                     ps.Clear();
                     ps.Simulate(0f, true, true);
                     ps.Play();
-                    Debug.Log($"[TreeOfLightPot {gameObject.name}] Instantiated and playing growingVFX at {treeSpawnPoint.position}");
+                    Debug.Log($"[TreeOfLightPot {gameObject.name}] Instantiated and playing growingVFX at {treeSpawnPoint.position}. Playing: {ps.isPlaying}");
                 }
                 else
                 {
@@ -286,7 +312,24 @@ namespace Items
             }
             DropItem(keyPrefab);
             OnTreeGrown?.Invoke();
-            TriggerDestruction();
+
+            if (monsterSpawner != null)
+            {
+                monsterSpawner.StopSpawning();
+                Destroy(monsterSpawner.gameObject);
+            }
+
+            GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+            foreach (GameObject enemy in enemies)
+            {
+                var health = enemy.GetComponent<HealthComponent>();
+                if (health != null)
+                {
+                    health.Kill();
+                }
+            }
+
+            Invoke("TriggerDestruction", 0.5f); // Delay explosion to after key drop
         }
 
         private void OnTreeDeath(HealthComponent health)
@@ -306,17 +349,33 @@ namespace Items
             }
             else
             {
-                // Explode the pot after growth complete
-                Collider[] colliders = Physics.OverlapSphere(transform.position, explosionRadius);
+                float bigExplosionForce = 2000f;
+                float bigExplosionRadius = 50f;
+                Collider[] colliders = Physics.OverlapSphere(transform.position, bigExplosionRadius);
+                int hitCount = 0;
                 foreach (Collider hit in colliders)
                 {
-                    Rigidbody rb = hit.GetComponent<Rigidbody>();
-                    if (rb != null)
+                    if (hit.gameObject != gameObject) // Exclude self
                     {
-                        rb.AddExplosionForce(explosionForce, transform.position, explosionRadius);
+                        hitCount++;
+                        Rigidbody rb = hit.attachedRigidbody;
+                        if (rb != null)
+                        {
+                            Vector3 direction = (hit.transform.position - transform.position).normalized;
+                            rb.AddForce(direction * bigExplosionForce, ForceMode.Impulse);
+                        }
+
+                        if (hit.CompareTag("Enemy"))
+                        {
+                            HealthComponent enemyHealth = hit.GetComponent<HealthComponent>();
+                            if (enemyHealth != null)
+                            {
+                                enemyHealth.TakeDamage(1000f);
+                            }
+                        }
                     }
                 }
-                Debug.Log($"[TreeOfLightPot {gameObject.name}] Exploding pot after growth complete");
+                Debug.Log($"[TreeOfLightPot {gameObject.name}] Exploding pot after growth complete. Hit {hitCount} objects.");
             }
 
             if (currentTree != null)

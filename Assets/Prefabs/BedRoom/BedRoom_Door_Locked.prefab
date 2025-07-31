@@ -544,25 +544,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 5319416733037820165}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 285c6d8108ca04141a77fc9662acad55, type: 3}
+  m_Script: {fileID: 11500000, guid: 6e90214380550ff45ae9119b86727a3b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_DoorJoint: {fileID: 6506544725693368079}
-  m_DoorPuller: {fileID: 8209666774514023538}
-  m_KeyKnob: {fileID: 8084261320235020126}
-  m_HandleOpenValue: 0.5
-  m_HandleCloseValue: 0.5
-  m_HingeCloseAngle: 5
-  m_KeyPullDistance: 0.3
-  m_OnLock:
-    m_PersistentCalls:
-      m_Calls: []
-  m_OnUnlock:
-    m_PersistentCalls:
-      m_Calls: []
-  itemToDrop: {fileID: 3777597441533160902, guid: 1a8b377c483bfa843b196e7f3dbd816d,
+  doorSocket: {fileID: 1938328786324727194}
+  doorHandleKnob: {fileID: 3299885152402928898}
+  turnThreshold: 45
+  isLocked: 1
+  bombPrefab: {fileID: 3777597441533160902, guid: 55e7c8b7e8d7c354e9355383dbb8ce9d,
     type: 3}
-  dropPosition: {fileID: 1480268917419768070}
+  bombDropPosition: {fileID: 1796825035687215763}
+  unlockSound: {fileID: 0}
+  audioSource: {fileID: 0}
 --- !u!1 &7025650377286697919
 GameObject:
   m_ObjectHideFlags: 0

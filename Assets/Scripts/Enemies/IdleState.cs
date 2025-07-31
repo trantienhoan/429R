@@ -32,13 +32,23 @@ namespace Enemies
         {
             idleTimer += Time.deltaTime;
             float distance = monster.GetDistanceToTarget();
-            if (monster.currentTarget != null && distance <= monster.chaseRange && monster.isGrounded && !monster.IsBeingHeld && Time.time >= monster.lastAttackTime + monster.attackCooldown)
+            bool hasTarget = monster.currentTarget != null;
+            bool inRange = distance <= monster.chaseRange;
+            bool grounded = monster.isGrounded;
+            bool notHeld = !monster.IsBeingHeld;
+            bool cooldownReady = Time.time >= monster.lastAttackTime + monster.attackCooldown;
+
+            Debug.Log($"[IdleState Tick] HasTarget: {hasTarget}, Distance: {distance} (inRange: {inRange}), Grounded: {grounded}, NotHeld: {notHeld}, CooldownReady: {cooldownReady}, IdleTimer: {idleTimer}");
+
+            if (hasTarget && inRange && grounded && notHeld && cooldownReady)
             {
+                Debug.Log("[IdleState] All conditions met, switching to ChaseState");
                 monster.stateMachine.ChangeState(new ChaseState(monster));
                 return;
             }
             if (idleTimer >= monster.idleTimeBeforeDive && monster.isGrounded)
             {
+                Debug.Log("[IdleState] Idle timeout, switching to DiveState");
                 monster.stateMachine.ChangeState(new DiveState(monster));
             }
         }

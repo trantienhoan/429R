@@ -101,12 +101,10 @@ namespace Enemies
             {
                 if (monsterData.MonsterObject != null)
                 {
-                    var shadowMonster = monsterData.SpiderReference;
                     var health = monsterData.MonsterObject.GetComponent<HealthComponent>();
-                    if (shadowMonster != null && health != null && !health.IsDead())
+                    if (health != null && !health.IsDead())
                     {
-                        shadowMonster.DisableAI();
-                        health.Kill(gameObject);
+                        health.Kill(gameObject); // Only kill; let death state handle animation/disable
                     }
                     if (SpiderPool.Instance != null)
                     {

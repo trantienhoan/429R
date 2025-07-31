@@ -31,17 +31,21 @@ namespace Enemies
         {
             if (monster.currentTarget == null)
             {
+                Debug.Log("[ChaseState] No target, returning to Idle");
                 monster.stateMachine.ChangeState(new IdleState(monster));
                 return;
             }
             monster.agent.SetDestination(monster.currentTarget.position);
             float distance = monster.GetDistanceToTarget();
+            Debug.Log($"[ChaseState Tick] Distance: {distance}, CooldownReady: {Time.time >= monster.lastAttackTime + monster.attackCooldown}");
             if (distance <= monster.attackRange && Time.time >= monster.lastAttackTime + monster.attackCooldown)
             {
+                Debug.Log("[ChaseState] In attack range, switching to ChargeState");
                 monster.stateMachine.ChangeState(new ChargeState(monster));
             }
             else if (distance > monster.chaseRange)
             {
+                Debug.Log("[ChaseState] Out of chase range, returning to Idle");
                 monster.stateMachine.ChangeState(new IdleState(monster));
             }
         }
@@ -49,7 +53,10 @@ namespace Enemies
         public void OnExit()
         {
             if (monster.animator != null) monster.animator.SetBool("isRunning", false);
-            if (monster.agent != null) monster.agent.isStopped = true;
+            if (monster.agent != null && monster.agent.isActiveAndEnabled) // Add check
+            {
+                monster.agent.isStopped = true;
+            }
         }
     }
 }

@@ -121,10 +121,7 @@ namespace Enemies
         public void DisableAI()
         {
             enabled = false;
-            if (agent != null && agent.isActiveAndEnabled)
-            {
-                agent.enabled = false;
-            }
+
             if (attackHitbox != null)
             {
                 attackHitbox.gameObject.SetActive(false);
@@ -143,7 +140,15 @@ namespace Enemies
                 animator.ResetTrigger("KamikazeAttack");
                 animator.Update(0f);
             }
+
+            // Change state FIRST to allow OnExit to run while agent is enabled
             stateMachine.ChangeState(null);
+
+            // Then disable agent
+            if (agent != null && agent.isActiveAndEnabled)
+            {
+                agent.enabled = false;
+            }
         }
 
         protected override void Awake()
@@ -281,6 +286,12 @@ namespace Enemies
         private void OnDeath(HealthComponent health)
         {
             stateMachine.ChangeState(new DeadState(this));
+            StartCoroutine(DelayedScaleDown(2f)); // Delay for death animation
+        }
+        private IEnumerator DelayedScaleDown(float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            StartCoroutine(ScaleDownAndDisable());
         }
 
         protected override void OnDeathHandler()

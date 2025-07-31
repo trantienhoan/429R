@@ -1,4 +1,7 @@
-﻿namespace Enemies
+﻿using System.Collections;
+using UnityEngine;
+
+namespace Enemies
 {
     public class DeadState : IState
     {
@@ -18,6 +21,13 @@
             monster.rb.isKinematic = true;
             monster.grabInteractable.enabled = false;
             monster.PlayDeathEffects();
+            monster.StartCoroutine(DelayedScaleDown(2f)); // Add this for delayed disappear
+        }
+
+        private IEnumerator DelayedScaleDown(float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            monster.StartCoroutine(monster.ScaleDownAndDisable());
         }
 
         public void Tick() { }
