@@ -29,7 +29,7 @@ namespace Enemies
         public void Tick()
         {
             hurtDuration -= Time.deltaTime;
-            if (hurtDuration <= 0f && !monster.IsBeingHeld && !monster.healthComponent.IsDead())
+            if (hurtDuration <= 0f && !monster.isBeingHeld && !monster.healthComponent.IsDead())
             {
                 Transform target = monster.GetClosestTarget();
                 float distance = monster.GetDistanceToTarget();

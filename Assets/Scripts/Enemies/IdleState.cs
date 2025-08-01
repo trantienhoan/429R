@@ -39,7 +39,7 @@ namespace Enemies
             bool hasTarget = monster.currentTarget != null;
             bool inRange = distance <= monster.chaseRange;
             bool grounded = monster.isGrounded;
-            bool notHeld = !monster.IsBeingHeld;
+            bool notHeld = !monster.isBeingHeld;
             bool cooldownReady = Time.time >= monster.lastAttackTime + monster.attackCooldown;
 
             //Debug.Log($"[IdleState Tick] HasTarget: {hasTarget}, Distance: {distance} (inRange: {inRange}), Grounded: {grounded}, NotHeld: {notHeld}, CooldownReady: {cooldownReady}, IdleTimer: {idleTimer}");

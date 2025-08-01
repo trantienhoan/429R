@@ -18,7 +18,7 @@
 
         public void Tick()
         {
-            if (!monster.IsBeingHeld && monster.isGrounded)
+            if (!monster.isBeingHeld && monster.isGrounded)
             {
                 monster.stateMachine.ChangeState(new IdleState(monster));
             }

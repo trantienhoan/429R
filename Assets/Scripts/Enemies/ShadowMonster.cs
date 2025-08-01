@@ -13,6 +13,9 @@ namespace Enemies
         private static readonly int IsRunning = Animator.StringToHash("isRunning");
         private static readonly int IsCharging = Animator.StringToHash("isCharging");
         private static readonly int KamikazeAttack = Animator.StringToHash("KamikazeAttack");
+        private static readonly int IdleOnAir = Animator.StringToHash("IdleOnAir");
+        private static readonly int Attack = Animator.StringToHash("Attack");
+        private static readonly int Dead = Animator.StringToHash("Dead");
 
         [Header("References")]
         [SerializeField] public Animator animator;
@@ -34,7 +37,7 @@ namespace Enemies
         public float normalAttackDamage = 10f;
         public float kamikazeAttackDamage = 50f;
         public float kamikazeHealthThreshold = 0.19f;
-        private float kamikazeRadiusMultiplier = 3f;
+        private readonly float kamikazeRadiusMultiplier = 3f;
         public float pushForce = 5f;
         public float stuckTimeThreshold = 9f;
         public float idleTimeBeforeDive = 5f;
@@ -60,10 +63,10 @@ namespace Enemies
         private Coroutine attackCoroutine;
         private float growthTimer;
         private float targetRefreshTimer;
-        private const float targetRefreshInterval = 0.5f;
+        private const float k_TargetRefreshInterval = 0.5f;
 
         public bool isGrounded { get; private set; }
-        public bool IsBeingHeld { get; private set; }
+        public bool isBeingHeld { get; private set; }
 
         [SerializeField] private Transform groundCheckPoint;
         [SerializeField] private float groundCheckDistance = 0.5f;
@@ -76,7 +79,7 @@ namespace Enemies
             isGrounded = grounded;
             if (animator != null)
             {
-                animator.SetBool("isGrounded", grounded);
+                animator.SetBool(Grounded, grounded);
                 animator.Update(0f);
             }
             if (!grounded)
@@ -243,7 +246,7 @@ namespace Enemies
             float growthProgress = Mathf.Clamp01(growthTimer / growthTime);
             transform.localScale = Vector3.Lerp(startScale, fullScale, growthProgress);
             targetRefreshTimer += Time.deltaTime;
-            if (targetRefreshTimer >= targetRefreshInterval)
+            if (targetRefreshTimer >= k_TargetRefreshInterval)
             {
                 GetClosestTarget();
                 targetRefreshTimer = 0f;
@@ -269,7 +272,7 @@ namespace Enemies
             if (animator != null)
             {
                 string currentState = GetStateName(animator.GetCurrentAnimatorStateInfo(0).fullPathHash);
-                Debug.Log("[Animator] Current State: " + currentState + ", Grounded Bool: " + animator.GetBool("isGrounded"));
+                //Debug.Log("[Animator] Current State: " + currentState + ", Grounded Bool: " + animator.GetBool("isGrounded"));
             }
         }
 
@@ -327,7 +330,7 @@ namespace Enemies
         }
         private void OnHealthChanged(HealthComponent.HealthChangedEventArgs e)
         {
-            if (e.DamageAmount > 0 && !healthComponent.IsDead() && stateMachine.CurrentState is not HurtState && !IsBeingHeld)
+            if (e.DamageAmount > 0 && !healthComponent.IsDead() && stateMachine.CurrentState is not HurtState && !isBeingHeld)
             {
                 isCharging = false;
                 stateMachine.ChangeState(new HurtState(this));
@@ -433,7 +436,7 @@ namespace Enemies
                 {
                     if (animator != null && animator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))  // Gate to state
                     {
-                        animator.SetTrigger("Attack");
+                        animator.SetTrigger(Attack);
                     }
                     yield return new WaitForSeconds(0.3f);
                     attackHitbox.TriggerExplosion();  // SFX/damage
@@ -459,7 +462,7 @@ namespace Enemies
 
         public void Pickup()
         {
-            IsBeingHeld = true;
+            isBeingHeld = true;
             if (agent != null && agent.isActiveAndEnabled)
             {
                 agent.updatePosition = false;  // Pause control, don't disable
@@ -477,12 +480,12 @@ namespace Enemies
             }
             if (animator != null)
             {
-                animator.SetBool("isGrounded", false);
-                animator.SetBool("isRunning", false);
-                animator.SetBool("isCharging", false);
+                animator.SetBool(Grounded, false);
+                animator.SetBool(IsRunning, false);
+                animator.SetBool(IsCharging, false);
                 animator.ResetTrigger("Attack");
                 animator.ResetTrigger("KamikazeAttack");
-                animator.SetTrigger("IdleOnAir");
+                animator.SetTrigger(IdleOnAir);
                 animator.Update(0f);
             }
             stateMachine.ChangeState(new HeldState(this));
@@ -490,7 +493,7 @@ namespace Enemies
 
         public void Release()
         {
-            IsBeingHeld = false;
+            isBeingHeld = false;
             currentTarget = null;
             if (attackHitbox != null)
             {
@@ -503,9 +506,9 @@ namespace Enemies
             }
             if (animator != null)
             {
-                animator.SetBool("isGrounded", isGrounded);
-                animator.SetBool("isRunning", false);
-                animator.SetBool("isCharging", false);
+                animator.SetBool(Grounded, isGrounded);
+                animator.SetBool(IsRunning, false);
+                animator.SetBool(IsCharging, false);
                 animator.ResetTrigger("Attack");
                 animator.ResetTrigger("KamikazeAttack");
                 animator.Update(0f);
@@ -585,7 +588,7 @@ namespace Enemies
         {
             if (animator != null)
             {
-                animator.SetTrigger("Dead");
+                animator.SetTrigger(Dead);
             }
             if (deathVFX != null)
             {
@@ -614,7 +617,7 @@ namespace Enemies
             isCharging = false;
             if (animator != null)
             {
-                animator.SetBool("isCharging", false);
+                animator.SetBool(IsCharging, false);
             }
         }
 
@@ -647,9 +650,9 @@ namespace Enemies
             {
                 animator.Rebind();
                 animator.Update(0f);
-                animator.SetBool("isGrounded", isGrounded);
-                animator.SetBool("isRunning", false);
-                animator.SetBool("isCharging", false);
+                animator.SetBool(Grounded, isGrounded);
+                animator.SetBool(IsRunning, false);
+                animator.SetBool(IsCharging, false);
                 animator.ResetTrigger("Attack");
                 animator.ResetTrigger("KamikazeAttack");
             }
