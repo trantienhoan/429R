@@ -1,83 +1,88 @@
 using UnityEngine;
-using System.Linq;
-using Enemies; // <-- Needed to access ShadowMonster
+using Items;   // For TreeOfLightPot
+using Enemies; // For ShadowMonsterSpawner events
 
-public class GameManager : MonoBehaviour
+namespace Core
 {
-    [Header("Monster Settings")]
-    [SerializeField] private string monsterTag = "Monster";
-    [SerializeField] private float healthIncreasePerLamp = 0.1f; // 10% per lamp
-    [SerializeField] private float sizeIncreasePerLamp = 0.1f;    // 10% per lamp
-
-    private GameObject monster;
-    private ShadowMonster monsterScript;
-    private Vector3 initialMonsterScale;
-    private float initialMaxHealth = 100f; // Default starting health
-
-    private static GameManager _instance;
-    public static GameManager Instance => _instance;
-
-    private int brokenLampsCount = 0;
-
-    private void Awake()
+    public class GameManager : MonoBehaviour
     {
-        if (_instance != null && _instance != this)
+        [Header("Audio Settings")]
+        [SerializeField] private AudioClip treeGrowthMusic;  // BGM when tree starts growing
+        [SerializeField] private AudioClip monsterSpawnSfx;  // SFX on each monster spawn
+        [SerializeField] private AudioClip lampBreakSfx;     // SFX on lamp break (global)
+        [SerializeField] private AudioSource bgmSource;      // Background music source
+        [SerializeField] private AudioSource sfxSource;      // SFX source
+
+        [SerializeField] private TreeOfLightPot treePot;  // Added missing field
+
+        private static GameManager _instance;
+        public static GameManager Instance => _instance;
+
+        private void Awake()
         {
-            Destroy(this.gameObject);
-        }
-        else
-        {
+            if (_instance != null && _instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
             _instance = this;
-        }
-    }
 
-    private void Start()
-    {
-        monster = GameObject.FindGameObjectWithTag(monsterTag);
-        if (monster == null)
+            // Auto-find audio sources if not assigned
+            if (bgmSource == null) bgmSource = gameObject.AddComponent<AudioSource>();
+            if (sfxSource == null) sfxSource = gameObject.AddComponent<AudioSource>();
+
+            bgmSource.loop = true;  // Loop BGM
+        }
+
+        private void Start()
         {
-            Debug.LogError($"No GameObject tagged as \"{monsterTag}\" found in the scene.");
-            return;
+            // Subscribe to events
+            ShadowMonsterSpawner.OnMonsterSpawned += PlayMonsterSpawnSfx;  // Assume added event in spawner
+            Lamp.OnLampBroken += PlayLampBreakSfx;
+
+            // Tree growth (assume TreeOfLightPot has OnGrowthStart event; add if not)
+            if (treePot != null)
+            {
+                treePot.OnGrowthStart += PlayTreeGrowthMusic;
+            }
+
+            Debug.Log("Game Manager Started (Audio Events).");
         }
 
-        monsterScript = monster.GetComponent<ShadowMonster>();
-        if (monsterScript == null)
+        private void OnDestroy()
         {
-            Debug.LogError("No ShadowMonster script found on the monster.");
-            return;
+            // Unsubscribe
+            ShadowMonsterSpawner.OnMonsterSpawned -= PlayMonsterSpawnSfx;
+            Lamp.OnLampBroken -= PlayLampBreakSfx;
+            if (treePot != null)
+            {
+                treePot.OnGrowthStart -= PlayTreeGrowthMusic;
+            }
         }
 
-        initialMonsterScale = monster.transform.localScale;
-        initialMaxHealth = 100f; // Update this if your monster has another default
+        private void PlayTreeGrowthMusic()
+        {
+            if (bgmSource != null && treeGrowthMusic != null)
+            {
+                bgmSource.clip = treeGrowthMusic;
+                bgmSource.Play();
+            }
+        }
 
-        Lamp.OnLampBroken += HandleLampBroken;
-        Debug.Log("Game Manager Started.");
-    }
+        private void PlayMonsterSpawnSfx()
+        {
+            if (sfxSource != null && monsterSpawnSfx != null)
+            {
+                sfxSource.PlayOneShot(monsterSpawnSfx);
+            }
+        }
 
-    private void HandleLampBroken(Lamp lamp)
-    {
-        brokenLampsCount++;
-        UpdateMonsterStats();
-    }
-
-    private void UpdateMonsterStats()
-    {
-        if (monsterScript == null) return;
-
-        // Update health
-        float healthMultiplier = 1 + (brokenLampsCount * healthIncreasePerLamp);
-        float newMaxHealth = initialMaxHealth * healthMultiplier;
-        //monsterScript.SetMaxHealth(newMaxHealth);
-
-        // Update size
-        float sizeMultiplier = 1 + (brokenLampsCount * sizeIncreasePerLamp);
-        monster.transform.localScale = initialMonsterScale * sizeMultiplier;
-
-        Debug.Log($"Updated Monster: Health = {newMaxHealth}, Scale = {monster.transform.localScale}");
-    }
-
-    private void OnDestroy()
-    {
-        Lamp.OnLampBroken -= HandleLampBroken;
+        private void PlayLampBreakSfx(Lamp lamp)
+        {
+            if (sfxSource != null && lampBreakSfx != null)
+            {
+                sfxSource.PlayOneShot(lampBreakSfx);
+            }
+        }
     }
 }

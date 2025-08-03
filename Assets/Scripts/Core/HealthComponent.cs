@@ -6,10 +6,12 @@ namespace Core
 {
     public class HealthComponent : MonoBehaviour
     {
-        [SerializeField] private float maxHealth = 100f;
-        [SerializeField] private float health = 100f;
+        [SerializeField] public float maxHealth = 100f;
+        [SerializeField] public float health = 100f;
         [SerializeField] private bool destroyOnDeath = true;
-        [SerializeField] private bool scaleOnDeath = true; // Added for TreeOfLightPot
+        [SerializeField] private bool scaleOnDeath = true; // Toggle for scaling effect on death
+        [SerializeField] private Vector3 deathScaleTarget = Vector3.zero; // Target scale (zero for down, larger for up)
+        [SerializeField] private float deathScaleDuration = 3f; // Configurable duration for scaling
         [SerializeField] private bool isInvulnerableByDefault = false; // Added for TreeOfLightPot
 
         public UnityEvent<float> OnHealthChanged;
@@ -150,11 +152,10 @@ namespace Core
                 {
                     float timer = 0f;
                     Vector3 startScale = transform.localScale;
-                    float duration = 3f; // Match ShadowMonster's ScaleDownAndDisable
-                    while (timer < duration)
+                    while (timer < deathScaleDuration)
                     {
                         timer += Time.deltaTime;
-                        transform.localScale = Vector3.Lerp(startScale, Vector3.zero, timer / duration);
+                        transform.localScale = Vector3.Lerp(startScale, deathScaleTarget, timer / deathScaleDuration);
                         yield return null;
                     }
                 }

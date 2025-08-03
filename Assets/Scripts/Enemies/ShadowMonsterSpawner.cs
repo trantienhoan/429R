@@ -33,17 +33,23 @@ namespace Enemies
 
         [Header("References")]
         [SerializeField] private GameObject treeObject;
-        [SerializeField] private List<GameObject> windows = new();
 
-        [Header("Window Rotation Settings")]
-        [SerializeField] private float openWindowRotationL = -147f;
-        [SerializeField] private float openWindowRotationR = 147f;
-        [SerializeField] private float closedWindowRotation;
+        [Header("Lamps and Lights")]
+        [SerializeField] private List<Lamp> lamps = new();
+        [SerializeField] private List<Light> roomLights = new();
+        [SerializeField] private float lampBreakDelay = 2f;
+
+        [Header("Monster Boost Settings")]  // Moved from GameManager
+        [SerializeField] private string monsterTag = "Enemy";  // For refresh
+        [SerializeField] private float healthIncreasePerLamp = 0.1f;  // 10% per lamp
+        [SerializeField] private float sizeIncreasePerLamp = 0.1f;    // 10% per lamp
+        [SerializeField] private float maxBoostMultiplier = 2f;       // Cap at 200%
+        [SerializeField] private float scaleTransitionDuration = 1f;  // Smooth scale time
 
         private readonly List<MonsterTrackerData> activeMonsters = new();
         private bool isSpawning;
         private Coroutine spawnCoroutine;
-        private bool isInvokePending;
+        private int brokenLampsCount = 0;
 
         private void Awake()
         {
@@ -54,16 +60,36 @@ namespace Enemies
                 return;
             }
 
-            if (windows.Count != 2)
-            {
-                LogWarning("Two windows must be assigned!");
-            }
-
             if (cornerSpawnPoints == null || cornerSpawnPoints.Count == 0)
             {
                 LogWarning("No corner spawn points defined. Using spawner position.");
                 cornerSpawnPoints = new List<Transform> { transform };
             }
+
+            // Auto-assign lamps if not set in Inspector
+            if (lamps.Count == 0)
+            {
+                lamps = FindObjectsOfType<Lamp>().ToList();
+                Log($"Auto-assigned {lamps.Count} lamps from scene.");
+            }
+
+            // Auto-assign room lights if not set (optional, assuming lights are on lamps or separate)
+            if (roomLights.Count == 0)
+            {
+                roomLights = FindObjectsOfType<Light>().ToList();
+                Log($"Auto-assigned {roomLights.Count} room lights from scene.");
+            }
+        }
+
+        private void Start()
+        {
+            Lamp.OnLampBroken += HandleLampBroken;  // Subscribe to lamp breaks for boosts
+        }
+
+        private void OnDestroy()
+        {
+            Lamp.OnLampBroken -= HandleLampBroken;
+            StopSpawning();
         }
 
         public void BeginSpawning()
@@ -73,29 +99,24 @@ namespace Enemies
                 LogWarning("BeginSpawning called while already spawning!");
                 return;
             }
-            isInvokePending = true;
-            OpenWindows();
-            Invoke(nameof(StartSpawning), 7f);
+            StartCoroutine(BreakLampsSequentially());
+            StartSpawning();
         }
 
         public void StopSpawning()
         {
-            if (!isSpawning && !isInvokePending)
+            if (!isSpawning)
             {
                 return;
             }
 
             isSpawning = false;
-            isInvokePending = false;
-            CancelInvoke(nameof(StartSpawning));
 
             if (spawnCoroutine != null)
             {
                 StopCoroutine(spawnCoroutine);
                 spawnCoroutine = null;
             }
-
-            CloseWindows();
 
             foreach (var monsterData in activeMonsters.ToList())
             {
@@ -127,7 +148,6 @@ namespace Enemies
                 return;
             }
             isSpawning = true;
-            isInvokePending = false;
             spawnCoroutine = StartCoroutine(SpawnMonsters());
         }
 
@@ -256,36 +276,74 @@ namespace Enemies
             return basePosition + Vector3.up * spawnHeight;
         }
 
-        private void OpenWindows()
+        private IEnumerator BreakLampsSequentially()
         {
-            if (windows.Count != 2) return;
-            for (int i = 0; i < windows.Count; i++)
+            // Break lamps one by one with delay, destroying them
+            foreach (Lamp lamp in lamps.ToList())
             {
-                if (windows[i] != null)
+                if (lamp != null)
                 {
-                    windows[i].SetActive(true);
-                    float rotation = i == 0 ? openWindowRotationL : openWindowRotationR;
-                    windows[i].transform.rotation = Quaternion.Euler(0, rotation, 0);
+                    lamp.Break();  // Break the lamp
+                    yield return new WaitForSeconds(lampBreakDelay);
+                    Destroy(lamp.gameObject);  // Destroy after delay
+                }
+            }
+            lamps.Clear();
+
+            // Turn off all room lights to darken the room
+            foreach (Light roomLight in roomLights)
+            {
+                if (roomLight != null)
+                {
+                    roomLight.enabled = false;
                 }
             }
         }
 
-        private void CloseWindows()
+        // Monster boost logic (moved from GameManager)
+        private void HandleLampBroken(Lamp lamp)
         {
-            if (windows.Count != 2) return;
-            for (int i = 0; i < windows.Count; i++)
+            brokenLampsCount++;
+            UpdateAllMonsters();
+        }
+
+        private void UpdateAllMonsters()
+        {
+            float healthMultiplier = Mathf.Min(1 + (brokenLampsCount * healthIncreasePerLamp), maxBoostMultiplier);
+            float sizeMultiplier = Mathf.Min(1 + (brokenLampsCount * sizeIncreasePerLamp), maxBoostMultiplier);
+
+            foreach (MonsterTrackerData data in activeMonsters)
             {
-                if (windows[i] != null)
-                {
-                    windows[i].SetActive(false);
-                    windows[i].transform.rotation = Quaternion.Euler(0, closedWindowRotation, 0);
-                }
+                ShadowMonster sm = data.SpiderReference;
+                if (sm == null) continue;
+
+                // Health: Scale max and current proportionally
+                float oldMax = sm.healthComponent.maxHealth;
+                float newMax = oldMax * healthMultiplier;
+                float healthRatio = sm.healthComponent.health / oldMax;
+                sm.SetMaxHealth(newMax);
+                sm.healthComponent.health = newMax * healthRatio;
+                sm.healthComponent.OnHealthChanged?.Invoke(sm.healthComponent.health / newMax);
+
+                // Size: Smooth lerp to new scale
+                Vector3 targetScale = sm.transform.localScale * sizeMultiplier;  // Multiply current (handles time-growth)
+                StartCoroutine(SmoothScale(sm.transform, targetScale));
+
+                Debug.Log($"Updated Monster {sm.name}: Health = {newMax}, Scale = {targetScale}");
             }
         }
 
-        private void OnDestroy()
+        private IEnumerator SmoothScale(Transform target, Vector3 endScale)
         {
-            StopSpawning();
+            Vector3 startScale = target.localScale;
+            float timer = 0f;
+            while (timer < scaleTransitionDuration)
+            {
+                timer += Time.deltaTime;
+                target.localScale = Vector3.Lerp(startScale, endScale, timer / scaleTransitionDuration);
+                yield return null;
+            }
+            target.localScale = endScale;
         }
 
         private void Log(string message) => Debug.Log($"[ShadowMonsterSpawner {gameObject.name}] {message}");

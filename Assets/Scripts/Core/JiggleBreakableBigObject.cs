@@ -1,5 +1,5 @@
-﻿using UnityEngine;
-//using Core;
+﻿using System.Collections;
+using UnityEngine;
 
 namespace Core
 {
@@ -10,19 +10,17 @@ namespace Core
     {
         [Header("Jiggle Settings")]
         [SerializeField] private float jiggleAmount = 0.1f;
+        [SerializeField] private float jiggleRotationAmount = 5f;
+        [SerializeField] private float jiggleScaleAmount = 0.05f;
         [SerializeField] private float jiggleDuration = 0.5f;
         [SerializeField] private AnimationCurve jiggleCurve;
-
-        [Header("Physics Settings")]
-        [SerializeField] private float objectMass = 50f;
+        [SerializeField] private AudioClip jiggleSfx;
+        [SerializeField] private ParticleSystem hitParticlesPrefab;
 
         private BoxCollider boxCollider;
-        private Rigidbody rigidBody;
         private Vector3 originalPosition;
         private Quaternion originalRotation;
-        private float jiggleTimer;
-        private bool isJiggling;
-        private Vector3 jiggleDirection;
+        private Vector3 originalScale;
         private HealthComponent healthComponent;
 
         protected override void Awake()
@@ -30,21 +28,26 @@ namespace Core
             base.Awake();
 
             boxCollider = GetComponent<BoxCollider>();
-            rigidBody = GetComponent<Rigidbody>();
             healthComponent = GetComponent<HealthComponent>();
 
             originalPosition = transform.position;
             originalRotation = transform.rotation;
+            originalScale = transform.localScale;
 
-            SetupPhysics();
+            boxCollider.isTrigger = false;
 
-            if (Resources.Load<GameObject>("Prefabs/BreakableHealthBar") is GameObject healthBarPrefab)
+            GameObject healthBarPrefab = Resources.Load<GameObject>("Prefabs/BreakableHealthBar");
+            if (healthBarPrefab != null)
             {
                 GameObject healthBar = Instantiate(healthBarPrefab, transform);
                 if (healthBar.TryGetComponent(out BreakableHealthBar bar))
                 {
                     bar.Initialize(this);
                 }
+            }
+            else
+            {
+                Debug.LogWarning("Prefab 'Prefabs/BreakableHealthBar' not found.");
             }
         }
 
@@ -53,42 +56,6 @@ namespace Core
             if (healthComponent != null)
             {
                 healthComponent.OnDeath.AddListener(HandleHealthDeath);
-                //Debug.Log($"[JiggleBreakableBigObject {gameObject.name}] Subscribed to OnDeath");
-            }
-        }
-
-        private void SetupPhysics()
-        {
-            rigidBody.useGravity = true;
-            rigidBody.isKinematic = false;
-            rigidBody.mass = objectMass;
-            rigidBody.linearDamping = 0.5f;
-            rigidBody.interpolation = RigidbodyInterpolation.Interpolate;
-            rigidBody.collisionDetectionMode = CollisionDetectionMode.Continuous;
-            rigidBody.maxAngularVelocity = 50f;
-            rigidBody.solverIterations = 8;
-            rigidBody.solverVelocityIterations = 3;
-
-            boxCollider.isTrigger = false;
-        }
-
-        private void Update()
-        {
-            if (!isJiggling) return;
-
-            jiggleTimer += Time.deltaTime;
-            float progress = jiggleTimer / jiggleDuration;
-
-            if (progress < 1.0f)
-            {
-                float curveValue = jiggleCurve != null ? jiggleCurve.Evaluate(progress) : Mathf.Sin(progress * Mathf.PI * 4);
-                transform.position = originalPosition + jiggleDirection * jiggleAmount * curveValue;
-            }
-            else
-            {
-                transform.position = originalPosition;
-                transform.rotation = originalRotation;
-                isJiggling = false;
             }
         }
 
@@ -99,16 +66,16 @@ namespace Core
             bool isWeapon = collision.gameObject.CompareTag("Weapon");
             float impactForce = collision.impulse.magnitude;
 
-            bool shouldBreak = breakOnlyFromWeapons
+            bool shouldDamage = breakOnlyFromWeapons
                 ? isWeapon && (!useImpactForce || impactForce >= minimumImpactForce)
                 : isWeapon || (useImpactForce && impactForce >= minimumImpactForce);
 
-            if (!shouldBreak) return;
+            if (!shouldDamage) return;
 
             Vector3 hitPoint = collision.contacts[0].point;
             Vector3 hitDirection = collision.contacts[0].normal;
 
-            TriggerJiggleEffect(hitDirection);
+            StartCoroutine(JiggleCoroutine(hitDirection, hitPoint));
 
             float damage = useImpactForce
                 ? Mathf.Max(impactForce * damageMultiplier, minimumImpactForce)
@@ -117,14 +84,45 @@ namespace Core
             healthComponent.TakeDamage(damage, hitPoint, collision.gameObject);
         }
 
-        private void TriggerJiggleEffect(Vector3 hitDirection)
+        private IEnumerator JiggleCoroutine(Vector3 hitDirection, Vector3 hitPoint)
         {
-            jiggleTimer = 0f;
-            jiggleDirection = -hitDirection.normalized;
-            isJiggling = true;
+            if (audioSource != null && jiggleSfx != null) audioSource.PlayOneShot(jiggleSfx);
 
-            originalPosition = transform.position;
-            originalRotation = transform.rotation;
+            if (hitParticlesPrefab != null)
+            {
+                ParticleSystem particles = Instantiate(hitParticlesPrefab, hitPoint, Quaternion.LookRotation(-hitDirection));
+                particles.Play();
+                Destroy(particles.gameObject, particles.main.duration);
+            }
+
+            float timer = 0f;
+            Vector3 jiggleDir = -hitDirection.normalized;
+            Vector3 startPos = transform.position;
+            Quaternion startRot = transform.rotation;
+            Vector3 startScale = transform.localScale;
+
+            float randomFactor = Random.Range(0.8f, 1.2f);
+
+            while (timer < jiggleDuration)
+            {
+                timer += Time.deltaTime;
+                float progress = timer / jiggleDuration;
+                float curveValue = jiggleCurve?.Evaluate(progress) ?? Mathf.Sin(progress * Mathf.PI * 4);
+
+                transform.position = startPos + jiggleDir * (jiggleAmount * curveValue * randomFactor);
+
+                Vector3 rotOffset = Vector3.Cross(Vector3.up, jiggleDir) * (jiggleRotationAmount * curveValue * randomFactor);
+                transform.rotation = startRot * Quaternion.Euler(rotOffset);
+
+                Vector3 scaleOffset = new Vector3(1 - jiggleScaleAmount * curveValue, 1 + jiggleScaleAmount * curveValue, 1 - jiggleScaleAmount * curveValue);
+                transform.localScale = Vector3.Scale(startScale, scaleOffset);
+
+                yield return null;
+            }
+
+            transform.position = startPos;
+            transform.rotation = startRot;
+            transform.localScale = startScale;
         }
 
         protected override void HandleDestruction()
@@ -134,18 +132,26 @@ namespace Core
                 boxCollider.enabled = false;
             }
 
+            StopAllCoroutines();
+
+            transform.position = originalPosition;
+            transform.rotation = originalRotation;
+            transform.localScale = originalScale;
+
             base.HandleDestruction();
         }
 
         private void HandleHealthDeath(HealthComponent health)
         {
             HandleBreaking();
-            //Debug.Log($"[JiggleBreakableBigObject {gameObject.name}] HandleHealthDeath called");
         }
 
         protected override void HandleBreaking()
         {
-            DropItems(transform.position);
+            if (rb != null)
+            {
+                rb.AddForce(Vector3.up * Random.Range(1f, 3f), ForceMode.Impulse);
+            }
 
             if (TryGetComponent(out Lamp lamp) && !lamp.isBroken)
             {
@@ -160,7 +166,6 @@ namespace Core
             if (healthComponent != null)
             {
                 healthComponent.OnDeath.RemoveListener(HandleHealthDeath);
-                //Debug.Log($"[JiggleBreakableBigObject {gameObject.name}] Unsubscribed from OnDeath");
             }
         }
     }

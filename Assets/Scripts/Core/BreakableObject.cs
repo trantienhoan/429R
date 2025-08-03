@@ -1,10 +1,11 @@
 using UnityEngine;
 using UnityEngine.Events;
 using System.Collections;
+using UnityEngine.Serialization;
 
 namespace Core
 {
-    public abstract class BreakableObject : MonoBehaviour
+    public class BreakableObject : MonoBehaviour  // Removed 'abstract' here
     {
         [Header("Breakable Object Settings")]
         [SerializeField] protected bool isBreakable = true;
@@ -31,15 +32,27 @@ namespace Core
         [SerializeField] protected bool useImpactForce = true;
         [SerializeField] protected float damageMultiplier = 1f;
 
+        [Header("Explosion Settings")]
+        [SerializeField] protected float explodeRange = 5f;
+        [SerializeField] protected float explodeDamage = 50f;
+        [SerializeField] protected LayerMask damageLayers = -1;
+
+        [Header("Effects Settings")]
+        [SerializeField] protected ParticleSystem breakVFXPrefab;
+
+        [FormerlySerializedAs("breakSFX")] [SerializeField] protected AudioClip breakSFX;  // Fixed case to match FormerlySerializedAs
+
         [Header("Events")]
         public UnityEvent onBreak;
 
         private bool isBroken;
-        private Rigidbody rb;
+        public Rigidbody rb;
+        public AudioSource audioSource;
 
         protected virtual void Awake()
         {
             SetupRigidbody();
+            SetupAudioSource();
         }
 
         protected virtual void SetupRigidbody()
@@ -54,12 +67,21 @@ namespace Core
             rb.linearDamping = linearDamping;
             rb.angularDamping = angularDamping;
             rb.useGravity = useGravity;
-            rb.isKinematic = true;
+            rb.isKinematic = false;  // Changed to false so it's always dynamic and movable
             rb.interpolation = RigidbodyInterpolation.Interpolate;
             rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
             rb.maxAngularVelocity = 50f;
             rb.solverIterations = 6;
             rb.solverVelocityIterations = 2;
+        }
+
+        protected virtual void SetupAudioSource()
+        {
+            audioSource = GetComponent<AudioSource>();
+            if (audioSource == null)
+            {
+                audioSource = gameObject.AddComponent<AudioSource>();
+            }
         }
 
         protected virtual void OnCollisionEnter(Collision collision)
@@ -94,19 +116,60 @@ namespace Core
 
             if (rb != null)
             {
-                rb.isKinematic = false;
                 rb.AddForce(Vector3.up * breakUpwardForce, ForceMode.VelocityChange);
             }
 
             HandleDestruction();
         }
-        protected abstract void HandleBreaking();
+
+        protected virtual void HandleBreaking()  // Made virtual with empty body
+        {
+            // Empty by default; override in subclasses if needed
+        }
 
         protected virtual void HandleDestruction()
         {
+            PlayBreakEffects();
+            ApplyExplosionDamage();
             DropItems(transform.position);
             onBreak?.Invoke();
             StartCoroutine(DestroyAfterDelay());
+        }
+
+        protected virtual void PlayBreakEffects()
+        {
+            // Play SFX
+            if (audioSource != null && breakSFX != null)
+            {
+                audioSource.PlayOneShot(breakSFX);
+            }
+
+            // Instantiate VFX
+            if (breakVFXPrefab != null)
+            {
+                ParticleSystem vfx = Instantiate(breakVFXPrefab, transform.position, Quaternion.identity);
+                vfx.Play();
+                // Optionally destroy the VFX after it finishes, assuming it has a lifetime
+                Destroy(vfx.gameObject, vfx.main.duration);
+            }
+        }
+
+        protected virtual void ApplyExplosionDamage()
+        {
+            if (explodeRange <= 0f || explodeDamage <= 0f) return;
+
+            Collider[] hitColliders = Physics.OverlapSphere(transform.position, explodeRange, damageLayers);
+            foreach (Collider hitCollider in hitColliders)
+            {
+                if (hitCollider.gameObject.CompareTag("Furniture")) continue;
+
+                HealthComponent health = hitCollider.GetComponent<HealthComponent>();
+                if (health != null)
+                {
+                    // Apply damage, using transform.position as hitPoint, and this gameObject as attacker
+                    health.TakeDamage(explodeDamage, transform.position, gameObject);
+                }
+            }
         }
 
         protected virtual IEnumerator DestroyAfterDelay()

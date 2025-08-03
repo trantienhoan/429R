@@ -51,6 +51,14 @@ namespace Enemies
         public float diveSpeed = 10f;
         public float diveTimeout = 3f;
 
+        [Header("NavMesh Scaling")]
+        [SerializeField] private float originalAgentRadius = 0.5f;  // Base agent radius
+        [SerializeField] private float originalAgentHeight = 2f;    // Base agent height
+        [SerializeField] private float originalBaseOffset = 0f;     // Base offset
+
+        [Header("Ground Check Scaling")]
+        [SerializeField] private float baseGroundCheckRadius = 0.3f;  // Base sphere radius for OverlapSphere
+
         public Transform currentTarget;
         private Vector3 lastPosition;
         public float stuckTimer;
@@ -74,7 +82,10 @@ namespace Enemies
 
         public bool IsGrounded()
         {
-            Collider[] hits = Physics.OverlapSphere(groundCheckPoint.position, 0.3f, groundLayer);  // Increase radius for tolerance
+            float scaleFactor = transform.localScale.y;
+            float adjustedRadius = baseGroundCheckRadius * scaleFactor;
+
+            Collider[] hits = Physics.OverlapSphere(groundCheckPoint.position, adjustedRadius, groundLayer);
             bool grounded = hits.Length > 0;
             isGrounded = grounded;
             if (animator != null)
@@ -86,7 +97,7 @@ namespace Enemies
             {
                 int layerIndex = Mathf.RoundToInt(Mathf.Log(groundLayer.value + 1, 2)) - 1;  // Handle mask
                 string layerName = (layerIndex >= 0) ? LayerMask.LayerToName(layerIndex) : "Invalid";
-                Debug.LogWarning("[IsGrounded] Failed: Position=" + groundCheckPoint.position + ", Layer=" + layerName);
+                Debug.LogWarning("[IsGrounded] Failed at scale " + scaleFactor + ": Position=" + groundCheckPoint.position + ", Layer=" + layerName + ", Adjusted Radius=" + adjustedRadius);
             }
             return grounded;
         }
@@ -115,8 +126,9 @@ namespace Enemies
             }
             if (agent != null && !agent.isOnNavMesh)  // Remove && isGrounded – always try to fix
             {
+                float scaleFactor = transform.localScale.y;
                 NavMeshHit hit;
-                if (NavMesh.SamplePosition(transform.position, out hit, 5f, NavMesh.AllAreas))  // Increase radius to 5f
+                if (NavMesh.SamplePosition(transform.position, out hit, 5f * scaleFactor, NavMesh.AllAreas))  // Scale sample distance
                 {
                     transform.position = hit.position;
                     agent.Warp(hit.position);
@@ -126,6 +138,18 @@ namespace Enemies
                 {
                     Debug.LogWarning("[EnsureAgent] No NavMesh position found near " + transform.position);
                 }
+            }
+        }
+
+        private void UpdateAgentOnScale()
+        {
+            if (agent != null)
+            {
+                float scaleFactor = transform.localScale.y;  // Use Y for height consistency
+                agent.radius = originalAgentRadius * scaleFactor;
+                agent.height = originalAgentHeight * scaleFactor;
+                agent.baseOffset = originalBaseOffset * scaleFactor - (scaleFactor - 1f) * 0.1f;  // Slight negative offset for larger scales to "sink" in
+                EnsureAgentOnNavMesh();  // Force re-sample after changes
             }
         }
 
@@ -245,6 +269,7 @@ namespace Enemies
             growthTimer += Time.deltaTime;
             float growthProgress = Mathf.Clamp01(growthTimer / growthTime);
             transform.localScale = Vector3.Lerp(startScale, fullScale, growthProgress);
+            UpdateAgentOnScale();  // Update agent after scaling
             targetRefreshTimer += Time.deltaTime;
             if (targetRefreshTimer >= k_TargetRefreshInterval)
             {
@@ -412,7 +437,7 @@ namespace Enemies
             {
                 var collider = attackHitbox.GetComponent<SphereCollider>();
                 collider.radius = originalExplosionRadius * kamikazeRadiusMultiplier;
-                attackHitbox.Initialize(gameObject, kamikazeAttackDamage, pushForce);  // No need for radius param yet
+                attackHitbox.Initialize(gameObject, kamikazeAttackDamage, pushForce, isKamikaze: true);
                 attackCoroutine = StartCoroutine(PerformAttackCoroutine(true));
             }
         }

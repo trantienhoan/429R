@@ -7,8 +7,8 @@ namespace Enemies
     public class SpiderAttackHitbox : MonoBehaviour
     {
         [Header("Explosion Settings")]
-        [SerializeField] private float damage = 10f;
-        [SerializeField] private float pushForce = 5f;
+        [SerializeField] private float baseDamage = 10f;  // Base at scale=1
+        [SerializeField] private float basePushForce = 5f;
 
         [Header("VFX & SFX")]
         [SerializeField] private ParticleSystem explosionVFX;
@@ -21,21 +21,34 @@ namespace Enemies
         [SerializeField] private Color gizmoColor = Color.red;
         
         [Header("Continuous Push Settings")]
-        [SerializeField] private float continuousPushForce = 2f; 
+        [SerializeField] private float baseContinuousPushForce = 2f; 
         [SerializeField] private bool applyContinuousPush = true;
 
         [Header("Directional Hit Settings")]
-        [SerializeField] private Vector3 boxSize = new Vector3(0.5f, 0.5f, 1f);  // Small scene: width/height/depth (forward)
-        [SerializeField] private float castDistance = 1f;  // Reach forward
-        [SerializeField] private float directionalPushForce = 15f;  // Forward knockback
+        [SerializeField] private Vector3 baseBoxSize = new Vector3(0.5f, 0.5f, 1f);  // Base at scale=1
+        [SerializeField] private float baseCastDistance = 1f;  // Base at scale=1
+        [SerializeField] private float baseDirectionalPushForce = 15f;  // Base at scale=1
+
+        [Header("Scaling Settings")]
+        [SerializeField] private bool scaleWithParent = true;  // Toggle for growth
+        [SerializeField] private float damageScaleMultiplier = 1f;  // Extra tuning (e.g., 1.5f for stronger at large size)
 
         private SphereCollider sphereCollider;
+        private ShadowMonster parentMonster;  // Reference to parent for scale
 
         private GameObject owner;
         private bool hasExploded;
 
+        // Scaled values (computed on init)
+        private float scaledDamage;
+        private float scaledPushForce;
+        private float scaledContinuousPushForce;
+        private Vector3 scaledBoxSize;
+        private float scaledCastDistance;
+        private float scaledDirectionalPushForce;
+
         // Public property to expose damage for TreeOfLightPot
-        private float damageAmount => damage;
+        public float DamageAmount => scaledDamage;
 
         private void Awake()
         {
@@ -43,6 +56,14 @@ namespace Enemies
             if (sphereCollider != null)
             {
                 sphereCollider.isTrigger = true;  // Ensure it's a trigger for OnTriggerStay
+            }
+
+            // Find parent monster (assume hitbox is child)
+            parentMonster = GetComponentInParent<ShadowMonster>();
+            if (parentMonster == null)
+            {
+                Debug.LogWarning("[SpiderAttackHitbox] No parent ShadowMonster found—scaling disabled.");
+                scaleWithParent = false;
             }
         }
 
@@ -56,7 +77,7 @@ namespace Enemies
                 if (rb != null && rb.mass > 0f)
                 {
                     Vector3 pushDir = (other.transform.position - transform.position).normalized;
-                    rb.AddForce(pushDir * continuousPushForce * Time.deltaTime, ForceMode.Force); 
+                    rb.AddForce(pushDir * scaledContinuousPushForce * Time.deltaTime, ForceMode.Force); 
                 }
             }
         }
@@ -96,14 +117,14 @@ namespace Enemies
                     if (hp != null)
                     {
                         Vector3 hitPoint = hit.ClosestPoint(transform.position);
-                        hp.TakeDamage(damage, hitPoint, owner, true);
+                        hp.TakeDamage(scaledDamage, hitPoint, owner, true);
                     }
 
                     var rb = hit.attachedRigidbody;
                     if (rb != null && rb.mass > 0f)
                     {
                         Vector3 pushDir = (hit.transform.position - transform.position).normalized;
-                        rb.AddForce(pushDir * pushForce, ForceMode.Impulse);
+                        rb.AddForce(pushDir * scaledPushForce, ForceMode.Impulse);
                     }
                 }
             }
@@ -114,21 +135,25 @@ namespace Enemies
 
         private void DirectionalHit()
         {
-            RaycastHit[] directionalHits = Physics.BoxCastAll(transform.position, boxSize / 2f, transform.forward, transform.rotation, castDistance);
-            foreach (RaycastHit hit in directionalHits)
+            RaycastHit[] directionalHits = new RaycastHit[32];
+            int hitCount = Physics.BoxCastNonAlloc(transform.position, scaledBoxSize / 2f, transform.forward, directionalHits, transform.rotation, scaledCastDistance);
+            for (int i = 0; i < hitCount; i++)
             {
+                RaycastHit hit = directionalHits[i];
+                if (hit.collider == null) continue;
+
                 if (hit.collider.CompareTag("Player") || hit.collider.CompareTag("TreeOfLight") || hit.collider.CompareTag("Furniture"))
                 {
                     Rigidbody rb = hit.collider.attachedRigidbody;
                     if (rb != null && rb.mass > 0f)
                     {
                         Vector3 pushDir = transform.forward;  // Directional push
-                        rb.AddForceAtPosition(pushDir * directionalPushForce, hit.point, ForceMode.Impulse);  // At point for rotation
+                        rb.AddForceAtPosition(pushDir * scaledDirectionalPushForce, hit.point, ForceMode.Impulse);  // At point for rotation
                         Debug.Log("Directional Push on: " + hit.collider.name);
                     }
                     // Damage (if not in radial)
                     HealthComponent hp = hit.collider.GetComponent<HealthComponent>();
-                    if (hp != null) hp.TakeDamage(damageAmount, hit.point, owner, true);
+                    if (hp != null) hp.TakeDamage(DamageAmount, hit.point, owner, true);
                 }
             }
         }
@@ -139,11 +164,11 @@ namespace Enemies
             // Only override serialized values if parameters are provided (non-negative)
             if (newDamage >= 0f)
             {
-                damage = newDamage;
+                baseDamage = newDamage;
             }
             if (newPushForce >= 0f)
             {
-                pushForce = newPushForce;
+                basePushForce = newPushForce;
             }
             hasExploded = false;
             if (radius >= 0f && sphereCollider != null)
@@ -152,9 +177,32 @@ namespace Enemies
             }
             if (isKamikaze)
             {
-                boxSize *= 3f;  // 3x size for kamikaze
-                castDistance *= 3f;
+                baseBoxSize *= 3f;  // 3x size for kamikaze
+                baseCastDistance *= 3f;
             }
+
+            // Apply scaling based on parent
+            float scaleFactor = 1f;
+            if (scaleWithParent && parentMonster != null)
+            {
+                scaleFactor = parentMonster.transform.localScale.y;  // Use Y as size proxy (or average XYZ)
+            }
+
+            // Compute scaled values
+            scaledDamage = baseDamage * scaleFactor * damageScaleMultiplier;
+            scaledPushForce = basePushForce * scaleFactor;
+            scaledContinuousPushForce = baseContinuousPushForce * scaleFactor;
+            scaledBoxSize = baseBoxSize * scaleFactor;
+            scaledCastDistance = baseCastDistance * scaleFactor;
+            scaledDirectionalPushForce = baseDirectionalPushForce * scaleFactor;
+
+            // Optional: Scale collider radius too (if not set via param)
+            if (radius < 0f && sphereCollider != null)
+            {
+                sphereCollider.radius *= scaleFactor;
+            }
+
+            Debug.Log($"[SpiderAttackHitbox] Initialized with scaleFactor={scaleFactor}, scaledDamage={scaledDamage}, scaledRadius={(sphereCollider ? sphereCollider.radius : 0)}");
         }
 
         private void OnDrawGizmosSelected()
@@ -164,9 +212,9 @@ namespace Enemies
             float gizmoRadius = sphereCollider != null ? sphereCollider.radius : 3f;
             Gizmos.DrawWireSphere(transform.position, gizmoRadius);
 
-            // Directional box preview
+            // Directional box preview (use base for static view, or scaled if desired)
             Gizmos.color = Color.blue;
-            Gizmos.DrawWireCube(transform.position + transform.forward * (castDistance / 2f), boxSize);
+            Gizmos.DrawWireCube(transform.position + transform.forward * (baseCastDistance / 2f), baseBoxSize);
         }
     }
 }

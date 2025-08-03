@@ -9,8 +9,9 @@ namespace Items
     {
         [Header("Weapon Base Settings")]
         [SerializeField] private WeaponType weaponType = WeaponType.Sword;
-        [SerializeField] private float baseDamage = 10f;
-        [SerializeField] private float minDamage = 5f; // New: Minimum damage to prevent zero
+        [SerializeField] private float baseDamage = 5f;
+        [SerializeField] private float minDamage = 5f; // Minimum damage to prevent zero
+        [SerializeField] private float maxDamage = 30f;  // New: Cap to prevent overkill
         [SerializeField] private float weaponMass = 0.9f;
         [SerializeField] private float impactForceMultiplier = 1f;
         [SerializeField] private float treeOfLightDamageMultiplier = 0.5f;
@@ -24,6 +25,7 @@ namespace Items
         [Header("Effects")]
         [SerializeField] private GameObject groundImpactEffectPrefab;
         [SerializeField] private GameObject airSlashEffectPrefab;
+        [SerializeField] private GameObject smokeHitVFXPrefab;  // New: Hit VFX for Smoke weapon
 
         private Rigidbody rb;
         private Vector3 lastPosition;
@@ -32,11 +34,14 @@ namespace Items
         private Vector3 velocityHistory;
         private UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable grabInteractable;
         private bool isGrabbed;
+        private float lastHitTime; 
+        private const float k_HitCooldown = 0.2f;  // New: Prevent multi-hits per swing
 
         private enum WeaponType
         {
             Sword,
             Hammer,
+            Smoke  // New: Smoke weapon type
         }
 
         private void Awake()
@@ -49,7 +54,7 @@ namespace Items
 
             gameObject.tag = "Weapon";
             if (rb != null) rb.mass = weaponMass;
-            Debug.Log($"Weapon {gameObject.name}: Initialized with baseDamage={baseDamage}, minDamage={minDamage}, weaponType={weaponType}");
+            Debug.Log($"Weapon {gameObject.name}: Initialized with baseDamage={baseDamage}, minDamage={minDamage}, maxDamage={maxDamage}, weaponType={weaponType}");
         }
 
         private void OnGrab(SelectEnterEventArgs args)
@@ -94,17 +99,28 @@ namespace Items
             {
                 Debug.Log($"Weapon {gameObject.name}: Sword horizontal swing detected, horizontalDot={horizontalDot:F2}");
             }
+            // Optional: Add smoke-specific swing detection if needed
         }
 
         private void OnCollisionEnter(Collision collision)
         {
-            if (!isGrabbed) return;
+            if (!isGrabbed || Time.time - lastHitTime < k_HitCooldown) return;  // New: Debounce
+
+            lastHitTime = Time.time;  // New: Update timestamp
 
             // Use Rigidbody velocity for more accurate damage calculation
-            float speed = rb.linearVelocity.magnitude > currentSpeed ? rb.linearVelocity.magnitude : currentSpeed;
-            float damageAmount = Mathf.Max(minDamage, baseDamage * (speed / 5f));
+            float speed = collision.relativeVelocity.magnitude > currentSpeed ? collision.relativeVelocity.magnitude : currentSpeed;  // Changed: Use relativeVelocity for better accuracy
+            float damageAmount = Mathf.Clamp(baseDamage + (speed * 0.5f), minDamage, maxDamage);  // Changed: Less aggressive scaling + clamp to max
             Vector3 collisionPoint = collision.contacts[0].point;
+
             Debug.Log($"Weapon {gameObject.name}: Collision with {collision.gameObject.name}, speed={speed:F2}, damageAmount={damageAmount:F2}");
+
+            // New: For Smoke weapon, play hit VFX at collision point
+            if (weaponType == WeaponType.Smoke && smokeHitVFXPrefab != null)
+            {
+                Instantiate(smokeHitVFXPrefab, collisionPoint, Quaternion.LookRotation(collision.contacts[0].normal));
+                Debug.Log($"Weapon {gameObject.name}: Spawned smoke hit VFX at {collisionPoint}");
+            }
 
             if (weaponType == WeaponType.Hammer &&
                 Vector3.Dot(movementDirection, -Vector3.up) > verticalSwingThreshold &&
