@@ -1,6 +1,5 @@
 using UnityEngine;
-using Items;   // For TreeOfLightPot
-using Enemies; // For ShadowMonsterSpawner events
+using Items;
 
 namespace Core
 {
@@ -37,13 +36,13 @@ namespace Core
         private void Start()
         {
             // Subscribe to events
-            ShadowMonsterSpawner.OnMonsterSpawned += PlayMonsterSpawnSfx;  // Assume added event in spawner
+            // ShadowMonsterSpawner.OnMonsterSpawned += PlayMonsterSpawnSfx;  // Uncomment when event added
             Lamp.OnLampBroken += PlayLampBreakSfx;
 
             // Tree growth (assume TreeOfLightPot has OnGrowthStart event; add if not)
             if (treePot != null)
             {
-                treePot.OnGrowthStart += PlayTreeGrowthMusic;
+                // treePot.OnGrowthStart += PlayTreeGrowthMusic;  // Uncomment when event added
             }
 
             Debug.Log("Game Manager Started (Audio Events).");
@@ -52,11 +51,11 @@ namespace Core
         private void OnDestroy()
         {
             // Unsubscribe
-            ShadowMonsterSpawner.OnMonsterSpawned -= PlayMonsterSpawnSfx;
+            // ShadowMonsterSpawner.OnMonsterSpawned -= PlayMonsterSpawnSfx;
             Lamp.OnLampBroken -= PlayLampBreakSfx;
             if (treePot != null)
             {
-                treePot.OnGrowthStart -= PlayTreeGrowthMusic;
+                // treePot.OnGrowthStart -= PlayTreeGrowthMusic;
             }
         }
 

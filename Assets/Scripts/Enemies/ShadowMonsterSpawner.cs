@@ -65,20 +65,6 @@ namespace Enemies
                 LogWarning("No corner spawn points defined. Using spawner position.");
                 cornerSpawnPoints = new List<Transform> { transform };
             }
-
-            // Auto-assign lamps if not set in Inspector
-            if (lamps.Count == 0)
-            {
-                lamps = FindObjectsOfType<Lamp>().ToList();
-                Log($"Auto-assigned {lamps.Count} lamps from scene.");
-            }
-
-            // Auto-assign room lights if not set (optional, assuming lights are on lamps or separate)
-            if (roomLights.Count == 0)
-            {
-                roomLights = FindObjectsOfType<Light>().ToList();
-                Log($"Auto-assigned {roomLights.Count} room lights from scene.");
-            }
         }
 
         private void Start()

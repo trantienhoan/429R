@@ -66,8 +66,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb68cb885af71d74d80e5c6cb5c82f44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  damage: 1000
-  pushForce: 1000
+  baseDamage: 10
+  basePushForce: 5
   explosionVFX: {fileID: 570832250925526149, guid: dcd90c4976197424b9958a7c54b6bb8c,
     type: 3}
   explosionSfx: {fileID: 8300000, guid: 9118a3d703424a441a222ad5c2ea6971, type: 3}
@@ -75,11 +75,13 @@ MonoBehaviour:
   shakeDuration: 0.05
   drawDebugGizmos: 1
   gizmoColor: {r: 1, g: 0, b: 0, a: 1}
-  continuousPushForce: 2
+  baseContinuousPushForce: 2
   applyContinuousPush: 1
-  boxSize: {x: 0.5, y: 0.5, z: 1}
-  castDistance: 1
-  directionalPushForce: 15
+  baseBoxSize: {x: 0.5, y: 0.5, z: 1}
+  baseCastDistance: 1
+  baseDirectionalPushForce: 15
+  scaleWithParent: 1
+  damageScaleMultiplier: 1
 --- !u!1001 &2892365612308435589
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1495,7 +1497,7 @@ MonoBehaviour:
   attackHitbox: {fileID: 5078379185537246606}
   rb: {fileID: 4301660074786869948}
   deathVFX: {fileID: 570832250925526149, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
-  deathSfx: {fileID: 0}
+  deathSfx: {fileID: 8300000, guid: 9118a3d703424a441a222ad5c2ea6971, type: 3}
   audioSource: {fileID: 0}
   grabInteractable: {fileID: 7609633742523881503}
   healthComponent: {fileID: 2649278790831312482}
@@ -1503,15 +1505,15 @@ MonoBehaviour:
   attackRange: 0.7
   kamikazeRange: 5
   attackCooldown: 0
-  chargeDelay: 1
-  normalAttackDamage: 1000
+  chargeDelay: 2
+  normalAttackDamage: 200
   kamikazeAttackDamage: 5005
   kamikazeHealthThreshold: 0.19
   pushForce: 50
   stuckTimeThreshold: 30
   idleTimeBeforeDive: 3
   growthTime: 30
-  startScale: {x: 0.5, y: 0.5, z: 0.5}
+  startScale: {x: 0.3, y: 0.3, z: 0.3}
   fullScale: {x: 1.3, y: 1.3, z: 1.3}
   wallLayer:
     serializedVersion: 2
@@ -1663,16 +1665,16 @@ NavMeshAgent:
   m_GameObject: {fileID: 8658269655017285872}
   m_Enabled: 1
   m_AgentTypeID: -902729914
-  m_Radius: 0.2
+  m_Radius: 0.28
   m_Speed: 1
-  m_Acceleration: 3
+  m_Acceleration: 7
   avoidancePriority: 50
   m_AngularSpeed: 180
   m_StoppingDistance: 0
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
   m_AutoRepath: 1
-  m_Height: 0.3
+  m_Height: 0.36
   m_BaseOffset: 0
   m_WalkableMask: 1
   m_ObstacleAvoidanceType: 3
@@ -1693,7 +1695,7 @@ MonoBehaviour:
   destroyOnDeath: 1
   scaleOnDeath: 1
   deathScaleTarget: {x: 0, y: 0, z: 0}
-  deathScaleDuration: 3
+  deathScaleDuration: 2
   isInvulnerableByDefault: 0
   OnHealthChanged:
     m_PersistentCalls:

@@ -350,12 +350,12 @@ namespace Items
             else
             {
                 float bigExplosionForce = 2000f;
-                float bigExplosionRadius = 50f;
+                float bigExplosionRadius = 5f;
                 Collider[] colliders = Physics.OverlapSphere(transform.position, bigExplosionRadius);
                 int hitCount = 0;
                 foreach (Collider hit in colliders)
                 {
-                    if (hit.gameObject != gameObject) // Exclude self
+                    if (hit.gameObject != gameObject && hit.CompareTag("Enemy")) // Add tag check here
                     {
                         hitCount++;
                         Rigidbody rb = hit.attachedRigidbody;
@@ -365,13 +365,10 @@ namespace Items
                             rb.AddForce(direction * bigExplosionForce, ForceMode.Impulse);
                         }
 
-                        if (hit.CompareTag("Enemy"))
+                        HealthComponent enemyHealth = hit.GetComponent<HealthComponent>();
+                        if (enemyHealth != null)
                         {
-                            HealthComponent enemyHealth = hit.GetComponent<HealthComponent>();
-                            if (enemyHealth != null)
-                            {
-                                enemyHealth.TakeDamage(1000f);
-                            }
+                            enemyHealth.TakeDamage(1000f);
                         }
                     }
                 }

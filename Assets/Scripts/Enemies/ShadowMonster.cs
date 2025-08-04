@@ -555,7 +555,7 @@ namespace Enemies
         {
             GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
             GameObject[] trees = GameObject.FindGameObjectsWithTag("TreeOfLight");
-            Debug.Log($"[GetClosestTarget] Found {trees.Length} trees and {players.Length} players");
+            //Debug.Log($"[GetClosestTarget] Found {trees.Length} trees and {players.Length} players");
             Transform closestTarget = null;
             float closestDistance = Mathf.Infinity;
 
