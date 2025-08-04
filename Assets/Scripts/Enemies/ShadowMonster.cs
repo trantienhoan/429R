@@ -56,6 +56,16 @@ namespace Enemies
         [SerializeField] private float originalAgentHeight = 2f;    // Base agent height
         [SerializeField] private float originalBaseOffset = 0f;     // Base offset
 
+        [Header("Throw and Break Settings")]
+        [SerializeField]
+        public float maxHoldTime = 5f;  // Time before break free
+        [SerializeField] private float velocityThreshold = 0.1f;  // For settling after throw/dive
+        [SerializeField] public float struggleShakeIntensity = 0.1f;  // For feedback during long hold
+        [SerializeField] private float breakDamage = 10f;  // Optional: Damage to player on break
+
+        private bool isBreakingHold = false;
+        private bool isThrown = false;  // Track post-release physics flight
+        
         [Header("Ground Check Scaling")]
         [SerializeField] private float baseGroundCheckRadius = 0.3f;  // Base sphere radius for OverlapSphere
 
@@ -124,11 +134,11 @@ namespace Enemies
                 agent.speed = 3.5f;
                 agent.stoppingDistance = 0f;
             }
-            if (agent != null && !agent.isOnNavMesh)  // Remove && isGrounded – always try to fix
+            if (agent != null && !agent.isOnNavMesh)
             {
                 float scaleFactor = transform.localScale.y;
                 NavMeshHit hit;
-                if (NavMesh.SamplePosition(transform.position, out hit, 5f * scaleFactor, NavMesh.AllAreas))  // Scale sample distance
+                if (NavMesh.SamplePosition(transform.position, out hit, 10f * scaleFactor, NavMesh.AllAreas))  // Increased sample distance to reduce snap risk
                 {
                     transform.position = hit.position;
                     agent.Warp(hit.position);
@@ -137,6 +147,24 @@ namespace Enemies
                 else
                 {
                     Debug.LogWarning("[EnsureAgent] No NavMesh position found near " + transform.position);
+                }
+            }
+        }
+        
+        public void ForceBreakHold()
+        {
+            if (grabInteractable != null && grabInteractable.isSelected)
+            {
+                isBreakingHold = true;
+                if (grabInteractable.interactorsSelecting.Count > 0)
+                {
+                    var interactor = grabInteractable.interactorsSelecting[0];
+                    grabInteractable.interactionManager.SelectExit(interactor, (UnityEngine.XR.Interaction.Toolkit.Interactables.IXRSelectInteractable)grabInteractable);
+                    Debug.Log("[ForceBreakHold] Forced release.");
+                }
+                else
+                {
+                    Debug.LogWarning("[ForceBreakHold] No interactors selecting.");
                 }
             }
         }
@@ -191,12 +219,6 @@ namespace Enemies
 
             // Change state FIRST to allow OnExit to run while agent is enabled
             stateMachine.ChangeState(null);
-
-            // Then disable agent
-            if (agent != null && agent.isActiveAndEnabled)
-            {
-                agent.enabled = false;
-            }
         }
 
         protected override void Awake()
@@ -218,6 +240,13 @@ namespace Enemies
             if (rb != null)
             {
                 rb.constraints = RigidbodyConstraints.FreezeRotation;
+                rb.useGravity = true;  // Ensure gravity for throws/dives
+                rb.isKinematic = false;  // Non-kinematic for constant physics (damage, throws, pushes)
+            }
+            if (agent != null)
+            {
+                agent.updatePosition = false;  // Decouple agent from direct transform control
+                agent.updateRotation = false;  // Manual rotation
             }
             if (attackHitbox != null)
             {
@@ -298,6 +327,39 @@ namespace Enemies
             {
                 string currentState = GetStateName(animator.GetCurrentAnimatorStateInfo(0).fullPathHash);
                 //Debug.Log("[Animator] Current State: " + currentState + ", Grounded Bool: " + animator.GetBool("isGrounded"));
+            }
+
+            // Handle post-release settling for throws/drops
+            if (!isBeingHeld && isThrown && stateMachine.CurrentState is not DiveState)
+            {
+                if (IsGrounded() && rb.linearVelocity.magnitude < velocityThreshold)
+                {
+                    isThrown = false;  // Resume AI sync in FixedUpdate
+                }
+            }
+
+            // Sync agent position (always, if on NavMesh)
+            if (agent.isActiveAndEnabled && agent.isOnNavMesh)
+            {
+                agent.nextPosition = transform.position;
+            }
+        }
+
+        private void FixedUpdate()
+        {
+            // Manual sync: Apply agent's desired velocity to Rigidbody if in AI mode (not held/thrown/diving)
+            if (enabled && agent.isActiveAndEnabled && agent.isOnNavMesh && !isBeingHeld && !isThrown && stateMachine.CurrentState is not DiveState && stateMachine.CurrentState is not HeldState)
+            {
+                // Set destination in relevant states (e.g., ChaseState handles this; add if needed)
+                // agent.SetDestination(currentTarget.position); // Uncomment if not set in state
+
+                rb.linearVelocity = new Vector3(agent.desiredVelocity.x, rb.linearVelocity.y, agent.desiredVelocity.z);  // Apply horizontal nav, preserve vertical physics
+
+                // Manual rotation towards movement
+                if (agent.desiredVelocity.sqrMagnitude > 0.01f)
+                {
+                    transform.rotation = Quaternion.LookRotation(new Vector3(agent.desiredVelocity.x, 0f, agent.desiredVelocity.z));
+                }
             }
         }
 
@@ -488,11 +550,10 @@ namespace Enemies
         public void Pickup()
         {
             isBeingHeld = true;
-            if (agent != null && agent.isActiveAndEnabled)
+            isThrown = false;
+            if (agent != null)
             {
-                agent.updatePosition = false;  // Pause control, don't disable
-                agent.updateRotation = false;
-                agent.isStopped = true;  // Safe now
+                agent.isStopped = true;  // Pause agent during grab
             }
             if (attackHitbox != null)
             {
@@ -539,16 +600,33 @@ namespace Enemies
                 animator.Update(0f);
             }
             EnsureAgentOnNavMesh();
-            if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+
+            if (isBreakingHold)
             {
-                agent.updatePosition = true;  // Resume control
-                agent.updateRotation = true;
-                agent.Warp(transform.position);  // Force reposition
+                isBreakingHold = false;
+                stateMachine.ChangeState(new DiveState(this));  // Force Dive (handles physics)
+                // Optional: Damage player
+                if (grabInteractable.interactorsSelecting.Count > 0)
+                {
+                    var player = grabInteractable.interactorsSelecting[0].transform.root.GetComponent<HealthComponent>();
+                    if (player != null) player.TakeDamage(breakDamage);
+                }
             }
-            if (isGrounded && agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+            else
             {
-                stateMachine.ChangeState(new IdleState(this));
+                isThrown = true;  // Mark for Update to handle landing
+                // No immediate state change; wait for land in Update
             }
+
+            // Temporarily disable grab to prevent instant re-grab (e.g., after break/dive)
+            StartCoroutine(ReEnableGrabAfter(1f));  // Adjust delay
+        }
+
+        private IEnumerator ReEnableGrabAfter(float delay)
+        {
+            grabInteractable.enabled = false;
+            yield return new WaitForSeconds(delay);
+            grabInteractable.enabled = true;
         }
 
         public Transform GetClosestTarget()

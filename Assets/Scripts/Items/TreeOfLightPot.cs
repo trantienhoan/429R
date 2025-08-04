@@ -128,6 +128,10 @@ namespace Items
                 {
                     seedScript.DisablePhysics();
                 }
+                else
+                {
+                    Debug.LogWarning($"[TreeOfLightPot {gameObject.name}] MagicalSeed component missing on {other.gameObject.name} - proceeding without disabling physics");
+                }
                 absorbRoutine = StartCoroutine(AbsorbSeed());
             }
         }
@@ -315,18 +319,8 @@ namespace Items
 
             if (monsterSpawner != null)
             {
-                monsterSpawner.StopSpawning();
-                Destroy(monsterSpawner.gameObject);
-            }
-
-            GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
-            foreach (GameObject enemy in enemies)
-            {
-                var health = enemy.GetComponent<HealthComponent>();
-                if (health != null)
-                {
-                    health.Kill();
-                }
+                monsterSpawner.StopSpawning();  // This triggers sequential despawn - no manual kill needed
+                // Do not destroy spawner here; it self-destructs after despawn completes
             }
 
             Invoke("TriggerDestruction", 0.5f); // Delay explosion to after key drop

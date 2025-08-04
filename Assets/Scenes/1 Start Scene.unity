@@ -1547,7 +1547,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 226729183}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 6.71}
+  m_LocalPosition: {x: 0, y: 0, z: 0.96}
   m_LocalScale: {x: 0.46967, y: 0.46967, z: 0.46967}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2114,17 +2114,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 10100
-  currentHealth: 10100
-  healthLight: {fileID: 0}
-  breakEffect: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
-    type: 3}
-  breakSound: {fileID: 0}
-  dustParticlePrefab: {fileID: 4938095755617958530, guid: 2e79f16be10fbd14f8d5ef191f8db4aa,
-    type: 3}
-  hitSound: {fileID: 0}
+  health: 100
+  destroyOnDeath: 1
   scaleOnDeath: 1
-  scaleDuration: 0.5
-  minScale: {x: 0, y: 0, z: 0}
+  deathScaleTarget: {x: 0, y: 0, z: 0}
+  deathScaleDuration: 3
+  isInvulnerableByDefault: 0
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &281654366
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9584,32 +9588,32 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 1e0cc7a7d83da534db3c01169ffcb243,
         type: 3}
       propertyPath: m_LocalScale.x
-      value: 14.129937
+      value: 25.744745
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1e0cc7a7d83da534db3c01169ffcb243,
         type: 3}
       propertyPath: m_LocalScale.y
-      value: 14.129937
+      value: 25.744745
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1e0cc7a7d83da534db3c01169ffcb243,
         type: 3}
       propertyPath: m_LocalScale.z
-      value: 14.129937
+      value: 25.744745
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1e0cc7a7d83da534db3c01169ffcb243,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 0.0014201
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1e0cc7a7d83da534db3c01169ffcb243,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 3.26
+      value: 1.31
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1e0cc7a7d83da534db3c01169ffcb243,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 2.99
+      value: 3.32
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1e0cc7a7d83da534db3c01169ffcb243,
         type: 3}

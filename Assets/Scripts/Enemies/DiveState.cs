@@ -17,52 +17,48 @@ namespace Enemies
         public void OnEnter()
         {
             diveTimer = 0f;
-            monster.stuckTimer = 0f;  // Reset stuck
+            monster.stuckTimer = 0f;
 
-            // Disable agent for physics dive
-            if (monster.agent != null && monster.agent.isActiveAndEnabled)
+            // Ensure agent disabled and physics ready
+            if (monster.agent != null)
             {
                 monster.agent.enabled = false;
             }
-
-            // Apply forward dive force (use Force for acceleration)
             if (monster.rb != null)
             {
                 monster.rb.isKinematic = false;
-                Vector3 diveDirection = monster.transform.forward;
+                Vector3 diveDirection = monster.transform.forward;  // Or towards target if available
                 monster.rb.AddForce(diveDirection * monster.diveSpeed * monster.diveForceMultiplier, ForceMode.VelocityChange);
-                Debug.Log("[DiveState] Diving forward with force: " + (monster.diveSpeed * monster.diveForceMultiplier));
+                Debug.Log("[DiveState] Diving forward with force: " + (monster.diveSpeed * monster.diveForceMultiplier) + " in direction: " + diveDirection);
             }
 
-            // Animator
+            // Animator - Force trigger and update
             if (monster.animator != null)
             {
                 monster.animator.SetBool(IsRunning, false);
                 monster.animator.SetBool(IsCharging, false);
                 monster.animator.SetTrigger(Dive);
-                monster.animator.Update(0f);
+                monster.animator.Update(0f);  // Immediate update to ensure trigger fires
             }
         }
 
-        [Obsolete("Obsolete")]
         public void Tick()
         {
             diveTimer += Time.deltaTime;
 
-            // Exit if timeout or stopped (hit something, velocity low)
-            if (diveTimer >= monster.diveTimeout || (monster.rb != null && monster.rb.velocity.magnitude < 0.5f))
+            // Exit if timeout or low velocity (settled/hit)
+            if (diveTimer >= monster.diveTimeout || (monster.rb != null && monster.rb.linearVelocity.magnitude < 0.5f))
             {
-                monster.stateMachine.ChangeState(new IdleState(monster));  // Or new ChaseState if target still valid
+                monster.stateMachine.ChangeState(new IdleState(monster));  // Or Chase if target near
             }
         }
 
-        [Obsolete("Obsolete")]
         public void OnExit()
         {
             // Stop movement
             if (monster.rb != null)
             {
-                monster.rb.velocity = Vector3.zero;
+                monster.rb.linearVelocity = Vector3.zero;
                 monster.rb.angularVelocity = Vector3.zero;
             }
 

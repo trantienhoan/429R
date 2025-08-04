@@ -46,6 +46,10 @@ namespace Enemies
         [SerializeField] private float maxBoostMultiplier = 2f;       // Cap at 200%
         [SerializeField] private float scaleTransitionDuration = 1f;  // Smooth scale time
 
+        [Header("Despawn Settings")]
+        [SerializeField] private float despawnDelayBetweenMonsters = 0.5f;  // Delay between each monster's death sequence
+        [SerializeField] private float deathSequenceDuration = 3f;  // Time for each monster's death animation/scale-down before pooling
+
         private readonly List<MonsterTrackerData> activeMonsters = new();
         private bool isSpawning;
         private Coroutine spawnCoroutine;
@@ -104,27 +108,40 @@ namespace Enemies
                 spawnCoroutine = null;
             }
 
+            // Start sequential despawn
+            StartCoroutine(DespawnAllSequentially());
+
+            Log("Stopped spawning and initiated sequential monster despawn");
+        }
+
+        private IEnumerator DespawnAllSequentially()
+        {
             foreach (var monsterData in activeMonsters.ToList())
             {
-                if (monsterData.MonsterObject != null)
+                if (monsterData.MonsterObject != null && monsterData.SpiderReference != null)
                 {
                     var health = monsterData.MonsterObject.GetComponent<HealthComponent>();
                     if (health != null && !health.IsDead())
                     {
-                        health.Kill(gameObject); // Only kill; let death state handle animation/disable
+                        monsterData.SpiderReference.Despawn();  // Triggers death sequence (Kill → DeadState → effects/scale-down)
+                        yield return new WaitForSeconds(deathSequenceDuration + despawnDelayBetweenMonsters);  // Wait for full death + inter-monster delay
                     }
+
+                    // After death sequence, return to pool or destroy
                     if (SpiderPool.Instance != null)
                     {
                         SpiderPool.Instance.ReturnSpider(monsterData.MonsterObject);
                     }
                     else
                     {
-                        DestroyImmediate(monsterData.MonsterObject);
+                        Destroy(monsterData.MonsterObject);
                     }
                 }
             }
             activeMonsters.Clear();
-            Log("Stopped spawning and cleared monsters");
+
+            // Optional: Destroy this spawner after all despawned
+            Destroy(gameObject);
         }
 
         private void StartSpawning()
