@@ -263,6 +263,8 @@ MonoBehaviour:
   deathScaleTarget: {x: 0, y: 0, z: 0}
   deathScaleDuration: 3
   isInvulnerableByDefault: 1
+  scaleWithHealth: 0
+  minScaleOnLowHealth: {x: 0, y: 0, z: 0}
   OnHealthChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -1502,6 +1504,8 @@ MonoBehaviour:
   deathScaleTarget: {x: 0, y: 0, z: 0}
   deathScaleDuration: 3
   isInvulnerableByDefault: 1
+  scaleWithHealth: 0
+  minScaleOnLowHealth: {x: 0, y: 0, z: 0}
   OnHealthChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -2670,8 +2674,7 @@ PrefabInstance:
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 5863650252929523565, guid: d981ec15ffcba794a964d3c3707e5676,
-        type: 3}
+      objectReference: {fileID: 2100000, guid: 55cd01aa0b7843f489de2a599fdb31ec, type: 2}
     - target: {fileID: 919132149155446097, guid: 90d9aa01a8ac0e442940167872fce08e,
         type: 3}
       propertyPath: m_Name
@@ -3442,6 +3445,8 @@ MonoBehaviour:
   deathScaleTarget: {x: 0, y: 0, z: 0}
   deathScaleDuration: 3
   isInvulnerableByDefault: 1
+  scaleWithHealth: 0
+  minScaleOnLowHealth: {x: 0, y: 0, z: 0}
   OnHealthChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -3745,6 +3750,8 @@ MonoBehaviour:
   deathScaleTarget: {x: 0, y: 0, z: 0}
   deathScaleDuration: 3
   isInvulnerableByDefault: 1
+  scaleWithHealth: 0
+  minScaleOnLowHealth: {x: 0, y: 0, z: 0}
   OnHealthChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -3974,6 +3981,8 @@ MonoBehaviour:
   deathScaleTarget: {x: 5, y: 5, z: 5}
   deathScaleDuration: 8
   isInvulnerableByDefault: 0
+  scaleWithHealth: 0
+  minScaleOnLowHealth: {x: 0, y: 0, z: 0}
   OnHealthChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -4239,6 +4248,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -8327340554674058206, guid: 2b86fa68b3334974c823fa67da980dc7,
+        type: 3}
+      propertyPath: delay
+      value: 133
+      objectReference: {fileID: 0}
     - target: {fileID: 3777597441533160902, guid: 2b86fa68b3334974c823fa67da980dc7,
         type: 3}
       propertyPath: m_Name
@@ -7115,6 +7129,8 @@ MonoBehaviour:
   deathScaleTarget: {x: 0, y: 0, z: 0}
   deathScaleDuration: 3
   isInvulnerableByDefault: 1
+  scaleWithHealth: 0
+  minScaleOnLowHealth: {x: 0, y: 0, z: 0}
   OnHealthChanged:
     m_PersistentCalls:
       m_Calls: []

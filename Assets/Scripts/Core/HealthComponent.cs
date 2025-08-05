@@ -14,11 +14,16 @@ namespace Core
         [SerializeField] private float deathScaleDuration = 3f; // Configurable duration for scaling
         [SerializeField] private bool isInvulnerableByDefault = false; // Added for TreeOfLightPot
 
+        // New fields for continuous health-based scaling
+        [SerializeField] private bool scaleWithHealth = false; // Toggle to enable scaling as health changes
+        [SerializeField] private Vector3 minScaleOnLowHealth = Vector3.zero; // Minimum scale at zero health (customizable)
+
         public UnityEvent<float> OnHealthChanged;
         public UnityEvent<HealthChangedEventArgs> OnTakeDamage;
         public UnityEvent<HealthComponent> OnDeath;
 
         private bool isDead;
+        private Vector3 originalScale; // Stores the initial scale for reference
 
         public class HealthChangedEventArgs : EventArgs
         {
@@ -37,6 +42,7 @@ namespace Core
             health = maxHealth;
             isDead = false;
             IsInvulnerable = isInvulnerableByDefault;
+            originalScale = transform.localScale; // Store original scale here
             //Debug.Log($"[HealthComponent {gameObject.name}] Initialized with Health: {health}/{maxHealth}, Invulnerable: {IsInvulnerable}");
         }
 
@@ -46,6 +52,7 @@ namespace Core
             maxHealth = Mathf.Max(0, value);
             health = Mathf.Clamp(health, 0, maxHealth);
             OnHealthChanged?.Invoke(health / maxHealth);
+            UpdateScale(); // New: Update scale after max health change
             //Debug.Log($"[HealthComponent {gameObject.name}] MaxHealth set to {maxHealth}, Health adjusted to {health}");
         }
 
@@ -82,6 +89,11 @@ namespace Core
 
             Debug.Log($"[HealthComponent {gameObject.name}] Took {damage} damage, Health: {health}/{maxHealth}");
 
+            if (!justDied)
+            {
+                UpdateScale(); // New: Update scale if still alive
+            }
+
             if (justDied)
             {
                 isDead = true;
@@ -109,6 +121,8 @@ namespace Core
             OnHealthChanged?.Invoke(health / maxHealth);
             OnTakeDamage?.Invoke(args);
 
+            UpdateScale(); // New: Update scale after healing
+
             Debug.Log($"[HealthComponent {gameObject.name}] Healed for {amount}, Health: {health}/{maxHealth}");
         }
 
@@ -118,6 +132,7 @@ namespace Core
             isDead = false;
             IsInvulnerable = isInvulnerableByDefault;
             OnHealthChanged?.Invoke(health / maxHealth);
+            UpdateScale(); // New: Update scale after reset (back to original)
             Debug.Log($"[HealthComponent {gameObject.name}] Health reset to {health}/{maxHealth}, Invulnerable: {IsInvulnerable}");
         }
 
@@ -148,7 +163,7 @@ namespace Core
             yield return new WaitForEndOfFrame();
             if (gameObject != null)
             {
-                if (scaleOnDeath)
+                if (scaleOnDeath && !scaleWithHealth) // Modified: Optionally skip death scaling if continuous scaling is enabled (to avoid conflict)
                 {
                     float timer = 0f;
                     Vector3 startScale = transform.localScale;
@@ -161,6 +176,17 @@ namespace Core
                 }
                 Debug.Log($"[HealthComponent {gameObject.name}] Destroying GameObject");
                 UnityEngine.Object.Destroy(gameObject);
+            }
+        }
+
+        // New method to handle continuous scaling based on health
+        private void UpdateScale()
+        {
+            if (scaleWithHealth && !isDead)
+            {
+                float healthPercentage = GetHealthPercentage();
+                // Linearly interpolate between original scale (at 100% health) and min scale (at 0% health)
+                transform.localScale = Vector3.Lerp(minScaleOnLowHealth, originalScale, healthPercentage);
             }
         }
     }
