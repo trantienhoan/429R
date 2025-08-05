@@ -57,17 +57,19 @@ namespace Enemies
         [SerializeField] private float originalBaseOffset = 0f;     // Base offset
 
         [Header("Throw and Break Settings")]
-        [SerializeField]
-        public float maxHoldTime = 5f;  // Time before break free
+        [SerializeField] public float maxHoldTime = 5f;  // Time before break free
         [SerializeField] private float velocityThreshold = 0.1f;  // For settling after throw/dive
         [SerializeField] public float struggleShakeIntensity = 0.1f;  // For feedback during long hold
         [SerializeField] private float breakDamage = 10f;  // Optional: Damage to player on break
+        [SerializeField] private float settleDelayAfterLand = 0.2f;  // Delay before resuming AI after land
 
         private bool isBreakingHold = false;
         private bool isThrown = false;  // Track post-release physics flight
         
-        [Header("Ground Check Scaling")]
-        [SerializeField] private float baseGroundCheckRadius = 0.3f;  // Base sphere radius for OverlapSphere
+        [Header("Ground Check Settings")]
+        [SerializeField] private float groundRayDistance = 0.5f;  // Raycast down distance (adjust to scale)
+        [SerializeField] private LayerMask groundLayer;  // Ensure assigned in Inspector
+        [SerializeField] private float minFloorY = -10f;  // Clamp threshold for position (adjust to scene)
 
         public Transform currentTarget;
         private Vector3 lastPosition;
@@ -87,16 +89,18 @@ namespace Enemies
         public bool isBeingHeld { get; private set; }
 
         [SerializeField] private Transform groundCheckPoint;
-        [SerializeField] private float groundCheckDistance = 0.5f;
-        [SerializeField] private LayerMask groundLayer;
+
+        [Header("Target Layers")]  // New for optimized GetClosestTarget
+        [SerializeField] private LayerMask playerLayer;
+        [SerializeField] private LayerMask treeLayer;
 
         public bool IsGrounded()
         {
             float scaleFactor = transform.localScale.y;
-            float adjustedRadius = baseGroundCheckRadius * scaleFactor;
+            float adjustedDistance = groundRayDistance * scaleFactor;
 
-            Collider[] hits = Physics.OverlapSphere(groundCheckPoint.position, adjustedRadius, groundLayer);
-            bool grounded = hits.Length > 0;
+            // Raycast down from groundCheckPoint
+            bool grounded = Physics.Raycast(groundCheckPoint.position, -Vector3.up, adjustedDistance, groundLayer);
             isGrounded = grounded;
             if (animator != null)
             {
@@ -105,9 +109,8 @@ namespace Enemies
             }
             if (!grounded)
             {
-                int layerIndex = Mathf.RoundToInt(Mathf.Log(groundLayer.value + 1, 2)) - 1;  // Handle mask
-                string layerName = (layerIndex >= 0) ? LayerMask.LayerToName(layerIndex) : "Invalid";
-                Debug.LogWarning("[IsGrounded] Failed at scale " + scaleFactor + ": Position=" + groundCheckPoint.position + ", Layer=" + layerName + ", Adjusted Radius=" + adjustedRadius);
+                string layerName = groundLayer.value == 0 ? "INVALID - Assign in Inspector!" : LayerMask.LayerToName(Mathf.RoundToInt(Mathf.Log(groundLayer.value + 1, 2)) - 1);
+                Debug.LogWarning($"[IsGrounded] Failed at scale {scaleFactor}: Position={groundCheckPoint.position}, Layer={layerName}, Adjusted Distance={adjustedDistance}");
             }
             return grounded;
         }
@@ -207,15 +210,7 @@ namespace Enemies
                 StopCoroutine(attackCoroutine);
                 attackCoroutine = null;
             }
-            if (animator != null)
-            {
-                animator.SetBool(Grounded, false);
-                animator.SetBool(IsRunning, false);
-                animator.SetBool(IsCharging, false);
-                animator.ResetTrigger("Attack");
-                animator.ResetTrigger("KamikazeAttack");
-                animator.Update(0f);
-            }
+            ResetAnimator();  // Use new method
 
             // Change state FIRST to allow OnExit to run while agent is enabled
             stateMachine.ChangeState(null);
@@ -254,14 +249,7 @@ namespace Enemies
                 originalExplosionRadius = collider.radius;  // Cache the actual collider radius
                 attackHitbox.Initialize(gameObject, normalAttackDamage, pushForce);
             }
-            if (animator != null)
-            {
-                animator.SetBool(Grounded, isGrounded);
-                animator.SetBool(IsRunning, false);
-                animator.SetBool(IsCharging, false);
-                animator.ResetTrigger("Attack");
-                animator.ResetTrigger("KamikazeAttack");
-            }
+            ResetAnimator();  // Initial reset
             transform.localScale = startScale;
             growthTimer = 0f;
             EnsureAgentOnNavMesh();
@@ -308,15 +296,8 @@ namespace Enemies
 #if UNITY_EDITOR
             if (Input.GetKeyDown(KeyCode.G) && isGrounded)
             {
-                if (animator != null)
-                {
-                    animator.SetBool(Grounded, true);
-                    animator.SetBool(IsRunning, false);
-                    animator.SetBool(IsCharging, false);
-                    animator.ResetTrigger("Attack");
-                    animator.ResetTrigger("KamikazeAttack");
-                    stateMachine.ChangeState(new IdleState(this));
-                }
+                ResetAnimator();
+                stateMachine.ChangeState(new IdleState(this));
             }
             if (Input.GetKeyDown(KeyCode.C))
             {
@@ -334,12 +315,22 @@ namespace Enemies
             {
                 if (IsGrounded() && rb.linearVelocity.magnitude < velocityThreshold)
                 {
-                    isThrown = false;  // Resume AI sync in FixedUpdate
+                    StartCoroutine(ResumeAIWithDelay(settleDelayAfterLand));  // Delay to let physics settle
                 }
             }
 
+            // Clamp position to prevent deep falls
+            if (transform.position.y < minFloorY)
+            {
+                Vector3 pos = transform.position;
+                pos.y = minFloorY;
+                transform.position = pos;
+                rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);  // Zero Y velocity
+                Debug.LogWarning("[Update] Clamped position to prevent fall-through.");
+            }
+
             // Sync agent position (always, if on NavMesh)
-            if (agent.isActiveAndEnabled && agent.isOnNavMesh)
+            if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
             {
                 agent.nextPosition = transform.position;
             }
@@ -348,11 +339,8 @@ namespace Enemies
         private void FixedUpdate()
         {
             // Manual sync: Apply agent's desired velocity to Rigidbody if in AI mode (not held/thrown/diving)
-            if (enabled && agent.isActiveAndEnabled && agent.isOnNavMesh && !isBeingHeld && !isThrown && stateMachine.CurrentState is not DiveState && stateMachine.CurrentState is not HeldState)
+            if (enabled && agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh && !isBeingHeld && !isThrown && stateMachine.CurrentState is not DiveState && stateMachine.CurrentState is not HeldState)
             {
-                // Set destination in relevant states (e.g., ChaseState handles this; add if needed)
-                // agent.SetDestination(currentTarget.position); // Uncomment if not set in state
-
                 rb.linearVelocity = new Vector3(agent.desiredVelocity.x, rb.linearVelocity.y, agent.desiredVelocity.z);  // Apply horizontal nav, preserve vertical physics
 
                 // Manual rotation towards movement
@@ -399,6 +387,7 @@ namespace Enemies
                 lastPosition = transform.position;
             }
         }
+
         public override void TakeDamage(float damageAmount, Vector3 hitPoint = default, GameObject damageSource = null)
         {
             if (healthComponent != null)
@@ -415,6 +404,7 @@ namespace Enemies
                 stateMachine.ChangeState(new IdleState(this));  // Or Chase if target nearby
             }
         }
+
         private void OnHealthChanged(HealthComponent.HealthChangedEventArgs e)
         {
             if (e.DamageAmount > 0 && !healthComponent.IsDead() && stateMachine.CurrentState is not HurtState && !isBeingHeld)
@@ -433,6 +423,7 @@ namespace Enemies
             stateMachine.ChangeState(new DeadState(this));
             StartCoroutine(DelayedScaleDown(2f)); // Delay for death animation
         }
+
         private IEnumerator DelayedScaleDown(float delay)
         {
             yield return new WaitForSeconds(delay);
@@ -482,7 +473,8 @@ namespace Enemies
             isCharging = false;
             if (attackHitbox != null)
             {
-                attackHitbox.GetComponent<SphereCollider>().radius = originalExplosionRadius;
+                var collider = attackHitbox.GetComponent<SphereCollider>();
+                collider.radius = originalExplosionRadius;
                 attackHitbox.Initialize(gameObject, normalAttackDamage, pushForce);
                 attackCoroutine = StartCoroutine(PerformAttackCoroutine(false));
             }
@@ -537,7 +529,7 @@ namespace Enemies
             attackCoroutine = null;
         }
 
-        private void EnterKamikazeMode()
+        public void EnterKamikazeMode()
         {
             isInKamikazeMode = true;
             if (agent != null)
@@ -631,49 +623,40 @@ namespace Enemies
 
         public Transform GetClosestTarget()
         {
-            GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
-            GameObject[] trees = GameObject.FindGameObjectsWithTag("TreeOfLight");
-            //Debug.Log($"[GetClosestTarget] Found {trees.Length} trees and {players.Length} players");
             Transform closestTarget = null;
             float closestDistance = Mathf.Infinity;
 
-            foreach (GameObject obj in trees)
+            // Check trees
+            Collider[] treeHits = Physics.OverlapSphere(transform.position, chaseRange, treeLayer);
+            foreach (Collider hit in treeHits)
             {
-                if (obj != null && obj.activeInHierarchy)
+                var treePot = hit.GetComponent<TreeOfLightPot>();
+                if (treePot != null && treePot.IsGrowing)
                 {
-                    var treePot = obj.GetComponent<TreeOfLightPot>();
-                    if (treePot != null && treePot.IsGrowing)
+                    float distance = Vector3.Distance(transform.position, hit.transform.position);
+                    if (distance < closestDistance)
                     {
-                        float distance = Vector3.Distance(transform.position, obj.transform.position);
-                        if (distance < closestDistance)
-                        {
-                            closestDistance = distance;
-                            closestTarget = obj.transform;
-                        }
+                        closestDistance = distance;
+                        closestTarget = hit.transform;
                     }
                 }
             }
 
+            // Fallback to players if no trees
             if (closestTarget == null)
             {
-                foreach (GameObject obj in players)
+                Collider[] playerHits = Physics.OverlapSphere(transform.position, chaseRange, playerLayer);
+                foreach (Collider hit in playerHits)
                 {
-                    if (obj != null && obj.activeInHierarchy)
+                    float distance = Vector3.Distance(transform.position, hit.transform.position);
+                    if (distance < closestDistance)
                     {
-                        float distance = Vector3.Distance(transform.position, obj.transform.position);
-                        if (distance < closestDistance)
-                        {
-                            closestDistance = distance;
-                            closestTarget = obj.transform;
-                        }
+                        closestDistance = distance;
+                        closestTarget = hit.transform;
                     }
                 }
             }
 
-            if (closestTarget == null)
-            {
-                Debug.LogWarning("[GetClosestTarget] No targets found! Monster will idle.");
-            }
             currentTarget = closestTarget;
             return closestTarget;
         }
@@ -749,16 +732,7 @@ namespace Enemies
             {
                 attackHitbox.gameObject.SetActive(false);
             }
-            if (animator != null)
-            {
-                animator.Rebind();
-                animator.Update(0f);
-                animator.SetBool(Grounded, isGrounded);
-                animator.SetBool(IsRunning, false);
-                animator.SetBool(IsCharging, false);
-                animator.ResetTrigger("Attack");
-                animator.ResetTrigger("KamikazeAttack");
-            }
+            ResetAnimator();
             EnsureAgentOnNavMesh();
             if (healthComponent != null)
             {
@@ -775,6 +749,20 @@ namespace Enemies
             }
         }
 
+        private void ResetAnimator()
+        {
+            if (animator != null)
+            {
+                animator.Rebind();
+                animator.Update(0f);
+                animator.SetBool(Grounded, isGrounded);
+                animator.SetBool(IsRunning, false);
+                animator.SetBool(IsCharging, false);
+                animator.ResetTrigger("Attack");
+                animator.ResetTrigger("KamikazeAttack");
+            }
+        }
+
         private IEnumerator WaitForAgentReady()
         {
             yield return new WaitForSeconds(0.1f);  // Small delay
@@ -784,6 +772,7 @@ namespace Enemies
                 stateMachine.ChangeState(new IdleState(this));
             }
         }
+
         private void OnGrabbed(SelectEnterEventArgs args)
         {
             Pickup();
@@ -813,17 +802,24 @@ namespace Enemies
             yield return StartCoroutine(DestroyAfterDelay(3f));
         }
 
-        new private IEnumerator DestroyAfterDelay(float delay)
+        private IEnumerator DestroyAfterDelay(float delay)
         {
             float timer = 0f;
-            Vector3 startScale = transform.localScale;
+            Vector3 currentScale = transform.localScale;
             while (timer < delay)
             {
                 timer += Time.deltaTime;
-                transform.localScale = Vector3.Lerp(startScale, Vector3.zero, timer / delay);
+                transform.localScale = Vector3.Lerp(currentScale, Vector3.zero, timer / delay);
                 yield return null;
             }
             gameObject.SetActive(false);
+        }
+
+        private IEnumerator ResumeAIWithDelay(float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            isThrown = false;
+            Debug.Log("[ResumeAIWithDelay] Resumed AI after settle delay.");
         }
     }
 }

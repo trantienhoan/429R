@@ -118,6 +118,7 @@ namespace Items
 
         private void OnTriggerEnter(Collider other)
         {
+            if (other.CompareTag("Wall")) return;  // Ignore walls explicitly
             Debug.Log($"[TreeOfLightPot {gameObject.name}] Trigger entered by {other.tag} on layer {other.gameObject.layer}");
             if (other.CompareTag("MagicalSeed") && !isGrowing && currentSeed == null)
             {

@@ -45,6 +45,7 @@ namespace Enemies
 
         public void ReturnSpider(GameObject spider)
         {
+            if (spider == null) return;
             spider.SetActive(false);
             pool.Enqueue(spider);
         }

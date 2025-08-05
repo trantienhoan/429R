@@ -47,8 +47,12 @@ namespace Enemies
         [SerializeField] private float scaleTransitionDuration = 1f;  // Smooth scale time
 
         [Header("Despawn Settings")]
-        [SerializeField] private float despawnDelayBetweenMonsters = 0.5f;  // Delay between each monster's death sequence
+        [SerializeField] private float despawnDelayBetweenMonsters = 0.5f;  // Delay between each monster despawn
         [SerializeField] private float deathSequenceDuration = 3f;  // Time for each monster's death animation/scale-down before pooling
+
+        [Header("Kamikaze Overpopulation Control")]
+        [SerializeField] private int maxMonstersBeforeKamikaze = 10;  // Threshold to trigger random kamikaze (e.g., >=10)
+        [SerializeField] private int kamikazeBatchSize = 1;  // How many to kamikaze per check (to reduce gradually)
 
         private readonly List<MonsterTrackerData> activeMonsters = new();
         private bool isSpawning;
@@ -108,40 +112,9 @@ namespace Enemies
                 spawnCoroutine = null;
             }
 
-            // Start sequential despawn
             StartCoroutine(DespawnAllSequentially());
 
             Log("Stopped spawning and initiated sequential monster despawn");
-        }
-
-        private IEnumerator DespawnAllSequentially()
-        {
-            foreach (var monsterData in activeMonsters.ToList())
-            {
-                if (monsterData.MonsterObject != null && monsterData.SpiderReference != null)
-                {
-                    var health = monsterData.MonsterObject.GetComponent<HealthComponent>();
-                    if (health != null && !health.IsDead())
-                    {
-                        monsterData.SpiderReference.Despawn();  // Triggers death sequence (Kill → DeadState → effects/scale-down)
-                        yield return new WaitForSeconds(deathSequenceDuration + despawnDelayBetweenMonsters);  // Wait for full death + inter-monster delay
-                    }
-
-                    // After death sequence, return to pool or destroy
-                    if (SpiderPool.Instance != null)
-                    {
-                        SpiderPool.Instance.ReturnSpider(monsterData.MonsterObject);
-                    }
-                    else
-                    {
-                        Destroy(monsterData.MonsterObject);
-                    }
-                }
-            }
-            activeMonsters.Clear();
-
-            // Optional: Destroy this spawner after all despawned
-            Destroy(gameObject);
         }
 
         private void StartSpawning()
@@ -162,6 +135,7 @@ namespace Enemies
                 {
                     Vector3 spawnPosition = FindValidSpawnPosition();
                     SpawnMonsterAt(spawnPosition, spawnPosition);
+                    CheckForOverpopulation();  // Check after spawn
                 }
                 yield return new WaitForSeconds(spawnInterval);
             }
@@ -195,6 +169,28 @@ namespace Enemies
             RegisterMonster(monsterInstance);
             StartCoroutine(ScaleMonster(monsterInstance.transform, monsterPrefab.transform.localScale));
             StartCoroutine(WaitUntilGroundedThenEnableAI(monsterInstance));
+        }
+
+        // New: Check count and force kamikaze on random monsters if over threshold
+        private void CheckForOverpopulation()
+        {
+            int excess = activeMonsters.Count - (maxMonstersBeforeKamikaze - 1);  // e.g., if 12, excess=3
+            if (excess <= 0) return;
+
+            // Shuffle list for random selection
+            var shuffledMonsters = activeMonsters.OrderBy(x => Random.value).ToList();
+
+            // Trigger kamikaze on up to batch size (or excess, whichever smaller)
+            int toKamikaze = Mathf.Min(excess, kamikazeBatchSize);
+            for (int i = 0; i < toKamikaze; i++)
+            {
+                var monster = shuffledMonsters[i].SpiderReference;
+                if (monster != null && !monster.isInKamikazeMode && !monster.healthComponent.IsDead())
+                {
+                    monster.EnterKamikazeMode();
+                    Debug.Log($"[Overpopulation] Forced {monster.name} into Kamikaze mode. Current count: {activeMonsters.Count}");
+                }
+            }
         }
 
         private IEnumerator ScaleMonster(Transform monsterTransform, Vector3 targetScale)
@@ -338,15 +334,51 @@ namespace Enemies
 
         private IEnumerator SmoothScale(Transform target, Vector3 endScale)
         {
+            if (target == null) yield break;
             Vector3 startScale = target.localScale;
             float timer = 0f;
             while (timer < scaleTransitionDuration)
             {
                 timer += Time.deltaTime;
+                if (target == null) yield break;  // Exit if destroyed mid-coroutine
                 target.localScale = Vector3.Lerp(startScale, endScale, timer / scaleTransitionDuration);
                 yield return null;
             }
-            target.localScale = endScale;
+            if (target != null)
+            {
+                target.localScale = endScale;
+            }
+        }
+
+        private IEnumerator DespawnAllSequentially()
+        {
+            foreach (var monsterData in activeMonsters.ToList())
+            {
+                if (monsterData.MonsterObject != null && monsterData.SpiderReference != null)
+                {
+                    var health = monsterData.MonsterObject.GetComponent<HealthComponent>();
+                    if (health != null && !health.IsDead())
+                    {
+                        monsterData.SpiderReference.Despawn();  // Triggers death sequence
+                        yield return new WaitForSeconds(deathSequenceDuration + despawnDelayBetweenMonsters);
+                    }
+
+                    // Check if still exists before pooling
+                    if (monsterData.MonsterObject != null)
+                    {
+                        if (SpiderPool.Instance != null)
+                        {
+                            SpiderPool.Instance.ReturnSpider(monsterData.MonsterObject);
+                        }
+                        else
+                        {
+                            Destroy(monsterData.MonsterObject);
+                        }
+                    }
+                }
+            }
+            activeMonsters.Clear();
+            Destroy(gameObject);  // Self-destruct after
         }
 
         private void Log(string message) => Debug.Log($"[ShadowMonsterSpawner {gameObject.name}] {message}");
