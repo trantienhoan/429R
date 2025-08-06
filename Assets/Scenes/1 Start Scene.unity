@@ -194,7 +194,7 @@ PrefabInstance:
         type: 3}
       propertyPath: fadeScreen
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1122711839}
     - target: {fileID: 8841422738568278766, guid: b09d33c8b7830a34d89d176d138cba96,
         type: 3}
       propertyPath: m_Name
@@ -488,58 +488,6 @@ MonoBehaviour:
   volumeSlider: {fileID: 1295627046}
   turnDropdown: {fileID: 189759100}
   turnTypeFromPlayerPref: {fileID: 0}
---- !u!1 &137967769
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 137967771}
-  - component: {fileID: 137967770}
-  m_Layer: 0
-  m_Name: PhysicsManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &137967770
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 137967769}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 763dc684aee58d94a9649771e3965525, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pushableLayer:
-    serializedVersion: 2
-    m_Bits: 32768
-  wallLayer:
-    serializedVersion: 2
-    m_Bits: 16384
-  pushableMaterial: {fileID: 0}
-  wallMaterial: {fileID: 0}
---- !u!4 &137967771
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 137967769}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.35181594, y: -0.026735796, z: -0.40119863}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &149157999
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6082,6 +6030,18 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 1896941906}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1122711839 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3127377416852887304, guid: e367714f162349d48a5cb6f00133e149,
+    type: 3}
+  m_PrefabInstance: {fileID: 1896941906}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c2d507c3ae9dc744a28e79d568b5806, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1144905148
 GameObject:
   m_ObjectHideFlags: 0
@@ -6576,6 +6536,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: XR Device Simulator
+      objectReference: {fileID: 0}
+    - target: {fileID: 6598815579406187037, guid: 18ddb545287c546e19cc77dc9fbb2189,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -12311,6 +12276,16 @@ PrefabInstance:
       propertyPath: m_LocalScale.z
       value: 0.5
       objectReference: {fileID: 0}
+    - target: {fileID: 7891206273984349464, guid: 489d99e8a8f1c0a4b8fd66c1804e2567,
+        type: 3}
+      propertyPath: rb
+      value: 
+      objectReference: {fileID: 2091426679}
+    - target: {fileID: 7891206273984349464, guid: 489d99e8a8f1c0a4b8fd66c1804e2567,
+        type: 3}
+      propertyPath: explodeRange
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8368670279786463108, guid: 489d99e8a8f1c0a4b8fd66c1804e2567,
         type: 3}
       propertyPath: m_LocalScale.x
@@ -12381,6 +12356,12 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 489d99e8a8f1c0a4b8fd66c1804e2567, type: 3}
+--- !u!54 &2091426679 stripped
+Rigidbody:
+  m_CorrespondingSourceObject: {fileID: 1109231764364310682, guid: 489d99e8a8f1c0a4b8fd66c1804e2567,
+    type: 3}
+  m_PrefabInstance: {fileID: 2091426678}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &2115984799 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8270855663187062767, guid: 1392f805216c47742996d4742c80721c,
@@ -12481,11 +12462,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: cay_boong
       objectReference: {fileID: 0}
-    - target: {fileID: 7621060073968193995, guid: 7e10b0d5af1d06d418625e174f9317eb,
-        type: 3}
-      propertyPath: m_TagString
-      value: Weapon
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -12581,7 +12557,6 @@ SceneRoots:
   - {fileID: 838107453}
   - {fileID: 19669739}
   - {fileID: 1213249249}
-  - {fileID: 137967771}
   - {fileID: 2091426678}
   - {fileID: 8992527431732134737}
   - {fileID: 953209024}

@@ -88,12 +88,12 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 8d115d7506187d041b9fc508fb192daa,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.28431824
+      value: -0.37268808
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8d115d7506187d041b9fc508fb192daa,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.91141
+      value: 0.9668764
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8d115d7506187d041b9fc508fb192daa,
         type: 3}
@@ -103,37 +103,37 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 8d115d7506187d041b9fc508fb192daa,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.7072693
+      value: 0.5170561
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8d115d7506187d041b9fc508fb192daa,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0
+      value: 0.48235717
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8d115d7506187d041b9fc508fb192daa,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.7069443
+      value: 0.5168195
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8d115d7506187d041b9fc508fb192daa,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0
+      value: -0.48257875
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8d115d7506187d041b9fc508fb192daa,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
+      value: 86.049
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8d115d7506187d041b9fc508fb192daa,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 89.974
+      value: 89.619
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8d115d7506187d041b9fc508fb192daa,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
+      value: -0.38
       objectReference: {fileID: 0}
     - target: {fileID: -7511558181221131132, guid: 8d115d7506187d041b9fc508fb192daa,
         type: 3}
@@ -144,6 +144,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: cay_boong
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 8d115d7506187d041b9fc508fb192daa,
+        type: 3}
+      propertyPath: m_TagString
+      value: Weapon
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -370,13 +375,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   weaponType: 0
   baseDamage: 10
+  minDamage: 5
+  maxDamage: 30
   weaponMass: 0.9
   impactForceMultiplier: 1
   treeOfLightDamageMultiplier: 0.5
   shadowMonsterDamageMultiplier: 1.5
-  swingDetectionThreshold: 2.5
-  verticalSwingThreshold: 0.8
-  horizontalSwingThreshold: 0.8
+  swingDetectionThreshold: 0.2
+  verticalSwingThreshold: 0.2
+  horizontalSwingThreshold: 0.2
   groundImpactEffectPrefab: {fileID: 0}
   airSlashEffectPrefab: {fileID: 8846737274113074935, guid: 81a74a0aefeb7674ca32535d1a269b4a,
     type: 3}
+  smokeHitVFXPrefab: {fileID: 0}
