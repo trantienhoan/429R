@@ -27,6 +27,7 @@ namespace Items
         [SerializeField] private float particleScaleStartTime = 0.03f;
         [SerializeField] private float minParticleScale = 0.1f;
         [SerializeField] private float maxParticleScale = 0.3f;
+        [SerializeField] private float particleRiseHeight = 2f; // Height to rise growing VFX on Y-axis during growth
 
         public UnityEvent OnTreeGrown;
 
@@ -37,6 +38,7 @@ namespace Items
         private Coroutine absorbRoutine;
         private GameObject currentGrowingVFXInstance;
         private ShadowMonsterSpawner monsterSpawner;
+        private Vector3 startVFXLocalPos; // CHANGED: Store initial LOCAL position for growing VFX lerp (to stick with pot movement)
 
         public bool IsGrowing => isGrowing;
 
@@ -176,11 +178,20 @@ namespace Items
                         currentTree.transform.Rotate(Vector3.up, treeRotationSpeed * Time.deltaTime);
                     }
 
-                    if (currentGrowingVFXInstance != null && growTimer > particleScaleStartTime)
+                    if (currentGrowingVFXInstance != null)
                     {
-                        float progress = (growTimer - particleScaleStartTime) / (growTime - particleScaleStartTime);
-                        float scale = Mathf.Lerp(minParticleScale, maxParticleScale, progress);
-                        currentGrowingVFXInstance.transform.localScale = Vector3.one * scale;
+                        float progress = growTimer / growTime;
+                        // CHANGED: Lerp LOCAL position upward on local Y-axis based on growth progress (sticks to pot if it moves)
+                        float rise = particleRiseHeight * progress;
+                        currentGrowingVFXInstance.transform.localPosition = startVFXLocalPos + new Vector3(0f, rise, 0f);
+
+                        // Existing scale lerp (starts after particleScaleStartTime)
+                        if (growTimer > particleScaleStartTime)
+                        {
+                            float scaleProgress = (growTimer - particleScaleStartTime) / (growTime - particleScaleStartTime);
+                            float scale = Mathf.Lerp(minParticleScale, maxParticleScale, scaleProgress);
+                            currentGrowingVFXInstance.transform.localScale = Vector3.one * scale;
+                        }
                     }
                 }
             }
@@ -260,9 +271,11 @@ namespace Items
 
             if (growingVFXPrefab != null)
             {
+                // Instantiate at world position, but parented, so localPosition is calculated automatically
                 currentGrowingVFXInstance = Instantiate(growingVFXPrefab, treeSpawnPoint.position + Vector3.up * 0.25f, Quaternion.identity, treeSpawnPoint.parent);
                 currentGrowingVFXInstance.SetActive(true);
                 currentGrowingVFXInstance.transform.localScale = Vector3.one * minParticleScale;
+                startVFXLocalPos = currentGrowingVFXInstance.transform.localPosition; // CHANGED: Store start LOCAL position for Y-lerp
                 ParticleSystem ps = currentGrowingVFXInstance.GetComponent<ParticleSystem>();
                 if (ps != null)
                 {
@@ -315,6 +328,17 @@ namespace Items
                     Destroy(currentGrowingVFXInstance);
                 }
             }
+
+            // Play death SFX and VFX immediately on growth completion (as requested "also")
+            if (deathVFX != null)
+            {
+                deathVFX.Play();
+            }
+            if (sfxSource != null && deathSFX != null)
+            {
+                sfxSource.PlayOneShot(deathSFX);
+            }
+
             DropItem(keyPrefab);
             OnTreeGrown?.Invoke();
 
@@ -329,6 +353,7 @@ namespace Items
 
         private void OnTreeDeath(HealthComponent health)
         {
+            // Existing: Play death VFX/SFX (kept for premature deaths; may overlap with completion if delayed)
             if (deathVFX != null)
             {
                 deathVFX.Play();
@@ -350,9 +375,9 @@ namespace Items
                 int hitCount = 0;
                 foreach (Collider hit in colliders)
                 {
-                    if (hit.gameObject != gameObject && hit.CompareTag("Enemy")) // Add tag check here
+                    if (hit.gameObject != gameObject) // Exclude self
                     {
-                        hitCount++;
+                        // Apply force to ALL rigidbodies in radius (e.g., to fly the key up)
                         Rigidbody rb = hit.attachedRigidbody;
                         if (rb != null)
                         {
@@ -360,14 +385,19 @@ namespace Items
                             rb.AddForce(direction * bigExplosionForce, ForceMode.Impulse);
                         }
 
-                        HealthComponent enemyHealth = hit.GetComponent<HealthComponent>();
-                        if (enemyHealth != null)
+                        // Existing: Only damage and count enemies
+                        if (hit.CompareTag("Enemy"))
                         {
-                            enemyHealth.TakeDamage(1000f);
+                            hitCount++;
+                            HealthComponent enemyHealth = hit.GetComponent<HealthComponent>();
+                            if (enemyHealth != null)
+                            {
+                                enemyHealth.TakeDamage(1000f);
+                            }
                         }
                     }
                 }
-                Debug.Log($"[TreeOfLightPot {gameObject.name}] Exploding pot after growth complete. Hit {hitCount} objects.");
+                Debug.Log($"[TreeOfLightPot {gameObject.name}] Exploding pot after growth complete. Hit {hitCount} enemies.");
             }
 
             if (currentTree != null)

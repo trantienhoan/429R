@@ -5462,36 +5462,14 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2649278790831312482, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
         type: 3}
-      propertyPath: scaleOnDeath
-      value: 0
+      propertyPath: health
+      value: 5000
       objectReference: {fileID: 0}
     - target: {fileID: 2649278790831312482, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
         type: 3}
-      propertyPath: scaleWithHealth
-      value: 1
+      propertyPath: maxHealth
+      value: 5000
       objectReference: {fileID: 0}
-    - target: {fileID: 2649278790831312482, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
-        type: 3}
-      propertyPath: deathScaleDuration
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 3030980029734817786, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
-        type: 3}
-      propertyPath: deathVFX
-      value: 
-      objectReference: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
-        type: 3}
-    - target: {fileID: 4478516609795976183, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
-        type: 3}
-      propertyPath: m_BaseOffset
-      value: -0.06
-      objectReference: {fileID: 0}
-    - target: {fileID: 5078379185537246606, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
-        type: 3}
-      propertyPath: explosionVFX
-      value: 
-      objectReference: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-        type: 3}
     - target: {fileID: 8314641946612675146, guid: e7f7c4534c7bfbb4e914b26e3e7b9a56,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -7761,7 +7739,7 @@ MonoBehaviour:
   treeSpawnPoint: {fileID: 509467690}
   treeChild: {fileID: 956400512}
   absorbDuration: 2
-  growTime: 10
+  growTime: 60
   growingVFXPrefab: {fileID: 7938384439400024403, guid: b6e54acc881a03c4a9719b161a25a3e3,
     type: 3}
   deathVFX: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
@@ -7776,9 +7754,10 @@ MonoBehaviour:
   explosionForce: 300
   explosionRadius: 3
   treeRotationSpeed: 90
-  particleScaleStartTime: 0.0001
-  minParticleScale: 0.0001
+  particleScaleStartTime: 0.01
+  minParticleScale: 0.01
   maxParticleScale: 0.07
+  particleRiseHeight: 0.4
   OnTreeGrown:
     m_PersistentCalls:
       m_Calls: []
@@ -8828,7 +8807,7 @@ Light:
   serializedVersion: 11
   m_Type: 2
   m_Color: {r: 0.9433962, g: 0.9257743, b: 0.89444643, a: 1}
-  m_Intensity: 4.63
+  m_Intensity: 0
   m_Range: 7
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -10304,7 +10283,7 @@ MonoBehaviour:
   deathScaleTarget: {x: 0, y: 0, z: 0}
   deathScaleDuration: 3
   isInvulnerableByDefault: 0
-  scaleWithHealth: 0
+  scaleWithHealth: 1
   minScaleOnLowHealth: {x: 0, y: 0, z: 0}
   OnHealthChanged:
     m_PersistentCalls:
@@ -14041,7 +14020,7 @@ MonoBehaviour:
   deathScaleTarget: {x: 0, y: 0, z: 0}
   deathScaleDuration: 3
   isInvulnerableByDefault: 0
-  scaleWithHealth: 0
+  scaleWithHealth: 1
   minScaleOnLowHealth: {x: 0, y: 0, z: 0}
   OnHealthChanged:
     m_PersistentCalls:
@@ -18304,6 +18283,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1330854907}
+    - targetCorrespondingSourceObject: {fileID: 4814340647233166656, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1330854910}
     - targetCorrespondingSourceObject: {fileID: -4138269750220621252, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       insertIndex: -1
@@ -18996,6 +18979,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1425434754}
+    - targetCorrespondingSourceObject: {fileID: -913896944093314138, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1425434758}
     - targetCorrespondingSourceObject: {fileID: -6784945003110283662, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       insertIndex: -1
@@ -19649,10 +19636,20 @@ PrefabInstance:
       propertyPath: m_Name
       value: Hammer_Boong
       objectReference: {fileID: 0}
+    - target: {fileID: 398670456967341933, guid: dbeb3f89513365c489b7eef744c5f7fb,
+        type: 3}
+      propertyPath: m_Interpolate
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 398670456967341933, guid: dbeb3f89513365c489b7eef744c5f7fb,
+        type: 3}
+      propertyPath: m_CollisionDetection
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 4807449582191205079, guid: dbeb3f89513365c489b7eef744c5f7fb,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -1.486
+      value: -1.905
       objectReference: {fileID: 0}
     - target: {fileID: 4807449582191205079, guid: dbeb3f89513365c489b7eef744c5f7fb,
         type: 3}
@@ -19662,7 +19659,7 @@ PrefabInstance:
     - target: {fileID: 4807449582191205079, guid: dbeb3f89513365c489b7eef744c5f7fb,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -1.272
+      value: 0.902
       objectReference: {fileID: 0}
     - target: {fileID: 4807449582191205079, guid: dbeb3f89513365c489b7eef744c5f7fb,
         type: 3}
@@ -19702,7 +19699,7 @@ PrefabInstance:
     - target: {fileID: 4940320352082019240, guid: dbeb3f89513365c489b7eef744c5f7fb,
         type: 3}
       propertyPath: maxDamage
-      value: 100
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 4940320352082019240, guid: dbeb3f89513365c489b7eef744c5f7fb,
         type: 3}
@@ -19728,6 +19725,11 @@ PrefabInstance:
         type: 3}
     - target: {fileID: 4940320352082019240, guid: dbeb3f89513365c489b7eef744c5f7fb,
         type: 3}
+      propertyPath: impactForceMultiplier
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4940320352082019240, guid: dbeb3f89513365c489b7eef744c5f7fb,
+        type: 3}
       propertyPath: verticalSwingThreshold
       value: 0.2
       objectReference: {fileID: 0}
@@ -19746,6 +19748,16 @@ PrefabInstance:
         type: 3}
       propertyPath: horizontalSwingThreshold
       value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4940320352082019240, guid: dbeb3f89513365c489b7eef744c5f7fb,
+        type: 3}
+      propertyPath: treeOfLightDamageMultiplier
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4940320352082019240, guid: dbeb3f89513365c489b7eef744c5f7fb,
+        type: 3}
+      propertyPath: shadowMonsterDamageMultiplier
+      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -19776,14 +19788,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2883e4c1dfd15bf43a546e9d36e341bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 500
-  health: 100
+  maxHealth: 5000
+  health: 5000
   destroyOnDeath: 1
   scaleOnDeath: 1
   deathScaleTarget: {x: 0, y: 0, z: 0}
   deathScaleDuration: 3
   isInvulnerableByDefault: 1
-  scaleWithHealth: 0
+  scaleWithHealth: 1
   minScaleOnLowHealth: {x: 0, y: 0, z: 0}
   OnHealthChanged:
     m_PersistentCalls:
@@ -19855,6 +19867,62 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isBroken: 0
+--- !u!114 &1330854910
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1330854897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c63e449bee2a27e4092f0b298d2b4946, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isBreakable: 1
+  itemDropPrefabs:
+  - {fileID: 1485541009}
+  dropForce: 5
+  itemSpawnHeightOffset: 0.5
+  destroyDelay: 2
+  mass: 100
+  linearDamping: 1
+  angularDamping: 1
+  useGravity: 1
+  breakUpwardForce: 2
+  collisionLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  minimumImpactForce: 5
+  breakOnlyFromWeapons: 1
+  useImpactForce: 1
+  damageMultiplier: 1
+  explodeRange: 1
+  explodeDamage: 50
+  damageLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  breakVFXPrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+    type: 3}
+  breakSFX: {fileID: 0}
+  onBreak:
+    m_PersistentCalls:
+      m_Calls: []
+  rb: {fileID: 1330854903}
+  audioSource: {fileID: 0}
+  jiggleAmount: 0.1
+  jiggleRotationAmount: 5
+  jiggleScaleAmount: 0.05
+  jiggleDuration: 0.5
+  jiggleCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  jiggleSfx: {fileID: 0}
+  hitParticlesPrefab: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+    type: 3}
 --- !u!1 &1332034943 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6935266692904418516, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
@@ -21941,6 +22009,32 @@ MonoBehaviour:
       m_Calls: []
   rb: {fileID: 1425434745}
   audioSource: {fileID: 0}
+--- !u!114 &1425434758
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1425434738}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06c365fd00c3b964b9024efe0d79e479, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  weaponType: 1
+  baseDamage: 5
+  minDamage: 5
+  maxDamage: 30
+  weaponMass: 0.9
+  impactForceMultiplier: 1
+  treeOfLightDamageMultiplier: 0.5
+  shadowMonsterDamageMultiplier: 1.5
+  swingDetectionThreshold: 2.5
+  verticalSwingThreshold: 0.8
+  horizontalSwingThreshold: 0.8
+  groundImpactEffectPrefab: {fileID: 0}
+  airSlashEffectPrefab: {fileID: 0}
+  smokeHitVFXPrefab: {fileID: 0}
 --- !u!1 &1432128259 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6757549241712946169, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
@@ -22349,7 +22443,7 @@ MonoBehaviour:
   deathScaleTarget: {x: 0, y: 0, z: 0}
   deathScaleDuration: 3
   isInvulnerableByDefault: 0
-  scaleWithHealth: 0
+  scaleWithHealth: 1
   minScaleOnLowHealth: {x: 0, y: 0, z: 0}
   OnHealthChanged:
     m_PersistentCalls:
@@ -23352,7 +23446,7 @@ MonoBehaviour:
   deathScaleTarget: {x: 0, y: 0, z: 0}
   deathScaleDuration: 3
   isInvulnerableByDefault: 0
-  scaleWithHealth: 0
+  scaleWithHealth: 1
   minScaleOnLowHealth: {x: 0, y: 0, z: 0}
   OnHealthChanged:
     m_PersistentCalls:
@@ -23615,6 +23709,12 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.0555
   m_Center: {x: 0.613, y: 1.125, z: 0.975}
+--- !u!4 &1505699237 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -5049137594714283496, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
+    type: 3}
+  m_PrefabInstance: {fileID: 1261005732}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1533654645
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -23911,7 +24011,7 @@ PrefabInstance:
     - target: {fileID: 6598815579406187037, guid: 18ddb545287c546e19cc77dc9fbb2189,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -28808,7 +28908,7 @@ Transform:
   m_GameObject: {fileID: 1910992778}
   serializedVersion: 2
   m_LocalRotation: {x: 0.006170608, y: 0.7070799, z: -0.006170608, w: 0.7070799}
-  m_LocalPosition: {x: -0.76, y: 0, z: 1.14}
+  m_LocalPosition: {x: 0.954, y: 0.895, z: 0.971}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -33463,13 +33563,13 @@ PrefabInstance:
     - target: {fileID: 4836868040052509315, guid: 98f33dce55e98574bb6bd02fd309cbf4,
         type: 3}
       propertyPath: cornerSpawnPoints.Array.size
-      value: 4
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4836868040052509315, guid: 98f33dce55e98574bb6bd02fd309cbf4,
         type: 3}
       propertyPath: 'cornerSpawnPoints.Array.data[0]'
       value: 
-      objectReference: {fileID: 178787973}
+      objectReference: {fileID: 1505699237}
     - target: {fileID: 4836868040052509315, guid: 98f33dce55e98574bb6bd02fd309cbf4,
         type: 3}
       propertyPath: 'cornerSpawnPoints.Array.data[1]'
@@ -33509,6 +33609,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Layer
       value: 14
+      objectReference: {fileID: 0}
+    - target: {fileID: 7304744200883531375, guid: 98f33dce55e98574bb6bd02fd309cbf4,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7304744200883531375, guid: 98f33dce55e98574bb6bd02fd309cbf4,
         type: 3}

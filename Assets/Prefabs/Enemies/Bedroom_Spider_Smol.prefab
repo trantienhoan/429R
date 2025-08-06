@@ -68,7 +68,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   baseDamage: 10
   basePushForce: 5
-  explosionVFX: {fileID: 570832250925526149, guid: dcd90c4976197424b9958a7c54b6bb8c,
+  explosionVFX: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   explosionSfx: {fileID: 8300000, guid: 9118a3d703424a441a222ad5c2ea6971, type: 3}
   shakeIntensity: 0.01
@@ -1496,7 +1496,8 @@ MonoBehaviour:
   agent: {fileID: 4478516609795976183}
   attackHitbox: {fileID: 5078379185537246606}
   rb: {fileID: 4301660074786869948}
-  deathVFX: {fileID: 570832250925526149, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
+  deathVFX: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+    type: 3}
   deathSfx: {fileID: 8300000, guid: 9118a3d703424a441a222ad5c2ea6971, type: 3}
   audioSource: {fileID: 0}
   grabInteractable: {fileID: 7609633742523881503}
@@ -1686,7 +1687,7 @@ NavMeshAgent:
   m_AutoBraking: 1
   m_AutoRepath: 1
   m_Height: 0.36
-  m_BaseOffset: 0
+  m_BaseOffset: -0.06
   m_WalkableMask: 1
   m_ObstacleAvoidanceType: 3
 --- !u!114 &2649278790831312482
@@ -1701,14 +1702,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2883e4c1dfd15bf43a546e9d36e341bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100
-  health: 100
+  maxHealth: 10000
+  health: 10000
   destroyOnDeath: 1
-  scaleOnDeath: 1
+  scaleOnDeath: 0
   deathScaleTarget: {x: 0, y: 0, z: 0}
-  deathScaleDuration: 2
+  deathScaleDuration: 10
   isInvulnerableByDefault: 0
-  scaleWithHealth: 0
+  scaleWithHealth: 1
   minScaleOnLowHealth: {x: 0, y: 0, z: 0}
   OnHealthChanged:
     m_PersistentCalls:
