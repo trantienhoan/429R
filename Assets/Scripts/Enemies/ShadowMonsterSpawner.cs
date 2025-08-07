@@ -39,25 +39,17 @@ namespace Enemies
         [SerializeField] private List<Light> roomLights = new();
         [SerializeField] private float lampBreakDelay = 2f;
 
-        [Header("Monster Boost Settings")]  // Moved from GameManager
-        [SerializeField] private string monsterTag = "Enemy";  // For refresh
-        [SerializeField] private float healthIncreasePerLamp = 0.1f;  // 10% per lamp
-        [SerializeField] private float sizeIncreasePerLamp = 0.1f;    // 10% per lamp
-        [SerializeField] private float maxBoostMultiplier = 2f;       // Cap at 200%
-        [SerializeField] private float scaleTransitionDuration = 1f;  // Smooth scale time
-
         [Header("Despawn Settings")]
         [SerializeField] private float despawnDelayBetweenMonsters = 0.5f;  // Delay between each monster despawn
         [SerializeField] private float deathSequenceDuration = 3f;  // Time for each monster's death animation/scale-down before pooling
 
         [Header("Kamikaze Overpopulation Control")]
-        [SerializeField] private int maxMonstersBeforeKamikaze = 10;  // Threshold to trigger random kamikaze (e.g., >=10)
+        [SerializeField] private int maxMonstersBeforeKamikaze = 23;  // Updated: Threshold to trigger random kamikaze (e.g., >=23)
         [SerializeField] private int kamikazeBatchSize = 1;  // How many to kamikaze per check (to reduce gradually)
 
         private readonly List<MonsterTrackerData> activeMonsters = new();
         private bool isSpawning;
         private Coroutine spawnCoroutine;
-        private int brokenLampsCount = 0;
 
         private void Awake()
         {
@@ -77,12 +69,12 @@ namespace Enemies
 
         private void Start()
         {
-            Lamp.OnLampBroken += HandleLampBroken;  // Subscribe to lamp breaks for boosts
+            // Removed subscription to Lamp.OnLampBroken
         }
 
         private void OnDestroy()
         {
-            Lamp.OnLampBroken -= HandleLampBroken;
+            // Removed unsubscription to Lamp.OnLampBroken
             StopSpawning();
         }
 
@@ -174,7 +166,7 @@ namespace Enemies
         // New: Check count and force kamikaze on random monsters if over threshold
         private void CheckForOverpopulation()
         {
-            int excess = activeMonsters.Count - (maxMonstersBeforeKamikaze - 1);  // e.g., if 12, excess=3
+            int excess = activeMonsters.Count - (maxMonstersBeforeKamikaze - 1);  // e.g., if 24, excess=1
             if (excess <= 0) return;
 
             // Shuffle list for random selection
@@ -296,57 +288,6 @@ namespace Enemies
                 {
                     roomLight.enabled = false;
                 }
-            }
-        }
-
-        // Monster boost logic (moved from GameManager)
-        private void HandleLampBroken(Lamp lamp)
-        {
-            brokenLampsCount++;
-            UpdateAllMonsters();
-        }
-
-        private void UpdateAllMonsters()
-        {
-            float healthMultiplier = Mathf.Min(1 + (brokenLampsCount * healthIncreasePerLamp), maxBoostMultiplier);
-            float sizeMultiplier = Mathf.Min(1 + (brokenLampsCount * sizeIncreasePerLamp), maxBoostMultiplier);
-
-            foreach (MonsterTrackerData data in activeMonsters)
-            {
-                ShadowMonster sm = data.SpiderReference;
-                if (sm == null) continue;
-
-                // Health: Scale max and current proportionally
-                float oldMax = sm.healthComponent.maxHealth;
-                float newMax = oldMax * healthMultiplier;
-                float healthRatio = sm.healthComponent.health / oldMax;
-                sm.SetMaxHealth(newMax);
-                sm.healthComponent.health = newMax * healthRatio;
-                sm.healthComponent.OnHealthChanged?.Invoke(sm.healthComponent.health / newMax);
-
-                // Size: Smooth lerp to new scale
-                Vector3 targetScale = sm.transform.localScale * sizeMultiplier;  // Multiply current (handles time-growth)
-                StartCoroutine(SmoothScale(sm.transform, targetScale));
-
-                Debug.Log($"Updated Monster {sm.name}: Health = {newMax}, Scale = {targetScale}");
-            }
-        }
-
-        private IEnumerator SmoothScale(Transform target, Vector3 endScale)
-        {
-            if (target == null) yield break;
-            Vector3 startScale = target.localScale;
-            float timer = 0f;
-            while (timer < scaleTransitionDuration)
-            {
-                timer += Time.deltaTime;
-                if (target == null) yield break;  // Exit if destroyed mid-coroutine
-                target.localScale = Vector3.Lerp(startScale, endScale, timer / scaleTransitionDuration);
-                yield return null;
-            }
-            if (target != null)
-            {
-                target.localScale = endScale;
             }
         }
 

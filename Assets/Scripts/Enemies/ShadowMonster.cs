@@ -4,6 +4,7 @@ using UnityEngine.XR.Interaction.Toolkit;
 using Core;
 using Items;
 using System.Collections;
+using Random = UnityEngine.Random;  // Add this for random selection
 
 namespace Enemies
 {
@@ -15,6 +16,8 @@ namespace Enemies
         private static readonly int KamikazeAttack = Animator.StringToHash("KamikazeAttack");
         private static readonly int IdleOnAir = Animator.StringToHash("IdleOnAir");
         private static readonly int Attack = Animator.StringToHash("Attack");
+        private static readonly int Attack2 = Animator.StringToHash("Attack2");  // New
+        private static readonly int Attack3 = Animator.StringToHash("Attack3");  // New
         private static readonly int Dead = Animator.StringToHash("Dead");
 
         [Header("References")]
@@ -50,6 +53,7 @@ namespace Enemies
         [SerializeField] public float diveForceMultiplier = 1.5f; 
         public float diveSpeed = 10f;
         public float diveTimeout = 3f;
+        public float diveDamage = 15f;  // New: Damage for dive attack, adjust as needed
 
         [Header("NavMesh Scaling")]
         [SerializeField] private float originalAgentRadius = 0.5f;  // Base agent radius
@@ -177,9 +181,9 @@ namespace Enemies
             if (agent != null)
             {
                 float scaleFactor = transform.localScale.y;  // Use Y for height consistency
-                agent.radius = originalAgentRadius * scaleFactor;
-                agent.height = originalAgentHeight * scaleFactor;
-                agent.baseOffset = originalBaseOffset * scaleFactor - (scaleFactor - 1f) * 0.1f;  // Slight negative offset for larger scales to "sink" in
+                agent.radius = 0.28f;  // Match your baked radius
+                agent.height = 0.36f;  // Match your baked height
+                //agent.baseOffset = originalBaseOffset * scaleFactor - (scaleFactor - 1f) * 0.1f;  // Slight negative offset for larger scales to "sink" in
                 EnsureAgentOnNavMesh();  // Force re-sample after changes
             }
         }
@@ -471,12 +475,40 @@ namespace Enemies
             }
             lastAttackTime = Time.time;
             isCharging = false;
+
+            // Randomly select attack animation
+            int[] attackTriggers = { Attack, Attack2, Attack3 };
+            int selectedTrigger = attackTriggers[Random.Range(0, attackTriggers.Length)];
+
+            if (animator != null)
+            {
+                animator.SetTrigger(selectedTrigger);
+            }
+
             if (attackHitbox != null)
             {
                 var collider = attackHitbox.GetComponent<SphereCollider>();
                 collider.radius = originalExplosionRadius;
                 attackHitbox.Initialize(gameObject, normalAttackDamage, pushForce);
                 attackCoroutine = StartCoroutine(PerformAttackCoroutine(false));
+            }
+        }
+
+        public IEnumerator PerformDiveAttackCoroutine()
+        {
+            if (attackHitbox != null)
+            {
+                var collider = attackHitbox.GetComponent<SphereCollider>();
+                collider.radius = originalExplosionRadius;  // Or adjust if needed for dive
+                attackHitbox.Initialize(gameObject, diveDamage, pushForce);
+                attackHitbox.gameObject.SetActive(true);
+                yield return new WaitForSeconds(0.1f);  // Small delay to align with dive start
+                attackHitbox.TriggerExplosion();  // Trigger damage burst
+                yield return new WaitForSeconds(0.5f);  // Duration hitbox active
+                if (attackHitbox != null)
+                {
+                    attackHitbox.gameObject.SetActive(false);
+                }
             }
         }
 
@@ -491,7 +523,7 @@ namespace Enemies
             {
                 var collider = attackHitbox.GetComponent<SphereCollider>();
                 collider.radius = originalExplosionRadius * kamikazeRadiusMultiplier;
-                attackHitbox.Initialize(gameObject, kamikazeAttackDamage, pushForce, isKamikaze: true);
+                attackHitbox.Initialize(gameObject, kamikazeAttackDamage, pushForce, kamikaze: true);
                 attackCoroutine = StartCoroutine(PerformAttackCoroutine(true));
             }
         }
@@ -509,14 +541,10 @@ namespace Enemies
                     }
                     yield return new WaitForSeconds(0.2f);
                     attackHitbox.TriggerExplosion(); 
-                    healthComponent.Kill(gameObject);
+                    // Removed self-kill to prevent early deaths: healthComponent.Kill(gameObject);
                 }
                 else
                 {
-                    if (animator != null && animator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))  // Gate to state
-                    {
-                        animator.SetTrigger(Attack);
-                    }
                     yield return new WaitForSeconds(0.3f);
                     attackHitbox.TriggerExplosion();  // SFX/damage
                 }
@@ -759,6 +787,8 @@ namespace Enemies
                 animator.SetBool(IsRunning, false);
                 animator.SetBool(IsCharging, false);
                 animator.ResetTrigger("Attack");
+                animator.ResetTrigger("Attack2");  // Add resets for new triggers
+                animator.ResetTrigger("Attack3");
                 animator.ResetTrigger("KamikazeAttack");
             }
         }

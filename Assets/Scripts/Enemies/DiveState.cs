@@ -40,6 +40,9 @@ namespace Enemies
                 monster.animator.SetTrigger(Dive);
                 monster.animator.Update(0f);  // Immediate update to ensure trigger fires
             }
+
+            // Start dive attack coroutine
+            monster.StartCoroutine(monster.PerformDiveAttackCoroutine());
         }
 
         public void Tick()
@@ -76,6 +79,12 @@ namespace Enemies
                 monster.animator.ResetTrigger("Dive");
                 monster.animator.SetBool(IsGrounded, monster.IsGrounded());
                 monster.animator.Update(0f);
+            }
+
+            // Ensure hitbox is disabled (in case coroutine didn't finish)
+            if (monster.attackHitbox != null)
+            {
+                monster.attackHitbox.gameObject.SetActive(false);
             }
         }
     }

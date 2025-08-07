@@ -1,5 +1,8 @@
 ﻿using System;
 using UnityEngine;
+using System.Collections;
+//using System.Collections.Generic;
+//using Core;
 using UnityEngine.Events;
 
 namespace Core
@@ -17,6 +20,13 @@ namespace Core
         // New fields for continuous health-based scaling
         [SerializeField] private bool scaleWithHealth = false; // Toggle to enable scaling as health changes
         [SerializeField] private Vector3 minScaleOnLowHealth = Vector3.zero; // Minimum scale at zero health (customizable)
+
+        // New fields for distance-based destruction
+        [Header("Distance Destruction Settings")]
+        [SerializeField] private bool destroyOnDistance = false; // Toggle to enable destruction if too far from reference point
+        [SerializeField] private Transform referencePoint; // e.g., Bedroom's position (assign in Inspector)
+        [SerializeField] private float maxAllowedDistance = 50f; // Destroy if distance exceeds this
+        [SerializeField] private float distanceCheckInterval = 2f; // How often to check distance (seconds, for performance)
 
         public UnityEvent<float> OnHealthChanged;
         public UnityEvent<HealthChangedEventArgs> OnTakeDamage;
@@ -44,6 +54,19 @@ namespace Core
             IsInvulnerable = isInvulnerableByDefault;
             originalScale = transform.localScale; // Store original scale here
             //Debug.Log($"[HealthComponent {gameObject.name}] Initialized with Health: {health}/{maxHealth}, Invulnerable: {IsInvulnerable}");
+        }
+
+        private void Start()
+        {
+            if (destroyOnDistance)
+            {
+                if (referencePoint == null)
+                {
+                    Debug.LogWarning($"[HealthComponent {gameObject.name}] destroyOnDistance enabled but no referencePoint assigned. Using transform.position as reference.");
+                    referencePoint = transform;
+                }
+                StartCoroutine(CheckDistanceCoroutine());
+            }
         }
 
         public void SetMaxHealth(float value)
@@ -187,6 +210,25 @@ namespace Core
                 float healthPercentage = GetHealthPercentage();
                 // Linearly interpolate between original scale (at 100% health) and min scale (at 0% health)
                 transform.localScale = Vector3.Lerp(minScaleOnLowHealth, originalScale, healthPercentage);
+            }
+        }
+
+        // New coroutine for distance checking (runs periodically for performance)
+        private IEnumerator CheckDistanceCoroutine()
+        {
+            while (true)
+            {
+                if (referencePoint != null)
+                {
+                    float distance = Vector3.Distance(transform.position, referencePoint.position);
+                    if (distance > maxAllowedDistance)
+                    {
+                        Debug.Log($"[HealthComponent {gameObject.name}] Exceeded max distance ({distance} > {maxAllowedDistance}) from {referencePoint.name}. Triggering death.");
+                        TakeDamage(health + 1f, transform.position, gameObject);  // Force health to 0 by "damaging" more than current health
+                        yield break;  // Stop coroutine after death
+                    }
+                }
+                yield return new WaitForSeconds(distanceCheckInterval);
             }
         }
     }

@@ -4,9 +4,9 @@ namespace Enemies
 {
     public class AttackState : IState
     {
-        private ShadowMonster monster;
+        private readonly ShadowMonster monster;
         private float attackTimer;
-        private float attackDuration = 0.5f;  // Adjust to your Attack anim length
+        private readonly float attackDuration = 0.5f;  // Adjust to your Attack anim length
 
         public AttackState(ShadowMonster monster) { this.monster = monster; }
 
@@ -35,6 +35,8 @@ namespace Enemies
             if (monster.animator != null)
             {
                 monster.animator.ResetTrigger("Attack");
+                //monster.animator.ResetTrigger("Attack2");
+                //monster.animator.ResetTrigger("Attack3");
             }
         }
     }

@@ -1,6 +1,7 @@
 using UnityEngine;
 using Cam;
 using Core;
+using System.Collections.Generic;
 
 namespace Enemies
 {
@@ -28,10 +29,17 @@ namespace Enemies
         [SerializeField] private Vector3 baseBoxSize = new Vector3(0.5f, 0.5f, 1f);  // Base at scale=1
         [SerializeField] private float baseCastDistance = 1f;  // Base at scale=1
         [SerializeField] private float baseDirectionalPushForce = 15f;  // Base at scale=1
+        [SerializeField] private ForceMode pushForceMode = ForceMode.Impulse;  // New: Configurable (Impulse for natural, VelocityChange for override)
 
         [Header("Scaling Settings")]
         [SerializeField] private bool scaleWithParent = true;  // Toggle for growth
         [SerializeField] private float damageScaleMultiplier = 1f;  // Extra tuning (e.g., 1.5f for stronger at large size)
+        [SerializeField] private float minRadius = 0.1f;  // Minimum to prevent zero radius
+        [SerializeField] private float minPushForce = 5f;  // New: Min force to ensure push even at small scale
+
+        [Header("Target Settings")]  // New: Configurable
+        [SerializeField] private LayerMask targetLayerMask;  // Layers to hit (assign in Inspector: Player, Enemy, etc.)
+        [SerializeField] private string[] targetTags = { "Player", "TreeOfLight", "Furniture", "Enemy" };  // Configurable tags
 
         private SphereCollider sphereCollider;
         private ShadowMonster parentMonster;  // Reference to parent for scale
@@ -47,16 +55,22 @@ namespace Enemies
         private float scaledCastDistance;
         private float scaledDirectionalPushForce;
 
+        // For kamikaze-specific logic
+        private bool isKamikaze;
+
         // Public property to expose damage for TreeOfLightPot
         public float DamageAmount => scaledDamage;
 
         private void Awake()
         {
             sphereCollider = GetComponent<SphereCollider>();
-            if (sphereCollider != null)
+            if (sphereCollider == null)
             {
-                sphereCollider.isTrigger = true;  // Ensure it's a trigger for OnTriggerStay
+                Debug.LogWarning("[SpiderAttackHitbox] No SphereCollider found – adding one dynamically.");
+                sphereCollider = gameObject.AddComponent<SphereCollider>();
             }
+            sphereCollider.isTrigger = true;  // Ensure it's a trigger for OnTriggerStay
+            sphereCollider.radius = Mathf.Max(sphereCollider.radius, minRadius);  // Prevent zero
 
             // Find parent monster (assume hitbox is child)
             parentMonster = GetComponentInParent<ShadowMonster>();
@@ -71,10 +85,10 @@ namespace Enemies
         {
             if (!gameObject.activeInHierarchy || hasExploded || !applyContinuousPush) return;
 
-            if (other.CompareTag("Player") || other.CompareTag("TreeOfLight") || other.CompareTag("Furniture"))
+            if (IsValidTarget(other.gameObject))
             {
                 Rigidbody rb = other.attachedRigidbody;
-                if (rb != null && rb.mass > 0f)
+                if (rb != null && rb.gameObject != owner)  // Skip owner
                 {
                     Vector3 pushDir = (other.transform.position - transform.position).normalized;
                     rb.AddForce(pushDir * scaledContinuousPushForce * Time.deltaTime, ForceMode.Force); 
@@ -102,29 +116,38 @@ namespace Enemies
 
             VRRigShake.Instance?.Shake(shakeIntensity, shakeDuration);
 
-            // 💥 Explosion Logic (radial)
-            float currentRadius = sphereCollider != null ? sphereCollider.radius : 3f;  // Fallback if no collider
-            Collider[] hits = new Collider[32];
-            int hitCount = Physics.OverlapSphereNonAlloc(transform.position, currentRadius, hits);
-            for (int i = 0; i < hitCount; i++)
+            // 💥 Explosion Logic (radial) - Simplified without HashSet
+            float currentRadius = Mathf.Max(sphereCollider.radius, minRadius);  // Ensure min
+            Collider[] hits = Physics.OverlapSphere(transform.position, currentRadius, targetLayerMask);  // Allocating for simplicity (64 max not needed)
+            foreach (Collider hit in hits)
             {
-                Collider hit = hits[i];
-                if (hit == null) continue;
+                if (hit == null || hit.gameObject == owner) continue;
 
-                if (hit.CompareTag("Player") || hit.CompareTag("TreeOfLight") || hit.CompareTag("Furniture"))
+                GameObject hitObject = hit.gameObject;
+                if (IsValidTarget(hitObject))
                 {
-                    var hp = hit.GetComponent<HealthComponent>();
+                    HealthComponent hp = hitObject.GetComponent<HealthComponent>();
                     if (hp != null)
                     {
+                        float finalDamage = scaledDamage;
+
+                        // Reduce damage to 1/10 if kamikaze and target is Enemy
+                        if (isKamikaze && hitObject.CompareTag("Enemy"))
+                        {
+                            finalDamage *= 0.1f;
+                        }
+
                         Vector3 hitPoint = hit.ClosestPoint(transform.position);
-                        hp.TakeDamage(scaledDamage, hitPoint, owner, true);
+                        hp.TakeDamage(finalDamage, hitPoint, owner, true);
                     }
 
-                    var rb = hit.attachedRigidbody;
-                    if (rb != null && rb.mass > 0f)
+                    Rigidbody rb = hit.attachedRigidbody;
+                    if (rb != null)
                     {
-                        Vector3 pushDir = (hit.transform.position - transform.position).normalized;
-                        rb.AddForce(pushDir * scaledPushForce, ForceMode.Impulse);
+                        Vector3 pushDir = (hitObject.transform.position - transform.position).normalized;
+                        float effectiveForce = Mathf.Max(scaledPushForce, minPushForce);  // Ensure min force
+                        rb.AddForce(pushDir * effectiveForce, pushForceMode);
+                        Debug.Log($"[Radial Push] Applied {effectiveForce} force to {hitObject.name} (mass={rb.mass}, kinematic={rb.isKinematic}, mode={pushForceMode})");
                     }
                 }
             }
@@ -135,32 +158,44 @@ namespace Enemies
 
         private void DirectionalHit()
         {
-            RaycastHit[] directionalHits = new RaycastHit[32];
-            int hitCount = Physics.BoxCastNonAlloc(transform.position, scaledBoxSize / 2f, transform.forward, directionalHits, transform.rotation, scaledCastDistance);
-            for (int i = 0; i < hitCount; i++)
+            RaycastHit[] directionalHits = Physics.BoxCastAll(transform.position, scaledBoxSize / 2f, transform.forward, transform.rotation, scaledCastDistance, targetLayerMask);  // Allocating for simplicity
+            foreach (RaycastHit hit in directionalHits)
             {
-                RaycastHit hit = directionalHits[i];
-                if (hit.collider == null) continue;
+                if (hit.collider == null || hit.collider.gameObject == owner) continue;
 
-                if (hit.collider.CompareTag("Player") || hit.collider.CompareTag("TreeOfLight") || hit.collider.CompareTag("Furniture"))
+                GameObject hitObject = hit.collider.gameObject;
+                if (IsValidTarget(hitObject))
                 {
+                    HealthComponent hp = hitObject.GetComponent<HealthComponent>();
+                    if (hp != null)
+                    {
+                        float finalDamage = scaledDamage;
+
+                        // Reduce damage to 1/10 if kamikaze and target is Enemy
+                        if (isKamikaze && hitObject.CompareTag("Enemy"))
+                        {
+                            finalDamage *= 0.1f;
+                        }
+
+                        hp.TakeDamage(finalDamage, hit.point, owner, true);
+                    }
+
                     Rigidbody rb = hit.collider.attachedRigidbody;
-                    if (rb != null && rb.mass > 0f)
+                    if (rb != null)
                     {
                         Vector3 pushDir = transform.forward;  // Directional push
-                        rb.AddForceAtPosition(pushDir * scaledDirectionalPushForce, hit.point, ForceMode.Impulse);  // At point for rotation
-                        Debug.Log("Directional Push on: " + hit.collider.name);
+                        float effectiveForce = Mathf.Max(scaledDirectionalPushForce, minPushForce);  // Ensure min force
+                        rb.AddForceAtPosition(pushDir * effectiveForce, hit.point, pushForceMode);  // At point for rotation
+                        Debug.Log($"Directional Push on: {hit.collider.name} with {effectiveForce} force (mass={rb.mass}, kinematic={rb.isKinematic}, mode={pushForceMode})");
                     }
-                    // Damage (if not in radial)
-                    HealthComponent hp = hit.collider.GetComponent<HealthComponent>();
-                    if (hp != null) hp.TakeDamage(DamageAmount, hit.point, owner, true);
                 }
             }
         }
         
-        public void Initialize(GameObject newOwner, float newDamage = -1f, float newPushForce = -1f, float radius = -1f, bool isKamikaze = false)
+        public void Initialize(GameObject newOwner, float newDamage = -1f, float newPushForce = -1f, float radius = -1f, bool kamikaze = false)
         {
             owner = newOwner;
+            isKamikaze = kamikaze;  // Set kamikaze flag
             // Only override serialized values if parameters are provided (non-negative)
             if (newDamage >= 0f)
             {
@@ -173,7 +208,7 @@ namespace Enemies
             hasExploded = false;
             if (radius >= 0f && sphereCollider != null)
             {
-                sphereCollider.radius = radius;
+                sphereCollider.radius = Mathf.Max(radius, minRadius);  // Apply min radius
             }
             if (isKamikaze)
             {
@@ -199,10 +234,28 @@ namespace Enemies
             // Optional: Scale collider radius too (if not set via param)
             if (radius < 0f && sphereCollider != null)
             {
-                sphereCollider.radius *= scaleFactor;
+                sphereCollider.radius = Mathf.Max(sphereCollider.radius * scaleFactor, minRadius);
             }
 
             Debug.Log($"[SpiderAttackHitbox] Initialized with scaleFactor={scaleFactor}, scaledDamage={scaledDamage}, scaledRadius={(sphereCollider ? sphereCollider.radius : 0)}");
+        }
+
+        // New: Helper to check if target is valid (tags + layer)
+        private bool IsValidTarget(GameObject target)
+        {
+            if (target == null) return false;
+            foreach (string tag in targetTags)
+            {
+                if (target.CompareTag(tag)) return true;
+            }
+            return false;
+        }
+
+        // New: Reset for pooling/reuse
+        public void ResetHitbox()
+        {
+            hasExploded = false;
+            // Reset other states if needed
         }
 
         private void OnDrawGizmosSelected()

@@ -82,6 +82,15 @@ MonoBehaviour:
   baseDirectionalPushForce: 15
   scaleWithParent: 1
   damageScaleMultiplier: 1
+  minRadius: 0.1
+  targetLayerMask:
+    serializedVersion: 2
+    m_Bits: 8392
+  targetTags:
+  - Player
+  - TreeOfLight
+  - Furniture
+  - Enemy
 --- !u!1001 &2892365612308435589
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1512,16 +1521,17 @@ MonoBehaviour:
   kamikazeHealthThreshold: 0.8
   pushForce: 1000
   stuckTimeThreshold: 5
-  idleTimeBeforeDive: 10
+  idleTimeBeforeDive: 3
   growthTime: 30
   startScale: {x: 0.3, y: 0.3, z: 0.3}
-  fullScale: {x: 2, y: 2, z: 2}
+  fullScale: {x: 1.5, y: 1.5, z: 1.5}
   wallLayer:
     serializedVersion: 2
     m_Bits: 16384
   diveForceMultiplier: 1.5
   diveSpeed: 10
   diveTimeout: 3
+  diveDamage: 15
   originalAgentRadius: 0.5
   originalAgentHeight: 2
   originalBaseOffset: 0
@@ -1702,8 +1712,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2883e4c1dfd15bf43a546e9d36e341bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 10000
-  health: 10000
+  maxHealth: 5000
+  health: 5000
   destroyOnDeath: 1
   scaleOnDeath: 0
   deathScaleTarget: {x: 0, y: 0, z: 0}
