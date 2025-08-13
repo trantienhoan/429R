@@ -1,273 +1,200 @@
-using UnityEngine;
-using Cam;
-using Core;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Enemies
 {
+    [DisallowMultipleComponent]
     public class SpiderAttackHitbox : MonoBehaviour
     {
+        [Header("Scale Source (set to spider root that actually grows)")]
+        public Transform scaleSource;          // <- drag your top-level spider object here
+        public bool fallbackToSelfIfNull = true;
+        [Tooltip("Clamp the growth multiplier so physics doesn't explode.")]
+        public Vector2 scaleClamp = new Vector2(0.25f, 5f);
+
         [Header("Explosion Settings")]
-        [SerializeField] private float baseDamage = 10f;  // Base at scale=1
-        [SerializeField] private float basePushForce = 5f;
+        public float baseDamage = 10f;
+        public float basePushForce = 5f;
+        public float baseExplosionRadius = 1.0f;
 
         [Header("VFX & SFX")]
-        [SerializeField] private ParticleSystem explosionVFX;
-        [SerializeField] private AudioClip explosionSfx;
-        [SerializeField] private float shakeIntensity = 0.05f;
-        [SerializeField] private float shakeDuration = 0.3f;
+        public ParticleSystem explosionVFX;
+        public AudioSource explosionSfx;
+        public float shakeIntensity = 0.01f;
+        public float shakeDuration = 0.1f;
 
         [Header("Debug")]
-        [SerializeField] private bool drawDebugGizmos = true;
-        [SerializeField] private Color gizmoColor = Color.red;
-        
+        public bool drawDebugGizmos = true;
+        public Color gizmoColor = Color.red;
+
         [Header("Continuous Push Settings")]
-        [SerializeField] private float baseContinuousPushForce = 2f; 
-        [SerializeField] private bool applyContinuousPush = true;
+        public float baseContinuousPush = 50f;
+        public bool applyContinuousPush = true;
 
         [Header("Directional Hit Settings")]
-        [SerializeField] private Vector3 baseBoxSize = new Vector3(0.5f, 0.5f, 1f);  // Base at scale=1
-        [SerializeField] private float baseCastDistance = 1f;  // Base at scale=1
-        [SerializeField] private float baseDirectionalPushForce = 15f;  // Base at scale=1
-        [SerializeField] private ForceMode pushForceMode = ForceMode.Impulse;  // New: Configurable (Impulse for natural, VelocityChange for override)
+        public Vector3 baseBoxSize = new Vector3(0.5f, 0.5f, 0.5f);
+        public float baseCastDistance = 1f;
+        public float baseDirectionalPushForce = 15f;
+        public ForceMode pushForceMode = ForceMode.Impulse;
 
         [Header("Scaling Settings")]
-        [SerializeField] private bool scaleWithParent = true;  // Toggle for growth
-        [SerializeField] private float damageScaleMultiplier = 1f;  // Extra tuning (e.g., 1.5f for stronger at large size)
-        [SerializeField] private float minRadius = 0.1f;  // Minimum to prevent zero radius
-        [SerializeField] private float minPushForce = 5f;  // New: Min force to ensure push even at small scale
+        [Tooltip("Extra designer-controlled multiplier on top of growth scale.")]
+        public float damageScaleMultiplier = 1f;
+        public float forceScaleMultiplier = 1f;
+        public float sizeScaleMultiplier = 1f;  // can tune feel without changing model scale
+        public float minRadius = 0.1f;
+        public float minPushForce = 5f;
 
-        [Header("Target Settings")]  // New: Configurable
-        [SerializeField] private LayerMask targetLayerMask;  // Layers to hit (assign in Inspector: Player, Enemy, etc.)
-        [SerializeField] private string[] targetTags = { "Player", "TreeOfLight", "Furniture", "Enemy" };  // Configurable tags
+        [Header("Target Settings")]
+        public LayerMask targetLayerMask;
+        public List<string> targetTags = new List<string>(); // e.g. ["Player","Furniture"]
 
-        private SphereCollider sphereCollider;
-        private ShadowMonster parentMonster;  // Reference to parent for scale
+        // --- runtime ---
+        float activeUntil = -1f;
+        bool doExplosion;
+        bool doDirectional;
+        float damageMul = 1f, pushMul = 1f;
 
-        private GameObject owner;
-        private bool hasExploded;
+        readonly HashSet<Rigidbody> _impulsedThisActivation = new HashSet<Rigidbody>();
+        Collider[] _overlapBuffer = new Collider[32];
 
-        // Scaled values (computed on init)
-        private float scaledDamage;
-        private float scaledPushForce;
-        private float scaledContinuousPushForce;
-        private Vector3 scaledBoxSize;
-        private float scaledCastDistance;
-        private float scaledDirectionalPushForce;
+        public bool IsActive => Time.time <= activeUntil;
 
-        // For kamikaze-specific logic
-        private bool isKamikaze;
-
-        // Public property to expose damage for TreeOfLightPot
-        public float DamageAmount => scaledDamage;
-
-        private void Awake()
+        float GrowthScale01()
         {
-            sphereCollider = GetComponent<SphereCollider>();
-            if (sphereCollider == null)
-            {
-                Debug.LogWarning("[SpiderAttackHitbox] No SphereCollider found – adding one dynamically.");
-                sphereCollider = gameObject.AddComponent<SphereCollider>();
-            }
-            sphereCollider.isTrigger = true;  // Ensure it's a trigger for OnTriggerStay
-            sphereCollider.radius = Mathf.Max(sphereCollider.radius, minRadius);  // Prevent zero
+            Transform s = scaleSource != null ? scaleSource :
+                (fallbackToSelfIfNull ? transform : null);
+            if (s == null) return 1f;
 
-            // Find parent monster (assume hitbox is child)
-            parentMonster = GetComponentInParent<ShadowMonster>();
-            if (parentMonster == null)
+            // use a uniform estimate from X to keep stable
+            float k = Mathf.Max(0.0001f, s.lossyScale.x);
+            k = Mathf.Clamp(k, scaleClamp.x, scaleClamp.y);
+            return k;
+        }
+
+        // ---- public API ----
+        /// Activate the hitbox for duration seconds.
+        /// explode=true => one-shot radial blast now.
+        /// directional=true => overlap box forward each FixedUpdate.
+        public void Activate(float duration, bool explode, bool directional, float damageMultiplier = 1f, float pushMultiplier = 1f)
+        {
+            activeUntil = Time.time + Mathf.Max(0.01f, duration);
+            doExplosion = explode;
+            doDirectional = directional;
+            damageMul = damageMultiplier;
+            pushMul = pushMultiplier;
+            _impulsedThisActivation.Clear();
+
+            if (doExplosion) RadialBlast();
+
+            if (doExplosion && explosionVFX) explosionVFX.Play(true);
+            if (doExplosion && explosionSfx) explosionSfx.Play();
+            // your camera shake hook here if you have one
+        }
+
+        void FixedUpdate()
+        {
+            if (!IsActive) return;
+
+            if (applyContinuousPush)
+                ContinuousSpherePush();
+
+            if (doDirectional)
+                DirectionalOverlapPush();
+        }
+
+        // --- internals ---
+        void RadialBlast()
+        {
+            float g = GrowthScale01();
+            float radius = Mathf.Max(minRadius, baseExplosionRadius * sizeScaleMultiplier * g);
+            int count = Physics.OverlapSphereNonAlloc(transform.position, radius, _overlapBuffer, targetLayerMask, QueryTriggerInteraction.Collide);
+
+            for (int i = 0; i < count; i++)
             {
-                Debug.LogWarning("[SpiderAttackHitbox] No parent ShadowMonster found—scaling disabled.");
-                scaleWithParent = false;
+                var c = _overlapBuffer[i];
+                if (!IsValidTarget(c)) continue;
+                var rb = c.attachedRigidbody;
+                if (rb == null || rb.isKinematic) continue;
+
+                var dir = (c.transform.position - transform.position).normalized;
+                float force = Mathf.Max(minPushForce, basePushForce * forceScaleMultiplier * pushMul * g);
+                rb.AddForce(dir * force, pushForceMode);
+
+                _impulsedThisActivation.Add(rb);
+                // TODO call your IDamageable here (damage = baseDamage * damageScaleMultiplier * damageMul * g)
             }
         }
 
-        private void OnTriggerStay(Collider other)
+        void DirectionalOverlapPush()
         {
-            if (!gameObject.activeInHierarchy || hasExploded || !applyContinuousPush) return;
+            float g = GrowthScale01();
 
-            if (IsValidTarget(other.gameObject))
+            // forward box centered a bit in front of the hitbox
+            Vector3 size = Vector3.Max(Vector3.one * 0.01f, baseBoxSize) * (sizeScaleMultiplier * g);
+            Vector3 half = size * 0.5f;
+            float dist = Mathf.Max(0.01f, baseCastDistance) * (sizeScaleMultiplier * g);
+
+            // OverlapBox catches everything inside a box volume; we center it half distance forward
+            Vector3 center = transform.position + transform.forward * (dist * 0.5f);
+            int count = Physics.OverlapBoxNonAlloc(center, half, _overlapBuffer, transform.rotation, targetLayerMask, QueryTriggerInteraction.Collide);
+
+            for (int i = 0; i < count; i++)
             {
-                Rigidbody rb = other.attachedRigidbody;
-                if (rb != null && rb.gameObject != owner)  // Skip owner
-                {
-                    Vector3 pushDir = (other.transform.position - transform.position).normalized;
-                    rb.AddForce(pushDir * scaledContinuousPushForce * Time.deltaTime, ForceMode.Force); 
-                }
+                var c = _overlapBuffer[i];
+                if (!IsValidTarget(c)) continue;
+
+                var rb = c.attachedRigidbody;
+                if (rb == null || rb.isKinematic) continue;
+
+                float force = Mathf.Max(minPushForce, baseDirectionalPushForce * forceScaleMultiplier * pushMul * g);
+                if (_impulsedThisActivation.Add(rb))
+                    rb.AddForce(transform.forward * force, pushForceMode);
             }
         }
 
-        public void TriggerExplosion()
+        void ContinuousSpherePush()
         {
-            if (!isActiveAndEnabled || hasExploded) return;
-            hasExploded = true;
+            float g = GrowthScale01();
+            float radius = Mathf.Max(minRadius, baseExplosionRadius * sizeScaleMultiplier * g);
+            int count = Physics.OverlapSphereNonAlloc(transform.position, radius, _overlapBuffer, targetLayerMask, QueryTriggerInteraction.Collide);
 
-            // 🔊 VFX & SFX
-            if (explosionVFX != null)
+            for (int i = 0; i < count; i++)
             {
-                var fx = Instantiate(explosionVFX, transform.position, Quaternion.identity);
-                fx.Play();
-                Destroy(fx.gameObject, fx.main.duration + fx.main.startLifetime.constantMax);
+                var c = _overlapBuffer[i];
+                if (!IsValidTarget(c)) continue;
+
+                var rb = c.attachedRigidbody;
+                if (rb == null || rb.isKinematic) continue;
+
+                var dir = (c.transform.position - transform.position).normalized;
+                float f = baseContinuousPush * forceScaleMultiplier * pushMul * Time.fixedDeltaTime * g;
+                rb.AddForce(dir * f, ForceMode.Force);
             }
-
-            if (explosionSfx != null)
-            {
-                AudioSource.PlayClipAtPoint(explosionSfx, transform.position);
-            }
-
-            VRRigShake.Instance?.Shake(shakeIntensity, shakeDuration);
-
-            // 💥 Explosion Logic (radial) - Simplified without HashSet
-            float currentRadius = Mathf.Max(sphereCollider.radius, minRadius);  // Ensure min
-            Collider[] hits = Physics.OverlapSphere(transform.position, currentRadius, targetLayerMask);  // Allocating for simplicity (64 max not needed)
-            foreach (Collider hit in hits)
-            {
-                if (hit == null || hit.gameObject == owner) continue;
-
-                GameObject hitObject = hit.gameObject;
-                if (IsValidTarget(hitObject))
-                {
-                    HealthComponent hp = hitObject.GetComponent<HealthComponent>();
-                    if (hp != null)
-                    {
-                        float finalDamage = scaledDamage;
-
-                        // Reduce damage to 1/10 if kamikaze and target is Enemy
-                        if (isKamikaze && hitObject.CompareTag("Enemy"))
-                        {
-                            finalDamage *= 0.1f;
-                        }
-
-                        Vector3 hitPoint = hit.ClosestPoint(transform.position);
-                        hp.TakeDamage(finalDamage, hitPoint, owner, true);
-                    }
-
-                    Rigidbody rb = hit.attachedRigidbody;
-                    if (rb != null)
-                    {
-                        Vector3 pushDir = (hitObject.transform.position - transform.position).normalized;
-                        float effectiveForce = Mathf.Max(scaledPushForce, minPushForce);  // Ensure min force
-                        rb.AddForce(pushDir * effectiveForce, pushForceMode);
-                        Debug.Log($"[Radial Push] Applied {effectiveForce} force to {hitObject.name} (mass={rb.mass}, kinematic={rb.isKinematic}, mode={pushForceMode})");
-                    }
-                }
-            }
-
-            // Directional hit for forward impact
-            DirectionalHit();
         }
 
-        private void DirectionalHit()
+        bool IsValidTarget(Collider c)
         {
-            RaycastHit[] directionalHits = Physics.BoxCastAll(transform.position, scaledBoxSize / 2f, transform.forward, transform.rotation, scaledCastDistance, targetLayerMask);  // Allocating for simplicity
-            foreach (RaycastHit hit in directionalHits)
-            {
-                if (hit.collider == null || hit.collider.gameObject == owner) continue;
-
-                GameObject hitObject = hit.collider.gameObject;
-                if (IsValidTarget(hitObject))
-                {
-                    HealthComponent hp = hitObject.GetComponent<HealthComponent>();
-                    if (hp != null)
-                    {
-                        float finalDamage = scaledDamage;
-
-                        // Reduce damage to 1/10 if kamikaze and target is Enemy
-                        if (isKamikaze && hitObject.CompareTag("Enemy"))
-                        {
-                            finalDamage *= 0.1f;
-                        }
-
-                        hp.TakeDamage(finalDamage, hit.point, owner, true);
-                    }
-
-                    Rigidbody rb = hit.collider.attachedRigidbody;
-                    if (rb != null)
-                    {
-                        Vector3 pushDir = transform.forward;  // Directional push
-                        float effectiveForce = Mathf.Max(scaledDirectionalPushForce, minPushForce);  // Ensure min force
-                        rb.AddForceAtPosition(pushDir * effectiveForce, hit.point, pushForceMode);  // At point for rotation
-                        Debug.Log($"Directional Push on: {hit.collider.name} with {effectiveForce} force (mass={rb.mass}, kinematic={rb.isKinematic}, mode={pushForceMode})");
-                    }
-                }
-            }
-        }
-        
-        public void Initialize(GameObject newOwner, float newDamage = -1f, float newPushForce = -1f, float radius = -1f, bool kamikaze = false)
-        {
-            owner = newOwner;
-            isKamikaze = kamikaze;  // Set kamikaze flag
-            // Only override serialized values if parameters are provided (non-negative)
-            if (newDamage >= 0f)
-            {
-                baseDamage = newDamage;
-            }
-            if (newPushForce >= 0f)
-            {
-                basePushForce = newPushForce;
-            }
-            hasExploded = false;
-            if (radius >= 0f && sphereCollider != null)
-            {
-                sphereCollider.radius = Mathf.Max(radius, minRadius);  // Apply min radius
-            }
-            if (isKamikaze)
-            {
-                baseBoxSize *= 3f;  // 3x size for kamikaze
-                baseCastDistance *= 3f;
-            }
-
-            // Apply scaling based on parent
-            float scaleFactor = 1f;
-            if (scaleWithParent && parentMonster != null)
-            {
-                scaleFactor = parentMonster.transform.localScale.y;  // Use Y as size proxy (or average XYZ)
-            }
-
-            // Compute scaled values
-            scaledDamage = baseDamage * scaleFactor * damageScaleMultiplier;
-            scaledPushForce = basePushForce * scaleFactor;
-            scaledContinuousPushForce = baseContinuousPushForce * scaleFactor;
-            scaledBoxSize = baseBoxSize * scaleFactor;
-            scaledCastDistance = baseCastDistance * scaleFactor;
-            scaledDirectionalPushForce = baseDirectionalPushForce * scaleFactor;
-
-            // Optional: Scale collider radius too (if not set via param)
-            if (radius < 0f && sphereCollider != null)
-            {
-                sphereCollider.radius = Mathf.Max(sphereCollider.radius * scaleFactor, minRadius);
-            }
-
-            Debug.Log($"[SpiderAttackHitbox] Initialized with scaleFactor={scaleFactor}, scaledDamage={scaledDamage}, scaledRadius={(sphereCollider ? sphereCollider.radius : 0)}");
+            if (targetTags == null || targetTags.Count == 0) return true;
+            return targetTags.Contains(c.tag);
         }
 
-        // New: Helper to check if target is valid (tags + layer)
-        private bool IsValidTarget(GameObject target)
-        {
-            if (target == null) return false;
-            foreach (string tag in targetTags)
-            {
-                if (target.CompareTag(tag)) return true;
-            }
-            return false;
-        }
-
-        // New: Reset for pooling/reuse
-        public void ResetHitbox()
-        {
-            hasExploded = false;
-            // Reset other states if needed
-        }
-
-        private void OnDrawGizmosSelected()
+        void OnDrawGizmosSelected()
         {
             if (!drawDebugGizmos) return;
             Gizmos.color = gizmoColor;
-            float gizmoRadius = sphereCollider != null ? sphereCollider.radius : 3f;
-            Gizmos.DrawWireSphere(transform.position, gizmoRadius);
 
-            // Directional box preview (use base for static view, or scaled if desired)
-            Gizmos.color = Color.blue;
-            Gizmos.DrawWireCube(transform.position + transform.forward * (baseCastDistance / 2f), baseBoxSize);
+            float g = Application.isPlaying ? GrowthScale01() : 1f;
+            float radius = Mathf.Max(minRadius, baseExplosionRadius * sizeScaleMultiplier * g);
+            Gizmos.DrawWireSphere(transform.position, radius);
+
+            Vector3 size = Vector3.Max(Vector3.one * 0.01f, baseBoxSize) * (sizeScaleMultiplier * g);
+            Vector3 center = transform.position + transform.forward * (Mathf.Max(0.01f, baseCastDistance) * (sizeScaleMultiplier * g) * 0.5f);
+            Matrix4x4 m = Matrix4x4.TRS(center, transform.rotation, Vector3.one);
+            var old = Gizmos.matrix;
+            Gizmos.matrix = m;
+            Gizmos.DrawWireCube(Vector3.zero, size);
+            Gizmos.matrix = old;
         }
     }
 }

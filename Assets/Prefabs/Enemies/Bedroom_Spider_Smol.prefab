@@ -27,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 4643109836980762304}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0, y: 0.002259, z: -0.001102}
+  m_LocalPosition: {x: 0, y: 0.00226, z: -0.00468}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -52,8 +52,8 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.003
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Radius: 0.15
+  m_Center: {x: 0, y: 0, z: 0.005}
 --- !u!114 &5078379185537246606
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -72,17 +72,19 @@ MonoBehaviour:
     type: 3}
   explosionSfx: {fileID: 8300000, guid: 9118a3d703424a441a222ad5c2ea6971, type: 3}
   shakeIntensity: 0.01
-  shakeDuration: 0.05
+  shakeDuration: 0.1
   drawDebugGizmos: 1
   gizmoColor: {r: 1, g: 0, b: 0, a: 1}
   baseContinuousPushForce: 50
   applyContinuousPush: 1
-  baseBoxSize: {x: 1, y: 1, z: 1}
+  baseBoxSize: {x: 0.5, y: 0.5, z: 0.5}
   baseCastDistance: 1
   baseDirectionalPushForce: 15
+  pushForceMode: 1
   scaleWithParent: 1
   damageScaleMultiplier: 1
   minRadius: 0.1
+  minPushForce: 5
   targetLayerMask:
     serializedVersion: 2
     m_Bits: 8392
@@ -107,17 +109,17 @@ PrefabInstance:
     - target: {fileID: 1275427502020279384, guid: 9e0599f5a53c6ae4e91961edfdad1ce9,
         type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.00070000003
+      value: 0.0001
       objectReference: {fileID: 0}
     - target: {fileID: 1275427502020279384, guid: 9e0599f5a53c6ae4e91961edfdad1ce9,
         type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.00070000003
+      value: 0.0001
       objectReference: {fileID: 0}
     - target: {fileID: 1275427502020279384, guid: 9e0599f5a53c6ae4e91961edfdad1ce9,
         type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.00070000003
+      value: 0.0001
       objectReference: {fileID: 0}
     - target: {fileID: 1275427502020279384, guid: 9e0599f5a53c6ae4e91961edfdad1ce9,
         type: 3}
@@ -127,12 +129,12 @@ PrefabInstance:
     - target: {fileID: 1275427502020279384, guid: 9e0599f5a53c6ae4e91961edfdad1ce9,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.00122
+      value: -0.00114
       objectReference: {fileID: 0}
     - target: {fileID: 1275427502020279384, guid: 9e0599f5a53c6ae4e91961edfdad1ce9,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.00114
+      value: 0.00028
       objectReference: {fileID: 0}
     - target: {fileID: 1275427502020279384, guid: 9e0599f5a53c6ae4e91961edfdad1ce9,
         type: 3}
@@ -192,7 +194,7 @@ PrefabInstance:
     - target: {fileID: 1275427502020279462, guid: 9e0599f5a53c6ae4e91961edfdad1ce9,
         type: 3}
       propertyPath: ShapeModule.arc.mode
-      value: 3
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1275427502020279462, guid: 9e0599f5a53c6ae4e91961edfdad1ce9,
         type: 3}
@@ -202,7 +204,7 @@ PrefabInstance:
     - target: {fileID: 1275427502020279462, guid: 9e0599f5a53c6ae4e91961edfdad1ce9,
         type: 3}
       propertyPath: ShapeModule.radius.value
-      value: 0.3
+      value: 0.42
       objectReference: {fileID: 0}
     - target: {fileID: 1275427502020279462, guid: 9e0599f5a53c6ae4e91961edfdad1ce9,
         type: 3}
@@ -369,17 +371,17 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: eea07b0f474e5d44c85bbaded1d24bf4,
         type: 3}
       propertyPath: m_LocalScale.x
-      value: 1
+      value: 0.37
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: eea07b0f474e5d44c85bbaded1d24bf4,
         type: 3}
       propertyPath: m_LocalScale.y
-      value: 1
+      value: 0.37
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: eea07b0f474e5d44c85bbaded1d24bf4,
         type: 3}
       propertyPath: m_LocalScale.z
-      value: 1
+      value: 0.37
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: eea07b0f474e5d44c85bbaded1d24bf4,
         type: 3}
@@ -1555,7 +1557,7 @@ MonoBehaviour:
     m_Bits: 8
   treeLayer:
     serializedVersion: 2
-    m_Bits: 65
+    m_Bits: 8257
 --- !u!114 &7609633742523881503
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1721,6 +1723,10 @@ MonoBehaviour:
   isInvulnerableByDefault: 0
   scaleWithHealth: 1
   minScaleOnLowHealth: {x: 0, y: 0, z: 0}
+  destroyOnDistance: 0
+  referencePoint: {fileID: 0}
+  maxAllowedDistance: 30
+  distanceCheckInterval: 2
   OnHealthChanged:
     m_PersistentCalls:
       m_Calls: []

@@ -4,7 +4,7 @@ using UnityEngine.XR.Interaction.Toolkit;
 using Core;
 using Items;
 using System.Collections;
-using Random = UnityEngine.Random;  // Add this for random selection
+using Random = UnityEngine.Random;
 
 namespace Enemies
 {
@@ -16,8 +16,8 @@ namespace Enemies
         private static readonly int KamikazeAttack = Animator.StringToHash("KamikazeAttack");
         private static readonly int IdleOnAir = Animator.StringToHash("IdleOnAir");
         private static readonly int Attack = Animator.StringToHash("Attack");
-        private static readonly int Attack2 = Animator.StringToHash("Attack2");  // New
-        private static readonly int Attack3 = Animator.StringToHash("Attack3");  // New
+        private static readonly int Attack2 = Animator.StringToHash("Attack2");
+        private static readonly int Attack3 = Animator.StringToHash("Attack3");
         private static readonly int Dead = Animator.StringToHash("Dead");
 
         [Header("References")]
@@ -30,7 +30,7 @@ namespace Enemies
         [SerializeField] private AudioSource audioSource;
         [SerializeField] public UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable grabInteractable;
         [SerializeField] public HealthComponent healthComponent;
-        
+
         [Header("Settings")]
         public float chaseRange = 15f;
         public float attackRange = 2f;
@@ -44,36 +44,37 @@ namespace Enemies
         public float pushForce = 5f;
         public float stuckTimeThreshold = 9f;
         public float idleTimeBeforeDive = 5f;
+
         [SerializeField] private float growthTime = 30f;
         [SerializeField] private Vector3 startScale = new Vector3(0.5f, 0.5f, 0.5f);
         [SerializeField] private Vector3 fullScale = new Vector3(1f, 1f, 1f);
-        
+
         [Header("Dive Settings")]
         [SerializeField] private LayerMask wallLayer;
-        [SerializeField] public float diveForceMultiplier = 1.5f; 
+        [SerializeField] public float diveForceMultiplier = 1.5f;
         public float diveSpeed = 10f;
         public float diveTimeout = 3f;
-        public float diveDamage = 15f;  // New: Damage for dive attack, adjust as needed
+        public float diveDamage = 15f;
 
         [Header("NavMesh Scaling")]
-        [SerializeField] private float originalAgentRadius = 0.5f;  // Base agent radius
-        [SerializeField] private float originalAgentHeight = 2f;    // Base agent height
-        [SerializeField] private float originalBaseOffset = 0f;     // Base offset
+        [SerializeField] private float originalAgentRadius = 0.5f;
+        [SerializeField] private float originalAgentHeight = 2f;
+        [SerializeField] private float originalBaseOffset = 0f;
 
         [Header("Throw and Break Settings")]
-        [SerializeField] public float maxHoldTime = 5f;  // Time before break free
-        [SerializeField] private float velocityThreshold = 0.1f;  // For settling after throw/dive
-        [SerializeField] public float struggleShakeIntensity = 0.1f;  // For feedback during long hold
-        [SerializeField] private float breakDamage = 10f;  // Optional: Damage to player on break
-        [SerializeField] private float settleDelayAfterLand = 0.2f;  // Delay before resuming AI after land
+        [SerializeField] public float maxHoldTime = 5f;
+        [SerializeField] private float velocityThreshold = 0.1f;
+        [SerializeField] public float struggleShakeIntensity = 0.1f;
+        [SerializeField] private float breakDamage = 10f;
+        [SerializeField] private float settleDelayAfterLand = 0.2f;
 
         private bool isBreakingHold = false;
-        private bool isThrown = false;  // Track post-release physics flight
-        
+        private bool isThrown = false;
+
         [Header("Ground Check Settings")]
-        [SerializeField] private float groundRayDistance = 0.5f;  // Raycast down distance (adjust to scale)
-        [SerializeField] private LayerMask groundLayer;  // Ensure assigned in Inspector
-        [SerializeField] private float minFloorY = -10f;  // Clamp threshold for position (adjust to scene)
+        [SerializeField] private float groundRayDistance = 0.5f;
+        [SerializeField] private LayerMask groundLayer;
+        [SerializeField] private float minFloorY = -10f;
 
         public Transform currentTarget;
         private Vector3 lastPosition;
@@ -81,7 +82,7 @@ namespace Enemies
         public float chargeTimer { get; private set; }
         private bool isCharging;
         public bool isInKamikazeMode;
-        private float originalExplosionRadius;
+        private float originalExplosionRadius = 0.4f;   // sensible fallback
         public float lastAttackTime;
         public StateMachine stateMachine { get; private set; }
         private Coroutine attackCoroutine;
@@ -94,27 +95,28 @@ namespace Enemies
 
         [SerializeField] private Transform groundCheckPoint;
 
-        [Header("Target Layers")]  // New for optimized GetClosestTarget
+        [Header("Target Layers")]
         [SerializeField] private LayerMask playerLayer;
         [SerializeField] private LayerMask treeLayer;
 
+        // === Ground / NavMesh ===
         public bool IsGrounded()
         {
             float scaleFactor = transform.localScale.y;
             float adjustedDistance = groundRayDistance * scaleFactor;
 
-            // Raycast down from groundCheckPoint
-            bool grounded = Physics.Raycast(groundCheckPoint.position, -Vector3.up, adjustedDistance, groundLayer);
+            bool grounded = Physics.Raycast(groundCheckPoint.position, Vector3.down, adjustedDistance, groundLayer);
             isGrounded = grounded;
+
             if (animator != null)
             {
                 animator.SetBool(Grounded, grounded);
                 animator.Update(0f);
             }
+
             if (!grounded)
             {
-                string layerName = groundLayer.value == 0 ? "INVALID - Assign in Inspector!" : LayerMask.LayerToName(Mathf.RoundToInt(Mathf.Log(groundLayer.value + 1, 2)) - 1);
-                Debug.LogWarning($"[IsGrounded] Failed at scale {scaleFactor}: Position={groundCheckPoint.position}, Layer={layerName}, Adjusted Distance={adjustedDistance}");
+                Debug.LogWarning($"[IsGrounded] Failed at scale {scaleFactor:F2}: Position={groundCheckPoint.position}, Adjusted Distance={adjustedDistance}");
             }
             return grounded;
         }
@@ -135,17 +137,18 @@ namespace Enemies
 
         public void EnsureAgentOnNavMesh()
         {
-            if (agent != null && !agent.isActiveAndEnabled)
+            if (agent == null) return;
+
+            if (!agent.isActiveAndEnabled)
             {
                 agent.enabled = true;
                 agent.speed = 3.5f;
                 agent.stoppingDistance = 0f;
             }
-            if (agent != null && !agent.isOnNavMesh)
+            if (!agent.isOnNavMesh)
             {
                 float scaleFactor = transform.localScale.y;
-                NavMeshHit hit;
-                if (NavMesh.SamplePosition(transform.position, out hit, 10f * scaleFactor, NavMesh.AllAreas))  // Increased sample distance to reduce snap risk
+                if (NavMesh.SamplePosition(transform.position, out var hit, 10f * scaleFactor, NavMesh.AllAreas))
                 {
                     transform.position = hit.position;
                     agent.Warp(hit.position);
@@ -153,11 +156,11 @@ namespace Enemies
                 }
                 else
                 {
-                    Debug.LogWarning("[EnsureAgent] No NavMesh position found near " + transform.position);
+                    Debug.LogWarning("[EnsureAgent] No NavMesh position near " + transform.position);
                 }
             }
         }
-        
+
         public void ForceBreakHold()
         {
             if (grabInteractable != null && grabInteractable.isSelected)
@@ -166,7 +169,9 @@ namespace Enemies
                 if (grabInteractable.interactorsSelecting.Count > 0)
                 {
                     var interactor = grabInteractable.interactorsSelecting[0];
-                    grabInteractable.interactionManager.SelectExit(interactor, (UnityEngine.XR.Interaction.Toolkit.Interactables.IXRSelectInteractable)grabInteractable);
+                    grabInteractable.interactionManager.SelectExit(
+                        interactor,
+                        (UnityEngine.XR.Interaction.Toolkit.Interactables.IXRSelectInteractable)grabInteractable);
                     Debug.Log("[ForceBreakHold] Forced release.");
                 }
                 else
@@ -180,20 +185,18 @@ namespace Enemies
         {
             if (agent != null)
             {
-                float scaleFactor = transform.localScale.y;  // Use Y for height consistency
-                agent.radius = 0.28f;  // Match your baked radius
-                agent.height = 0.36f;  // Match your baked height
-                //agent.baseOffset = originalBaseOffset * scaleFactor - (scaleFactor - 1f) * 0.1f;  // Slight negative offset for larger scales to "sink" in
-                EnsureAgentOnNavMesh();  // Force re-sample after changes
+                float scaleFactor = transform.localScale.y;
+                agent.radius = originalAgentRadius * scaleFactor;
+                agent.height = originalAgentHeight * scaleFactor;
+                agent.baseOffset = originalBaseOffset * scaleFactor;
+                EnsureAgentOnNavMesh();
             }
         }
 
         public void EnableAI()
         {
-            if (!enabled)
-            {
-                enabled = true;
-            }
+            if (!enabled) enabled = true;
+
             EnsureAgentOnNavMesh();
             if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
             {
@@ -214,46 +217,53 @@ namespace Enemies
                 StopCoroutine(attackCoroutine);
                 attackCoroutine = null;
             }
-            ResetAnimator();  // Use new method
-
-            // Change state FIRST to allow OnExit to run while agent is enabled
+            ResetAnimator();
             stateMachine.ChangeState(null);
         }
 
+        // === Lifecycle ===
         protected override void Awake()
         {
             base.Awake();
+
             stateMachine = new StateMachine();
             audioSource = GetComponent<AudioSource>();
             grabInteractable = GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
             healthComponent = GetComponent<HealthComponent>();
             gameObject.tag = "Enemy";
-            if (!healthComponent)
-            {
-                healthComponent = gameObject.AddComponent<HealthComponent>();
-            }
-            if (animator == null)
-            {
-                animator = GetComponent<Animator>();
-            }
+
+            if (!healthComponent) healthComponent = gameObject.AddComponent<HealthComponent>();
+            if (!animator) animator = GetComponent<Animator>();
+            if (!rb) rb = GetComponent<Rigidbody>();
+
             if (rb != null)
             {
                 rb.constraints = RigidbodyConstraints.FreezeRotation;
-                rb.useGravity = true;  // Ensure gravity for throws/dives
-                rb.isKinematic = false;  // Non-kinematic for constant physics (damage, throws, pushes)
+                rb.useGravity = true;
+                rb.isKinematic = false;
             }
+
             if (agent != null)
             {
-                agent.updatePosition = false;  // Decouple agent from direct transform control
-                agent.updateRotation = false;  // Manual rotation
+                // We manually drive motion from desiredVelocity in FixedUpdate:
+                agent.updatePosition = false;
+                agent.updateRotation = false;
             }
+
             if (attackHitbox != null)
             {
-                var collider = attackHitbox.GetComponent<SphereCollider>();
-                originalExplosionRadius = collider.radius;  // Cache the actual collider radius
-                attackHitbox.Initialize(gameObject, normalAttackDamage, pushForce);
+                // Cache a sensible base radius (collider may be small due to bone scale)
+                var col = attackHitbox.GetComponent<SphereCollider>();
+                if (col) originalExplosionRadius = Mathf.Max(0.05f, col.radius);
+
+                // Critical: scale from the ROOT that actually grows
+                attackHitbox.scaleSource = transform;
+                attackHitbox.sizeScaleMultiplier = 1f;
+                attackHitbox.forceScaleMultiplier = 1f;
+                attackHitbox.damageScaleMultiplier = 1f;
             }
-            ResetAnimator();  // Initial reset
+
+            ResetAnimator();
             transform.localScale = startScale;
             growthTimer = 0f;
             EnsureAgentOnNavMesh();
@@ -262,6 +272,7 @@ namespace Enemies
         protected override void Start()
         {
             base.Start();
+
             if (grabInteractable != null)
             {
                 grabInteractable.selectEntered.AddListener(OnGrabbed);
@@ -272,6 +283,7 @@ namespace Enemies
                 healthComponent.OnTakeDamage.AddListener(OnHealthChanged);
                 healthComponent.OnDeath.AddListener(OnDeath);
             }
+
             currentTarget = GetClosestTarget();
             EnableAI();
         }
@@ -287,16 +299,21 @@ namespace Enemies
             EnsureAgentOnNavMesh();
             stateMachine.Tick();
             CheckIfStuck();
+
+            // Growth
             growthTimer += Time.deltaTime;
             float growthProgress = Mathf.Clamp01(growthTimer / growthTime);
             transform.localScale = Vector3.Lerp(startScale, fullScale, growthProgress);
-            UpdateAgentOnScale();  // Update agent after scaling
+            UpdateAgentOnScale();
+
+            // Refresh target occasionally
             targetRefreshTimer += Time.deltaTime;
             if (targetRefreshTimer >= k_TargetRefreshInterval)
             {
                 GetClosestTarget();
                 targetRefreshTimer = 0f;
             }
+
 #if UNITY_EDITOR
             if (Input.GetKeyDown(KeyCode.G) && isGrounded)
             {
@@ -308,32 +325,27 @@ namespace Enemies
                 stateMachine.ChangeState(new ChaseState(this));
             }
 #endif
-            if (animator != null)
-            {
-                string currentState = GetStateName(animator.GetCurrentAnimatorStateInfo(0).fullPathHash);
-                //Debug.Log("[Animator] Current State: " + currentState + ", Grounded Bool: " + animator.GetBool("isGrounded"));
-            }
 
-            // Handle post-release settling for throws/drops
+            // Post-release landing settle
             if (!isBeingHeld && isThrown && stateMachine.CurrentState is not DiveState)
             {
                 if (IsGrounded() && rb.linearVelocity.magnitude < velocityThreshold)
                 {
-                    StartCoroutine(ResumeAIWithDelay(settleDelayAfterLand));  // Delay to let physics settle
+                    StartCoroutine(ResumeAIWithDelay(settleDelayAfterLand));
                 }
             }
 
-            // Clamp position to prevent deep falls
+            // Clamp extreme falls
             if (transform.position.y < minFloorY)
             {
-                Vector3 pos = transform.position;
+                var pos = transform.position;
                 pos.y = minFloorY;
                 transform.position = pos;
-                rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);  // Zero Y velocity
+                rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
                 Debug.LogWarning("[Update] Clamped position to prevent fall-through.");
             }
 
-            // Sync agent position (always, if on NavMesh)
+            // Keep agent synced
             if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
             {
                 agent.nextPosition = transform.position;
@@ -342,12 +354,15 @@ namespace Enemies
 
         private void FixedUpdate()
         {
-            // Manual sync: Apply agent's desired velocity to Rigidbody if in AI mode (not held/thrown/diving)
-            if (enabled && agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh && !isBeingHeld && !isThrown && stateMachine.CurrentState is not DiveState && stateMachine.CurrentState is not HeldState)
+            // Drive RB with agent desired velocity when AI-controlled
+            if (enabled &&
+                agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh &&
+                !isBeingHeld && !isThrown &&
+                stateMachine.CurrentState is not DiveState &&
+                stateMachine.CurrentState is not HeldState)
             {
-                rb.linearVelocity = new Vector3(agent.desiredVelocity.x, rb.linearVelocity.y, agent.desiredVelocity.z);  // Apply horizontal nav, preserve vertical physics
+                rb.linearVelocity = new Vector3(agent.desiredVelocity.x, rb.linearVelocity.y, agent.desiredVelocity.z);
 
-                // Manual rotation towards movement
                 if (agent.desiredVelocity.sqrMagnitude > 0.01f)
                 {
                     transform.rotation = Quaternion.LookRotation(new Vector3(agent.desiredVelocity.x, 0f, agent.desiredVelocity.z));
@@ -355,23 +370,25 @@ namespace Enemies
             }
         }
 
+        // === Behavior helpers ===
         private void CheckIfStuck()
         {
-            if (!isGrounded) 
+            if (!isGrounded)
             {
-                stuckTimer = 0f;  // Reset if in air – no stuck
+                stuckTimer = 0f;
                 return;
             }
+
             if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
             {
-                if (agent.hasPath || agent.remainingDistance > 0.1f)  // Only when should be moving
+                if (agent.hasPath || agent.remainingDistance > 0.1f)
                 {
                     if (Vector3.Distance(transform.position, lastPosition) < 0.1f)
                     {
                         stuckTimer += Time.deltaTime;
                         if (stuckTimer > stuckTimeThreshold && !isInKamikazeMode)
                         {
-                            stateMachine.ChangeState(new DiveState(this));  // Dive instead of Kamikaze
+                            stateMachine.ChangeState(new DiveState(this)); // you can switch to Kamikaze if desired
                         }
                     }
                     else
@@ -402,10 +419,12 @@ namespace Enemies
 
         private void OnCollisionEnter(Collision collision)
         {
-            if (stateMachine.CurrentState is DiveState && ((1 << collision.gameObject.layer) & wallLayer) != 0)
+            // Proper layermask check
+            if (stateMachine.CurrentState is DiveState &&
+                (wallLayer.value & (1 << collision.gameObject.layer)) != 0)
             {
                 Debug.Log("[Dive] Hit wall/border, exiting Dive");
-                stateMachine.ChangeState(new IdleState(this));  // Or Chase if target nearby
+                stateMachine.ChangeState(new IdleState(this));
             }
         }
 
@@ -415,6 +434,7 @@ namespace Enemies
             {
                 isCharging = false;
                 stateMachine.ChangeState(new HurtState(this));
+
                 if (healthComponent.GetHealthPercentage() <= kamikazeHealthThreshold)
                 {
                     EnterKamikazeMode();
@@ -425,7 +445,7 @@ namespace Enemies
         private void OnDeath(HealthComponent health)
         {
             stateMachine.ChangeState(new DeadState(this));
-            StartCoroutine(DelayedScaleDown(2f)); // Delay for death animation
+            StartCoroutine(DelayedScaleDown(2f));
         }
 
         private IEnumerator DelayedScaleDown(float delay)
@@ -434,24 +454,20 @@ namespace Enemies
             StartCoroutine(ScaleDownAndDisable());
         }
 
-        protected override void OnDeathHandler()
-        {
-            // Handled by HealthComponent and DeadState
-        }
+        protected override void OnDeathHandler() { /* handled by HealthComponent/DeadState */ }
 
         public void SetMaxHealth(float value)
         {
-            if (healthComponent != null)
-            {
-                healthComponent.SetMaxHealth(value);
-            }
+            if (healthComponent != null) healthComponent.SetMaxHealth(value);
         }
 
+        // === Charge / Attack ===
         public void StartCharge()
         {
             isCharging = true;
             chargeTimer = 0f;
-            if (animator != null && isCharging)  // Explicit read to satisfy compiler
+
+            if (animator != null)
             {
                 animator.SetBool(IsCharging, true);
                 animator.SetBool(IsRunning, false);
@@ -469,62 +485,50 @@ namespace Enemies
 
         public void PerformAttack()
         {
-            if (Time.time < lastAttackTime + attackCooldown)
-            {
-                return;
-            }
+            if (Time.time < lastAttackTime + attackCooldown) return;
+
             lastAttackTime = Time.time;
             isCharging = false;
 
-            // Randomly select attack animation
             int[] attackTriggers = { Attack, Attack2, Attack3 };
             int selectedTrigger = attackTriggers[Random.Range(0, attackTriggers.Length)];
 
-            if (animator != null)
-            {
-                animator.SetTrigger(selectedTrigger);
-            }
+            if (animator != null) animator.SetTrigger(selectedTrigger);
 
             if (attackHitbox != null)
             {
-                var collider = attackHitbox.GetComponent<SphereCollider>();
-                collider.radius = originalExplosionRadius;
-                attackHitbox.Initialize(gameObject, normalAttackDamage, pushForce);
-                attackCoroutine = StartCoroutine(PerformAttackCoroutine(false));
+                attackCoroutine = StartCoroutine(PerformAttackCoroutine(isKamikaze: false));
             }
         }
 
         public IEnumerator PerformDiveAttackCoroutine()
         {
-            if (attackHitbox != null)
-            {
-                var collider = attackHitbox.GetComponent<SphereCollider>();
-                collider.radius = originalExplosionRadius;  // Or adjust if needed for dive
-                attackHitbox.Initialize(gameObject, diveDamage, pushForce);
-                attackHitbox.gameObject.SetActive(true);
-                yield return new WaitForSeconds(0.1f);  // Small delay to align with dive start
-                attackHitbox.TriggerExplosion();  // Trigger damage burst
-                yield return new WaitForSeconds(0.5f);  // Duration hitbox active
-                if (attackHitbox != null)
-                {
-                    attackHitbox.gameObject.SetActive(false);
-                }
-            }
+            if (attackHitbox == null) yield break;
+
+            attackHitbox.gameObject.SetActive(true);
+            yield return new WaitForSeconds(0.1f); // align with dive start
+
+            // Short, sharp radial thump for the dive impact
+            attackHitbox.baseExplosionRadius = Mathf.Max(attackHitbox.baseExplosionRadius, originalExplosionRadius);
+            attackHitbox.Activate(
+                duration: 0.2f,
+                explode: true,
+                directional: false,
+                damageMultiplier: Mathf.Max(0.1f, diveDamage / 10f),
+                pushMultiplier: Mathf.Max(0.1f, pushForce / 5f));
+
+            yield return new WaitForSeconds(0.5f);
+            attackHitbox.gameObject.SetActive(false);
         }
 
         public void PerformKamikazeAttack()
         {
-            if (Time.time < lastAttackTime + attackCooldown)
-            {
-                return;
-            }
+            if (Time.time < lastAttackTime + attackCooldown) return;
             lastAttackTime = Time.time;
+
             if (attackHitbox != null)
             {
-                var collider = attackHitbox.GetComponent<SphereCollider>();
-                collider.radius = originalExplosionRadius * kamikazeRadiusMultiplier;
-                attackHitbox.Initialize(gameObject, kamikazeAttackDamage, pushForce, kamikaze: true);
-                attackCoroutine = StartCoroutine(PerformAttackCoroutine(true));
+                attackCoroutine = StartCoroutine(PerformAttackCoroutine(isKamikaze: true));
             }
         }
 
@@ -533,57 +537,66 @@ namespace Enemies
             if (attackHitbox != null)
             {
                 attackHitbox.gameObject.SetActive(true);
+
                 if (isKamikaze)
                 {
-                    if (animator != null && animator.GetCurrentAnimatorStateInfo(0).IsName("Kamikaze"))  // Gate to state
-                    {
+                    if (animator != null && animator.GetCurrentAnimatorStateInfo(0).IsName("Kamikaze"))
                         animator.SetTrigger(KamikazeAttack);
-                    }
+
                     yield return new WaitForSeconds(0.2f);
-                    attackHitbox.TriggerExplosion(); 
-                    // Removed self-kill to prevent early deaths: healthComponent.Kill(gameObject);
+
+                    // Big radial blast; size auto-scales via scaleSource
+                    attackHitbox.baseExplosionRadius = Mathf.Max(originalExplosionRadius * kamikazeRadiusMultiplier, attackHitbox.baseExplosionRadius);
+                    attackHitbox.Activate(
+                        duration: 0.2f,
+                        explode: true,
+                        directional: false,
+                        damageMultiplier: Mathf.Max(0.1f, kamikazeAttackDamage / 10f),
+                        pushMultiplier: Mathf.Max(0.1f, pushForce / 5f));
                 }
                 else
                 {
+                    // Standard melee: forward shove (plus you can add a tiny radial if desired)
                     yield return new WaitForSeconds(0.3f);
-                    attackHitbox.TriggerExplosion();  // SFX/damage
+
+                    attackHitbox.baseExplosionRadius = Mathf.Max(originalExplosionRadius, attackHitbox.baseExplosionRadius);
+                    attackHitbox.Activate(
+                        duration: 0.25f,
+                        explode: false,
+                        directional: true,
+                        damageMultiplier: Mathf.Max(0.1f, normalAttackDamage / 10f),
+                        pushMultiplier: Mathf.Max(0.1f, pushForce / 5f));
                 }
+
                 yield return new WaitForSeconds(0.5f);
-                if (attackHitbox != null)
-                {
-                    attackHitbox.gameObject.SetActive(false);
-                }
+                if (attackHitbox != null) attackHitbox.gameObject.SetActive(false);
             }
+
             attackCoroutine = null;
         }
 
         public void EnterKamikazeMode()
         {
             isInKamikazeMode = true;
-            if (agent != null)
-            {
-                agent.speed *= 1.5f;
-            }
+            if (agent != null) agent.speed *= 1.5f;
             stateMachine.ChangeState(new KamikazeState(this));
         }
 
+        // === Grab flow ===
         public void Pickup()
         {
             isBeingHeld = true;
             isThrown = false;
-            if (agent != null)
-            {
-                agent.isStopped = true;  // Pause agent during grab
-            }
-            if (attackHitbox != null)
-            {
-                attackHitbox.gameObject.SetActive(false);
-            }
+
+            if (agent != null) agent.isStopped = true;
+            if (attackHitbox != null) attackHitbox.gameObject.SetActive(false);
+
             if (attackCoroutine != null)
             {
                 StopCoroutine(attackCoroutine);
                 attackCoroutine = null;
             }
+
             if (animator != null)
             {
                 animator.SetBool(Grounded, false);
@@ -594,6 +607,7 @@ namespace Enemies
                 animator.SetTrigger(IdleOnAir);
                 animator.Update(0f);
             }
+
             stateMachine.ChangeState(new HeldState(this));
         }
 
@@ -601,15 +615,14 @@ namespace Enemies
         {
             isBeingHeld = false;
             currentTarget = null;
-            if (attackHitbox != null)
-            {
-                attackHitbox.gameObject.SetActive(false);
-            }
+
+            if (attackHitbox != null) attackHitbox.gameObject.SetActive(false);
             if (attackCoroutine != null)
             {
                 StopCoroutine(attackCoroutine);
                 attackCoroutine = null;
             }
+
             if (animator != null)
             {
                 animator.SetBool(Grounded, isGrounded);
@@ -619,13 +632,14 @@ namespace Enemies
                 animator.ResetTrigger("KamikazeAttack");
                 animator.Update(0f);
             }
+
             EnsureAgentOnNavMesh();
 
             if (isBreakingHold)
             {
                 isBreakingHold = false;
-                stateMachine.ChangeState(new DiveState(this));  // Force Dive (handles physics)
-                // Optional: Damage player
+                stateMachine.ChangeState(new DiveState(this));
+
                 if (grabInteractable.interactorsSelecting.Count > 0)
                 {
                     var player = grabInteractable.interactorsSelecting[0].transform.root.GetComponent<HealthComponent>();
@@ -634,12 +648,10 @@ namespace Enemies
             }
             else
             {
-                isThrown = true;  // Mark for Update to handle landing
-                // No immediate state change; wait for land in Update
+                isThrown = true;
             }
 
-            // Temporarily disable grab to prevent instant re-grab (e.g., after break/dive)
-            StartCoroutine(ReEnableGrabAfter(1f));  // Adjust delay
+            StartCoroutine(ReEnableGrabAfter(1f));
         }
 
         private IEnumerator ReEnableGrabAfter(float delay)
@@ -649,37 +661,38 @@ namespace Enemies
             grabInteractable.enabled = true;
         }
 
+        // === Targeting ===
         public Transform GetClosestTarget()
         {
             Transform closestTarget = null;
             float closestDistance = Mathf.Infinity;
 
-            // Check trees
+            // Prefer TreeOfLightPot that is growing
             Collider[] treeHits = Physics.OverlapSphere(transform.position, chaseRange, treeLayer);
-            foreach (Collider hit in treeHits)
+            foreach (var hit in treeHits)
             {
                 var treePot = hit.GetComponent<TreeOfLightPot>();
                 if (treePot != null && treePot.IsGrowing)
                 {
-                    float distance = Vector3.Distance(transform.position, hit.transform.position);
-                    if (distance < closestDistance)
+                    float d = Vector3.Distance(transform.position, hit.transform.position);
+                    if (d < closestDistance)
                     {
-                        closestDistance = distance;
+                        closestDistance = d;
                         closestTarget = hit.transform;
                     }
                 }
             }
 
-            // Fallback to players if no trees
+            // Fallback: players
             if (closestTarget == null)
             {
                 Collider[] playerHits = Physics.OverlapSphere(transform.position, chaseRange, playerLayer);
-                foreach (Collider hit in playerHits)
+                foreach (var hit in playerHits)
                 {
-                    float distance = Vector3.Distance(transform.position, hit.transform.position);
-                    if (distance < closestDistance)
+                    float d = Vector3.Distance(transform.position, hit.transform.position);
+                    if (d < closestDistance)
                     {
-                        closestDistance = distance;
+                        closestDistance = d;
                         closestTarget = hit.transform;
                     }
                 }
@@ -691,111 +704,88 @@ namespace Enemies
 
         public float GetDistanceToTarget()
         {
-            if (currentTarget == null)
-            {
-                currentTarget = GetClosestTarget();
-            }
-            return currentTarget != null ? Vector3.Distance(transform.position, currentTarget.position) : Mathf.Infinity;
+            if (currentTarget == null) currentTarget = GetClosestTarget();
+            return currentTarget ? Vector3.Distance(transform.position, currentTarget.position) : Mathf.Infinity;
         }
 
+        // === Death / Despawn ===
         public void PlayDeathEffects()
         {
-            if (animator != null)
-            {
-                animator.SetTrigger(Dead);
-            }
-            if (deathVFX != null)
-            {
-                deathVFX.Play();
-            }
-            if (deathSfx != null && audioSource != null)
-            {
-                audioSource.PlayOneShot(deathSfx);
-            }
+            if (animator != null) animator.SetTrigger(Dead);
+            if (deathVFX != null) deathVFX.Play();
+            if (deathSfx != null && audioSource != null) audioSource.PlayOneShot(deathSfx);
         }
+
         public void Despawn()
         {
-            if (healthComponent != null)
-            {
-                healthComponent.Kill(gameObject);  // Triggers OnDeath -> PlayDeathEffects -> ScaleDown
-            }
-            else
-            {
-                StartCoroutine(ScaleDownAndDisable());  // Fallback no VFX
-            }
+            if (healthComponent != null) healthComponent.Kill(gameObject);
+            else StartCoroutine(ScaleDownAndDisable());
         }
-        
+
         public void ResetChargeTimer()
         {
             chargeTimer = 0f;
             isCharging = false;
-            if (animator != null)
-            {
-                animator.SetBool(IsCharging, false);
-            }
+            if (animator != null) animator.SetBool(IsCharging, false);
         }
 
+        // === Full reset (pool return) ===
         public void ResetSpider()
         {
-            if (stateMachine.CurrentState != null && !(stateMachine.CurrentState is DeadState))
-            {
-                return;
-            }
+            if (stateMachine.CurrentState != null && !(stateMachine.CurrentState is DeadState)) return;
+
             stuckTimer = 0f;
             chargeTimer = 0f;
             lastAttackTime = 0f;
             isCharging = false;
             isInKamikazeMode = false;
             currentTarget = null;
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
+
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
+
             transform.localScale = startScale;
             growthTimer = 0f;
+
             if (attackCoroutine != null)
             {
                 StopCoroutine(attackCoroutine);
                 attackCoroutine = null;
             }
-            if (attackHitbox != null)
-            {
-                attackHitbox.gameObject.SetActive(false);
-            }
+            if (attackHitbox != null) attackHitbox.gameObject.SetActive(false);
+
             ResetAnimator();
             EnsureAgentOnNavMesh();
-            if (healthComponent != null)
-            {
-                healthComponent.ResetHealth();
-            }
+
+            if (healthComponent != null) healthComponent.ResetHealth();
+
             if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
-            {
                 stateMachine.ChangeState(new IdleState(this));
-            }
             else
-            {
-                // Fallback: Start coroutine to wait
                 StartCoroutine(WaitForAgentReady());
-            }
         }
 
         private void ResetAnimator()
         {
-            if (animator != null)
-            {
-                animator.Rebind();
-                animator.Update(0f);
-                animator.SetBool(Grounded, isGrounded);
-                animator.SetBool(IsRunning, false);
-                animator.SetBool(IsCharging, false);
-                animator.ResetTrigger("Attack");
-                animator.ResetTrigger("Attack2");  // Add resets for new triggers
-                animator.ResetTrigger("Attack3");
-                animator.ResetTrigger("KamikazeAttack");
-            }
+            if (animator == null) return;
+
+            animator.Rebind();
+            animator.Update(0f);
+            animator.SetBool(Grounded, isGrounded);
+            animator.SetBool(IsRunning, false);
+            animator.SetBool(IsCharging, false);
+            animator.ResetTrigger("Attack");
+            animator.ResetTrigger("Attack2");
+            animator.ResetTrigger("Attack3");
+            animator.ResetTrigger("KamikazeAttack");
         }
 
         private IEnumerator WaitForAgentReady()
         {
-            yield return new WaitForSeconds(0.1f);  // Small delay
+            yield return new WaitForSeconds(0.1f);
             EnsureAgentOnNavMesh();
             if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
             {
@@ -803,15 +793,8 @@ namespace Enemies
             }
         }
 
-        private void OnGrabbed(SelectEnterEventArgs args)
-        {
-            Pickup();
-        }
-
-        private void OnReleased(SelectExitEventArgs args)
-        {
-            Release();
-        }
+        private void OnGrabbed(SelectEnterEventArgs args) => Pickup();
+        private void OnReleased(SelectExitEventArgs args) => Release();
 
         private void OnDestroy()
         {
@@ -835,11 +818,11 @@ namespace Enemies
         private IEnumerator DestroyAfterDelay(float delay)
         {
             float timer = 0f;
-            Vector3 currentScale = transform.localScale;
+            Vector3 start = transform.localScale;
             while (timer < delay)
             {
                 timer += Time.deltaTime;
-                transform.localScale = Vector3.Lerp(currentScale, Vector3.zero, timer / delay);
+                transform.localScale = Vector3.Lerp(start, Vector3.zero, timer / delay);
                 yield return null;
             }
             gameObject.SetActive(false);
