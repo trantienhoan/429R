@@ -21,19 +21,18 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Bedroom_Spider_Smol
-  m_Shader: {fileID: 4800000, guid: 596750eee9fe2874c94746a14cf12805, type: 3}
+  m_Shader: {fileID: 4800000, guid: 650dd9526735d5b46b79224bc6e94025, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords:
   - _EMISSION
-  - _METALLICSPECGLOSSMAP
-  - _NORMALMAP
   m_LightmapFlags: 1
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
+  stringTagMap:
+    RenderType: Opaque
   disabledShaderPasses:
   - MOTIONVECTORS
   m_LockedProperties: 
@@ -126,6 +125,7 @@ Material:
     - _QueueOffset: 0
     - _ReadMask: 255
     - _ReceiveShadows: 1
+    - _SampleGI: 0
     - _Smoothness: 1
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1

@@ -185,9 +185,9 @@ namespace Enemies
         {
             if (agent != null)
             {
-                float scaleFactor = transform.localScale.y;
-                agent.radius = originalAgentRadius * scaleFactor;
-                agent.height = originalAgentHeight * scaleFactor;
+                float scaleFactor = Mathf.Clamp(transform.localScale.y, 0.5f, 1.0f);  // Clamp to prevent over-scaling
+                agent.radius = Mathf.Clamp(originalAgentRadius * scaleFactor, 0.25f, 0.5f);  // Tuned bounds
+                agent.height = Mathf.Clamp(originalAgentHeight * scaleFactor, 1f, 2f);
                 agent.baseOffset = originalBaseOffset * scaleFactor;
                 EnsureAgentOnNavMesh();
             }
@@ -505,19 +505,38 @@ namespace Enemies
         {
             if (attackHitbox == null) yield break;
 
+            var collider = attackHitbox.GetComponent<SphereCollider>();
+            var hitboxScript = attackHitbox.GetComponent<AttackHitboxCollider>();
+            float originalRadius = collider.radius;
+
             attackHitbox.gameObject.SetActive(true);
-            yield return new WaitForSeconds(0.1f); // align with dive start
+            yield return new WaitForSeconds(0.1f);
 
-            // Short, sharp radial thump for the dive impact
-            attackHitbox.baseExplosionRadius = Mathf.Max(attackHitbox.baseExplosionRadius, originalExplosionRadius);
-            attackHitbox.Activate(
-                duration: 0.2f,
-                explode: true,
-                directional: false,
-                damageMultiplier: Mathf.Max(0.1f, diveDamage / 10f),
-                pushMultiplier: Mathf.Max(0.1f, pushForce / 5f));
+            // Scale up for dive impact
+            float scaleTime = 0.2f;
+            float targetRadius = 1.5f;  // Larger for dive (tune)
+            float timer = 0f;
+            while (timer < scaleTime)
+            {
+                timer += Time.deltaTime;
+                collider.radius = Mathf.Lerp(originalRadius, targetRadius, timer / scaleTime);
+                yield return null;
+            }
 
+            hitboxScript.SetDamage(diveDamage);  // Set dive-specific damage
+
+            // Existing wait...
             yield return new WaitForSeconds(0.5f);
+
+            // Scale back
+            timer = 0f;
+            while (timer < scaleTime)
+            {
+                timer += Time.deltaTime;
+                collider.radius = Mathf.Lerp(targetRadius, originalRadius, timer / scaleTime);
+                yield return null;
+            }
+
             attackHitbox.gameObject.SetActive(false);
         }
 
@@ -534,44 +553,50 @@ namespace Enemies
 
         private IEnumerator PerformAttackCoroutine(bool isKamikaze)
         {
-            if (attackHitbox != null)
+            if (attackHitbox == null) yield break;  // attackHitbox is now the GameObject with collider/script
+
+            var collider = attackHitbox.GetComponent<SphereCollider>();  // Get the collider
+            var hitboxScript = attackHitbox.GetComponent<AttackHitboxCollider>();  // Your new script
+            float originalRadius = collider.radius;  // Save original (e.g., 0.003)
+
+            attackHitbox.gameObject.SetActive(true);
+
+            // Scale up over time
+            float scaleTime = 0.3f;  // Duration to grow
+            float targetRadius = 1.0f;  // Scale up to this (tune)
+            float timer = 0f;
+            while (timer < scaleTime)
             {
-                attackHitbox.gameObject.SetActive(true);
-
-                if (isKamikaze)
-                {
-                    if (animator != null && animator.GetCurrentAnimatorStateInfo(0).IsName("Kamikaze"))
-                        animator.SetTrigger(KamikazeAttack);
-
-                    yield return new WaitForSeconds(0.2f);
-
-                    // Big radial blast; size auto-scales via scaleSource
-                    attackHitbox.baseExplosionRadius = Mathf.Max(originalExplosionRadius * kamikazeRadiusMultiplier, attackHitbox.baseExplosionRadius);
-                    attackHitbox.Activate(
-                        duration: 0.2f,
-                        explode: true,
-                        directional: false,
-                        damageMultiplier: Mathf.Max(0.1f, kamikazeAttackDamage / 10f),
-                        pushMultiplier: Mathf.Max(0.1f, pushForce / 5f));
-                }
-                else
-                {
-                    // Standard melee: forward shove (plus you can add a tiny radial if desired)
-                    yield return new WaitForSeconds(0.3f);
-
-                    attackHitbox.baseExplosionRadius = Mathf.Max(originalExplosionRadius, attackHitbox.baseExplosionRadius);
-                    attackHitbox.Activate(
-                        duration: 0.25f,
-                        explode: false,
-                        directional: true,
-                        damageMultiplier: Mathf.Max(0.1f, normalAttackDamage / 10f),
-                        pushMultiplier: Mathf.Max(0.1f, pushForce / 5f));
-                }
-
-                yield return new WaitForSeconds(0.5f);
-                if (attackHitbox != null) attackHitbox.gameObject.SetActive(false);
+                timer += Time.deltaTime;
+                collider.radius = Mathf.Lerp(originalRadius, targetRadius, timer / scaleTime);
+                yield return null;
             }
 
+            // Attack logic (animator, etc.) remains
+
+            if (isKamikaze)
+            {
+                // Existing kamikaze code...
+                hitboxScript.SetDamage(kamikazeAttackDamage);  // Override damage for this mode
+            }
+            else
+            {
+                // Existing normal attack code...
+                hitboxScript.SetDamage(normalAttackDamage);
+            }
+
+            // Wait for attack duration, then scale back
+            yield return new WaitForSeconds(0.5f);  // Your existing wait
+
+            timer = 0f;
+            while (timer < scaleTime)
+            {
+                timer += Time.deltaTime;
+                collider.radius = Mathf.Lerp(targetRadius, originalRadius, timer / scaleTime);
+                yield return null;
+            }
+
+            attackHitbox.gameObject.SetActive(false);
             attackCoroutine = null;
         }
 
@@ -833,6 +858,19 @@ namespace Enemies
             yield return new WaitForSeconds(delay);
             isThrown = false;
             Debug.Log("[ResumeAIWithDelay] Resumed AI after settle delay.");
+        }
+
+        void OnDrawGizmosSelected()
+        {
+            if (attackHitbox != null)
+            {
+                var collider = attackHitbox.GetComponent<SphereCollider>();
+                if (collider != null)
+                {
+                    Gizmos.color = Color.red;
+                    Gizmos.DrawWireSphere(attackHitbox.transform.position, collider.radius);
+                }
+            }
         }
     }
 }

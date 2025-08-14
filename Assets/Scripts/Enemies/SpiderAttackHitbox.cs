@@ -87,8 +87,28 @@ namespace Enemies
 
             if (doExplosion) RadialBlast();
 
-            if (doExplosion && explosionVFX) explosionVFX.Play(true);
-            if (doExplosion && explosionSfx) explosionSfx.Play();
+            Debug.Log($"[SpiderAttackHitbox] Activating with explode={doExplosion}. Checking explosionVFX: {(explosionVFX != null ? "Assigned" : "NULL")}");
+            Debug.Log($"[SpiderAttackHitbox] Checking explosionSfx: {(explosionSfx != null ? "Assigned" : "NULL")}");
+
+            if (doExplosion && explosionVFX != null) {
+                try {
+                    explosionVFX.Play(true);
+                    Debug.Log("[SpiderAttackHitbox] explosionVFX played successfully.");
+                } catch (System.Exception ex) {
+                    Debug.LogError($"[SpiderAttackHitbox] Error playing VFX: {ex.Message}");
+                }
+            }
+
+            if (doExplosion && explosionSfx != null && explosionSfx.gameObject != null) {
+                try {
+                    explosionSfx.Play();
+                    Debug.Log("[SpiderAttackHitbox] explosionSfx played successfully.");
+                } catch (System.Exception ex) {
+                    Debug.LogError($"[SpiderAttackHitbox] Error playing SFX: {ex.Message}. Skipping to avoid crash.");
+                }
+            } else if (doExplosion) {
+                Debug.LogWarning("[SpiderAttackHitbox] explosionSfx is invalid or missing—skipping play.");
+            }
             // your camera shake hook here if you have one
         }
 
@@ -109,6 +129,7 @@ namespace Enemies
             float g = GrowthScale01();
             float radius = Mathf.Max(minRadius, baseExplosionRadius * sizeScaleMultiplier * g);
             int count = Physics.OverlapSphereNonAlloc(transform.position, radius, _overlapBuffer, targetLayerMask, QueryTriggerInteraction.Collide);
+            Debug.Log($"[SpiderAttackHitbox] RadialBlast: Detected {count} overlaps at radius {radius}");
 
             for (int i = 0; i < count; i++)
             {
@@ -117,12 +138,21 @@ namespace Enemies
                 var rb = c.attachedRigidbody;
                 if (rb == null || rb.isKinematic) continue;
 
+                // Apply damage
+                var health = c.GetComponent<Core.HealthComponent>() ?? c.GetComponentInParent<Core.HealthComponent>();
+                if (health != null)
+                {
+                    float damage = baseDamage * damageScaleMultiplier * damageMul * g;
+                    health.TakeDamage(damage, transform.position);
+                    Debug.Log($"[Damage] Dealt {damage} to {c.name} at {transform.position}");
+                }
+
                 var dir = (c.transform.position - transform.position).normalized;
                 float force = Mathf.Max(minPushForce, basePushForce * forceScaleMultiplier * pushMul * g);
                 rb.AddForce(dir * force, pushForceMode);
+                Debug.Log($"[Push] Applied force {force} to {c.name}");
 
                 _impulsedThisActivation.Add(rb);
-                // TODO call your IDamageable here (damage = baseDamage * damageScaleMultiplier * damageMul * g)
             }
         }
 
@@ -138,6 +168,7 @@ namespace Enemies
             // OverlapBox catches everything inside a box volume; we center it half distance forward
             Vector3 center = transform.position + transform.forward * (dist * 0.5f);
             int count = Physics.OverlapBoxNonAlloc(center, half, _overlapBuffer, transform.rotation, targetLayerMask, QueryTriggerInteraction.Collide);
+            Debug.Log($"[SpiderAttackHitbox] DirectionalOverlapPush: Detected {count} overlaps");
 
             for (int i = 0; i < count; i++)
             {
@@ -147,9 +178,21 @@ namespace Enemies
                 var rb = c.attachedRigidbody;
                 if (rb == null || rb.isKinematic) continue;
 
+                // Apply damage
+                var health = c.GetComponent<Core.HealthComponent>() ?? c.GetComponentInParent<Core.HealthComponent>();
+                if (health != null)
+                {
+                    float damage = baseDamage * damageScaleMultiplier * damageMul * g;
+                    health.TakeDamage(damage, transform.position);
+                    Debug.Log($"[Damage] Dealt {damage} to {c.name} at {transform.position}");
+                }
+
                 float force = Mathf.Max(minPushForce, baseDirectionalPushForce * forceScaleMultiplier * pushMul * g);
                 if (_impulsedThisActivation.Add(rb))
+                {
                     rb.AddForce(transform.forward * force, pushForceMode);
+                    Debug.Log($"[Push] Applied directional force {force} to {c.name}");
+                }
             }
         }
 
@@ -158,6 +201,7 @@ namespace Enemies
             float g = GrowthScale01();
             float radius = Mathf.Max(minRadius, baseExplosionRadius * sizeScaleMultiplier * g);
             int count = Physics.OverlapSphereNonAlloc(transform.position, radius, _overlapBuffer, targetLayerMask, QueryTriggerInteraction.Collide);
+            Debug.Log($"[SpiderAttackHitbox] ContinuousSpherePush: Detected {count} overlaps at radius {radius}");
 
             for (int i = 0; i < count; i++)
             {
@@ -167,9 +211,19 @@ namespace Enemies
                 var rb = c.attachedRigidbody;
                 if (rb == null || rb.isKinematic) continue;
 
+                // Apply damage (reduced for continuous)
+                var health = c.GetComponent<Core.HealthComponent>() ?? c.GetComponentInParent<Core.HealthComponent>();
+                if (health != null)
+                {
+                    float damage = (baseDamage * damageScaleMultiplier * damageMul * g) * Time.fixedDeltaTime * 0.5f;  // Tune multiplier
+                    health.TakeDamage(damage, transform.position);
+                    Debug.Log($"[Damage] Dealt continuous {damage} to {c.name} at {transform.position}");
+                }
+
                 var dir = (c.transform.position - transform.position).normalized;
                 float f = baseContinuousPush * forceScaleMultiplier * pushMul * Time.fixedDeltaTime * g;
                 rb.AddForce(dir * f, ForceMode.Force);
+                Debug.Log($"[Push] Applied continuous force {f} to {c.name}");
             }
         }
 

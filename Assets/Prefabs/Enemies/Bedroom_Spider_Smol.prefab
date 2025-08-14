@@ -48,11 +48,11 @@ SphereCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.15
+  m_Radius: 0.003
   m_Center: {x: 0, y: 0, z: 0.005}
 --- !u!114 &5078379185537246606
 MonoBehaviour:
@@ -66,23 +66,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb68cb885af71d74d80e5c6cb5c82f44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  scaleSource: {fileID: 8314641946612675146}
+  fallbackToSelfIfNull: 1
+  scaleClamp: {x: 0.25, y: 5}
   baseDamage: 10
   basePushForce: 5
+  baseExplosionRadius: 1
   explosionVFX: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
-  explosionSfx: {fileID: 8300000, guid: 9118a3d703424a441a222ad5c2ea6971, type: 3}
+  explosionSfx: {fileID: 0}
   shakeIntensity: 0.01
   shakeDuration: 0.1
   drawDebugGizmos: 1
   gizmoColor: {r: 1, g: 0, b: 0, a: 1}
-  baseContinuousPushForce: 50
+  baseContinuousPush: 50
   applyContinuousPush: 1
   baseBoxSize: {x: 0.5, y: 0.5, z: 0.5}
   baseCastDistance: 1
   baseDirectionalPushForce: 15
   pushForceMode: 1
-  scaleWithParent: 1
   damageScaleMultiplier: 1
+  forceScaleMultiplier: 1
+  sizeScaleMultiplier: 1
   minRadius: 0.1
   minPushForce: 5
   targetLayerMask:
@@ -1413,6 +1418,12 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.003, y: 0.0033877217, z: 0.0030893977}
   m_Center: {x: 0.0000022430713, y: 0.0016732345, z: -0.0003916951}
+--- !u!4 &8314641946612675146 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: eea07b0f474e5d44c85bbaded1d24bf4,
+    type: 3}
+  m_PrefabInstance: {fileID: 8424321414631544225}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &8658269655017285872 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: eea07b0f474e5d44c85bbaded1d24bf4,
@@ -1557,7 +1568,7 @@ MonoBehaviour:
     m_Bits: 8
   treeLayer:
     serializedVersion: 2
-    m_Bits: 8257
+    m_Bits: 64
 --- !u!114 &7609633742523881503
 MonoBehaviour:
   m_ObjectHideFlags: 0
