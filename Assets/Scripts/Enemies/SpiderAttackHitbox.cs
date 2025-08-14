@@ -7,14 +7,17 @@ namespace Enemies
     public class SpiderAttackHitbox : MonoBehaviour
     {
         [Header("Scale Source (set to spider root that actually grows)")]
-        public Transform scaleSource;          // <- drag your top-level spider object here
+        public Transform scaleSource;          // drag your spider root here
         public bool fallbackToSelfIfNull = true;
-        [Tooltip("Clamp the growth multiplier so physics doesn't explode.")]
+        [Tooltip("Clamp growth multiplier so physics doesn't explode.")]
         public Vector2 scaleClamp = new Vector2(0.25f, 5f);
 
-        [Header("Explosion Settings")]
+        [Header("Base Settings")]
+        [Tooltip("Base (pre-multipliers) absolute damage per activation.")]
         public float baseDamage = 10f;
+        [Tooltip("Base (pre-multipliers) radial push impulse.")]
         public float basePushForce = 5f;
+        [Tooltip("Base (pre-multipliers) explosion radius.")]
         public float baseExplosionRadius = 1.0f;
 
         [Header("VFX & SFX")]
@@ -24,12 +27,13 @@ namespace Enemies
         public float shakeDuration = 0.1f;
 
         [Header("Debug")]
+        public bool debugVerboseLogs = false;   // turn on for deep debugging
         public bool drawDebugGizmos = true;
         public Color gizmoColor = Color.red;
 
         [Header("Continuous Push Settings")]
-        public float baseContinuousPush = 50f;
         public bool applyContinuousPush = true;
+        public float baseContinuousPush = 50f;   // Force mode = Force (per FixedUpdate)
 
         [Header("Directional Hit Settings")]
         public Vector3 baseBoxSize = new Vector3(0.5f, 0.5f, 0.5f);
@@ -37,7 +41,7 @@ namespace Enemies
         public float baseDirectionalPushForce = 15f;
         public ForceMode pushForceMode = ForceMode.Impulse;
 
-        [Header("Scaling Settings")]
+        [Header("Scaling Multipliers (designer tuning knobs)")]
         [Tooltip("Extra designer-controlled multiplier on top of growth scale.")]
         public float damageScaleMultiplier = 1f;
         public float forceScaleMultiplier = 1f;
@@ -47,69 +51,101 @@ namespace Enemies
 
         [Header("Target Settings")]
         public LayerMask targetLayerMask;
+        [Tooltip("If empty, any tag on the layerMask is accepted.")]
         public List<string> targetTags = new List<string>(); // e.g. ["Player","Furniture"]
 
-        // --- runtime ---
-        float activeUntil = -1f;
-        bool doExplosion;
-        bool doDirectional;
-        float damageMul = 1f, pushMul = 1f;
+        [Header("Performance")]
+        [Tooltip("Max colliders processed per query; increase if you have dense scenes.")]
+        public int overlapBufferSize = 32;
 
+        // --- runtime (per-activation) ---
+        float _activeUntil = -1f;
+        bool _doExplosion;
+        bool _doDirectional;
+        float _damageMul = 1f, _pushMul = 1f;
+
+        // caches
         readonly HashSet<Rigidbody> _impulsedThisActivation = new HashSet<Rigidbody>();
-        Collider[] _overlapBuffer = new Collider[32];
+        Collider[] _overlapBuffer;
 
-        public bool IsActive => Time.time <= activeUntil;
+        // properties
+        public bool IsActive => Time.time <= _activeUntil;
 
-        float GrowthScale01()
+        // —— Public API ————————————————————————————————————————————————————————
+
+        /// <summary>
+        /// Configure absolute damage, radius scale multiplier, and push force for upcoming activations.
+        /// Call this before Activate(...) for each attack flavor (normal/dive/kamikaze).
+        /// </summary>
+        public void Configure(float absoluteDamage, float radiusScale, float pushForce)
         {
-            Transform s = scaleSource != null ? scaleSource :
-                (fallbackToSelfIfNull ? transform : null);
-            if (s == null) return 1f;
-
-            // use a uniform estimate from X to keep stable
-            float k = Mathf.Max(0.0001f, s.lossyScale.x);
-            k = Mathf.Clamp(k, scaleClamp.x, scaleClamp.y);
-            return k;
+            baseDamage = Mathf.Max(0f, absoluteDamage);
+            sizeScaleMultiplier = Mathf.Max(0.01f, radiusScale);
+            basePushForce = Mathf.Max(0f, pushForce);
+            // Keep baseDirectionalPushForce synced unless you want different behavior
+            baseDirectionalPushForce = Mathf.Max(0f, pushForce);
         }
 
-        // ---- public API ----
-        /// Activate the hitbox for duration seconds.
-        /// explode=true => one-shot radial blast now.
-        /// directional=true => overlap box forward each FixedUpdate.
-        public void Activate(float duration, bool explode, bool directional, float damageMultiplier = 1f, float pushMultiplier = 1f)
+        /// <summary>
+        /// Activate the hitbox for a duration.
+        /// explode=true  => one-shot radial blast on activation (+ optional continuous if enabled)
+        /// directional=true => forward box push every FixedUpdate (good for slashes).
+        /// damageMultiplier/pushMultiplier are extra per-activation knobs.
+        /// </summary>
+        public void Activate(
+            float duration,
+            bool explode,
+            bool directional,
+            float damageMultiplier = 1f,
+            float pushMultiplier   = 1f)
         {
-            activeUntil = Time.time + Mathf.Max(0.01f, duration);
-            doExplosion = explode;
-            doDirectional = directional;
-            damageMul = damageMultiplier;
-            pushMul = pushMultiplier;
+            _activeUntil = Time.time + Mathf.Max(0.01f, duration);
+            _doExplosion = explode;
+            _doDirectional = directional;
+            _damageMul = damageMultiplier;
+            _pushMul = pushMultiplier;
             _impulsedThisActivation.Clear();
 
-            if (doExplosion) RadialBlast();
+            if (_doExplosion)
+                RadialBlast();
 
-            Debug.Log($"[SpiderAttackHitbox] Activating with explode={doExplosion}. Checking explosionVFX: {(explosionVFX != null ? "Assigned" : "NULL")}");
-            Debug.Log($"[SpiderAttackHitbox] Checking explosionSfx: {(explosionSfx != null ? "Assigned" : "NULL")}");
-
-            if (doExplosion && explosionVFX != null) {
-                try {
-                    explosionVFX.Play(true);
-                    Debug.Log("[SpiderAttackHitbox] explosionVFX played successfully.");
-                } catch (System.Exception ex) {
-                    Debug.LogError($"[SpiderAttackHitbox] Error playing VFX: {ex.Message}");
-                }
+            if (debugVerboseLogs)
+            {
+                Debug.Log($"[SpiderAttackHitbox] Activate(explode={_doExplosion}, directional={_doDirectional}, dur={duration})");
+                Debug.Log($"[SpiderAttackHitbox] VFX: {(IsAlive(explosionVFX) ? "OK" : "NULL")} | SFX: {(IsAlive(explosionSfx) ? "OK" : "NULL")}");
             }
 
-            if (doExplosion && explosionSfx != null && explosionSfx.gameObject != null) {
-                try {
-                    explosionSfx.Play();
-                    Debug.Log("[SpiderAttackHitbox] explosionSfx played successfully.");
-                } catch (System.Exception ex) {
-                    Debug.LogError($"[SpiderAttackHitbox] Error playing SFX: {ex.Message}. Skipping to avoid crash.");
-                }
-            } else if (doExplosion) {
-                Debug.LogWarning("[SpiderAttackHitbox] explosionSfx is invalid or missing—skipping play.");
+            // VFX/SFX are best-effort; guard against destroyed refs when pooling
+            if (_doExplosion && IsAlive(explosionVFX))
+            {
+                explosionVFX.Play(true);
             }
-            // your camera shake hook here if you have one
+            if (_doExplosion && IsAlive(explosionSfx))
+            {
+                // Optional: set clip/volume here
+                explosionSfx.Play();
+            }
+
+            // camera shake hook goes here (if you have a shaker)
+        }
+
+        // —— Unity ———————————————————————————————————————————————————————————————
+
+        void Awake()
+        {
+            if (overlapBufferSize < 1) overlapBufferSize = 1;
+            _overlapBuffer = new Collider[overlapBufferSize];
+        }
+
+        void OnDisable()
+        {
+            // Clear activation state so pooled objects don't linger "active"
+            _activeUntil = -1f;
+            _doExplosion = _doDirectional = false;
+            _impulsedThisActivation.Clear();
+
+            // stop VFX if still playing (pool-safety)
+            if (IsAlive(explosionVFX)) explosionVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
 
         void FixedUpdate()
@@ -119,40 +155,62 @@ namespace Enemies
             if (applyContinuousPush)
                 ContinuousSpherePush();
 
-            if (doDirectional)
+            if (_doDirectional)
                 DirectionalOverlapPush();
         }
 
-        // --- internals ---
+        void OnValidate()
+        {
+            scaleClamp.x = Mathf.Max(0.0001f, Mathf.Min(scaleClamp.x, scaleClamp.y));
+        }
+
+        // —— Internals ———————————————————————————————————————————————————————————
+
+        float GrowthScale01()
+        {
+            Transform s = scaleSource != null ? scaleSource : (fallbackToSelfIfNull ? transform : null);
+            if (s == null) return 1f;
+
+            // use a uniform estimate for stability
+            float k = Mathf.Max(0.0001f, s.lossyScale.x);
+            return Mathf.Clamp(k, scaleClamp.x, scaleClamp.y);
+        }
+
         void RadialBlast()
         {
             float g = GrowthScale01();
             float radius = Mathf.Max(minRadius, baseExplosionRadius * sizeScaleMultiplier * g);
-            int count = Physics.OverlapSphereNonAlloc(transform.position, radius, _overlapBuffer, targetLayerMask, QueryTriggerInteraction.Collide);
-            Debug.Log($"[SpiderAttackHitbox] RadialBlast: Detected {count} overlaps at radius {radius}");
+
+            int count = Physics.OverlapSphereNonAlloc(
+                transform.position, radius,
+                _overlapBuffer, targetLayerMask, QueryTriggerInteraction.Collide);
+
+            if (debugVerboseLogs)
+                Debug.Log($"[SpiderAttackHitbox] RadialBlast: {count} hits @ r={radius:F2}");
 
             for (int i = 0; i < count; i++)
             {
                 var c = _overlapBuffer[i];
                 if (!IsValidTarget(c)) continue;
+
                 var rb = c.attachedRigidbody;
                 if (rb == null || rb.isKinematic) continue;
 
-                // Apply damage
+                // Damage
                 var health = c.GetComponent<Core.HealthComponent>() ?? c.GetComponentInParent<Core.HealthComponent>();
                 if (health != null)
                 {
-                    float damage = baseDamage * damageScaleMultiplier * damageMul * g;
-                    health.TakeDamage(damage, transform.position);
-                    Debug.Log($"[Damage] Dealt {damage} to {c.name} at {transform.position}");
+                    float damage = baseDamage * damageScaleMultiplier * _damageMul * g;
+                    // Prefer the 4-arg signature if available in your project:
+                    health.TakeDamage(damage, transform.position, gameObject, /*isExplosion:*/ true);
+                    if (debugVerboseLogs) Debug.Log($"[Damage] Explode {damage:F1} -> {c.name}");
                 }
 
+                // Push (radial)
                 var dir = (c.transform.position - transform.position).normalized;
-                float force = Mathf.Max(minPushForce, basePushForce * forceScaleMultiplier * pushMul * g);
+                float force = Mathf.Max(minPushForce, basePushForce * forceScaleMultiplier * _pushMul * g);
                 rb.AddForce(dir * force, pushForceMode);
-                Debug.Log($"[Push] Applied force {force} to {c.name}");
-
-                _impulsedThisActivation.Add(rb);
+                if (debugVerboseLogs) Debug.Log($"[Push] Explode force {force:F1} -> {c.name}");
             }
         }
 
@@ -160,15 +218,18 @@ namespace Enemies
         {
             float g = GrowthScale01();
 
-            // forward box centered a bit in front of the hitbox
+            // forward box centered half distance ahead
             Vector3 size = Vector3.Max(Vector3.one * 0.01f, baseBoxSize) * (sizeScaleMultiplier * g);
             Vector3 half = size * 0.5f;
             float dist = Mathf.Max(0.01f, baseCastDistance) * (sizeScaleMultiplier * g);
-
-            // OverlapBox catches everything inside a box volume; we center it half distance forward
             Vector3 center = transform.position + transform.forward * (dist * 0.5f);
-            int count = Physics.OverlapBoxNonAlloc(center, half, _overlapBuffer, transform.rotation, targetLayerMask, QueryTriggerInteraction.Collide);
-            Debug.Log($"[SpiderAttackHitbox] DirectionalOverlapPush: Detected {count} overlaps");
+
+            int count = Physics.OverlapBoxNonAlloc(
+                center, half, _overlapBuffer,
+                transform.rotation, targetLayerMask, QueryTriggerInteraction.Collide);
+
+            if (debugVerboseLogs)
+                Debug.Log($"[SpiderAttackHitbox] DirectionalOverlap: {count} hits");
 
             for (int i = 0; i < count; i++)
             {
@@ -178,20 +239,21 @@ namespace Enemies
                 var rb = c.attachedRigidbody;
                 if (rb == null || rb.isKinematic) continue;
 
-                // Apply damage
+                // Damage (you can gate to 1x per activation if desired)
                 var health = c.GetComponent<Core.HealthComponent>() ?? c.GetComponentInParent<Core.HealthComponent>();
                 if (health != null)
                 {
-                    float damage = baseDamage * damageScaleMultiplier * damageMul * g;
-                    health.TakeDamage(damage, transform.position);
-                    Debug.Log($"[Damage] Dealt {damage} to {c.name} at {transform.position}");
+                    float damage = baseDamage * damageScaleMultiplier * _damageMul * g;
+                    health.TakeDamage(damage, transform.position, gameObject, /*isExplosion:*/ false);
+                    if (debugVerboseLogs) Debug.Log($"[Damage] Directional {damage:F1} -> {c.name}");
                 }
 
-                float force = Mathf.Max(minPushForce, baseDirectionalPushForce * forceScaleMultiplier * pushMul * g);
+                // Single impulse per activation to avoid machine-gunning the same body
                 if (_impulsedThisActivation.Add(rb))
                 {
+                    float force = Mathf.Max(minPushForce, baseDirectionalPushForce * forceScaleMultiplier * _pushMul * g);
                     rb.AddForce(transform.forward * force, pushForceMode);
-                    Debug.Log($"[Push] Applied directional force {force} to {c.name}");
+                    if (debugVerboseLogs) Debug.Log($"[Push] Directional force {force:F1} -> {c.name}");
                 }
             }
         }
@@ -200,8 +262,13 @@ namespace Enemies
         {
             float g = GrowthScale01();
             float radius = Mathf.Max(minRadius, baseExplosionRadius * sizeScaleMultiplier * g);
-            int count = Physics.OverlapSphereNonAlloc(transform.position, radius, _overlapBuffer, targetLayerMask, QueryTriggerInteraction.Collide);
-            Debug.Log($"[SpiderAttackHitbox] ContinuousSpherePush: Detected {count} overlaps at radius {radius}");
+
+            int count = Physics.OverlapSphereNonAlloc(
+                transform.position, radius,
+                _overlapBuffer, targetLayerMask, QueryTriggerInteraction.Collide);
+
+            if (debugVerboseLogs)
+                Debug.Log($"[SpiderAttackHitbox] Continuous: {count} hits @ r={radius:F2}");
 
             for (int i = 0; i < count; i++)
             {
@@ -211,26 +278,35 @@ namespace Enemies
                 var rb = c.attachedRigidbody;
                 if (rb == null || rb.isKinematic) continue;
 
-                // Apply damage (reduced for continuous)
+                // Continuous damage (smaller, frame-rate independent)
                 var health = c.GetComponent<Core.HealthComponent>() ?? c.GetComponentInParent<Core.HealthComponent>();
                 if (health != null)
                 {
-                    float damage = (baseDamage * damageScaleMultiplier * damageMul * g) * Time.fixedDeltaTime * 0.5f;  // Tune multiplier
-                    health.TakeDamage(damage, transform.position);
-                    Debug.Log($"[Damage] Dealt continuous {damage} to {c.name} at {transform.position}");
+                    float dps = baseDamage * damageScaleMultiplier * _damageMul * g * 0.5f; // tune 0.5f as needed
+                    float dmg = dps * Time.fixedDeltaTime;
+                    health.TakeDamage(dmg, transform.position, gameObject, /*isExplosion:*/ false);
+                    if (debugVerboseLogs) Debug.Log($"[Damage] Continuous +{dmg:F2} -> {c.name}");
                 }
 
+                // Continuous push (Force mode)
                 var dir = (c.transform.position - transform.position).normalized;
-                float f = baseContinuousPush * forceScaleMultiplier * pushMul * Time.fixedDeltaTime * g;
+                float f = baseContinuousPush * forceScaleMultiplier * _pushMul * Time.fixedDeltaTime * g;
                 rb.AddForce(dir * f, ForceMode.Force);
-                Debug.Log($"[Push] Applied continuous force {f} to {c.name}");
+                if (debugVerboseLogs) Debug.Log($"[Push] Continuous +{f:F2} -> {c.name}");
             }
         }
 
         bool IsValidTarget(Collider c)
         {
             if (targetTags == null || targetTags.Count == 0) return true;
+            // List<string>.Contains is okay; CompareTag is faster if you only have 1 tag.
             return targetTags.Contains(c.tag);
+        }
+
+        static bool IsAlive(Object o)
+        {
+            // Unity null + destroyed object guard
+            return o != null;
         }
 
         void OnDrawGizmosSelected()
@@ -239,14 +315,17 @@ namespace Enemies
             Gizmos.color = gizmoColor;
 
             float g = Application.isPlaying ? GrowthScale01() : 1f;
+
+            // sphere (explosion / continuous)
             float radius = Mathf.Max(minRadius, baseExplosionRadius * sizeScaleMultiplier * g);
             Gizmos.DrawWireSphere(transform.position, radius);
 
+            // forward box (directional)
             Vector3 size = Vector3.Max(Vector3.one * 0.01f, baseBoxSize) * (sizeScaleMultiplier * g);
             Vector3 center = transform.position + transform.forward * (Mathf.Max(0.01f, baseCastDistance) * (sizeScaleMultiplier * g) * 0.5f);
-            Matrix4x4 m = Matrix4x4.TRS(center, transform.rotation, Vector3.one);
+
             var old = Gizmos.matrix;
-            Gizmos.matrix = m;
+            Gizmos.matrix = Matrix4x4.TRS(center, transform.rotation, Vector3.one);
             Gizmos.DrawWireCube(Vector3.zero, size);
             Gizmos.matrix = old;
         }

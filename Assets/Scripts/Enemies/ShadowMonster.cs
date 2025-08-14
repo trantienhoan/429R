@@ -8,6 +8,20 @@ using Random = UnityEngine.Random;
 
 namespace Enemies
 {
+    /// <summary>
+    /// ShadowMonster (single hitbox system)
+    /// This version delegates ALL hitbox size/damage logic to SpiderAttackHitbox.
+    /// ShadowMonster never touches SphereCollider or AttackHitboxCollider directly.
+    ///
+    /// Required SpiderAttackHitbox API:
+    ///   void Configure(float damage, float radiusScale, float pushMultiplier);
+    ///   void Activate(float duration, bool explode, bool directional);
+    ///
+    /// Inside SpiderAttackHitbox, you should:
+    ///   - compute final radius using scaleSource * radiusScale (or however you prefer)
+    ///   - apply absolute damage (not multipliers)
+    ///   - handle explosion SFX/VFX and cleanup
+    /// </summary>
     public class ShadowMonster : BaseMonster
     {
         private static readonly int Grounded = Animator.StringToHash("isGrounded");
@@ -23,7 +37,7 @@ namespace Enemies
         [Header("References")]
         [SerializeField] public Animator animator;
         [SerializeField] public NavMeshAgent agent;
-        [SerializeField] public SpiderAttackHitbox attackHitbox;
+        [SerializeField] public SpiderAttackHitbox attackHitbox; // <-- SINGLE AUTHORITY for size/damage
         [SerializeField] public Rigidbody rb;
         [SerializeField] private ParticleSystem deathVFX;
         [SerializeField] private AudioClip deathSfx;
@@ -40,7 +54,6 @@ namespace Enemies
         public float normalAttackDamage = 10f;
         public float kamikazeAttackDamage = 50f;
         public float kamikazeHealthThreshold = 0.19f;
-        private readonly float kamikazeRadiusMultiplier = 3f;
         public float pushForce = 5f;
         public float stuckTimeThreshold = 9f;
         public float idleTimeBeforeDive = 5f;
@@ -82,7 +95,6 @@ namespace Enemies
         public float chargeTimer { get; private set; }
         private bool isCharging;
         public bool isInKamikazeMode;
-        private float originalExplosionRadius = 0.4f;   // sensible fallback
         public float lastAttackTime;
         public StateMachine stateMachine { get; private set; }
         private Coroutine attackCoroutine;
@@ -185,8 +197,8 @@ namespace Enemies
         {
             if (agent != null)
             {
-                float scaleFactor = Mathf.Clamp(transform.localScale.y, 0.5f, 1.0f);  // Clamp to prevent over-scaling
-                agent.radius = Mathf.Clamp(originalAgentRadius * scaleFactor, 0.25f, 0.5f);  // Tuned bounds
+                float scaleFactor = Mathf.Clamp(transform.localScale.y, 0.5f, 1.0f);
+                agent.radius = Mathf.Clamp(originalAgentRadius * scaleFactor, 0.25f, 0.5f);
                 agent.height = Mathf.Clamp(originalAgentHeight * scaleFactor, 1f, 2f);
                 agent.baseOffset = originalBaseOffset * scaleFactor;
                 EnsureAgentOnNavMesh();
@@ -196,8 +208,8 @@ namespace Enemies
         public void EnableAI()
         {
             if (!enabled) enabled = true;
-
             EnsureAgentOnNavMesh();
+
             if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
             {
                 stateMachine.ChangeState(new IdleState(this));
@@ -209,14 +221,14 @@ namespace Enemies
             enabled = false;
 
             if (attackHitbox != null)
-            {
                 attackHitbox.gameObject.SetActive(false);
-            }
+
             if (attackCoroutine != null)
             {
                 StopCoroutine(attackCoroutine);
                 attackCoroutine = null;
             }
+
             ResetAnimator();
             stateMachine.ChangeState(null);
         }
@@ -250,17 +262,17 @@ namespace Enemies
                 agent.updateRotation = false;
             }
 
+            // Prepare hitbox: we only set stable, long-lived knobs; the actual size/damage is configured per attack via Configure(...)
             if (attackHitbox != null)
             {
-                // Cache a sensible base radius (collider may be small due to bone scale)
-                var col = attackHitbox.GetComponent<SphereCollider>();
-                if (col) originalExplosionRadius = Mathf.Max(0.05f, col.radius);
-
-                // Critical: scale from the ROOT that actually grows
-                attackHitbox.scaleSource = transform;
-                attackHitbox.sizeScaleMultiplier = 1f;
-                attackHitbox.forceScaleMultiplier = 1f;
-                attackHitbox.damageScaleMultiplier = 1f;
+                attackHitbox.scaleSource = transform;      // let hitbox scale with the spider
+                attackHitbox.sizeScaleMultiplier = 1f;     // baseline (we override per-attack in Configure)
+                attackHitbox.forceScaleMultiplier = 1f;    // baseline (we override per-attack in Configure)
+                attackHitbox.damageScaleMultiplier = 1f;   // baseline (we override per-attack in Configure)
+            }
+            else
+            {
+                Debug.LogError("[ShadowMonster] attackHitbox is not assigned.");
             }
 
             ResetAnimator();
@@ -388,7 +400,7 @@ namespace Enemies
                         stuckTimer += Time.deltaTime;
                         if (stuckTimer > stuckTimeThreshold && !isInKamikazeMode)
                         {
-                            stateMachine.ChangeState(new DiveState(this)); // you can switch to Kamikaze if desired
+                            stateMachine.ChangeState(new DiveState(this)); // or switch to Kamikaze if desired
                         }
                     }
                     else
@@ -497,47 +509,9 @@ namespace Enemies
 
             if (attackHitbox != null)
             {
-                attackCoroutine = StartCoroutine(PerformAttackCoroutine(isKamikaze: false));
+                // normal melee swing; let hitbox decide exact collider radius
+                StartHitbox(absoluteDamage: normalAttackDamage, radiusScale: 1.0f, duration: 0.5f, explode: false, directional: false);
             }
-        }
-
-        public IEnumerator PerformDiveAttackCoroutine()
-        {
-            if (attackHitbox == null) yield break;
-
-            var collider = attackHitbox.GetComponent<SphereCollider>();
-            var hitboxScript = attackHitbox.GetComponent<AttackHitboxCollider>();
-            float originalRadius = collider.radius;
-
-            attackHitbox.gameObject.SetActive(true);
-            yield return new WaitForSeconds(0.1f);
-
-            // Scale up for dive impact
-            float scaleTime = 0.2f;
-            float targetRadius = 1.5f;  // Larger for dive (tune)
-            float timer = 0f;
-            while (timer < scaleTime)
-            {
-                timer += Time.deltaTime;
-                collider.radius = Mathf.Lerp(originalRadius, targetRadius, timer / scaleTime);
-                yield return null;
-            }
-
-            hitboxScript.SetDamage(diveDamage);  // Set dive-specific damage
-
-            // Existing wait...
-            yield return new WaitForSeconds(0.5f);
-
-            // Scale back
-            timer = 0f;
-            while (timer < scaleTime)
-            {
-                timer += Time.deltaTime;
-                collider.radius = Mathf.Lerp(targetRadius, originalRadius, timer / scaleTime);
-                yield return null;
-            }
-
-            attackHitbox.gameObject.SetActive(false);
         }
 
         public void PerformKamikazeAttack()
@@ -545,59 +519,31 @@ namespace Enemies
             if (Time.time < lastAttackTime + attackCooldown) return;
             lastAttackTime = Time.time;
 
+            if (animator != null) animator.SetTrigger(KamikazeAttack);
+
             if (attackHitbox != null)
             {
-                attackCoroutine = StartCoroutine(PerformAttackCoroutine(isKamikaze: true));
+                // larger radius & explosion behavior
+                StartHitbox(absoluteDamage: kamikazeAttackDamage, radiusScale: 3.0f, duration: 0.6f, explode: true, directional: false);
             }
         }
 
-        private IEnumerator PerformAttackCoroutine(bool isKamikaze)
+        public IEnumerator PerformDiveAttackCoroutine()
         {
-            if (attackHitbox == null) yield break;  // attackHitbox is now the GameObject with collider/script
+            // Drive a stronger, short window hit without touching colliders here
+            if (attackHitbox == null || !isActiveAndEnabled) yield break;
 
-            var collider = attackHitbox.GetComponent<SphereCollider>();  // Get the collider
-            var hitboxScript = attackHitbox.GetComponent<AttackHitboxCollider>();  // Your new script
-            float originalRadius = collider.radius;  // Save original (e.g., 0.003)
+            StartHitbox(absoluteDamage: diveDamage, radiusScale: 1.5f, duration: 0.6f, explode: false, directional: false);
+            yield return null;
+        }
 
-            attackHitbox.gameObject.SetActive(true);
+        private void StartHitbox(float absoluteDamage, float radiusScale, float duration, bool explode, bool directional)
+        {
+            if (!isActiveAndEnabled || attackHitbox == null) return;
 
-            // Scale up over time
-            float scaleTime = 0.3f;  // Duration to grow
-            float targetRadius = 1.0f;  // Scale up to this (tune)
-            float timer = 0f;
-            while (timer < scaleTime)
-            {
-                timer += Time.deltaTime;
-                collider.radius = Mathf.Lerp(originalRadius, targetRadius, timer / scaleTime);
-                yield return null;
-            }
-
-            // Attack logic (animator, etc.) remains
-
-            if (isKamikaze)
-            {
-                // Existing kamikaze code...
-                hitboxScript.SetDamage(kamikazeAttackDamage);  // Override damage for this mode
-            }
-            else
-            {
-                // Existing normal attack code...
-                hitboxScript.SetDamage(normalAttackDamage);
-            }
-
-            // Wait for attack duration, then scale back
-            yield return new WaitForSeconds(0.5f);  // Your existing wait
-
-            timer = 0f;
-            while (timer < scaleTime)
-            {
-                timer += Time.deltaTime;
-                collider.radius = Mathf.Lerp(targetRadius, originalRadius, timer / scaleTime);
-                yield return null;
-            }
-
-            attackHitbox.gameObject.SetActive(false);
-            attackCoroutine = null;
+            // Configure and fire through the single authority
+            attackHitbox.Configure(absoluteDamage, radiusScale, pushForce);
+            attackHitbox.Activate(duration, explode, directional);
         }
 
         public void EnterKamikazeMode()
@@ -665,7 +611,7 @@ namespace Enemies
                 isBreakingHold = false;
                 stateMachine.ChangeState(new DiveState(this));
 
-                if (grabInteractable.interactorsSelecting.Count > 0)
+                if (grabInteractable != null && grabInteractable.interactorsSelecting.Count > 0)
                 {
                     var player = grabInteractable.interactorsSelecting[0].transform.root.GetComponent<HealthComponent>();
                     if (player != null) player.TakeDamage(breakDamage);
@@ -681,9 +627,12 @@ namespace Enemies
 
         private IEnumerator ReEnableGrabAfter(float delay)
         {
-            grabInteractable.enabled = false;
-            yield return new WaitForSeconds(delay);
-            grabInteractable.enabled = true;
+            if (grabInteractable != null)
+            {
+                grabInteractable.enabled = false;
+                yield return new WaitForSeconds(delay);
+                grabInteractable.enabled = true;
+            }
         }
 
         // === Targeting ===
@@ -862,14 +811,12 @@ namespace Enemies
 
         void OnDrawGizmosSelected()
         {
+            // Optional: If you want a visual, you can ask the hitbox for a debug radius instead of reading colliders here.
             if (attackHitbox != null)
             {
-                var collider = attackHitbox.GetComponent<SphereCollider>();
-                if (collider != null)
-                {
-                    Gizmos.color = Color.red;
-                    Gizmos.DrawWireSphere(attackHitbox.transform.position, collider.radius);
-                }
+                Gizmos.color = Color.red;
+                // Draw a simple fixed wire sphere at the hitbox transform for preview
+                Gizmos.DrawWireSphere(attackHitbox.transform.position, 0.5f);
             }
         }
     }
