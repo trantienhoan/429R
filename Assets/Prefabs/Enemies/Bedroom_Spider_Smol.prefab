@@ -30,8 +30,7 @@ Transform:
   m_LocalPosition: {x: 0, y: 0.00226, z: -0.00468}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
-  m_Children:
-  - {fileID: 922799610896289845}
+  m_Children: []
   m_Father: {fileID: 7658882366548129132}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!135 &1962385869066354704
@@ -49,7 +48,7 @@ SphereCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -71,107 +70,33 @@ MonoBehaviour:
   fallbackToSelfIfNull: 1
   scaleClamp: {x: 0.25, y: 5}
   baseDamage: 10
-  basePushForce: 5
   baseExplosionRadius: 1
+  damageToForceMultiplier: 1
+  minPushForce: 5
   explosionVFX: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   explosionSfx: {fileID: 0}
-  shakeIntensity: 0.01
-  shakeDuration: 0.1
-  debugVerboseLogs: 0
+  debugVerboseLogs: 1
   drawDebugGizmos: 1
   gizmoColor: {r: 1, g: 0, b: 0, a: 1}
   applyContinuousPush: 1
   baseContinuousPush: 50
-  baseBoxSize: {x: 0.5, y: 0.5, z: 0.5}
-  baseCastDistance: 1
-  baseDirectionalPushForce: 15
+  baseBoxSize: {x: 0.2, y: 0.2, z: 0.2}
+  baseCastDistance: 0.4
   pushForceMode: 1
   damageScaleMultiplier: 1
   forceScaleMultiplier: 1
   sizeScaleMultiplier: 1
   minRadius: 0.1
-  minPushForce: 5
   targetLayerMask:
     serializedVersion: 2
-    m_Bits: 8392
+    m_Bits: 4294967295
   targetTags:
   - Player
   - TreeOfLight
   - Furniture
   - Enemy
   overlapBufferSize: 32
---- !u!1 &6301232620055506528
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 922799610896289845}
-  - component: {fileID: 1885932200989876307}
-  - component: {fileID: 4702613906210155595}
-  m_Layer: 0
-  m_Name: AttackHitboxCollider
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!4 &922799610896289845
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6301232620055506528}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1740443824796398036}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1885932200989876307
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6301232620055506528}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e5363c0007ffef14aa548f331e64b8dd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  damageAmount: 10
-  targetLayerMask:
-    serializedVersion: 2
-    m_Bits: 65
-  cooldown: 1
---- !u!135 &4702613906210155595
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6301232620055506528}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 0.006
-  m_Center: {x: 0, y: 0, z: 0.007}
 --- !u!1001 &2892365612308435589
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1574,7 +1499,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 126
+  m_Constraints: 14
   m_CollisionDetection: 2
 --- !u!114 &3030980029734817786
 MonoBehaviour:
@@ -1599,8 +1524,8 @@ MonoBehaviour:
   grabInteractable: {fileID: 7609633742523881503}
   healthComponent: {fileID: 2649278790831312482}
   chaseRange: 5
-  attackRange: 0.7
-  kamikazeRange: 5
+  attackRange: 1
+  kamikazeRange: 10
   attackCooldown: 0
   chargeDelay: 2
   normalAttackDamage: 200
@@ -1609,9 +1534,11 @@ MonoBehaviour:
   pushForce: 1000
   stuckTimeThreshold: 5
   idleTimeBeforeDive: 3
-  growthTime: 30
+  maxHoldTime: 2
+  struggleShakeIntensity: 0.1
+  growthTime: 3
   startScale: {x: 0.3, y: 0.3, z: 0.3}
-  fullScale: {x: 1.5, y: 1.5, z: 1.5}
+  fullScale: {x: 0.7, y: 0.7, z: 0.7}
   wallLayer:
     serializedVersion: 2
     m_Bits: 16384
@@ -1622,9 +1549,7 @@ MonoBehaviour:
   originalAgentRadius: 0.5
   originalAgentHeight: 2
   originalBaseOffset: 0
-  maxHoldTime: 2
   velocityThreshold: 0.1
-  struggleShakeIntensity: 0.1
   breakDamage: 10
   settleDelayAfterLand: 0.2
   groundRayDistance: 0.5
@@ -1632,10 +1557,6 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 2097152
   minFloorY: -10
-  currentTarget: {fileID: 0}
-  stuckTimer: 0
-  isInKamikazeMode: 0
-  lastAttackTime: 0
   groundCheckPoint: {fileID: 2323047856565264533}
   playerLayer:
     serializedVersion: 2
@@ -1643,6 +1564,10 @@ MonoBehaviour:
   treeLayer:
     serializedVersion: 2
     m_Bits: 65
+  currentTarget: {fileID: 0}
+  stuckTimer: 0
+  isInKamikazeMode: 0
+  lastAttackTime: 0
 --- !u!114 &7609633742523881503
 MonoBehaviour:
   m_ObjectHideFlags: 0

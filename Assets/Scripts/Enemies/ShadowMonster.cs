@@ -9,18 +9,9 @@ using Random = UnityEngine.Random;
 namespace Enemies
 {
     /// <summary>
-    /// ShadowMonster (single hitbox system)
-    /// This version delegates ALL hitbox size/damage logic to SpiderAttackHitbox.
-    /// ShadowMonster never touches SphereCollider or AttackHitboxCollider directly.
-    ///
-    /// Required SpiderAttackHitbox API:
-    ///   void Configure(float damage, float radiusScale, float pushMultiplier);
-    ///   void Activate(float duration, bool explode, bool directional);
-    ///
-    /// Inside SpiderAttackHitbox, you should:
-    ///   - compute final radius using scaleSource * radiusScale (or however you prefer)
-    ///   - apply absolute damage (not multipliers)
-    ///   - handle explosion SFX/VFX and cleanup
+    /// ShadowMonster AI controller.
+    /// Manages navigation, targeting, attacks (via delegated hitbox), growth, and XR interactions.
+    /// Uses a state machine for behaviors (idle, chase, attack, etc.).
     /// </summary>
     public class ShadowMonster : BaseMonster
     {
@@ -37,7 +28,7 @@ namespace Enemies
         [Header("References")]
         [SerializeField] public Animator animator;
         [SerializeField] public NavMeshAgent agent;
-        [SerializeField] public SpiderAttackHitbox attackHitbox; // <-- SINGLE AUTHORITY for size/damage
+        [SerializeField] public SpiderAttackHitbox attackHitbox;
         [SerializeField] public Rigidbody rb;
         [SerializeField] private ParticleSystem deathVFX;
         [SerializeField] private AudioClip deathSfx;
@@ -46,17 +37,19 @@ namespace Enemies
         [SerializeField] public HealthComponent healthComponent;
 
         [Header("Settings")]
-        public float chaseRange = 15f;
-        public float attackRange = 2f;
-        public float kamikazeRange = 5f;
-        public float attackCooldown = 2f;
-        public float chargeDelay = 2.5f;
-        public float normalAttackDamage = 10f;
-        public float kamikazeAttackDamage = 50f;
-        public float kamikazeHealthThreshold = 0.19f;
-        public float pushForce = 5f;
-        public float stuckTimeThreshold = 9f;
-        public float idleTimeBeforeDive = 5f;
+        [SerializeField] public float chaseRange = 15f;
+        [SerializeField] public float attackRange = 2f;
+        [SerializeField] public float kamikazeRange = 5f;
+        [SerializeField] public float attackCooldown = 2f;
+        [SerializeField] public float chargeDelay = 2.5f;
+        [SerializeField] public float normalAttackDamage = 10f;
+        [SerializeField] public float kamikazeAttackDamage = 50f;
+        [SerializeField] public float kamikazeHealthThreshold = 0.19f;
+        [SerializeField] public float pushForce = 5f;
+        [SerializeField] public float stuckTimeThreshold = 9f;
+        [SerializeField] public float idleTimeBeforeDive = 5f;
+        [SerializeField] public float maxHoldTime = 5f;
+        [SerializeField] public float struggleShakeIntensity = 0.1f;
 
         [SerializeField] private float growthTime = 30f;
         [SerializeField] private Vector3 startScale = new Vector3(0.5f, 0.5f, 0.5f);
@@ -65,9 +58,9 @@ namespace Enemies
         [Header("Dive Settings")]
         [SerializeField] private LayerMask wallLayer;
         [SerializeField] public float diveForceMultiplier = 1.5f;
-        public float diveSpeed = 10f;
-        public float diveTimeout = 3f;
-        public float diveDamage = 15f;
+        [SerializeField] public float diveSpeed = 10f;
+        [SerializeField] public float diveTimeout = 3f;
+        [SerializeField] public float diveDamage = 15f;
 
         [Header("NavMesh Scaling")]
         [SerializeField] private float originalAgentRadius = 0.5f;
@@ -75,35 +68,14 @@ namespace Enemies
         [SerializeField] private float originalBaseOffset = 0f;
 
         [Header("Throw and Break Settings")]
-        [SerializeField] public float maxHoldTime = 5f;
         [SerializeField] private float velocityThreshold = 0.1f;
-        [SerializeField] public float struggleShakeIntensity = 0.1f;
         [SerializeField] private float breakDamage = 10f;
-        [SerializeField] private float settleDelayAfterLand = 0.2f;
-
-        private bool isBreakingHold = false;
-        private bool isThrown = false;
+        [SerializeField] private float settleDelayAfterLand = 0.5f; // Increased for better settling
 
         [Header("Ground Check Settings")]
         [SerializeField] private float groundRayDistance = 0.5f;
         [SerializeField] private LayerMask groundLayer;
         [SerializeField] private float minFloorY = -10f;
-
-        public Transform currentTarget;
-        private Vector3 lastPosition;
-        public float stuckTimer;
-        public float chargeTimer { get; private set; }
-        private bool isCharging;
-        public bool isInKamikazeMode;
-        public float lastAttackTime;
-        public StateMachine stateMachine { get; private set; }
-        private Coroutine attackCoroutine;
-        private float growthTimer;
-        private float targetRefreshTimer;
-        private const float k_TargetRefreshInterval = 0.5f;
-
-        public bool isGrounded { get; private set; }
-        public bool isBeingHeld { get; private set; }
 
         [SerializeField] private Transform groundCheckPoint;
 
@@ -111,129 +83,29 @@ namespace Enemies
         [SerializeField] private LayerMask playerLayer;
         [SerializeField] private LayerMask treeLayer;
 
-        // === Ground / NavMesh ===
-        public bool IsGrounded()
-        {
-            float scaleFactor = transform.localScale.y;
-            float adjustedDistance = groundRayDistance * scaleFactor;
+        public Transform currentTarget;
+        private Vector3 lastPosition;
+        private Vector3 lastValidPosition; // For fallback warping
+        public float stuckTimer;
+        public float chargeTimer { get; private set; }
+        private bool isCharging;
+        public bool isInKamikazeMode;
+        public float lastAttackTime;
+        public StateMachine stateMachine { get; private set; }
+        private float growthTimer;
+        private float targetRefreshTimer;
+        private const float k_TargetRefreshInterval = 0.5f;
 
-            bool grounded = Physics.Raycast(groundCheckPoint.position, Vector3.down, adjustedDistance, groundLayer);
-            isGrounded = grounded;
+        public bool isGrounded { get; private set; }
+        public bool isBeingHeld { get; private set; }
 
-            if (animator != null)
-            {
-                animator.SetBool(Grounded, grounded);
-                animator.Update(0f);
-            }
+        private bool isThrown;
+        private bool isBreakingHold;
 
-            if (!grounded)
-            {
-                Debug.LogWarning($"[IsGrounded] Failed at scale {scaleFactor:F2}: Position={groundCheckPoint.position}, Adjusted Distance={adjustedDistance}");
-            }
-            return grounded;
-        }
-
-        public string GetStateName(int stateHash)
-        {
-            if (stateHash == Animator.StringToHash("Base Layer.Idle")) return "Idle";
-            if (stateHash == Animator.StringToHash("Base Layer.Idle_On_Air")) return "Idle_On_Air";
-            if (stateHash == Animator.StringToHash("Base Layer.Run")) return "Run";
-            if (stateHash == Animator.StringToHash("Base Layer.Charge")) return "Charge";
-            if (stateHash == Animator.StringToHash("Base Layer.Attack")) return "Attack";
-            if (stateHash == Animator.StringToHash("Base Layer.Hurt")) return "Hurt";
-            if (stateHash == Animator.StringToHash("Base Layer.Dive")) return "Dive";
-            if (stateHash == Animator.StringToHash("Base Layer.Dead")) return "Dead";
-            if (stateHash == Animator.StringToHash("Base Layer.Kamikaze")) return "Kamikaze";
-            return "Unknown";
-        }
-
-        public void EnsureAgentOnNavMesh()
-        {
-            if (agent == null) return;
-
-            if (!agent.isActiveAndEnabled)
-            {
-                agent.enabled = true;
-                agent.speed = 3.5f;
-                agent.stoppingDistance = 0f;
-            }
-            if (!agent.isOnNavMesh)
-            {
-                float scaleFactor = transform.localScale.y;
-                if (NavMesh.SamplePosition(transform.position, out var hit, 10f * scaleFactor, NavMesh.AllAreas))
-                {
-                    transform.position = hit.position;
-                    agent.Warp(hit.position);
-                    Debug.Log("[EnsureAgent] Warped to NavMesh: " + hit.position);
-                }
-                else
-                {
-                    Debug.LogWarning("[EnsureAgent] No NavMesh position near " + transform.position);
-                }
-            }
-        }
-
-        public void ForceBreakHold()
-        {
-            if (grabInteractable != null && grabInteractable.isSelected)
-            {
-                isBreakingHold = true;
-                if (grabInteractable.interactorsSelecting.Count > 0)
-                {
-                    var interactor = grabInteractable.interactorsSelecting[0];
-                    grabInteractable.interactionManager.SelectExit(
-                        interactor,
-                        (UnityEngine.XR.Interaction.Toolkit.Interactables.IXRSelectInteractable)grabInteractable);
-                    Debug.Log("[ForceBreakHold] Forced release.");
-                }
-                else
-                {
-                    Debug.LogWarning("[ForceBreakHold] No interactors selecting.");
-                }
-            }
-        }
-
-        private void UpdateAgentOnScale()
-        {
-            if (agent != null)
-            {
-                float scaleFactor = Mathf.Clamp(transform.localScale.y, 0.5f, 1.0f);
-                agent.radius = Mathf.Clamp(originalAgentRadius * scaleFactor, 0.25f, 0.5f);
-                agent.height = Mathf.Clamp(originalAgentHeight * scaleFactor, 1f, 2f);
-                agent.baseOffset = originalBaseOffset * scaleFactor;
-                EnsureAgentOnNavMesh();
-            }
-        }
-
-        public void EnableAI()
-        {
-            if (!enabled) enabled = true;
-            EnsureAgentOnNavMesh();
-
-            if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
-            {
-                stateMachine.ChangeState(new IdleState(this));
-            }
-        }
-
-        public void DisableAI()
-        {
-            enabled = false;
-
-            if (attackHitbox != null)
-                attackHitbox.gameObject.SetActive(false);
-
-            if (attackCoroutine != null)
-            {
-                StopCoroutine(attackCoroutine);
-                attackCoroutine = null;
-            }
-
-            ResetAnimator();
-            stateMachine.ChangeState(null);
-        }
+        private bool IsAgentValid => agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh;
 
         // === Lifecycle ===
+
         protected override void Awake()
         {
             base.Awake();
@@ -241,12 +113,9 @@ namespace Enemies
             stateMachine = new StateMachine();
             audioSource = GetComponent<AudioSource>();
             grabInteractable = GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
-            healthComponent = GetComponent<HealthComponent>();
-            gameObject.tag = "Enemy";
-
-            if (!healthComponent) healthComponent = gameObject.AddComponent<HealthComponent>();
-            if (!animator) animator = GetComponent<Animator>();
-            if (!rb) rb = GetComponent<Rigidbody>();
+            healthComponent = GetComponent<HealthComponent>() ?? gameObject.AddComponent<HealthComponent>();
+            animator = GetComponent<Animator>();
+            rb = GetComponent<Rigidbody>();
 
             if (rb != null)
             {
@@ -257,27 +126,21 @@ namespace Enemies
 
             if (agent != null)
             {
-                // We manually drive motion from desiredVelocity in FixedUpdate:
                 agent.updatePosition = false;
                 agent.updateRotation = false;
             }
 
-            // Prepare hitbox: we only set stable, long-lived knobs; the actual size/damage is configured per attack via Configure(...)
             if (attackHitbox != null)
             {
-                attackHitbox.scaleSource = transform;      // let hitbox scale with the spider
-                attackHitbox.sizeScaleMultiplier = 1f;     // baseline (we override per-attack in Configure)
-                attackHitbox.forceScaleMultiplier = 1f;    // baseline (we override per-attack in Configure)
-                attackHitbox.damageScaleMultiplier = 1f;   // baseline (we override per-attack in Configure)
-            }
-            else
-            {
-                Debug.LogError("[ShadowMonster] attackHitbox is not assigned.");
+                attackHitbox.scaleSource = transform;
+                attackHitbox.sizeScaleMultiplier = 1f;
+                attackHitbox.forceScaleMultiplier = 1f;
+                attackHitbox.damageScaleMultiplier = 1f;
             }
 
-            ResetAnimator();
             transform.localScale = startScale;
             growthTimer = 0f;
+            ResetAnimator();
             EnsureAgentOnNavMesh();
         }
 
@@ -290,6 +153,7 @@ namespace Enemies
                 grabInteractable.selectEntered.AddListener(OnGrabbed);
                 grabInteractable.selectExited.AddListener(OnReleased);
             }
+
             if (healthComponent != null)
             {
                 healthComponent.OnTakeDamage.AddListener(OnHealthChanged);
@@ -305,6 +169,21 @@ namespace Enemies
             ResetSpider();
         }
 
+        private void OnDestroy()
+        {
+            if (grabInteractable != null)
+            {
+                grabInteractable.selectEntered.RemoveListener(OnGrabbed);
+                grabInteractable.selectExited.RemoveListener(OnReleased);
+            }
+
+            if (healthComponent != null)
+            {
+                healthComponent.OnTakeDamage.RemoveListener(OnHealthChanged);
+                healthComponent.OnDeath.RemoveListener(OnDeath);
+            }
+        }
+
         private void Update()
         {
             isGrounded = IsGrounded();
@@ -318,7 +197,7 @@ namespace Enemies
             transform.localScale = Vector3.Lerp(startScale, fullScale, growthProgress);
             UpdateAgentOnScale();
 
-            // Refresh target occasionally
+            // Refresh target
             targetRefreshTimer += Time.deltaTime;
             if (targetRefreshTimer >= k_TargetRefreshInterval)
             {
@@ -326,63 +205,131 @@ namespace Enemies
                 targetRefreshTimer = 0f;
             }
 
-#if UNITY_EDITOR
-            if (Input.GetKeyDown(KeyCode.G) && isGrounded)
+            // Post-throw settle
+            if (!isBeingHeld && isThrown && !(stateMachine.CurrentState is DiveState))
             {
-                ResetAnimator();
-                stateMachine.ChangeState(new IdleState(this));
-            }
-            if (Input.GetKeyDown(KeyCode.C))
-            {
-                stateMachine.ChangeState(new ChaseState(this));
-            }
-#endif
-
-            // Post-release landing settle
-            if (!isBeingHeld && isThrown && stateMachine.CurrentState is not DiveState)
-            {
-                if (IsGrounded() && rb.linearVelocity.magnitude < velocityThreshold)
+                if (isGrounded && rb.linearVelocity.magnitude < velocityThreshold)
                 {
                     StartCoroutine(ResumeAIWithDelay(settleDelayAfterLand));
                 }
             }
 
-            // Clamp extreme falls
+            // Clamp falls
             if (transform.position.y < minFloorY)
             {
-                var pos = transform.position;
+                Vector3 pos = transform.position;
                 pos.y = minFloorY;
                 transform.position = pos;
                 rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
-                Debug.LogWarning("[Update] Clamped position to prevent fall-through.");
             }
 
-            // Keep agent synced
-            if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+            // Sync agent
+            if (IsAgentValid)
             {
                 agent.nextPosition = transform.position;
+                lastValidPosition = transform.position; // Track for fallback
             }
         }
 
         private void FixedUpdate()
         {
-            // Drive RB with agent desired velocity when AI-controlled
-            if (enabled &&
-                agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh &&
-                !isBeingHeld && !isThrown &&
-                stateMachine.CurrentState is not DiveState &&
-                stateMachine.CurrentState is not HeldState)
-            {
-                rb.linearVelocity = new Vector3(agent.desiredVelocity.x, rb.linearVelocity.y, agent.desiredVelocity.z);
+            if (!enabled || !IsAgentValid || isBeingHeld || isThrown || stateMachine.CurrentState is DiveState || stateMachine.CurrentState is HeldState)
+                return;
 
-                if (agent.desiredVelocity.sqrMagnitude > 0.01f)
+            // Prevent downward velocity bounce
+            if (isGrounded && rb.linearVelocity.y < 0)
+            {
+                rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
+            }
+
+            rb.linearVelocity = new Vector3(agent.desiredVelocity.x, rb.linearVelocity.y, agent.desiredVelocity.z);
+
+            if (agent.desiredVelocity.sqrMagnitude > 0.01f)
+            {
+                transform.rotation = Quaternion.LookRotation(new Vector3(agent.desiredVelocity.x, 0f, agent.desiredVelocity.z));
+            }
+        }
+
+        // === Ground / NavMesh ===
+
+        public bool IsGrounded()
+        {
+            float scaleFactor = transform.localScale.y;
+            float adjustedDistance = groundRayDistance * scaleFactor;
+
+            bool grounded = Physics.Raycast(groundCheckPoint.position, Vector3.down, adjustedDistance, groundLayer);
+            isGrounded = grounded;
+
+            if (animator != null)
+            {
+                animator.SetBool(Grounded, grounded);
+            }
+
+            return grounded;
+        }
+
+        public void EnsureAgentOnNavMesh()
+        {
+            if (agent == null) return;
+
+            if (!agent.isActiveAndEnabled)
+            {
+                agent.enabled = true;
+                agent.speed = 3.5f;
+                agent.stoppingDistance = 0f;
+            }
+
+            if (!agent.isOnNavMesh)
+            {
+                float scaleFactor = transform.localScale.y;
+                if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 50f * scaleFactor, NavMesh.AllAreas)) // Increased radius
                 {
-                    transform.rotation = Quaternion.LookRotation(new Vector3(agent.desiredVelocity.x, 0f, agent.desiredVelocity.z));
+                    transform.position = hit.position;
+                    agent.Warp(hit.position);
+                }
+                else if (lastValidPosition != Vector3.zero)
+                {
+                    transform.position = lastValidPosition;
+                    agent.Warp(lastValidPosition);
                 }
             }
         }
 
-        // === Behavior helpers ===
+        private void UpdateAgentOnScale()
+        {
+            if (agent == null) return;
+
+            float scaleFactor = Mathf.Clamp(transform.localScale.y, 0.5f, 1.0f);
+            agent.radius = Mathf.Clamp(originalAgentRadius * scaleFactor, 0.25f, 0.5f);
+            agent.height = Mathf.Clamp(originalAgentHeight * scaleFactor, 1f, 2f);
+            agent.baseOffset = originalBaseOffset * scaleFactor;
+            EnsureAgentOnNavMesh();
+        }
+
+        // === AI Control ===
+
+        public void EnableAI()
+        {
+            enabled = true;
+            EnsureAgentOnNavMesh();
+
+            if (IsAgentValid)
+            {
+                stateMachine.ChangeState(new IdleState(this));
+            }
+        }
+
+        public void DisableAI()
+        {
+            enabled = false;
+
+            if (attackHitbox != null)
+                attackHitbox.gameObject.SetActive(false);
+
+            ResetAnimator();
+            stateMachine.ChangeState(null);
+        }
+
         private void CheckIfStuck()
         {
             if (!isGrounded)
@@ -391,7 +338,7 @@ namespace Enemies
                 return;
             }
 
-            if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+            if (IsAgentValid)
             {
                 if (agent.hasPath || agent.remainingDistance > 0.1f)
                 {
@@ -400,7 +347,7 @@ namespace Enemies
                         stuckTimer += Time.deltaTime;
                         if (stuckTimer > stuckTimeThreshold && !isInKamikazeMode)
                         {
-                            stateMachine.ChangeState(new DiveState(this)); // or switch to Kamikaze if desired
+                            stateMachine.ChangeState(new DiveState(this));
                         }
                     }
                     else
@@ -421,59 +368,56 @@ namespace Enemies
             }
         }
 
-        public override void TakeDamage(float damageAmount, Vector3 hitPoint = default, GameObject damageSource = null)
-        {
-            if (healthComponent != null)
-            {
-                healthComponent.TakeDamage(damageAmount, hitPoint, damageSource);
-            }
-        }
+        // === Targeting ===
 
-        private void OnCollisionEnter(Collision collision)
+        public Transform GetClosestTarget()
         {
-            // Proper layermask check
-            if (stateMachine.CurrentState is DiveState &&
-                (wallLayer.value & (1 << collision.gameObject.layer)) != 0)
-            {
-                Debug.Log("[Dive] Hit wall/border, exiting Dive");
-                stateMachine.ChangeState(new IdleState(this));
-            }
-        }
+            Transform closestTarget = null;
+            float closestDistance = Mathf.Infinity;
 
-        private void OnHealthChanged(HealthComponent.HealthChangedEventArgs e)
-        {
-            if (e.DamageAmount > 0 && !healthComponent.IsDead() && stateMachine.CurrentState is not HurtState && !isBeingHeld)
+            // Prefer growing TreeOfLightPot
+            Collider[] treeHits = Physics.OverlapSphere(transform.position, chaseRange, treeLayer);
+            foreach (var hit in treeHits)
             {
-                isCharging = false;
-                stateMachine.ChangeState(new HurtState(this));
-
-                if (healthComponent.GetHealthPercentage() <= kamikazeHealthThreshold)
+                var treePot = hit.GetComponent<TreeOfLightPot>();
+                if (treePot != null && treePot.IsGrowing)
                 {
-                    EnterKamikazeMode();
+                    float d = Vector3.Distance(transform.position, hit.transform.position);
+                    if (d < closestDistance)
+                    {
+                        closestDistance = d;
+                        closestTarget = hit.transform;
+                    }
                 }
             }
+
+            // Fallback to players
+            if (closestTarget == null)
+            {
+                Collider[] playerHits = Physics.OverlapSphere(transform.position, chaseRange, playerLayer);
+                foreach (var hit in playerHits)
+                {
+                    float d = Vector3.Distance(transform.position, hit.transform.position);
+                    if (d < closestDistance)
+                    {
+                        closestDistance = d;
+                        closestTarget = hit.transform;
+                    }
+                }
+            }
+
+            currentTarget = closestTarget;
+            return closestTarget;
         }
 
-        private void OnDeath(HealthComponent health)
+        public float GetDistanceToTarget()
         {
-            stateMachine.ChangeState(new DeadState(this));
-            StartCoroutine(DelayedScaleDown(2f));
-        }
-
-        private IEnumerator DelayedScaleDown(float delay)
-        {
-            yield return new WaitForSeconds(delay);
-            StartCoroutine(ScaleDownAndDisable());
-        }
-
-        protected override void OnDeathHandler() { /* handled by HealthComponent/DeadState */ }
-
-        public void SetMaxHealth(float value)
-        {
-            if (healthComponent != null) healthComponent.SetMaxHealth(value);
+            if (currentTarget == null) currentTarget = GetClosestTarget();
+            return currentTarget ? Vector3.Distance(transform.position, currentTarget.position) : Mathf.Infinity;
         }
 
         // === Charge / Attack ===
+
         public void StartCharge()
         {
             isCharging = true;
@@ -485,7 +429,6 @@ namespace Enemies
                 animator.SetBool(IsRunning, false);
                 animator.SetBool(Grounded, isGrounded);
                 animator.ResetTrigger("Attack");
-                animator.Update(0f);
             }
         }
 
@@ -509,8 +452,7 @@ namespace Enemies
 
             if (attackHitbox != null)
             {
-                // normal melee swing; let hitbox decide exact collider radius
-                StartHitbox(absoluteDamage: normalAttackDamage, radiusScale: 1.0f, duration: 0.5f, explode: false, directional: false);
+                StartHitbox(normalAttackDamage, 1.0f, 0.5f, false, false);
             }
         }
 
@@ -523,17 +465,15 @@ namespace Enemies
 
             if (attackHitbox != null)
             {
-                // larger radius & explosion behavior
-                StartHitbox(absoluteDamage: kamikazeAttackDamage, radiusScale: 3.0f, duration: 0.6f, explode: true, directional: false);
+                StartHitbox(kamikazeAttackDamage, 3.0f, 0.6f, true, false);
             }
         }
 
         public IEnumerator PerformDiveAttackCoroutine()
         {
-            // Drive a stronger, short window hit without touching colliders here
             if (attackHitbox == null || !isActiveAndEnabled) yield break;
 
-            StartHitbox(absoluteDamage: diveDamage, radiusScale: 1.5f, duration: 0.6f, explode: false, directional: false);
+            StartHitbox(diveDamage, 1.5f, 0.6f, false, false);
             yield return null;
         }
 
@@ -541,7 +481,6 @@ namespace Enemies
         {
             if (!isActiveAndEnabled || attackHitbox == null) return;
 
-            // Configure and fire through the single authority
             attackHitbox.Configure(absoluteDamage, radiusScale, pushForce);
             attackHitbox.Activate(duration, explode, directional);
         }
@@ -553,7 +492,49 @@ namespace Enemies
             stateMachine.ChangeState(new KamikazeState(this));
         }
 
-        // === Grab flow ===
+        // === Health / Damage ===
+
+        public override void TakeDamage(float damageAmount, Vector3 hitPoint = default, GameObject damageSource = null)
+        {
+            if (healthComponent != null)
+            {
+                healthComponent.TakeDamage(damageAmount, hitPoint, damageSource);
+            }
+        }
+
+        private void OnHealthChanged(HealthComponent.HealthChangedEventArgs e)
+        {
+            if (e.DamageAmount > 0 && !healthComponent.IsDead() && !(stateMachine.CurrentState is HurtState) && !isBeingHeld)
+            {
+                isCharging = false;
+                stateMachine.ChangeState(new HurtState(this));
+
+                if (healthComponent.GetHealthPercentage() <= kamikazeHealthThreshold)
+                {
+                    EnterKamikazeMode();
+                }
+            }
+        }
+
+        private void OnDeath(HealthComponent health)
+        {
+            stateMachine.ChangeState(new DeadState(this));
+            StartCoroutine(DelayedScaleDown(2f));
+        }
+
+        protected override void OnDeathHandler() { }
+
+        public void SetMaxHealth(float value)
+        {
+            if (healthComponent != null) healthComponent.SetMaxHealth(value);
+        }
+
+        // === Grab / Throw ===
+
+        private void OnGrabbed(SelectEnterEventArgs args) => Pickup();
+
+        private void OnReleased(SelectExitEventArgs args) => Release();
+
         public void Pickup()
         {
             isBeingHeld = true;
@@ -561,12 +542,6 @@ namespace Enemies
 
             if (agent != null) agent.isStopped = true;
             if (attackHitbox != null) attackHitbox.gameObject.SetActive(false);
-
-            if (attackCoroutine != null)
-            {
-                StopCoroutine(attackCoroutine);
-                attackCoroutine = null;
-            }
 
             if (animator != null)
             {
@@ -576,7 +551,6 @@ namespace Enemies
                 animator.ResetTrigger("Attack");
                 animator.ResetTrigger("KamikazeAttack");
                 animator.SetTrigger(IdleOnAir);
-                animator.Update(0f);
             }
 
             stateMachine.ChangeState(new HeldState(this));
@@ -588,11 +562,6 @@ namespace Enemies
             currentTarget = null;
 
             if (attackHitbox != null) attackHitbox.gameObject.SetActive(false);
-            if (attackCoroutine != null)
-            {
-                StopCoroutine(attackCoroutine);
-                attackCoroutine = null;
-            }
 
             if (animator != null)
             {
@@ -601,10 +570,9 @@ namespace Enemies
                 animator.SetBool(IsCharging, false);
                 animator.ResetTrigger("Attack");
                 animator.ResetTrigger("KamikazeAttack");
-                animator.Update(0f);
             }
 
-            EnsureAgentOnNavMesh();
+            if (agent != null) agent.enabled = false; // Disable to prevent snap during flight
 
             if (isBreakingHold)
             {
@@ -635,54 +603,38 @@ namespace Enemies
             }
         }
 
-        // === Targeting ===
-        public Transform GetClosestTarget()
+        private IEnumerator ResumeAIWithDelay(float delay)
         {
-            Transform closestTarget = null;
-            float closestDistance = Mathf.Infinity;
+            yield return new WaitForSeconds(delay);
 
-            // Prefer TreeOfLightPot that is growing
-            Collider[] treeHits = Physics.OverlapSphere(transform.position, chaseRange, treeLayer);
-            foreach (var hit in treeHits)
+            if (rb != null)
             {
-                var treePot = hit.GetComponent<TreeOfLightPot>();
-                if (treePot != null && treePot.IsGrowing)
-                {
-                    float d = Vector3.Distance(transform.position, hit.transform.position);
-                    if (d < closestDistance)
-                    {
-                        closestDistance = d;
-                        closestTarget = hit.transform;
-                    }
-                }
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
             }
 
-            // Fallback: players
-            if (closestTarget == null)
+            agent.enabled = true;
+            EnsureAgentOnNavMesh();
+            isThrown = false;
+        }
+
+        public void ForceBreakHold()
+        {
+            if (grabInteractable != null && grabInteractable.isSelected)
             {
-                Collider[] playerHits = Physics.OverlapSphere(transform.position, chaseRange, playerLayer);
-                foreach (var hit in playerHits)
+                isBreakingHold = true;
+                if (grabInteractable.interactorsSelecting.Count > 0)
                 {
-                    float d = Vector3.Distance(transform.position, hit.transform.position);
-                    if (d < closestDistance)
-                    {
-                        closestDistance = d;
-                        closestTarget = hit.transform;
-                    }
+                    var interactor = grabInteractable.interactorsSelecting[0];
+                    grabInteractable.interactionManager.SelectExit(
+                        interactor,
+                        (UnityEngine.XR.Interaction.Toolkit.Interactables.IXRSelectInteractable)grabInteractable);
                 }
             }
-
-            currentTarget = closestTarget;
-            return closestTarget;
         }
 
-        public float GetDistanceToTarget()
-        {
-            if (currentTarget == null) currentTarget = GetClosestTarget();
-            return currentTarget ? Vector3.Distance(transform.position, currentTarget.position) : Mathf.Infinity;
-        }
+        // === Death / Reset ===
 
-        // === Death / Despawn ===
         public void PlayDeathEffects()
         {
             if (animator != null) animator.SetTrigger(Dead);
@@ -696,14 +648,26 @@ namespace Enemies
             else StartCoroutine(ScaleDownAndDisable());
         }
 
-        public void ResetChargeTimer()
+        private IEnumerator DelayedScaleDown(float delay)
         {
-            chargeTimer = 0f;
-            isCharging = false;
-            if (animator != null) animator.SetBool(IsCharging, false);
+            yield return new WaitForSeconds(delay);
+            StartCoroutine(ScaleDownAndDisable());
         }
 
-        // === Full reset (pool return) ===
+        public IEnumerator ScaleDownAndDisable()
+        {
+            float timer = 0f;
+            Vector3 start = transform.localScale;
+            const float duration = 3f;
+            while (timer < duration)
+            {
+                timer += Time.deltaTime;
+                transform.localScale = Vector3.Lerp(start, Vector3.zero, timer / duration);
+                yield return null;
+            }
+            gameObject.SetActive(false);
+        }
+
         public void ResetSpider()
         {
             if (stateMachine.CurrentState != null && !(stateMachine.CurrentState is DeadState)) return;
@@ -714,6 +678,9 @@ namespace Enemies
             isCharging = false;
             isInKamikazeMode = false;
             currentTarget = null;
+            isThrown = false;
+            isBeingHeld = false;
+            isBreakingHold = false;
 
             if (rb != null)
             {
@@ -724,11 +691,6 @@ namespace Enemies
             transform.localScale = startScale;
             growthTimer = 0f;
 
-            if (attackCoroutine != null)
-            {
-                StopCoroutine(attackCoroutine);
-                attackCoroutine = null;
-            }
             if (attackHitbox != null) attackHitbox.gameObject.SetActive(false);
 
             ResetAnimator();
@@ -736,7 +698,7 @@ namespace Enemies
 
             if (healthComponent != null) healthComponent.ResetHealth();
 
-            if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+            if (IsAgentValid)
                 stateMachine.ChangeState(new IdleState(this));
             else
                 StartCoroutine(WaitForAgentReady());
@@ -746,8 +708,6 @@ namespace Enemies
         {
             if (animator == null) return;
 
-            animator.Rebind();
-            animator.Update(0f);
             animator.SetBool(Grounded, isGrounded);
             animator.SetBool(IsRunning, false);
             animator.SetBool(IsCharging, false);
@@ -761,63 +721,25 @@ namespace Enemies
         {
             yield return new WaitForSeconds(0.1f);
             EnsureAgentOnNavMesh();
-            if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+            if (IsAgentValid)
             {
                 stateMachine.ChangeState(new IdleState(this));
             }
         }
 
-        private void OnGrabbed(SelectEnterEventArgs args) => Pickup();
-        private void OnReleased(SelectExitEventArgs args) => Release();
-
-        private void OnDestroy()
+        private void OnCollisionEnter(Collision collision)
         {
-            if (grabInteractable != null)
+            if (stateMachine.CurrentState is DiveState && (wallLayer.value & (1 << collision.gameObject.layer)) != 0)
             {
-                grabInteractable.selectEntered.RemoveListener(OnGrabbed);
-                grabInteractable.selectExited.RemoveListener(OnReleased);
-            }
-            if (healthComponent != null)
-            {
-                healthComponent.OnTakeDamage.RemoveListener(OnHealthChanged);
-                healthComponent.OnDeath.RemoveListener(OnDeath);
+                stateMachine.ChangeState(new IdleState(this));
             }
         }
 
-        public IEnumerator ScaleDownAndDisable()
+        public void ResetChargeTimer()
         {
-            yield return StartCoroutine(DestroyAfterDelay(3f));
-        }
-
-        private IEnumerator DestroyAfterDelay(float delay)
-        {
-            float timer = 0f;
-            Vector3 start = transform.localScale;
-            while (timer < delay)
-            {
-                timer += Time.deltaTime;
-                transform.localScale = Vector3.Lerp(start, Vector3.zero, timer / delay);
-                yield return null;
-            }
-            gameObject.SetActive(false);
-        }
-
-        private IEnumerator ResumeAIWithDelay(float delay)
-        {
-            yield return new WaitForSeconds(delay);
-            isThrown = false;
-            Debug.Log("[ResumeAIWithDelay] Resumed AI after settle delay.");
-        }
-
-        void OnDrawGizmosSelected()
-        {
-            // Optional: If you want a visual, you can ask the hitbox for a debug radius instead of reading colliders here.
-            if (attackHitbox != null)
-            {
-                Gizmos.color = Color.red;
-                // Draw a simple fixed wire sphere at the hitbox transform for preview
-                Gizmos.DrawWireSphere(attackHitbox.transform.position, 0.5f);
-            }
+            chargeTimer = 0f;
+            isCharging = false;
+            if (animator != null) animator.SetBool(IsCharging, false);
         }
     }
 }
