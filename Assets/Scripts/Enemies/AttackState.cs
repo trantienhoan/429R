@@ -26,8 +26,6 @@ namespace Enemies
                 monster.SafeSet("Attack"); // Trigger anim
                 monster.animator.Update(0f); // Force immediate
             }
-
-            monster.PerformAttack(); // Keep for damage
         }
 
         public void Tick()

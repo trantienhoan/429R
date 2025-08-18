@@ -1,102 +1,106 @@
 ﻿using UnityEngine;
-using System.Collections;namespace Enemies
+using System.Collections;
+
+namespace Enemies
 {
     public class ChargeState : IState
     {
         private ShadowMonster monster;
-        private float lockedDistance;    public ChargeState(ShadowMonster monster) { this.monster = monster; }
+        private float lockedDistance;
 
-    public void OnEnter()
-    {
-        monster.StartCharge();
-        lockedDistance = monster.GetDistanceToTarget();
-        if (monster.agent != null && monster.agent.isActiveAndEnabled && monster.agent.isOnNavMesh)
-        {
-            monster.agent.isStopped = true;
-        }
-        if (monster.animator != null)
-        {
-            monster.animator.SetBool("isCharging", true);
-            monster.animator.Update(0f);
-        }
-    }
+        public ChargeState(ShadowMonster monster) { this.monster = monster; }
 
-    public void Tick()
-    {
-        if (monster.IsChargeComplete())
+        public void OnEnter()
         {
+            monster.StartCharge();
+            lockedDistance = monster.GetDistanceToTarget();
+            if (monster.agent != null && monster.agent.isActiveAndEnabled && monster.agent.isOnNavMesh)
+            {
+                monster.agent.isStopped = true;
+            }
             if (monster.animator != null)
             {
-                monster.animator.SetBool("isCharging", false);
-                monster.animator.Update(0f);  // Force process
-                Debug.Log("Charge complete: isCharging reset, current animator state: " + monster.animator.GetCurrentAnimatorStateInfo(0).shortNameHash);  // Debug
-            }
-
-            // Kamikaze check
-            if (monster.isInKamikazeMode || monster.healthComponent.GetHealthPercentage() <= monster.kamikazeHealthThreshold)
-            {
-                monster.StartCoroutine(TransitionToKamikaze());  // Fixed: Removed extra 'monster.'
-                return;
-            }
-
-            // Attack check
-            if (monster.currentTarget != null && lockedDistance <= monster.attackRange)
-            {
-                monster.StartCoroutine(TransitionToAttack());  // Fixed if similar typo here
-            }
-            else
-            {
-                monster.stateMachine.ChangeState(new IdleState(monster));
+                monster.animator.SetBool("isCharging", true);
+                monster.animator.Update(0f);
             }
         }
-    }
 
-    private IEnumerator TransitionToAttack()
-    {
-        ResetAllTriggers();  // Clear before set
-        if (monster.animator != null)
+        public void Tick()
         {
-            monster.animator.SetTrigger("Attack");
-            monster.animator.Update(0f);
-            yield return null;  // Delay 1 frame for animator to process
-        }
-        monster.stateMachine.ChangeState(new AttackState(monster));
-        Debug.Log("Transitioning to Attack: Trigger set, state changed");
-    }
-
-    private IEnumerator TransitionToKamikaze()
-    {
-        ResetAllTriggers();
-        if (monster.animator != null)
-        {
-            monster.animator.SetTrigger("KamikazeAttack");
-            monster.animator.Update(0f);
-            yield return null;
-        }
-        monster.stateMachine.ChangeState(new KamikazeState(monster));
-    }
-
-    private void ResetAllTriggers()
-    {
-        if (monster.animator != null)
-        {
-            foreach (var param in monster.animator.parameters)
+            if (monster.IsChargeComplete())
             {
-                if (param.type == AnimatorControllerParameterType.Trigger)
+                if (monster.animator != null)
                 {
-                    monster.animator.ResetTrigger(param.name);
+                    monster.animator.SetBool("isCharging", false);
+                    monster.animator.Update(0f);  // Force process
+                    Debug.Log("Charge complete: isCharging reset, current animator state: " + monster.animator.GetCurrentAnimatorStateInfo(0).shortNameHash);  // Debug
+                }
+
+                // Kamikaze check
+                if (monster.isInKamikazeMode || monster.healthComponent.GetHealthPercentage() <= monster.kamikazeHealthThreshold)
+                {
+                    monster.StartCoroutine(TransitionToKamikaze());
+                    return;
+                }
+
+                // Attack check
+                if (monster.currentTarget != null && lockedDistance <= monster.attackRange)
+                {
+                    monster.StartCoroutine(TransitionToAttack());
+                }
+                else
+                {
+                    monster.stateMachine.ChangeState(new IdleState(monster));
                 }
             }
         }
-    }
 
-    public void OnExit()
-    {
-        monster.ResetChargeTimer();
-        if (monster.animator != null)
+        private IEnumerator TransitionToAttack()
         {
-            monster.animator.SetBool("isCharging", false);
+            ResetAllTriggers();  // Clear before set
+            if (monster.animator != null)
+            {
+                monster.animator.SetTrigger("Attack");
+                monster.animator.Update(0f);
+                yield return new WaitForSeconds(0.0f);  // Small delay for anim to settle
+            }
+            monster.stateMachine.ChangeState(new AttackState(monster));
+            Debug.Log("Transitioning to Attack: Trigger set, state changed");
+        }
+
+        private IEnumerator TransitionToKamikaze()
+        {
+            ResetAllTriggers();
+            if (monster.animator != null)
+            {
+                monster.animator.SetTrigger("KamikazeAttack");
+                monster.animator.Update(0f);
+                yield return new WaitForSeconds(0.1f);  // Small delay
+            }
+            monster.stateMachine.ChangeState(new KamikazeState(monster));
+        }
+
+        private void ResetAllTriggers()
+        {
+            if (monster.animator != null)
+            {
+                foreach (var param in monster.animator.parameters)
+                {
+                    if (param.type == AnimatorControllerParameterType.Trigger)
+                    {
+                        monster.animator.ResetTrigger(param.name);
+                    }
+                }
+            }
+        }
+
+        public void OnExit()
+        {
+            monster.ResetChargeTimer();
+            if (monster.animator != null)
+            {
+                monster.animator.SetBool("isCharging", false);
+            }
         }
     }
-}}
-
+}

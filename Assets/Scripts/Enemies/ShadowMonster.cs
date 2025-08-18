@@ -40,7 +40,7 @@ namespace Enemies
         [SerializeField] public float chaseRange = 15f;
         [SerializeField] public float attackRange = 2f;
         [SerializeField] public float attackCooldown = 1.25f;
-        [SerializeField] public float chargeTime = 1.5f; // New: Separate charge duration (1-2s)
+        [SerializeField] public float chargeTime = 1.5f; // Added for separate charge duration
         [SerializeField] public float idleTimeBeforeDive = 5f;
 
         [Header("Attack")]
@@ -79,6 +79,10 @@ namespace Enemies
         [SerializeField] private Transform groundCheckPoint;
         [SerializeField] private float groundRayDistance = 0.5f;
         [SerializeField] private float minFloorY = -10f;
+        
+        [SerializeField] private LayerMask losObstacles;     // walls, props, etc.
+        private readonly Collider[] _targetBuffer = new Collider[32]; // reuse to avoid GC
+        private const float StickinessFactor = 0.9f;
 
         // State
         public StateMachine stateMachine { get; private set; }
@@ -209,21 +213,54 @@ namespace Enemies
                 agent.nextPosition = transform.position;
                 lastValidPosition = transform.position;
             }
+            if (IsAgentValid && !isBeingHeld && !isThrown &&
+                !(stateMachine.CurrentState is DiveState) &&
+                !(stateMachine.CurrentState is HeldState))
+            {
+                // While AI is controlling movement, turn off gravity and stick to mesh height
+                if (rb) rb.useGravity = false;
+                AlignToNavMeshHeight(); // smooth Y glue to NavMesh
+            }
+            else
+            {
+                if (rb) rb.useGravity = true; // free fall when thrown/held/dive
+            }
+            
+            isGrounded = IsGrounded(); // Ensure this raycasts properly.
+            if (transform.position.y < minFloorY) { stateMachine.ChangeState(new DeadState(this)); } // Fall death.
+            if (healthComponent.IsDead() && !(stateMachine.CurrentState is DeadState)) { stateMachine.ChangeState(new DeadState(this)); }
         }
 
+        public void HandleDamage(float dmg, Vector3 sourcePos) {
+            healthComponent.TakeDamage(dmg);
+            if (!healthComponent.IsDead()) stateMachine.ChangeState(new HurtState(this));
+        }
+        private void AlignToNavMeshHeight(float maxSnap = 1.5f, float lerp = 0.4f)
+        {
+            if (!IsAgentValid) return;
+            if (NavMesh.SamplePosition(transform.position, out var hit, maxSnap, NavMesh.AllAreas))
+            {
+                var p = transform.position;
+                p.y = Mathf.Lerp(p.y, hit.position.y + agent.baseOffset, lerp);
+                transform.position = p;
+                agent.nextPosition = p; // keep agent and body in sync
+            }
+        }
         private void FixedUpdate()
         {
-            if (!enabled || !IsAgentValid || isBeingHeld || isThrown || stateMachine.CurrentState is DiveState || stateMachine.CurrentState is HeldState)
+            if (!enabled || !IsAgentValid || isBeingHeld || isThrown ||
+                stateMachine.CurrentState is DiveState || stateMachine.CurrentState is HeldState)
                 return;
 
             if (!rb) return;
 
-            if (isGrounded && rb.linearVelocity.y < 0f)
-                rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
+            // Zero vertical velocity while AI is in control; height is handled by AlignToNavMeshHeight()
+            rb.linearVelocity = new Vector3(
+                Mathf.Lerp(rb.linearVelocity.x, agent.desiredVelocity.x, 0.8f),
+                0f,
+                Mathf.Lerp(rb.linearVelocity.z, agent.desiredVelocity.z, 0.8f)
+            );
 
-            // follow agent desired velocity (smooth for better chasing)
-            Vector3 targetVelocity = new Vector3(agent.desiredVelocity.x, rb.linearVelocity.y, agent.desiredVelocity.z);
-            rb.linearVelocity = Vector3.Lerp(rb.linearVelocity, targetVelocity, 0.8f); // Smoothing for responsive chase without jitter
             if (agent.desiredVelocity.sqrMagnitude > 0.01f)
                 transform.rotation = Quaternion.LookRotation(new Vector3(agent.desiredVelocity.x, 0f, agent.desiredVelocity.z));
         }
@@ -305,21 +342,53 @@ namespace Enemies
         }
 
         // ===== Targeting =====
-        public Transform GetClosestTarget()
+        public Transform GetClosestTarget(bool requireLineOfSight = true)
         {
-            Transform best = null;
-            float bestDist = Mathf.Infinity;
+            Transform best = currentTarget;             // start sticky: prefer what we already have
+            float bestScore = best ? (best.position - transform.position).sqrMagnitude : float.PositiveInfinity;
 
-            Collider[] hits = Physics.OverlapSphere(transform.position, chaseRange, damageLayers);
-            foreach (var h in hits)
+            // Non-alloc query to reduce GC
+            int count = Physics.OverlapSphereNonAlloc(transform.position, chaseRange, _targetBuffer, damageLayers, QueryTriggerInteraction.Ignore);
+
+            Vector3 origin = transform.position;
+
+            for (int i = 0; i < count; i++)
             {
-                float d = Vector3.Distance(transform.position, h.transform.position);
-                if (d < bestDist)
+                var t = _targetBuffer[i]?.transform;
+                if (!t || t == transform) continue;
+
+                // (Optional) filter: if you only want the player or things with HealthComponent, uncomment:
+                // if (!t.TryGetComponent<HealthComponent>(out _)) continue;
+
+                // Optional line-of-sight test
+                if (requireLineOfSight)
                 {
-                    bestDist = d;
-                    best = h.transform;
+                    Vector3 targetPos = t.position + Vector3.up * 0.5f;
+                    if (Physics.Linecast(origin + Vector3.up * 0.5f, targetPos, out RaycastHit hit, losObstacles, QueryTriggerInteraction.Ignore))
+                    {
+                        if (hit.transform != t) continue; // something blocks LOS
+                    }
+                }
+
+                float d2 = (t.position - origin).sqrMagnitude;
+
+                // Stickiness: slightly discount the current target so we don't retarget unless clearly better
+                if (best && t == best) d2 *= StickinessFactor;
+
+                if (d2 < bestScore)
+                {
+                    bestScore = d2;
+                    best = t;
                 }
             }
+
+            // If nothing found but we had a target and it's still within hard range, keep it
+            if (!best && currentTarget)
+            {
+                float keep2 = (currentTarget.position - origin).sqrMagnitude;
+                if (keep2 <= chaseRange * chaseRange) best = currentTarget;
+            }
+
             currentTarget = best;
             return best;
         }
@@ -327,7 +396,13 @@ namespace Enemies
         public float GetDistanceToTarget()
         {
             if (!currentTarget) currentTarget = GetClosestTarget();
-            return currentTarget ? Vector3.Distance(transform.position, currentTarget.position) : Mathf.Infinity;
+            if (currentTarget)
+            {
+                Vector3 flatPos = currentTarget.position;
+                flatPos.y = transform.position.y; // Horizontal distance only
+                return Vector3.Distance(transform.position, flatPos);
+            }
+            return Mathf.Infinity;
         }
 
         // ===== Charge / Attack =====
@@ -346,7 +421,7 @@ namespace Enemies
         public bool IsChargeComplete()
         {
             chargeTimer += Time.deltaTime;
-            return chargeTimer >= chargeTime; // Use chargeTime instead of attackCooldown
+            return chargeTimer >= chargeTime;
         }
 
         public void ResetChargeTimer()
@@ -605,20 +680,23 @@ namespace Enemies
         public bool AgentReady() => agent && agent.isActiveAndEnabled && agent.isOnNavMesh;
 
         // Call to (re)enable + place the agent on NavMesh when close enough
-        public bool TryMakeAgentReady(float sampleRadius = 50f)
+        public bool TryMakeAgentReady(float sampleRadius = 100f)
         {
             if (!agent) return false;
 
-            // sample FIRST while disabled to avoid errors
+            // Always disable before we try to place the agent to avoid the "create agent" error.
+            if (agent.enabled) agent.enabled = false;
+
             float scale = Mathf.Max(0.5f, transform.localScale.y);
             if (!NavMesh.SamplePosition(transform.position, out var hit, sampleRadius * scale, NavMesh.AllAreas))
                 return false;
 
+            // Move transform first, then enable + Warp.
             transform.position = hit.position;
-            if (!agent.enabled) agent.enabled = true;
+            agent.enabled = true;
             agent.Warp(hit.position);
             agent.isStopped = false;
-            return true;
+            return agent.isOnNavMesh;
         }
 
         public bool TryResumeAgent()
@@ -634,7 +712,7 @@ namespace Enemies
         }
 
         // ===== Animator helpers (avoid warnings when a trigger is missing) =====
-        private bool HasTrigger(string name)
+        protected bool HasTrigger(string name)
         {
             if (!animator) return false;
             foreach (var p in animator.parameters)
@@ -642,8 +720,8 @@ namespace Enemies
                     return true;
             return false;
         }
-        private void SafeSet(string trig)   { if (HasTrigger(trig)) animator.SetTrigger(trig); }
-        private void SafeReset(string trig) { if (HasTrigger(trig)) animator.ResetTrigger(trig); }
+        public void SafeSet(string trig)   { if (HasTrigger(trig)) animator.SetTrigger(trig); } // Made public
+        public void SafeReset(string trig) { if (HasTrigger(trig)) animator.ResetTrigger(trig); } // Made public
 
         private void OnCollisionEnter(Collision collision)
         {
@@ -666,8 +744,8 @@ namespace Enemies
             // Force release
             if (grabInteractable && grabInteractable.isSelected)
             {
-                var interactor = UnityEngine.XR.Interaction.Toolkit.XRSelectInteractableExtensions.GetOldestInteractorSelecting((UnityEngine.XR.Interaction.Toolkit.IXRSelectInteractable)grabInteractable);
-                grabInteractable.interactionManager.SelectExit((UnityEngine.XR.Interaction.Toolkit.IXRSelectInteractor)interactor, (UnityEngine.XR.Interaction.Toolkit.IXRSelectInteractable)grabInteractable);
+                var interactor = UnityEngine.XR.Interaction.Toolkit.Interactables.XRSelectInteractableExtensions.GetOldestInteractorSelecting((UnityEngine.XR.Interaction.Toolkit.Interactables.IXRSelectInteractable)grabInteractable);
+                grabInteractable.interactionManager.SelectExit((UnityEngine.XR.Interaction.Toolkit.Interactors.IXRSelectInteractor)interactor, (UnityEngine.XR.Interaction.Toolkit.Interactables.IXRSelectInteractable)grabInteractable);
             }
             else
             {

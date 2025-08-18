@@ -66,11 +66,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb68cb885af71d74d80e5c6cb5c82f44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  baseRadius: 1.2
-  knockbackForce: 1
+  baseRadius: 0.2
+  knockbackForce: 5
   targetLayerMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 8264
   drawGizmos: 1
   gizmoColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1001 &2892365612308435589
@@ -1472,11 +1472,11 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 0
   m_ImplicitTensor: 1
-  m_UseGravity: 1
+  m_UseGravity: 0
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 14
-  m_CollisionDetection: 2
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!114 &3030980029734817786
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1501,18 +1501,18 @@ MonoBehaviour:
   deathSfx: {fileID: 8300000, guid: 9118a3d703424a441a222ad5c2ea6971, type: 3}
   damageLayers:
     serializedVersion: 2
-    m_Bits: 8201
+    m_Bits: 73
   groundLayer:
     serializedVersion: 2
     m_Bits: 2097152
   chaseRange: 5
   attackRange: 1
-  attackCooldown: 0
-  idleTimeBeforeDive: 7
+  attackCooldown: 3
+  chargeTime: 1
+  idleTimeBeforeDive: 3
   normalAttackDamage: 200
-  attackRadius: 1.2
+  attackRadius: 3
   attackKnockback: 1
-  attackLungeForce: 15
   hitVfxPrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
     type: 3}
   kamikazeRange: 10
@@ -1534,6 +1534,9 @@ MonoBehaviour:
   groundCheckPoint: {fileID: 2323047856565264533}
   groundRayDistance: 0.5
   minFloorY: -10
+  losObstacles:
+    serializedVersion: 2
+    m_Bits: 0
   currentTarget: {fileID: 0}
   isInKamikazeMode: 0
   lastAttackTime: 0
@@ -1547,7 +1550,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8658269655017285872}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0ad34abafad169848a38072baa96cdb2, type: 3}
   m_Name: 
@@ -1672,7 +1675,7 @@ NavMeshAgent:
   m_Enabled: 0
   m_AgentTypeID: -902729914
   m_Radius: 0.28
-  m_Speed: 1
+  m_Speed: 10
   m_Acceleration: 7
   avoidancePriority: 50
   m_AngularSpeed: 180
@@ -1680,8 +1683,8 @@ NavMeshAgent:
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
   m_AutoRepath: 1
-  m_Height: 0.36
-  m_BaseOffset: -0.06
+  m_Height: 0.24
+  m_BaseOffset: 0
   m_WalkableMask: 1
   m_ObstacleAvoidanceType: 3
 --- !u!114 &2649278790831312482

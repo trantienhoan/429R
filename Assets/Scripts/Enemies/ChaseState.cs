@@ -4,7 +4,7 @@ namespace Enemies
 {
     public class ChaseState : IState
     {
-        private static readonly int IsRunning = Animator.StringToHash("isRunning");
+        private static readonly int IsRunning  = Animator.StringToHash("isRunning");
         private static readonly int IsCharging = Animator.StringToHash("isCharging");
         private static readonly int IsGrounded = Animator.StringToHash("isGrounded");
         private readonly ShadowMonster monster;
@@ -13,20 +13,14 @@ namespace Enemies
 
         public void OnEnter()
         {
-            if (monster.animator != null)
-            {
-                monster.animator.SetBool(IsRunning, true);
-                monster.animator.SetBool(IsCharging, false);
-                monster.animator.SetBool(IsGrounded, monster.isGrounded);
-                monster.animator.ResetTrigger("Attack");
-                monster.animator.Update(0f);
+            if (!monster.TryMakeAgentReady()) {
+                Debug.Log("[Chase] Agent not ready, back to Idle");
+                monster.stateMachine.ChangeState(new IdleState(monster));
+                return;
             }
-            monster.EnsureAgentOnNavMesh();
-            if (monster.agent != null && monster.agent.isActiveAndEnabled)
-            {
-                monster.agent.isStopped = false;
-                monster.agent.stoppingDistance = monster.attackRange * 0.5f; // Lower to get closer (half range)
-            }
+            monster.agent.updatePosition = true; // Enable sync
+            monster.agent.updateRotation = true;
+            monster.agent.isStopped = false;
             monster.currentTarget = monster.GetClosestTarget();
         }
 
@@ -34,32 +28,37 @@ namespace Enemies
         {
             if (monster.currentTarget == null)
             {
-                Debug.Log("[ChaseState] No target, returning to Idle");
-                monster.stateMachine.ChangeState(new IdleState(monster));
-                return;
+                monster.currentTarget = monster.GetClosestTarget();
+                if (monster.currentTarget == null)
+                {
+                    monster.stateMachine.ChangeState(new IdleState(monster));
+                    return;
+                }
             }
+            if (monster.currentTarget != null) {
+                if (Vector3.Distance(monster.agent.destination, monster.currentTarget.position) > 0.5f) { // Only if changed significantly
+                    monster.agent.SetDestination(monster.currentTarget.position);
+                }
+                // Existing dist check for Charge
+            }
+            Debug.Log($"[Chase] Target pos: {monster.currentTarget.position}, Agent dest: {monster.agent.destination}, hasPath: {monster.agent.hasPath}, stopped: {monster.agent.isStopped}, vel: {monster.agent.velocity.magnitude}");
+
+            // Keep destination updated every frame
             monster.agent.SetDestination(monster.currentTarget.position);
-            monster.IsGrounded();
-            if (!monster.isGrounded) monster.EnsureAgentOnNavMesh();
-            float distance = monster.GetDistanceToTarget();
-            Debug.Log("[ChaseState Tick] Distance: " + distance + ", CooldownReady: " + (Time.time >= monster.lastAttackTime + monster.attackCooldown));
-            if (distance <= monster.attackRange && Time.time >= monster.lastAttackTime + monster.attackCooldown)
-            {
+
+            // Quick visibility while testing:
+            //Debug.Log($"[Chase] hasPath={monster.agent.hasPath} status={monster.agent.pathStatus} " +
+                      //$"stopped={monster.agent.isStopped} vel={monster.agent.desiredVelocity}");
+
+            var dist = monster.GetDistanceToTarget();
+            if (dist <= monster.attackRange && Time.time >= monster.nextAttackAllowed)
                 monster.stateMachine.ChangeState(new ChargeState(monster));
-            }
-            else if (distance > monster.chaseRange)
-            {
-                monster.stateMachine.ChangeState(new IdleState(monster));
-            }
         }
 
         public void OnExit()
         {
             if (monster.animator != null) monster.animator.SetBool(IsRunning, false);
-            if (monster.agent != null && monster.agent.isActiveAndEnabled) // Add check
-            {
-                monster.agent.isStopped = true;
-            }
+            if (monster.AgentReady()) monster.agent.isStopped = true;
         }
     }
 }
