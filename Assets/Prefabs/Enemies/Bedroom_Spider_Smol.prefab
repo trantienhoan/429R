@@ -17,7 +17,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1740443824796398036
 Transform:
   m_ObjectHideFlags: 0
@@ -26,12 +26,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4643109836980762304}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.00226, z: -0.00468}
+  m_LocalRotation: {x: 0.6004193, y: -0.34260073, z: 0.2527491, w: 0.67693377}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
-  m_Father: {fileID: 7658882366548129132}
+  m_Father: {fileID: 6834992265680353444}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!135 &1962385869066354704
 SphereCollider:
@@ -52,8 +52,8 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.003
-  m_Center: {x: 0, y: 0, z: 0.005}
+  m_Radius: 0.005
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &5078379185537246606
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -66,37 +66,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb68cb885af71d74d80e5c6cb5c82f44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  scaleSource: {fileID: 8314641946612675146}
-  fallbackToSelfIfNull: 1
-  scaleClamp: {x: 0.25, y: 5}
-  baseDamage: 10
-  baseExplosionRadius: 1
-  damageToForceMultiplier: 1
-  minPushForce: 5
-  explosionVFX: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
-    type: 3}
-  explosionSfx: {fileID: 0}
-  debugVerboseLogs: 1
-  drawDebugGizmos: 1
-  gizmoColor: {r: 1, g: 0, b: 0, a: 1}
-  applyContinuousPush: 1
-  baseContinuousPush: 50
-  baseBoxSize: {x: 0.2, y: 0.2, z: 0.2}
-  baseCastDistance: 0.4
-  pushForceMode: 1
-  damageScaleMultiplier: 1
-  forceScaleMultiplier: 1
-  sizeScaleMultiplier: 1
-  minRadius: 0.1
+  baseRadius: 1.2
+  knockbackForce: 1
   targetLayerMask:
     serializedVersion: 2
     m_Bits: 4294967295
-  targetTags:
-  - Player
-  - TreeOfLight
-  - Furniture
-  - Enemy
-  overlapBufferSize: 32
+  drawGizmos: 1
+  gizmoColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1001 &2892365612308435589
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1308,11 +1284,11 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -7016358225464336179, guid: eea07b0f474e5d44c85bbaded1d24bf4,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1740443824796398036}
-    - targetCorrespondingSourceObject: {fileID: -7016358225464336179, guid: eea07b0f474e5d44c85bbaded1d24bf4,
+      addedObject: {fileID: 4147962303748091613}
+    - targetCorrespondingSourceObject: {fileID: 3041045691687185669, guid: eea07b0f474e5d44c85bbaded1d24bf4,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 4147962303748091613}
+      addedObject: {fileID: 1740443824796398036}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: eea07b0f474e5d44c85bbaded1d24bf4,
         type: 3}
@@ -1384,6 +1360,12 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 8424321414631544225}
   m_PrefabAsset: {fileID: 0}
+--- !u!4 &6834992265680353444 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3041045691687185669, guid: eea07b0f474e5d44c85bbaded1d24bf4,
+    type: 3}
+  m_PrefabInstance: {fileID: 8424321414631544225}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &7658882366548129132 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -7016358225464336179, guid: eea07b0f474e5d44c85bbaded1d24bf4,
@@ -1417,12 +1399,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.003, y: 0.0033877217, z: 0.0030893977}
   m_Center: {x: 0.0000022430713, y: 0.0016732345, z: -0.0003916951}
---- !u!4 &8314641946612675146 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: eea07b0f474e5d44c85bbaded1d24bf4,
-    type: 3}
-  m_PrefabInstance: {fileID: 8424321414631544225}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &8658269655017285872 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: eea07b0f474e5d44c85bbaded1d24bf4,
@@ -1515,59 +1491,55 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   animator: {fileID: 3885325605593910892}
   agent: {fileID: 4478516609795976183}
-  attackHitbox: {fileID: 5078379185537246606}
   rb: {fileID: 4301660074786869948}
+  attackHitbox: {fileID: 5078379185537246606}
+  healthComponent: {fileID: 2649278790831312482}
+  grabInteractable: {fileID: 7609633742523881503}
   deathVFX: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
-  deathSfx: {fileID: 8300000, guid: 9118a3d703424a441a222ad5c2ea6971, type: 3}
   audioSource: {fileID: 0}
-  grabInteractable: {fileID: 7609633742523881503}
-  healthComponent: {fileID: 2649278790831312482}
+  deathSfx: {fileID: 8300000, guid: 9118a3d703424a441a222ad5c2ea6971, type: 3}
+  damageLayers:
+    serializedVersion: 2
+    m_Bits: 8201
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 2097152
   chaseRange: 5
   attackRange: 1
-  kamikazeRange: 10
   attackCooldown: 0
-  chargeDelay: 2
+  idleTimeBeforeDive: 7
   normalAttackDamage: 200
+  attackRadius: 1.2
+  attackKnockback: 1
+  attackLungeForce: 15
+  hitVfxPrefab: {fileID: 5167249678902415216, guid: 363e7368242b41d40bcaf1733a7ed45e,
+    type: 3}
+  kamikazeRange: 10
   kamikazeAttackDamage: 500
-  kamikazeHealthThreshold: 0.8
-  pushForce: 1000
-  stuckTimeThreshold: 5
-  idleTimeBeforeDive: 3
+  kamikazeHealthThreshold: 0.2
+  diveSpeed: 3
+  diveForceMultiplier: 1
+  diveTimeout: 10
+  diveDamage: 50
   maxHoldTime: 2
   struggleShakeIntensity: 0.1
   growthTime: 3
   startScale: {x: 0.3, y: 0.3, z: 0.3}
   fullScale: {x: 0.7, y: 0.7, z: 0.7}
-  wallLayer:
-    serializedVersion: 2
-    m_Bits: 16384
-  diveForceMultiplier: 1.5
-  diveSpeed: 10
-  diveTimeout: 3
-  diveDamage: 15
+  baseAgentSpeed: 1.5
   originalAgentRadius: 0.5
-  originalAgentHeight: 2
+  originalAgentHeight: 0.2
   originalBaseOffset: 0
-  velocityThreshold: 0.1
-  breakDamage: 10
-  settleDelayAfterLand: 0.2
-  groundRayDistance: 0.5
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 2097152
-  minFloorY: -10
   groundCheckPoint: {fileID: 2323047856565264533}
-  playerLayer:
-    serializedVersion: 2
-    m_Bits: 8
-  treeLayer:
-    serializedVersion: 2
-    m_Bits: 65
+  groundRayDistance: 0.5
+  minFloorY: -10
   currentTarget: {fileID: 0}
-  stuckTimer: 0
   isInKamikazeMode: 0
   lastAttackTime: 0
+  attackInProgress: 0
+  nextAttackAllowed: 0
+  stuckTimer: 0
 --- !u!114 &7609633742523881503
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1697,7 +1669,7 @@ NavMeshAgent:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8658269655017285872}
-  m_Enabled: 1
+  m_Enabled: 0
   m_AgentTypeID: -902729914
   m_Radius: 0.28
   m_Speed: 1
@@ -1724,14 +1696,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2883e4c1dfd15bf43a546e9d36e341bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 500
-  health: 500
+  maxHealth: 50000
+  health: 50000
   destroyOnDeath: 1
   scaleOnDeath: 1
   deathScaleTarget: {x: 0, y: 0, z: 0}
-  deathScaleDuration: 10
+  deathScaleDuration: 0.5
   isInvulnerableByDefault: 0
-  scaleWithHealth: 1
+  scaleWithHealth: 0
   minScaleOnLowHealth: {x: 0, y: 0, z: 0}
   destroyOnDistance: 1
   referencePoint: {fileID: 0}

@@ -25,7 +25,7 @@ namespace Enemies
             if (monster.agent != null && monster.agent.isActiveAndEnabled)
             {
                 monster.agent.isStopped = false;
-                monster.agent.stoppingDistance = monster.attackRange - 0.5f;
+                monster.agent.stoppingDistance = monster.attackRange * 0.5f; // Lower to get closer (half range)
             }
             monster.currentTarget = monster.GetClosestTarget();
         }
@@ -34,23 +34,21 @@ namespace Enemies
         {
             if (monster.currentTarget == null)
             {
-                //Debug.Log("[ChaseState] No target, returning to Idle");
+                Debug.Log("[ChaseState] No target, returning to Idle");
                 monster.stateMachine.ChangeState(new IdleState(monster));
                 return;
             }
             monster.agent.SetDestination(monster.currentTarget.position);
-            monster.IsGrounded();  // Re-check
+            monster.IsGrounded();
             if (!monster.isGrounded) monster.EnsureAgentOnNavMesh();
             float distance = monster.GetDistanceToTarget();
-            //Debug.Log($"[ChaseState Tick] Distance: {distance}, CooldownReady: {Time.time >= monster.lastAttackTime + monster.attackCooldown}");
+            Debug.Log("[ChaseState Tick] Distance: " + distance + ", CooldownReady: " + (Time.time >= monster.lastAttackTime + monster.attackCooldown));
             if (distance <= monster.attackRange && Time.time >= monster.lastAttackTime + monster.attackCooldown)
             {
-                //Debug.Log("[ChaseState] In attack range, switching to ChargeState");
                 monster.stateMachine.ChangeState(new ChargeState(monster));
             }
             else if (distance > monster.chaseRange)
             {
-                //Debug.Log("[ChaseState] Out of chase range, returning to Idle");
                 monster.stateMachine.ChangeState(new IdleState(monster));
             }
         }

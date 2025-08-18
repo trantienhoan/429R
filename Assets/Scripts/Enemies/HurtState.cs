@@ -1,11 +1,21 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Enemies
 {
+    [Serializable]
     public class HurtState : IState
     {
-        private ShadowMonster monster;
-        private float hurtDuration = 0.5f;
+        private static readonly int IsCharging = Animator.StringToHash("isCharging");
+        private static readonly int IsRunning = Animator.StringToHash("isRunning");
+        private static readonly int IsGrounded = Animator.StringToHash("isGrounded");
+        private static readonly int Hurt = Animator.StringToHash("Hurt");
+        private readonly ShadowMonster monster;
+        [SerializeField] private float hurtDuration = 0.5f; // Tune in Inspector
+        [SerializeField] private float knockbackForce = 5f; // Tune for push strength
+
+        private float remainingDuration;
 
         public HurtState(ShadowMonster monster)
         {
@@ -14,22 +24,38 @@ namespace Enemies
 
         public void OnEnter()
         {
+            remainingDuration = hurtDuration;
+
+            // Halt navigation and apply knockback
             if (monster.agent != null && monster.agent.isActiveAndEnabled && monster.agent.isOnNavMesh)
             {
-                monster.agent.isStopped = true;
+                monster.agent.enabled = false; // Temporarily disable for physics freedom
             }
-            monster.rb.linearVelocity = Vector3.zero;
-            monster.rb.angularVelocity = Vector3.zero;
-            monster.animator.SetBool("isCharging", false);
-            monster.animator.SetBool("isRunning", false);
-            monster.animator.SetBool("isGrounded", monster.isGrounded);
-            monster.animator.SetTrigger("Hurt");
+            if (monster.rb != null)
+            {
+                // Apply knockback: Backward or random direction
+                Vector3 knockDir = -monster.transform.forward + Random.insideUnitSphere * 0.3f; // Add slight randomness
+                knockDir.y = 0f; // Keep horizontal
+                monster.rb.AddForce(knockDir.normalized * knockbackForce, ForceMode.VelocityChange);
+            }
+
+            // Animator updates
+            if (monster.animator != null)
+            {
+                monster.animator.SetBool(IsCharging, false);
+                monster.animator.SetBool(IsRunning, false);
+                monster.animator.SetBool(IsGrounded, monster.isGrounded);
+                monster.SafeSet("Hurt"); // Use safe method to avoid warnings if trigger missing
+            }
+
+            // Optional: Play hit SFX or particles here for polish
+            // e.g., if (monster.hitSfx) monster.audioSource.PlayOneShot(monster.hitSfx);
         }
 
         public void Tick()
         {
-            hurtDuration -= Time.deltaTime;
-            if (hurtDuration <= 0f && !monster.isBeingHeld && !monster.healthComponent.IsDead())
+            remainingDuration -= Time.deltaTime;
+            if (remainingDuration <= 0f && !monster.isBeingHeld && !monster.healthComponent.IsDead())
             {
                 Transform target = monster.GetClosestTarget();
                 float distance = monster.GetDistanceToTarget();
@@ -46,11 +72,20 @@ namespace Enemies
 
         public void OnExit()
         {
-            if (monster.agent != null && monster.agent.isActiveAndEnabled && monster.agent.isOnNavMesh)
+            // Re-enable agent and soft-reset movement
+            if (monster.agent != null)
             {
-                monster.agent.isStopped = false;
+                monster.TryResumeAgent(); // Handles enabling and stopping false
             }
-            monster.animator.SetBool("isGrounded", monster.isGrounded);
+            if (monster.rb != null)
+            {
+                monster.rb.linearVelocity *= 0.5f; // Dampen any residual velocity softly
+            }
+            if (monster.animator != null)
+            {
+                monster.animator.SetBool(IsGrounded, monster.isGrounded);
+                monster.SafeReset("Hurt"); // Clean up trigger
+            }
         }
     }
 }

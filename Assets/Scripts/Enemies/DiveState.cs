@@ -27,7 +27,7 @@ namespace Enemies
             if (monster.rb != null)
             {
                 monster.rb.isKinematic = false;
-                Vector3 diveDirection = monster.transform.forward;  // Or towards target if available
+                Vector3 diveDirection = monster.currentTarget ? (monster.currentTarget.position - monster.transform.position).normalized : monster.transform.forward;
                 monster.rb.AddForce(diveDirection * monster.diveSpeed * monster.diveForceMultiplier, ForceMode.VelocityChange);
                 Debug.Log("[DiveState] Diving forward with force: " + (monster.diveSpeed * monster.diveForceMultiplier) + " in direction: " + diveDirection);
             }

@@ -6,19 +6,28 @@ namespace Enemies
     {
         private readonly ShadowMonster monster;
         private float attackTimer;
-        private readonly float attackDuration = 0.5f;  // Adjust to your Attack anim length
+        private readonly float attackDuration = 0.5f;  // Adjust to your anim length
 
         public AttackState(ShadowMonster monster) { this.monster = monster; }
 
         public void OnEnter()
         {
             attackTimer = 0f;
+
+            // Activate hitbox right here, before anim
+            if (monster.attackHitbox != null)
+            {
+                monster.attackHitbox.gameObject.SetActive(true);
+                monster.attackHitbox.Activate(0.3f); // Only duration
+            }
+
             if (monster.animator != null)
             {
-                monster.animator.Update(0f);  // Ensure entry
-                Debug.Log("Entered AttackState: Current animator state: " + monster.animator.GetCurrentAnimatorStateInfo(0).shortNameHash);
+                monster.SafeSet("Attack"); // Trigger anim
+                monster.animator.Update(0f); // Force immediate
             }
-            monster.PerformAttack();  // Damage/SFX here only
+
+            monster.PerformAttack(); // Keep for damage
         }
 
         public void Tick()
@@ -34,9 +43,11 @@ namespace Enemies
         {
             if (monster.animator != null)
             {
-                monster.animator.ResetTrigger("Attack");
-                //monster.animator.ResetTrigger("Attack2");
-                //monster.animator.ResetTrigger("Attack3");
+                monster.SafeReset("Attack");
+            }
+            if (monster.attackHitbox != null)
+            {
+                monster.attackHitbox.gameObject.SetActive(false);
             }
         }
     }
