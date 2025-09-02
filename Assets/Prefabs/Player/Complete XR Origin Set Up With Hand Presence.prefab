@@ -710,8 +710,6 @@ GameObject:
   - component: {fileID: 3600643191344726507}
   - component: {fileID: 1005902521960961534}
   - component: {fileID: 6179400107193657250}
-  - component: {fileID: 8819409675527169032}
-  - component: {fileID: 4500388562366432022}
   - component: {fileID: 8583841122528023562}
   m_Layer: 3
   m_Name: XR Origin
@@ -984,58 +982,6 @@ MonoBehaviour:
   m_BodyPositionEvaluatorObject: {fileID: 0}
   m_ConstrainedBodyManipulatorObject: {fileID: 0}
   m_UseCharacterControllerIfExists: 1
---- !u!114 &8819409675527169032
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6372156615731376483}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2883e4c1dfd15bf43a546e9d36e341bb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maxHealth: 150151
-  health: 150151
-  destroyOnDeath: 0
-  scaleOnDeath: 1
-  deathScaleTarget: {x: 5, y: 5, z: 5}
-  deathScaleDuration: 8
-  isInvulnerableByDefault: 0
-  scaleWithHealth: 0
-  minScaleOnLowHealth: {x: 0, y: 0, z: 0}
-  destroyOnDistance: 1
-  referencePoint: {fileID: 0}
-  maxAllowedDistance: 10
-  distanceCheckInterval: 2
-  OnHealthChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  OnTakeDamage:
-    m_PersistentCalls:
-      m_Calls: []
-  OnDeath:
-    m_PersistentCalls:
-      m_Calls: []
---- !u!114 &4500388562366432022
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6372156615731376483}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2380d6a6e9dc3254d95d638321e4362a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  keyItemPrefab: {fileID: 3777597441533160902, guid: 1a8b377c483bfa843b196e7f3dbd816d,
-    type: 3}
-  bombItemPrefab: {fileID: 3777597441533160902, guid: 1a8b377c483bfa843b196e7f3dbd816d,
-    type: 3}
-  dropForce: 200
-  hasGrown: 0
 --- !u!195 &8583841122528023562
 NavMeshAgent:
   m_ObjectHideFlags: 0
