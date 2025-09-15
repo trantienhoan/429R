@@ -16435,6 +16435,12 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!1 &1044849029 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3869970377573092882, guid: 87d0b0d1d48c7b44886f168d0622f716,
+    type: 3}
+  m_PrefabInstance: {fileID: 2071527101462856780}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1052545117
 GameObject:
   m_ObjectHideFlags: 0
@@ -18552,8 +18558,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.6273667, y: 0.52279514, z: 0.47838885}
-  m_Center: {x: -0.000000029802322, y: 0.26139757, z: -0.0026957095}
+  m_Size: {x: 0.66, y: 0.73811203, z: 0.9}
+  m_Center: {x: -0.000000029802322, y: 0.36905602, z: -0.0026957095}
 --- !u!4 &1222284899 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 9139737120549459410, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
@@ -19000,7 +19006,7 @@ MonoBehaviour:
     ResetVariablesOnEnable: 0
     EnableDebugFlow: 0
     EnableBreakpoints: 1
-    editorFlags: 225
+    editorFlags: 224
     activeStateName: 
     mouseEvents: 0
     handleLevelLoaded: 0
@@ -19475,7 +19481,7 @@ MonoBehaviour:
     ResetVariablesOnEnable: 0
     EnableDebugFlow: 0
     EnableBreakpoints: 1
-    editorFlags: 225
+    editorFlags: 224
     activeStateName: 
     mouseEvents: 0
     handleLevelLoaded: 0
@@ -23220,10 +23226,6 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1296223958}
-    - targetCorrespondingSourceObject: {fileID: 8899999620914823551, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1296223957}
     - targetCorrespondingSourceObject: {fileID: -8835352193337857623, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       insertIndex: -1
@@ -24005,33 +24007,6 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 1261005732}
   m_PrefabAsset: {fileID: 0}
---- !u!54 &1296223957
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1296223953}
-  serializedVersion: 4
-  m_Mass: 1
-  m_Drag: 0
-  m_AngularDrag: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 1, y: 1, z: 1}
-  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ImplicitCom: 1
-  m_ImplicitTensor: 1
-  m_UseGravity: 1
-  m_IsKinematic: 0
-  m_Interpolate: 0
-  m_Constraints: 0
-  m_CollisionDetection: 0
 --- !u!65 &1296223958
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -24049,7 +24024,7 @@ BoxCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 3
   m_Size: {x: 1.1421996, y: 0.011445813, z: 1.1421996}
   m_Center: {x: -0.00000011920929, y: 0.0057229064, z: 0.000000059604645}
@@ -34118,7 +34093,7 @@ MonoBehaviour:
             tooltip: 
             showInInspector: 0
             networkSync: 0
-            value: {fileID: 1339374491}
+            value: {fileID: 1044849029}
         animationCurveParams: []
         functionCallParams: []
         fsmTemplateControlParams: []
@@ -35024,8 +34999,8 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 64
-        y: 176
+        x: 89
+        y: 177
         width: 101.62
         height: 48
       isBreakpoint: 0
@@ -36209,7 +36184,7 @@ MonoBehaviour:
         tooltip: 
         showInInspector: 0
         networkSync: 0
-        value: 3
+        value: 30
       intVariables: []
       boolVariables: []
       stringVariables: []
@@ -40439,6 +40414,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1172166720316410300, guid: 87d0b0d1d48c7b44886f168d0622f716,
         type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1172166720316410300, guid: 87d0b0d1d48c7b44886f168d0622f716,
+        type: 3}
       propertyPath: fsm.states.Array.data[1].actionData.fsmOwnerDefaultParams.Array.data[0].gameObject.value
       value: 
       objectReference: {fileID: 0}
@@ -40497,6 +40477,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2310591427080772722, guid: 87d0b0d1d48c7b44886f168d0622f716,
+        type: 3}
+      propertyPath: m_Radius
+      value: 0.73
+      objectReference: {fileID: 0}
     - target: {fileID: 4283043108032588773, guid: 87d0b0d1d48c7b44886f168d0622f716,
         type: 3}
       propertyPath: m_IsActive
@@ -40505,7 +40490,12 @@ PrefabInstance:
     - target: {fileID: 6372156615731376483, guid: 87d0b0d1d48c7b44886f168d0622f716,
         type: 3}
       propertyPath: m_TagString
-      value: Untagged
+      value: Player
+      objectReference: {fileID: 0}
+    - target: {fileID: 6980833212573579266, guid: 87d0b0d1d48c7b44886f168d0622f716,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8709065813520654688, guid: 87d0b0d1d48c7b44886f168d0622f716,
         type: 3}
@@ -40523,10 +40513,8 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 576831366}
     m_RemovedComponents:
-    - {fileID: 4500388562366432022, guid: 87d0b0d1d48c7b44886f168d0622f716, type: 3}
-    - {fileID: 8819409675527169032, guid: 87d0b0d1d48c7b44886f168d0622f716, type: 3}
-    - {fileID: 6980833212573579266, guid: 87d0b0d1d48c7b44886f168d0622f716, type: 3}
-    - {fileID: 1172166720316410300, guid: 87d0b0d1d48c7b44886f168d0622f716, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
     m_RemovedGameObjects:
     - {fileID: 1199343819294303104, guid: 87d0b0d1d48c7b44886f168d0622f716, type: 3}
     m_AddedGameObjects:
@@ -40564,10 +40552,20 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 3487631477848388572, guid: 5024383c10ac7c445a1d49b32c2da044,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7121320014386324541, guid: 5024383c10ac7c445a1d49b32c2da044,
         type: 3}
       propertyPath: m_Name
       value: Spider_Smol_&_Anims
+      objectReference: {fileID: 0}
+    - target: {fileID: 7121320014386324541, guid: 5024383c10ac7c445a1d49b32c2da044,
+        type: 3}
+      propertyPath: m_TagString
+      value: Monster
       objectReference: {fileID: 0}
     - target: {fileID: 7611033334018227847, guid: 5024383c10ac7c445a1d49b32c2da044,
         type: 3}
