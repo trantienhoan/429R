@@ -23,10 +23,10 @@ RenderSettings:
   m_AmbientSkyColor: {r: 0, g: 0, b: 0, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
-  m_AmbientIntensity: 2.51
+  m_AmbientIntensity: 4.24
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.2830189, g: 0.2830189, b: 0.2830189, a: 1}
-  m_SkyboxMaterial: {fileID: 2100000, guid: c494c335823f54b52b2e87e1b7a63a23, type: 2}
+  m_SkyboxMaterial: {fileID: 2100000, guid: eac2ef371405749e0bd050b4c3272f16, type: 2}
   m_HaloStrength: 0.067
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -10531,7 +10531,7 @@ Transform:
   m_GameObject: {fileID: 482558282}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.002680812, y: 0.022679986, z: 0.0033400026}
+  m_LocalPosition: {x: 0.002680812, y: 0.021119993, z: 0.0033400003}
   m_LocalScale: {x: 0.0065999995, y: 0.006600001, z: 0.006600001}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -11441,8 +11441,8 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 240
-        y: 192
+        x: 243
+        y: 194
         width: 122.97
         height: 16
       isBreakpoint: 0
@@ -11633,7 +11633,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 0
+          value: 15
         - useVariable: 1
           name: 
           tooltip: 
@@ -14054,7 +14054,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 0101010101010101
-        actionIsOpen: 0001000000010101
+        actionIsOpen: 0000000000010101
         actionStartIndex: 0000000003000000080000000d0000000f00000014000000180000001c000000
         actionHashCodes: 48c01101b2cf1000b2cf10009bd6f801b2cf1000ba7ea101ba7ea10148c01101
         unityObjectParams: []
@@ -14311,6 +14311,7 @@ MonoBehaviour:
       transitions: []
       actionData:
         actionNames:
+        - HutongGames.PlayMaker.Actions.Explosion
         - HutongGames.PlayMaker.Actions.ActivateGameObject
         - HutongGames.PlayMaker.Actions.DestroySelf
         - HutongGames.PlayMaker.Actions.DestroyObject
@@ -14318,10 +14319,11 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 010101
-        actionIsOpen: 000101
-        actionStartIndex: 000000000500000008000000
-        actionHashCodes: b2cf1000230cc8009ff80c02
+        - 
+        actionEnabled: 01010101
+        actionIsOpen: 01000000
+        actionStartIndex: 00000000090000000e00000011000000
+        actionHashCodes: bc338a03b2cf1000230cc8009ff80c02
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 0
@@ -14356,6 +14358,18 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
+          value: 50
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 3
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
           value: 0
         - useVariable: 0
           name: 
@@ -14363,8 +14377,26 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0
-        fsmIntParams: []
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        fsmIntParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
         fsmBoolParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
         - useVariable: 0
           name: 
           tooltip: 
@@ -14396,18 +14428,34 @@ MonoBehaviour:
           networkSync: 0
           value: 0
         fsmVector2Params: []
-        fsmVector3Params: []
+        fsmVector3Params:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {x: 0, y: 0, z: 0}
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
         stringParams: []
-        byteData: 0000
-        arrayParamSizes: 
-        arrayParamTypes: []
+        byteData: 00000000000000
+        arrayParamSizes: 00000000
+        arrayParamTypes:
+        - HutongGames.PlayMaker.FsmInt
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 14000000110000001100000001000000010000000f0000001100000011000000130000000f00000011000000
+        paramDataType: 1c0000000f0000000f0000000f00000007000000100000000c000000110000000100000014000000110000001100000001000000010000000f0000001100000011000000130000000f00000011000000
         paramName:
+        - center
+        - force
+        - radius
+        - upwardsModifier
+        - forceMode
+        - layer
+        - layerMask
+        - invertMask
+        - everyFrame
         - gameObject
         - activate
         - recursive
@@ -14419,8 +14467,8 @@ MonoBehaviour:
         - gameObject
         - delay
         - detachChildren
-        paramDataPos: 0000000000000000010000000000000001000000000000000200000003000000000000000100000004000000
-        paramByteDataSize: 0000000000000000000000000100000001000000000000000000000000000000000000000000000000000000
+        paramDataPos: 0000000000000000010000000200000000000000000000000000000000000000040000000000000001000000020000000500000006000000030000000300000004000000000000000400000005000000
+        paramByteDataSize: 0000000000000000000000000000000004000000000000000000000000000000010000000000000000000000000000000100000001000000000000000000000000000000000000000000000000000000
     events:
     - name: StartGrowingTree
       isSystemEvent: 0
@@ -19891,7 +19939,7 @@ Transform:
   m_GameObject: {fileID: 850281391}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.002680812, y: 0.016189994, z: 0.001200004}
+  m_LocalPosition: {x: 0.002680812, y: 0.01463, z: 0.0012}
   m_LocalScale: {x: 0.0065999995, y: 0.006600001, z: 0.006600001}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -20373,7 +20421,7 @@ Transform:
   m_GameObject: {fileID: 864285877}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.002680812, y: 0.019554723, z: 0.0087}
+  m_LocalPosition: {x: 0.002680812, y: 0.01799473, z: 0.008699998}
   m_LocalScale: {x: 0.0065999995, y: 0.006600001, z: 0.006600001}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -22173,7 +22221,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1039797281}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 1384774831, guid: e743331561ef77147ae48cda9bcb8209, type: 3}
   m_Name: 
@@ -31664,7 +31712,7 @@ PrefabInstance:
     - target: {fileID: -5606676697396164213, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.093
+      value: -0.091
       objectReference: {fileID: 0}
     - target: {fileID: -5606676697396164213, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
@@ -31674,7 +31722,7 @@ PrefabInstance:
     - target: {fileID: -5606676697396164213, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -1.603
+      value: -1.027
       objectReference: {fileID: 0}
     - target: {fileID: -5501013695792592023, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
@@ -31849,7 +31897,7 @@ PrefabInstance:
     - target: {fileID: -4731697770346616870, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -1.833
+      value: -1.754
       objectReference: {fileID: 0}
     - target: {fileID: -4731697770346616870, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
@@ -31859,12 +31907,12 @@ PrefabInstance:
     - target: {fileID: -4731697770346616870, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.945
+      value: -1.713
       objectReference: {fileID: 0}
     - target: {fileID: -4731697770346616870, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.028206479
+      value: -0.0034999305
       objectReference: {fileID: 0}
     - target: {fileID: -4731697770346616870, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
@@ -31874,12 +31922,12 @@ PrefabInstance:
     - target: {fileID: -4731697770346616870, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.99960214
+      value: -0.99999386
       objectReference: {fileID: 0}
     - target: {fileID: -4731697770346616870, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: -176.767
+      value: -180.401
       objectReference: {fileID: 0}
     - target: {fileID: -4726867633588771345, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
@@ -32264,17 +32312,17 @@ PrefabInstance:
     - target: {fileID: -1759088832786357420, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -1.798
+      value: -1.748
       objectReference: {fileID: 0}
     - target: {fileID: -1759088832786357420, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.804
+      value: 1.0894
       objectReference: {fileID: 0}
     - target: {fileID: -1759088832786357420, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -1.984
+      value: -1.7584999
       objectReference: {fileID: 0}
     - target: {fileID: -1682976309384947576, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
@@ -32363,8 +32411,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -1164112872016052737, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -1.834
+      objectReference: {fileID: 0}
+    - target: {fileID: -1164112872016052737, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
+        type: 3}
       propertyPath: m_LocalPosition.y
       value: -0.007
+      objectReference: {fileID: 0}
+    - target: {fileID: -1164112872016052737, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.006
       objectReference: {fileID: 0}
     - target: {fileID: -1109847038195869227, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
@@ -32859,7 +32917,7 @@ PrefabInstance:
     - target: {fileID: 1055433719612307198, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -1.834
+      value: -1.074
       objectReference: {fileID: 0}
     - target: {fileID: 1055433719612307198, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
@@ -32869,7 +32927,7 @@ PrefabInstance:
     - target: {fileID: 1055433719612307198, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 1.895
+      value: -1.896
       objectReference: {fileID: 0}
     - target: {fileID: 1170432589037594610, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
@@ -32974,17 +33032,17 @@ PrefabInstance:
     - target: {fileID: 1702863999867580519, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -1.8
+      value: -1.75
       objectReference: {fileID: 0}
     - target: {fileID: 1702863999867580519, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.605
+      value: 0.8904
       objectReference: {fileID: 0}
     - target: {fileID: 1702863999867580519, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -1.99
+      value: -1.7644999
       objectReference: {fileID: 0}
     - target: {fileID: 1782411914631473220, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
@@ -33344,17 +33402,17 @@ PrefabInstance:
     - target: {fileID: 4951133976106211793, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -1.799
+      value: -1.749
       objectReference: {fileID: 0}
     - target: {fileID: 4951133976106211793, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.252
+      value: 0.5374
       objectReference: {fileID: 0}
     - target: {fileID: 4951133976106211793, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -1.992
+      value: -1.7665
       objectReference: {fileID: 0}
     - target: {fileID: 4951133976106211793, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
@@ -34406,6 +34464,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1296223958}
+    - targetCorrespondingSourceObject: {fileID: 8899999620914823551, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1296223962}
     - targetCorrespondingSourceObject: {fileID: -8835352193337857623, guid: 4018ba78ab3b1f141ab7093cf179c0a9,
         type: 3}
       insertIndex: -1
@@ -35290,10 +35352,37 @@ BoxCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 3
   m_Size: {x: 1.1421996, y: 0.011445813, z: 1.1421996}
   m_Center: {x: -0.00000011920929, y: 0.0057229064, z: 0.000000059604645}
+--- !u!54 &1296223962
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1296223953}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &1316085766
 GameObject:
   m_ObjectHideFlags: 0
@@ -36545,8 +36634,8 @@ Transform:
   m_GameObject: {fileID: 1402803702}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.015464818, y: 0.019785402, z: 0.0030066762}
-  m_LocalScale: {x: 0.0065999995, y: 0.006600001, z: 0.006600001}
+  m_LocalPosition: {x: -0.01411, y: 0.01682, z: 0.00301}
+  m_LocalScale: {x: 0.0087695215, y: 0.008769523, z: 0.008769523}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 1803096837}
@@ -36914,7 +37003,7 @@ Transform:
   m_GameObject: {fileID: 1431492359}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.0026604421, y: 0.015399995, z: -0.007799992}
+  m_LocalPosition: {x: 0.0026604421, y: 0.01614, z: -0.0078}
   m_LocalScale: {x: 0.007447199, y: 0.007447201, z: 0.007447201}
   m_ConstrainProportionsScale: 1
   m_Children: []
