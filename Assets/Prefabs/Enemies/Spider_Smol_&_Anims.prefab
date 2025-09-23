@@ -1229,7 +1229,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 0101
-        actionIsOpen: 0101
+        actionIsOpen: 0100
         actionStartIndex: 0000000005000000
         actionHashCodes: 9c512400fcb1a001
         unityObjectParams: []
@@ -1269,7 +1269,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: Player
+          value: TreeOfLight
         - useVariable: 0
           name: 
           tooltip: 
@@ -1492,6 +1492,9 @@ MonoBehaviour:
     - name: Player is Detect
       isSystemEvent: 0
       isGlobal: 0
+    - name: Tree is Detected
+      isSystemEvent: 0
+      isGlobal: 0
     globalTransitions: []
     variables:
       floatVariables: []
@@ -1617,13 +1620,13 @@ MonoBehaviour:
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
-          name: Player
+          name: TreeOfLight
           tooltip: 
           showInInspector: 0
           networkSync: 0
           value: {fileID: 0}
         - useVariable: 1
-          name: Player
+          name: TreeOfLight
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -1663,7 +1666,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: Player
+          value: TreeOfLight
         - useVariable: 0
           name: 
           tooltip: 
@@ -1706,13 +1709,13 @@ MonoBehaviour:
         fsmEnumParams: []
         fsmFloatParams:
         - useVariable: 1
-          name: Angle to Player
+          name: Angle to TreeOfLight
           tooltip: 
           showInInspector: 0
           networkSync: 0
           value: 0
         - useVariable: 1
-          name: Angle to Player
+          name: Angle to TreeOfLight
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -1980,6 +1983,12 @@ MonoBehaviour:
         showInInspector: 0
         networkSync: 0
         value: 0
+      - useVariable: 1
+        name: Angle to TreeOfLight
+        tooltip: 
+        showInInspector: 0
+        networkSync: 0
+        value: 0
       intVariables: []
       boolVariables: []
       stringVariables: []
@@ -1995,6 +2004,12 @@ MonoBehaviour:
         showInInspector: 0
         networkSync: 0
         value: {fileID: 0}
+      - useVariable: 1
+        name: TreeOfLight
+        tooltip: 
+        showInInspector: 0
+        networkSync: 0
+        value: {fileID: 0}
       objectVariables: []
       materialVariables: []
       textureVariables: []
@@ -2002,7 +2017,7 @@ MonoBehaviour:
       enumVariables: []
       categories:
       - 
-      variableCategoryIDs: 0000000000000000
+      variableCategoryIDs: 00000000000000000000000000000000
     description: 
     docUrl: 
     showStateLabel: 0
@@ -2102,7 +2117,7 @@ MonoBehaviour:
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
-          name: Player
+          name: TreeOfLight
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -2126,7 +2141,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: Player
+          value: TreeOfLight
         fsmObjectParams: []
         fsmVarParams: []
         fsmArrayParams: []
@@ -2182,7 +2197,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 0101
-        actionIsOpen: 0001
+        actionIsOpen: 0101
         actionStartIndex: 0000000006000000
         actionHashCodes: 8076870587aa9700
         unityObjectParams: []
@@ -2313,7 +2328,7 @@ MonoBehaviour:
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
-          name: Player
+          name: TreeOfLight
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -2338,7 +2353,7 @@ MonoBehaviour:
         - ownerOption: 1
           gameObject:
             useVariable: 1
-            name: Player
+            name: TreeOfLight
             tooltip: 
             showInInspector: 0
             networkSync: 0
@@ -2505,13 +2520,13 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 010101010101
-        actionIsOpen: 000000000001
+        actionIsOpen: 000000010001
         actionStartIndex: 0000000002000000080000000a0000000d00000011000000
         actionHashCodes: 15264c01f9cb7200e8ea3902f0eeac0136f094001bcdca04
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
-          name: Player
+          name: TreeOfLight
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -2734,7 +2749,7 @@ MonoBehaviour:
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
-          name: Player
+          name: TreeOfLight
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -2780,7 +2795,7 @@ MonoBehaviour:
             ownerOption: 1
             gameObject:
               useVariable: 1
-              name: Player
+              name: TreeOfLight
               tooltip: 
               showInInspector: 0
               networkSync: 0
@@ -3051,6 +3066,12 @@ MonoBehaviour:
         showInInspector: 0
         networkSync: 0
         value: {fileID: 0}
+      - useVariable: 1
+        name: TreeOfLight
+        tooltip: 
+        showInInspector: 0
+        networkSync: 0
+        value: {fileID: 0}
       objectVariables: []
       materialVariables: []
       textureVariables: []
@@ -3058,7 +3079,7 @@ MonoBehaviour:
       enumVariables: []
       categories:
       - 
-      variableCategoryIDs: 0000000000000000000000000000000000000000
+      variableCategoryIDs: 000000000000000000000000000000000000000000000000
     description: 
     docUrl: 
     showStateLabel: 0

@@ -23,7 +23,7 @@ RenderSettings:
   m_AmbientSkyColor: {r: 0, g: 0, b: 0, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
-  m_AmbientIntensity: 4.24
+  m_AmbientIntensity: 1.74
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.2830189, g: 0.2830189, b: 0.2830189, a: 1}
   m_SkyboxMaterial: {fileID: 2100000, guid: eac2ef371405749e0bd050b4c3272f16, type: 2}
@@ -11441,14 +11441,32 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 243
-        y: 194
+        x: 268.77344
+        y: 188.84375
         width: 122.97
-        height: 16
+        height: 48
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
-      transitions: []
+      transitions:
+      - fsmEvent:
+          name: LoopEvent
+          isSystemEvent: 0
+          isGlobal: 0
+        toState: Spawn Enemies
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
+      - fsmEvent:
+          name: next
+          isSystemEvent: 0
+          isGlobal: 0
+        toState: SpawnEnemy
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.GetPosition
@@ -11469,7 +11487,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 0101010101010101
-        actionIsOpen: 0000000000010101
+        actionIsOpen: 0100000001010101
         actionStartIndex: 00000000070000000a0000000d000000130000001e0000002400000027000000
         actionHashCodes: 5552ad052ee017042ee01704192194058e44e90260532301603dd90565c84b02
         unityObjectParams: []
@@ -11479,7 +11497,8 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {fileID: 1537643033}
+          value: {fileID: 7121320014386324541, guid: 5024383c10ac7c445a1d49b32c2da044,
+            type: 3}
         - useVariable: 0
           name: 
           tooltip: 
@@ -11633,7 +11652,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 15
+          value: 1
         - useVariable: 1
           name: 
           tooltip: 
@@ -11703,8 +11722,8 @@ MonoBehaviour:
         stringParams:
         - 
         - 
-        - 
-        - 
+        - LoopEvent
+        - next
         byteData: 0000000000000000
         arrayParamSizes: 
         arrayParamTypes: []
@@ -38494,7 +38513,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 010101
-        actionIsOpen: 000100
+        actionIsOpen: 000000
         actionStartIndex: 00000000050000000a000000
         actionHashCodes: b2cf1000a0dd8303bc338a03
         unityObjectParams: []
@@ -39046,7 +39065,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 0101010101
-        actionIsOpen: 0101010101
+        actionIsOpen: 0000000101
         actionStartIndex: 0000000005000000090000000e00000013000000
         actionHashCodes: 876045022a6e8a0087604502b2cf100048c01101
         unityObjectParams: []
@@ -39601,12 +39620,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1531236297}
   m_Mesh: {fileID: 8265474954778267225, guid: 4018ba78ab3b1f141ab7093cf179c0a9, type: 3}
---- !u!1 &1537643033 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 7121320014386324541, guid: 5024383c10ac7c445a1d49b32c2da044,
-    type: 3}
-  m_PrefabInstance: {fileID: 5679169689829990457}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1539648698
 GameObject:
   m_ObjectHideFlags: 0
