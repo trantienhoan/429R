@@ -733,6 +733,7 @@ Transform:
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 402903850965364310}
+  - {fileID: 1374441594561719748}
   m_Father: {fileID: 2084529918764998815}
   m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
 --- !u!114 &436812389750173382
@@ -1146,9 +1147,9 @@ MonoBehaviour:
     dataVersion: 2
     usedInTemplate: {fileID: 0}
     name: PlayerHealth
-    startState: State 1
+    startState: Init
     states:
-    - name: State 1
+    - name: Init
       description: 
       colorIndex: 0
       position:
@@ -1200,10 +1201,231 @@ MonoBehaviour:
         paramName: []
         paramDataPos: 
         paramByteDataSize: 
-    events: []
-    globalTransitions: []
+    - name: Subtract Health
+      description: 
+      colorIndex: 0
+      position:
+        serializedVersion: 2
+        x: 199
+        y: 100
+        width: 127.6
+        height: 32
+      isBreakpoint: 0
+      isSequence: 0
+      hideUnused: 0
+      transitions:
+      - fsmEvent:
+          name: Dead
+          isSystemEvent: 0
+          isGlobal: 0
+        toState: DEAD
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
+      actionData:
+        actionNames:
+        - HutongGames.PlayMaker.Actions.FloatSubtract
+        - HutongGames.PlayMaker.Actions.FloatCompare
+        - HutongGames.PlayMaker.Actions.ParticleSystemPlay
+        customNames:
+        - 
+        - 
+        - 
+        actionEnabled: 010101
+        actionIsOpen: 010101
+        actionStartIndex: 00000000040000000b000000
+        actionHashCodes: 2a6e8a001bcdca0473b31903
+        unityObjectParams: []
+        fsmGameObjectParams: []
+        fsmOwnerDefaultParams:
+        - ownerOption: 1
+          gameObject:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 8830913239388404574}
+        animationCurveParams: []
+        functionCallParams: []
+        fsmTemplateControlParams: []
+        fsmEventTargetParams: []
+        fsmPropertyParams: []
+        layoutOptionParams: []
+        fsmStringParams: []
+        fsmObjectParams: []
+        fsmVarParams: []
+        fsmArrayParams: []
+        fsmEnumParams: []
+        fsmFloatParams:
+        - useVariable: 1
+          name: PlayerHealth
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 100
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 10
+        - useVariable: 1
+          name: PlayerHealth
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 100
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        fsmIntParams: []
+        fsmBoolParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        fsmVector2Params: []
+        fsmVector3Params: []
+        fsmColorParams: []
+        fsmRectParams: []
+        fsmQuaternionParams: []
+        stringParams:
+        - Dead
+        - Dead
+        - 
+        byteData: 000000
+        arrayParamSizes: 
+        arrayParamTypes: []
+        customTypeSizes: 
+        customTypeNames: []
+        paramDataType: 0f0000000f00000001000000010000000f0000000f0000000f000000170000001700000017000000010000001400000011000000110000001100000011000000
+        paramName:
+        - floatVariable
+        - subtract
+        - everyFrame
+        - perSecond
+        - float1
+        - float2
+        - tolerance
+        - equal
+        - lessThan
+        - greaterThan
+        - everyFrame
+        - gameObject
+        - withChildren
+        - cacheChildren
+        - stopOnExit
+        - destroyOnFinish
+        paramDataPos: 00000000010000000000000001000000020000000300000004000000000000000100000002000000020000000000000000000000010000000200000003000000
+        paramByteDataSize: 00000000000000000100000001000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000
+    - name: DEAD
+      description: 
+      colorIndex: 6
+      position:
+        serializedVersion: 2
+        x: 430
+        y: 96
+        width: 100
+        height: 16
+      isBreakpoint: 0
+      isSequence: 0
+      hideUnused: 0
+      transitions: []
+      actionData:
+        actionNames: []
+        customNames: []
+        actionEnabled: 
+        actionIsOpen: 
+        actionStartIndex: 
+        actionHashCodes: 
+        unityObjectParams: []
+        fsmGameObjectParams: []
+        fsmOwnerDefaultParams: []
+        animationCurveParams: []
+        functionCallParams: []
+        fsmTemplateControlParams: []
+        fsmEventTargetParams: []
+        fsmPropertyParams: []
+        layoutOptionParams: []
+        fsmStringParams: []
+        fsmObjectParams: []
+        fsmVarParams: []
+        fsmArrayParams: []
+        fsmEnumParams: []
+        fsmFloatParams: []
+        fsmIntParams: []
+        fsmBoolParams: []
+        fsmVector2Params: []
+        fsmVector3Params: []
+        fsmColorParams: []
+        fsmRectParams: []
+        fsmQuaternionParams: []
+        stringParams: []
+        byteData: 
+        arrayParamSizes: 
+        arrayParamTypes: []
+        customTypeSizes: 
+        customTypeNames: []
+        paramDataType: 
+        paramName: []
+        paramDataPos: 
+        paramByteDataSize: 
+    events:
+    - name: DamageToPlayer
+      isSystemEvent: 0
+      isGlobal: 1
+    - name: Dead
+      isSystemEvent: 0
+      isGlobal: 0
+    globalTransitions:
+    - fsmEvent:
+        name: DamageToPlayer
+        isSystemEvent: 0
+        isGlobal: 1
+      toState: Subtract Health
+      linkStyle: 0
+      linkConstraint: 0
+      linkTarget: 0
+      colorIndex: 0
     variables:
-      floatVariables: []
+      floatVariables:
+      - useVariable: 1
+        name: PlayerHealth
+        tooltip: 
+        showInInspector: 0
+        networkSync: 0
+        value: 100
       intVariables: []
       boolVariables: []
       stringVariables: []
@@ -1220,7 +1442,7 @@ MonoBehaviour:
       enumVariables: []
       categories:
       - 
-      variableCategoryIDs: 
+      variableCategoryIDs: 00000000
     description: 
     docUrl: 
     showStateLabel: 0
@@ -4399,6 +4621,126 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8849414207674852688, guid: bb91fcbcb3cc896468b372b1c762bfab,
     type: 3}
   m_PrefabInstance: {fileID: 3808329642195906137}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &4092690636447180297
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 984965067648742026}
+    m_Modifications:
+    - target: {fileID: 1417632600559909248, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+        type: 3}
+      propertyPath: lengthInSec
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1417632600559909248, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+        type: 3}
+      propertyPath: playOnAwake
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2369874885000415831, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+        type: 3}
+      propertyPath: lengthInSec
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2369874885000415831, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+        type: 3}
+      propertyPath: playOnAwake
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3161200564006489037, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3161200564006489037, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3161200564006489037, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3161200564006489037, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3161200564006489037, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3161200564006489037, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3161200564006489037, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3161200564006489037, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3161200564006489037, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3161200564006489037, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+        type: 3}
+      propertyPath: m_Name
+      value: Smoke_Blast
+      objectReference: {fileID: 0}
+    - target: {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5167249678902415216, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+        type: 3}
+      propertyPath: playOnAwake
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6979683126700274030, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+        type: 3}
+      propertyPath: lengthInSec
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6979683126700274030, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+        type: 3}
+      propertyPath: playOnAwake
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 6dc229f4e3c8311428773c7f0214f2ac, type: 3}
+--- !u!4 &1374441594561719748 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3161200564006489037, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+    type: 3}
+  m_PrefabInstance: {fileID: 4092690636447180297}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &8830913239388404574 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+    type: 3}
+  m_PrefabInstance: {fileID: 4092690636447180297}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5038263262209170754
 PrefabInstance:

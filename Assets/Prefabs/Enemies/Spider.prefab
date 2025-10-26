@@ -689,7 +689,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 1.69
+  m_Radius: 3
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &6180877067336912560
 MonoBehaviour:
@@ -902,7 +902,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 010101
-        actionIsOpen: 010101
+        actionIsOpen: 010000
         actionStartIndex: 000000000200000008000000
         actionHashCodes: d97b7202ef8d8504b2cf1000
         unityObjectParams: []
@@ -1038,13 +1038,13 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 010101
-        actionIsOpen: 010101
+        actionIsOpen: 000001
         actionStartIndex: 000000000200000007000000
         actionHashCodes: 15264c01c34b41059c512400
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
-          name: Player
+          name: Fairy
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -1092,7 +1092,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: Player
+          value: Fairy
         fsmObjectParams: []
         fsmVarParams: []
         fsmArrayParams: []
@@ -1180,7 +1180,7 @@ MonoBehaviour:
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
-          name: Player
+          name: Fairy
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -1307,7 +1307,7 @@ MonoBehaviour:
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
-          name: Player
+          name: Fairy
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -1480,19 +1480,19 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 0101010101
-        actionIsOpen: 0000000101
+        actionIsOpen: 0000010101
         actionStartIndex: 0000000002000000070000000a0000000e000000
         actionHashCodes: 15264c01c34b4105f0eeac0136f094001bcdca04
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
-          name: Player
+          name: Fairy
           tooltip: 
           showInInspector: 0
           networkSync: 0
           value: {fileID: 0}
         - useVariable: 1
-          name: Player
+          name: Fairy
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -1561,13 +1561,13 @@ MonoBehaviour:
           networkSync: 0
           value: 1
         - useVariable: 1
-          name: distanceToPlayer
+          name: distanceToFairy
           tooltip: 
           showInInspector: 0
           networkSync: 0
           value: 0
         - useVariable: 1
-          name: distanceToPlayer
+          name: distanceToFairy
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -1577,7 +1577,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 0.5
+          value: 0.8
         - useVariable: 0
           name: 
           tooltip: 
@@ -1642,10 +1642,10 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 672
+        x: 704
         y: 160
         width: 100
-        height: 32
+        height: 48
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
@@ -1655,6 +1655,15 @@ MonoBehaviour:
           isSystemEvent: 0
           isGlobal: 0
         toState: Chase Player
+        linkStyle: 0
+        linkConstraint: 1
+        linkTarget: 0
+        colorIndex: 0
+      - fsmEvent:
+          name: LoopEvent
+          isSystemEvent: 0
+          isGlobal: 0
+        toState: Attack
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -1667,6 +1676,7 @@ MonoBehaviour:
         - HutongGames.PlayMaker.Actions.SmoothLookAt
         - HutongGames.PlayMaker.Actions.GetDistance
         - HutongGames.PlayMaker.Actions.FloatCompare
+        - HutongGames.PlayMaker.Actions.Wait
         customNames:
         - 
         - 
@@ -1674,14 +1684,15 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 010101010101
-        actionIsOpen: 010000000000
-        actionStartIndex: 0000000004000000060000000b0000001400000018000000
-        actionHashCodes: 5e69bb0415264c01c34b41054e66130136f094001bcdca04
+        - 
+        actionEnabled: 01010101010101
+        actionIsOpen: 00000001000100
+        actionStartIndex: 0000000004000000060000000b00000014000000180000001f000000
+        actionHashCodes: 5e69bb0415264c01c34b41054e66130136f094001bcdca0448c01101
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
-          name: Player
+          name: Fairy
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -1806,7 +1817,7 @@ MonoBehaviour:
           networkSync: 0
           value: 0
         - useVariable: 1
-          name: distanceToPlayer
+          name: distanceToFairy
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -1816,13 +1827,19 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 2.5
+          value: 1.3
         - useVariable: 0
           name: 
           tooltip: 
           showInInspector: 0
           networkSync: 0
           value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
         fsmIntParams:
         - useVariable: 1
           name: 
@@ -1867,17 +1884,18 @@ MonoBehaviour:
         fsmRectParams: []
         fsmQuaternionParams: []
         stringParams:
-        - DamageToPlayer
+        - Damage
         - 
         - 
         - 
         - next
-        byteData: 00000101
+        - LoopEvent
+        byteData: 0000010100
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1f000000170000000f0000000100000014000000110000001400000012000000100000000f0000000100000014000000130000001c0000001c000000110000000f000000110000000f0000001700000014000000130000000f000000010000000f0000000f0000000f00000017000000170000001700000001000000
+        paramDataType: 1f000000170000000f0000000100000014000000110000001400000012000000100000000f0000000100000014000000130000001c0000001c000000110000000f000000110000000f0000001700000014000000130000000f000000010000000f0000000f0000000f000000170000001700000017000000010000000f0000001700000001000000
         paramName:
         - eventTarget
         - sendEvent
@@ -1910,29 +1928,41 @@ MonoBehaviour:
         - lessThan
         - greaterThan
         - everyFrame
-        paramDataPos: 00000000000000000000000000000000000000000000000001000000000000000000000001000000010000000200000000000000000000000100000001000000020000000200000003000000010000000300000001000000040000000200000005000000060000000700000002000000030000000400000003000000
-        paramByteDataSize: 00000000000000000000000001000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000001000000
+        - time
+        - finishEvent
+        - realTime
+        paramDataPos: 00000000000000000000000000000000000000000000000001000000000000000000000001000000010000000200000000000000000000000100000001000000020000000200000003000000010000000300000001000000040000000200000005000000060000000700000002000000030000000400000003000000080000000500000004000000
+        paramByteDataSize: 00000000000000000000000001000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000001000000000000000000000001000000
     events:
     - name: FINISHED
       isSystemEvent: 1
       isGlobal: 0
-    - name: tryAgain
+    - name: Damage
+      isSystemEvent: 0
+      isGlobal: 1
+    - name: EnteredZone
       isSystemEvent: 0
       isGlobal: 0
-    - name: EnteredZone
+    - name: LoopEvent
       isSystemEvent: 0
       isGlobal: 0
     - name: next
       isSystemEvent: 0
       isGlobal: 0
-    - name: DamageToPlayer
+    - name: tryAgain
       isSystemEvent: 0
-      isGlobal: 1
+      isGlobal: 0
     globalTransitions: []
     variables:
       floatVariables:
       - useVariable: 1
         name: distanceToPlayer
+        tooltip: 
+        showInInspector: 0
+        networkSync: 0
+        value: 0
+      - useVariable: 1
+        name: distanceToFairy
         tooltip: 
         showInInspector: 0
         networkSync: 0
@@ -1965,7 +1995,7 @@ MonoBehaviour:
       enumVariables: []
       categories:
       - 
-      variableCategoryIDs: 000000000000000000000000
+      variableCategoryIDs: 00000000000000000000000000000000
     description: 
     docUrl: 
     showStateLabel: 0
