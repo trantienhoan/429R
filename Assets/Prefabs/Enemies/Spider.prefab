@@ -30656,12 +30656,14 @@ MonoBehaviour:
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.TriggerEvent
+        - HutongGames.PlayMaker.Actions.TriggerEvent
         customNames:
         - 
-        actionEnabled: 01
-        actionIsOpen: 01
-        actionStartIndex: 00000000
-        actionHashCodes: 9c512400
+        - 
+        actionEnabled: 0101
+        actionIsOpen: 0101
+        actionStartIndex: 0000000005000000
+        actionHashCodes: 9c5124009c512400
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
@@ -30670,7 +30672,21 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: {fileID: 0}
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 0}
         fsmOwnerDefaultParams:
+        - ownerOption: 1
+          gameObject:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 1312216107182037821}
         - ownerOption: 1
           gameObject:
             useVariable: 0
@@ -30692,6 +30708,12 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: Player
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: Weapon
         fsmObjectParams: []
         fsmVarParams: []
         fsmArrayParams: []
@@ -30706,20 +30728,26 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - next
-        byteData: 00000000
+        - next
+        byteData: 0000000000000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1400000007000000120000001700000013000000
+        paramDataType: 14000000070000001200000017000000130000001400000007000000120000001700000013000000
         paramName:
         - gameObject
         - trigger
         - collideTag
         - sendEvent
         - storeCollider
-        paramDataPos: 0000000000000000000000000000000000000000
-        paramByteDataSize: 0000000004000000000000000000000000000000
+        - gameObject
+        - trigger
+        - collideTag
+        - sendEvent
+        - storeCollider
+        paramDataPos: 00000000000000000000000000000000000000000100000004000000010000000100000001000000
+        paramByteDataSize: 00000000040000000000000000000000000000000000000004000000000000000000000000000000
     - name: Dead
       description: 
       colorIndex: 0
@@ -37625,7 +37653,7 @@ GameObject:
   - component: {fileID: 5410553149032609048}
   m_Layer: 0
   m_Name: Spider_Models
-  m_TagString: Monster
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
