@@ -3181,7 +3181,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.81
+  m_Radius: 1
   m_Center: {x: 0, y: 0.09, z: 0}
 --- !u!114 &304672045
 MonoBehaviour:
@@ -7254,26 +7254,17 @@ MonoBehaviour:
         serializedVersion: 2
         x: 464
         y: 176
-        width: 121.85
-        height: 48
+        width: 127.63
+        height: 32
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
       transitions:
       - fsmEvent:
-          name: LoopEvent
-          isSystemEvent: 0
+          name: FINISHED
+          isSystemEvent: 1
           isGlobal: 0
-        toState: Spawn Enemies
-        linkStyle: 0
-        linkConstraint: 0
-        linkTarget: 0
-        colorIndex: 0
-      - fsmEvent:
-          name: next
-          isSystemEvent: 0
-          isGlobal: 0
-        toState: Loop Spawns
+        toState: Loop
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -7287,8 +7278,7 @@ MonoBehaviour:
         - HutongGames.PlayMaker.Actions.NavMeshSamplePosition
         - HutongGames.PlayMaker.Actions.CreateObject
         - HutongGames.PlayMaker.Actions.IntAdd
-        - HutongGames.PlayMaker.Actions.Wait
-        - HutongGames.PlayMaker.Actions.Loop
+        - HutongGames.PlayMaker.Actions.RandomWait
         customNames:
         - 
         - 
@@ -7298,11 +7288,10 @@ MonoBehaviour:
         - 
         - 
         - 
-        - 
-        actionEnabled: 010101010101010101
-        actionIsOpen: 000000000001000101
-        actionStartIndex: 00000000070000000a0000000d000000130000001e00000024000000270000002a000000
-        actionHashCodes: 5552ad052ee017042ee01704192194058e44e90260532301603dd90548c0110165c84b02
+        actionEnabled: 0101010101010101
+        actionIsOpen: 0000000000010001
+        actionStartIndex: 00000000070000000a0000000d000000130000001e0000002400000027000000
+        actionHashCodes: 5552ad052ee017042ee01704192194058e44e90260532301603dd9050d5f5c01
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 0
@@ -7440,7 +7429,13 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 5
+          value: 0.5
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 2
         fsmIntParams:
         - useVariable: 0
           name: 
@@ -7466,18 +7461,6 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 1
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 3
-        - useVariable: 1
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
         fsmBoolParams:
         - useVariable: 1
           name: 
@@ -7541,15 +7524,13 @@ MonoBehaviour:
         stringParams:
         - 
         - 
-        - 
-        - LoopEvent
-        - next
+        - FINISHED
         byteData: 000000000000000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 140000001c0000000f0000000f0000000f00000007000000010000000f0000000f0000000f0000000f0000000f0000000f0000001c0000000f0000000f0000000f00000001000000010000001c000000100000000f0000001100000017000000170000001c0000001c0000000f00000010000000110000001300000013000000130000001c0000001c000000130000001000000010000000010000000f000000170000000100000010000000100000001700000017000000
+        paramDataType: 140000001c0000000f0000000f0000000f00000007000000010000000f0000000f0000000f0000000f0000000f0000000f0000001c0000000f0000000f0000000f00000001000000010000001c000000100000000f0000001100000017000000170000001c0000001c0000000f00000010000000110000001300000013000000130000001c0000001c000000130000001000000010000000010000000f0000000f0000001700000001000000
         paramName:
         - gameObject
         - vector
@@ -7590,15 +7571,12 @@ MonoBehaviour:
         - intVariable
         - add
         - everyFrame
-        - time
+        - min
+        - max
         - finishEvent
         - realTime
-        - loops
-        - storeCurrentLoop
-        - loopEvent
-        - finishEvent
-        paramDataPos: 0000000000000000000000000100000002000000000000000400000003000000040000000500000006000000070000000800000001000000090000000a0000000b000000050000000600000002000000000000000c00000000000000000000000100000003000000040000000d00000001000000010000000000000001000000020000000500000006000000030000000200000003000000070000000e000000020000000800000004000000050000000300000004000000
-        paramByteDataSize: 00000000000000000000000000000000000000000400000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000100000000000000000000000000000000000000
+        paramDataPos: 0000000000000000000000000100000002000000000000000400000003000000040000000500000006000000070000000800000001000000090000000a0000000b000000050000000600000002000000000000000c00000000000000000000000100000003000000040000000d00000001000000010000000000000001000000020000000500000006000000030000000200000003000000070000000e0000000f0000000200000008000000
+        paramByteDataSize: 00000000000000000000000000000000000000000400000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000001000000
     - name: COMPLETE
       description: 
       colorIndex: 0
@@ -7779,6 +7757,96 @@ MonoBehaviour:
         - storeObject
         paramDataPos: 000000000000000000000000000000000100000002000000000000000100000003000000
         paramByteDataSize: 000000000000000000000000000000000000000000000000000000000000000000000000
+    - name: Loop
+      description: 
+      colorIndex: 0
+      position:
+        serializedVersion: 2
+        x: 478
+        y: 230
+        width: 100
+        height: 48
+      isBreakpoint: 0
+      isSequence: 0
+      hideUnused: 0
+      transitions:
+      - fsmEvent:
+          name: LoopEvent
+          isSystemEvent: 0
+          isGlobal: 0
+        toState: Spawn Enemies
+        linkStyle: 0
+        linkConstraint: 2
+        linkTarget: 0
+        colorIndex: 0
+      - fsmEvent:
+          name: next
+          isSystemEvent: 0
+          isGlobal: 0
+        toState: Loop Spawns
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
+      actionData:
+        actionNames:
+        - HutongGames.PlayMaker.Actions.Loop
+        customNames:
+        - 
+        actionEnabled: 01
+        actionIsOpen: 01
+        actionStartIndex: 00000000
+        actionHashCodes: 65c84b02
+        unityObjectParams: []
+        fsmGameObjectParams: []
+        fsmOwnerDefaultParams: []
+        animationCurveParams: []
+        functionCallParams: []
+        fsmTemplateControlParams: []
+        fsmEventTargetParams: []
+        fsmPropertyParams: []
+        layoutOptionParams: []
+        fsmStringParams: []
+        fsmObjectParams: []
+        fsmVarParams: []
+        fsmArrayParams: []
+        fsmEnumParams: []
+        fsmFloatParams: []
+        fsmIntParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 3
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        fsmBoolParams: []
+        fsmVector2Params: []
+        fsmVector3Params: []
+        fsmColorParams: []
+        fsmRectParams: []
+        fsmQuaternionParams: []
+        stringParams:
+        - LoopEvent
+        - next
+        byteData: 
+        arrayParamSizes: 
+        arrayParamTypes: []
+        customTypeSizes: 
+        customTypeNames: []
+        paramDataType: 10000000100000001700000017000000
+        paramName:
+        - loops
+        - storeCurrentLoop
+        - loopEvent
+        - finishEvent
+        paramDataPos: 00000000010000000000000001000000
+        paramByteDataSize: 00000000000000000000000000000000
     events:
     - name: FINISHED
       isSystemEvent: 1
@@ -23903,6 +23971,11 @@ PrefabInstance:
       propertyPath: m_LocalScale.z
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 1008906430858218750, guid: 87d0b0d1d48c7b44886f168d0622f716,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 67488936bcca1db4ba42383ea5f1f679, type: 2}
     - target: {fileID: 1172166720316410300, guid: 87d0b0d1d48c7b44886f168d0622f716,
         type: 3}
       propertyPath: m_Enabled
@@ -23917,6 +23990,11 @@ PrefabInstance:
         type: 3}
       propertyPath: fsm.states.Array.data[1].actionData.fsmOwnerDefaultParams.Array.data[1].gameObject.value
       value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 1886428789302542575, guid: 87d0b0d1d48c7b44886f168d0622f716,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.1078
       objectReference: {fileID: 0}
     - target: {fileID: 2084529918764998815, guid: 87d0b0d1d48c7b44886f168d0622f716,
         type: 3}
@@ -23988,6 +24066,56 @@ PrefabInstance:
       propertyPath: m_Radius
       value: 0.73
       objectReference: {fileID: 0}
+    - target: {fileID: 2546186575540222495, guid: 87d0b0d1d48c7b44886f168d0622f716,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2966140693490217386, guid: 87d0b0d1d48c7b44886f168d0622f716,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.1087
+      objectReference: {fileID: 0}
+    - target: {fileID: 2966140693490217386, guid: 87d0b0d1d48c7b44886f168d0622f716,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.9995954
+      objectReference: {fileID: 0}
+    - target: {fileID: 2966140693490217386, guid: 87d0b0d1d48c7b44886f168d0622f716,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.028439604
+      objectReference: {fileID: 0}
+    - target: {fileID: 2966140693490217386, guid: 87d0b0d1d48c7b44886f168d0622f716,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0.0004967152
+      objectReference: {fileID: 0}
+    - target: {fileID: 2966140693490217386, guid: 87d0b0d1d48c7b44886f168d0622f716,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0.000000038351725
+      objectReference: {fileID: 0}
+    - target: {fileID: 2966140693490217386, guid: 87d0b0d1d48c7b44886f168d0622f716,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: -3.259
+      objectReference: {fileID: 0}
+    - target: {fileID: 2966140693490217386, guid: 87d0b0d1d48c7b44886f168d0622f716,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: -0.057
+      objectReference: {fileID: 0}
+    - target: {fileID: 2966140693490217386, guid: 87d0b0d1d48c7b44886f168d0622f716,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0.002
+      objectReference: {fileID: 0}
+    - target: {fileID: 3418750268406238000, guid: 87d0b0d1d48c7b44886f168d0622f716,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 67488936bcca1db4ba42383ea5f1f679, type: 2}
     - target: {fileID: 3499042297509702196, guid: 87d0b0d1d48c7b44886f168d0622f716,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -24017,6 +24145,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Enabled
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6988234506850925834, guid: 87d0b0d1d48c7b44886f168d0622f716,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8709065813520654688, guid: 87d0b0d1d48c7b44886f168d0622f716,
         type: 3}
