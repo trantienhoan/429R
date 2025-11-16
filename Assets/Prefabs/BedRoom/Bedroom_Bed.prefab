@@ -20279,15 +20279,17 @@ MonoBehaviour:
         - HutongGames.PlayMaker.Actions.ActivateGameObject
         - HutongGames.PlayMaker.Actions.SetParent
         - HutongGames.PlayMaker.Actions.Explosion
+        - HutongGames.PlayMaker.Actions.Wait
         customNames:
         - 
         - 
         - 
         - 
-        actionEnabled: 01010101
-        actionIsOpen: 00000000
-        actionStartIndex: 00000000050000000a0000000f000000
-        actionHashCodes: b2cf1000b2cf1000a0dd8303bc338a03
+        - 
+        actionEnabled: 0101010101
+        actionIsOpen: 0001000101
+        actionStartIndex: 00000000050000000a0000000f00000018000000
+        actionHashCodes: b2cf1000b2cf1000a0dd8303bc338a0348c01101
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 0
@@ -20351,13 +20353,19 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 20
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0.5
         fsmIntParams:
         - useVariable: 0
           name: 
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 0
+          value: 13
         fsmBoolParams:
         - useVariable: 0
           name: 
@@ -20418,14 +20426,15 @@ MonoBehaviour:
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
-        stringParams: []
-        byteData: 000000000000000000
+        stringParams:
+        - FINISHED
+        byteData: 00000000000000000000
         arrayParamSizes: 00000000
         arrayParamTypes:
         - HutongGames.PlayMaker.FsmInt
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1400000011000000110000000100000001000000140000001100000011000000010000000100000014000000130000001100000011000000110000001c0000000f0000000f0000000f00000007000000100000000c0000001100000001000000
+        paramDataType: 1400000011000000110000000100000001000000140000001100000011000000010000000100000014000000130000001100000011000000110000001c0000000f0000000f0000000f00000007000000100000000c00000011000000010000000f0000001700000001000000
         paramName:
         - gameObject
         - activate
@@ -20451,8 +20460,11 @@ MonoBehaviour:
         - layerMask
         - invertMask
         - everyFrame
-        paramDataPos: 000000000000000001000000000000000100000001000000020000000300000002000000030000000200000000000000040000000500000006000000000000000000000001000000020000000400000000000000000000000700000008000000
-        paramByteDataSize: 000000000000000000000000010000000100000000000000000000000000000001000000010000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000001000000
+        - time
+        - finishEvent
+        - realTime
+        paramDataPos: 000000000000000001000000000000000100000001000000020000000300000002000000030000000200000000000000040000000500000006000000000000000000000001000000020000000400000000000000000000000700000008000000030000000000000009000000
+        paramByteDataSize: 000000000000000000000000010000000100000000000000000000000000000001000000010000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000001000000000000000000000001000000
     - name: Deactivate Object
       description: 
       colorIndex: 0
@@ -20469,16 +20481,12 @@ MonoBehaviour:
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.ActivateGameObject
-        - HutongGames.PlayMaker.Actions.ActivateGameObject
-        - HutongGames.PlayMaker.Actions.ActivateGameObject
         customNames:
         - 
-        - 
-        - 
-        actionEnabled: 010000
-        actionIsOpen: 010000
-        actionStartIndex: 00000000050000000a000000
-        actionHashCodes: b2cf1000b2cf1000b2cf1000
+        actionEnabled: 01
+        actionIsOpen: 01
+        actionStartIndex: 00000000
+        actionHashCodes: b2cf1000
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams:
@@ -20490,22 +20498,6 @@ MonoBehaviour:
             showInInspector: 0
             networkSync: 0
             value: {fileID: 0}
-        - ownerOption: 1
-          gameObject:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: {fileID: 5166793077995220556}
-        - ownerOption: 1
-          gameObject:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: {fileID: 665526150680203547}
         animationCurveParams: []
         functionCallParams: []
         fsmTemplateControlParams: []
@@ -20532,60 +20524,26 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
         fsmVector2Params: []
         fsmVector3Params: []
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
         stringParams: []
-        byteData: 000000000000
+        byteData: 0000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 140000001100000011000000010000000100000014000000110000001100000001000000010000001400000011000000110000000100000001000000
+        paramDataType: 1400000011000000110000000100000001000000
         paramName:
         - gameObject
         - activate
         - recursive
         - resetOnExit
         - everyFrame
-        - gameObject
-        - activate
-        - recursive
-        - resetOnExit
-        - everyFrame
-        - gameObject
-        - activate
-        - recursive
-        - resetOnExit
-        - everyFrame
-        paramDataPos: 000000000000000001000000000000000100000001000000020000000300000002000000030000000200000004000000050000000400000005000000
-        paramByteDataSize: 000000000000000000000000010000000100000000000000000000000000000001000000010000000000000000000000000000000100000001000000
+        paramDataPos: 0000000000000000010000000000000001000000
+        paramByteDataSize: 0000000000000000000000000100000001000000
     events:
     - name: next
       isSystemEvent: 0
@@ -20999,7 +20957,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 0101010101
-        actionIsOpen: 0000000101
+        actionIsOpen: 0000000001
         actionStartIndex: 0000000005000000090000000e00000013000000
         actionHashCodes: 876045022a6e8a0087604502b2cf1000910fc300
         unityObjectParams: []
@@ -21425,10 +21383,15 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 704297073810520652}
     m_Modifications:
+    - target: {fileID: -9164173495654269347, guid: 4837b9fc386936b47ad71e069a1e469d,
+        type: 3}
+      propertyPath: m_TagString
+      value: Furniture
+      objectReference: {fileID: 0}
     - target: {fileID: -8800400824451833920, guid: 4837b9fc386936b47ad71e069a1e469d,
         type: 3}
       propertyPath: m_TagString
-      value: Weapon
+      value: Furniture
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 4837b9fc386936b47ad71e069a1e469d,
         type: 3}
@@ -21503,7 +21466,7 @@ PrefabInstance:
     - target: {fileID: -3031138540113278716, guid: 4837b9fc386936b47ad71e069a1e469d,
         type: 3}
       propertyPath: m_TagString
-      value: Weapon
+      value: Furniture
       objectReference: {fileID: 0}
     - target: {fileID: -2936274817089648275, guid: 4837b9fc386936b47ad71e069a1e469d,
         type: 3}
@@ -21518,7 +21481,12 @@ PrefabInstance:
     - target: {fileID: -1192873995539481900, guid: 4837b9fc386936b47ad71e069a1e469d,
         type: 3}
       propertyPath: m_TagString
-      value: Weapon
+      value: Furniture
+      objectReference: {fileID: 0}
+    - target: {fileID: -1035234255387490666, guid: 4837b9fc386936b47ad71e069a1e469d,
+        type: 3}
+      propertyPath: m_TagString
+      value: Furniture
       objectReference: {fileID: 0}
     - target: {fileID: -1027805161912866473, guid: 4837b9fc386936b47ad71e069a1e469d,
         type: 3}
@@ -21528,12 +21496,12 @@ PrefabInstance:
     - target: {fileID: -491824140697945343, guid: 4837b9fc386936b47ad71e069a1e469d,
         type: 3}
       propertyPath: m_TagString
-      value: Weapon
+      value: Furniture
       objectReference: {fileID: 0}
     - target: {fileID: -454183360059605065, guid: 4837b9fc386936b47ad71e069a1e469d,
         type: 3}
       propertyPath: m_TagString
-      value: Weapon
+      value: Furniture
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 4837b9fc386936b47ad71e069a1e469d,
         type: 3}
@@ -21544,6 +21512,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_IsActive
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1278611834103316411, guid: 4837b9fc386936b47ad71e069a1e469d,
+        type: 3}
+      propertyPath: m_TagString
+      value: Furniture
       objectReference: {fileID: 0}
     - target: {fileID: 2112834171042148616, guid: 4837b9fc386936b47ad71e069a1e469d,
         type: 3}
@@ -21558,7 +21531,7 @@ PrefabInstance:
     - target: {fileID: 5621160161863502095, guid: 4837b9fc386936b47ad71e069a1e469d,
         type: 3}
       propertyPath: m_TagString
-      value: Weapon
+      value: Furniture
       objectReference: {fileID: 0}
     - target: {fileID: 6111298140548670239, guid: 4837b9fc386936b47ad71e069a1e469d,
         type: 3}
@@ -21573,7 +21546,7 @@ PrefabInstance:
     - target: {fileID: 8836176691916008751, guid: 4837b9fc386936b47ad71e069a1e469d,
         type: 3}
       propertyPath: m_TagString
-      value: Weapon
+      value: Furniture
       objectReference: {fileID: 0}
     - target: {fileID: 9173165206372440043, guid: 4837b9fc386936b47ad71e069a1e469d,
         type: 3}
@@ -26407,7 +26380,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 6c2ec93056d3d7445b6125dea9766698,
         type: 3}
       propertyPath: m_TagString
-      value: Weapon
+      value: Furniture
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -27160,7 +27133,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 09566be522269fb44b235307c3867763,
         type: 3}
       propertyPath: m_TagString
-      value: Weapon
+      value: Furniture
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
