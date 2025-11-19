@@ -19963,6 +19963,7 @@ GameObject:
   - component: {fileID: 704297073810520652}
   - component: {fileID: 51959886929480837}
   - component: {fileID: 6029552520353580785}
+  - component: {fileID: 6541649036301957755}
   - component: {fileID: 435036047429373658}
   - component: {fileID: 3024947428908960433}
   - component: {fileID: 6242227604276762565}
@@ -20052,6 +20053,22 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!208 &6541649036301957755
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4253646714288135865}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 0.647, y: 0.60200006, z: 0.90300006}
+  m_MoveThreshold: 0.1
+  m_Carve: 0
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0, y: 0.61700004, z: 0.003}
+  m_TimeToStationary: 0.5
 --- !u!54 &435036047429373658
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -27125,6 +27142,11 @@ PrefabInstance:
     - target: {fileID: 8681851285859518967, guid: 024ba4dffe1521b45a86a52d4819d5b3,
         type: 3}
       propertyPath: fsm.states.Array.data[1].actionData.fsmOwnerDefaultParams.Array.data[0].gameObject.value
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 8681851285859518967, guid: 024ba4dffe1521b45a86a52d4819d5b3,
+        type: 3}
+      propertyPath: fsm.states.Array.data[1].actionData.fsmOwnerDefaultParams.Array.data[1].gameObject.value
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: 9008670646541103142, guid: 024ba4dffe1521b45a86a52d4819d5b3,

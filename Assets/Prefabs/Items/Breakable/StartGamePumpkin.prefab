@@ -19906,10 +19906,10 @@ GameObject:
   - component: {fileID: 3297647885557999414}
   - component: {fileID: 2515755612508645623}
   - component: {fileID: 4106527742642386951}
-  - component: {fileID: 7812162730161225654}
   - component: {fileID: 1758879196726637573}
   - component: {fileID: 4964890316226060746}
   - component: {fileID: 2694575517448442781}
+  - component: {fileID: 8491033595265522170}
   m_Layer: 0
   m_Name: pumpkin_Start
   m_TagString: Breakable
@@ -19926,7 +19926,7 @@ Transform:
   m_GameObject: {fileID: 1562310346286460977}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0.70710707, z: -0, w: 0.70710653}
-  m_LocalPosition: {x: -0.242, y: 0.084, z: 0}
+  m_LocalPosition: {x: -0.242, y: 0.08, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -20015,30 +20015,8 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 14
-  m_CollisionDetection: 2
---- !u!64 &7812162730161225654
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1562310346286460977}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 1
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -3288405685572441796, guid: 7528f0174e77d2c40ba9b5bff58d520e, type: 3}
+  m_Constraints: 46
+  m_CollisionDetection: 0
 --- !u!114 &1758879196726637573
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20869,7 +20847,7 @@ MonoBehaviour:
         - HutongGames.PlayMaker.Actions.FloatSubtract
         - HutongGames.PlayMaker.Actions.SetFsmFloat
         - HutongGames.PlayMaker.Actions.ActivateGameObject
-        - HutongGames.PlayMaker.Actions.TweenScale
+        - HutongGames.PlayMaker.Actions.TweenPunch
         customNames:
         - 
         - 
@@ -20877,23 +20855,11 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 0101010101
-        actionIsOpen: 0000000000
+        actionIsOpen: 0000000001
         actionStartIndex: 0000000005000000090000000e00000013000000
-        actionHashCodes: 876045022a6e8a0087604502b2cf1000910fc300
+        actionHashCodes: 876045022a6e8a0087604502b2cf1000bac44f04
         unityObjectParams: []
-        fsmGameObjectParams:
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: {fileID: 0}
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: {fileID: 0}
+        fsmGameObjectParams: []
         fsmOwnerDefaultParams:
         - ownerOption: 0
           gameObject:
@@ -20973,8 +20939,8 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          enumName: HutongGames.EasingFunction+Ease
-          intValue: 33
+          enumName: 
+          intValue: 0
         fsmFloatParams:
         - useVariable: 1
           name: health
@@ -21011,7 +20977,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 0.2
+          value: 1
         fsmIntParams: []
         fsmBoolParams:
         - useVariable: 0
@@ -21039,24 +21005,18 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {x: 1, y: 1, z: 1}
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: {x: 1, y: 0.8, z: 1}
+          value: {x: 0, y: 0, z: 0}
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
         stringParams:
         - FINISHED
-        byteData: 000000000000000000000100000000000000000000000000000000
+        byteData: 0000000000000200000000000000000000000000000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1400000012000000120000000f000000010000000f0000000f00000001000000010000001400000012000000120000000f00000001000000140000001100000011000000010000000100000007000000130000001c00000007000000130000001c000000140000000f0000002a000000160000000f000000110000000700000017000000020000000100000007000000
+        paramDataType: 1400000012000000120000000f000000010000000f0000000f00000001000000010000001400000012000000120000000f000000010000001400000011000000110000000100000001000000070000001c000000140000000f0000002a000000160000000f000000110000000700000017000000020000000100000007000000
         paramName:
         - gameObject
         - fsmName
@@ -21077,12 +21037,8 @@ MonoBehaviour:
         - recursive
         - resetOnExit
         - everyFrame
-        - fromOptions
-        - fromTarget
-        - fromScale
-        - toOptions
-        - toTarget
-        - toScale
+        - punchType
+        - value
         - gameObject
         - startDelay
         - easeType
@@ -21094,8 +21050,8 @@ MonoBehaviour:
         - normalizedTime
         - everyFrame
         - updateType
-        paramDataPos: 000000000000000001000000000000000000000001000000020000000100000002000000010000000200000003000000030000000300000002000000000000000100000004000000050000000600000000000000000000000a00000001000000010000000300000004000000000000000000000005000000020000000e00000000000000120000001600000017000000
-        paramByteDataSize: 000000000000000000000000000000000100000000000000000000000100000001000000000000000000000000000000000000000100000000000000000000000000000001000000010000000400000000000000000000000400000000000000000000000000000000000000000000000000000000000000000000000400000000000000040000000100000004000000
+        paramDataPos: 0000000000000000010000000000000000000000010000000200000001000000020000000100000002000000030000000300000003000000020000000000000001000000040000000500000006000000000000000300000004000000000000000000000005000000020000000a000000000000000e0000001200000013000000
+        paramByteDataSize: 0000000000000000000000000000000001000000000000000000000001000000010000000000000000000000000000000000000001000000000000000000000000000000010000000100000004000000000000000000000000000000000000000000000000000000000000000400000000000000040000000100000004000000
     events:
     - name: next
       isSystemEvent: 0
@@ -21312,6 +21268,27 @@ MonoBehaviour:
   m_LimitAngularVelocity: 0
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
+--- !u!135 &8491033595265522170
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1562310346286460977}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.2819432
+  m_Center: {x: -0.003780053, y: 0.23668101, z: 0.008368181}
 --- !u!1 &2081222070788544065
 GameObject:
   m_ObjectHideFlags: 0
@@ -22128,7 +22105,7 @@ ParticleSystem:
     rateOverTime:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 4
+      scalar: 2
       minScalar: 10
       maxCurve:
         serializedVersion: 2
@@ -43327,7 +43304,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4871850987860103417}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.70710707, z: -0, w: 0.70710653}
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
   m_LocalPosition: {x: -0.8, y: 0, z: -0.638}
   m_LocalScale: {x: 1.5215, y: 1.5215, z: 1.5215}
   m_ConstrainProportionsScale: 0
@@ -43372,7 +43349,7 @@ Rigidbody:
   m_Mass: 10
   m_LinearDamping: 0
   m_AngularDamping: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_CenterOfMass: {x: 0, y: -1.95, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
   m_IncludeLayers:
@@ -43381,7 +43358,7 @@ Rigidbody:
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 0
-  m_ImplicitCom: 1
+  m_ImplicitCom: 0
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
@@ -58443,7 +58420,7 @@ Transform:
   m_GameObject: {fileID: 6104885057318540900}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.12230496, z: -0, w: 0.99249256}
-  m_LocalPosition: {x: -0.22757511, y: 0, z: -0.07254134}
+  m_LocalPosition: {x: -0.345, y: 0, z: -0.087}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -58483,7 +58460,7 @@ MeshRenderer:
   m_RendererPriority: 0
   m_Materials:
   - {fileID: 2100000, guid: 9fc3c4ae449a4c940b700e75492c948c, type: 2}
-  - {fileID: -8349331136708988000, guid: da6fba7cb6dc8f948910434b39b64316, type: 3}
+  - {fileID: 2100000, guid: 9effe8bd6b6560b4996dc2742051da1f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -73659,17 +73636,17 @@ MonoBehaviour:
         colorIndex: 0
       actionData:
         actionNames:
+        - HutongGames.PlayMaker.Actions.SetRotation
         - HutongGames.PlayMaker.Actions.Rotate
         - HutongGames.PlayMaker.Actions.TriggerEvent
-        - HutongGames.PlayMaker.Actions.SetRotation
         customNames:
         - 
         - 
         - 
         actionEnabled: 010101
-        actionIsOpen: 000001
-        actionStartIndex: 000000000a0000000f000000
-        actionHashCodes: b03274009c512400979e4104
+        actionIsOpen: 000100
+        actionStartIndex: 000000000900000013000000
+        actionHashCodes: 979e4104b03274009c512400
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
@@ -73721,24 +73698,6 @@ MonoBehaviour:
         fsmArrayParams: []
         fsmEnumParams: []
         fsmFloatParams:
-        - useVariable: 1
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0.25
-        - useVariable: 1
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
         - useVariable: 0
           name: 
           tooltip: 
@@ -73752,6 +73711,24 @@ MonoBehaviour:
           networkSync: 0
           value: 0
         - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 60
+        - useVariable: 1
           name: 
           tooltip: 
           showInInspector: 0
@@ -73784,13 +73761,22 @@ MonoBehaviour:
           value: {x: 0, y: 0, z: 0, w: 0}
         stringParams:
         - next
-        byteData: 010000000001000000000000000000000000
+        byteData: 000000000000010000000101000000000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 140000001c0000000f0000000f0000000f0000000700000001000000010000000100000001000000140000000700000012000000170000001300000014000000230000001c0000000f0000000f0000000f000000070000000100000001000000
+        paramDataType: 14000000230000001c0000000f0000000f0000000f000000070000000100000001000000140000001c0000000f0000000f0000000f00000007000000010000000100000001000000010000001400000007000000120000001700000013000000
         paramName:
+        - gameObject
+        - quaternion
+        - vector
+        - xAngle
+        - yAngle
+        - zAngle
+        - space
+        - everyFrame
+        - lateUpdate
         - gameObject
         - vector
         - xAngle
@@ -73806,17 +73792,8 @@ MonoBehaviour:
         - collideTag
         - sendEvent
         - storeCollider
-        - gameObject
-        - quaternion
-        - vector
-        - xAngle
-        - yAngle
-        - zAngle
-        - space
-        - everyFrame
-        - lateUpdate
-        paramDataPos: 0000000000000000000000000100000002000000000000000400000005000000060000000700000001000000080000000000000000000000000000000200000000000000010000000300000004000000050000000c0000001000000011000000
-        paramByteDataSize: 000000000000000000000000000000000000000004000000010000000100000001000000010000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000040000000100000001000000
+        paramDataPos: 0000000000000000000000000000000001000000020000000000000004000000050000000100000001000000030000000400000005000000060000000a0000000b0000000c0000000d000000020000000e000000000000000000000000000000
+        paramByteDataSize: 000000000000000000000000000000000000000000000000040000000100000001000000000000000000000000000000000000000000000004000000010000000100000001000000010000000000000004000000000000000000000000000000
     - name: Set Stage 2
       description: 
       colorIndex: 3
@@ -84392,13 +84369,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8664576238716514432}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.1268906, z: -0, w: 0.9919168}
-  m_LocalPosition: {x: -0.34873757, y: 0, z: -0.029252464}
+  m_LocalRotation: {x: -0, y: -0.023118852, z: -0, w: 0.99973273}
+  m_LocalPosition: {x: -0.246, y: 0, z: -0.152}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4547012105242098745}
-  m_LocalEulerAnglesHint: {x: 0, y: -14.58, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: -2.649, z: 0}
 --- !u!33 &4074152098679276766
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -84433,7 +84410,7 @@ MeshRenderer:
   m_RendererPriority: 0
   m_Materials:
   - {fileID: 2100000, guid: 9fc3c4ae449a4c940b700e75492c948c, type: 2}
-  - {fileID: -8349331136708988000, guid: da6fba7cb6dc8f948910434b39b64316, type: 3}
+  - {fileID: 2100000, guid: 9effe8bd6b6560b4996dc2742051da1f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
