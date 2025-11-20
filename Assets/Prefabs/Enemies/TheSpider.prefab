@@ -4959,6 +4959,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6964223323252811960}
+  - {fileID: 4027141567119872539}
   m_Father: {fileID: 2205526779239161683}
   m_LocalEulerAnglesHint: {x: 15.687086, y: -179.99991, z: -179.99997}
 --- !u!1 &808974090144718441
@@ -10842,7 +10843,6 @@ Transform:
   - {fileID: 5425142022583709300}
   - {fileID: 447515758618431092}
   - {fileID: 4855296363428188049}
-  - {fileID: 4027141567119872539}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!195 &2569083251903338554
@@ -11039,6 +11039,7 @@ MonoBehaviour:
         - HutongGames.PlayMaker.Actions.TweenScale
         - HutongGames.PlayMaker.Actions.DestroySelf
         - HutongGames.PlayMaker.Actions.ActivateGameObject
+        - HutongGames.PlayMaker.Actions.SetFsmVariable
         customNames:
         - 
         - 
@@ -11046,10 +11047,11 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 010101010101
-        actionIsOpen: 000000000000
-        actionStartIndex: 0000000004000000060000000b0000001c0000001f000000
-        actionHashCodes: 87aa970015264c01c34b4105910fc300230cc800b2cf1000
+        - 
+        actionEnabled: 01010101010101
+        actionIsOpen: 00000000000001
+        actionStartIndex: 0000000004000000060000000b0000001c0000001f00000024000000
+        actionHashCodes: 87aa970015264c01c34b4105910fc300230cc800b2cf1000fcb1a001
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 0
@@ -11105,6 +11107,14 @@ MonoBehaviour:
             showInInspector: 0
             networkSync: 0
             value: {fileID: 2161603157673772253}
+        - ownerOption: 1
+          gameObject:
+            useVariable: 1
+            name: GAMESTAGES
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 0}
         animationCurveParams:
         - curve:
             serializedVersion: 2
@@ -11130,8 +11140,44 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: dead
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: GAMESTAGES
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: StartStage4
         fsmObjectParams: []
-        fsmVarParams: []
+        fsmVarParams:
+        - variableName: 
+          objectType: UnityEngine.Object
+          useVariable: 0
+          type: 2
+          floatValue: 0
+          intValue: 0
+          boolValue: 1
+          stringValue: 
+          vector4Value: {x: 0, y: 0, z: 0, w: 0}
+          objectReference: {fileID: 0}
+          arrayValue:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            type: -1
+            objectTypeName: 
+            floatValues: []
+            intValues: 
+            boolValues: 
+            stringValues: []
+            vector4Values: []
+            objectReferences: []
         fsmArrayParams: []
         fsmEnumParams:
         - useVariable: 0
@@ -11241,12 +11287,12 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - 
-        byteData: 000000000001000000000000000000000000000000000000
+        byteData: 00000000000100000000000000000000000000000000000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1400000012000000110000001100000014000000110000001400000012000000100000000f0000000100000007000000130000001c00000007000000130000001c000000140000000f0000002a000000160000000f0000001100000007000000170000000200000001000000070000000f00000011000000110000001400000011000000110000000100000001000000
+        paramDataType: 1400000012000000110000001100000014000000110000001400000012000000100000000f0000000100000007000000130000001c00000007000000130000001c000000140000000f0000002a000000160000000f0000001100000007000000170000000200000001000000070000000f000000110000001100000014000000110000001100000001000000010000001400000012000000120000002700000001000000
         paramName:
         - gameObject
         - fsmName
@@ -11284,8 +11330,13 @@ MonoBehaviour:
         - recursive
         - resetOnExit
         - everyFrame
-        paramDataPos: 000000000000000000000000010000000100000002000000020000000100000000000000000000000000000001000000000000000000000005000000010000000100000003000000010000000000000000000000020000000300000009000000000000000d00000011000000120000000300000004000000050000000400000006000000070000001600000017000000
-        paramByteDataSize: 000000000000000000000000000000000000000000000000000000000000000000000000000000000100000004000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000004000000000000000400000001000000040000000000000000000000000000000000000000000000000000000100000001000000
+        - gameObject
+        - fsmName
+        - variableName
+        - setValue
+        - everyFrame
+        paramDataPos: 000000000000000000000000010000000100000002000000020000000100000000000000000000000000000001000000000000000000000005000000010000000100000003000000010000000000000000000000020000000300000009000000000000000d000000110000001200000003000000040000000500000004000000060000000700000016000000170000000500000002000000030000000000000018000000
+        paramByteDataSize: 0000000000000000000000000000000000000000000000000000000000000000000000000000000001000000040000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000040000000000000004000000010000000400000000000000000000000000000000000000000000000000000001000000010000000000000000000000000000000000000001000000
     - name: Check force
       description: 
       colorIndex: 4
@@ -18235,7 +18286,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8986349096288024622
 Transform:
   m_ObjectHideFlags: 0
@@ -19705,57 +19756,57 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 7779331538366485845}
+    m_TransformParent: {fileID: 7074447553022413392}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: af9d821224220b44c89d9ac97e1d17ed,
         type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.82321995
+      value: 0.008232195
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: af9d821224220b44c89d9ac97e1d17ed,
         type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.82322
+      value: 0.008232193
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: af9d821224220b44c89d9ac97e1d17ed,
         type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.82321995
+      value: 0.008232187
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: af9d821224220b44c89d9ac97e1d17ed,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.01
+      value: 0.000100000594
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: af9d821224220b44c89d9ac97e1d17ed,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.312
+      value: 0.0022535096
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: af9d821224220b44c89d9ac97e1d17ed,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.196
+      value: -0.00084757846
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: af9d821224220b44c89d9ac97e1d17ed,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.87609214
+      value: 0.25311962
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: af9d821224220b44c89d9ac97e1d17ed,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.4029272
+      value: -0.07773629
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: af9d821224220b44c89d9ac97e1d17ed,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.24341919
+      value: -0.9290106
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: af9d821224220b44c89d9ac97e1d17ed,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.104208075
+      value: 0.2585087
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: af9d821224220b44c89d9ac97e1d17ed,
         type: 3}
