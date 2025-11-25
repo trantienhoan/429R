@@ -346,7 +346,7 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 7
+      scalar: 2
       minScalar: 1.5
       maxCurve:
         serializedVersion: 2
@@ -5067,8 +5067,8 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.55
-  m_Center: {x: 0, y: 0.42, z: 0}
+  m_Radius: 0.27
+  m_Center: {x: 0, y: 0.3, z: -0.08}
 --- !u!114 &6821794221572927740
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5267,7 +5267,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: 0.007915718, w: 0.9999687}
   m_LocalPosition: {x: -0.005, y: 0.202, z: -0.11}
-  m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+  m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 7581402840879496093}
@@ -5528,7 +5528,7 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 9.5
+      scalar: 5
       minScalar: 0.04
       maxCurve:
         serializedVersion: 2
@@ -10925,7 +10925,7 @@ MonoBehaviour:
           name: next
           isSystemEvent: 0
           isGlobal: 0
-        toState: Dead
+        toState: Drop
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -11041,7 +11041,7 @@ MonoBehaviour:
         - storeForce
         paramDataPos: 0000000000000000000000000000000000000000010000000400000001000000010000000100000000000000
         paramByteDataSize: 0000000004000000000000000000000000000000000000000400000000000000000000000000000000000000
-    - name: Dead
+    - name: Drop
       description: 
       colorIndex: 0
       position:
@@ -11058,7 +11058,7 @@ MonoBehaviour:
           name: FINISHED
           isSystemEvent: 1
           isGlobal: 0
-        toState: State 1
+        toState: Dead
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -11378,8 +11378,8 @@ MonoBehaviour:
       colorIndex: 4
       position:
         serializedVersion: 2
-        x: 64
-        y: 160
+        x: 60.796875
+        y: 245.08594
         width: 100.23
         height: 48
       isBreakpoint: 0
@@ -11390,7 +11390,7 @@ MonoBehaviour:
           name: next
           isSystemEvent: 0
           isGlobal: 0
-        toState: Dead
+        toState: Drop
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -11439,7 +11439,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 30
+          value: 100
         - useVariable: 0
           name: 
           tooltip: 
@@ -11473,7 +11473,7 @@ MonoBehaviour:
         - everyFrame
         paramDataPos: 00000000010000000200000000000000010000000200000000000000
         paramByteDataSize: 00000000000000000000000000000000000000000000000001000000
-    - name: State 1
+    - name: Dead
       description: 
       colorIndex: 0
       position:
@@ -13125,7 +13125,7 @@ ParticleSystem:
   m_GameObject: {fileID: 3661500958987239241}
   serializedVersion: 8
   lengthInSec: 1
-  simulationSpeed: 1
+  simulationSpeed: 0.85
   stopAction: 0
   cullingMode: 3
   ringBufferMode: 0
@@ -13234,8 +13234,8 @@ ParticleSystem:
     startSpeed:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 5
-      minScalar: 3
+      scalar: 0.35
+      minScalar: 0.2
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -13352,7 +13352,7 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 1
+      scalar: 1.85
       minScalar: 0.2
       maxCurve:
         serializedVersion: 2
@@ -13711,7 +13711,7 @@ ParticleSystem:
   ShapeModule:
     serializedVersion: 6
     enabled: 1
-    type: 0
+    type: 17
     angle: 50.12
     length: 5
     boxThickness: {x: 0, y: 0, z: 0}
@@ -13798,7 +13798,7 @@ ParticleSystem:
     sphericalDirectionAmount: 0
     randomPositionAmount: 0
     radius:
-      value: 0.0001
+      value: 0.21
       mode: 0
       spread: 0
       speed:
@@ -14143,7 +14143,7 @@ ParticleSystem:
       countCurve:
         serializedVersion: 2
         minMaxState: 0
-        scalar: 5
+        scalar: 7
         minScalar: 30
         maxCurve:
           serializedVersion: 2
@@ -14201,7 +14201,7 @@ ParticleSystem:
     curve:
       serializedVersion: 2
       minMaxState: 1
-      scalar: 5
+      scalar: 3
       minScalar: 1
       maxCurve:
         serializedVersion: 2
