@@ -15326,7 +15326,7 @@ MonoBehaviour:
         - next
         - Dead
         - Dead
-        byteData: 000000000000000000000000
+        byteData: 000000000000000002000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
@@ -16016,15 +16016,17 @@ MonoBehaviour:
         - HutongGames.PlayMaker.Actions.SetParent
         - HutongGames.PlayMaker.Actions.ActivateGameObject
         - HutongGames.PlayMaker.Actions.SetParent
+        - HutongGames.PlayMaker.Actions.SetFsmVariable
         customNames:
         - 
         - 
         - 
         - 
-        actionEnabled: 01010101
-        actionIsOpen: 00000101
-        actionStartIndex: 00000000050000000a0000000f000000
-        actionHashCodes: b2cf1000a0dd8303b2cf1000a0dd8303
+        - 
+        actionEnabled: 0101010101
+        actionIsOpen: 0000000001
+        actionStartIndex: 00000000050000000a0000000f00000014000000
+        actionHashCodes: b2cf1000a0dd8303b2cf1000a0dd8303fcb1a001
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 0
@@ -16072,15 +16074,59 @@ MonoBehaviour:
             showInInspector: 0
             networkSync: 0
             value: {fileID: 818447128687145528}
+        - ownerOption: 1
+          gameObject:
+            useVariable: 1
+            name: Fairy
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 0}
         animationCurveParams: []
         functionCallParams: []
         fsmTemplateControlParams: []
         fsmEventTargetParams: []
         fsmPropertyParams: []
         layoutOptionParams: []
-        fsmStringParams: []
+        fsmStringParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: Info
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: Pumpkin_3
         fsmObjectParams: []
-        fsmVarParams: []
+        fsmVarParams:
+        - variableName: 
+          objectType: UnityEngine.Object
+          useVariable: 0
+          type: 2
+          floatValue: 0
+          intValue: 0
+          boolValue: 1
+          stringValue: 
+          vector4Value: {x: 0, y: 0, z: 0, w: 0}
+          objectReference: {fileID: 0}
+          arrayValue:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            type: -1
+            objectTypeName: 
+            floatValues: []
+            intValues: 
+            boolValues: 
+            stringValues: []
+            vector4Values: []
+            objectReferences: []
         fsmArrayParams: []
         fsmEnumParams: []
         fsmFloatParams: []
@@ -16152,12 +16198,12 @@ MonoBehaviour:
         fsmRectParams: []
         fsmQuaternionParams: []
         stringParams: []
-        byteData: 00000000
+        byteData: 0000000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1400000011000000110000000100000001000000140000001300000011000000110000001100000014000000110000001100000001000000010000001400000013000000110000001100000011000000
+        paramDataType: 14000000110000001100000001000000010000001400000013000000110000001100000011000000140000001100000011000000010000000100000014000000130000001100000011000000110000001400000012000000120000002700000001000000
         paramName:
         - gameObject
         - activate
@@ -16179,8 +16225,13 @@ MonoBehaviour:
         - worldPositionStays
         - resetLocalPosition
         - resetLocalRotation
-        paramDataPos: 0000000000000000010000000000000001000000010000000000000002000000030000000400000002000000050000000600000002000000030000000300000001000000070000000800000009000000
-        paramByteDataSize: 0000000000000000000000000100000001000000000000000000000000000000000000000000000000000000000000000000000001000000010000000000000000000000000000000000000000000000
+        - gameObject
+        - fsmName
+        - variableName
+        - setValue
+        - everyFrame
+        paramDataPos: 00000000000000000100000000000000010000000100000000000000020000000300000004000000020000000500000006000000020000000300000003000000010000000700000008000000090000000400000000000000010000000000000004000000
+        paramByteDataSize: 00000000000000000000000001000000010000000000000000000000000000000000000000000000000000000000000000000000010000000100000000000000000000000000000000000000000000000000000000000000000000000000000001000000
     - name: Destroy Self
       description: 
       colorIndex: 0

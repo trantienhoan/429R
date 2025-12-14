@@ -27416,7 +27416,7 @@ Transform:
   m_GameObject: {fileID: 6784639141768068051}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -2.4573832, y: 0.24907956, z: 0.90731966}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -27490,13 +27490,13 @@ MonoBehaviour:
         actionNames:
         - HutongGames.PlayMaker.Actions.GetOwner
         - HutongGames.PlayMaker.Actions.AnimatorPlay
-        - HutongGames.PlayMaker.Actions.BoolAnyTrue
+        - HutongGames.PlayMaker.Actions.BoolAllTrue
         customNames:
         - 
         - 
         - 
         actionEnabled: 010101
-        actionIsOpen: 010101
+        actionIsOpen: 000001
         actionStartIndex: 000000000100000006000000
         actionHashCodes: 5c004505c34b410580768705
         unityObjectParams: []
@@ -27549,25 +27549,19 @@ MonoBehaviour:
           value: 0
         fsmBoolParams:
         - useVariable: 1
-          name: Chest Piece
+          name: Pumpkin_0
           tooltip: 
           showInInspector: 0
           networkSync: 0
           value: 0
         - useVariable: 1
-          name: Head Piece
+          name: Pumpkin_1
           tooltip: 
           showInInspector: 0
           networkSync: 0
           value: 0
         - useVariable: 1
-          name: Shoes Piece
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
-        - useVariable: 1
-          name: Bracer Piece
+          name: Pumpkin_2
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -27586,12 +27580,12 @@ MonoBehaviour:
         stringParams:
         - SummonFairy
         byteData: 0001
-        arrayParamSizes: 04000000
+        arrayParamSizes: 03000000
         arrayParamTypes:
         - HutongGames.PlayMaker.FsmBool
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 130000001400000012000000100000000f000000010000000c00000011000000110000001100000011000000170000001100000001000000
+        paramDataType: 130000001400000012000000100000000f000000010000000c000000110000001100000011000000170000001100000001000000
         paramName:
         - storeGameObject
         - gameObject
@@ -27603,12 +27597,11 @@ MonoBehaviour:
         - 
         - 
         - 
-        - 
         - sendEvent
         - storeResult
         - everyFrame
-        paramDataPos: 0000000000000000000000000000000000000000000000000000000000000000010000000200000003000000000000000400000001000000
-        paramByteDataSize: 0000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000
+        paramDataPos: 00000000000000000000000000000000000000000000000000000000000000000100000002000000000000000300000001000000
+        paramByteDataSize: 00000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000001000000
     - name: Fairy Summon
       description: 
       colorIndex: 0
@@ -27643,7 +27636,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 01010101
-        actionIsOpen: 00010101
+        actionIsOpen: 00000101
         actionStartIndex: 00000000050000000e00000013000000
         actionHashCodes: b2cf10004e661301c34b410548c01101
         unityObjectParams: []
@@ -27840,7 +27833,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 0101010101
-        actionIsOpen: 0000000100
+        actionIsOpen: 0101000100
         actionStartIndex: 00000000050000000a0000000f00000014000000
         actionHashCodes: c34b4105fcb1a001b2cf10009c512400b0327400
         unityObjectParams: []
@@ -28053,8 +28046,8 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 258.3672
-        y: 183.53906
+        x: 248.36719
+        y: 265.53906
         width: 149.83
         height: 32
       isBreakpoint: 0
@@ -28080,7 +28073,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 010101
-        actionIsOpen: 010101
+        actionIsOpen: 000101
         actionStartIndex: 00000000090000000e000000
         actionHashCodes: 4e661301c34b410548c01101
         unityObjectParams: []
@@ -28120,7 +28113,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: pray
+          value: call
         fsmObjectParams: []
         fsmVarParams: []
         fsmArrayParams: []
@@ -28221,25 +28214,36 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 266.9922
-        y: 266.92188
-        width: 120.1
-        height: 16
+        x: 256.9922
+        y: 348.92188
+        width: 127.52
+        height: 32
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
-      transitions: []
+      transitions:
+      - fsmEvent:
+          name: next
+          isSystemEvent: 0
+          isGlobal: 0
+        toState: State 1
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.AnimatorPlay
         - HutongGames.PlayMaker.Actions.ActivateGameObject
+        - HutongGames.PlayMaker.Actions.BoolAllTrue
         customNames:
         - 
         - 
-        actionEnabled: 0101
-        actionIsOpen: 0101
-        actionStartIndex: 0000000005000000
-        actionHashCodes: c34b4105b2cf1000
+        - 
+        actionEnabled: 010101
+        actionIsOpen: 010101
+        actionStartIndex: 00000000050000000a000000
+        actionHashCodes: c34b4105b2cf100080768705
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams:
@@ -28271,7 +28275,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: call
+          value: pray
         fsmObjectParams: []
         fsmVarParams: []
         fsmArrayParams: []
@@ -28303,18 +28307,44 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0
+        - useVariable: 1
+          name: Pumpkin_3
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 1
+          name: Pumpkin_4
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 1
+          name: Pumpkin_5
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
         fsmVector2Params: []
         fsmVector3Params: []
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
-        stringParams: []
-        byteData: 000000
-        arrayParamSizes: 
-        arrayParamTypes: []
+        stringParams:
+        - next
+        byteData: 00000001
+        arrayParamSizes: 03000000
+        arrayParamTypes:
+        - HutongGames.PlayMaker.FsmBool
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1400000012000000100000000f000000010000001400000011000000110000000100000001000000
+        paramDataType: 1400000012000000100000000f0000000100000014000000110000001100000001000000010000000c000000110000001100000011000000170000001100000001000000
         paramName:
         - gameObject
         - stateName
@@ -28326,8 +28356,67 @@ MonoBehaviour:
         - recursive
         - resetOnExit
         - everyFrame
-        paramDataPos: 00000000000000000000000000000000000000000100000000000000010000000100000002000000
-        paramByteDataSize: 00000000000000000000000000000000010000000000000000000000000000000100000001000000
+        - boolVariables
+        - 
+        - 
+        - 
+        - sendEvent
+        - storeResult
+        - everyFrame
+        paramDataPos: 0000000000000000000000000000000000000000010000000000000001000000010000000200000000000000020000000300000004000000000000000500000003000000
+        paramByteDataSize: 0000000000000000000000000000000001000000000000000000000000000000010000000100000000000000000000000000000000000000000000000000000001000000
+    - name: State 1
+      description: 
+      colorIndex: 0
+      position:
+        serializedVersion: 2
+        x: 485
+        y: 349
+        width: 100
+        height: 16
+      isBreakpoint: 0
+      isSequence: 0
+      hideUnused: 0
+      transitions: []
+      actionData:
+        actionNames: []
+        customNames: []
+        actionEnabled: 
+        actionIsOpen: 
+        actionStartIndex: 
+        actionHashCodes: 
+        unityObjectParams: []
+        fsmGameObjectParams: []
+        fsmOwnerDefaultParams: []
+        animationCurveParams: []
+        functionCallParams: []
+        fsmTemplateControlParams: []
+        fsmEventTargetParams: []
+        fsmPropertyParams: []
+        layoutOptionParams: []
+        fsmStringParams: []
+        fsmObjectParams: []
+        fsmVarParams: []
+        fsmArrayParams: []
+        fsmEnumParams: []
+        fsmFloatParams: []
+        fsmIntParams: []
+        fsmBoolParams: []
+        fsmVector2Params: []
+        fsmVector3Params: []
+        fsmColorParams: []
+        fsmRectParams: []
+        fsmQuaternionParams: []
+        stringParams: []
+        byteData: 
+        arrayParamSizes: 
+        arrayParamTypes: []
+        customTypeSizes: 
+        customTypeNames: []
+        paramDataType: 
+        paramName: []
+        paramDataPos: 
+        paramByteDataSize: 
     events:
     - name: SummonFairy
       isSystemEvent: 0
@@ -28347,25 +28436,43 @@ MonoBehaviour:
       intVariables: []
       boolVariables:
       - useVariable: 1
-        name: Chest Piece
+        name: 
         tooltip: 
         showInInspector: 0
         networkSync: 0
         value: 0
       - useVariable: 1
-        name: Head Piece
+        name: Pumpkin_0
         tooltip: 
         showInInspector: 0
         networkSync: 0
         value: 0
       - useVariable: 1
-        name: Shoes Piece
+        name: Pumpkin_1
         tooltip: 
         showInInspector: 0
         networkSync: 0
         value: 0
       - useVariable: 1
-        name: Bracer Piece
+        name: Pumpkin_2
+        tooltip: 
+        showInInspector: 0
+        networkSync: 0
+        value: 0
+      - useVariable: 1
+        name: Pumpkin_3
+        tooltip: 
+        showInInspector: 0
+        networkSync: 0
+        value: 0
+      - useVariable: 1
+        name: Pumpkin_4
+        tooltip: 
+        showInInspector: 0
+        networkSync: 0
+        value: 0
+      - useVariable: 1
+        name: Pumpkin_5
         tooltip: 
         showInInspector: 0
         networkSync: 0
@@ -28384,7 +28491,7 @@ MonoBehaviour:
       enumVariables: []
       categories:
       - 
-      variableCategoryIDs: 00000000000000000000000000000000
+      variableCategoryIDs: 00000000000000000000000000000000000000000000000000000000
     description: 
     docUrl: 
     showStateLabel: 0
