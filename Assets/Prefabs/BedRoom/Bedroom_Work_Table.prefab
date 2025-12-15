@@ -10796,8 +10796,8 @@ MonoBehaviour:
         actionHashCodes: b2cf1000a0dd8303bc338a03
         unityObjectParams: []
         fsmGameObjectParams:
-        - useVariable: 0
-          name: 
+        - useVariable: 1
+          name: CurrentlySpawnedStuffs
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -11015,6 +11015,9 @@ MonoBehaviour:
       isGlobal: 0
     - name: FINISHED
       isSystemEvent: 1
+      isGlobal: 0
+    - name: Dead
+      isSystemEvent: 0
       isGlobal: 0
     globalTransitions: []
     variables:
@@ -35480,6 +35483,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8529673103472462751, guid: 49f3ca2e95039e941953ddd0d755c15a,
+        type: 3}
+      propertyPath: fsm.states.Array.data[1].actionData.fsmOwnerDefaultParams.Array.data[4].gameObject.value
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 8690403555129543112, guid: 49f3ca2e95039e941953ddd0d755c15a,
         type: 3}
