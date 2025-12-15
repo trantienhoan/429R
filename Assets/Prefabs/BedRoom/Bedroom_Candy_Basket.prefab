@@ -5046,6 +5046,7 @@ Transform:
   - {fileID: 5954970117838754813}
   - {fileID: 4469874573577403303}
   - {fileID: 1389888427747456713}
+  - {fileID: 3129078847308385893}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &4453357073394379606
@@ -5489,14 +5490,22 @@ MonoBehaviour:
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.DestroySelf
+        - HutongGames.PlayMaker.Actions.DestroyObject
         customNames:
         - 
-        actionEnabled: 01
-        actionIsOpen: 01
-        actionStartIndex: 00000000
-        actionHashCodes: 230cc800
+        - 
+        actionEnabled: 0101
+        actionIsOpen: 0101
+        actionStartIndex: 0000000003000000
+        actionHashCodes: 230cc8009ff80c02
         unityObjectParams: []
-        fsmGameObjectParams: []
+        fsmGameObjectParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 2279985105134846913}
         fsmOwnerDefaultParams: []
         animationCurveParams: []
         functionCallParams: []
@@ -5516,8 +5525,20 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
         fsmIntParams: []
         fsmBoolParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
         - useVariable: 0
           name: 
           tooltip: 
@@ -5541,13 +5562,16 @@ MonoBehaviour:
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 0f0000001100000011000000
+        paramDataType: 0f0000001100000011000000130000000f00000011000000
         paramName:
         - delay
         - realTime
         - detachChildren
-        paramDataPos: 000000000000000001000000
-        paramByteDataSize: 000000000000000000000000
+        - gameObject
+        - delay
+        - detachChildren
+        paramDataPos: 000000000000000001000000000000000100000002000000
+        paramByteDataSize: 000000000000000000000000000000000000000000000000
     events:
     - name: next
       isSystemEvent: 0
@@ -34425,4 +34449,78 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 9083372792005522447, guid: cb4f64e3790071845b47d919a6f9e2a9,
     type: 3}
   m_PrefabInstance: {fileID: 5760972469974449502}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &6391482897461184565
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 3378273378072483891}
+    m_Modifications:
+    - target: {fileID: 8349571965583476304, guid: 5216c56fbae507d4a941cdc3de09140d,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.047
+      objectReference: {fileID: 0}
+    - target: {fileID: 8349571965583476304, guid: 5216c56fbae507d4a941cdc3de09140d,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.597
+      objectReference: {fileID: 0}
+    - target: {fileID: 8349571965583476304, guid: 5216c56fbae507d4a941cdc3de09140d,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.025
+      objectReference: {fileID: 0}
+    - target: {fileID: 8349571965583476304, guid: 5216c56fbae507d4a941cdc3de09140d,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.9433506
+      objectReference: {fileID: 0}
+    - target: {fileID: 8349571965583476304, guid: 5216c56fbae507d4a941cdc3de09140d,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.2706807
+      objectReference: {fileID: 0}
+    - target: {fileID: 8349571965583476304, guid: 5216c56fbae507d4a941cdc3de09140d,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.162496
+      objectReference: {fileID: 0}
+    - target: {fileID: 8349571965583476304, guid: 5216c56fbae507d4a941cdc3de09140d,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.10206241
+      objectReference: {fileID: 0}
+    - target: {fileID: 8349571965583476304, guid: 5216c56fbae507d4a941cdc3de09140d,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: -32.947
+      objectReference: {fileID: 0}
+    - target: {fileID: 8349571965583476304, guid: 5216c56fbae507d4a941cdc3de09140d,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 17.427
+      objectReference: {fileID: 0}
+    - target: {fileID: 8349571965583476304, guid: 5216c56fbae507d4a941cdc3de09140d,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 7.16
+      objectReference: {fileID: 0}
+    - target: {fileID: 8690403555129543112, guid: 5216c56fbae507d4a941cdc3de09140d,
+        type: 3}
+      propertyPath: m_Name
+      value: Pumpkin_2
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 5216c56fbae507d4a941cdc3de09140d, type: 3}
+--- !u!4 &3129078847308385893 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8349571965583476304, guid: 5216c56fbae507d4a941cdc3de09140d,
+    type: 3}
+  m_PrefabInstance: {fileID: 6391482897461184565}
   m_PrefabAsset: {fileID: 0}

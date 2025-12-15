@@ -4960,7 +4960,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6964223323252811960}
-  - {fileID: 2997742748607826837}
+  - {fileID: 3332715898440863214}
   m_Father: {fileID: 2205526779239161683}
   m_LocalEulerAnglesHint: {x: 10.453095, y: -3.4521484, z: -3.7521057}
 --- !u!135 &6402935475669586520
@@ -10917,7 +10917,7 @@ MonoBehaviour:
         x: 50
         y: 100
         width: 124.08
-        height: 32
+        height: 48
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
@@ -10926,7 +10926,16 @@ MonoBehaviour:
           name: next
           isSystemEvent: 0
           isGlobal: 0
-        toState: Activate Parts
+        toState: Death
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
+      - fsmEvent:
+          name: Dead
+          isSystemEvent: 0
+          isGlobal: 0
+        toState: Death
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -10934,22 +10943,44 @@ MonoBehaviour:
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.FloatCompare
+        - HutongGames.PlayMaker.Actions.TriggerEvent
         customNames:
         - 
-        actionEnabled: 01
-        actionIsOpen: 01
-        actionStartIndex: 00000000
-        actionHashCodes: 1bcdca04
+        - 
+        actionEnabled: 0101
+        actionIsOpen: 0101
+        actionStartIndex: 0000000007000000
+        actionHashCodes: 1bcdca049c512400
         unityObjectParams: []
-        fsmGameObjectParams: []
-        fsmOwnerDefaultParams: []
+        fsmGameObjectParams:
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 0}
+        fsmOwnerDefaultParams:
+        - ownerOption: 1
+          gameObject:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 1312216107182037821}
         animationCurveParams: []
         functionCallParams: []
         fsmTemplateControlParams: []
         fsmEventTargetParams: []
         fsmPropertyParams: []
         layoutOptionParams: []
-        fsmStringParams: []
+        fsmStringParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: Fairy_Shield
         fsmObjectParams: []
         fsmVarParams: []
         fsmArrayParams: []
@@ -10984,12 +11015,13 @@ MonoBehaviour:
         - next
         - next
         - 
-        byteData: 01
+        - Dead
+        byteData: 0100000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 0f0000000f0000000f00000017000000170000001700000001000000
+        paramDataType: 0f0000000f0000000f000000170000001700000017000000010000001400000007000000120000001700000013000000
         paramName:
         - float1
         - float2
@@ -10998,16 +11030,21 @@ MonoBehaviour:
         - lessThan
         - greaterThan
         - everyFrame
-        paramDataPos: 00000000010000000200000000000000010000000200000000000000
-        paramByteDataSize: 00000000000000000000000000000000000000000000000001000000
-    - name: Activate Parts
+        - gameObject
+        - trigger
+        - collideTag
+        - sendEvent
+        - storeCollider
+        paramDataPos: 000000000100000002000000000000000100000002000000000000000000000001000000000000000300000000000000
+        paramByteDataSize: 000000000000000000000000000000000000000000000000010000000000000004000000000000000000000000000000
+    - name: Death
       description: 
       colorIndex: 0
       position:
         serializedVersion: 2
         x: 240
         y: 112
-        width: 111.97
+        width: 100
         height: 32
       isBreakpoint: 0
       isSequence: 0
@@ -11413,7 +11450,7 @@ MonoBehaviour:
         tooltip: 
         showInInspector: 1
         networkSync: 0
-        value: 70
+        value: 7
       - useVariable: 1
         name: collisionForce
         tooltip: 
@@ -12953,7 +12990,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 01010101010101
-        actionIsOpen: 00000100010100
+        actionIsOpen: 01000100010100
         actionStartIndex: 0000000004000000060000000b00000014000000180000001f000000
         actionHashCodes: 5e69bb0415264c01c34b41054e66130136f094001bcdca0448c01101
         unityObjectParams: []
@@ -19634,7 +19671,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &8986349096288024622
 Transform:
   m_ObjectHideFlags: 0
@@ -21098,7 +21135,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 417608597261176035}
   m_LocalEulerAnglesHint: {x: -13.1418495, y: -56.48572, z: 32.965256}
---- !u!1001 &3319335825824066686
+--- !u!1001 &3011384290968611333
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -21106,86 +21143,86 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 7074447553022413392}
     m_Modifications:
-    - target: {fileID: -8679921383154817045, guid: 0c025f45a86d5ab4da00fe29761befa4,
+    - target: {fileID: -8679921383154817045, guid: af9d821224220b44c89d9ac97e1d17ed,
         type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.009528985
+      value: 0.007483998
       objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 0c025f45a86d5ab4da00fe29761befa4,
+    - target: {fileID: -8679921383154817045, guid: af9d821224220b44c89d9ac97e1d17ed,
         type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.009528965
+      value: 0.007483998
       objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 0c025f45a86d5ab4da00fe29761befa4,
+    - target: {fileID: -8679921383154817045, guid: af9d821224220b44c89d9ac97e1d17ed,
         type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.009528973
+      value: 0.007483998
       objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 0c025f45a86d5ab4da00fe29761befa4,
+    - target: {fileID: -8679921383154817045, guid: af9d821224220b44c89d9ac97e1d17ed,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.00011156
+      value: -0.00014
       objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 0c025f45a86d5ab4da00fe29761befa4,
+    - target: {fileID: -8679921383154817045, guid: af9d821224220b44c89d9ac97e1d17ed,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.0020147
+      value: 0.00299
       objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 0c025f45a86d5ab4da00fe29761befa4,
+    - target: {fileID: -8679921383154817045, guid: af9d821224220b44c89d9ac97e1d17ed,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.0013892
+      value: -0.00185
       objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 0c025f45a86d5ab4da00fe29761befa4,
+    - target: {fileID: -8679921383154817045, guid: af9d821224220b44c89d9ac97e1d17ed,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.0000003274726
+      value: 0.85898274
       objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 0c025f45a86d5ab4da00fe29761befa4,
+    - target: {fileID: -8679921383154817045, guid: af9d821224220b44c89d9ac97e1d17ed,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.00000032832918
+      value: -0.4321086
       objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 0c025f45a86d5ab4da00fe29761befa4,
+    - target: {fileID: -8679921383154817045, guid: af9d821224220b44c89d9ac97e1d17ed,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.4563858
+      value: 0.2530187
       objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 0c025f45a86d5ab4da00fe29761befa4,
+    - target: {fileID: -8679921383154817045, guid: af9d821224220b44c89d9ac97e1d17ed,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.889782
+      value: -0.1068286
       objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 0c025f45a86d5ab4da00fe29761befa4,
+    - target: {fileID: -8679921383154817045, guid: af9d821224220b44c89d9ac97e1d17ed,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 45.195
+      value: -43.495
       objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 0c025f45a86d5ab4da00fe29761befa4,
+    - target: {fileID: -8679921383154817045, guid: af9d821224220b44c89d9ac97e1d17ed,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
+      value: 46.59
       objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 0c025f45a86d5ab4da00fe29761befa4,
+    - target: {fileID: -8679921383154817045, guid: af9d821224220b44c89d9ac97e1d17ed,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
+      value: -33.67
       objectReference: {fileID: 0}
-    - target: {fileID: 919132149155446097, guid: 0c025f45a86d5ab4da00fe29761befa4,
+    - target: {fileID: 919132149155446097, guid: af9d821224220b44c89d9ac97e1d17ed,
         type: 3}
       propertyPath: m_Name
-      value: Hat_Black
+      value: pumpkin_4
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 0c025f45a86d5ab4da00fe29761befa4, type: 3}
---- !u!4 &2997742748607826837 stripped
+  m_SourcePrefab: {fileID: 100100000, guid: af9d821224220b44c89d9ac97e1d17ed, type: 3}
+--- !u!4 &3332715898440863214 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 0c025f45a86d5ab4da00fe29761befa4,
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: af9d821224220b44c89d9ac97e1d17ed,
     type: 3}
-  m_PrefabInstance: {fileID: 3319335825824066686}
+  m_PrefabInstance: {fileID: 3011384290968611333}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &4719419182728289603
 PrefabInstance:

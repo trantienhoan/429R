@@ -5196,6 +5196,7 @@ Transform:
   - {fileID: 7344214895411534496}
   - {fileID: 2060910024110290628}
   - {fileID: 1756183782480351449}
+  - {fileID: 6759273042293521789}
   - {fileID: 289447479396203986}
   m_Father: {fileID: 4836661344641763434}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -12243,14 +12244,22 @@ MonoBehaviour:
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.DestroySelf
+        - HutongGames.PlayMaker.Actions.DestroyObject
         customNames:
         - 
-        actionEnabled: 01
-        actionIsOpen: 01
-        actionStartIndex: 00000000
-        actionHashCodes: 230cc800
+        - 
+        actionEnabled: 0101
+        actionIsOpen: 0101
+        actionStartIndex: 0000000003000000
+        actionHashCodes: 230cc8009ff80c02
         unityObjectParams: []
-        fsmGameObjectParams: []
+        fsmGameObjectParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 5527972164508565789}
         fsmOwnerDefaultParams: []
         animationCurveParams: []
         functionCallParams: []
@@ -12270,8 +12279,20 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
         fsmIntParams: []
         fsmBoolParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
         - useVariable: 0
           name: 
           tooltip: 
@@ -12295,13 +12316,16 @@ MonoBehaviour:
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 0f0000001100000011000000
+        paramDataType: 0f0000001100000011000000130000000f00000011000000
         paramName:
         - delay
         - realTime
         - detachChildren
-        paramDataPos: 000000000000000001000000
-        paramByteDataSize: 000000000000000000000000
+        - gameObject
+        - delay
+        - detachChildren
+        paramDataPos: 000000000000000001000000000000000100000002000000
+        paramByteDataSize: 000000000000000000000000000000000000000000000000
     events:
     - name: next
       isSystemEvent: 0
@@ -30063,14 +30087,14 @@ ParticleSystem:
   ShapeModule:
     serializedVersion: 6
     enabled: 1
-    type: 17
+    type: 2
     angle: 50.12
     length: 5
     boxThickness: {x: 0, y: 0, z: 0}
     radiusThickness: 1
     donutRadius: 1.23
     m_Position: {x: 0, y: 0.06, z: 0}
-    m_Rotation: {x: 90, y: 0, z: 90}
+    m_Rotation: {x: -90, y: 0, z: 90}
     m_Scale: {x: 1, y: 1, z: 1}
     placementMode: 0
     m_MeshMaterialIndex: 0
@@ -30208,7 +30232,7 @@ ParticleSystem:
           m_RotationOrder: 4
     arc:
       value: 360
-      mode: 0
+      mode: 3
       spread: 0
       speed:
         serializedVersion: 2
@@ -35495,3 +35519,82 @@ MonoBehaviour:
     handleAnimatorIK: 0
   fsmTemplate: {fileID: 0}
   eventHandlerComponentsAdded: 0
+--- !u!1001 &1634535879233976682
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 9168495493443607621}
+    m_Modifications:
+    - target: {fileID: 1466277309599601579, guid: d8aa458306020af4c9d7b94e3462b698,
+        type: 3}
+      propertyPath: m_Name
+      value: Cockroach
+      objectReference: {fileID: 0}
+    - target: {fileID: 5432127017008514071, guid: d8aa458306020af4c9d7b94e3462b698,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.015
+      objectReference: {fileID: 0}
+    - target: {fileID: 5432127017008514071, guid: d8aa458306020af4c9d7b94e3462b698,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.24547352
+      objectReference: {fileID: 0}
+    - target: {fileID: 5432127017008514071, guid: d8aa458306020af4c9d7b94e3462b698,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.045
+      objectReference: {fileID: 0}
+    - target: {fileID: 5432127017008514071, guid: d8aa458306020af4c9d7b94e3462b698,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5432127017008514071, guid: d8aa458306020af4c9d7b94e3462b698,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5432127017008514071, guid: d8aa458306020af4c9d7b94e3462b698,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5432127017008514071, guid: d8aa458306020af4c9d7b94e3462b698,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5432127017008514071, guid: d8aa458306020af4c9d7b94e3462b698,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5432127017008514071, guid: d8aa458306020af4c9d7b94e3462b698,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5432127017008514071, guid: d8aa458306020af4c9d7b94e3462b698,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5432127017008514071, guid: d8aa458306020af4c9d7b94e3462b698,
+        type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: d8aa458306020af4c9d7b94e3462b698, type: 3}
+--- !u!4 &6759273042293521789 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5432127017008514071, guid: d8aa458306020af4c9d7b94e3462b698,
+    type: 3}
+  m_PrefabInstance: {fileID: 1634535879233976682}
+  m_PrefabAsset: {fileID: 0}
