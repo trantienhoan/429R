@@ -33089,7 +33089,7 @@ MonoBehaviour:
           name: FINISHED
           isSystemEvent: 1
           isGlobal: 0
-        toState: State 1 - The Wait
+        toState: State 1 - The Start
         linkStyle: 0
         linkConstraint: 2
         linkTarget: 0
@@ -33362,7 +33362,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: Bedroom_GO
+          value: Bedroom_GO2
         fsmObjectParams: []
         fsmVarParams: []
         fsmArrayParams: []
@@ -33436,7 +33436,7 @@ MonoBehaviour:
         colorIndex: 0
       actionData:
         actionNames:
-        - HutongGames.PlayMaker.Actions.DestroyObject
+        - HutongGames.PlayMaker.Actions.AnimatorPlay
         - HutongGames.PlayMaker.Actions.ActivateGameObject
         - HutongGames.PlayMaker.Actions.Wait
         customNames:
@@ -33444,18 +33444,20 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 010101
-        actionIsOpen: 000101
-        actionStartIndex: 000000000300000008000000
-        actionHashCodes: 9ff80c02b2cf100048c01101
+        actionIsOpen: 010101
+        actionStartIndex: 00000000050000000a000000
+        actionHashCodes: c34b4105b2cf100048c01101
         unityObjectParams: []
-        fsmGameObjectParams:
-        - useVariable: 1
-          name: Bedroom_Base
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: {fileID: 0}
+        fsmGameObjectParams: []
         fsmOwnerDefaultParams:
+        - ownerOption: 1
+          gameObject:
+            useVariable: 1
+            name: Bedroom_Base
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 0}
         - ownerOption: 1
           gameObject:
             useVariable: 0
@@ -33470,13 +33472,19 @@ MonoBehaviour:
         fsmEventTargetParams: []
         fsmPropertyParams: []
         layoutOptionParams: []
-        fsmStringParams: []
+        fsmStringParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: Bedroom_GO
         fsmObjectParams: []
         fsmVarParams: []
         fsmArrayParams: []
         fsmEnumParams: []
         fsmFloatParams:
-        - useVariable: 0
+        - useVariable: 1
           name: 
           tooltip: 
           showInInspector: 0
@@ -33488,14 +33496,14 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 1
-        fsmIntParams: []
-        fsmBoolParams:
-        - useVariable: 0
+        fsmIntParams:
+        - useVariable: 1
           name: 
           tooltip: 
           showInInspector: 0
           networkSync: 0
           value: 0
+        fsmBoolParams:
         - useVariable: 0
           name: 
           tooltip: 
@@ -33515,16 +33523,18 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - FINISHED
-        byteData: 000001
+        byteData: 00000001
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 130000000f0000001100000014000000110000001100000001000000010000000f0000001700000001000000
+        paramDataType: 1400000012000000100000000f0000000100000014000000110000001100000001000000010000000f0000001700000001000000
         paramName:
         - gameObject
-        - delay
-        - detachChildren
+        - stateName
+        - layer
+        - normalizedTime
+        - everyFrame
         - gameObject
         - activate
         - recursive
@@ -33533,8 +33543,8 @@ MonoBehaviour:
         - time
         - finishEvent
         - realTime
-        paramDataPos: 0000000000000000000000000000000001000000020000000000000001000000010000000000000002000000
-        paramByteDataSize: 0000000000000000000000000000000000000000000000000100000001000000000000000000000001000000
+        paramDataPos: 00000000000000000000000000000000000000000100000000000000010000000100000002000000010000000000000003000000
+        paramByteDataSize: 00000000000000000000000000000000010000000000000000000000000000000100000001000000000000000000000001000000
     - name: Stage5 - Livingroom End
       description: 
       colorIndex: 0
@@ -34120,14 +34130,14 @@ MonoBehaviour:
         - detachChildren
         paramDataPos: 000000000000000000000000
         paramByteDataSize: 000000000000000000000000
-    - name: State 1 - The Wait
+    - name: State 1 - The Start
       description: 
       colorIndex: 0
       position:
         serializedVersion: 2
         x: 259.01562
         y: 182.8125
-        width: 132.51001
+        width: 135.44
         height: 32
       isBreakpoint: 0
       isSequence: 0
@@ -34307,17 +34317,25 @@ MonoBehaviour:
         colorIndex: 0
       actionData:
         actionNames:
+        - HutongGames.PlayMaker.Actions.DestroyObject
         - HutongGames.PlayMaker.Actions.ActivateGameObject
         - HutongGames.PlayMaker.Actions.BoolTest
         customNames:
         - 
         - 
-        actionEnabled: 0101
-        actionIsOpen: 0101
-        actionStartIndex: 0000000005000000
-        actionHashCodes: b2cf1000a4c8bf00
+        - 
+        actionEnabled: 010101
+        actionIsOpen: 000101
+        actionStartIndex: 000000000300000008000000
+        actionHashCodes: 9ff80c02b2cf1000a4c8bf00
         unityObjectParams: []
-        fsmGameObjectParams: []
+        fsmGameObjectParams:
+        - useVariable: 1
+          name: Bedroom_Base
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 0}
         fsmOwnerDefaultParams:
         - ownerOption: 1
           gameObject:
@@ -34338,9 +34356,21 @@ MonoBehaviour:
         fsmVarParams: []
         fsmArrayParams: []
         fsmEnumParams: []
-        fsmFloatParams: []
+        fsmFloatParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
         fsmIntParams: []
         fsmBoolParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
         - useVariable: 0
           name: 
           tooltip: 
@@ -34372,8 +34402,11 @@ MonoBehaviour:
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 140000001100000011000000010000000100000011000000170000001700000001000000
+        paramDataType: 130000000f00000011000000140000001100000011000000010000000100000011000000170000001700000001000000
         paramName:
+        - gameObject
+        - delay
+        - detachChildren
         - gameObject
         - activate
         - recursive
@@ -34383,8 +34416,8 @@ MonoBehaviour:
         - isTrue
         - isFalse
         - everyFrame
-        paramDataPos: 000000000000000001000000000000000100000002000000000000000100000002000000
-        paramByteDataSize: 000000000000000000000000010000000100000000000000000000000000000001000000
+        paramDataPos: 000000000000000000000000000000000100000002000000000000000100000003000000000000000100000002000000
+        paramByteDataSize: 000000000000000000000000000000000000000000000000010000000100000000000000000000000000000001000000
     - name: State 1
       description: 
       colorIndex: 0
@@ -34402,7 +34435,7 @@ MonoBehaviour:
           name: FINISHED
           isSystemEvent: 1
           isGlobal: 0
-        toState: State 1 - The Wait
+        toState: State 1 - The Start
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -69783,6 +69816,74 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!1001 &4997511190111394652
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 663660688018967467, guid: 7ce3b69d94ceffe4da9213c69e140803,
+        type: 3}
+      propertyPath: m_Name
+      value: Rooftop_Base_Z
+      objectReference: {fileID: 0}
+    - target: {fileID: 4055133441329085902, guid: 7ce3b69d94ceffe4da9213c69e140803,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4055133441329085902, guid: 7ce3b69d94ceffe4da9213c69e140803,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4055133441329085902, guid: 7ce3b69d94ceffe4da9213c69e140803,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4055133441329085902, guid: 7ce3b69d94ceffe4da9213c69e140803,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4055133441329085902, guid: 7ce3b69d94ceffe4da9213c69e140803,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4055133441329085902, guid: 7ce3b69d94ceffe4da9213c69e140803,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4055133441329085902, guid: 7ce3b69d94ceffe4da9213c69e140803,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4055133441329085902, guid: 7ce3b69d94ceffe4da9213c69e140803,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4055133441329085902, guid: 7ce3b69d94ceffe4da9213c69e140803,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4055133441329085902, guid: 7ce3b69d94ceffe4da9213c69e140803,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7ce3b69d94ceffe4da9213c69e140803, type: 3}
 --- !u!1 &5021889381088140058
 GameObject:
   m_ObjectHideFlags: 0
@@ -93232,3 +93333,4 @@ SceneRoots:
   - {fileID: 1965817534}
   - {fileID: 806214612}
   - {fileID: 1078365850}
+  - {fileID: 4997511190111394652}
