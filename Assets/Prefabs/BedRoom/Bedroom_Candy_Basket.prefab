@@ -5197,7 +5197,7 @@ MonoBehaviour:
           name: Dead
           isSystemEvent: 0
           isGlobal: 0
-        toState: Activate Parts
+        toState: Deactivate Object
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -5305,7 +5305,7 @@ MonoBehaviour:
       position:
         serializedVersion: 2
         x: 237
-        y: 100
+        y: 72
         width: 115.79
         height: 32
       isBreakpoint: 0
@@ -5479,8 +5479,8 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 436
-        y: 97
+        x: 402
+        y: 130
         width: 135.61
         height: 16
       isBreakpoint: 0
@@ -34451,6 +34451,16 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4854485844180336597}
     m_Modifications:
+    - target: {fileID: 1471943336473303689, guid: cb4f64e3790071845b47d919a6f9e2a9,
+        type: 3}
+      propertyPath: fsm.variables.arrayVariables.Array.data[0].objectTypeName
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 1471943336473303689, guid: cb4f64e3790071845b47d919a6f9e2a9,
+        type: 3}
+      propertyPath: fsm.variables.arrayVariables.Array.data[1].objectTypeName
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 8631937298997782582, guid: cb4f64e3790071845b47d919a6f9e2a9,
         type: 3}
       propertyPath: m_Name
