@@ -1684,7 +1684,6 @@ GameObject:
   - component: {fileID: 4822331616654054810}
   - component: {fileID: 6404038517807726957}
   - component: {fileID: 3854354460428736965}
-  - component: {fileID: 2783867333726829946}
   - component: {fileID: 4723718769829213764}
   - component: {fileID: 4681225332562437705}
   - component: {fileID: 8459876024242892117}
@@ -1773,22 +1772,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!208 &2783867333726829946
-NavMeshObstacle:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1729118793524668122}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Shape: 1
-  m_Extents: {x: 0.33900002, y: 1.023, z: 0.536}
-  m_MoveThreshold: 0.1
-  m_Carve: 0
-  m_CarveOnlyStationary: 1
-  m_Center: {x: 0.003, y: 1.023, z: 0.062000003}
-  m_TimeToStationary: 0.5
 --- !u!65 &4723718769829213764
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1905,7 +1888,7 @@ Rigidbody:
   m_Mass: 200
   m_LinearDamping: 0
   m_AngularDamping: 0.05
-  m_CenterOfMass: {x: 0, y: -0.1, z: 0}
+  m_CenterOfMass: {x: 0, y: -0.2, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
   m_IncludeLayers:
@@ -1919,8 +1902,8 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 14
-  m_CollisionDetection: 2
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!114 &5016245940396560943
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2468,8 +2451,8 @@ MonoBehaviour:
         serializedVersion: 2
         x: 64
         y: 112
-        width: 130.8
-        height: 32
+        width: 128.22
+        height: 48
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
@@ -2483,15 +2466,26 @@ MonoBehaviour:
         linkConstraint: 0
         linkTarget: 0
         colorIndex: 0
+      - fsmEvent:
+          name: FINISHED
+          isSystemEvent: 1
+          isGlobal: 0
+        toState: Deal 1 damage
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.CollisionEvent
+        - HutongGames.PlayMaker.Actions.CollisionEvent
         customNames:
         - 
-        actionEnabled: 01
-        actionIsOpen: 01
-        actionStartIndex: 00000000
-        actionHashCodes: beb33100
+        - 
+        actionEnabled: 0101
+        actionIsOpen: 0101
+        actionStartIndex: 0000000006000000
+        actionHashCodes: beb33100beb33100
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
@@ -2500,7 +2494,21 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: {fileID: 0}
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 0}
         fsmOwnerDefaultParams:
+        - ownerOption: 0
+          gameObject:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 0}
         - ownerOption: 0
           gameObject:
             useVariable: 0
@@ -2522,11 +2530,23 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: Weapon
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: Enemy
         fsmObjectParams: []
         fsmVarParams: []
         fsmArrayParams: []
         fsmEnumParams: []
         fsmFloatParams:
+        - useVariable: 1
+          name: collisionForce
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
         - useVariable: 1
           name: collisionForce
           tooltip: 
@@ -2542,12 +2562,13 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - next
-        byteData: 00000000
+        - FINISHED
+        byteData: 0000000000000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 14000000070000001200000017000000130000000f000000
+        paramDataType: 14000000070000001200000017000000130000000f00000014000000070000001200000017000000130000000f000000
         paramName:
         - gameObject
         - collision
@@ -2555,8 +2576,14 @@ MonoBehaviour:
         - sendEvent
         - storeCollider
         - storeForce
-        paramDataPos: 000000000000000000000000000000000000000000000000
-        paramByteDataSize: 000000000400000000000000000000000000000000000000
+        - gameObject
+        - collision
+        - collideTag
+        - sendEvent
+        - storeCollider
+        - storeForce
+        paramDataPos: 000000000000000000000000000000000000000000000000010000000400000001000000010000000100000001000000
+        paramByteDataSize: 000000000400000000000000000000000000000000000000000000000400000000000000000000000000000000000000
     - name: Check force
       description: 
       colorIndex: 4

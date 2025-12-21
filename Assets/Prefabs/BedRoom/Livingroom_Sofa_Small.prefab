@@ -6795,7 +6795,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 126
+  m_Constraints: 0
   m_CollisionDetection: 0
 --- !u!114 &4392520810660469505
 MonoBehaviour:
@@ -6822,8 +6822,8 @@ MonoBehaviour:
         serializedVersion: 2
         x: 50
         y: 100
-        width: 125.26
-        height: 32
+        width: 124.08
+        height: 48
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
@@ -6837,25 +6837,56 @@ MonoBehaviour:
         linkConstraint: 0
         linkTarget: 0
         colorIndex: 0
+      - fsmEvent:
+          name: FINISHED
+          isSystemEvent: 1
+          isGlobal: 0
+        toState: Activate Parts
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.FloatCompare
+        - HutongGames.PlayMaker.Actions.TriggerEvent
         customNames:
         - 
-        actionEnabled: 01
-        actionIsOpen: 01
-        actionStartIndex: 00000000
-        actionHashCodes: 1bcdca04
+        - 
+        actionEnabled: 0101
+        actionIsOpen: 0101
+        actionStartIndex: 0000000007000000
+        actionHashCodes: 1bcdca049c512400
         unityObjectParams: []
-        fsmGameObjectParams: []
-        fsmOwnerDefaultParams: []
+        fsmGameObjectParams:
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 0}
+        fsmOwnerDefaultParams:
+        - ownerOption: 0
+          gameObject:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 0}
         animationCurveParams: []
         functionCallParams: []
         fsmTemplateControlParams: []
         fsmEventTargetParams: []
         fsmPropertyParams: []
         layoutOptionParams: []
-        fsmStringParams: []
+        fsmStringParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: Fairy_Shield
         fsmObjectParams: []
         fsmVarParams: []
         fsmArrayParams: []
@@ -6864,9 +6895,9 @@ MonoBehaviour:
         - useVariable: 1
           name: health
           tooltip: 
-          showInInspector: 0
+          showInInspector: 1
           networkSync: 0
-          value: 3
+          value: 5
         - useVariable: 0
           name: 
           tooltip: 
@@ -6890,12 +6921,13 @@ MonoBehaviour:
         - next
         - next
         - 
-        byteData: 01
+        - FINISHED
+        byteData: 0100000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 0f0000000f0000000f00000017000000170000001700000001000000
+        paramDataType: 0f0000000f0000000f000000170000001700000017000000010000001400000007000000120000001700000013000000
         paramName:
         - float1
         - float2
@@ -6904,8 +6936,13 @@ MonoBehaviour:
         - lessThan
         - greaterThan
         - everyFrame
-        paramDataPos: 00000000010000000200000000000000010000000200000000000000
-        paramByteDataSize: 00000000000000000000000000000000000000000000000001000000
+        - gameObject
+        - trigger
+        - collideTag
+        - sendEvent
+        - storeCollider
+        paramDataPos: 000000000100000002000000000000000100000002000000000000000000000001000000000000000300000000000000
+        paramByteDataSize: 000000000000000000000000000000000000000000000000010000000000000004000000000000000000000000000000
     - name: Activate Parts
       description: 
       colorIndex: 0
@@ -7181,9 +7218,9 @@ MonoBehaviour:
       - useVariable: 1
         name: health
         tooltip: 
-        showInInspector: 0
+        showInInspector: 1
         networkSync: 0
-        value: 3
+        value: 5
       intVariables: []
       boolVariables: []
       stringVariables: []
@@ -35557,6 +35594,8 @@ Transform:
   - {fileID: 3778454387403559671}
   - {fileID: 3520422161936715382}
   - {fileID: 5301880523761410283}
+  - {fileID: 7803918401213578720}
+  - {fileID: 3577072469720206050}
   - {fileID: 3190791667244802388}
   m_Father: {fileID: 8941032165316271280}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -36088,3 +36127,151 @@ MonoBehaviour:
     handleAnimatorIK: 0
   fsmTemplate: {fileID: 0}
   eventHandlerComponentsAdded: 0
+--- !u!1001 &1316046277352868335
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5337827068536096883}
+    m_Modifications:
+    - target: {fileID: 8631937298997782582, guid: cb4f64e3790071845b47d919a6f9e2a9,
+        type: 3}
+      propertyPath: m_Name
+      value: Random_Breakable_Candy
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: cb4f64e3790071845b47d919a6f9e2a9,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.084
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: cb4f64e3790071845b47d919a6f9e2a9,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.323
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: cb4f64e3790071845b47d919a6f9e2a9,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.251
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: cb4f64e3790071845b47d919a6f9e2a9,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: cb4f64e3790071845b47d919a6f9e2a9,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: cb4f64e3790071845b47d919a6f9e2a9,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: cb4f64e3790071845b47d919a6f9e2a9,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: cb4f64e3790071845b47d919a6f9e2a9,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: cb4f64e3790071845b47d919a6f9e2a9,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: cb4f64e3790071845b47d919a6f9e2a9,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: cb4f64e3790071845b47d919a6f9e2a9, type: 3}
+--- !u!4 &7803918401213578720 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 9083372792005522447, guid: cb4f64e3790071845b47d919a6f9e2a9,
+    type: 3}
+  m_PrefabInstance: {fileID: 1316046277352868335}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &5740628377835896557
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5337827068536096883}
+    m_Modifications:
+    - target: {fileID: 8631937298997782582, guid: cb4f64e3790071845b47d919a6f9e2a9,
+        type: 3}
+      propertyPath: m_Name
+      value: Random_Breakable_Candy (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: cb4f64e3790071845b47d919a6f9e2a9,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.084
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: cb4f64e3790071845b47d919a6f9e2a9,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.323
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: cb4f64e3790071845b47d919a6f9e2a9,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.266
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: cb4f64e3790071845b47d919a6f9e2a9,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: cb4f64e3790071845b47d919a6f9e2a9,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: cb4f64e3790071845b47d919a6f9e2a9,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: cb4f64e3790071845b47d919a6f9e2a9,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: cb4f64e3790071845b47d919a6f9e2a9,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: cb4f64e3790071845b47d919a6f9e2a9,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: cb4f64e3790071845b47d919a6f9e2a9,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: cb4f64e3790071845b47d919a6f9e2a9, type: 3}
+--- !u!4 &3577072469720206050 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 9083372792005522447, guid: cb4f64e3790071845b47d919a6f9e2a9,
+    type: 3}
+  m_PrefabInstance: {fileID: 5740628377835896557}
+  m_PrefabAsset: {fileID: 0}
