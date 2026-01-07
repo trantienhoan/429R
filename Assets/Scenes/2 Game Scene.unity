@@ -1577,7 +1577,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &121109470
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19578,7 +19578,6 @@ Transform:
   - {fileID: 280019352}
   - {fileID: 345804454}
   - {fileID: 1654583169}
-  - {fileID: 1990975457}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &591989514
@@ -51121,80 +51120,6 @@ MonoBehaviour:
     handleAnimatorIK: 0
   fsmTemplate: {fileID: 0}
   eventHandlerComponentsAdded: 0
---- !u!1001 &1990975456
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 576831366}
-    m_Modifications:
-    - target: {fileID: 2807503199306651173, guid: aa04316d160542f4e8bd170f578b6d4b,
-        type: 3}
-      propertyPath: m_Name
-      value: Livingroom_Base_Z
-      objectReference: {fileID: 0}
-    - target: {fileID: 3295950912601869471, guid: aa04316d160542f4e8bd170f578b6d4b,
-        type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3295950912601869471, guid: aa04316d160542f4e8bd170f578b6d4b,
-        type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3295950912601869471, guid: aa04316d160542f4e8bd170f578b6d4b,
-        type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3295950912601869471, guid: aa04316d160542f4e8bd170f578b6d4b,
-        type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3295950912601869471, guid: aa04316d160542f4e8bd170f578b6d4b,
-        type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3295950912601869471, guid: aa04316d160542f4e8bd170f578b6d4b,
-        type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3295950912601869471, guid: aa04316d160542f4e8bd170f578b6d4b,
-        type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3295950912601869471, guid: aa04316d160542f4e8bd170f578b6d4b,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3295950912601869471, guid: aa04316d160542f4e8bd170f578b6d4b,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3295950912601869471, guid: aa04316d160542f4e8bd170f578b6d4b,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: aa04316d160542f4e8bd170f578b6d4b, type: 3}
---- !u!4 &1990975457 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 3295950912601869471, guid: aa04316d160542f4e8bd170f578b6d4b,
-    type: 3}
-  m_PrefabInstance: {fileID: 1990975456}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1991909845
 GameObject:
   m_ObjectHideFlags: 0
@@ -52017,7 +51942,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 01010101010101
-        actionIsOpen: 00000000010101
+        actionIsOpen: 00000101010101
         actionStartIndex: 0000000003000000080000000d00000012000000170000001c000000
         actionHashCodes: 9ff80c02c34b4105b2cf1000b2cf1000b2cf1000c34b410548c01101
         unityObjectParams: []
@@ -52245,16 +52170,18 @@ MonoBehaviour:
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.AnimatorPlay
+        - HutongGames.PlayMaker.Actions.ActivateGameObject
         - HutongGames.PlayMaker.Actions.AnimatorPlay
         - HutongGames.PlayMaker.Actions.Wait
         customNames:
         - 
         - 
         - 
-        actionEnabled: 010101
-        actionIsOpen: 010101
-        actionStartIndex: 00000000050000000a000000
-        actionHashCodes: c34b4105c34b410548c01101
+        - 
+        actionEnabled: 01010101
+        actionIsOpen: 01010101
+        actionStartIndex: 00000000050000000a0000000f000000
+        actionHashCodes: c34b4105b2cf1000c34b410548c01101
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams:
@@ -52262,6 +52189,14 @@ MonoBehaviour:
           gameObject:
             useVariable: 1
             name: Livingroom_Base
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 0}
+        - ownerOption: 1
+          gameObject:
+            useVariable: 1
+            name: Fairy
             tooltip: 
             showInInspector: 0
             networkSync: 0
@@ -52329,7 +52264,19 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0
-        fsmBoolParams: []
+        fsmBoolParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
         fsmVector2Params: []
         fsmVector3Params: []
         fsmColorParams: []
@@ -52337,17 +52284,22 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - FINISHED
-        byteData: 000001
+        byteData: 0000000001
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1400000012000000100000000f000000010000001400000012000000100000000f000000010000000f0000001700000001000000
+        paramDataType: 1400000012000000100000000f0000000100000014000000110000001100000001000000010000001400000012000000100000000f000000010000000f0000001700000001000000
         paramName:
         - gameObject
         - stateName
         - layer
         - normalizedTime
+        - everyFrame
+        - gameObject
+        - activate
+        - recursive
+        - resetOnExit
         - everyFrame
         - gameObject
         - stateName
@@ -52357,8 +52309,8 @@ MonoBehaviour:
         - time
         - finishEvent
         - realTime
-        paramDataPos: 00000000000000000000000000000000000000000100000001000000010000000100000001000000020000000000000002000000
-        paramByteDataSize: 00000000000000000000000000000000010000000000000000000000000000000000000001000000000000000000000001000000
+        paramDataPos: 000000000000000000000000000000000000000001000000000000000100000001000000020000000200000001000000010000000100000003000000020000000000000004000000
+        paramByteDataSize: 000000000000000000000000000000000100000000000000000000000000000001000000010000000000000000000000000000000000000001000000000000000000000001000000
     - name: Stage6 - Rooffield Start
       description: 
       colorIndex: 0
