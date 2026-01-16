@@ -11096,7 +11096,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 010101010101
-        actionIsOpen: 010101000000
+        actionIsOpen: 010101010101
         actionStartIndex: 0000000004000000060000000b0000001c0000001f000000
         actionHashCodes: 87aa970015264c01c34b4105910fc300230cc800b2cf1000
         unityObjectParams: []
@@ -11189,7 +11189,7 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           enumName: HutongGames.EasingFunction+Ease
-          intValue: 0
+          intValue: 22
         fsmFloatParams:
         - useVariable: 1
           name: 
@@ -11214,7 +11214,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 2
+          value: 1
         fsmIntParams:
         - useVariable: 1
           name: 
@@ -11284,7 +11284,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {x: 0.01, y: 0.01, z: 0.01}
+          value: {x: 1.25, y: 1.25, z: 1.25}
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
@@ -11751,7 +11751,7 @@ MonoBehaviour:
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
-          name: Fairy
+          name: Player
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -11799,7 +11799,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: Fairy
+          value: Player
         fsmObjectParams: []
         fsmVarParams: []
         fsmArrayParams: []
@@ -11887,7 +11887,7 @@ MonoBehaviour:
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
-          name: Fairy
+          name: Player
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -12014,7 +12014,7 @@ MonoBehaviour:
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
-          name: Fairy
+          name: Player
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -12198,25 +12198,25 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 010101010101
-        actionIsOpen: 000000000101
+        actionIsOpen: 000001010101
         actionStartIndex: 0000000002000000070000000a0000000e00000015000000
         actionHashCodes: 15264c01c34b4105f0eeac0136f094001bcdca049c512400
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
-          name: Fairy
+          name: Player
           tooltip: 
           showInInspector: 0
           networkSync: 0
           value: {fileID: 0}
         - useVariable: 1
-          name: Fairy
+          name: Player
           tooltip: 
           showInInspector: 0
           networkSync: 0
           value: {fileID: 0}
         - useVariable: 1
-          name: Fairy
+          name: Player
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -12280,7 +12280,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: Fairy
+          value: Player
         fsmObjectParams: []
         fsmVarParams: []
         fsmArrayParams: []
@@ -12299,13 +12299,13 @@ MonoBehaviour:
           networkSync: 0
           value: 1
         - useVariable: 1
-          name: distanceToFairy
+          name: distanceToPlayer
           tooltip: 
           showInInspector: 0
           networkSync: 0
           value: 0
         - useVariable: 1
-          name: distanceToFairy
+          name: distanceToPlayer
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -12430,19 +12430,19 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 01010101010101
-        actionIsOpen: 00000100010100
+        actionIsOpen: 01010101010101
         actionStartIndex: 0000000004000000060000000b00000014000000180000001f000000
         actionHashCodes: 5e69bb0415264c01c34b41054e66130136f094001bcdca0448c01101
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
-          name: Fairy
+          name: Player
           tooltip: 
           showInInspector: 0
           networkSync: 0
           value: {fileID: 0}
         - useVariable: 1
-          name: Fairy
+          name: Player
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -12496,7 +12496,7 @@ MonoBehaviour:
             ownerOption: 1
             gameObject:
               useVariable: 1
-              name: Fairy
+              name: Player
               tooltip: 
               showInInspector: 0
               networkSync: 0
@@ -12507,7 +12507,7 @@ MonoBehaviour:
             tooltip: 
             showInInspector: 0
             networkSync: 0
-            value: FairyHealth
+            value: PlayerHealth
           sendToChildren:
             useVariable: 0
             name: 
@@ -12555,13 +12555,13 @@ MonoBehaviour:
           networkSync: 0
           value: 0.1
         - useVariable: 1
-          name: distanceToFairy
+          name: distanceToPlayer
           tooltip: 
           showInInspector: 0
           networkSync: 0
           value: 0
         - useVariable: 1
-          name: distanceToFairy
+          name: distanceToPlayer
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -12634,7 +12634,7 @@ MonoBehaviour:
         - 
         - back
         - LoopEvent
-        byteData: 0000010100
+        byteData: 0000010101
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
@@ -13086,8 +13086,8 @@ ParticleSystem:
     startLifetime:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 1.25
-      minScalar: 1
+      scalar: 1.5
+      minScalar: 2
       maxCurve:
         serializedVersion: 2
         m_Curve:
