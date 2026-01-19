@@ -13233,6 +13233,95 @@ MonoBehaviour:
     handleAnimatorIK: 0
   fsmTemplate: {fileID: 0}
   eventHandlerComponentsAdded: 0
+--- !u!1001 &1178865776652737256
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7316093555075644958}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: eb422bf4ca551834281eff703e3f289e,
+        type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.0019260508
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eb422bf4ca551834281eff703e3f289e,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.0019260468
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eb422bf4ca551834281eff703e3f289e,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.0019260502
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eb422bf4ca551834281eff703e3f289e,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.000050000184
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eb422bf4ca551834281eff703e3f289e,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.0018072741
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eb422bf4ca551834281eff703e3f289e,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.0006822413
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eb422bf4ca551834281eff703e3f289e,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: -0.00000007643716
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eb422bf4ca551834281eff703e3f289e,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.00000025690227
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eb422bf4ca551834281eff703e3f289e,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.9405301
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eb422bf4ca551834281eff703e3f289e,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.3397105
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eb422bf4ca551834281eff703e3f289e,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: -39.718
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eb422bf4ca551834281eff703e3f289e,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: -180
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: eb422bf4ca551834281eff703e3f289e,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: eb422bf4ca551834281eff703e3f289e,
+        type: 3}
+      propertyPath: m_Name
+      value: pumpkin_crown
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: eb422bf4ca551834281eff703e3f289e, type: 3}
+--- !u!4 &1717724482778250499 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: eb422bf4ca551834281eff703e3f289e,
+    type: 3}
+  m_PrefabInstance: {fileID: 1178865776652737256}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &4535378057019586411
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -13313,7 +13402,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -2632606855661221515, guid: 942848d9d225de7449e6fb9544ef7dd8,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1717724482778250499}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 942848d9d225de7449e6fb9544ef7dd8,
         type: 3}
@@ -13419,6 +13512,12 @@ Animator:
 --- !u!4 &4141727455347839104 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 942848d9d225de7449e6fb9544ef7dd8,
+    type: 3}
+  m_PrefabInstance: {fileID: 4535378057019586411}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7316093555075644958 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -2632606855661221515, guid: 942848d9d225de7449e6fb9544ef7dd8,
     type: 3}
   m_PrefabInstance: {fileID: 4535378057019586411}
   m_PrefabAsset: {fileID: 0}
