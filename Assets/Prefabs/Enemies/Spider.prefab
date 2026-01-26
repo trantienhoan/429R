@@ -104,10 +104,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7074447553022413392}
-  - component: {fileID: 8017417486847688500}
   m_Layer: 0
   m_Name: Butt
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -128,27 +127,6 @@ Transform:
   - {fileID: 6964223323252811960}
   m_Father: {fileID: 2205526779239161683}
   m_LocalEulerAnglesHint: {x: 15.687086, y: -179.99991, z: -179.99997}
---- !u!135 &8017417486847688500
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 717461559909622988}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 0.002
-  m_Center: {x: 0, y: 0.0016, z: 0}
 --- !u!1 &808974090144718441
 GameObject:
   m_ObjectHideFlags: 0
@@ -5672,7 +5650,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &7476848429728149272
 Transform:
   m_ObjectHideFlags: 0
@@ -6004,7 +5982,8 @@ GameObject:
   - component: {fileID: 2569083251903338554}
   - component: {fileID: 7120115540696113965}
   - component: {fileID: 2373344247748511595}
-  - component: {fileID: 6751385551715590777}
+  - component: {fileID: 5285635192736459050}
+  - component: {fileID: 2054824213020782847}
   m_Layer: 0
   m_Name: Spider
   m_TagString: Enemy
@@ -6041,8 +6020,8 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: -902729914
   m_Radius: 0.21
-  m_Speed: 0.42
-  m_Acceleration: 8
+  m_Speed: 2
+  m_Acceleration: 1
   avoidancePriority: 50
   m_AngularSpeed: 360
   m_StoppingDistance: 0
@@ -6106,15 +6085,17 @@ MonoBehaviour:
         actionNames:
         - HutongGames.PlayMaker.Actions.TriggerEvent
         - HutongGames.PlayMaker.Actions.TriggerEvent
+        - HutongGames.PlayMaker.Actions.TriggerEvent
         - HutongGames.PlayMaker.Actions.CollisionEvent
         customNames:
         - 
         - 
         - 
-        actionEnabled: 010101
-        actionIsOpen: 010101
-        actionStartIndex: 00000000050000000a000000
-        actionHashCodes: 9c5124009c512400beb33100
+        - 
+        actionEnabled: 01010101
+        actionIsOpen: 01010101
+        actionStartIndex: 00000000050000000a0000000f000000
+        actionHashCodes: 9c5124009c5124009c512400beb33100
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
@@ -6135,7 +6116,21 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: {fileID: 0}
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 0}
         fsmOwnerDefaultParams:
+        - ownerOption: 1
+          gameObject:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 1312216107182037821}
         - ownerOption: 1
           gameObject:
             useVariable: 0
@@ -6184,6 +6179,12 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
+          value: FIREKILL
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
           value: Weapon
         fsmObjectParams: []
         fsmVarParams: []
@@ -6206,14 +6207,20 @@ MonoBehaviour:
         stringParams:
         - next
         - next
+        - next
         - check
-        byteData: 000000000000000000000000
+        byteData: 00000000000000000200000000000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1400000007000000120000001700000013000000140000000700000012000000170000001300000014000000070000001200000017000000130000000f000000
+        paramDataType: 14000000070000001200000017000000130000001400000007000000120000001700000013000000140000000700000012000000170000001300000014000000070000001200000017000000130000000f000000
         paramName:
+        - gameObject
+        - trigger
+        - collideTag
+        - sendEvent
+        - storeCollider
         - gameObject
         - trigger
         - collideTag
@@ -6230,8 +6237,8 @@ MonoBehaviour:
         - sendEvent
         - storeCollider
         - storeForce
-        paramDataPos: 00000000000000000000000000000000000000000100000004000000010000000100000001000000020000000800000002000000020000000200000000000000
-        paramByteDataSize: 00000000040000000000000000000000000000000000000004000000000000000000000000000000000000000400000000000000000000000000000000000000
+        paramDataPos: 000000000000000000000000000000000000000001000000040000000100000001000000010000000200000008000000020000000200000002000000030000000c00000003000000030000000300000000000000
+        paramByteDataSize: 000000000400000000000000000000000000000000000000040000000000000000000000000000000000000004000000000000000000000000000000000000000400000000000000000000000000000000000000
     - name: Dead
       description: 
       colorIndex: 0
@@ -7878,7 +7885,28 @@ MonoBehaviour:
     handleAnimatorIK: 0
   fsmTemplate: {fileID: 0}
   eventHandlerComponentsAdded: 0
---- !u!54 &6751385551715590777
+--- !u!135 &5285635192736459050
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3569810238917063108}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.28
+  m_Center: {x: 0, y: 0.21, z: -0.09}
+--- !u!54 &2054824213020782847
 Rigidbody:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -7886,7 +7914,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3569810238917063108}
   serializedVersion: 5
-  m_Mass: 50
+  m_Mass: 500
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -7921,7 +7949,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2653177655587054684
 Transform:
   m_ObjectHideFlags: 0
@@ -13304,7 +13332,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5380579752060560771}
-  - component: {fileID: 8075274649233288060}
   m_Layer: 0
   m_Name: Head
   m_TagString: Untagged
@@ -13345,27 +13372,6 @@ Transform:
   - {fileID: 1046858521221964263}
   m_Father: {fileID: 6964223323252811960}
   m_LocalEulerAnglesHint: {x: 3.197841, y: 0.0000017144938, z: -0.000018106892}
---- !u!135 &8075274649233288060
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4783132965429344280}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 0.001
-  m_Center: {x: 0, y: 0.001, z: 0}
 --- !u!1 &4989675064918026713
 GameObject:
   m_ObjectHideFlags: 0
@@ -13382,7 +13388,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &8986349096288024622
 Transform:
   m_ObjectHideFlags: 0
@@ -14538,7 +14544,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.001
+  m_Radius: 0.003
   m_Center: {x: 0, y: 0, z: 0.0011}
 --- !u!1 &7987023365938992907
 GameObject:
@@ -14686,7 +14692,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.001
+  m_Radius: 0.003
   m_Center: {x: 0, y: 0, z: 0.0011}
 --- !u!1 &8654101142842161666
 GameObject:

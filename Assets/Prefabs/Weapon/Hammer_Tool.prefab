@@ -5169,8 +5169,8 @@ GameObject:
   - component: {fileID: 3675610110980597232}
   - component: {fileID: 4598464444358604728}
   - component: {fileID: 2689430776340711734}
+  - component: {fileID: 5347407319795000795}
   - component: {fileID: 9198337721691087930}
-  - component: {fileID: 848407732017415388}
   - component: {fileID: 2926084390192529529}
   - component: {fileID: 3991966568878862572}
   - component: {fileID: 9127762408819454023}
@@ -5256,6 +5256,27 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &5347407319795000795
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4337052619155732277}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.22536041, y: 0.38611996, z: 0.3030008}
+  m_Center: {x: 0.0001340285, y: 0.00033062696, z: -0.34305692}
 --- !u!136 &9198337721691087930
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -5276,30 +5297,9 @@ CapsuleCollider:
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.05
-  m_Height: 0.31306648
+  m_Height: 0.36
   m_Direction: 2
-  m_Center: {x: 0, y: 0, z: 0.0016129315}
---- !u!135 &848407732017415388
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4337052619155732277}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 0.2
-  m_Center: {x: 0, y: 0, z: -0.31}
+  m_Center: {x: 0, y: 0, z: -0.03}
 --- !u!54 &2926084390192529529
 Rigidbody:
   m_ObjectHideFlags: 0
