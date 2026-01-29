@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 4187936263996947498}
   - component: {fileID: 3381992444781524905}
   - component: {fileID: 2694257137416905093}
+  - component: {fileID: 2168920048878531827}
   m_Layer: 0
   m_Name: The_Soil
   m_TagString: KeyStuff
@@ -349,14 +350,18 @@ MonoBehaviour:
         - HutongGames.PlayMaker.Actions.SetFsmVariable
         - HutongGames.PlayMaker.Actions.SetFsmVariable
         - HutongGames.PlayMaker.Actions.TweenScale
+        - HutongGames.PlayMaker.Actions.ArrayGetRandom
+        - HutongGames.PlayMaker.Actions.AudioPlay
         customNames:
         - 
         - 
         - 
-        actionEnabled: 010101
-        actionIsOpen: 010101
-        actionStartIndex: 00000000050000000a000000
-        actionHashCodes: fcb1a001fcb1a001910fc300
+        - 
+        - 
+        actionEnabled: 0101010101
+        actionIsOpen: 0000000101
+        actionStartIndex: 00000000050000000a0000001b00000020000000
+        actionHashCodes: fcb1a001fcb1a001910fc3005978870081294e04
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 0
@@ -384,6 +389,14 @@ MonoBehaviour:
           gameObject:
             useVariable: 1
             name: Shield
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 0}
+        - ownerOption: 0
+          gameObject:
+            useVariable: 0
+            name: 
             tooltip: 
             showInInspector: 0
             networkSync: 0
@@ -433,7 +446,14 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: GetSoil
-        fsmObjectParams: []
+        fsmObjectParams:
+        - useVariable: 1
+          name: randomHit
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          typeName: UnityEngine.AudioClip
+          value: {fileID: 0}
         fsmVarParams:
         - variableName: 
           objectType: UnityEngine.Object
@@ -483,7 +503,46 @@ MonoBehaviour:
             stringValues: []
             vector4Values: []
             objectReferences: []
-        fsmArrayParams: []
+        - variableName: randomHit
+          objectType: UnityEngine.AudioClip
+          useVariable: 1
+          type: 12
+          floatValue: 0
+          intValue: 0
+          boolValue: 0
+          stringValue: 
+          vector4Value: {x: 0, y: 0, z: 0, w: 0}
+          objectReference: {fileID: 0}
+          arrayValue:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            type: -1
+            objectTypeName: 
+            floatValues: []
+            intValues: 
+            boolValues: 
+            stringValues: []
+            vector4Values: []
+            objectReferences: []
+        fsmArrayParams:
+        - useVariable: 1
+          name: randomHitSound
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          type: 12
+          objectTypeName: UnityEngine.AudioClip
+          floatValues: []
+          intValues: 
+          boolValues: 
+          stringValues: []
+          vector4Values: []
+          objectReferences:
+          - {fileID: 8300000, guid: e099ffdff64cfea48992357c5acf46a2, type: 3}
+          - {fileID: 8300000, guid: 70397107cf201194bbb25fb87d18f6d7, type: 3}
         fsmEnumParams:
         - useVariable: 0
           name: 
@@ -505,8 +564,32 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0.2
-        fsmIntParams: []
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
+        fsmIntParams:
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
         fsmBoolParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
         - useVariable: 0
           name: 
           tooltip: 
@@ -532,12 +615,13 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - FINISHED
-        byteData: 0000000000000100000000000000000000000000000000
+        - FINISHED
+        byteData: 000000000000010000000000000000000000000000000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1400000012000000120000002700000001000000140000001200000012000000270000000100000007000000130000001c00000007000000130000001c000000140000000f0000002a000000160000000f000000110000000700000017000000020000000100000007000000
+        paramDataType: 1400000012000000120000002700000001000000140000001200000012000000270000000100000007000000130000001c00000007000000130000001c000000140000000f0000002a000000160000000f0000001100000007000000170000000200000001000000070000002900000027000000100000001100000001000000140000000f000000180000001100000017000000
         paramName:
         - gameObject
         - fsmName
@@ -566,8 +650,18 @@ MonoBehaviour:
         - normalizedTime
         - everyFrame
         - updateType
-        paramDataPos: 000000000000000001000000000000000000000001000000020000000300000001000000010000000200000000000000000000000600000001000000010000000200000000000000000000000000000001000000000000000a000000000000000e0000001200000013000000
-        paramByteDataSize: 000000000000000000000000000000000100000000000000000000000000000000000000010000000400000000000000000000000400000000000000000000000000000000000000000000000000000000000000000000000400000000000000040000000100000004000000
+        - array
+        - storeValue
+        - index
+        - noRepeat
+        - everyFrame
+        - gameObject
+        - volume
+        - oneShotClip
+        - WaitForEndOfClip
+        - finishedEvent
+        paramDataPos: 000000000000000001000000000000000000000001000000020000000300000001000000010000000200000000000000000000000600000001000000010000000200000000000000000000000000000001000000000000000a000000000000000e000000120000001300000000000000020000000000000001000000170000000300000002000000000000000200000001000000
+        paramByteDataSize: 00000000000000000000000000000000010000000000000000000000000000000000000001000000040000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000040000000000000004000000010000000400000000000000000000000000000000000000010000000000000000000000000000000000000000000000
     - name: End
       description: 
       colorIndex: 6
@@ -668,14 +762,36 @@ MonoBehaviour:
       rectVariables: []
       quaternionVariables: []
       gameObjectVariables: []
-      objectVariables: []
+      objectVariables:
+      - useVariable: 1
+        name: randomHit
+        tooltip: 
+        showInInspector: 0
+        networkSync: 0
+        typeName: UnityEngine.AudioClip
+        value: {fileID: 0}
       materialVariables: []
       textureVariables: []
-      arrayVariables: []
+      arrayVariables:
+      - useVariable: 1
+        name: randomHitSound
+        tooltip: 
+        showInInspector: 0
+        networkSync: 0
+        type: 12
+        objectTypeName: UnityEngine.AudioClip
+        floatValues: []
+        intValues: 
+        boolValues: 
+        stringValues: []
+        vector4Values: []
+        objectReferences:
+        - {fileID: 8300000, guid: e099ffdff64cfea48992357c5acf46a2, type: 3}
+        - {fileID: 8300000, guid: 70397107cf201194bbb25fb87d18f6d7, type: 3}
       enumVariables: []
       categories:
       - 
-      variableCategoryIDs: 00000000
+      variableCategoryIDs: 000000000000000000000000
     description: 
     docUrl: 
     showStateLabel: 0
@@ -892,6 +1008,103 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.38585111
   m_Center: {x: -0.0010573566, y: 0.016176105, z: 0.0015440583}
+--- !u!82 &2168920048878531827
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5574053433701336849}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &5745457701725994513
 GameObject:
   m_ObjectHideFlags: 0
