@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: 601118046603812040}
   - component: {fileID: 5419019432973716090}
   - component: {fileID: -4984142731159461463}
+  - component: {fileID: 6928962605859122059}
   m_Layer: 0
   m_Name: Paper_Box_3
   m_TagString: Weapon
@@ -37,7 +38,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1028609331278364005}
+  - {fileID: 2763692984043548676}
   - {fileID: 7615500491993001676}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -397,7 +398,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 10
+          value: 5
         - useVariable: 0
           name: 
           tooltip: 
@@ -460,16 +461,20 @@ MonoBehaviour:
         - HutongGames.PlayMaker.Actions.SetFsmFloat
         - HutongGames.PlayMaker.Actions.ActivateGameObject
         - HutongGames.PlayMaker.Actions.Explosion
+        - HutongGames.PlayMaker.Actions.ArrayGetRandom
+        - HutongGames.PlayMaker.Actions.AudioPlay
         customNames:
         - 
         - 
         - 
         - 
         - 
-        actionEnabled: 0101010101
-        actionIsOpen: 0101010101
-        actionStartIndex: 0000000005000000090000000e00000013000000
-        actionHashCodes: 876045022a6e8a0087604502b2cf1000bc338a03
+        - 
+        - 
+        actionEnabled: 01010101010101
+        actionIsOpen: 01010101010101
+        actionStartIndex: 0000000005000000090000000e000000130000001c00000021000000
+        actionHashCodes: 876045022a6e8a0087604502b2cf1000bc338a035978870081294e04
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams:
@@ -497,6 +502,14 @@ MonoBehaviour:
             showInInspector: 0
             networkSync: 0
             value: {fileID: 2313960991164863092}
+        - ownerOption: 0
+          gameObject:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 0}
         animationCurveParams: []
         functionCallParams: []
         fsmTemplateControlParams: []
@@ -528,9 +541,56 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: health
-        fsmObjectParams: []
-        fsmVarParams: []
-        fsmArrayParams: []
+        fsmObjectParams:
+        - useVariable: 1
+          name: randomHit
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          typeName: UnityEngine.AudioClip
+          value: {fileID: 0}
+        fsmVarParams:
+        - variableName: randomHit
+          objectType: UnityEngine.AudioClip
+          useVariable: 1
+          type: 12
+          floatValue: 0
+          intValue: 0
+          boolValue: 0
+          stringValue: 
+          vector4Value: {x: 0, y: 0, z: 0, w: 0}
+          objectReference: {fileID: 0}
+          arrayValue:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            type: -1
+            objectTypeName: 
+            floatValues: []
+            intValues: 
+            boolValues: 
+            stringValues: []
+            vector4Values: []
+            objectReferences: []
+        fsmArrayParams:
+        - useVariable: 1
+          name: randomHitSound
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          type: 12
+          objectTypeName: UnityEngine.AudioClip
+          floatValues: []
+          intValues: 
+          boolValues: 
+          stringValues: []
+          vector4Values: []
+          objectReferences:
+          - {fileID: 8300000, guid: 699a818d2488fc44bac4406d98c6a681, type: 3}
+          - {fileID: 8300000, guid: 1ab0a3a1ae573ae4a83eec9c81323797, type: 3}
+          - {fileID: 8300000, guid: 956e17fac0656824b963ccb842b10876, type: 3}
         fsmEnumParams: []
         fsmFloatParams:
         - useVariable: 1
@@ -575,8 +635,20 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
         fsmIntParams:
         - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 1
           name: 
           tooltip: 
           showInInspector: 0
@@ -601,6 +673,18 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
         fsmVector2Params: []
         fsmVector3Params:
         - useVariable: 0
@@ -612,14 +696,15 @@ MonoBehaviour:
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
-        stringParams: []
-        byteData: 0000000000000000000000
+        stringParams:
+        - FINISHED
+        byteData: 000000000000000000000000
         arrayParamSizes: 00000000
         arrayParamTypes:
         - HutongGames.PlayMaker.FsmInt
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1400000012000000120000000f000000010000000f0000000f00000001000000010000001400000012000000120000000f0000000100000014000000110000001100000001000000010000001c0000000f0000000f0000000f00000007000000100000000c0000001100000001000000
+        paramDataType: 1400000012000000120000000f000000010000000f0000000f00000001000000010000001400000012000000120000000f0000000100000014000000110000001100000001000000010000001c0000000f0000000f0000000f00000007000000100000000c00000011000000010000002900000027000000100000001100000001000000140000000f000000180000001100000017000000
         paramName:
         - gameObject
         - fsmName
@@ -649,8 +734,18 @@ MonoBehaviour:
         - layerMask
         - invertMask
         - everyFrame
-        paramDataPos: 0000000000000000010000000000000000000000010000000200000001000000020000000100000002000000030000000300000003000000020000000000000001000000040000000500000000000000040000000500000006000000060000000000000000000000020000000a000000
-        paramByteDataSize: 00000000000000000000000000000000010000000000000000000000010000000100000000000000000000000000000000000000010000000000000000000000000000000100000001000000000000000000000000000000000000000400000000000000000000000000000001000000
+        - array
+        - storeValue
+        - index
+        - noRepeat
+        - everyFrame
+        - gameObject
+        - volume
+        - oneShotClip
+        - WaitForEndOfClip
+        - finishedEvent
+        paramDataPos: 0000000000000000010000000000000000000000010000000200000001000000020000000100000002000000030000000300000003000000020000000000000001000000040000000500000000000000040000000500000006000000060000000000000000000000020000000a000000000000000000000001000000030000000b0000000300000007000000000000000400000000000000
+        paramByteDataSize: 0000000000000000000000000000000001000000000000000000000001000000010000000000000000000000000000000000000001000000000000000000000000000000010000000100000000000000000000000000000000000000040000000000000000000000000000000100000000000000000000000000000000000000010000000000000000000000000000000000000000000000
     - name: Deal 999 damage
       description: 
       colorIndex: 6
@@ -851,14 +946,37 @@ MonoBehaviour:
         showInInspector: 0
         networkSync: 0
         value: {fileID: 0}
-      objectVariables: []
+      objectVariables:
+      - useVariable: 1
+        name: randomHit
+        tooltip: 
+        showInInspector: 0
+        networkSync: 0
+        typeName: UnityEngine.AudioClip
+        value: {fileID: 0}
       materialVariables: []
       textureVariables: []
-      arrayVariables: []
+      arrayVariables:
+      - useVariable: 1
+        name: randomHitSound
+        tooltip: 
+        showInInspector: 0
+        networkSync: 0
+        type: 12
+        objectTypeName: UnityEngine.AudioClip
+        floatValues: []
+        intValues: 
+        boolValues: 
+        stringValues: []
+        vector4Values: []
+        objectReferences:
+        - {fileID: 8300000, guid: 699a818d2488fc44bac4406d98c6a681, type: 3}
+        - {fileID: 8300000, guid: 1ab0a3a1ae573ae4a83eec9c81323797, type: 3}
+        - {fileID: 8300000, guid: 956e17fac0656824b963ccb842b10876, type: 3}
       enumVariables: []
       categories:
       - 
-      variableCategoryIDs: 0000000000000000
+      variableCategoryIDs: 00000000000000000000000000000000
     description: 
     docUrl: 
     showStateLabel: 0
@@ -1049,7 +1167,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 01010101
-        actionIsOpen: 00010101
+        actionIsOpen: 01010101
         actionStartIndex: 00000000050000000a0000000f000000
         actionHashCodes: b2cf1000b2cf1000a0dd8303a0dd8303
         unityObjectParams: []
@@ -1082,7 +1200,7 @@ MonoBehaviour:
             tooltip: 
             showInInspector: 0
             networkSync: 0
-            value: {fileID: 6068993102102157812}
+            value: {fileID: 6719125909450278518}
         - ownerOption: 1
           gameObject:
             useVariable: 0
@@ -1098,7 +1216,7 @@ MonoBehaviour:
             tooltip: 
             showInInspector: 0
             networkSync: 0
-            value: {fileID: 6068993102102157812}
+            value: {fileID: 6719125909450278518}
         animationCurveParams: []
         functionCallParams: []
         fsmTemplateControlParams: []
@@ -1502,6 +1620,103 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 62fb9fb1177925e4b8a383be2b9db66c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UnityEngine.XR.Content.Interaction.RayAttachModifier
+--- !u!82 &6928962605859122059
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 936478556243301555}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &2066085750543245667
 GameObject:
   m_ObjectHideFlags: 0
@@ -6402,6 +6617,7 @@ GameObject:
   - component: {fileID: 787644809845479507}
   - component: {fileID: 1744095866306785399}
   - component: {fileID: 6760371533454173822}
+  - component: {fileID: 6311091078498676820}
   m_Layer: 0
   m_Name: Smoke_Blast
   m_TagString: Untagged
@@ -11350,16 +11566,26 @@ MonoBehaviour:
         colorIndex: 0
       actionData:
         actionNames:
-        - HutongGames.PlayMaker.Actions.Wait
+        - HutongGames.PlayMaker.Actions.ArrayGetRandom
+        - HutongGames.PlayMaker.Actions.AudioPlay
         customNames:
         - 
-        actionEnabled: 01
-        actionIsOpen: 01
-        actionStartIndex: 00000000
-        actionHashCodes: 48c01101
+        - 
+        actionEnabled: 0101
+        actionIsOpen: 0101
+        actionStartIndex: 0000000005000000
+        actionHashCodes: 5978870081294e04
         unityObjectParams: []
         fsmGameObjectParams: []
-        fsmOwnerDefaultParams: []
+        fsmOwnerDefaultParams:
+        - ownerOption: 0
+          gameObject:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 0}
         animationCurveParams: []
         functionCallParams: []
         fsmTemplateControlParams: []
@@ -11367,9 +11593,56 @@ MonoBehaviour:
         fsmPropertyParams: []
         layoutOptionParams: []
         fsmStringParams: []
-        fsmObjectParams: []
-        fsmVarParams: []
-        fsmArrayParams: []
+        fsmObjectParams:
+        - useVariable: 1
+          name: randomHit
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          typeName: UnityEngine.AudioClip
+          value: {fileID: 0}
+        fsmVarParams:
+        - variableName: randomHit
+          objectType: UnityEngine.AudioClip
+          useVariable: 1
+          type: 12
+          floatValue: 0
+          intValue: 0
+          boolValue: 0
+          stringValue: 
+          vector4Value: {x: 0, y: 0, z: 0, w: 0}
+          objectReference: {fileID: 0}
+          arrayValue:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            type: -1
+            objectTypeName: 
+            floatValues: []
+            intValues: 
+            boolValues: 
+            stringValues: []
+            vector4Values: []
+            objectReferences: []
+        fsmArrayParams:
+        - useVariable: 1
+          name: randomHitSound
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          type: 12
+          objectTypeName: UnityEngine.AudioClip
+          floatValues: []
+          intValues: 
+          boolValues: 
+          stringValues: []
+          vector4Values: []
+          objectReferences:
+          - {fileID: 8300000, guid: 699a818d2488fc44bac4406d98c6a681, type: 3}
+          - {fileID: 8300000, guid: 1ab0a3a1ae573ae4a83eec9c81323797, type: 3}
+          - {fileID: 8300000, guid: 956e17fac0656824b963ccb842b10876, type: 3}
         fsmEnumParams: []
         fsmFloatParams:
         - useVariable: 0
@@ -11377,9 +11650,27 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 0.75
-        fsmIntParams: []
-        fsmBoolParams: []
+          value: 1
+        fsmIntParams:
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        fsmBoolParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
         fsmVector2Params: []
         fsmVector3Params: []
         fsmColorParams: []
@@ -11392,13 +11683,20 @@ MonoBehaviour:
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 0f0000001700000001000000
+        paramDataType: 2900000027000000100000001100000001000000140000000f000000180000001100000017000000
         paramName:
-        - time
-        - finishEvent
-        - realTime
-        paramDataPos: 000000000000000000000000
-        paramByteDataSize: 000000000000000001000000
+        - array
+        - storeValue
+        - index
+        - noRepeat
+        - everyFrame
+        - gameObject
+        - volume
+        - oneShotClip
+        - WaitForEndOfClip
+        - finishedEvent
+        paramDataPos: 00000000000000000000000000000000000000000000000000000000000000000100000000000000
+        paramByteDataSize: 00000000000000000000000000000000010000000000000000000000000000000000000000000000
     - name: Deactivate
       description: 
       colorIndex: 0
@@ -11494,14 +11792,37 @@ MonoBehaviour:
       rectVariables: []
       quaternionVariables: []
       gameObjectVariables: []
-      objectVariables: []
+      objectVariables:
+      - useVariable: 1
+        name: randomHit
+        tooltip: 
+        showInInspector: 0
+        networkSync: 0
+        typeName: UnityEngine.AudioClip
+        value: {fileID: 0}
       materialVariables: []
       textureVariables: []
-      arrayVariables: []
+      arrayVariables:
+      - useVariable: 1
+        name: randomHitSound
+        tooltip: 
+        showInInspector: 0
+        networkSync: 0
+        type: 12
+        objectTypeName: UnityEngine.AudioClip
+        floatValues: []
+        intValues: 
+        boolValues: 
+        stringValues: []
+        vector4Values: []
+        objectReferences:
+        - {fileID: 8300000, guid: 699a818d2488fc44bac4406d98c6a681, type: 3}
+        - {fileID: 8300000, guid: 1ab0a3a1ae573ae4a83eec9c81323797, type: 3}
+        - {fileID: 8300000, guid: 956e17fac0656824b963ccb842b10876, type: 3}
       enumVariables: []
       categories:
       - 
-      variableCategoryIDs: 
+      variableCategoryIDs: 0000000000000000
     description: 
     docUrl: 
     showStateLabel: 0
@@ -11549,6 +11870,103 @@ MonoBehaviour:
     handleAnimatorIK: 0
   fsmTemplate: {fileID: 0}
   eventHandlerComponentsAdded: 0
+--- !u!82 &6311091078498676820
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2313960991164863092}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &4869287807812570555
 GameObject:
   m_ObjectHideFlags: 0
@@ -16383,75 +16801,99 @@ ParticleSystemRenderer:
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
   m_MaskInteraction: 0
---- !u!1001 &7328454378466863152
+--- !u!1 &6719125909450278518
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2763692984043548676}
+  m_Layer: 0
+  m_Name: Paper_Box_3_Drop
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &2763692984043548676
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6719125909450278518}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.11500001, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 8406118723748918639}
+  - {fileID: 3495754692662373645}
+  - {fileID: 7397083314408322627}
+  m_Father: {fileID: 6100248801652272385}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &767326198245065056
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 6100248801652272385}
+    m_TransformParent: {fileID: 2763692984043548676}
     m_Modifications:
-    - target: {fileID: 2373344247748511595, guid: 5075d28a224617f4597ed08c924dfd6f,
-        type: 3}
-      propertyPath: fsm.states.Array.data[5].actionData.fsmEventTargetParams.Array.data[0].gameObject.gameObject.value
-      value: 
-      objectReference: {fileID: 0}
-    - target: {fileID: 3569810238917063108, guid: 5075d28a224617f4597ed08c924dfd6f,
+    - target: {fileID: 8631937298997782582, guid: 206a45de6df65d546b4748308446a24d,
         type: 3}
       propertyPath: m_Name
-      value: Spider
+      value: Random_Breakable_Book
       objectReference: {fileID: 0}
-    - target: {fileID: 3569810238917063108, guid: 5075d28a224617f4597ed08c924dfd6f,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7779331538366485845, guid: 5075d28a224617f4597ed08c924dfd6f,
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.01
+      value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 7779331538366485845, guid: 5075d28a224617f4597ed08c924dfd6f,
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.001
+      value: 0.004
       objectReference: {fileID: 0}
-    - target: {fileID: 7779331538366485845, guid: 5075d28a224617f4597ed08c924dfd6f,
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.044
+      value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 7779331538366485845, guid: 5075d28a224617f4597ed08c924dfd6f,
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
         type: 3}
       propertyPath: m_LocalRotation.w
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 7779331538366485845, guid: 5075d28a224617f4597ed08c924dfd6f,
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
-    - target: {fileID: 7779331538366485845, guid: 5075d28a224617f4597ed08c924dfd6f,
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
-    - target: {fileID: 7779331538366485845, guid: 5075d28a224617f4597ed08c924dfd6f,
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
-    - target: {fileID: 7779331538366485845, guid: 5075d28a224617f4597ed08c924dfd6f,
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 7779331538366485845, guid: 5075d28a224617f4597ed08c924dfd6f,
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 7779331538366485845, guid: 5075d28a224617f4597ed08c924dfd6f,
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
@@ -16460,16 +16902,158 @@ PrefabInstance:
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 5075d28a224617f4597ed08c924dfd6f, type: 3}
---- !u!4 &1028609331278364005 stripped
+  m_SourcePrefab: {fileID: 100100000, guid: 206a45de6df65d546b4748308446a24d, type: 3}
+--- !u!4 &8406118723748918639 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 7779331538366485845, guid: 5075d28a224617f4597ed08c924dfd6f,
+  m_CorrespondingSourceObject: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
     type: 3}
-  m_PrefabInstance: {fileID: 7328454378466863152}
+  m_PrefabInstance: {fileID: 767326198245065056}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &6068993102102157812 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 3569810238917063108, guid: 5075d28a224617f4597ed08c924dfd6f,
+--- !u!1001 &1776994928428646988
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2763692984043548676}
+    m_Modifications:
+    - target: {fileID: 8631937298997782582, guid: 206a45de6df65d546b4748308446a24d,
+        type: 3}
+      propertyPath: m_Name
+      value: Random_Breakable_Book (2)
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.004
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.096
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 206a45de6df65d546b4748308446a24d, type: 3}
+--- !u!4 &7397083314408322627 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
     type: 3}
-  m_PrefabInstance: {fileID: 7328454378466863152}
+  m_PrefabInstance: {fileID: 1776994928428646988}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &5660449904252967170
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2763692984043548676}
+    m_Modifications:
+    - target: {fileID: 8631937298997782582, guid: 206a45de6df65d546b4748308446a24d,
+        type: 3}
+      propertyPath: m_Name
+      value: Random_Breakable_Book (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.004
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.088
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 206a45de6df65d546b4748308446a24d, type: 3}
+--- !u!4 &3495754692662373645 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 9083372792005522447, guid: 206a45de6df65d546b4748308446a24d,
+    type: 3}
+  m_PrefabInstance: {fileID: 5660449904252967170}
   m_PrefabAsset: {fileID: 0}
