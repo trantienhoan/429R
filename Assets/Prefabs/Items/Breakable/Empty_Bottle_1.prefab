@@ -12,7 +12,6 @@ GameObject:
   - component: {fileID: 8673381672073983238}
   - component: {fileID: 7737857523890534323}
   - component: {fileID: 4762353463863273535}
-  - component: {fileID: 6056248979108780595}
   m_Layer: 0
   m_Name: Smoke_Blast
   m_TagString: Untagged
@@ -5183,103 +5182,6 @@ MonoBehaviour:
     handleAnimatorIK: 0
   fsmTemplate: {fileID: 0}
   eventHandlerComponentsAdded: 0
---- !u!82 &6056248979108780595
-AudioSource:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1762679321382275425}
-  m_Enabled: 1
-  serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 0}
-  m_PlayOnAwake: 1
-  m_Volume: 1
-  m_Pitch: 1
-  Loop: 0
-  Mute: 0
-  Spatialize: 0
-  SpatializePostEffects: 0
-  Priority: 128
-  DopplerLevel: 1
-  MinDistance: 1
-  MaxDistance: 500
-  Pan2D: 0
-  rolloffMode: 0
-  BypassEffects: 0
-  BypassListenerEffects: 0
-  BypassReverbZones: 0
-  rolloffCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  panLevelCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  spreadCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  reverbZoneMixCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
 --- !u!1 &3770248347027283059
 GameObject:
   m_ObjectHideFlags: 0
@@ -15041,6 +14943,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8225970758260515133}
+  - {fileID: 155741829210938676}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &6305100654819123986
@@ -16300,16 +16203,26 @@ MonoBehaviour:
         - HutongGames.PlayMaker.Actions.SetScale
         - HutongGames.PlayMaker.Actions.ActivateGameObject
         - HutongGames.PlayMaker.Actions.SetParent
+        - HutongGames.PlayMaker.Actions.ActivateGameObject
+        - HutongGames.PlayMaker.Actions.SetParent
         customNames:
         - 
         - 
         - 
-        actionEnabled: 010101
-        actionIsOpen: 000001
-        actionStartIndex: 00000000070000000c000000
-        actionHashCodes: afff1105b2cf1000a0dd8303
+        - 
+        - 
+        actionEnabled: 0101010101
+        actionIsOpen: 0000010101
+        actionStartIndex: 00000000070000000c0000001100000016000000
+        actionHashCodes: afff1105b2cf1000a0dd8303b2cf1000a0dd8303
         unityObjectParams: []
         fsmGameObjectParams:
+        - useVariable: 1
+          name: CurrentlySpawnedStuffs
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 0}
         - useVariable: 1
           name: CurrentlySpawnedStuffs
           tooltip: 
@@ -16341,6 +16254,22 @@ MonoBehaviour:
             showInInspector: 0
             networkSync: 0
             value: {fileID: 1762679321382275425}
+        - ownerOption: 1
+          gameObject:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 613360947247669476}
+        - ownerOption: 1
+          gameObject:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 613360947247669476}
         animationCurveParams: []
         functionCallParams: []
         fsmTemplateControlParams: []
@@ -16403,6 +16332,36 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
         fsmVector2Params: []
         fsmVector3Params:
         - useVariable: 1
@@ -16415,12 +16374,12 @@ MonoBehaviour:
         fsmRectParams: []
         fsmQuaternionParams: []
         stringParams: []
-        byteData: 00000000
+        byteData: 000000000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 140000001c0000000f0000000f0000000f000000010000000100000014000000110000001100000001000000010000001400000013000000110000001100000011000000
+        paramDataType: 140000001c0000000f0000000f0000000f00000001000000010000001400000011000000110000000100000001000000140000001300000011000000110000001100000014000000110000001100000001000000010000001400000013000000110000001100000011000000
         paramName:
         - gameObject
         - vector
@@ -16439,8 +16398,18 @@ MonoBehaviour:
         - worldPositionStays
         - resetLocalPosition
         - resetLocalRotation
-        paramDataPos: 0000000000000000000000000100000002000000000000000100000001000000000000000100000002000000030000000200000000000000020000000300000004000000
-        paramByteDataSize: 0000000000000000000000000000000000000000010000000100000000000000000000000000000001000000010000000000000000000000000000000000000000000000
+        - gameObject
+        - activate
+        - recursive
+        - resetOnExit
+        - everyFrame
+        - gameObject
+        - parent
+        - worldPositionStays
+        - resetLocalPosition
+        - resetLocalRotation
+        paramDataPos: 000000000000000000000000010000000200000000000000010000000100000000000000010000000200000003000000020000000000000002000000030000000400000003000000050000000600000004000000050000000400000001000000070000000800000009000000
+        paramByteDataSize: 000000000000000000000000000000000000000001000000010000000000000000000000000000000100000001000000000000000000000000000000000000000000000000000000000000000000000001000000010000000000000000000000000000000000000000000000
     - name: Destroy Self
       description: 
       colorIndex: 0
@@ -16693,3 +16662,103 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!1001 &1407926146701591762
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 8349571965583476304}
+    m_Modifications:
+    - target: {fileID: 1270220706326223334, guid: 51b46b51599fe76419ee1ee6834dd228,
+        type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.69064
+      objectReference: {fileID: 0}
+    - target: {fileID: 1270220706326223334, guid: 51b46b51599fe76419ee1ee6834dd228,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.1809253
+      objectReference: {fileID: 0}
+    - target: {fileID: 1270220706326223334, guid: 51b46b51599fe76419ee1ee6834dd228,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.69064
+      objectReference: {fileID: 0}
+    - target: {fileID: 1270220706326223334, guid: 51b46b51599fe76419ee1ee6834dd228,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.0003
+      objectReference: {fileID: 0}
+    - target: {fileID: 1270220706326223334, guid: 51b46b51599fe76419ee1ee6834dd228,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.0011
+      objectReference: {fileID: 0}
+    - target: {fileID: 1270220706326223334, guid: 51b46b51599fe76419ee1ee6834dd228,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.00054258
+      objectReference: {fileID: 0}
+    - target: {fileID: 1270220706326223334, guid: 51b46b51599fe76419ee1ee6834dd228,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1270220706326223334, guid: 51b46b51599fe76419ee1ee6834dd228,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1270220706326223334, guid: 51b46b51599fe76419ee1ee6834dd228,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1270220706326223334, guid: 51b46b51599fe76419ee1ee6834dd228,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1270220706326223334, guid: 51b46b51599fe76419ee1ee6834dd228,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1270220706326223334, guid: 51b46b51599fe76419ee1ee6834dd228,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1270220706326223334, guid: 51b46b51599fe76419ee1ee6834dd228,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1948631295792342070, guid: 51b46b51599fe76419ee1ee6834dd228,
+        type: 3}
+      propertyPath: m_Name
+      value: Glass_drop
+      objectReference: {fileID: 0}
+    - target: {fileID: 1948631295792342070, guid: 51b46b51599fe76419ee1ee6834dd228,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 51b46b51599fe76419ee1ee6834dd228, type: 3}
+--- !u!4 &155741829210938676 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1270220706326223334, guid: 51b46b51599fe76419ee1ee6834dd228,
+    type: 3}
+  m_PrefabInstance: {fileID: 1407926146701591762}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &613360947247669476 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1948631295792342070, guid: 51b46b51599fe76419ee1ee6834dd228,
+    type: 3}
+  m_PrefabInstance: {fileID: 1407926146701591762}
+  m_PrefabAsset: {fileID: 0}
