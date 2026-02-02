@@ -2292,6 +2292,7 @@ GameObject:
   - component: {fileID: 8017947653134980308}
   - component: {fileID: 3675753827953958352}
   - component: {fileID: 7547173844445013096}
+  - component: {fileID: 8586749139238983077}
   m_Layer: 0
   m_Name: Rooftop_Base_Z_Round_Gate.003
   m_TagString: Untagged
@@ -2370,6 +2371,28 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &8586749139238983077
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 111962314289549915}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 8120116771537599079, guid: 147ffce685b4e2d40ab574157acaba70, type: 3}
 --- !u!1 &197750888885982339
 GameObject:
   m_ObjectHideFlags: 0
@@ -4240,6 +4263,7 @@ Transform:
   - {fileID: 7855869904941707741}
   - {fileID: 5326051312956895857}
   - {fileID: 5870438262748685856}
+  - {fileID: 5505152757537021876}
   - {fileID: 5237920551576504110}
   - {fileID: 5730702742914533918}
   - {fileID: 1624183721808166387}
@@ -4256,7 +4280,6 @@ Transform:
   - {fileID: 6544789263244428898}
   - {fileID: 8782104831780812920}
   - {fileID: 8431632630278181097}
-  - {fileID: 5505152757537021876}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &1799068254436150765
@@ -4334,8 +4357,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 16.94706, y: 5.7301555, z: 2.7383847}
-  m_Center: {x: -0.007297516, y: -0.2038877, z: -7.098221}
+  m_Size: {x: 12.11894, y: 1.0202197, z: 0.68314075}
+  m_Center: {x: -0.34223342, y: 0.5010713, z: -6.070599}
 --- !u!65 &8473604786385924416
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4355,8 +4378,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2.777647, y: 5.7301555, z: 16.940416}
-  m_Center: {x: -7.092004, y: -0.2038877, z: 0.0027942657}
+  m_Size: {x: 0.6970482, y: 1.0924015, z: 11.450137}
+  m_Center: {x: -6.0517044, y: 0.5108645, z: -0.0029625893}
 --- !u!65 &5353557752678826243
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4376,8 +4399,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 5.0411, y: 1.6859806, z: 0.6776104}
-  m_Center: {x: -3.8218858, y: 0.19484127, z: 6.0634346}
+  m_Size: {x: 5.100711, y: 1.0401356, z: 0.6776104}
+  m_Center: {x: -3.8516912, y: 0.51776373, z: 6.0634346}
 --- !u!65 &3975738408936856155
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4397,8 +4420,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2.7359629, y: 5.7301555, z: 16.940416}
-  m_Center: {x: 7.098251, y: -0.2038877, z: 0.0027942657}
+  m_Size: {x: 0.6766987, y: 1.0964447, z: 12.121845}
+  m_Center: {x: 6.068619, y: 0.50232023, z: -0.351099}
 --- !u!65 &549891375937283405
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4418,8 +4441,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.6556215, y: 1.75, z: 0.6551266}
-  m_Center: {x: -2.1725945, y: 0.62, z: -5.314666}
+  m_Size: {x: 0.6556215, y: 1.5329785, z: 0.6551266}
+  m_Center: {x: -2.1725945, y: 0.72851074, z: -5.314666}
 --- !u!65 &1359083080180804471
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4439,8 +4462,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.6556215, y: 1.75, z: 0.6551266}
-  m_Center: {x: 2.19, y: 0.62, z: -5.314666}
+  m_Size: {x: 0.6556215, y: 1.5329784, z: 0.6551266}
+  m_Center: {x: 2.19, y: 0.7285108, z: -5.314666}
 --- !u!65 &6745003813994981192
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4460,8 +4483,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.6556215, y: 1.75, z: 0.6551266}
-  m_Center: {x: 5.32, y: 0.62, z: -2.08}
+  m_Size: {x: 0.6556215, y: 1.5423391, z: 0.6551266}
+  m_Center: {x: 5.32, y: 0.72383046, z: -2.08}
 --- !u!65 &326596324985372245
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4481,8 +4504,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.6556215, y: 1.75, z: 0.6551266}
-  m_Center: {x: 5.32, y: 0.62, z: 2.17}
+  m_Size: {x: 0.6556215, y: 1.5423391, z: 0.6551266}
+  m_Center: {x: 5.32, y: 0.72383046, z: 2.17}
 --- !u!65 &6944775796337532623
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4502,8 +4525,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.6556215, y: 1.75, z: 0.6551266}
-  m_Center: {x: 2.09, y: 0.62, z: 5.33}
+  m_Size: {x: 0.6556215, y: 1.5423391, z: 0.6551266}
+  m_Center: {x: 2.09, y: 0.72383046, z: 5.33}
 --- !u!65 &8884636741505493879
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4523,8 +4546,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.6556215, y: 1.75, z: 0.6551266}
-  m_Center: {x: -2.27, y: 0.62, z: 5.33}
+  m_Size: {x: 0.6556215, y: 1.5561831, z: 0.6551266}
+  m_Center: {x: -2.27, y: 0.71690845, z: 5.33}
 --- !u!65 &3376103296456429479
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4565,8 +4588,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.6556215, y: 1.75, z: 0.6551266}
-  m_Center: {x: -5.32, y: 0.62, z: 2.178}
+  m_Size: {x: 0.6556215, y: 1.7084677, z: 0.6551266}
+  m_Center: {x: -5.32, y: 0.64076614, z: 2.178}
 --- !u!65 &5984225901456944515
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4670,8 +4693,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 5.0573406, y: 1.6859806, z: 0.6883769}
-  m_Center: {x: 3.7673454, y: 0.19484127, z: 6.058051}
+  m_Size: {x: 5.169256, y: 1.0422316, z: 0.6883774}
+  m_Center: {x: 3.8233032, y: 0.51671576, z: 6.058051}
 --- !u!114 &659744951584628430
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -30779,6 +30802,7 @@ GameObject:
   - component: {fileID: 1470975733358788312}
   - component: {fileID: 3571845002921139068}
   - component: {fileID: 6109540545299591614}
+  - component: {fileID: 8271328079495771839}
   m_Layer: 0
   m_Name: Rooftop_Base_Z_Round_Gate.000
   m_TagString: Untagged
@@ -30857,6 +30881,28 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &8271328079495771839
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2997863419880913495}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 8120116771537599079, guid: 147ffce685b4e2d40ab574157acaba70, type: 3}
 --- !u!1 &3021128583433303510
 GameObject:
   m_ObjectHideFlags: 0
@@ -38893,6 +38939,7 @@ GameObject:
   - component: {fileID: 7904516905333218351}
   - component: {fileID: 1005814803002496113}
   - component: {fileID: 353203382795826573}
+  - component: {fileID: 7963778948663967587}
   m_Layer: 0
   m_Name: Rooftop_Base_Z_Round_Gate.002
   m_TagString: Untagged
@@ -38971,6 +39018,28 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &7963778948663967587
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3372776901056015335}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 8120116771537599079, guid: 147ffce685b4e2d40ab574157acaba70, type: 3}
 --- !u!1 &3390457895038403138
 GameObject:
   m_ObjectHideFlags: 0
@@ -68468,6 +68537,7 @@ GameObject:
   - component: {fileID: 7849753062644836017}
   - component: {fileID: 9021158014951281186}
   - component: {fileID: 277947766608357905}
+  - component: {fileID: 114169612440794465}
   m_Layer: 0
   m_Name: Pumpkin_Tree
   m_TagString: Untagged
@@ -70036,6 +70106,22 @@ MonoBehaviour:
     handleAnimatorIK: 0
   fsmTemplate: {fileID: 0}
   eventHandlerComponentsAdded: 0
+--- !u!208 &114169612440794465
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5129014964152026382}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 1.63, y: 2.7740002, z: 1.77}
+  m_MoveThreshold: 0.1
+  m_Carve: 0
+  m_CarveOnlyStationary: 1
+  m_Center: {x: -0.081, y: 2.5540001, z: -0.18}
+  m_TimeToStationary: 0.5
 --- !u!1 &5242288761240294867
 GameObject:
   m_ObjectHideFlags: 0
@@ -81121,6 +81207,7 @@ GameObject:
   - component: {fileID: 4790775286113181712}
   - component: {fileID: 661366584405791198}
   - component: {fileID: 2993717210997463920}
+  - component: {fileID: 4469858365655983324}
   m_Layer: 0
   m_Name: Rooftop_Base_Z_Round_Gate.001
   m_TagString: Untagged
@@ -81199,6 +81286,28 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &4469858365655983324
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6112896797366909526}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 8120116771537599079, guid: 147ffce685b4e2d40ab574157acaba70, type: 3}
 --- !u!1 &6302533670024289058
 GameObject:
   m_ObjectHideFlags: 0

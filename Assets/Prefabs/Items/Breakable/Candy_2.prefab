@@ -5211,9 +5211,9 @@ MonoBehaviour:
         stringValues: []
         vector4Values: []
         objectReferences:
-        - {fileID: 8300000, guid: 699a818d2488fc44bac4406d98c6a681, type: 3}
-        - {fileID: 8300000, guid: 1ab0a3a1ae573ae4a83eec9c81323797, type: 3}
-        - {fileID: 8300000, guid: 956e17fac0656824b963ccb842b10876, type: 3}
+        - {fileID: 8300000, guid: eed8c542202798d40894eb3b0b6fd4ac, type: 3}
+        - {fileID: 8300000, guid: 3fb426873a7b92145a586f16e06f1eba, type: 3}
+        - {fileID: 8300000, guid: 4cb5e853271f52445b993305835f8191, type: 3}
       enumVariables: []
       categories:
       - 
@@ -16221,9 +16221,9 @@ MonoBehaviour:
         stringValues: []
         vector4Values: []
         objectReferences:
-        - {fileID: 8300000, guid: 699a818d2488fc44bac4406d98c6a681, type: 3}
-        - {fileID: 8300000, guid: 1ab0a3a1ae573ae4a83eec9c81323797, type: 3}
-        - {fileID: 8300000, guid: 956e17fac0656824b963ccb842b10876, type: 3}
+        - {fileID: 8300000, guid: c16fdee2715a903419edcb86534b585b, type: 3}
+        - {fileID: 8300000, guid: b333a21ba28984b4ba3e252dd2c009a1, type: 3}
+        - {fileID: 8300000, guid: 15d0a0f688c5f4f41ae7df84f092f6eb, type: 3}
       enumVariables: []
       categories:
       - 
@@ -16408,15 +16408,17 @@ MonoBehaviour:
         colorIndex: 0
       actionData:
         actionNames:
+        - HutongGames.PlayMaker.Actions.SetScale
         - HutongGames.PlayMaker.Actions.ActivateGameObject
         - HutongGames.PlayMaker.Actions.SetParent
         customNames:
         - 
         - 
-        actionEnabled: 0101
-        actionIsOpen: 0001
-        actionStartIndex: 0000000005000000
-        actionHashCodes: b2cf1000a0dd8303
+        - 
+        actionEnabled: 010101
+        actionIsOpen: 010101
+        actionStartIndex: 00000000070000000c000000
+        actionHashCodes: afff1105b2cf1000a0dd8303
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
@@ -16426,6 +16428,14 @@ MonoBehaviour:
           networkSync: 0
           value: {fileID: 0}
         fsmOwnerDefaultParams:
+        - ownerOption: 1
+          gameObject:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 1762679321382275425}
         - ownerOption: 1
           gameObject:
             useVariable: 0
@@ -16453,7 +16463,25 @@ MonoBehaviour:
         fsmVarParams: []
         fsmArrayParams: []
         fsmEnumParams: []
-        fsmFloatParams: []
+        fsmFloatParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 2
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 2
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 2
         fsmIntParams: []
         fsmBoolParams:
         - useVariable: 0
@@ -16487,18 +16515,31 @@ MonoBehaviour:
           networkSync: 0
           value: 0
         fsmVector2Params: []
-        fsmVector3Params: []
+        fsmVector3Params:
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {x: 0, y: 0, z: 0}
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
         stringParams: []
-        byteData: 0000
+        byteData: 00000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 14000000110000001100000001000000010000001400000013000000110000001100000011000000
+        paramDataType: 140000001c0000000f0000000f0000000f000000010000000100000014000000110000001100000001000000010000001400000013000000110000001100000011000000
         paramName:
+        - gameObject
+        - vector
+        - x
+        - y
+        - z
+        - everyFrame
+        - lateUpdate
         - gameObject
         - activate
         - recursive
@@ -16509,8 +16550,8 @@ MonoBehaviour:
         - worldPositionStays
         - resetLocalPosition
         - resetLocalRotation
-        paramDataPos: 00000000000000000100000000000000010000000100000000000000020000000300000004000000
-        paramByteDataSize: 00000000000000000000000001000000010000000000000000000000000000000000000000000000
+        paramDataPos: 0000000000000000000000000100000002000000000000000100000001000000000000000100000002000000030000000200000000000000020000000300000004000000
+        paramByteDataSize: 0000000000000000000000000000000000000000010000000100000000000000000000000000000001000000010000000000000000000000000000000000000000000000
     - name: Destroy Self
       description: 
       colorIndex: 0
