@@ -1194,6 +1194,7 @@ GameObject:
   - component: {fileID: 1990976549988335378}
   - component: {fileID: 7307134475101144660}
   - component: {fileID: 5749120765265615947}
+  - component: {fileID: 6606673078479422408}
   m_Layer: 0
   m_Name: Spine
   m_TagString: Enemy
@@ -1276,6 +1277,19 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 126
   m_CollisionDetection: 0
+--- !u!114 &6606673078479422408
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4032360222730813023}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 845409985, guid: e743331561ef77147ae48cda9bcb8209, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: PlayMaker.dll::PlayMakerCollisionEnter
+  TargetFSMs: []
 --- !u!1 &4103003488259013193
 GameObject:
   m_ObjectHideFlags: 0
@@ -7883,6 +7897,7 @@ MonoBehaviour:
         colorIndex: 0
       actionData:
         actionNames:
+        - HutongGames.PlayMaker.Actions.SendEvent
         - HutongGames.PlayMaker.Actions.GetFsmFloat
         - HutongGames.PlayMaker.Actions.FloatSubtract
         - HutongGames.PlayMaker.Actions.SetFsmFloat
@@ -7898,10 +7913,11 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 01010101010101
-        actionIsOpen: 01010100000101
-        actionStartIndex: 0000000005000000090000000e00000013000000180000001d000000
-        actionHashCodes: 876045022a6e8a0087604502b2cf1000c34b41055978870081294e04
+        - 
+        actionEnabled: 0101010101010101
+        actionIsOpen: 0101010101010101
+        actionStartIndex: 0000000004000000090000000d00000012000000170000001c00000021000000
+        actionHashCodes: 5e69bb04876045022a6e8a0087604502b2cf1000c34b41055978870081294e04
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams:
@@ -7948,7 +7964,39 @@ MonoBehaviour:
         animationCurveParams: []
         functionCallParams: []
         fsmTemplateControlParams: []
-        fsmEventTargetParams: []
+        fsmEventTargetParams:
+        - target: 2
+          excludeSelf:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: 0
+          gameObject:
+            ownerOption: 0
+            gameObject:
+              useVariable: 0
+              name: 
+              tooltip: 
+              showInInspector: 0
+              networkSync: 0
+              value: {fileID: 0}
+          fsmName:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: Bee
+          sendToChildren:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: 0
+          fsmComponent: {fileID: 0}
         fsmPropertyParams: []
         layoutOptionParams: []
         fsmStringParams:
@@ -8028,9 +8076,18 @@ MonoBehaviour:
           boolValues: 
           stringValues: []
           vector4Values: []
-          objectReferences: []
+          objectReferences:
+          - {fileID: 8300000, guid: 619a0ebeedf18ca489233e0f7f2a7c29, type: 3}
+          - {fileID: 8300000, guid: 52d4f2b97068c0b4290fffcf4c6154e7, type: 3}
+          - {fileID: 8300000, guid: f521d273cd7695746a94106640af0cd7, type: 3}
         fsmEnumParams: []
         fsmFloatParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
         - useVariable: 1
           name: health
           tooltip: 
@@ -8066,7 +8123,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 0.2
+          value: 0.5
         fsmIntParams:
         - useVariable: 1
           name: 
@@ -8092,7 +8149,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 1
+          value: 0
         - useVariable: 0
           name: 
           tooltip: 
@@ -8104,21 +8161,26 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 1
+          value: 0
         fsmVector2Params: []
         fsmVector3Params: []
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
         stringParams:
+        - Damage
         - FINISHED
-        byteData: 0000000000000000
+        byteData: 000000000000000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1400000012000000120000000f000000010000000f0000000f00000001000000010000001400000012000000120000000f0000000100000014000000110000001100000001000000010000001400000012000000100000000f000000010000002900000027000000100000001100000001000000140000000f000000180000001100000017000000
+        paramDataType: 1f000000170000000f000000010000001400000012000000120000000f000000010000000f0000000f00000001000000010000001400000012000000120000000f0000000100000014000000110000001100000001000000010000001400000012000000100000000f000000010000002900000027000000100000001100000001000000140000000f000000180000001100000017000000
         paramName:
+        - eventTarget
+        - sendEvent
+        - delay
+        - everyFrame
         - gameObject
         - fsmName
         - variableName
@@ -8153,8 +8215,8 @@ MonoBehaviour:
         - oneShotClip
         - WaitForEndOfClip
         - finishedEvent
-        paramDataPos: 00000000000000000100000000000000000000000100000002000000010000000200000001000000020000000300000003000000030000000200000000000000010000000400000005000000030000000400000000000000040000000600000000000000000000000100000002000000070000000400000005000000000000000300000000000000
-        paramByteDataSize: 00000000000000000000000000000000010000000000000000000000010000000100000000000000000000000000000000000000010000000000000000000000000000000100000001000000000000000000000000000000000000000100000000000000000000000000000000000000010000000000000000000000000000000000000000000000
+        paramDataPos: 0000000000000000000000000000000000000000000000000100000001000000010000000200000003000000020000000300000001000000020000000300000004000000040000000200000000000000010000000500000006000000030000000400000000000000050000000700000000000000000000000100000002000000080000000400000006000000000000000300000001000000
+        paramByteDataSize: 0000000000000000000000000100000000000000000000000000000000000000010000000000000000000000010000000100000000000000000000000000000000000000010000000000000000000000000000000100000001000000000000000000000000000000000000000100000000000000000000000000000000000000010000000000000000000000000000000000000000000000
     events:
     - name: next
       isSystemEvent: 0
@@ -8165,6 +8227,9 @@ MonoBehaviour:
     - name: FINISHED
       isSystemEvent: 1
       isGlobal: 0
+    - name: Damage
+      isSystemEvent: 0
+      isGlobal: 1
     globalTransitions: []
     variables:
       floatVariables:
@@ -9686,7 +9751,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: alert
+          value: idle
         fsmObjectParams:
         - useVariable: 1
           name: randomAlert
@@ -9911,7 +9976,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 01010101010101
-        actionIsOpen: 00000001010101
+        actionIsOpen: 00010000000101
         actionStartIndex: 0000000002000000070000000a0000000e000000150000001a000000
         actionHashCodes: 15264c01c34b4105f0eeac0136f094001bcdca049c51240081294e04
         unityObjectParams: []
@@ -9995,7 +10060,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: run
+          value: run2
         - useVariable: 0
           name: 
           tooltip: 
@@ -16430,7 +16495,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4461328799963907196
 Transform:
   m_ObjectHideFlags: 0
