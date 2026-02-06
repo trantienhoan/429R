@@ -76,6 +76,12 @@ namespace UnityEngine.XR.Content.Interaction
             m_Animating = true;
         }
 
+        [ContextMenu("TestPlay")]
+        private void TestPlay()
+        {
+            m_ToAnimate.Play();
+        }
+
         private bool FindActivateActionFromInteractor(UnityEngine.XR.Interaction.Toolkit.Interactors.IXRInteractor interactor, out InputAction activateAction)
         {
             activateAction = null;
