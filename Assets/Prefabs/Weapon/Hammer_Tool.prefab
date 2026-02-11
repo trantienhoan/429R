@@ -5170,11 +5170,11 @@ GameObject:
   - component: {fileID: 4598464444358604728}
   - component: {fileID: 2689430776340711734}
   - component: {fileID: 5347407319795000795}
-  - component: {fileID: 9198337721691087930}
   - component: {fileID: 2926084390192529529}
   - component: {fileID: 3991966568878862572}
   - component: {fileID: 9127762408819454023}
   - component: {fileID: 6417217773428796678}
+  - component: {fileID: 3732196974621210464}
   m_Layer: 0
   m_Name: Hammer_Tool
   m_TagString: Weapon
@@ -5276,31 +5276,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.22536041, y: 0.38611996, z: 0.3030008}
-  m_Center: {x: 0.0001340285, y: 0.00033062696, z: -0.34305692}
---- !u!136 &9198337721691087930
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4337052619155732277}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.05
-  m_Height: 0.36
-  m_Direction: 2
-  m_Center: {x: 0, y: 0, z: -0.03}
+  m_Size: {x: 0.22536041, y: 0.33146986, z: 0.21260864}
+  m_Center: {x: 0.0001340285, y: 0.00033062696, z: -0.3315773}
 --- !u!54 &2926084390192529529
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -6440,6 +6417,27 @@ MonoBehaviour:
   m_LimitAngularVelocity: 0
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
+--- !u!65 &3732196974621210464
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4337052619155732277}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.07756447, y: 0.07954323, z: 0.65436065}
+  m_Center: {x: 0.0001340285, y: 0.00033063442, z: -0.17548116}
 --- !u!1 &5853063292150961962
 GameObject:
   m_ObjectHideFlags: 0

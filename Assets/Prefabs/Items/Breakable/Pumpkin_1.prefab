@@ -16322,8 +16322,8 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 237
-        y: 106
+        x: 249
+        y: 100
         width: 115.79
         height: 32
       isBreakpoint: 0
@@ -16353,7 +16353,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 0101010101
-        actionIsOpen: 0000000001
+        actionIsOpen: 0100000001
         actionStartIndex: 00000000050000000a0000000f00000014000000
         actionHashCodes: b2cf1000a0dd8303b2cf1000a0dd8303fcb1a001
         unityObjectParams: []
@@ -16611,7 +16611,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 0
+          value: 1
         - useVariable: 0
           name: 
           tooltip: 
@@ -17223,7 +17223,10 @@ MonoBehaviour:
         - detachChildren
         paramDataPos: 000000000000000001000000
         paramByteDataSize: 000000000000000000000000
-    events: []
+    events:
+    - name: FINISHED
+      isSystemEvent: 1
+      isGlobal: 0
     globalTransitions: []
     variables:
       floatVariables: []
