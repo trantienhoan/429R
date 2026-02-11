@@ -46849,6 +46849,86 @@ MonoBehaviour:
         x: 50
         y: 100
         width: 100
+        height: 32
+      isBreakpoint: 0
+      isSequence: 0
+      hideUnused: 0
+      transitions:
+      - fsmEvent:
+          name: FINISHED
+          isSystemEvent: 1
+          isGlobal: 0
+        toState: Create
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
+      actionData:
+        actionNames:
+        - HutongGames.PlayMaker.Actions.RandomWait
+        customNames:
+        - 
+        actionEnabled: 01
+        actionIsOpen: 01
+        actionStartIndex: 00000000
+        actionHashCodes: 0d5f5c01
+        unityObjectParams: []
+        fsmGameObjectParams: []
+        fsmOwnerDefaultParams: []
+        animationCurveParams: []
+        functionCallParams: []
+        fsmTemplateControlParams: []
+        fsmEventTargetParams: []
+        fsmPropertyParams: []
+        layoutOptionParams: []
+        fsmStringParams: []
+        fsmObjectParams: []
+        fsmVarParams: []
+        fsmArrayParams: []
+        fsmEnumParams: []
+        fsmFloatParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 2
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 3
+        fsmIntParams: []
+        fsmBoolParams: []
+        fsmVector2Params: []
+        fsmVector3Params: []
+        fsmColorParams: []
+        fsmRectParams: []
+        fsmQuaternionParams: []
+        stringParams:
+        - FINISHED
+        byteData: 01
+        arrayParamSizes: 
+        arrayParamTypes: []
+        customTypeSizes: 
+        customTypeNames: []
+        paramDataType: 0f0000000f0000001700000001000000
+        paramName:
+        - min
+        - max
+        - finishEvent
+        - realTime
+        paramDataPos: 00000000010000000000000000000000
+        paramByteDataSize: 00000000000000000000000001000000
+    - name: Create
+      description: 
+      colorIndex: 0
+      position:
+        serializedVersion: 2
+        x: 53
+        y: 168
+        width: 100
         height: 16
       isBreakpoint: 0
       isSequence: 0
@@ -46938,7 +47018,10 @@ MonoBehaviour:
         - storeObject
         paramDataPos: 000000000100000002000000000000000100000003000000
         paramByteDataSize: 000000000000000000000000000000000000000000000000
-    events: []
+    events:
+    - name: FINISHED
+      isSystemEvent: 1
+      isGlobal: 0
     globalTransitions: []
     variables:
       floatVariables: []
@@ -48400,8 +48483,9 @@ MonoBehaviour:
         stringValues: []
         vector4Values: []
         objectReferences:
-        - {fileID: 8300000, guid: 4e6efe95af19bb14aa25c0029c0bc5dc, type: 3}
-        - {fileID: 8300000, guid: 3834bd401e6164e4297188d4c336ca3b, type: 3}
+        - {fileID: 8300000, guid: 693c989e9dcc7c2439a5fc1361c295ed, type: 3}
+        - {fileID: 8300000, guid: 1d3e9a2d9af772241983787c2066f8ec, type: 3}
+        - {fileID: 8300000, guid: 841f5f6ac64768e4b83dad4eb3584bc5, type: 3}
       - useVariable: 1
         name: 
         tooltip: 
@@ -49407,8 +49491,9 @@ MonoBehaviour:
         stringValues: []
         vector4Values: []
         objectReferences:
-        - {fileID: 8300000, guid: 4e6efe95af19bb14aa25c0029c0bc5dc, type: 3}
-        - {fileID: 8300000, guid: 3834bd401e6164e4297188d4c336ca3b, type: 3}
+        - {fileID: 8300000, guid: 693c989e9dcc7c2439a5fc1361c295ed, type: 3}
+        - {fileID: 8300000, guid: 1d3e9a2d9af772241983787c2066f8ec, type: 3}
+        - {fileID: 8300000, guid: 841f5f6ac64768e4b83dad4eb3584bc5, type: 3}
       - useVariable: 1
         name: 
         tooltip: 
@@ -50420,8 +50505,9 @@ MonoBehaviour:
         stringValues: []
         vector4Values: []
         objectReferences:
-        - {fileID: 8300000, guid: 4e6efe95af19bb14aa25c0029c0bc5dc, type: 3}
-        - {fileID: 8300000, guid: 3834bd401e6164e4297188d4c336ca3b, type: 3}
+        - {fileID: 8300000, guid: 693c989e9dcc7c2439a5fc1361c295ed, type: 3}
+        - {fileID: 8300000, guid: 1d3e9a2d9af772241983787c2066f8ec, type: 3}
+        - {fileID: 8300000, guid: 841f5f6ac64768e4b83dad4eb3584bc5, type: 3}
       - useVariable: 1
         name: 
         tooltip: 
