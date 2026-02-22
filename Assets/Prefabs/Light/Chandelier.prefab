@@ -211,7 +211,7 @@ MonoBehaviour:
       - fsmEvent:
           name: Dead
           isSystemEvent: 0
-          isGlobal: 0
+          isGlobal: 1
         toState: Activate Parts
         linkStyle: 0
         linkConstraint: 0
@@ -614,7 +614,7 @@ MonoBehaviour:
       isGlobal: 0
     - name: Dead
       isSystemEvent: 0
-      isGlobal: 0
+      isGlobal: 1
     globalTransitions: []
     variables:
       floatVariables:
@@ -11493,6 +11493,11 @@ PrefabInstance:
     - target: {fileID: 2569234712113845669, guid: 82c499d865ac3c74eb62f96b6ba37a3d,
         type: 3}
       propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5146684938121568670, guid: 82c499d865ac3c74eb62f96b6ba37a3d,
+        type: 3}
+      propertyPath: fsm.events.Array.size
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []

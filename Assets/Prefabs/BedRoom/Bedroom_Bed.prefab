@@ -25395,7 +25395,7 @@ MonoBehaviour:
       - fsmEvent:
           name: Dead
           isSystemEvent: 0
-          isGlobal: 0
+          isGlobal: 1
         toState: Activate Parts
         linkStyle: 0
         linkConstraint: 0
@@ -25900,7 +25900,7 @@ MonoBehaviour:
       isGlobal: 0
     - name: Dead
       isSystemEvent: 0
-      isGlobal: 0
+      isGlobal: 1
     globalTransitions: []
     variables:
       floatVariables:
@@ -37556,6 +37556,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8269147073881496658, guid: d8aa458306020af4c9d7b94e3462b698,
+        type: 3}
+      propertyPath: fsm.states.Array.data[0].transitions.Array.data[1].fsmEvent.isGlobal
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
