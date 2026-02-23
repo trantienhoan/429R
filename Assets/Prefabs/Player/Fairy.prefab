@@ -6393,13 +6393,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2627885595765584781}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.000000022351744, y: 4.2632568e-14, z: 3.552714e-15, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: 0.70710576, y: -1.4352963e-12, z: -0.000000020071166, w: 0.7071078}
+  m_LocalPosition: {x: 0, y: 62, z: -0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4308412602711584679}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
 --- !u!108 &1912691636770575215
 Light:
   m_ObjectHideFlags: 0
@@ -6409,12 +6409,12 @@ Light:
   m_GameObject: {fileID: 2627885595765584781}
   m_Enabled: 1
   serializedVersion: 11
-  m_Type: 2
+  m_Type: 0
   m_Color: {r: 0.54114884, g: 1, b: 0.2971698, a: 1}
-  m_Intensity: 0.15
-  m_Range: 7
-  m_SpotAngle: 30
-  m_InnerSpotAngle: 21.80208
+  m_Intensity: 1
+  m_Range: 3.5
+  m_SpotAngle: 34.475
+  m_InnerSpotAngle: 26.27708
   m_CookieSize: 10
   m_Shadows:
     m_Type: 0
@@ -6450,7 +6450,7 @@ Light:
     serializedVersion: 2
     m_Bits: 4294967295
   m_RenderingLayerMask: 1
-  m_Lightmapping: 1
+  m_Lightmapping: 2
   m_LightShadowCasterMode: 0
   m_AreaSize: {x: 1, y: 1}
   m_BounceIntensity: 0.21
@@ -23671,7 +23671,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 010101010101010101
-        actionIsOpen: 000000000000000001
+        actionIsOpen: 000000000000000000
         actionStartIndex: 000000000a0000000f0000002000000023000000280000002d0000003200000037000000
         actionHashCodes: b0327400c34b4105c1a70500230cc800b2cf1000b2cf1000a0dd8303a0dd830381294e04
         unityObjectParams: []
@@ -23783,7 +23783,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: dead
+          value: pray
         fsmObjectParams:
         - useVariable: 0
           name: 
@@ -24176,7 +24176,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 1
+  m_Radius: 3
   m_Center: {x: 0, y: 0.09, z: 0}
 --- !u!54 &8647544325187888860
 Rigidbody:
