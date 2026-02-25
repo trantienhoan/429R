@@ -14451,6 +14451,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8349571965583476304}
   - component: {fileID: 8536146005211852686}
+  - component: {fileID: 5662184655009664098}
   - component: {fileID: 1553171448782159517}
   - component: {fileID: -4144848801651552299}
   - component: {fileID: 8619799103645025506}
@@ -14509,6 +14510,27 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!135 &5662184655009664098
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8690403555129543112}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.27
+  m_Center: {x: 0, y: 0.23, z: 0}
 --- !u!64 &1553171448782159517
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -14526,7 +14548,7 @@ MeshCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 5
   m_Convex: 1
   m_CookingOptions: 30
@@ -14986,8 +15008,8 @@ MonoBehaviour:
       colorIndex: 6
       position:
         serializedVersion: 2
-        x: 102
-        y: 281
+        x: 61
+        y: 291
         width: 114.31
         height: 32
       isBreakpoint: 0
@@ -15000,7 +15022,7 @@ MonoBehaviour:
           isGlobal: 0
         toState: Wait for Collision
         linkStyle: 0
-        linkConstraint: 0
+        linkConstraint: 1
         linkTarget: 0
         colorIndex: 0
       actionData:
@@ -15011,6 +15033,7 @@ MonoBehaviour:
         - HutongGames.PlayMaker.Actions.ActivateGameObject
         - HutongGames.PlayMaker.Actions.ArrayGetRandom
         - HutongGames.PlayMaker.Actions.AudioPlay
+        - HutongGames.PlayMaker.Actions.TweenPunch
         customNames:
         - 
         - 
@@ -15018,10 +15041,11 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 010101010101
-        actionIsOpen: 000000000101
-        actionStartIndex: 0000000005000000090000000e0000001300000018000000
-        actionHashCodes: 876045022a6e8a0087604502b2cf10005978870081294e04
+        - 
+        actionEnabled: 01010101010101
+        actionIsOpen: 00000000000001
+        actionStartIndex: 0000000005000000090000000e00000013000000180000001d000000
+        actionHashCodes: 876045022a6e8a0087604502b2cf10005978870081294e04bac44f04
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams:
@@ -15057,7 +15081,21 @@ MonoBehaviour:
             showInInspector: 0
             networkSync: 0
             value: {fileID: 0}
-        animationCurveParams: []
+        - ownerOption: 0
+          gameObject:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 0}
+        animationCurveParams:
+        - curve:
+            serializedVersion: 2
+            m_Curve: []
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         functionCallParams: []
         fsmTemplateControlParams: []
         fsmEventTargetParams: []
@@ -15135,9 +15173,18 @@ MonoBehaviour:
           stringValues: []
           vector4Values: []
           objectReferences:
-          - {fileID: 8300000, guid: 91ee0fb710467fa47b637aeee96a5649, type: 3}
-          - {fileID: 8300000, guid: 0bab81a9dcd291a4890520fb3dbc2625, type: 3}
-        fsmEnumParams: []
+          - {fileID: 8300000, guid: 2de644d96a3052640b8989ecba915a80, type: 3}
+          - {fileID: 8300000, guid: a4661761129bc014490b3df27a00e952, type: 3}
+          - {fileID: 8300000, guid: b2291c3f8b565e74db9bd7833fe197bb, type: 3}
+          - {fileID: 8300000, guid: 5367bd01c33fd1343b9e3fea0381da10, type: 3}
+        fsmEnumParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          enumName: HutongGames.PlayMaker.None
+          intValue: 0
         fsmFloatParams:
         - useVariable: 1
           name: health
@@ -15169,6 +15216,18 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 1
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0.25
         fsmIntParams:
         - useVariable: 1
           name: 
@@ -15201,19 +15260,32 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 1
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
         fsmVector2Params: []
-        fsmVector3Params: []
+        fsmVector3Params:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {x: 0, y: 0.5, z: 0}
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
         stringParams:
         - FINISHED
-        byteData: 00000000000000
+        - 
+        byteData: 000000000000000000000000000000000000000000000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1400000012000000120000000f000000010000000f0000000f00000001000000010000001400000012000000120000000f0000000100000014000000110000001100000001000000010000002900000027000000100000001100000001000000140000000f000000180000001100000017000000
+        paramDataType: 1400000012000000120000000f000000010000000f0000000f00000001000000010000001400000012000000120000000f0000000100000014000000110000001100000001000000010000002900000027000000100000001100000001000000140000000f000000180000001100000017000000070000001c000000140000000f0000002a000000160000000f000000110000000700000017000000020000000100000007000000
         paramName:
         - gameObject
         - fsmName
@@ -15244,8 +15316,21 @@ MonoBehaviour:
         - oneShotClip
         - WaitForEndOfClip
         - finishedEvent
-        paramDataPos: 0000000000000000010000000000000000000000010000000200000001000000020000000100000002000000030000000300000003000000020000000000000001000000040000000500000000000000000000000000000002000000060000000300000004000000000000000300000000000000
-        paramByteDataSize: 0000000000000000000000000000000001000000000000000000000001000000010000000000000000000000000000000000000001000000000000000000000000000000010000000100000000000000000000000000000000000000010000000000000000000000000000000000000000000000
+        - punchType
+        - value
+        - gameObject
+        - startDelay
+        - easeType
+        - customCurve
+        - time
+        - realTime
+        - loopType
+        - finishEvent
+        - normalizedTime
+        - everyFrame
+        - updateType
+        paramDataPos: 000000000000000001000000000000000000000001000000020000000100000002000000010000000200000003000000030000000300000002000000000000000100000004000000050000000000000000000000000000000200000006000000030000000400000000000000030000000000000007000000000000000400000005000000000000000000000006000000040000000b000000010000000f0000001300000014000000
+        paramByteDataSize: 000000000000000000000000000000000100000000000000000000000100000001000000000000000000000000000000000000000100000000000000000000000000000001000000010000000000000000000000000000000000000001000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000400000000000000040000000100000004000000
     - name: Deal 999 damage
       description: 
       colorIndex: 6
@@ -15633,8 +15718,10 @@ MonoBehaviour:
         stringValues: []
         vector4Values: []
         objectReferences:
-        - {fileID: 8300000, guid: 91ee0fb710467fa47b637aeee96a5649, type: 3}
-        - {fileID: 8300000, guid: 0bab81a9dcd291a4890520fb3dbc2625, type: 3}
+        - {fileID: 8300000, guid: 2de644d96a3052640b8989ecba915a80, type: 3}
+        - {fileID: 8300000, guid: a4661761129bc014490b3df27a00e952, type: 3}
+        - {fileID: 8300000, guid: b2291c3f8b565e74db9bd7833fe197bb, type: 3}
+        - {fileID: 8300000, guid: 5367bd01c33fd1343b9e3fea0381da10, type: 3}
       enumVariables: []
       categories:
       - 
@@ -15745,7 +15832,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 010101
-        actionIsOpen: 000101
+        actionIsOpen: 010101
         actionStartIndex: 00000000070000000f000000
         actionHashCodes: 1bcdca04d57998059c512400
         unityObjectParams: []
@@ -16245,8 +16332,8 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 51
-        y: 212
+        x: 56
+        y: 218
         width: 100
         height: 32
       isBreakpoint: 0
@@ -16278,7 +16365,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 010101010101
-        actionIsOpen: 000001010101
+        actionIsOpen: 010101010101
         actionStartIndex: 00000000070000000f00000014000000190000001e000000
         actionHashCodes: 1bcdca04d5799805b2cf1000b2cf1000b2cf1000bac44f04
         unityObjectParams: []
@@ -16440,7 +16527,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 0
+          value: 1
         fsmVector2Params: []
         fsmVector3Params:
         - useVariable: 1
@@ -16460,7 +16547,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {x: 0, y: 0, z: 0}
+          value: {x: 0, y: 0.5, z: 0}
         fsmColorParams:
         - useVariable: 0
           name: 
@@ -16534,6 +16621,9 @@ MonoBehaviour:
     - name: FINISHED
       isSystemEvent: 1
       isGlobal: 0
+    - name: Dead
+      isSystemEvent: 0
+      isGlobal: 1
     globalTransitions: []
     variables:
       floatVariables:

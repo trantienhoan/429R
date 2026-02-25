@@ -54,8 +54,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.49374056, y: 2.9999998, z: 9}
-  m_Center: {x: -0.2619369, y: 1.4999999, z: -4.8979084e-24}
+  m_Size: {x: 0.31041145, y: 3.563083, z: 8.568124}
+  m_Center: {x: -0.17027235, y: 1.7815415, z: 0.003291369}
 --- !u!1 &701506100511073878
 GameObject:
   m_ObjectHideFlags: 0
@@ -312,6 +312,8 @@ GameObject:
   m_Component:
   - component: {fileID: 5083787808019303903}
   - component: {fileID: 6825815896012673067}
+  - component: {fileID: 8038596112361084311}
+  - component: {fileID: 2350200023619348561}
   m_Layer: 0
   m_Name: Wall_05
   m_TagString: Untagged
@@ -356,8 +358,50 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1.0635505, y: 2.9999998, z: 9}
-  m_Center: {x: 0.46822476, y: 1.4999999, z: 0}
+  m_Size: {x: 0.39726257, y: 3.5374587, z: 5.102419}
+  m_Center: {x: 0.17993164, y: 1.7687293, z: -1.9487901}
+--- !u!65 &8038596112361084311
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1732076745192161432}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.39726257, y: 1.4538871, z: 2.4814582}
+  m_Center: {x: 0.17993164, y: 2.8105147, z: 1.8438445}
+--- !u!65 &2350200023619348561
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1732076745192161432}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.39726257, y: 3.5374587, z: 1.2029024}
+  m_Center: {x: 0.17993164, y: 1.7687293, z: 3.6903546}
 --- !u!1 &2271049535505843028
 GameObject:
   m_ObjectHideFlags: 0
@@ -379,7 +423,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &4703963577678279788
 Transform:
   m_ObjectHideFlags: 0
@@ -1846,6 +1890,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7677202844881039103}
+  - component: {fileID: 1246497340554632732}
   m_Layer: 0
   m_Name: Rooftop_LivingRoom
   m_TagString: Untagged
@@ -1868,6 +1913,27 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2995163339314819660}
   m_LocalEulerAnglesHint: {x: 1.4033418e-14, y: 0, z: 0}
+--- !u!65 &1246497340554632732
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5218670634681518489}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 9.005689, y: 0.33325675, z: 9.0536}
+  m_Center: {x: 0, y: 0.15943862, z: -4.259801}
 --- !u!1 &5745393405701581778
 GameObject:
   m_ObjectHideFlags: 0
@@ -2274,8 +2340,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 9, y: 3, z: 0.5}
-  m_Center: {x: 0, y: 1.5, z: 0.15}
+  m_Size: {x: 9, y: 3.5861094, z: 0.36092284}
+  m_Center: {x: 0, y: 1.7930547, z: 0.15993406}
 --- !u!1 &7854654123074249708
 GameObject:
   m_ObjectHideFlags: 0
@@ -2990,7 +3056,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {fileID: 9044708629856060257, guid: 4fd6ab1bd672c234e889733d46fa18ca,
+          value: {fileID: 9044708629856060257, guid: 77256536ee82a5046886c4a7c75b4cff,
             type: 3}
         - useVariable: 0
           name: 
@@ -3180,8 +3246,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 9, y: 2.9999998, z: 0.35555556}
-  m_Center: {x: 0, y: 1.4999999, z: -0.13480379}
+  m_Size: {x: 8.5540085, y: 3.5774882, z: 0.29808047}
+  m_Center: {x: 0.01077652, y: 1.7887441, z: -0.15635683}
 --- !u!1 &9119071454375462373
 GameObject:
   m_ObjectHideFlags: 0
