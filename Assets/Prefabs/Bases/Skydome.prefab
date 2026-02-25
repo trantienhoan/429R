@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8144967645243885732}
+  - component: {fileID: 3922325536469942169}
   - component: {fileID: 4401131805763565184}
   - component: {fileID: 1184157571510667592}
   - component: {fileID: 3277130923043248111}
@@ -21,7 +22,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &8144967645243885732
 Transform:
   m_ObjectHideFlags: 0
@@ -37,6 +38,27 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1196243512154072656}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &3922325536469942169
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8472733937913528453}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 140.9426, y: 61.014732, z: 145.81845}
+  m_Center: {x: 0, y: -33.78406, z: 0}
 --- !u!65 &4401131805763565184
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -54,10 +76,10 @@ BoxCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 1
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 3
-  m_Size: {x: 6, y: 6, z: 6}
-  m_Center: {x: -7.5, y: 3, z: 0}
+  m_Size: {x: 4.4006195, y: 6, z: 12.528984}
+  m_Center: {x: -8.29969, y: 3, z: 0.106181145}
 --- !u!65 &1184157571510667592
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -75,10 +97,10 @@ BoxCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 1
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 3
-  m_Size: {x: 6, y: 6, z: 6}
-  m_Center: {x: 7.5, y: 3, z: 0}
+  m_Size: {x: 3.345665, y: 6, z: 12.5925255}
+  m_Center: {x: 8.8271675, y: 3, z: 0.13795877}
 --- !u!65 &3277130923043248111
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -96,10 +118,10 @@ BoxCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 1
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 3
-  m_Size: {x: 18.018818, y: 6, z: 6}
-  m_Center: {x: 0, y: 3, z: 6}
+  m_Size: {x: 18.018818, y: 6, z: 2.440402}
+  m_Center: {x: 0, y: 3, z: 7.779799}
 --- !u!65 &4697752050196522046
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -117,10 +139,10 @@ BoxCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 1
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 3
-  m_Size: {x: 18.0486, y: 6, z: 6}
-  m_Center: {x: 0, y: 3, z: -6}
+  m_Size: {x: 18.0486, y: 6, z: 2.7759953}
+  m_Center: {x: 0, y: 3, z: -7.6120024}
 --- !u!54 &7671987893247090008
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -239,7 +261,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 3
+          value: 0.7
         fsmIntParams: []
         fsmBoolParams: []
         fsmVector2Params: []
@@ -293,13 +315,15 @@ MonoBehaviour:
         actionNames:
         - HutongGames.PlayMaker.Actions.GetPosition
         - HutongGames.PlayMaker.Actions.SetPosition
+        - HutongGames.PlayMaker.Actions.Wait
         customNames:
         - 
         - 
-        actionEnabled: 0101
-        actionIsOpen: 0000
-        actionStartIndex: 0000000007000000
-        actionHashCodes: 5552ad05f6e5be03
+        - 
+        actionEnabled: 010101
+        actionIsOpen: 000001
+        actionStartIndex: 00000000070000000f000000
+        actionHashCodes: 5552ad05f6e5be0348c01101
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams:
@@ -367,6 +391,12 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0.25
         fsmIntParams: []
         fsmBoolParams: []
         fsmVector2Params: []
@@ -386,13 +416,14 @@ MonoBehaviour:
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
-        stringParams: []
-        byteData: 0000000000000000000101
+        stringParams:
+        - FINISHED
+        byteData: 000000000000000000010101
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 140000001c0000000f0000000f0000000f0000000700000001000000140000001c0000000f0000000f0000000f000000070000000100000001000000
+        paramDataType: 140000001c0000000f0000000f0000000f0000000700000001000000140000001c0000000f0000000f0000000f0000000700000001000000010000000f0000001700000001000000
         paramName:
         - gameObject
         - vector
@@ -409,8 +440,11 @@ MonoBehaviour:
         - space
         - everyFrame
         - lateUpdate
-        paramDataPos: 00000000000000000000000001000000020000000000000004000000010000000100000003000000040000000500000005000000090000000a000000
-        paramByteDataSize: 000000000000000000000000000000000000000004000000010000000000000000000000000000000000000000000000040000000100000001000000
+        - time
+        - finishEvent
+        - realTime
+        paramDataPos: 00000000000000000000000001000000020000000000000004000000010000000100000003000000040000000500000005000000090000000a00000006000000000000000b000000
+        paramByteDataSize: 000000000000000000000000000000000000000004000000010000000000000000000000000000000000000000000000040000000100000001000000000000000000000001000000
     - name: Wait for Stay
       description: 
       colorIndex: 0
@@ -697,8 +731,8 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 69
-  m_Center: {x: 0, y: 0, z: -0.000045776367}
+  m_Radius: 149.94374
+  m_Center: {x: 0, y: -0.00018310547, z: -0.000045776367}
 --- !u!114 &940918941628937419
 MonoBehaviour:
   m_ObjectHideFlags: 0
