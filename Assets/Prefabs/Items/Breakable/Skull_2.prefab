@@ -15015,11 +15015,10 @@ GameObject:
   - component: {fileID: 5609633583765862568}
   - component: {fileID: 8536146005211852686}
   - component: {fileID: -4144848801651552299}
-  - component: {fileID: 8970365034917435570}
   - component: {fileID: 8619799103645025506}
   - component: {fileID: 8529673103472462751}
-  - component: {fileID: 2054241352971736269}
   - component: {fileID: 6915567993485539952}
+  - component: {fileID: 5685935261002012892}
   m_Layer: 0
   m_Name: Skull_2
   m_TagString: Weapon
@@ -15254,18 +15253,6 @@ MonoBehaviour:
   m_LimitAngularVelocity: 0
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
---- !u!114 &8970365034917435570
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8690403555129543112}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 62fb9fb1177925e4b8a383be2b9db66c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UnityEngine.XR.Content.Interaction.RayAttachModifier
 --- !u!114 &8619799103645025506
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16734,28 +16721,6 @@ MonoBehaviour:
     handleAnimatorIK: 0
   fsmTemplate: {fileID: 0}
   eventHandlerComponentsAdded: 0
---- !u!64 &2054241352971736269
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8690403555129543112}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 1
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 5081405815257253784, guid: ab8a598d9582a3e41a08d2ab3e5106eb, type: 3}
 --- !u!82 &6915567993485539952
 AudioSource:
   m_ObjectHideFlags: 0
@@ -16853,6 +16818,27 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!135 &5685935261002012892
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8690403555129543112}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.21394393
+  m_Center: {x: -0.018713318, y: 0.09, z: -0.000000007450581}
 --- !u!1001 &1423173159727357840
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -15018,8 +15018,8 @@ GameObject:
   - component: {fileID: 8970365034917435570}
   - component: {fileID: 8619799103645025506}
   - component: {fileID: 8529673103472462751}
-  - component: {fileID: 6627099456011454442}
   - component: {fileID: 7544828851276127128}
+  - component: {fileID: 5923746649435357446}
   m_Layer: 0
   m_Name: Skull_3
   m_TagString: Weapon
@@ -16699,28 +16699,6 @@ MonoBehaviour:
     handleAnimatorIK: 0
   fsmTemplate: {fileID: 0}
   eventHandlerComponentsAdded: 0
---- !u!64 &6627099456011454442
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8690403555129543112}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 1
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -1744639390907758965, guid: b8b753acdddda5b4c80274f4cfb20df4, type: 3}
 --- !u!82 &7544828851276127128
 AudioSource:
   m_ObjectHideFlags: 0
@@ -16818,6 +16796,27 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!135 &5923746649435357446
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8690403555129543112}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.24228492
+  m_Center: {x: 0.012736537, y: 0.1, z: 0.000047132373}
 --- !u!1001 &2156797117297067420
 PrefabInstance:
   m_ObjectHideFlags: 0
