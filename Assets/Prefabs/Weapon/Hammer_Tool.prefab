@@ -4839,7 +4839,7 @@ ParticleSystem:
     vectorLabel1_3: W
 --- !u!199 &2454835407120576264
 ParticleSystemRenderer:
-  serializedVersion: 6
+  serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -4885,6 +4885,7 @@ ParticleSystemRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 3
+  m_MaskInteraction: 0
   m_RenderMode: 3
   m_MeshDistribution: 0
   m_SortMode: 0
@@ -4916,7 +4917,6 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
-  m_MaskInteraction: 0
 --- !u!114 &6206706802217321352
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5256,6 +5256,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!65 &5347407319795000795
 BoxCollider:
@@ -5815,8 +5816,8 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 50
-        y: 100
+        x: 63
+        y: 102
         width: 125.26
         height: 32
       isBreakpoint: 0
@@ -5906,7 +5907,7 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 237
+        x: 253
         y: 100
         width: 115.79
         height: 32
@@ -5925,7 +5926,6 @@ MonoBehaviour:
         colorIndex: 0
       actionData:
         actionNames:
-        - HutongGames.PlayMaker.Actions.SetScale
         - HutongGames.PlayMaker.Actions.ActivateGameObject
         - HutongGames.PlayMaker.Actions.SetParent
         - HutongGames.PlayMaker.Actions.ActivateGameObject
@@ -5935,11 +5935,10 @@ MonoBehaviour:
         - 
         - 
         - 
-        - 
-        actionEnabled: 0101010101
-        actionIsOpen: 0000010101
-        actionStartIndex: 00000000070000000c0000001100000016000000
-        actionHashCodes: afff1105b2cf1000a0dd8303b2cf1000a0dd8303
+        actionEnabled: 01010101
+        actionIsOpen: 00000001
+        actionStartIndex: 00000000050000000a0000000f000000
+        actionHashCodes: b2cf1000a0dd8303b2cf1000a0dd8303
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
@@ -5955,14 +5954,6 @@ MonoBehaviour:
           networkSync: 0
           value: {fileID: 0}
         fsmOwnerDefaultParams:
-        - ownerOption: 1
-          gameObject:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: {fileID: 3205803870197947175}
         - ownerOption: 1
           gameObject:
             useVariable: 0
@@ -6006,25 +5997,7 @@ MonoBehaviour:
         fsmVarParams: []
         fsmArrayParams: []
         fsmEnumParams: []
-        fsmFloatParams:
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 2
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 2
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 2
+        fsmFloatParams: []
         fsmIntParams: []
         fsmBoolParams:
         - useVariable: 0
@@ -6088,32 +6061,19 @@ MonoBehaviour:
           networkSync: 0
           value: 0
         fsmVector2Params: []
-        fsmVector3Params:
-        - useVariable: 1
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: {x: 0, y: 0, z: 0}
+        fsmVector3Params: []
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
         stringParams: []
-        byteData: 000000000000
+        byteData: 00000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 140000001c0000000f0000000f0000000f00000001000000010000001400000011000000110000000100000001000000140000001300000011000000110000001100000014000000110000001100000001000000010000001400000013000000110000001100000011000000
+        paramDataType: 1400000011000000110000000100000001000000140000001300000011000000110000001100000014000000110000001100000001000000010000001400000013000000110000001100000011000000
         paramName:
         - gameObject
-        - vector
-        - x
-        - y
-        - z
-        - everyFrame
-        - lateUpdate
-        - gameObject
         - activate
         - recursive
         - resetOnExit
@@ -6133,14 +6093,14 @@ MonoBehaviour:
         - worldPositionStays
         - resetLocalPosition
         - resetLocalRotation
-        paramDataPos: 000000000000000000000000010000000200000000000000010000000100000000000000010000000200000003000000020000000000000002000000030000000400000003000000050000000600000004000000050000000400000001000000070000000800000009000000
-        paramByteDataSize: 000000000000000000000000000000000000000001000000010000000000000000000000000000000100000001000000000000000000000000000000000000000000000000000000000000000000000001000000010000000000000000000000000000000000000000000000
+        paramDataPos: 0000000000000000010000000000000001000000010000000000000002000000030000000400000002000000050000000600000002000000030000000300000001000000070000000800000009000000
+        paramByteDataSize: 0000000000000000000000000100000001000000000000000000000000000000000000000000000000000000000000000000000001000000010000000000000000000000000000000000000000000000
     - name: Destroy Self
       description: 
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 436
+        x: 452
         y: 97
         width: 100.97
         height: 16
@@ -6185,7 +6145,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 0
+          value: 1
         - useVariable: 0
           name: 
           tooltip: 
@@ -6223,9 +6183,9 @@ MonoBehaviour:
       - useVariable: 1
         name: health
         tooltip: 
-        showInInspector: 0
+        showInInspector: 1
         networkSync: 0
-        value: 13
+        value: 1
       intVariables: []
       boolVariables: []
       stringVariables: []
@@ -6260,7 +6220,7 @@ MonoBehaviour:
     ResetVariablesOnEnable: 0
     EnableDebugFlow: 0
     EnableBreakpoints: 1
-    editorFlags: 224
+    editorFlags: 225
     activeStateName: 
     mouseEvents: 0
     handleLevelLoaded: 0
@@ -6362,6 +6322,8 @@ MonoBehaviour:
   m_StartingHoverFilters: []
   m_StartingSelectFilters: []
   m_StartingInteractionStrengthFilters: []
+  m_AutoFindParentInteractableInHierarchy: 0
+  m_ParentInteractableObject: {fileID: 0}
   m_AttachTransform: {fileID: 9063157265675953}
   m_SecondaryAttachTransform: {fileID: 0}
   m_UseDynamicAttach: 0
@@ -11395,7 +11357,7 @@ ParticleSystem:
     vectorLabel1_3: W
 --- !u!199 &8119829552863361495
 ParticleSystemRenderer:
-  serializedVersion: 6
+  serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -11441,6 +11403,7 @@ ParticleSystemRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_RenderMode: 3
   m_MeshDistribution: 0
   m_SortMode: 0
@@ -11472,7 +11435,6 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
-  m_MaskInteraction: 0
 --- !u!1001 &2134372167280557941
 PrefabInstance:
   m_ObjectHideFlags: 0

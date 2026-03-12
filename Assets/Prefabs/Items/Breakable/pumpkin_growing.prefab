@@ -4839,7 +4839,7 @@ ParticleSystem:
     vectorLabel1_3: W
 --- !u!199 &6966862520705958784
 ParticleSystemRenderer:
-  serializedVersion: 6
+  serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -4885,6 +4885,7 @@ ParticleSystemRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 3
+  m_MaskInteraction: 0
   m_RenderMode: 3
   m_MeshDistribution: 0
   m_SortMode: 0
@@ -4916,7 +4917,6 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
-  m_MaskInteraction: 0
 --- !u!114 &8868654268924362703
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9959,7 +9959,7 @@ ParticleSystem:
     vectorLabel1_3: W
 --- !u!199 &4640598884957575609
 ParticleSystemRenderer:
-  serializedVersion: 6
+  serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -10005,6 +10005,7 @@ ParticleSystemRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: -999
+  m_MaskInteraction: 0
   m_RenderMode: 3
   m_MeshDistribution: 0
   m_SortMode: 0
@@ -10036,7 +10037,6 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
-  m_MaskInteraction: 0
 --- !u!1 &7324284648989717942
 GameObject:
   m_ObjectHideFlags: 0
@@ -10130,6 +10130,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!65 &4134725701385088918
 BoxCollider:
@@ -10749,6 +10750,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8529673103472462751, guid: 8b906c80238400c44be1890e333c3aaa,
+        type: 3}
+      propertyPath: fsm.events.Array.size
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 8529673103472462751, guid: 8b906c80238400c44be1890e333c3aaa,
         type: 3}
