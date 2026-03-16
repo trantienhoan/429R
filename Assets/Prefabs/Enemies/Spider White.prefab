@@ -410,7 +410,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: 0.007915718, w: 0.9999687}
   m_LocalPosition: {x: -0.006, y: 0.261, z: -0.046}
-  m_LocalScale: {x: 0.2, y: 0.2, z: 0.2}
+  m_LocalScale: {x: 0.13, y: 0.13, z: 0.13}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 6682356580176916862}
@@ -5220,7 +5220,7 @@ ParticleSystem:
     vectorLabel1_3: W
 --- !u!199 &735258248086027964
 ParticleSystemRenderer:
-  serializedVersion: 6
+  serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -5266,6 +5266,7 @@ ParticleSystemRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 3
+  m_MaskInteraction: 0
   m_RenderMode: 0
   m_MeshDistribution: 0
   m_SortMode: 0
@@ -5297,7 +5298,6 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
-  m_MaskInteraction: 0
 --- !u!114 &4375428372109390791
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5713,6 +5713,7 @@ SkinnedMeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
   m_UpdateWhenOffscreen: 0
@@ -6180,7 +6181,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: FIREKILL
+          value: Fairy_Shield
         - useVariable: 0
           name: 
           tooltip: 
@@ -6278,7 +6279,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 010101010101
-        actionIsOpen: 010000000100
+        actionIsOpen: 000000000101
         actionStartIndex: 0000000004000000060000000b0000001000000021000000
         actionHashCodes: 87aa970015264c01c34b4105b2cf1000c1a7050081294e04
         unityObjectParams: []
@@ -6475,7 +6476,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {x: 0, y: 0, z: -0.29999995}
+          value: {x: 0, y: 0, z: -0.2999999}
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
@@ -6645,16 +6646,16 @@ MonoBehaviour:
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.SetFsmVariable
-        - HutongGames.PlayMaker.Actions.DestroySelf
         - HutongGames.PlayMaker.Actions.SendEvent
+        - HutongGames.PlayMaker.Actions.DestroySelf
         customNames:
         - 
         - 
         - 
         actionEnabled: 010101
-        actionIsOpen: 010101
-        actionStartIndex: 000000000500000008000000
-        actionHashCodes: fcb1a001230cc8005e69bb04
+        actionIsOpen: 000001
+        actionStartIndex: 000000000500000009000000
+        actionHashCodes: fcb1a0015e69bb04230cc800
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams:
@@ -6784,22 +6785,22 @@ MonoBehaviour:
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 14000000120000001200000027000000010000000f00000011000000110000001f000000170000000f00000001000000
+        paramDataType: 14000000120000001200000027000000010000001f000000170000000f000000010000000f0000001100000011000000
         paramName:
         - gameObject
         - fsmName
         - variableName
         - setValue
         - everyFrame
-        - delay
-        - realTime
-        - detachChildren
         - eventTarget
         - sendEvent
         - delay
         - everyFrame
-        paramDataPos: 000000000000000001000000000000000000000000000000000000000100000000000000000000000100000001000000
-        paramByteDataSize: 000000000000000000000000000000000100000000000000000000000000000000000000000000000000000001000000
+        - delay
+        - realTime
+        - detachChildren
+        paramDataPos: 000000000000000001000000000000000000000000000000000000000000000001000000010000000000000001000000
+        paramByteDataSize: 000000000000000000000000000000000100000000000000000000000000000001000000000000000000000000000000
     events:
     - name: next
       isSystemEvent: 0
@@ -7228,7 +7229,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 3
+          value: 1
         fsmIntParams:
         - useVariable: 1
           name: 
@@ -7335,7 +7336,7 @@ MonoBehaviour:
         customNames:
         - 
         actionEnabled: 01
-        actionIsOpen: 00
+        actionIsOpen: 01
         actionStartIndex: 00000000
         actionHashCodes: 4e661301
         unityObjectParams: []
@@ -7372,7 +7373,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 3
+          value: 6
         - useVariable: 0
           name: 
           tooltip: 
@@ -7464,7 +7465,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 01010101
-        actionIsOpen: 00000101
+        actionIsOpen: 00000001
         actionStartIndex: 00000000050000000e00000013000000
         actionHashCodes: c34b41054e6613015978870081294e04
         unityObjectParams: []
@@ -7576,7 +7577,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 10
+          value: 12
         - useVariable: 0
           name: 
           tooltip: 
@@ -7588,7 +7589,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 0.2
+          value: 0.5
         fsmIntParams:
         - useVariable: 1
           name: 
@@ -7727,7 +7728,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 010101010101
-        actionIsOpen: 000001000001
+        actionIsOpen: 010101010101
         actionStartIndex: 0000000002000000070000000a0000000e00000015000000
         actionHashCodes: 15264c01c34b4105f0eeac0136f094001bcdca049c512400
         unityObjectParams: []
@@ -7844,7 +7845,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 1
+          value: 1.1
         - useVariable: 0
           name: 
           tooltip: 
@@ -7873,7 +7874,7 @@ MonoBehaviour:
         stringParams:
         - next
         - next
-        - 
+        - ExitedZone
         - ExitedZone
         byteData: 00010102000000
         arrayParamSizes: 
@@ -7959,7 +7960,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 01010101010101
-        actionIsOpen: 00000000000001
+        actionIsOpen: 01000001010101
         actionStartIndex: 0000000004000000060000000b00000014000000180000001f000000
         actionHashCodes: 5e69bb0415264c01c34b41054e66130136f094001bcdca0481294e04
         unityObjectParams: []
@@ -8079,7 +8080,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 0.1
+          value: 0
         - useVariable: 1
           name: 
           tooltip: 
@@ -8115,7 +8116,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 1
+          value: 1.5
         - useVariable: 0
           name: 
           tooltip: 
@@ -8595,6 +8596,7 @@ SkinnedMeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
   m_UpdateWhenOffscreen: 0
@@ -8779,8 +8781,8 @@ ParticleSystem:
     startLifetime:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 3.5
-      minScalar: 6
+      scalar: 1.7
+      minScalar: 2.1
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -9600,7 +9602,7 @@ ParticleSystem:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
-    m_BurstCount: 3
+    m_BurstCount: 2
     m_Bursts:
     - serializedVersion: 2
       time: 0
@@ -9716,64 +9718,6 @@ ParticleSystem:
           m_PostInfinity: 2
           m_RotationOrder: 4
       cycleCount: 1
-      repeatInterval: 0.5
-      probability: 1
-    - serializedVersion: 2
-      time: 1
-      countCurve:
-        serializedVersion: 2
-        minMaxState: 0
-        scalar: 5
-        minScalar: 30
-        maxCurve:
-          serializedVersion: 2
-          m_Curve:
-          - serializedVersion: 3
-            time: 0
-            value: 1
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          - serializedVersion: 3
-            time: 1
-            value: 1
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          m_PreInfinity: 2
-          m_PostInfinity: 2
-          m_RotationOrder: 4
-        minCurve:
-          serializedVersion: 2
-          m_Curve:
-          - serializedVersion: 3
-            time: 0
-            value: 1
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          - serializedVersion: 3
-            time: 1
-            value: 1
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          m_PreInfinity: 2
-          m_PostInfinity: 2
-          m_RotationOrder: 4
-      cycleCount: 2
       repeatInterval: 0.5
       probability: 1
   SizeModule:
@@ -10145,8 +10089,8 @@ ParticleSystem:
       maxColor: {r: 1, g: 1, b: 1, a: 1}
       maxGradient:
         serializedVersion: 2
-        key0: {r: 0.103773594, g: 0.103773594, b: 0.103773594, a: 0}
-        key1: {r: 0.20754719, g: 0.07342471, b: 0.08638307, a: 1}
+        key0: {r: 0.5471698, g: 0.5471698, b: 0.5471698, a: 0}
+        key1: {r: 0.7264151, g: 0.7264151, b: 0.7264151, a: 1}
         key2: {r: 1, g: 1, b: 1, a: 1}
         key3: {r: 1, g: 1, b: 1, a: 0}
         key4: {r: 0, g: 0, b: 0, a: 0}
@@ -10318,7 +10262,7 @@ ParticleSystem:
     speedRange: {x: 0, y: 1}
     tilesX: 2
     tilesY: 2
-    animationType: 0
+    animationType: 1
     rowIndex: 0
     cycles: 1
     uvChannelMask: -1
@@ -13580,7 +13524,7 @@ ParticleSystem:
     vectorLabel1_3: W
 --- !u!199 &6403005663513668189
 ParticleSystemRenderer:
-  serializedVersion: 6
+  serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -13626,6 +13570,7 @@ ParticleSystemRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_RenderMode: 3
   m_MeshDistribution: 0
   m_SortMode: 0
@@ -13657,7 +13602,6 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
-  m_MaskInteraction: 0
 --- !u!1 &3754099972305684221
 GameObject:
   m_ObjectHideFlags: 0
@@ -13971,7 +13915,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &8986349096288024622
 Transform:
   m_ObjectHideFlags: 0
@@ -14034,6 +13978,7 @@ SkinnedMeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
   m_UpdateWhenOffscreen: 0
