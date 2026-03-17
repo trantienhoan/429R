@@ -19134,7 +19134,7 @@ MonoBehaviour:
       - fsmEvent:
           name: next
           isSystemEvent: 0
-          isGlobal: 0
+          isGlobal: 1
         toState: Check force
         linkStyle: 0
         linkConstraint: 0
@@ -19239,7 +19239,7 @@ MonoBehaviour:
       - fsmEvent:
           name: next
           isSystemEvent: 0
-          isGlobal: 0
+          isGlobal: 1
         toState: Deal 1 damage
         linkStyle: 0
         linkConstraint: 0
@@ -19501,7 +19501,7 @@ MonoBehaviour:
     events:
     - name: next
       isSystemEvent: 0
-      isGlobal: 0
+      isGlobal: 1
     - name: back
       isSystemEvent: 0
       isGlobal: 0
@@ -19624,7 +19624,7 @@ MonoBehaviour:
       - fsmEvent:
           name: next
           isSystemEvent: 0
-          isGlobal: 0
+          isGlobal: 1
         toState: Activate Parts
         linkStyle: 0
         linkConstraint: 0
@@ -19904,7 +19904,7 @@ MonoBehaviour:
     events:
     - name: next
       isSystemEvent: 0
-      isGlobal: 0
+      isGlobal: 1
     - name: FINISHED
       isSystemEvent: 1
       isGlobal: 0
@@ -20177,7 +20177,7 @@ MonoBehaviour:
       - fsmEvent:
           name: next
           isSystemEvent: 0
-          isGlobal: 0
+          isGlobal: 1
         toState: COMPLETE
         linkStyle: 0
         linkConstraint: 0
@@ -20475,7 +20475,7 @@ MonoBehaviour:
       - fsmEvent:
           name: next
           isSystemEvent: 0
-          isGlobal: 0
+          isGlobal: 1
         toState: Loop Spawns
         linkStyle: 0
         linkConstraint: 0
@@ -20564,7 +20564,7 @@ MonoBehaviour:
       isGlobal: 0
     - name: next
       isSystemEvent: 0
-      isGlobal: 0
+      isGlobal: 1
     - name: Damage
       isSystemEvent: 0
       isGlobal: 1
@@ -22374,6 +22374,21 @@ PrefabInstance:
       propertyPath: fsm.states.Array.data[1].actionData.fsmOwnerDefaultParams.Array.data[1].gameObject.value
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 1466336972774683682, guid: 8291f26abc51cbe48a8d0381d84ba6d8,
+        type: 3}
+      propertyPath: fsm.events.Array.data[0].isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1466336972774683682, guid: 8291f26abc51cbe48a8d0381d84ba6d8,
+        type: 3}
+      propertyPath: fsm.states.Array.data[0].transitions.Array.data[1].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1466336972774683682, guid: 8291f26abc51cbe48a8d0381d84ba6d8,
+        type: 3}
+      propertyPath: fsm.states.Array.data[1].transitions.Array.data[1].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4612582309924004840, guid: 8291f26abc51cbe48a8d0381d84ba6d8,
         type: 3}
       propertyPath: m_LocalScale.x
@@ -22454,6 +22469,16 @@ PrefabInstance:
       propertyPath: m_IsTrigger
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8740302553653479295, guid: 8291f26abc51cbe48a8d0381d84ba6d8,
+        type: 3}
+      propertyPath: fsm.events.Array.data[0].isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8740302553653479295, guid: 8291f26abc51cbe48a8d0381d84ba6d8,
+        type: 3}
+      propertyPath: fsm.states.Array.data[0].transitions.Array.data[0].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 9138850417452152812, guid: 8291f26abc51cbe48a8d0381d84ba6d8, type: 3}
@@ -22494,6 +22519,21 @@ PrefabInstance:
         type: 3}
       propertyPath: m_TagString
       value: Weapon
+      objectReference: {fileID: 0}
+    - target: {fileID: 2862001457090453308, guid: ef8365187c46a5f4a89ca65f4ce66f18,
+        type: 3}
+      propertyPath: fsm.events.Array.data[0].isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2862001457090453308, guid: ef8365187c46a5f4a89ca65f4ce66f18,
+        type: 3}
+      propertyPath: fsm.states.Array.data[0].transitions.Array.data[1].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2862001457090453308, guid: ef8365187c46a5f4a89ca65f4ce66f18,
+        type: 3}
+      propertyPath: fsm.states.Array.data[1].transitions.Array.data[1].fsmEvent.isGlobal
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3446065349930563775, guid: ef8365187c46a5f4a89ca65f4ce66f18,
         type: 3}
@@ -22567,8 +22607,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7355140381353979566, guid: ef8365187c46a5f4a89ca65f4ce66f18,
         type: 3}
+      propertyPath: fsm.events.Array.data[0].isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7355140381353979566, guid: ef8365187c46a5f4a89ca65f4ce66f18,
+        type: 3}
       propertyPath: fsm.variables.floatVariables.Array.data[0].value
       value: 969
+      objectReference: {fileID: 0}
+    - target: {fileID: 7355140381353979566, guid: ef8365187c46a5f4a89ca65f4ce66f18,
+        type: 3}
+      propertyPath: fsm.states.Array.data[0].transitions.Array.data[0].fsmEvent.isGlobal
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -1951,7 +1951,7 @@ MonoBehaviour:
       - fsmEvent:
           name: next
           isSystemEvent: 0
-          isGlobal: 0
+          isGlobal: 1
         toState: Activate Parts
         linkStyle: 0
         linkConstraint: 0
@@ -2390,7 +2390,7 @@ MonoBehaviour:
     events:
     - name: next
       isSystemEvent: 0
-      isGlobal: 0
+      isGlobal: 1
     - name: FINISHED
       isSystemEvent: 1
       isGlobal: 0
@@ -2504,7 +2504,7 @@ MonoBehaviour:
       - fsmEvent:
           name: next
           isSystemEvent: 0
-          isGlobal: 0
+          isGlobal: 1
         toState: Check force
         linkStyle: 0
         linkConstraint: 0
@@ -2653,7 +2653,7 @@ MonoBehaviour:
       - fsmEvent:
           name: next
           isSystemEvent: 0
-          isGlobal: 0
+          isGlobal: 1
         toState: Deal 1 damage
         linkStyle: 0
         linkConstraint: 0
@@ -2915,7 +2915,7 @@ MonoBehaviour:
     events:
     - name: next
       isSystemEvent: 0
-      isGlobal: 0
+      isGlobal: 1
     - name: back
       isSystemEvent: 0
       isGlobal: 0
@@ -22284,6 +22284,21 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2676028928895704743}
     m_Modifications:
+    - target: {fileID: 601118046603812040, guid: ca5e683eb456911458feecc6c0365434,
+        type: 3}
+      propertyPath: fsm.events.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 601118046603812040, guid: ca5e683eb456911458feecc6c0365434,
+        type: 3}
+      propertyPath: fsm.events.Array.data[0].isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 601118046603812040, guid: ca5e683eb456911458feecc6c0365434,
+        type: 3}
+      propertyPath: fsm.states.Array.data[0].transitions.Array.data[0].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 936478556243301555, guid: ca5e683eb456911458feecc6c0365434,
         type: 3}
       propertyPath: m_Name
@@ -22337,6 +22352,26 @@ PrefabInstance:
     - target: {fileID: 6100248801652272385, guid: ca5e683eb456911458feecc6c0365434,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7201153143539724447, guid: ca5e683eb456911458feecc6c0365434,
+        type: 3}
+      propertyPath: fsm.events.Array.data[0].isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7201153143539724447, guid: ca5e683eb456911458feecc6c0365434,
+        type: 3}
+      propertyPath: fsm.states.Array.data[0].transitions.Array.data[1].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7201153143539724447, guid: ca5e683eb456911458feecc6c0365434,
+        type: 3}
+      propertyPath: fsm.states.Array.data[1].transitions.Array.data[1].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8949420998267753273, guid: ca5e683eb456911458feecc6c0365434,
+        type: 3}
+      propertyPath: fsm.events.Array.size
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
@@ -22407,6 +22442,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8529673103472462751, guid: 9ac6a3073c7087e49bff7fcd9919c79d,
+        type: 3}
+      propertyPath: fsm.events.Array.size
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 8690403555129543112, guid: 9ac6a3073c7087e49bff7fcd9919c79d,
         type: 3}
@@ -22481,6 +22521,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8529673103472462751, guid: 64a9d0421eb032141b082caf0296696d,
+        type: 3}
+      propertyPath: fsm.events.Array.size
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 8690403555129543112, guid: 64a9d0421eb032141b082caf0296696d,
         type: 3}
@@ -22640,6 +22685,36 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8529673103472462751, guid: 5e7e69264a96b9648bbd1947ac1347bf,
+        type: 3}
+      propertyPath: fsm.events.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8529673103472462751, guid: 5e7e69264a96b9648bbd1947ac1347bf,
+        type: 3}
+      propertyPath: fsm.events.Array.data[0].isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8529673103472462751, guid: 5e7e69264a96b9648bbd1947ac1347bf,
+        type: 3}
+      propertyPath: fsm.states.Array.data[0].transitions.Array.data[0].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8619799103645025506, guid: 5e7e69264a96b9648bbd1947ac1347bf,
+        type: 3}
+      propertyPath: fsm.events.Array.data[0].isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8619799103645025506, guid: 5e7e69264a96b9648bbd1947ac1347bf,
+        type: 3}
+      propertyPath: fsm.states.Array.data[0].transitions.Array.data[1].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8619799103645025506, guid: 5e7e69264a96b9648bbd1947ac1347bf,
+        type: 3}
+      propertyPath: fsm.states.Array.data[1].transitions.Array.data[1].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8690403555129543112, guid: 5e7e69264a96b9648bbd1947ac1347bf,
         type: 3}
       propertyPath: m_Name
@@ -22714,6 +22789,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8529673103472462751, guid: 9ac6a3073c7087e49bff7fcd9919c79d,
+        type: 3}
+      propertyPath: fsm.events.Array.size
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 8690403555129543112, guid: 9ac6a3073c7087e49bff7fcd9919c79d,
         type: 3}
       propertyPath: m_Name
@@ -22787,6 +22867,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8529673103472462751, guid: 9ac6a3073c7087e49bff7fcd9919c79d,
+        type: 3}
+      propertyPath: fsm.events.Array.size
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 8690403555129543112, guid: 9ac6a3073c7087e49bff7fcd9919c79d,
         type: 3}

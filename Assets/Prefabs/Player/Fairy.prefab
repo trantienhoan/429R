@@ -17137,7 +17137,7 @@ MonoBehaviour:
       - fsmEvent:
           name: next
           isSystemEvent: 0
-          isGlobal: 0
+          isGlobal: 1
         toState: Scale Up
         linkStyle: 0
         linkConstraint: 0
@@ -17706,7 +17706,7 @@ MonoBehaviour:
     events:
     - name: next
       isSystemEvent: 0
-      isGlobal: 0
+      isGlobal: 1
     - name: FINISHED
       isSystemEvent: 1
       isGlobal: 0
@@ -18405,7 +18405,7 @@ MonoBehaviour:
       - fsmEvent:
           name: next
           isSystemEvent: 0
-          isGlobal: 0
+          isGlobal: 1
         toState: DEAD
         linkStyle: 0
         linkConstraint: 0
@@ -19241,7 +19241,7 @@ MonoBehaviour:
       isGlobal: 1
     - name: next
       isSystemEvent: 0
-      isGlobal: 0
+      isGlobal: 1
     - name: FINISHED
       isSystemEvent: 1
       isGlobal: 0
@@ -29722,6 +29722,31 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2183106083582989541}
     m_Modifications:
+    - target: {fileID: 2264088855654341351, guid: 5ea741e1d81181a40b1af71eaea25b0c,
+        type: 3}
+      propertyPath: fsm.events.Array.data[0].isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2264088855654341351, guid: 5ea741e1d81181a40b1af71eaea25b0c,
+        type: 3}
+      propertyPath: fsm.states.Array.data[0].transitions.Array.data[0].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3523355305661217573, guid: 5ea741e1d81181a40b1af71eaea25b0c,
+        type: 3}
+      propertyPath: fsm.events.Array.data[0].isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3523355305661217573, guid: 5ea741e1d81181a40b1af71eaea25b0c,
+        type: 3}
+      propertyPath: fsm.states.Array.data[0].transitions.Array.data[0].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3523355305661217573, guid: 5ea741e1d81181a40b1af71eaea25b0c,
+        type: 3}
+      propertyPath: fsm.states.Array.data[1].transitions.Array.data[1].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4528681779763800995, guid: 5ea741e1d81181a40b1af71eaea25b0c,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -29802,6 +29827,31 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2183106083582989541}
     m_Modifications:
+    - target: {fileID: 2264088855654341351, guid: 5ea741e1d81181a40b1af71eaea25b0c,
+        type: 3}
+      propertyPath: fsm.events.Array.data[0].isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2264088855654341351, guid: 5ea741e1d81181a40b1af71eaea25b0c,
+        type: 3}
+      propertyPath: fsm.states.Array.data[0].transitions.Array.data[0].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3523355305661217573, guid: 5ea741e1d81181a40b1af71eaea25b0c,
+        type: 3}
+      propertyPath: fsm.events.Array.data[0].isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3523355305661217573, guid: 5ea741e1d81181a40b1af71eaea25b0c,
+        type: 3}
+      propertyPath: fsm.states.Array.data[0].transitions.Array.data[0].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3523355305661217573, guid: 5ea741e1d81181a40b1af71eaea25b0c,
+        type: 3}
+      propertyPath: fsm.states.Array.data[1].transitions.Array.data[1].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4528681779763800995, guid: 5ea741e1d81181a40b1af71eaea25b0c,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -29882,6 +29932,31 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2183106083582989541}
     m_Modifications:
+    - target: {fileID: 2264088855654341351, guid: 5ea741e1d81181a40b1af71eaea25b0c,
+        type: 3}
+      propertyPath: fsm.events.Array.data[0].isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2264088855654341351, guid: 5ea741e1d81181a40b1af71eaea25b0c,
+        type: 3}
+      propertyPath: fsm.states.Array.data[0].transitions.Array.data[0].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3523355305661217573, guid: 5ea741e1d81181a40b1af71eaea25b0c,
+        type: 3}
+      propertyPath: fsm.events.Array.data[0].isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3523355305661217573, guid: 5ea741e1d81181a40b1af71eaea25b0c,
+        type: 3}
+      propertyPath: fsm.states.Array.data[0].transitions.Array.data[0].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3523355305661217573, guid: 5ea741e1d81181a40b1af71eaea25b0c,
+        type: 3}
+      propertyPath: fsm.states.Array.data[1].transitions.Array.data[1].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4528681779763800995, guid: 5ea741e1d81181a40b1af71eaea25b0c,
         type: 3}
       propertyPath: m_LocalPosition.x

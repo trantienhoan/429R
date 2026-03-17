@@ -23843,7 +23843,7 @@ MonoBehaviour:
       - fsmEvent:
           name: next
           isSystemEvent: 0
-          isGlobal: 0
+          isGlobal: 1
         toState: Activate Parts
         linkStyle: 0
         linkConstraint: 0
@@ -24370,7 +24370,7 @@ MonoBehaviour:
     events:
     - name: next
       isSystemEvent: 0
-      isGlobal: 0
+      isGlobal: 1
     - name: FINISHED
       isSystemEvent: 1
       isGlobal: 0
@@ -24512,7 +24512,7 @@ MonoBehaviour:
       - fsmEvent:
           name: next
           isSystemEvent: 0
-          isGlobal: 0
+          isGlobal: 1
         toState: Check force
         linkStyle: 0
         linkConstraint: 0
@@ -24661,7 +24661,7 @@ MonoBehaviour:
       - fsmEvent:
           name: next
           isSystemEvent: 0
-          isGlobal: 0
+          isGlobal: 1
         toState: Deal 1 damage
         linkStyle: 0
         linkConstraint: 0
@@ -25004,7 +25004,7 @@ MonoBehaviour:
     events:
     - name: next
       isSystemEvent: 0
-      isGlobal: 0
+      isGlobal: 1
     - name: back
       isSystemEvent: 0
       isGlobal: 0
@@ -33799,6 +33799,16 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8681851285859518967, guid: 024ba4dffe1521b45a86a52d4819d5b3,
         type: 3}
+      propertyPath: fsm.events.Array.data[0].isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8681851285859518967, guid: 024ba4dffe1521b45a86a52d4819d5b3,
+        type: 3}
+      propertyPath: fsm.states.Array.data[0].transitions.Array.data[0].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8681851285859518967, guid: 024ba4dffe1521b45a86a52d4819d5b3,
+        type: 3}
       propertyPath: fsm.states.Array.data[1].actionData.fsmOwnerDefaultParams.Array.data[0].gameObject.value
       value: 
       objectReference: {fileID: 0}
@@ -33907,6 +33917,31 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 634974111848896902, guid: d8aa458306020af4c9d7b94e3462b698,
         type: 3}
+      propertyPath: fsm.events.Array.data[4].isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 634974111848896902, guid: d8aa458306020af4c9d7b94e3462b698,
+        type: 3}
+      propertyPath: fsm.states.Array.data[2].transitions.Array.data[0].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 634974111848896902, guid: d8aa458306020af4c9d7b94e3462b698,
+        type: 3}
+      propertyPath: fsm.states.Array.data[3].transitions.Array.data[0].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 634974111848896902, guid: d8aa458306020af4c9d7b94e3462b698,
+        type: 3}
+      propertyPath: fsm.states.Array.data[4].transitions.Array.data[0].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 634974111848896902, guid: d8aa458306020af4c9d7b94e3462b698,
+        type: 3}
+      propertyPath: fsm.states.Array.data[6].transitions.Array.data[0].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 634974111848896902, guid: d8aa458306020af4c9d7b94e3462b698,
+        type: 3}
       propertyPath: fsm.states.Array.data[5].actionData.fsmEventTargetParams.Array.data[0].gameObject.gameObject.value
       value: 
       objectReference: {fileID: 0}
@@ -33964,6 +33999,31 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6174024472675752810, guid: d8aa458306020af4c9d7b94e3462b698,
+        type: 3}
+      propertyPath: fsm.events.Array.data[0].isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6174024472675752810, guid: d8aa458306020af4c9d7b94e3462b698,
+        type: 3}
+      propertyPath: fsm.states.Array.data[0].transitions.Array.data[0].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6174024472675752810, guid: d8aa458306020af4c9d7b94e3462b698,
+        type: 3}
+      propertyPath: fsm.states.Array.data[1].transitions.Array.data[1].fsmEvent.isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8269147073881496658, guid: d8aa458306020af4c9d7b94e3462b698,
+        type: 3}
+      propertyPath: fsm.events.Array.data[0].isGlobal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8269147073881496658, guid: d8aa458306020af4c9d7b94e3462b698,
+        type: 3}
+      propertyPath: fsm.states.Array.data[0].transitions.Array.data[0].fsmEvent.isGlobal
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8269147073881496658, guid: d8aa458306020af4c9d7b94e3462b698,
         type: 3}
