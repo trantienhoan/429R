@@ -5452,6 +5452,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: cb2373c235c2f904899f67ecc789f72a,
+        type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: -7915710123734933796, guid: cb2373c235c2f904899f67ecc789f72a,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -6277,7 +6282,7 @@ MonoBehaviour:
         x: 64
         y: 176
         width: 128.22
-        height: 32
+        height: 48
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
@@ -6291,17 +6296,28 @@ MonoBehaviour:
         linkConstraint: 1
         linkTarget: 0
         colorIndex: 0
+      - fsmEvent:
+          name: FINISHED
+          isSystemEvent: 1
+          isGlobal: 0
+        toState: Deal 1 damage
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
       actionData:
         actionNames:
+        - HutongGames.PlayMaker.Actions.CollisionEvent
         - HutongGames.PlayMaker.Actions.CollisionEvent
         - HutongGames.PlayMaker.Actions.AudioPlay
         customNames:
         - 
         - 
-        actionEnabled: 0101
-        actionIsOpen: 0101
-        actionStartIndex: 0000000006000000
-        actionHashCodes: beb3310081294e04
+        - 
+        actionEnabled: 010101
+        actionIsOpen: 010101
+        actionStartIndex: 00000000060000000c000000
+        actionHashCodes: beb33100beb3310081294e04
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
@@ -6310,7 +6326,21 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: {fileID: 0}
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 0}
         fsmOwnerDefaultParams:
+        - ownerOption: 0
+          gameObject:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 0}
         - ownerOption: 0
           gameObject:
             useVariable: 0
@@ -6340,6 +6370,12 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: Weapon
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: Destroyer
         fsmObjectParams:
         - useVariable: 0
           name: 
@@ -6352,6 +6388,12 @@ MonoBehaviour:
         fsmArrayParams: []
         fsmEnumParams: []
         fsmFloatParams:
+        - useVariable: 1
+          name: collisionForce
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
         - useVariable: 1
           name: collisionForce
           tooltip: 
@@ -6379,14 +6421,21 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - next
+        - FINISHED
         - 
-        byteData: 00000000
+        byteData: 0000000000000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 14000000070000001200000017000000130000000f000000140000000f000000180000001100000017000000
+        paramDataType: 14000000070000001200000017000000130000000f00000014000000070000001200000017000000130000000f000000140000000f000000180000001100000017000000
         paramName:
+        - gameObject
+        - collision
+        - collideTag
+        - sendEvent
+        - storeCollider
+        - storeForce
         - gameObject
         - collision
         - collideTag
@@ -6398,8 +6447,8 @@ MonoBehaviour:
         - oneShotClip
         - WaitForEndOfClip
         - finishedEvent
-        paramDataPos: 0000000000000000000000000000000000000000000000000100000001000000000000000000000001000000
-        paramByteDataSize: 0000000004000000000000000000000000000000000000000000000000000000000000000000000000000000
+        paramDataPos: 0000000000000000000000000000000000000000000000000100000004000000010000000100000001000000010000000200000002000000000000000000000002000000
+        paramByteDataSize: 0000000004000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000
     - name: Check force
       description: 
       colorIndex: 4
@@ -6482,7 +6531,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 6
+          value: 10
         - useVariable: 0
           name: 
           tooltip: 

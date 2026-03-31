@@ -29,9 +29,11 @@ Transform:
   m_LocalPosition: {x: 0, y: 0.0034453182, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 6471722580608251220}
+  - {fileID: 4348504656366390227}
   m_Father: {fileID: 8139032063423879291}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 89.98021, y: 0, z: 0}
 --- !u!65 &1016023617606906383
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -80,13 +82,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3205803870197947175}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.005597115, y: 0.7070847, z: 0.0055975025, w: 0.7070846}
-  m_LocalPosition: {x: 0, y: 0.00379, z: 0.00006}
-  m_LocalScale: {x: 0.0017250002, y: 0.0017250004, z: 0.0017249996}
+  m_LocalRotation: {x: -0.4960266, y: 0.5039424, z: -0.49602643, w: 0.503942}
+  m_LocalPosition: {x: 0, y: 0.00006000008, z: -0.00034467666}
+  m_LocalScale: {x: 0.0017250002, y: 0.0017250002, z: 0.0017249999}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 6146000362870841766}
-  m_Father: {fileID: 8139032063423879291}
+  m_Father: {fileID: 3672944928627919936}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!198 &4094096878834213621
 ParticleSystem:
@@ -171,7 +173,7 @@ ParticleSystem:
     startLifetime:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 0.25
+      scalar: 0.35
       minScalar: 0.15
       maxCurve:
         serializedVersion: 2
@@ -6471,7 +6473,7 @@ MonoBehaviour:
         tooltip: 
         showInInspector: 1
         networkSync: 0
-        value: 696
+        value: 69
       intVariables: []
       boolVariables: []
       stringVariables: []
@@ -6614,6 +6616,18 @@ MonoBehaviour:
           m_StringArgument: Fire
           m_BoolArgument: 1
         m_CallState: 2
+      - m_Target: {fileID: 6594331293433729677}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 1
+        m_CallState: 2
   m_Deactivated:
     m_PersistentCalls:
       m_Calls:
@@ -6627,6 +6641,18 @@ MonoBehaviour:
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: Release
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 6594331293433729677}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
   m_StartingHoverFilters: []
@@ -6817,7 +6843,7 @@ Transform:
   m_Children:
   - {fileID: 8139032063423879291}
   m_Father: {fileID: 3675610110980597232}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -89.98021, y: 0, z: 0}
 --- !u!1 &5853063292150961962
 GameObject:
   m_ObjectHideFlags: 0
@@ -6849,6 +6875,59 @@ Transform:
   m_Children: []
   m_Father: {fileID: 8139032063423879291}
   m_LocalEulerAnglesHint: {x: 225, y: 0, z: 0}
+--- !u!1 &6594331293433729677
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4348504656366390227}
+  - component: {fileID: 4571432001875839358}
+  m_Layer: 0
+  m_Name: Destroyer_Collider
+  m_TagString: Destroyer
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &4348504656366390227
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6594331293433729677}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0.0026405067}
+  m_LocalScale: {x: 0.0025497645, y: 0.0025497647, z: 0.0025497647}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3672944928627919936}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &4571432001875839358
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6594331293433729677}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1.0111761, y: 1.3737531, z: 0.89970446}
+  m_Center: {x: 0, y: 0, z: -1}
 --- !u!1 &8548668125928811613
 GameObject:
   m_ObjectHideFlags: 0
@@ -6975,7 +7054,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3672944928627919936}
-  - {fileID: 6471722580608251220}
   - {fileID: 9063157265675953}
   m_Father: {fileID: 2747264191407611298}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -7116,8 +7194,8 @@ ParticleSystem:
     startLifetime:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 1
-      minScalar: 1.2
+      scalar: 1.1
+      minScalar: 0.9
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -7571,7 +7649,7 @@ ParticleSystem:
     maxNumParticles: 1000
     customEmitterVelocity: {x: 0, y: 0, z: 0}
     size3D: 0
-    rotation3D: 1
+    rotation3D: 0
     gravityModifier:
       serializedVersion: 2
       minMaxState: 0
