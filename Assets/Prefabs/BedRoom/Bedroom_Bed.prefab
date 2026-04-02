@@ -27,7 +27,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 414450315641964227}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: 0.007915718, w: 0.9999687}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
@@ -117,8 +117,8 @@ ParticleSystem:
     startLifetime:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 1.1
-      minScalar: 1.3
+      scalar: 0.9
+      minScalar: 1.1
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -153,7 +153,7 @@ ParticleSystem:
       serializedVersion: 2
       minMaxState: 3
       scalar: 1
-      minScalar: 0.5
+      minScalar: 1.3
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -209,15 +209,15 @@ ParticleSystem:
       maxColor: {r: 1, g: 1, b: 1, a: 0.4117647}
       maxGradient:
         serializedVersion: 2
-        key0: {r: 0.62352943, g: 0.53163815, b: 0.43137255, a: 1}
-        key1: {r: 0.6198825, g: 0.6603774, b: 0.64255965, a: 1}
-        key2: {r: 0.38679248, g: 0.35415432, b: 0.34482914, a: 0}
+        key0: {r: 0.62352943, g: 0.53333336, b: 0.43137258, a: 1}
+        key1: {r: 0.7183724, g: 0.7264151, b: 0.58592916, a: 1}
+        key2: {r: 0.5471698, g: 0.44661656, b: 0.33294767, a: 0}
         key3: {r: 0, g: 0.8228338, b: 0.8396226, a: 0}
         key4: {r: 0.14978641, g: 0.38635373, b: 0.9622642, a: 0}
         key5: {r: 0.14978641, g: 0.38635373, b: 0.9622642, a: 0}
         key6: {r: 0.14978641, g: 0.38635373, b: 0.9622642, a: 0}
         key7: {r: 0.8425242, g: 0.3066038, b: 1, a: 0}
-        ctime0: 18697
+        ctime0: 30840
         ctime1: 41441
         ctime2: 65535
         ctime3: 65535
@@ -1119,32 +1119,23 @@ ParticleSystem:
     curve:
       serializedVersion: 2
       minMaxState: 1
-      scalar: 10
+      scalar: 5
       minScalar: 1
       maxCurve:
         serializedVersion: 2
         m_Curve:
         - serializedVersion: 3
           time: 0
-          value: 0.4853592
-          inSlope: 1.38653
-          outSlope: 1.38653
+          value: 0.38009644
+          inSlope: 3.1499581
+          outSlope: 3.1499581
           tangentMode: 0
           weightedMode: 0
           inWeight: 0.33333334
-          outWeight: 0.28418535
-        - serializedVersion: 3
-          time: 0.7595098
-          value: 1
-          inSlope: 0
-          outSlope: 0
-          tangentMode: 0
-          weightedMode: 0
-          inWeight: 0.33333334
-          outWeight: 0.33333334
+          outWeight: 0.19011405
         - serializedVersion: 3
           time: 1
-          value: 0.6492958
+          value: 0.7229805
           inSlope: -0.50064284
           outSlope: -0.50064284
           tangentMode: 0
@@ -5074,7 +5065,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 1.3
+          value: 1.1
         fsmIntParams: []
         fsmBoolParams: []
         fsmVector2Params: []
@@ -5473,7 +5464,7 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - FINISHED
-        byteData: 00
+        byteData: 01
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
@@ -5821,7 +5812,6 @@ Transform:
   - {fileID: 7527640362965735226}
   - {fileID: 6574534476616042590}
   - {fileID: 842514213085125497}
-  - {fileID: 59272499434805982}
   - {fileID: 1334807483978817445}
   - {fileID: 6429778296352800888}
   m_Father: {fileID: 704297073810520652}
@@ -6601,7 +6591,7 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - FINISHED
-        byteData: 00
+        byteData: 01
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
@@ -6904,221 +6894,6 @@ MonoBehaviour:
     handleAnimatorIK: 0
   fsmTemplate: {fileID: 0}
   eventHandlerComponentsAdded: 0
---- !u!1 &891051980139120925
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 59272499434805982}
-  - component: {fileID: 5784431988505674763}
-  m_Layer: 0
-  m_Name: Random_Box_Pos
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &59272499434805982
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 891051980139120925}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.751, y: 0.182, z: 2.289}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 3401226219215713874}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &5784431988505674763
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 891051980139120925}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1384774831, guid: e743331561ef77147ae48cda9bcb8209, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: PlayMaker.dll::PlayMakerFSM
-  fsm:
-    dataVersion: 2
-    usedInTemplate: {fileID: 0}
-    name: FSM
-    startState: Init
-    states:
-    - name: Init
-      description: 
-      colorIndex: 0
-      position:
-        serializedVersion: 2
-        x: 50
-        y: 100
-        width: 100
-        height: 16
-      isBreakpoint: 0
-      isSequence: 0
-      hideUnused: 0
-      transitions: []
-      actionData:
-        actionNames:
-        - HutongGames.PlayMaker.Actions.CreateObject
-        customNames:
-        - 
-        actionEnabled: 01
-        actionIsOpen: 01
-        actionStartIndex: 00000000
-        actionHashCodes: 60532301
-        unityObjectParams: []
-        fsmGameObjectParams:
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: {fileID: 8631937298997782582, guid: 8a48b52f993444f419fa67a8a6df0531,
-            type: 3}
-        - useVariable: 1
-          name: CurrentlySpawnedStuffs
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: {fileID: 0}
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: {fileID: 891051980139120925}
-        - useVariable: 1
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: {fileID: 0}
-        fsmOwnerDefaultParams: []
-        animationCurveParams: []
-        functionCallParams: []
-        fsmTemplateControlParams: []
-        fsmEventTargetParams: []
-        fsmPropertyParams: []
-        layoutOptionParams: []
-        fsmStringParams: []
-        fsmObjectParams: []
-        fsmVarParams: []
-        fsmArrayParams: []
-        fsmEnumParams: []
-        fsmFloatParams: []
-        fsmIntParams: []
-        fsmBoolParams: []
-        fsmVector2Params: []
-        fsmVector3Params:
-        - useVariable: 1
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: {x: 0, y: 0, z: 0}
-        - useVariable: 1
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: {x: 0, y: 0, z: 0}
-        fsmColorParams: []
-        fsmRectParams: []
-        fsmQuaternionParams: []
-        stringParams: []
-        byteData: 
-        arrayParamSizes: 
-        arrayParamTypes: []
-        customTypeSizes: 
-        customTypeNames: []
-        paramDataType: 1300000013000000130000001c0000001c00000013000000
-        paramName:
-        - gameObject
-        - parent
-        - spawnPoint
-        - position
-        - rotation
-        - storeObject
-        paramDataPos: 000000000100000002000000000000000100000003000000
-        paramByteDataSize: 000000000000000000000000000000000000000000000000
-    events: []
-    globalTransitions: []
-    variables:
-      floatVariables: []
-      intVariables: []
-      boolVariables: []
-      stringVariables: []
-      vector2Variables: []
-      vector3Variables: []
-      colorVariables: []
-      rectVariables: []
-      quaternionVariables: []
-      gameObjectVariables: []
-      objectVariables: []
-      materialVariables: []
-      textureVariables: []
-      arrayVariables: []
-      enumVariables: []
-      categories:
-      - 
-      variableCategoryIDs: 
-    description: 
-    docUrl: 
-    showStateLabel: 0
-    maxLoopCount: 0
-    watermark: 
-    password: 
-    locked: 0
-    manualUpdate: 0
-    outVariableIndices: 
-    keepDelayedEventsOnStateExit: 0
-    preprocessed: 0
-    ExposedEvents: []
-    OutputEvents: []
-    RestartOnEnable: 1
-    ResetVariablesOnEnable: 0
-    EnableDebugFlow: 0
-    EnableBreakpoints: 1
-    editorFlags: 225
-    activeStateName: 
-    mouseEvents: 0
-    handleLevelLoaded: 0
-    handleTriggerEnter2D: 0
-    handleTriggerExit2D: 0
-    handleTriggerStay2D: 0
-    handleCollisionEnter2D: 0
-    handleCollisionExit2D: 0
-    handleCollisionStay2D: 0
-    handleTriggerEnter: 0
-    handleTriggerExit: 0
-    handleTriggerStay: 0
-    handleCollisionEnter: 0
-    handleCollisionExit: 0
-    handleCollisionStay: 0
-    handleParticleCollision: 0
-    handleControllerColliderHit: 0
-    handleJointBreak: 0
-    handleJointBreak2D: 0
-    handleOnGUI: 0
-    handleFixedUpdate: 0
-    handleLateUpdate: 0
-    handleApplicationEvents: 0
-    handleUiEvents: 0
-    handleLegacyNetworking: 0
-    handleAnimatorMove: 0
-    handleAnimatorIK: 0
-  fsmTemplate: {fileID: 0}
-  eventHandlerComponentsAdded: 0
 --- !u!1 &1112276239339042220
 GameObject:
   m_ObjectHideFlags: 0
@@ -7345,7 +7120,7 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - FINISHED
-        byteData: 00
+        byteData: 01
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
@@ -13093,7 +12868,7 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - FINISHED
-        byteData: 00
+        byteData: 01
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
@@ -18672,7 +18447,7 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - FINISHED
-        byteData: 00
+        byteData: 01
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
@@ -25521,7 +25296,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {x: 0, y: 0.12, z: 0}
+          value: {x: 0, y: 0.07, z: 0}
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
@@ -26013,7 +25788,7 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - FINISHED
-        byteData: 00
+        byteData: 01
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
@@ -26542,7 +26317,7 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - FINISHED
-        byteData: 00
+        byteData: 01
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
@@ -27613,7 +27388,7 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - FINISHED
-        byteData: 00
+        byteData: 01
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
@@ -28671,7 +28446,7 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - FINISHED
-        byteData: 00
+        byteData: 01
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
@@ -29200,7 +28975,7 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - FINISHED
-        byteData: 00
+        byteData: 01
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
