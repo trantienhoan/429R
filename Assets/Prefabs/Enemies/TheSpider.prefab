@@ -7857,11 +7857,8 @@ MonoBehaviour:
         - HutongGames.PlayMaker.Actions.SetAgentIsStopped
         - HutongGames.PlayMaker.Actions.AnimatorPlay
         - HutongGames.PlayMaker.Actions.ActivateGameObject
-        - HutongGames.PlayMaker.Actions.ActivateGameObject
-        - HutongGames.PlayMaker.Actions.SendEvent
-        - HutongGames.PlayMaker.Actions.SendEvent
-        - HutongGames.PlayMaker.Actions.SetFsmVariable
         - HutongGames.PlayMaker.Actions.AudioPlay
+        - HutongGames.PlayMaker.Actions.SetFsmVariable
         customNames:
         - 
         - 
@@ -7869,13 +7866,10 @@ MonoBehaviour:
         - 
         - 
         - 
-        - 
-        - 
-        - 
-        actionEnabled: 010101010101010101
-        actionIsOpen: 010101010101010101
-        actionStartIndex: 0000000004000000060000000b0000001000000015000000190000001d00000022000000
-        actionHashCodes: 87aa970015264c01c34b4105b2cf1000b2cf10005e69bb045e69bb04fcb1a00181294e04
+        actionEnabled: 010101010101
+        actionIsOpen: 010101010101
+        actionStartIndex: 0000000004000000060000000b0000001000000015000000
+        actionHashCodes: 87aa970015264c01c34b4105b2cf100081294e04fcb1a001
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams:
@@ -7911,22 +7905,6 @@ MonoBehaviour:
             showInInspector: 0
             networkSync: 0
             value: {fileID: 2161603157673772253}
-        - ownerOption: 1
-          gameObject:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: {fileID: 6150051547597192326}
-        - ownerOption: 1
-          gameObject:
-            useVariable: 1
-            name: Rooftop_Base
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: {fileID: 0}
         - ownerOption: 0
           gameObject:
             useVariable: 0
@@ -7935,74 +7913,18 @@ MonoBehaviour:
             showInInspector: 0
             networkSync: 0
             value: {fileID: 0}
+        - ownerOption: 1
+          gameObject:
+            useVariable: 1
+            name: GAMESTAGES
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 0}
         animationCurveParams: []
         functionCallParams: []
         fsmTemplateControlParams: []
-        fsmEventTargetParams:
-        - target: 2
-          excludeSelf:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: 0
-          gameObject:
-            ownerOption: 1
-            gameObject:
-              useVariable: 1
-              name: Stone_Pumpkin.000
-              tooltip: 
-              showInInspector: 0
-              networkSync: 0
-              value: {fileID: 0}
-          fsmName:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: Health
-          sendToChildren:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: 0
-          fsmComponent: {fileID: 0}
-        - target: 2
-          excludeSelf:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: 0
-          gameObject:
-            ownerOption: 1
-            gameObject:
-              useVariable: 1
-              name: PumpkinTree
-              tooltip: 
-              showInInspector: 0
-              networkSync: 0
-              value: {fileID: 0}
-          fsmName:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: Health
-          sendToChildren:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: 0
-          fsmComponent: {fileID: 0}
+        fsmEventTargetParams: []
         fsmPropertyParams: []
         layoutOptionParams: []
         fsmStringParams:
@@ -8023,13 +7945,13 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: Info
+          value: GAMESTAGES
         - useVariable: 0
           name: 
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: TheSpider
+          value: Pumpkin_3
         fsmObjectParams:
         - useVariable: 0
           name: 
@@ -8067,18 +7989,6 @@ MonoBehaviour:
         fsmEnumParams: []
         fsmFloatParams:
         - useVariable: 1
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
-        - useVariable: 0
           name: 
           tooltip: 
           showInInspector: 0
@@ -8134,33 +8044,19 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 1
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 1
         fsmVector2Params: []
         fsmVector3Params: []
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
         stringParams:
-        - Damage
-        - Damage
         - FINISHED
-        byteData: 0000000000000000
+        byteData: 00000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1400000012000000110000001100000014000000110000001400000012000000100000000f00000001000000140000001100000011000000010000000100000014000000110000001100000001000000010000001f000000170000000f000000010000001f000000170000000f000000010000001400000012000000120000002700000001000000140000000f000000180000001100000017000000
+        paramDataType: 1400000012000000110000001100000014000000110000001400000012000000100000000f000000010000001400000011000000110000000100000001000000140000000f0000001800000011000000170000001400000012000000120000002700000001000000
         paramName:
         - gameObject
         - fsmName
@@ -8179,30 +8075,17 @@ MonoBehaviour:
         - resetOnExit
         - everyFrame
         - gameObject
-        - activate
-        - recursive
-        - resetOnExit
-        - everyFrame
-        - eventTarget
-        - sendEvent
-        - delay
-        - everyFrame
-        - eventTarget
-        - sendEvent
-        - delay
-        - everyFrame
+        - volume
+        - oneShotClip
+        - WaitForEndOfClip
+        - finishedEvent
         - gameObject
         - fsmName
         - variableName
         - setValue
         - everyFrame
-        - gameObject
-        - volume
-        - oneShotClip
-        - WaitForEndOfClip
-        - finishedEvent
-        paramDataPos: 000000000000000000000000010000000100000002000000020000000100000000000000000000000000000003000000030000000400000001000000020000000400000005000000060000000300000004000000000000000000000001000000050000000100000001000000020000000600000005000000020000000300000000000000070000000600000003000000000000000700000002000000
-        paramByteDataSize: 000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000001000000010000000000000000000000000000000100000001000000000000000000000000000000010000000000000000000000000000000100000000000000000000000000000000000000010000000000000000000000000000000000000000000000
+        paramDataPos: 0000000000000000000000000100000001000000020000000200000001000000000000000000000000000000030000000300000004000000010000000200000004000000010000000000000005000000000000000500000002000000030000000000000003000000
+        paramByteDataSize: 0000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000010000000100000000000000000000000000000000000000000000000000000000000000000000000000000001000000
     - name: Deactivate Object
       description: 
       colorIndex: 0
