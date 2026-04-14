@@ -17482,7 +17482,6 @@ MonoBehaviour:
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.TweenPunch
-        - HutongGames.PlayMaker.Actions.TweenPunch
         - HutongGames.PlayMaker.Actions.ArrayGetRandom
         - HutongGames.PlayMaker.Actions.AudioPlay
         - HutongGames.PlayMaker.Actions.FloatCompare
@@ -17491,11 +17490,10 @@ MonoBehaviour:
         - 
         - 
         - 
-        - 
-        actionEnabled: 0101010101
-        actionIsOpen: 0101010101
-        actionStartIndex: 000000000d0000001a0000001f00000024000000
-        actionHashCodes: bac44f04bac44f045978870081294e041bcdca04
+        actionEnabled: 01010101
+        actionIsOpen: 01010101
+        actionStartIndex: 000000000d0000001200000017000000
+        actionHashCodes: bac44f045978870081294e041bcdca04
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams:
@@ -17515,21 +17513,7 @@ MonoBehaviour:
             showInInspector: 0
             networkSync: 0
             value: {fileID: 0}
-        - ownerOption: 0
-          gameObject:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: {fileID: 0}
         animationCurveParams:
-        - curve:
-            serializedVersion: 2
-            m_Curve: []
-            m_PreInfinity: 2
-            m_PostInfinity: 2
-            m_RotationOrder: 4
         - curve:
             serializedVersion: 2
             m_Curve: []
@@ -17591,15 +17575,7 @@ MonoBehaviour:
           objectReferences:
           - {fileID: 8300000, guid: 5559a9c98e6c15148b6eb31df62d8b20, type: 3}
           - {fileID: 8300000, guid: 448f0b20a89331745bbe48dca5ca98d8, type: 3}
-          - {fileID: 8300000, guid: bdaf5f6e3901b474f9ea00411277f5d9, type: 3}
         fsmEnumParams:
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          enumName: HutongGames.PlayMaker.None
-          intValue: 0
         - useVariable: 0
           name: 
           tooltip: 
@@ -17620,18 +17596,6 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 2
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 3
         - useVariable: 0
           name: 
           tooltip: 
@@ -17682,12 +17646,6 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 1
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 1
         fsmVector2Params: []
         fsmVector3Params:
         - useVariable: 0
@@ -17696,42 +17654,22 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: {x: 0, y: 0.2, z: 0}
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: {x: 9, y: 9, z: 9}
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
         stringParams:
         - 
-        - 
         - FINISHED
         - next
         - next
         - 
-        byteData: 000000000000000000000000000000000001000000020000000000000000000000000001
+        byteData: 00000000000000000000000000000000000001
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 070000001c000000140000000f0000002a000000160000000f000000110000000700000017000000020000000100000007000000070000001c000000140000000f0000002a000000160000000f0000001100000007000000170000000200000001000000070000002900000027000000100000001100000001000000140000000f0000001800000011000000170000000f0000000f0000000f00000017000000170000001700000001000000
+        paramDataType: 070000001c000000140000000f0000002a000000160000000f0000001100000007000000170000000200000001000000070000002900000027000000100000001100000001000000140000000f0000001800000011000000170000000f0000000f0000000f00000017000000170000001700000001000000
         paramName:
-        - punchType
-        - value
-        - gameObject
-        - startDelay
-        - easeType
-        - customCurve
-        - time
-        - realTime
-        - loopType
-        - finishEvent
-        - normalizedTime
-        - everyFrame
-        - updateType
         - punchType
         - value
         - gameObject
@@ -17762,8 +17700,8 @@ MonoBehaviour:
         - lessThan
         - greaterThan
         - everyFrame
-        paramDataPos: 00000000000000000000000000000000000000000000000001000000000000000400000000000000080000000c0000000d00000011000000010000000100000002000000010000000100000003000000010000001500000001000000190000001d0000001e0000000000000000000000000000000200000022000000020000000400000000000000030000000200000005000000060000000700000003000000040000000500000023000000
-        paramByteDataSize: 04000000000000000000000000000000000000000000000000000000000000000400000000000000040000000100000004000000040000000000000000000000000000000000000000000000000000000000000004000000000000000400000001000000040000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000
+        paramDataPos: 00000000000000000000000000000000000000000000000001000000000000000400000000000000080000000c0000000d0000000000000000000000000000000100000011000000010000000200000000000000020000000100000003000000040000000500000002000000030000000400000012000000
+        paramByteDataSize: 040000000000000000000000000000000000000000000000000000000000000004000000000000000400000001000000040000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000
     - name: Loop Punch
       description: 
       colorIndex: 0
@@ -17891,7 +17829,6 @@ MonoBehaviour:
           objectReferences:
           - {fileID: 8300000, guid: 5559a9c98e6c15148b6eb31df62d8b20, type: 3}
           - {fileID: 8300000, guid: 448f0b20a89331745bbe48dca5ca98d8, type: 3}
-          - {fileID: 8300000, guid: bdaf5f6e3901b474f9ea00411277f5d9, type: 3}
         fsmEnumParams:
         - useVariable: 0
           name: 
@@ -17912,7 +17849,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 3
+          value: 1
         - useVariable: 0
           name: 
           tooltip: 
@@ -17970,7 +17907,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {x: 9, y: 9, z: 9}
+          value: {x: 0, y: 0.12, z: 0}
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
@@ -17980,7 +17917,7 @@ MonoBehaviour:
         - next
         - next
         - 
-        byteData: 01000000020000000000000000000000000001
+        byteData: 00000000020000000000000000000000000001
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
