@@ -220,8 +220,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2.6756153, y: 3.0590603, z: 0.41657946}
-  m_Center: {x: 0.8803847, y: 1.5295302, z: 0.2}
+  m_Size: {x: 6.341571, y: 3.0590603, z: 0.36265126}
+  m_Center: {x: 0.89941514, y: 1.5295302, z: 0.1730359}
 --- !u!65 &1203476757891220562
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -241,8 +241,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.41907406, y: 3.0590603, z: 0.41657946}
-  m_Center: {x: -2.0756743, y: 1.5295302, z: 0.2}
+  m_Size: {x: 0.40903473, y: 3.0590603, z: 0.36653104}
+  m_Center: {x: -3.8919878, y: 1.5295302, z: 0.1749758}
 --- !u!65 &675818488167149277
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -262,8 +262,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1.4052286, y: 0.96916306, z: 0.41657946}
-  m_Center: {x: -1.1613157, y: 2.5744784, z: 0.2}
+  m_Size: {x: 1.4051943, y: 0.96916294, z: 0.36389604}
+  m_Center: {x: -2.9811525, y: 2.5744784, z: 0.17365831}
 --- !u!54 &8742310827532043907
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -343,8 +343,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.42802978, y: 3.076074, z: 4.9795}
-  m_Center: {x: 0.21, y: 1.538037, z: -1.1468947e-14}
+  m_Size: {x: 0.38054687, y: 3.076074, z: 8.431663}
+  m_Center: {x: 0.18625852, y: 1.538037, z: 0.000000036603826}
 --- !u!54 &4549065303678835466
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -456,7 +456,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 4.481508, y: 3.0746481, z: 0.3854447}
+  m_Size: {x: 8.168854, y: 3.0746481, z: 0.3854447}
   m_Center: {x: 0, y: 1.5373241, z: -0.18}
 --- !u!54 &6474490956367478155
 Rigidbody:
@@ -624,6 +624,7 @@ GameObject:
   - component: {fileID: 429264483821088101}
   - component: {fileID: 6341614393983676932}
   - component: {fileID: 1458964078278743646}
+  - component: {fileID: 7375694938912374066}
   m_Layer: 0
   m_Name: Bedroom_Base_Z_Door
   m_TagString: Untagged
@@ -1069,6 +1070,103 @@ MonoBehaviour:
     handleAnimatorIK: 0
   fsmTemplate: {fileID: 0}
   eventHandlerComponentsAdded: 0
+--- !u!82 &7375694938912374066
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3441704829369671731}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &4309086976367769699
 GameObject:
   m_ObjectHideFlags: 0
@@ -1462,7 +1560,7 @@ SphereCollider:
   m_Enabled: 1
   serializedVersion: 3
   m_Radius: 1.42
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: -2.12, y: 0, z: 2.12}
 --- !u!1 &6074030983420187961
 GameObject:
   m_ObjectHideFlags: 0
@@ -1699,7 +1797,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.40635252, y: 3.0748348, z: 4.9605045}
+  m_Size: {x: 0.40635252, y: 3.0748348, z: 8.58783}
   m_Center: {x: -0.20999998, y: 1.5374174, z: 0.005453742}
 --- !u!54 &625356827981384064
 Rigidbody:
