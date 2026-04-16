@@ -5340,8 +5340,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.7064, y: 0.2395292, z: 0.272071}
-  m_Center: {x: -0.009356588, y: 0.12008361, z: 0.000000014901161}
+  m_Size: {x: 0.75208867, y: 0.2395292, z: 0.272071}
+  m_Center: {x: 0.013487756, y: 0.12008361, z: 0.000000014901161}
 --- !u!54 &4696872739905266778
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -5350,9 +5350,9 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8652957619629149998}
   serializedVersion: 5
-  m_Mass: 2941994
+  m_Mass: 999999
   m_LinearDamping: 0
-  m_AngularDamping: 0.001
+  m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -5364,11 +5364,11 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 0
+  m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 3
 --- !u!114 &8909201039330347582
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5887,7 +5887,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 7
+          value: 55
         - useVariable: 1
           name: 
           tooltip: 
@@ -5945,7 +5945,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {x: 3, y: 3, z: 3}
+          value: {x: 2, y: 2, z: 2}
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
