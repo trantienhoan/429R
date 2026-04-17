@@ -6063,7 +6063,7 @@ MonoBehaviour:
         x: 64
         y: 176
         width: 128.22
-        height: 48
+        height: 64
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
@@ -6086,19 +6086,30 @@ MonoBehaviour:
         linkConstraint: 0
         linkTarget: 0
         colorIndex: 0
+      - fsmEvent:
+          name: back
+          isSystemEvent: 0
+          isGlobal: 0
+        toState: Destroy Self
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.CollisionEvent
         - HutongGames.PlayMaker.Actions.CollisionEvent
+        - HutongGames.PlayMaker.Actions.TriggerEvent
         - HutongGames.PlayMaker.Actions.AudioPlay
         customNames:
         - 
         - 
         - 
-        actionEnabled: 010101
-        actionIsOpen: 010101
-        actionStartIndex: 00000000060000000c000000
-        actionHashCodes: beb33100beb3310081294e04
+        - 
+        actionEnabled: 01010101
+        actionIsOpen: 01010101
+        actionStartIndex: 00000000060000000c00000011000000
+        actionHashCodes: beb33100beb331009c51240081294e04
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
@@ -6113,7 +6124,21 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: {fileID: 0}
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 0}
         fsmOwnerDefaultParams:
+        - ownerOption: 0
+          gameObject:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 0}
         - ownerOption: 0
           gameObject:
             useVariable: 0
@@ -6157,6 +6182,12 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: Destroyer
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: Fairy_Shield
         fsmObjectParams:
         - useVariable: 0
           name: 
@@ -6203,13 +6234,14 @@ MonoBehaviour:
         stringParams:
         - next
         - FINISHED
+        - back
         - 
-        byteData: 0000000000000000
+        byteData: 000000000000000000000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 14000000070000001200000017000000130000000f00000014000000070000001200000017000000130000000f000000140000000f000000180000001100000017000000
+        paramDataType: 14000000070000001200000017000000130000000f00000014000000070000001200000017000000130000000f0000001400000007000000120000001700000013000000140000000f000000180000001100000017000000
         paramName:
         - gameObject
         - collision
@@ -6224,12 +6256,17 @@ MonoBehaviour:
         - storeCollider
         - storeForce
         - gameObject
+        - trigger
+        - collideTag
+        - sendEvent
+        - storeCollider
+        - gameObject
         - volume
         - oneShotClip
         - WaitForEndOfClip
         - finishedEvent
-        paramDataPos: 0000000000000000000000000000000000000000000000000100000004000000010000000100000001000000010000000200000002000000000000000000000002000000
-        paramByteDataSize: 0000000004000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000
+        paramDataPos: 00000000000000000000000000000000000000000000000001000000040000000100000001000000010000000100000002000000080000000200000002000000020000000300000002000000000000000000000003000000
+        paramByteDataSize: 00000000040000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000
     - name: Check force
       description: 
       colorIndex: 4
