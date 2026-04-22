@@ -6042,7 +6042,7 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: -902729914
   m_Radius: 0.21
-  m_Speed: 0.8
+  m_Speed: 3.6
   m_Acceleration: 1
   avoidancePriority: 50
   m_AngularSpeed: 360
@@ -7096,7 +7096,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 0.25
+          value: 0
         - useVariable: 1
           name: distanceToPlayer
           tooltip: 
@@ -7172,7 +7172,7 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - 
-        - Damage
+        - DamageHeavy
         - 
         - 
         - back
@@ -7486,6 +7486,9 @@ MonoBehaviour:
     - name: PlayerEnteredZone
       isSystemEvent: 0
       isGlobal: 0
+    - name: DamageHeavy
+      isSystemEvent: 0
+      isGlobal: 1
     globalTransitions: []
     variables:
       floatVariables:
@@ -9825,7 +9828,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {x: 7, y: 7, z: 7}
+          value: {x: 37, y: 37, z: 37}
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
