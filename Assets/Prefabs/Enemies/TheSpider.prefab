@@ -7241,7 +7241,7 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - 
-        - Damage
+        - DamageHeavy
         - 
         - 
         - back
@@ -7560,6 +7560,9 @@ MonoBehaviour:
     - name: PlayerEnteredZone
       isSystemEvent: 0
       isGlobal: 0
+    - name: DamageHeavy
+      isSystemEvent: 0
+      isGlobal: 1
     globalTransitions:
     - fsmEvent:
         name: Damage
