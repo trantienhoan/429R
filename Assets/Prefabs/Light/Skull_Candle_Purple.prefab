@@ -1210,8 +1210,8 @@ ParticleSystem:
     startSpeed:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 1
-      minScalar: 1.5
+      scalar: 0.2
+      minScalar: 0.5
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -1267,9 +1267,9 @@ ParticleSystem:
       maxColor: {r: 1, g: 1, b: 1, a: 0.4117647}
       maxGradient:
         serializedVersion: 2
-        key0: {r: 0.46769753, g: 0.36538804, b: 0.4811321, a: 1}
+        key0: {r: 0.6509804, g: 0.5647059, b: 0.4156863, a: 1}
         key1: {r: 0.6886792, g: 0.5390438, b: 0.41255784, a: 1}
-        key2: {r: 0.7710217, g: 0.63171947, b: 0.7924528, a: 0}
+        key2: {r: 0.6509804, g: 0.5647059, b: 0.4156863, a: 0}
         key3: {r: 0, g: 0.8228338, b: 0.8396226, a: 0}
         key4: {r: 0.14978641, g: 0.38635373, b: 0.9622642, a: 0}
         key5: {r: 0.14978641, g: 0.38635373, b: 0.9622642, a: 0}
@@ -1687,7 +1687,7 @@ ParticleSystem:
   ShapeModule:
     serializedVersion: 6
     enabled: 1
-    type: 17
+    type: 2
     angle: 50.12
     length: 5
     boxThickness: {x: 0, y: 0, z: 0}
@@ -2054,10 +2054,10 @@ ParticleSystem:
           m_PostInfinity: 2
           m_RotationOrder: 4
       cycleCount: 1
-      repeatInterval: 0.5
+      repeatInterval: 1
       probability: 1
     - serializedVersion: 2
-      time: 0
+      time: 0.1
       countCurve:
         serializedVersion: 2
         minMaxState: 0
@@ -2112,7 +2112,7 @@ ParticleSystem:
           m_PostInfinity: 2
           m_RotationOrder: 4
       cycleCount: 1
-      repeatInterval: 0.5
+      repeatInterval: 1
       probability: 1
   SizeModule:
     enabled: 1
@@ -11911,7 +11911,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5526814087266095596}
   serializedVersion: 5
-  m_Mass: 20
+  m_Mass: 666
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: -0.34, z: 0}
@@ -11923,12 +11923,12 @@ Rigidbody:
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 0
-  m_ImplicitCom: 0
+  m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 0
+  m_Constraints: 14
   m_CollisionDetection: 0
 --- !u!114 &2264088855654341351
 MonoBehaviour:
