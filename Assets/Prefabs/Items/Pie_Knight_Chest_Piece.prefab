@@ -19284,7 +19284,7 @@ MonoBehaviour:
         x: 50
         y: 100
         width: 121.8
-        height: 32
+        height: 48
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
@@ -19294,6 +19294,15 @@ MonoBehaviour:
           isSystemEvent: 0
           isGlobal: 1
         toState: Activate Stuffs
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
+      - fsmEvent:
+          name: FINISHED
+          isSystemEvent: 1
+          isGlobal: 0
+        toState: not get picked
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -19427,7 +19436,7 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - next
-        - next
+        - FINISHED
         byteData: 01000000000100000000000001000000000001
         arrayParamSizes: 
         arrayParamTypes: []
@@ -19468,8 +19477,8 @@ MonoBehaviour:
       colorIndex: 3
       position:
         serializedVersion: 2
-        x: 240
-        y: 96
+        x: 239
+        y: 85
         width: 116.36
         height: 32
       isBreakpoint: 0
@@ -19488,8 +19497,8 @@ MonoBehaviour:
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.SetFsmVariable
-        - HutongGames.PlayMaker.Actions.SetFsmVariable
         - HutongGames.PlayMaker.Actions.ActivateGameObject
+        - HutongGames.PlayMaker.Actions.SetFsmVariable
         customNames:
         - 
         - 
@@ -19497,18 +19506,10 @@ MonoBehaviour:
         actionEnabled: 010101
         actionIsOpen: 010101
         actionStartIndex: 00000000050000000a000000
-        actionHashCodes: fcb1a001fcb1a001b2cf1000
+        actionHashCodes: fcb1a001b2cf1000fcb1a001
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams:
-        - ownerOption: 1
-          gameObject:
-            useVariable: 1
-            name: GAMESTAGES
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: {fileID: 0}
         - ownerOption: 1
           gameObject:
             useVariable: 1
@@ -19525,6 +19526,14 @@ MonoBehaviour:
             showInInspector: 0
             networkSync: 0
             value: {fileID: 8850571927035628287}
+        - ownerOption: 1
+          gameObject:
+            useVariable: 1
+            name: GAMESTAGES
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 0}
         animationCurveParams: []
         functionCallParams: []
         fsmTemplateControlParams: []
@@ -19537,6 +19546,18 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
+          value: PlayerHealth
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: Chest Piece
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
           value: GAMESTAGES
         - useVariable: 0
           name: 
@@ -19544,18 +19565,6 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: Pumpkin_3
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: PlayerHealth
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: Bracer Piece
         fsmObjectParams: []
         fsmVarParams:
         - variableName: 
@@ -19634,13 +19643,8 @@ MonoBehaviour:
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 140000001200000012000000270000000100000014000000120000001200000027000000010000001400000011000000110000000100000001000000
+        paramDataType: 140000001200000012000000270000000100000014000000110000001100000001000000010000001400000012000000120000002700000001000000
         paramName:
-        - gameObject
-        - fsmName
-        - variableName
-        - setValue
-        - everyFrame
         - gameObject
         - fsmName
         - variableName
@@ -19651,15 +19655,20 @@ MonoBehaviour:
         - recursive
         - resetOnExit
         - everyFrame
-        paramDataPos: 000000000000000001000000000000000000000001000000020000000300000001000000010000000200000000000000010000000200000003000000
-        paramByteDataSize: 000000000000000000000000000000000100000000000000000000000000000000000000010000000000000000000000000000000100000001000000
+        - gameObject
+        - fsmName
+        - variableName
+        - setValue
+        - everyFrame
+        paramDataPos: 000000000000000001000000000000000000000001000000000000000100000001000000020000000200000002000000030000000100000003000000
+        paramByteDataSize: 000000000000000000000000000000000100000000000000000000000000000001000000010000000000000000000000000000000000000001000000
     - name: Destroy Self
       description: 
       colorIndex: 6
       position:
         serializedVersion: 2
-        x: 433.3203
-        y: 83.734375
+        x: 469.3203
+        y: 108.734375
         width: 100.97
         height: 16
       isBreakpoint: 0
@@ -19811,6 +19820,118 @@ MonoBehaviour:
         - detachChildren
         paramDataPos: 00000000000000000000000004000000010000000100000000000000000000000000000000000000010000000000000008000000000000000c0000001000000011000000020000000100000002000000
         paramByteDataSize: 0400000000000000000000000400000000000000000000000000000000000000000000000000000000000000000000000400000000000000040000000100000004000000000000000000000000000000
+    - name: not get picked
+      description: 
+      colorIndex: 3
+      position:
+        serializedVersion: 2
+        x: 238
+        y: 168
+        width: 113.1
+        height: 32
+      isBreakpoint: 0
+      isSequence: 0
+      hideUnused: 0
+      transitions:
+      - fsmEvent:
+          name: FINISHED
+          isSystemEvent: 1
+          isGlobal: 0
+        toState: Destroy Self
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
+      actionData:
+        actionNames:
+        - HutongGames.PlayMaker.Actions.SetFsmVariable
+        customNames:
+        - 
+        actionEnabled: 01
+        actionIsOpen: 01
+        actionStartIndex: 00000000
+        actionHashCodes: fcb1a001
+        unityObjectParams: []
+        fsmGameObjectParams: []
+        fsmOwnerDefaultParams:
+        - ownerOption: 1
+          gameObject:
+            useVariable: 1
+            name: GAMESTAGES
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 0}
+        animationCurveParams: []
+        functionCallParams: []
+        fsmTemplateControlParams: []
+        fsmEventTargetParams: []
+        fsmPropertyParams: []
+        layoutOptionParams: []
+        fsmStringParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: GAMESTAGES
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: Pumpkin_3
+        fsmObjectParams: []
+        fsmVarParams:
+        - variableName: 
+          objectType: UnityEngine.Object
+          useVariable: 0
+          type: 2
+          floatValue: 0
+          intValue: 0
+          boolValue: 1
+          stringValue: 
+          vector4Value: {x: 0, y: 0, z: 0, w: 0}
+          objectReference: {fileID: 0}
+          arrayValue:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            type: -1
+            objectTypeName: 
+            floatValues: []
+            intValues: 
+            boolValues: 
+            stringValues: []
+            vector4Values: []
+            objectReferences: []
+        fsmArrayParams: []
+        fsmEnumParams: []
+        fsmFloatParams: []
+        fsmIntParams: []
+        fsmBoolParams: []
+        fsmVector2Params: []
+        fsmVector3Params: []
+        fsmColorParams: []
+        fsmRectParams: []
+        fsmQuaternionParams: []
+        stringParams: []
+        byteData: 00
+        arrayParamSizes: 
+        arrayParamTypes: []
+        customTypeSizes: 
+        customTypeNames: []
+        paramDataType: 1400000012000000120000002700000001000000
+        paramName:
+        - gameObject
+        - fsmName
+        - variableName
+        - setValue
+        - everyFrame
+        paramDataPos: 0000000000000000010000000000000000000000
+        paramByteDataSize: 0000000000000000000000000000000001000000
     events:
     - name: next
       isSystemEvent: 0

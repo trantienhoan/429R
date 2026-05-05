@@ -19925,7 +19925,7 @@ MonoBehaviour:
         x: 50
         y: 100
         width: 121.8
-        height: 32
+        height: 48
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
@@ -19935,6 +19935,15 @@ MonoBehaviour:
           isSystemEvent: 0
           isGlobal: 1
         toState: Activate Stuffs
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
+      - fsmEvent:
+          name: FINISHED
+          isSystemEvent: 1
+          isGlobal: 0
+        toState: Destroy Self
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -20068,7 +20077,7 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - next
-        - next
+        - FINISHED
         byteData: 01000000000100000000000001000000000001
         arrayParamSizes: 
         arrayParamTypes: []
@@ -20110,7 +20119,7 @@ MonoBehaviour:
       position:
         serializedVersion: 2
         x: 240
-        y: 96
+        y: 79
         width: 116.36
         height: 32
       isBreakpoint: 0
@@ -20248,8 +20257,8 @@ MonoBehaviour:
       colorIndex: 6
       position:
         serializedVersion: 2
-        x: 433.3203
-        y: 83.734375
+        x: 434.3203
+        y: 174.73438
         width: 100.97
         height: 16
       isBreakpoint: 0
