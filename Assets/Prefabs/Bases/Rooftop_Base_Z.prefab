@@ -146,7 +146,7 @@ MonoBehaviour:
         customNames:
         - 
         - 
-        actionEnabled: 0101
+        actionEnabled: 0001
         actionIsOpen: 0101
         actionStartIndex: 0000000006000000
         actionHashCodes: 5a0192044d51cf04
@@ -675,23 +675,32 @@ MonoBehaviour:
         serializedVersion: 2
         x: 292
         y: 234
-        width: 102.74
-        height: 16
+        width: 100
+        height: 32
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
-      transitions: []
+      transitions:
+      - fsmEvent:
+          name: FINISHED
+          isSystemEvent: 1
+          isGlobal: 0
+        toState: Destroy Gate 1 and self
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.CreateObject
-        - HutongGames.PlayMaker.Actions.ActivateGameObject
+        - HutongGames.PlayMaker.Actions.Wait
         customNames:
         - 
         - 
         actionEnabled: 0101
         actionIsOpen: 0101
         actionStartIndex: 0000000006000000
-        actionHashCodes: 60532301b2cf1000
+        actionHashCodes: 6053230148c01101
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 0
@@ -719,15 +728,7 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: {fileID: 0}
-        fsmOwnerDefaultParams:
-        - ownerOption: 0
-          gameObject:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: {fileID: 0}
+        fsmOwnerDefaultParams: []
         animationCurveParams: []
         functionCallParams: []
         fsmTemplateControlParams: []
@@ -739,21 +740,15 @@ MonoBehaviour:
         fsmVarParams: []
         fsmArrayParams: []
         fsmEnumParams: []
-        fsmFloatParams: []
+        fsmFloatParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0.777
         fsmIntParams: []
-        fsmBoolParams:
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
+        fsmBoolParams: []
         fsmVector2Params: []
         fsmVector3Params:
         - useVariable: 1
@@ -771,13 +766,14 @@ MonoBehaviour:
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
-        stringParams: []
-        byteData: 0000
+        stringParams:
+        - FINISHED
+        byteData: 01
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1300000013000000130000001c0000001c000000130000001400000011000000110000000100000001000000
+        paramDataType: 1300000013000000130000001c0000001c000000130000000f0000001700000001000000
         paramName:
         - gameObject
         - parent
@@ -785,13 +781,11 @@ MonoBehaviour:
         - position
         - rotation
         - storeObject
-        - gameObject
-        - activate
-        - recursive
-        - resetOnExit
-        - everyFrame
-        paramDataPos: 0000000001000000020000000000000001000000030000000000000000000000010000000000000001000000
-        paramByteDataSize: 0000000000000000000000000000000000000000000000000000000000000000000000000100000001000000
+        - time
+        - finishEvent
+        - realTime
+        paramDataPos: 000000000100000002000000000000000100000003000000000000000000000000000000
+        paramByteDataSize: 000000000000000000000000000000000000000000000000000000000000000001000000
     - name: Game Over
       description: 
       colorIndex: 0
@@ -1034,6 +1028,104 @@ MonoBehaviour:
         - realTime
         paramDataPos: 0000000000000000
         paramByteDataSize: 0000000000000000
+    - name: Destroy Gate 1 and self
+      description: 
+      colorIndex: 0
+      position:
+        serializedVersion: 2
+        x: 255
+        y: 313
+        width: 163.82
+        height: 16
+      isBreakpoint: 0
+      isSequence: 0
+      hideUnused: 0
+      transitions: []
+      actionData:
+        actionNames:
+        - HutongGames.PlayMaker.Actions.DestroyObject
+        - HutongGames.PlayMaker.Actions.DestroySelf
+        customNames:
+        - 
+        - 
+        actionEnabled: 0101
+        actionIsOpen: 0101
+        actionStartIndex: 0000000003000000
+        actionHashCodes: 9ff80c02230cc800
+        unityObjectParams: []
+        fsmGameObjectParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 981066452986592914}
+        fsmOwnerDefaultParams: []
+        animationCurveParams: []
+        functionCallParams: []
+        fsmTemplateControlParams: []
+        fsmEventTargetParams: []
+        fsmPropertyParams: []
+        layoutOptionParams: []
+        fsmStringParams: []
+        fsmObjectParams: []
+        fsmVarParams: []
+        fsmArrayParams: []
+        fsmEnumParams: []
+        fsmFloatParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        fsmIntParams: []
+        fsmBoolParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        fsmVector2Params: []
+        fsmVector3Params: []
+        fsmColorParams: []
+        fsmRectParams: []
+        fsmQuaternionParams: []
+        stringParams: []
+        byteData: 
+        arrayParamSizes: 
+        arrayParamTypes: []
+        customTypeSizes: 
+        customTypeNames: []
+        paramDataType: 130000000f000000110000000f0000001100000011000000
+        paramName:
+        - gameObject
+        - delay
+        - detachChildren
+        - delay
+        - realTime
+        - detachChildren
+        paramDataPos: 000000000000000000000000010000000100000002000000
+        paramByteDataSize: 000000000000000000000000000000000000000000000000
     events:
     - name: FINISHED
       isSystemEvent: 1
@@ -7866,11 +7958,10 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 5102940569896208637}
+  - {fileID: 2491697377897610816}
   - {fileID: 9215439374599299398}
   - {fileID: 2128797805059267192}
-  - {fileID: 595898528319017701}
-  - {fileID: 6674870821319741618}
+  - {fileID: 2910047957536380490}
   - {fileID: 6184010866300677850}
   - {fileID: 4505994456343690655}
   - {fileID: 7024420474901329608}
@@ -8016,32 +8107,14 @@ MonoBehaviour:
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.ActivateGameObject
-        - HutongGames.PlayMaker.Actions.SetParent
-        - HutongGames.PlayMaker.Actions.ActivateGameObject
-        - HutongGames.PlayMaker.Actions.SetParent
         customNames:
         - 
-        - 
-        - 
-        - 
-        actionEnabled: 01010101
-        actionIsOpen: 00000000
-        actionStartIndex: 00000000050000000a0000000f000000
-        actionHashCodes: b2cf1000a0dd8303b2cf1000a0dd8303
+        actionEnabled: 01
+        actionIsOpen: 01
+        actionStartIndex: 00000000
+        actionHashCodes: b2cf1000
         unityObjectParams: []
-        fsmGameObjectParams:
-        - useVariable: 1
-          name: CurrentlySpawnedStuffs
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: {fileID: 0}
-        - useVariable: 1
-          name: CurrentlySpawnedStuffs
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: {fileID: 0}
+        fsmGameObjectParams: []
         fsmOwnerDefaultParams:
         - ownerOption: 1
           gameObject:
@@ -8050,31 +8123,7 @@ MonoBehaviour:
             tooltip: 
             showInInspector: 0
             networkSync: 0
-            value: {fileID: 6334936338597562888}
-        - ownerOption: 1
-          gameObject:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: {fileID: 6334936338597562888}
-        - ownerOption: 1
-          gameObject:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: {fileID: 220357667184592991}
-        - ownerOption: 1
-          gameObject:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: {fileID: 220357667184592991}
+            value: {fileID: 3083202285045135927}
         animationCurveParams: []
         functionCallParams: []
         fsmTemplateControlParams: []
@@ -8101,89 +8150,26 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 1
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 1
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 1
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
         fsmVector2Params: []
         fsmVector3Params: []
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
         stringParams: []
-        byteData: 00000000
+        byteData: 0000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1400000011000000110000000100000001000000140000001300000011000000110000001100000014000000110000001100000001000000010000001400000013000000110000001100000011000000
+        paramDataType: 1400000011000000110000000100000001000000
         paramName:
         - gameObject
         - activate
         - recursive
         - resetOnExit
         - everyFrame
-        - gameObject
-        - parent
-        - worldPositionStays
-        - resetLocalPosition
-        - resetLocalRotation
-        - gameObject
-        - activate
-        - recursive
-        - resetOnExit
-        - everyFrame
-        - gameObject
-        - parent
-        - worldPositionStays
-        - resetLocalPosition
-        - resetLocalRotation
-        paramDataPos: 0000000000000000010000000000000001000000010000000000000002000000030000000400000002000000050000000600000002000000030000000300000001000000070000000800000009000000
-        paramByteDataSize: 0000000000000000000000000100000001000000000000000000000000000000000000000000000000000000000000000000000001000000010000000000000000000000000000000000000000000000
+        paramDataPos: 0000000000000000010000000000000001000000
+        paramByteDataSize: 0000000000000000000000000100000001000000
     - name: Wait
       description: 
       colorIndex: 0
@@ -8289,9 +8275,9 @@ MonoBehaviour:
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.ActivateGameObject
-        - HutongGames.PlayMaker.Actions.SetParent
         - HutongGames.PlayMaker.Actions.ActivateGameObject
         - HutongGames.PlayMaker.Actions.SetFsmVariable
+        - HutongGames.PlayMaker.Actions.SendEvent
         - HutongGames.PlayMaker.Actions.SendEvent
         - HutongGames.PlayMaker.Actions.RandomWait
         customNames:
@@ -8302,17 +8288,11 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 010101010101
-        actionIsOpen: 000000000101
-        actionStartIndex: 00000000050000000a0000000f0000001400000018000000
-        actionHashCodes: b2cf1000a0dd8303b2cf1000fcb1a0015e69bb040d5f5c01
+        actionIsOpen: 010101010101
+        actionStartIndex: 00000000050000000a0000000f0000001300000017000000
+        actionHashCodes: b2cf1000b2cf1000fcb1a0015e69bb045e69bb040d5f5c01
         unityObjectParams: []
-        fsmGameObjectParams:
-        - useVariable: 1
-          name: CurrentlySpawnedStuffs
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: {fileID: 0}
+        fsmGameObjectParams: []
         fsmOwnerDefaultParams:
         - ownerOption: 1
           gameObject:
@@ -8321,15 +8301,7 @@ MonoBehaviour:
             tooltip: 
             showInInspector: 0
             networkSync: 0
-            value: {fileID: 4836016726089548624}
-        - ownerOption: 1
-          gameObject:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: {fileID: 4836016726089548624}
+            value: {fileID: 8260464887001548940}
         - ownerOption: 1
           gameObject:
             useVariable: 0
@@ -8374,6 +8346,38 @@ MonoBehaviour:
             showInInspector: 0
             networkSync: 0
             value: Info
+          sendToChildren:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: 0
+          fsmComponent: {fileID: 0}
+        - target: 2
+          excludeSelf:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: 0
+          gameObject:
+            ownerOption: 1
+            gameObject:
+              useVariable: 1
+              name: Player
+              tooltip: 
+              showInInspector: 0
+              networkSync: 0
+              value: {fileID: 0}
+          fsmName:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: PlayerHealth
           sendToChildren:
             useVariable: 0
             name: 
@@ -8437,6 +8441,12 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
           value: 0.1
         - useVariable: 0
           name: 
@@ -8463,24 +8473,6 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 1
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
           value: 0
         - useVariable: 0
           name: 
@@ -8495,24 +8487,20 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - ShakeBig
+        - Pumpkin_Boss_Damage
         - FINISHED
-        byteData: 00000000000001
+        byteData: 0000000000000001
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 14000000110000001100000001000000010000001400000013000000110000001100000011000000140000001100000011000000010000000100000014000000120000001200000027000000010000001f000000170000000f000000010000000f0000000f0000001700000001000000
+        paramDataType: 1400000011000000110000000100000001000000140000001100000011000000010000000100000014000000120000001200000027000000010000001f000000170000000f000000010000001f000000170000000f000000010000000f0000000f0000001700000001000000
         paramName:
         - gameObject
         - activate
         - recursive
         - resetOnExit
         - everyFrame
-        - gameObject
-        - parent
-        - worldPositionStays
-        - resetLocalPosition
-        - resetLocalRotation
         - gameObject
         - activate
         - recursive
@@ -8527,12 +8515,16 @@ MonoBehaviour:
         - sendEvent
         - delay
         - everyFrame
+        - eventTarget
+        - sendEvent
+        - delay
+        - everyFrame
         - min
         - max
         - finishEvent
         - realTime
-        paramDataPos: 00000000000000000100000000000000010000000100000000000000020000000300000004000000020000000500000006000000020000000300000003000000000000000100000000000000040000000000000000000000000000000500000001000000020000000100000006000000
-        paramByteDataSize: 00000000000000000000000001000000010000000000000000000000000000000000000000000000000000000000000000000000010000000100000000000000000000000000000000000000010000000000000000000000000000000100000000000000000000000000000001000000
+        paramDataPos: 000000000000000001000000000000000100000001000000020000000300000002000000030000000200000000000000010000000000000004000000000000000000000000000000050000000100000001000000010000000600000002000000030000000200000007000000
+        paramByteDataSize: 000000000000000000000000010000000100000000000000000000000000000001000000010000000000000000000000000000000000000001000000000000000000000000000000010000000000000000000000000000000100000000000000000000000000000001000000
     - name: EnDD
       description: 
       colorIndex: 0
@@ -8548,52 +8540,20 @@ MonoBehaviour:
       transitions: []
       actionData:
         actionNames:
-        - HutongGames.PlayMaker.Actions.SendEvent
+        - HutongGames.PlayMaker.Actions.DestroySelf
         customNames:
         - 
         actionEnabled: 01
         actionIsOpen: 01
         actionStartIndex: 00000000
-        actionHashCodes: 5e69bb04
+        actionHashCodes: 230cc800
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams: []
         animationCurveParams: []
         functionCallParams: []
         fsmTemplateControlParams: []
-        fsmEventTargetParams:
-        - target: 2
-          excludeSelf:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: 0
-          gameObject:
-            ownerOption: 1
-            gameObject:
-              useVariable: 1
-              name: MainCam
-              tooltip: 
-              showInInspector: 0
-              networkSync: 0
-              value: {fileID: 0}
-          fsmName:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: Info
-          sendToChildren:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: 0
-          fsmComponent: {fileID: 0}
+        fsmEventTargetParams: []
         fsmPropertyParams: []
         layoutOptionParams: []
         fsmStringParams: []
@@ -8609,27 +8569,37 @@ MonoBehaviour:
           networkSync: 0
           value: 0
         fsmIntParams: []
-        fsmBoolParams: []
+        fsmBoolParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
         fsmVector2Params: []
         fsmVector3Params: []
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
-        stringParams:
-        - ShakeSmall
-        byteData: 00
+        stringParams: []
+        byteData: 
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1f000000170000000f00000001000000
+        paramDataType: 0f0000001100000011000000
         paramName:
-        - eventTarget
-        - sendEvent
         - delay
-        - everyFrame
-        paramDataPos: 00000000000000000000000000000000
-        paramByteDataSize: 00000000000000000000000001000000
+        - realTime
+        - detachChildren
+        paramDataPos: 000000000000000001000000
+        paramByteDataSize: 000000000000000000000000
     events:
     - name: next
       isSystemEvent: 0
@@ -8641,6 +8611,9 @@ MonoBehaviour:
       isSystemEvent: 1
       isGlobal: 0
     - name: ShakeBig
+      isSystemEvent: 0
+      isGlobal: 1
+    - name: Pumpkin_Boss_Damage
       isSystemEvent: 0
       isGlobal: 1
     globalTransitions: []
@@ -31973,6 +31946,221 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
+--- !u!1 &3083202285045135927
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2910047957536380490}
+  - component: {fileID: 2057791810025191954}
+  m_Layer: 0
+  m_Name: Pumpkin_Boss_Pos
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &2910047957536380490
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3083202285045135927}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4055133441329085902}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2057791810025191954
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3083202285045135927}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1384774831, guid: e743331561ef77147ae48cda9bcb8209, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: PlayMaker.dll::PlayMakerFSM
+  fsm:
+    dataVersion: 2
+    usedInTemplate: {fileID: 0}
+    name: FSM
+    startState: State 1
+    states:
+    - name: State 1
+      description: 
+      colorIndex: 0
+      position:
+        serializedVersion: 2
+        x: 50
+        y: 100
+        width: 100
+        height: 16
+      isBreakpoint: 0
+      isSequence: 0
+      hideUnused: 0
+      transitions: []
+      actionData:
+        actionNames:
+        - HutongGames.PlayMaker.Actions.CreateObject
+        customNames:
+        - 
+        actionEnabled: 01
+        actionIsOpen: 01
+        actionStartIndex: 00000000
+        actionHashCodes: 60532301
+        unityObjectParams: []
+        fsmGameObjectParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 8756829779268293328, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
+            type: 3}
+        - useVariable: 1
+          name: CurrentlySpawnedStuffs
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 0}
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 3083202285045135927}
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 0}
+        fsmOwnerDefaultParams: []
+        animationCurveParams: []
+        functionCallParams: []
+        fsmTemplateControlParams: []
+        fsmEventTargetParams: []
+        fsmPropertyParams: []
+        layoutOptionParams: []
+        fsmStringParams: []
+        fsmObjectParams: []
+        fsmVarParams: []
+        fsmArrayParams: []
+        fsmEnumParams: []
+        fsmFloatParams: []
+        fsmIntParams: []
+        fsmBoolParams: []
+        fsmVector2Params: []
+        fsmVector3Params:
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {x: 0, y: 0, z: 0}
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {x: 0, y: 0, z: 0}
+        fsmColorParams: []
+        fsmRectParams: []
+        fsmQuaternionParams: []
+        stringParams: []
+        byteData: 
+        arrayParamSizes: 
+        arrayParamTypes: []
+        customTypeSizes: 
+        customTypeNames: []
+        paramDataType: 1300000013000000130000001c0000001c00000013000000
+        paramName:
+        - gameObject
+        - parent
+        - spawnPoint
+        - position
+        - rotation
+        - storeObject
+        paramDataPos: 000000000100000002000000000000000100000003000000
+        paramByteDataSize: 000000000000000000000000000000000000000000000000
+    events: []
+    globalTransitions: []
+    variables:
+      floatVariables: []
+      intVariables: []
+      boolVariables: []
+      stringVariables: []
+      vector2Variables: []
+      vector3Variables: []
+      colorVariables: []
+      rectVariables: []
+      quaternionVariables: []
+      gameObjectVariables: []
+      objectVariables: []
+      materialVariables: []
+      textureVariables: []
+      arrayVariables: []
+      enumVariables: []
+      categories:
+      - 
+      variableCategoryIDs: 
+    description: 
+    docUrl: 
+    showStateLabel: 0
+    maxLoopCount: 0
+    watermark: 
+    password: 
+    locked: 0
+    manualUpdate: 0
+    outVariableIndices: 
+    keepDelayedEventsOnStateExit: 0
+    preprocessed: 0
+    ExposedEvents: []
+    OutputEvents: []
+    RestartOnEnable: 1
+    ResetVariablesOnEnable: 0
+    EnableDebugFlow: 0
+    EnableBreakpoints: 1
+    editorFlags: 225
+    activeStateName: 
+    mouseEvents: 0
+    handleLevelLoaded: 0
+    handleTriggerEnter2D: 0
+    handleTriggerExit2D: 0
+    handleTriggerStay2D: 0
+    handleCollisionEnter2D: 0
+    handleCollisionExit2D: 0
+    handleCollisionStay2D: 0
+    handleTriggerEnter: 0
+    handleTriggerExit: 0
+    handleTriggerStay: 0
+    handleCollisionEnter: 0
+    handleCollisionExit: 0
+    handleCollisionStay: 0
+    handleParticleCollision: 0
+    handleControllerColliderHit: 0
+    handleJointBreak: 0
+    handleJointBreak2D: 0
+    handleOnGUI: 0
+    handleFixedUpdate: 0
+    handleLateUpdate: 0
+    handleApplicationEvents: 0
+    handleUiEvents: 0
+    handleLegacyNetworking: 0
+    handleAnimatorMove: 0
+    handleAnimatorIK: 0
+  fsmTemplate: {fileID: 0}
+  eventHandlerComponentsAdded: 0
 --- !u!1 &3167123478607605837
 GameObject:
   m_ObjectHideFlags: 0
@@ -37122,7 +37310,7 @@ MonoBehaviour:
         customNames:
         - 
         - 
-        actionEnabled: 0101
+        actionEnabled: 0001
         actionIsOpen: 0101
         actionStartIndex: 0000000006000000
         actionHashCodes: 5a0192044d51cf04
@@ -37649,25 +37837,34 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 292
-        y: 234
-        width: 102.74
-        height: 16
+        x: 278
+        y: 283
+        width: 100
+        height: 32
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
-      transitions: []
+      transitions:
+      - fsmEvent:
+          name: FINISHED
+          isSystemEvent: 1
+          isGlobal: 0
+        toState: Destroy Gate 3 and Self
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.CreateObject
-        - HutongGames.PlayMaker.Actions.ActivateGameObject
+        - HutongGames.PlayMaker.Actions.Wait
         customNames:
         - 
         - 
         actionEnabled: 0101
         actionIsOpen: 0101
         actionStartIndex: 0000000006000000
-        actionHashCodes: 60532301b2cf1000
+        actionHashCodes: 6053230148c01101
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 0
@@ -37695,15 +37892,7 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: {fileID: 0}
-        fsmOwnerDefaultParams:
-        - ownerOption: 0
-          gameObject:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: {fileID: 0}
+        fsmOwnerDefaultParams: []
         animationCurveParams: []
         functionCallParams: []
         fsmTemplateControlParams: []
@@ -37715,21 +37904,15 @@ MonoBehaviour:
         fsmVarParams: []
         fsmArrayParams: []
         fsmEnumParams: []
-        fsmFloatParams: []
+        fsmFloatParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
         fsmIntParams: []
-        fsmBoolParams:
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
+        fsmBoolParams: []
         fsmVector2Params: []
         fsmVector3Params:
         - useVariable: 1
@@ -37747,13 +37930,14 @@ MonoBehaviour:
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
-        stringParams: []
-        byteData: 0000
+        stringParams:
+        - FINISHED
+        byteData: 01
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1300000013000000130000001c0000001c000000130000001400000011000000110000000100000001000000
+        paramDataType: 1300000013000000130000001c0000001c000000130000000f0000001700000001000000
         paramName:
         - gameObject
         - parent
@@ -37761,13 +37945,11 @@ MonoBehaviour:
         - position
         - rotation
         - storeObject
-        - gameObject
-        - activate
-        - recursive
-        - resetOnExit
-        - everyFrame
-        paramDataPos: 0000000001000000020000000000000001000000030000000000000000000000010000000000000001000000
-        paramByteDataSize: 0000000000000000000000000000000000000000000000000000000000000000000000000100000001000000
+        - time
+        - finishEvent
+        - realTime
+        paramDataPos: 000000000100000002000000000000000100000003000000000000000000000000000000
+        paramByteDataSize: 000000000000000000000000000000000000000000000000000000000000000001000000
     - name: Game Over
       description: 
       colorIndex: 0
@@ -38010,6 +38192,104 @@ MonoBehaviour:
         - realTime
         paramDataPos: 0000000000000000
         paramByteDataSize: 0000000000000000
+    - name: Destroy Gate 3 and Self
+      description: 
+      colorIndex: 0
+      position:
+        serializedVersion: 2
+        x: 364
+        y: 384
+        width: 167.07
+        height: 16
+      isBreakpoint: 0
+      isSequence: 0
+      hideUnused: 0
+      transitions: []
+      actionData:
+        actionNames:
+        - HutongGames.PlayMaker.Actions.DestroyObject
+        - HutongGames.PlayMaker.Actions.DestroySelf
+        customNames:
+        - 
+        - 
+        actionEnabled: 0101
+        actionIsOpen: 0101
+        actionStartIndex: 0000000003000000
+        actionHashCodes: 9ff80c02230cc800
+        unityObjectParams: []
+        fsmGameObjectParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 7049752161267123471}
+        fsmOwnerDefaultParams: []
+        animationCurveParams: []
+        functionCallParams: []
+        fsmTemplateControlParams: []
+        fsmEventTargetParams: []
+        fsmPropertyParams: []
+        layoutOptionParams: []
+        fsmStringParams: []
+        fsmObjectParams: []
+        fsmVarParams: []
+        fsmArrayParams: []
+        fsmEnumParams: []
+        fsmFloatParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        fsmIntParams: []
+        fsmBoolParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        fsmVector2Params: []
+        fsmVector3Params: []
+        fsmColorParams: []
+        fsmRectParams: []
+        fsmQuaternionParams: []
+        stringParams: []
+        byteData: 
+        arrayParamSizes: 
+        arrayParamTypes: []
+        customTypeSizes: 
+        customTypeNames: []
+        paramDataType: 130000000f000000110000000f0000001100000011000000
+        paramName:
+        - gameObject
+        - delay
+        - detachChildren
+        - delay
+        - realTime
+        - detachChildren
+        paramDataPos: 000000000000000000000000010000000100000002000000
+        paramByteDataSize: 000000000000000000000000000000000000000000000000
     events:
     - name: FINISHED
       isSystemEvent: 1
@@ -44474,7 +44754,7 @@ MonoBehaviour:
         customNames:
         - 
         - 
-        actionEnabled: 0101
+        actionEnabled: 0001
         actionIsOpen: 0101
         actionStartIndex: 0000000006000000
         actionHashCodes: 5a0192044d51cf04
@@ -45013,7 +45293,7 @@ MonoBehaviour:
           name: FINISHED
           isSystemEvent: 1
           isGlobal: 0
-        toState: Loop Spawns
+        toState: Destroy Gate 2 and Self
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -45259,7 +45539,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 3
+          value: 13
         - useVariable: 1
           name: 
           tooltip: 
@@ -45356,6 +45636,104 @@ MonoBehaviour:
         - realTime
         paramDataPos: 0000000000000000
         paramByteDataSize: 0000000000000000
+    - name: Destroy Gate 2 and Self
+      description: 
+      colorIndex: 0
+      position:
+        serializedVersion: 2
+        x: 411
+        y: 369
+        width: 166.7
+        height: 16
+      isBreakpoint: 0
+      isSequence: 0
+      hideUnused: 0
+      transitions: []
+      actionData:
+        actionNames:
+        - HutongGames.PlayMaker.Actions.DestroyObject
+        - HutongGames.PlayMaker.Actions.DestroySelf
+        customNames:
+        - 
+        - 
+        actionEnabled: 0101
+        actionIsOpen: 0101
+        actionStartIndex: 0000000003000000
+        actionHashCodes: 9ff80c02230cc800
+        unityObjectParams: []
+        fsmGameObjectParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 933118647179652140}
+        fsmOwnerDefaultParams: []
+        animationCurveParams: []
+        functionCallParams: []
+        fsmTemplateControlParams: []
+        fsmEventTargetParams: []
+        fsmPropertyParams: []
+        layoutOptionParams: []
+        fsmStringParams: []
+        fsmObjectParams: []
+        fsmVarParams: []
+        fsmArrayParams: []
+        fsmEnumParams: []
+        fsmFloatParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        fsmIntParams: []
+        fsmBoolParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        fsmVector2Params: []
+        fsmVector3Params: []
+        fsmColorParams: []
+        fsmRectParams: []
+        fsmQuaternionParams: []
+        stringParams: []
+        byteData: 
+        arrayParamSizes: 
+        arrayParamTypes: []
+        customTypeSizes: 
+        customTypeNames: []
+        paramDataType: 130000000f000000110000000f0000001100000011000000
+        paramName:
+        - gameObject
+        - delay
+        - detachChildren
+        - delay
+        - realTime
+        - detachChildren
+        paramDataPos: 000000000000000000000000010000000100000002000000
+        paramByteDataSize: 000000000000000000000000000000000000000000000000
     events:
     - name: FINISHED
       isSystemEvent: 1
@@ -58613,7 +58991,7 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 010101
+        actionEnabled: 000101
         actionIsOpen: 010101
         actionStartIndex: 000000000600000009000000
         actionHashCodes: 5a0192044d51cf0448c01101
@@ -58673,7 +59051,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 3
+          value: 0.1
         fsmIntParams: []
         fsmBoolParams: []
         fsmVector2Params: []
@@ -59162,7 +59540,7 @@ MonoBehaviour:
           name: FINISHED
           isSystemEvent: 1
           isGlobal: 0
-        toState: Loop Spawns
+        toState: Destroy Gate
         linkStyle: 0
         linkConstraint: 1
         linkTarget: 0
@@ -59505,6 +59883,104 @@ MonoBehaviour:
         - realTime
         paramDataPos: 0000000000000000
         paramByteDataSize: 0000000000000000
+    - name: Destroy Gate
+      description: 
+      colorIndex: 0
+      position:
+        serializedVersion: 2
+        x: 285
+        y: 311
+        width: 105.98
+        height: 16
+      isBreakpoint: 0
+      isSequence: 0
+      hideUnused: 0
+      transitions: []
+      actionData:
+        actionNames:
+        - HutongGames.PlayMaker.Actions.DestroyObject
+        - HutongGames.PlayMaker.Actions.DestroySelf
+        customNames:
+        - 
+        - 
+        actionEnabled: 0101
+        actionIsOpen: 0101
+        actionStartIndex: 0000000003000000
+        actionHashCodes: 9ff80c02230cc800
+        unityObjectParams: []
+        fsmGameObjectParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 4957437777608659108}
+        fsmOwnerDefaultParams: []
+        animationCurveParams: []
+        functionCallParams: []
+        fsmTemplateControlParams: []
+        fsmEventTargetParams: []
+        fsmPropertyParams: []
+        layoutOptionParams: []
+        fsmStringParams: []
+        fsmObjectParams: []
+        fsmVarParams: []
+        fsmArrayParams: []
+        fsmEnumParams: []
+        fsmFloatParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        fsmIntParams: []
+        fsmBoolParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        fsmVector2Params: []
+        fsmVector3Params: []
+        fsmColorParams: []
+        fsmRectParams: []
+        fsmQuaternionParams: []
+        stringParams: []
+        byteData: 
+        arrayParamSizes: 
+        arrayParamTypes: []
+        customTypeSizes: 
+        customTypeNames: []
+        paramDataType: 130000000f000000110000000f0000001100000011000000
+        paramName:
+        - gameObject
+        - delay
+        - detachChildren
+        - delay
+        - realTime
+        - detachChildren
+        paramDataPos: 000000000000000000000000010000000100000002000000
+        paramByteDataSize: 000000000000000000000000000000000000000000000000
     events:
     - name: FINISHED
       isSystemEvent: 1
@@ -67364,6 +67840,221 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1668395308509635477}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &8260464887001548940
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2491697377897610816}
+  - component: {fileID: 1494135541453951033}
+  m_Layer: 0
+  m_Name: Rooftop_Base_Drop_Pos
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &2491697377897610816
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8260464887001548940}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4055133441329085902}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1494135541453951033
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8260464887001548940}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1384774831, guid: e743331561ef77147ae48cda9bcb8209, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: PlayMaker.dll::PlayMakerFSM
+  fsm:
+    dataVersion: 2
+    usedInTemplate: {fileID: 0}
+    name: FSM
+    startState: State 1
+    states:
+    - name: State 1
+      description: 
+      colorIndex: 0
+      position:
+        serializedVersion: 2
+        x: 50
+        y: 100
+        width: 100
+        height: 16
+      isBreakpoint: 0
+      isSequence: 0
+      hideUnused: 0
+      transitions: []
+      actionData:
+        actionNames:
+        - HutongGames.PlayMaker.Actions.CreateObject
+        customNames:
+        - 
+        actionEnabled: 01
+        actionIsOpen: 01
+        actionStartIndex: 00000000
+        actionHashCodes: 60532301
+        unityObjectParams: []
+        fsmGameObjectParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 2687449308608844291, guid: 2237d31cea82b4d47ac62f7a02409487,
+            type: 3}
+        - useVariable: 1
+          name: CurrentlySpawnedStuffs
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 0}
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 8260464887001548940}
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 0}
+        fsmOwnerDefaultParams: []
+        animationCurveParams: []
+        functionCallParams: []
+        fsmTemplateControlParams: []
+        fsmEventTargetParams: []
+        fsmPropertyParams: []
+        layoutOptionParams: []
+        fsmStringParams: []
+        fsmObjectParams: []
+        fsmVarParams: []
+        fsmArrayParams: []
+        fsmEnumParams: []
+        fsmFloatParams: []
+        fsmIntParams: []
+        fsmBoolParams: []
+        fsmVector2Params: []
+        fsmVector3Params:
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {x: 0, y: 0, z: 0}
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {x: 0, y: 0, z: 0}
+        fsmColorParams: []
+        fsmRectParams: []
+        fsmQuaternionParams: []
+        stringParams: []
+        byteData: 
+        arrayParamSizes: 
+        arrayParamTypes: []
+        customTypeSizes: 
+        customTypeNames: []
+        paramDataType: 1300000013000000130000001c0000001c00000013000000
+        paramName:
+        - gameObject
+        - parent
+        - spawnPoint
+        - position
+        - rotation
+        - storeObject
+        paramDataPos: 000000000100000002000000000000000100000003000000
+        paramByteDataSize: 000000000000000000000000000000000000000000000000
+    events: []
+    globalTransitions: []
+    variables:
+      floatVariables: []
+      intVariables: []
+      boolVariables: []
+      stringVariables: []
+      vector2Variables: []
+      vector3Variables: []
+      colorVariables: []
+      rectVariables: []
+      quaternionVariables: []
+      gameObjectVariables: []
+      objectVariables: []
+      materialVariables: []
+      textureVariables: []
+      arrayVariables: []
+      enumVariables: []
+      categories:
+      - 
+      variableCategoryIDs: 
+    description: 
+    docUrl: 
+    showStateLabel: 0
+    maxLoopCount: 0
+    watermark: 
+    password: 
+    locked: 0
+    manualUpdate: 0
+    outVariableIndices: 
+    keepDelayedEventsOnStateExit: 0
+    preprocessed: 0
+    ExposedEvents: []
+    OutputEvents: []
+    RestartOnEnable: 1
+    ResetVariablesOnEnable: 0
+    EnableDebugFlow: 0
+    EnableBreakpoints: 1
+    editorFlags: 225
+    activeStateName: 
+    mouseEvents: 0
+    handleLevelLoaded: 0
+    handleTriggerEnter2D: 0
+    handleTriggerExit2D: 0
+    handleTriggerStay2D: 0
+    handleCollisionEnter2D: 0
+    handleCollisionExit2D: 0
+    handleCollisionStay2D: 0
+    handleTriggerEnter: 0
+    handleTriggerExit: 0
+    handleTriggerStay: 0
+    handleCollisionEnter: 0
+    handleCollisionExit: 0
+    handleCollisionStay: 0
+    handleParticleCollision: 0
+    handleControllerColliderHit: 0
+    handleJointBreak: 0
+    handleJointBreak2D: 0
+    handleOnGUI: 0
+    handleFixedUpdate: 0
+    handleLateUpdate: 0
+    handleApplicationEvents: 0
+    handleUiEvents: 0
+    handleLegacyNetworking: 0
+    handleAnimatorMove: 0
+    handleAnimatorIK: 0
+  fsmTemplate: {fileID: 0}
+  eventHandlerComponentsAdded: 0
 --- !u!1 &8418903964795028499
 GameObject:
   m_ObjectHideFlags: 0
@@ -78773,859 +79464,6 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
---- !u!1001 &3345247913588234456
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 4055133441329085902}
-    m_Modifications:
-    - target: {fileID: 578168107850016550, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_Controller
-      value: 
-      objectReference: {fileID: 9100000, guid: 5929bc09eb5e40c41b4491576b563a7b, type: 2}
-    - target: {fileID: 590442852624685683, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 22.51971
-      objectReference: {fileID: 0}
-    - target: {fileID: 590442852624685683, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 96.07683
-      objectReference: {fileID: 0}
-    - target: {fileID: 590442852624685683, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 68.45077
-      objectReference: {fileID: 0}
-    - target: {fileID: 853431662282393664, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -19.820602
-      objectReference: {fileID: 0}
-    - target: {fileID: 853431662282393664, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -30.091131
-      objectReference: {fileID: 0}
-    - target: {fileID: 853431662282393664, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -75.29542
-      objectReference: {fileID: 0}
-    - target: {fileID: 912360581803710920, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 52.308292
-      objectReference: {fileID: 0}
-    - target: {fileID: 912360581803710920, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 5.822838
-      objectReference: {fileID: 0}
-    - target: {fileID: 912360581803710920, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 8.656462
-      objectReference: {fileID: 0}
-    - target: {fileID: 1461181014934529102, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -5.890566
-      objectReference: {fileID: 0}
-    - target: {fileID: 1461181014934529102, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 156.15842
-      objectReference: {fileID: 0}
-    - target: {fileID: 1461181014934529102, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 78.19377
-      objectReference: {fileID: 0}
-    - target: {fileID: 1607611373445713021, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 59.732853
-      objectReference: {fileID: 0}
-    - target: {fileID: 1607611373445713021, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -51.085922
-      objectReference: {fileID: 0}
-    - target: {fileID: 1607611373445713021, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -135.7595
-      objectReference: {fileID: 0}
-    - target: {fileID: 1735690285670134460, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -19.87053
-      objectReference: {fileID: 0}
-    - target: {fileID: 1735690285670134460, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 30.086811
-      objectReference: {fileID: 0}
-    - target: {fileID: 1735690285670134460, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 75.43284
-      objectReference: {fileID: 0}
-    - target: {fileID: 1832424059310335764, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 49.621597
-      objectReference: {fileID: 0}
-    - target: {fileID: 1832424059310335764, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 5.39691
-      objectReference: {fileID: 0}
-    - target: {fileID: 1832424059310335764, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -12.555992
-      objectReference: {fileID: 0}
-    - target: {fileID: 1849173784025933407, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 68.79174
-      objectReference: {fileID: 0}
-    - target: {fileID: 1849173784025933407, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -68.9298
-      objectReference: {fileID: 0}
-    - target: {fileID: 1849173784025933407, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 24.670496
-      objectReference: {fileID: 0}
-    - target: {fileID: 2139082750764264339, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -74.01462
-      objectReference: {fileID: 0}
-    - target: {fileID: 2139082750764264339, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -71.22943
-      objectReference: {fileID: 0}
-    - target: {fileID: 2139082750764264339, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 168.26344
-      objectReference: {fileID: 0}
-    - target: {fileID: 2249597852845164952, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 2.7235591
-      objectReference: {fileID: 0}
-    - target: {fileID: 2249597852845164952, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -0.000013254702
-      objectReference: {fileID: 0}
-    - target: {fileID: 2249597852845164952, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0.000000018321515
-      objectReference: {fileID: 0}
-    - target: {fileID: 2694642284082823093, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -89.88082
-      objectReference: {fileID: 0}
-    - target: {fileID: 2694642284082823093, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -65.50987
-      objectReference: {fileID: 0}
-    - target: {fileID: 2694642284082823093, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 114.49013
-      objectReference: {fileID: 0}
-    - target: {fileID: 2729330126805229958, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 52.239082
-      objectReference: {fileID: 0}
-    - target: {fileID: 2729330126805229958, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -3.9492898
-      objectReference: {fileID: 0}
-    - target: {fileID: 2729330126805229958, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -9.117285
-      objectReference: {fileID: 0}
-    - target: {fileID: 3054831669825765924, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -5.823481
-      objectReference: {fileID: 0}
-    - target: {fileID: 3054831669825765924, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -156.03905
-      objectReference: {fileID: 0}
-    - target: {fileID: 3054831669825765924, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -78.36997
-      objectReference: {fileID: 0}
-    - target: {fileID: 3336267423676060996, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 49.602905
-      objectReference: {fileID: 0}
-    - target: {fileID: 3336267423676060996, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -5.3508997
-      objectReference: {fileID: 0}
-    - target: {fileID: 3336267423676060996, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 12.599901
-      objectReference: {fileID: 0}
-    - target: {fileID: 3390524666300845892, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -3.0288248
-      objectReference: {fileID: 0}
-    - target: {fileID: 3390524666300845892, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -0.0000026798975
-      objectReference: {fileID: 0}
-    - target: {fileID: 3390524666300845892, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0.0000048342513
-      objectReference: {fileID: 0}
-    - target: {fileID: 3742696493561431634, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -5.3820577
-      objectReference: {fileID: 0}
-    - target: {fileID: 3742696493561431634, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -0.0000009168589
-      objectReference: {fileID: 0}
-    - target: {fileID: 3742696493561431634, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0.0000017738025
-      objectReference: {fileID: 0}
-    - target: {fileID: 4187604696185341087, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 20.090866
-      objectReference: {fileID: 0}
-    - target: {fileID: 4187604696185341087, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -57.291965
-      objectReference: {fileID: 0}
-    - target: {fileID: 4187604696185341087, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 15.484371
-      objectReference: {fileID: 0}
-    - target: {fileID: 4392081746203362196, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 64.21264
-      objectReference: {fileID: 0}
-    - target: {fileID: 4392081746203362196, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 38.81319
-      objectReference: {fileID: 0}
-    - target: {fileID: 4392081746203362196, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 127.71398
-      objectReference: {fileID: 0}
-    - target: {fileID: 4555597247851036467, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -11.141648
-      objectReference: {fileID: 0}
-    - target: {fileID: 4555597247851036467, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0.000023995448
-      objectReference: {fileID: 0}
-    - target: {fileID: 4555597247851036467, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -0.00000054668726
-      objectReference: {fileID: 0}
-    - target: {fileID: 4758414863398690064, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -74.471085
-      objectReference: {fileID: 0}
-    - target: {fileID: 4758414863398690064, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 70.15059
-      objectReference: {fileID: 0}
-    - target: {fileID: 4758414863398690064, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -167.11046
-      objectReference: {fileID: 0}
-    - target: {fileID: 5214008649277909224, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 9.4272175
-      objectReference: {fileID: 0}
-    - target: {fileID: 5214008649277909224, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -34.879578
-      objectReference: {fileID: 0}
-    - target: {fileID: 5214008649277909224, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -36.597927
-      objectReference: {fileID: 0}
-    - target: {fileID: 5368182963310357998, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 19.52804
-      objectReference: {fileID: 0}
-    - target: {fileID: 5368182963310357998, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 55.045353
-      objectReference: {fileID: 0}
-    - target: {fileID: 5368182963310357998, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -15.075755
-      objectReference: {fileID: 0}
-    - target: {fileID: 5488491081953742624, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 9.470091
-      objectReference: {fileID: 0}
-    - target: {fileID: 5488491081953742624, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 34.9006
-      objectReference: {fileID: 0}
-    - target: {fileID: 5488491081953742624, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 36.531055
-      objectReference: {fileID: 0}
-    - target: {fileID: 6197679872185963865, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -0.000022070662
-      objectReference: {fileID: 0}
-    - target: {fileID: 6197679872185963865, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -89.99996
-      objectReference: {fileID: 0}
-    - target: {fileID: 6197679872185963865, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -141.18623
-      objectReference: {fileID: 0}
-    - target: {fileID: 6912659774043993948, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -10.800033
-      objectReference: {fileID: 0}
-    - target: {fileID: 6912659774043993948, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -98.42308
-      objectReference: {fileID: 0}
-    - target: {fileID: 6912659774043993948, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -80.55189
-      objectReference: {fileID: 0}
-    - target: {fileID: 7227891778091342213, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 22.640184
-      objectReference: {fileID: 0}
-    - target: {fileID: 7227891778091342213, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -96.168915
-      objectReference: {fileID: 0}
-    - target: {fileID: 7227891778091342213, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -68.52139
-      objectReference: {fileID: 0}
-    - target: {fileID: 7232372941810090465, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 16.100986
-      objectReference: {fileID: 0}
-    - target: {fileID: 7232372941810090465, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0.000013157923
-      objectReference: {fileID: 0}
-    - target: {fileID: 7232372941810090465, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -0.000002059924
-      objectReference: {fileID: 0}
-    - target: {fileID: 7584502843116543742, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 2.9399135
-      objectReference: {fileID: 0}
-    - target: {fileID: 7584502843116543742, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -0.000078313664
-      objectReference: {fileID: 0}
-    - target: {fileID: 7584502843116543742, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0.000053572727
-      objectReference: {fileID: 0}
-    - target: {fileID: 8003853226065393842, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -89.98021
-      objectReference: {fileID: 0}
-    - target: {fileID: 8202312384869648848, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -10.8436165
-      objectReference: {fileID: 0}
-    - target: {fileID: 8202312384869648848, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 98.39618
-      objectReference: {fileID: 0}
-    - target: {fileID: 8202312384869648848, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 80.498276
-      objectReference: {fileID: 0}
-    - target: {fileID: 8272359235214968938, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8272359235214968938, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8272359235214968938, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8272359235214968938, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8272359235214968938, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8272359235214968938, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8272359235214968938, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8272359235214968938, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8272359235214968938, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8272359235214968938, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8530775019698153518, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 5.5667744
-      objectReference: {fileID: 0}
-    - target: {fileID: 8530775019698153518, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -85.64714
-      objectReference: {fileID: 0}
-    - target: {fileID: 8530775019698153518, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -78.123726
-      objectReference: {fileID: 0}
-    - target: {fileID: 8749463749813987395, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 69.16323
-      objectReference: {fileID: 0}
-    - target: {fileID: 8749463749813987395, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 68.54214
-      objectReference: {fileID: 0}
-    - target: {fileID: 8749463749813987395, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -25.079863
-      objectReference: {fileID: 0}
-    - target: {fileID: 8756829779268293328, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_Name
-      value: Pumpkin_Boss
-      objectReference: {fileID: 0}
-    - target: {fileID: 8756829779268293328, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8859777762870024877, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 5.6406317
-      objectReference: {fileID: 0}
-    - target: {fileID: 8859777762870024877, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 85.705475
-      objectReference: {fileID: 0}
-    - target: {fileID: 8859777762870024877, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 78.07889
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 8756829779268293328, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 2254713774956482385}
-    - targetCorrespondingSourceObject: {fileID: 8756829779268293328, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 4927330828458971713}
-  m_SourcePrefab: {fileID: 100100000, guid: 9bb66076b41c8084cbf90cf28ec7eb83, type: 3}
---- !u!1 &6334936338597562888 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8756829779268293328, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-    type: 3}
-  m_PrefabInstance: {fileID: 3345247913588234456}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &2254713774956482385
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6334936338597562888}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1384774831, guid: e743331561ef77147ae48cda9bcb8209, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: PlayMaker.dll::PlayMakerFSM
-  fsm:
-    dataVersion: 2
-    usedInTemplate: {fileID: 0}
-    name: FSM
-    startState: Init
-    states:
-    - name: Init
-      description: 
-      colorIndex: 0
-      position:
-        serializedVersion: 2
-        x: 50
-        y: 100
-        width: 100
-        height: 16
-      isBreakpoint: 0
-      isSequence: 0
-      hideUnused: 0
-      transitions: []
-      actionData:
-        actionNames:
-        - HutongGames.PlayMaker.Actions.AudioPlay
-        customNames:
-        - 
-        actionEnabled: 01
-        actionIsOpen: 01
-        actionStartIndex: 00000000
-        actionHashCodes: 81294e04
-        unityObjectParams: []
-        fsmGameObjectParams: []
-        fsmOwnerDefaultParams:
-        - ownerOption: 0
-          gameObject:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: {fileID: 0}
-        animationCurveParams: []
-        functionCallParams: []
-        fsmTemplateControlParams: []
-        fsmEventTargetParams: []
-        fsmPropertyParams: []
-        layoutOptionParams: []
-        fsmStringParams: []
-        fsmObjectParams:
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          typeName: UnityEngine.AudioClip
-          value: {fileID: 8300000, guid: 4bddb8652ad22904b9967add726a6706, type: 3}
-        fsmVarParams: []
-        fsmArrayParams: []
-        fsmEnumParams: []
-        fsmFloatParams:
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 1
-        fsmIntParams: []
-        fsmBoolParams:
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 1
-        fsmVector2Params: []
-        fsmVector3Params: []
-        fsmColorParams: []
-        fsmRectParams: []
-        fsmQuaternionParams: []
-        stringParams:
-        - 
-        byteData: 
-        arrayParamSizes: 
-        arrayParamTypes: []
-        customTypeSizes: 
-        customTypeNames: []
-        paramDataType: 140000000f000000180000001100000017000000
-        paramName:
-        - gameObject
-        - volume
-        - oneShotClip
-        - WaitForEndOfClip
-        - finishedEvent
-        paramDataPos: 0000000000000000000000000000000000000000
-        paramByteDataSize: 0000000000000000000000000000000000000000
-    events: []
-    globalTransitions: []
-    variables:
-      floatVariables: []
-      intVariables: []
-      boolVariables: []
-      stringVariables: []
-      vector2Variables: []
-      vector3Variables: []
-      colorVariables: []
-      rectVariables: []
-      quaternionVariables: []
-      gameObjectVariables: []
-      objectVariables: []
-      materialVariables: []
-      textureVariables: []
-      arrayVariables: []
-      enumVariables: []
-      categories:
-      - 
-      variableCategoryIDs: 
-    description: 
-    docUrl: 
-    showStateLabel: 0
-    maxLoopCount: 0
-    watermark: 
-    password: 
-    locked: 0
-    manualUpdate: 0
-    outVariableIndices: 
-    keepDelayedEventsOnStateExit: 0
-    preprocessed: 0
-    ExposedEvents: []
-    OutputEvents: []
-    RestartOnEnable: 1
-    ResetVariablesOnEnable: 0
-    EnableDebugFlow: 0
-    EnableBreakpoints: 1
-    editorFlags: 225
-    activeStateName: 
-    mouseEvents: 0
-    handleLevelLoaded: 0
-    handleTriggerEnter2D: 0
-    handleTriggerExit2D: 0
-    handleTriggerStay2D: 0
-    handleCollisionEnter2D: 0
-    handleCollisionExit2D: 0
-    handleCollisionStay2D: 0
-    handleTriggerEnter: 0
-    handleTriggerExit: 0
-    handleTriggerStay: 0
-    handleCollisionEnter: 0
-    handleCollisionExit: 0
-    handleCollisionStay: 0
-    handleParticleCollision: 0
-    handleControllerColliderHit: 0
-    handleJointBreak: 0
-    handleJointBreak2D: 0
-    handleOnGUI: 0
-    handleFixedUpdate: 0
-    handleLateUpdate: 0
-    handleApplicationEvents: 0
-    handleUiEvents: 0
-    handleLegacyNetworking: 0
-    handleAnimatorMove: 0
-    handleAnimatorIK: 0
-  fsmTemplate: {fileID: 0}
-  eventHandlerComponentsAdded: 0
---- !u!82 &4927330828458971713
-AudioSource:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6334936338597562888}
-  m_Enabled: 1
-  serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 0}
-  m_PlayOnAwake: 1
-  m_Volume: 1
-  m_Pitch: 1
-  Loop: 0
-  Mute: 0
-  Spatialize: 0
-  SpatializePostEffects: 0
-  Priority: 128
-  DopplerLevel: 1
-  MinDistance: 1
-  MaxDistance: 500
-  Pan2D: 0
-  rolloffMode: 0
-  BypassEffects: 0
-  BypassListenerEffects: 0
-  BypassReverbZones: 0
-  rolloffCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  panLevelCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  spreadCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  reverbZoneMixCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
---- !u!4 &6674870821319741618 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8272359235214968938, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-    type: 3}
-  m_PrefabInstance: {fileID: 3345247913588234456}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5061982092409075545
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -80190,91 +80028,6 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 6429247041500350853}
   m_PrefabAsset: {fileID: 0}
---- !u!1001 &7374441526720827731
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 4055133441329085902}
-    m_Modifications:
-    - target: {fileID: 2343576144474954158, guid: 2237d31cea82b4d47ac62f7a02409487,
-        type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2343576144474954158, guid: 2237d31cea82b4d47ac62f7a02409487,
-        type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2343576144474954158, guid: 2237d31cea82b4d47ac62f7a02409487,
-        type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2343576144474954158, guid: 2237d31cea82b4d47ac62f7a02409487,
-        type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2343576144474954158, guid: 2237d31cea82b4d47ac62f7a02409487,
-        type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2343576144474954158, guid: 2237d31cea82b4d47ac62f7a02409487,
-        type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2343576144474954158, guid: 2237d31cea82b4d47ac62f7a02409487,
-        type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2343576144474954158, guid: 2237d31cea82b4d47ac62f7a02409487,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2343576144474954158, guid: 2237d31cea82b4d47ac62f7a02409487,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2343576144474954158, guid: 2237d31cea82b4d47ac62f7a02409487,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2687449308608844291, guid: 2237d31cea82b4d47ac62f7a02409487,
-        type: 3}
-      propertyPath: m_Name
-      value: Rooftop_Base_drop
-      objectReference: {fileID: 0}
-    - target: {fileID: 2687449308608844291, guid: 2237d31cea82b4d47ac62f7a02409487,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 2237d31cea82b4d47ac62f7a02409487, type: 3}
---- !u!1 &4836016726089548624 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2687449308608844291, guid: 2237d31cea82b4d47ac62f7a02409487,
-    type: 3}
-  m_PrefabInstance: {fileID: 7374441526720827731}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &5102940569896208637 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2343576144474954158, guid: 2237d31cea82b4d47ac62f7a02409487,
-    type: 3}
-  m_PrefabInstance: {fileID: 7374441526720827731}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &8047999798916845432
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -80650,579 +80403,4 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 9155329515031925467, guid: 4103b572f2f427f459cf78e2fabf65d2,
     type: 3}
   m_PrefabInstance: {fileID: 8049602636263853363}
-  m_PrefabAsset: {fileID: 0}
---- !u!1001 &8829408673954208399
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 4055133441329085902}
-    m_Modifications:
-    - target: {fileID: 578168107850016550, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_Controller
-      value: 
-      objectReference: {fileID: 9100000, guid: 5929bc09eb5e40c41b4491576b563a7b, type: 2}
-    - target: {fileID: 590442852624685683, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 17.281097
-      objectReference: {fileID: 0}
-    - target: {fileID: 590442852624685683, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 75.79149
-      objectReference: {fileID: 0}
-    - target: {fileID: 590442852624685683, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 12.82145
-      objectReference: {fileID: 0}
-    - target: {fileID: 853431662282393664, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -2.9092562
-      objectReference: {fileID: 0}
-    - target: {fileID: 853431662282393664, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -14.366669
-      objectReference: {fileID: 0}
-    - target: {fileID: 853431662282393664, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -23.891037
-      objectReference: {fileID: 0}
-    - target: {fileID: 912360581803710920, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 3.4059277
-      objectReference: {fileID: 0}
-    - target: {fileID: 912360581803710920, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 29.177267
-      objectReference: {fileID: 0}
-    - target: {fileID: 912360581803710920, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 34.87651
-      objectReference: {fileID: 0}
-    - target: {fileID: 1461181014934529102, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -18.07774
-      objectReference: {fileID: 0}
-    - target: {fileID: 1461181014934529102, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 163.70764
-      objectReference: {fileID: 0}
-    - target: {fileID: 1461181014934529102, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 15.968974
-      objectReference: {fileID: 0}
-    - target: {fileID: 1607611373445713021, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 62.05451
-      objectReference: {fileID: 0}
-    - target: {fileID: 1607611373445713021, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 59.911125
-      objectReference: {fileID: 0}
-    - target: {fileID: 1607611373445713021, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -4.958239
-      objectReference: {fileID: 0}
-    - target: {fileID: 1735690285670134460, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -2.9148982
-      objectReference: {fileID: 0}
-    - target: {fileID: 1735690285670134460, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 14.370661
-      objectReference: {fileID: 0}
-    - target: {fileID: 1735690285670134460, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 23.904415
-      objectReference: {fileID: 0}
-    - target: {fileID: 1832424059310335764, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 16.34777
-      objectReference: {fileID: 0}
-    - target: {fileID: 1832424059310335764, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 57.908886
-      objectReference: {fileID: 0}
-    - target: {fileID: 1832424059310335764, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 12.506826
-      objectReference: {fileID: 0}
-    - target: {fileID: 1849173784025933407, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 13.047144
-      objectReference: {fileID: 0}
-    - target: {fileID: 1849173784025933407, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -105.96925
-      objectReference: {fileID: 0}
-    - target: {fileID: 1849173784025933407, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 2.7993069
-      objectReference: {fileID: 0}
-    - target: {fileID: 2139082750764264339, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -54.91764
-      objectReference: {fileID: 0}
-    - target: {fileID: 2139082750764264339, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 39.323685
-      objectReference: {fileID: 0}
-    - target: {fileID: 2139082750764264339, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 2.5687432
-      objectReference: {fileID: 0}
-    - target: {fileID: 2249597852845164952, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 3.5651398
-      objectReference: {fileID: 0}
-    - target: {fileID: 2249597852845164952, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -1.6413877
-      objectReference: {fileID: 0}
-    - target: {fileID: 2249597852845164952, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -0.9556155
-      objectReference: {fileID: 0}
-    - target: {fileID: 2694642284082823093, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -89.94991
-      objectReference: {fileID: 0}
-    - target: {fileID: 2694642284082823093, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -180
-      objectReference: {fileID: 0}
-    - target: {fileID: 2694642284082823093, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2729330126805229958, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 19.521866
-      objectReference: {fileID: 0}
-    - target: {fileID: 2729330126805229958, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 16.604584
-      objectReference: {fileID: 0}
-    - target: {fileID: 2729330126805229958, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 14.1553955
-      objectReference: {fileID: 0}
-    - target: {fileID: 3054831669825765924, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -13.864235
-      objectReference: {fileID: 0}
-    - target: {fileID: 3054831669825765924, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -171.0159
-      objectReference: {fileID: 0}
-    - target: {fileID: 3054831669825765924, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -12.129483
-      objectReference: {fileID: 0}
-    - target: {fileID: 3336267423676060996, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 16.380447
-      objectReference: {fileID: 0}
-    - target: {fileID: 3336267423676060996, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -57.756332
-      objectReference: {fileID: 0}
-    - target: {fileID: 3336267423676060996, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -12.560886
-      objectReference: {fileID: 0}
-    - target: {fileID: 3390524666300845892, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -10.646652
-      objectReference: {fileID: 0}
-    - target: {fileID: 3390524666300845892, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0.37186366
-      objectReference: {fileID: 0}
-    - target: {fileID: 3390524666300845892, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -0.09968178
-      objectReference: {fileID: 0}
-    - target: {fileID: 3742696493561431634, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 6.151995
-      objectReference: {fileID: 0}
-    - target: {fileID: 3742696493561431634, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -0.00000041151426
-      objectReference: {fileID: 0}
-    - target: {fileID: 3742696493561431634, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0.0000013049857
-      objectReference: {fileID: 0}
-    - target: {fileID: 4187604696185341087, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -30.218966
-      objectReference: {fileID: 0}
-    - target: {fileID: 4187604696185341087, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -84.64533
-      objectReference: {fileID: 0}
-    - target: {fileID: 4187604696185341087, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -32.474243
-      objectReference: {fileID: 0}
-    - target: {fileID: 4392081746203362196, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 50.18231
-      objectReference: {fileID: 0}
-    - target: {fileID: 4392081746203362196, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -18.814846
-      objectReference: {fileID: 0}
-    - target: {fileID: 4392081746203362196, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 70.622635
-      objectReference: {fileID: 0}
-    - target: {fileID: 4555597247851036467, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 5.241
-      objectReference: {fileID: 0}
-    - target: {fileID: 4555597247851036467, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 2.3646512
-      objectReference: {fileID: 0}
-    - target: {fileID: 4555597247851036467, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 1.8321197
-      objectReference: {fileID: 0}
-    - target: {fileID: 4758414863398690064, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -56.794197
-      objectReference: {fileID: 0}
-    - target: {fileID: 4758414863398690064, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -13.127325
-      objectReference: {fileID: 0}
-    - target: {fileID: 4758414863398690064, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 19.875355
-      objectReference: {fileID: 0}
-    - target: {fileID: 5214008649277909224, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -10.122114
-      objectReference: {fileID: 0}
-    - target: {fileID: 5214008649277909224, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -15.349222
-      objectReference: {fileID: 0}
-    - target: {fileID: 5214008649277909224, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -56.800045
-      objectReference: {fileID: 0}
-    - target: {fileID: 5368182963310357998, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -12.851631
-      objectReference: {fileID: 0}
-    - target: {fileID: 5368182963310357998, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 96.98359
-      objectReference: {fileID: 0}
-    - target: {fileID: 5368182963310357998, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -2.695995
-      objectReference: {fileID: 0}
-    - target: {fileID: 5488491081953742624, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 3.3669126
-      objectReference: {fileID: 0}
-    - target: {fileID: 5488491081953742624, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 24.225574
-      objectReference: {fileID: 0}
-    - target: {fileID: 5488491081953742624, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 68.35827
-      objectReference: {fileID: 0}
-    - target: {fileID: 6197679872185963865, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -0.000017471124
-      objectReference: {fileID: 0}
-    - target: {fileID: 6197679872185963865, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -89.99996
-      objectReference: {fileID: 0}
-    - target: {fileID: 6197679872185963865, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -141.1676
-      objectReference: {fileID: 0}
-    - target: {fileID: 6912659774043993948, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -7.1633134
-      objectReference: {fileID: 0}
-    - target: {fileID: 6912659774043993948, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -95.93854
-      objectReference: {fileID: 0}
-    - target: {fileID: 6912659774043993948, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -4.9325943
-      objectReference: {fileID: 0}
-    - target: {fileID: 7227891778091342213, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 16.140945
-      objectReference: {fileID: 0}
-    - target: {fileID: 7227891778091342213, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -79.022224
-      objectReference: {fileID: 0}
-    - target: {fileID: 7227891778091342213, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 9.117067
-      objectReference: {fileID: 0}
-    - target: {fileID: 7232372941810090465, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 16.527058
-      objectReference: {fileID: 0}
-    - target: {fileID: 7232372941810090465, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0.0000142629815
-      objectReference: {fileID: 0}
-    - target: {fileID: 7232372941810090465, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -0.0000021535745
-      objectReference: {fileID: 0}
-    - target: {fileID: 7584502843116543742, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 14.176331
-      objectReference: {fileID: 0}
-    - target: {fileID: 7584502843116543742, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -2.589876
-      objectReference: {fileID: 0}
-    - target: {fileID: 7584502843116543742, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -1.0135427
-      objectReference: {fileID: 0}
-    - target: {fileID: 8003853226065393842, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -89.98021
-      objectReference: {fileID: 0}
-    - target: {fileID: 8202312384869648848, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -8.515578
-      objectReference: {fileID: 0}
-    - target: {fileID: 8202312384869648848, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 92.05839
-      objectReference: {fileID: 0}
-    - target: {fileID: 8202312384869648848, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 27.795645
-      objectReference: {fileID: 0}
-    - target: {fileID: 8272359235214968938, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8272359235214968938, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8272359235214968938, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8272359235214968938, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalRotation.w
-      value: -0.00000035762784
-      objectReference: {fileID: 0}
-    - target: {fileID: 8272359235214968938, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8272359235214968938, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8272359235214968938, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8272359235214968938, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8272359235214968938, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -180
-      objectReference: {fileID: 0}
-    - target: {fileID: 8272359235214968938, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8530775019698153518, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -17.931206
-      objectReference: {fileID: 0}
-    - target: {fileID: 8530775019698153518, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -58.627136
-      objectReference: {fileID: 0}
-    - target: {fileID: 8530775019698153518, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -15.497953
-      objectReference: {fileID: 0}
-    - target: {fileID: 8749463749813987395, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 13.743488
-      objectReference: {fileID: 0}
-    - target: {fileID: 8749463749813987395, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 99.57817
-      objectReference: {fileID: 0}
-    - target: {fileID: 8749463749813987395, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: -1.3277757
-      objectReference: {fileID: 0}
-    - target: {fileID: 8756829779268293328, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_Name
-      value: Pumpkin_Boss _Clone
-      objectReference: {fileID: 0}
-    - target: {fileID: 8756829779268293328, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8859777762870024877, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -7.963353
-      objectReference: {fileID: 0}
-    - target: {fileID: 8859777762870024877, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 46.973278
-      objectReference: {fileID: 0}
-    - target: {fileID: 8859777762870024877, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 35.120064
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 9bb66076b41c8084cbf90cf28ec7eb83, type: 3}
---- !u!1 &220357667184592991 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8756829779268293328, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-    type: 3}
-  m_PrefabInstance: {fileID: 8829408673954208399}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &595898528319017701 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8272359235214968938, guid: 9bb66076b41c8084cbf90cf28ec7eb83,
-    type: 3}
-  m_PrefabInstance: {fileID: 8829408673954208399}
   m_PrefabAsset: {fileID: 0}
