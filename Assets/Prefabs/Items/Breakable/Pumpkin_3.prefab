@@ -10214,7 +10214,7 @@ MonoBehaviour:
         x: 64
         y: 176
         width: 128.22
-        height: 64
+        height: 80
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
@@ -10242,6 +10242,15 @@ MonoBehaviour:
           isSystemEvent: 0
           isGlobal: 1
         toState: Check force
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
+      - fsmEvent:
+          name: back
+          isSystemEvent: 0
+          isGlobal: 0
+        toState: Check force 2
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -10338,7 +10347,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: Enemy
+          value: Weapon
         - useVariable: 0
           name: 
           tooltip: 
@@ -10377,7 +10386,7 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - next
-        - Dead
+        - back
         - FINISHED
         - FINISHED
         byteData: 00000000000000000200000000000000
@@ -10416,8 +10425,8 @@ MonoBehaviour:
       colorIndex: 4
       position:
         serializedVersion: 2
-        x: 293
-        y: 225
+        x: 397
+        y: 233
         width: 100.23
         height: 48
       isBreakpoint: 0
@@ -10477,7 +10486,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 10
+          value: 33
         - useVariable: 0
           name: 
           tooltip: 
@@ -10516,8 +10525,8 @@ MonoBehaviour:
       colorIndex: 6
       position:
         serializedVersion: 2
-        x: 102
-        y: 281
+        x: 94
+        y: 331
         width: 114.31
         height: 32
       isBreakpoint: 0
@@ -10681,10 +10690,9 @@ MonoBehaviour:
           stringValues: []
           vector4Values: []
           objectReferences:
-          - {fileID: 8300000, guid: 2de644d96a3052640b8989ecba915a80, type: 3}
-          - {fileID: 8300000, guid: a4661761129bc014490b3df27a00e952, type: 3}
-          - {fileID: 8300000, guid: b2291c3f8b565e74db9bd7833fe197bb, type: 3}
-          - {fileID: 8300000, guid: 5367bd01c33fd1343b9e3fea0381da10, type: 3}
+          - {fileID: 8300000, guid: 91ee0fb710467fa47b637aeee96a5649, type: 3}
+          - {fileID: 8300000, guid: 0bab81a9dcd291a4890520fb3dbc2625, type: 3}
+          - {fileID: 8300000, guid: a7dbe31763e93d4478f2e12bbf3907fa, type: 3}
         fsmEnumParams:
         - useVariable: 0
           name: 
@@ -11165,6 +11173,106 @@ MonoBehaviour:
         - everyFrame
         paramDataPos: 00000000000000000100000000000000000000000100000002000000010000000200000001000000020000000300000003000000030000000200000000000000010000000400000005000000
         paramByteDataSize: 00000000000000000000000000000000010000000000000000000000010000000100000000000000000000000000000000000000010000000000000000000000000000000100000001000000
+    - name: Check force 2
+      description: 
+      colorIndex: 4
+      position:
+        serializedVersion: 2
+        x: 367.5
+        y: 316
+        width: 110.67
+        height: 48
+      isBreakpoint: 0
+      isSequence: 0
+      hideUnused: 0
+      transitions:
+      - fsmEvent:
+          name: back
+          isSystemEvent: 0
+          isGlobal: 0
+        toState: Wait for Collision
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
+      - fsmEvent:
+          name: next
+          isSystemEvent: 0
+          isGlobal: 1
+        toState: Deal 1 damage
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
+      actionData:
+        actionNames:
+        - HutongGames.PlayMaker.Actions.FloatCompare
+        customNames:
+        - 
+        actionEnabled: 01
+        actionIsOpen: 01
+        actionStartIndex: 00000000
+        actionHashCodes: 1bcdca04
+        unityObjectParams: []
+        fsmGameObjectParams: []
+        fsmOwnerDefaultParams: []
+        animationCurveParams: []
+        functionCallParams: []
+        fsmTemplateControlParams: []
+        fsmEventTargetParams: []
+        fsmPropertyParams: []
+        layoutOptionParams: []
+        fsmStringParams: []
+        fsmObjectParams: []
+        fsmVarParams: []
+        fsmArrayParams: []
+        fsmEnumParams: []
+        fsmFloatParams:
+        - useVariable: 1
+          name: collisionForce
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        fsmIntParams: []
+        fsmBoolParams: []
+        fsmVector2Params: []
+        fsmVector3Params: []
+        fsmColorParams: []
+        fsmRectParams: []
+        fsmQuaternionParams: []
+        stringParams:
+        - 
+        - back
+        - next
+        byteData: 00
+        arrayParamSizes: 
+        arrayParamTypes: []
+        customTypeSizes: 
+        customTypeNames: []
+        paramDataType: 0f0000000f0000000f00000017000000170000001700000001000000
+        paramName:
+        - float1
+        - float2
+        - tolerance
+        - equal
+        - lessThan
+        - greaterThan
+        - everyFrame
+        paramDataPos: 00000000010000000200000000000000010000000200000000000000
+        paramByteDataSize: 00000000000000000000000000000000000000000000000001000000
     events:
     - name: next
       isSystemEvent: 0

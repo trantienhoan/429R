@@ -879,14 +879,14 @@ MonoBehaviour:
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.GetOwner
-        - HutongGames.PlayMaker.Actions.TweenScale
+        - HutongGames.PlayMaker.Actions.TweenPosition
         customNames:
         - 
         - 
         actionEnabled: 0101
         actionIsOpen: 0101
         actionStartIndex: 0000000001000000
-        actionHashCodes: 5c004505910fc300
+        actionHashCodes: 5c004505c1a70500
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
@@ -968,19 +968,19 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {x: 0.1, y: 0.1, z: 0.1}
+          value: {x: 0, y: -0.21, z: 0}
         - useVariable: 0
           name: 
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {x: 1, y: 1.0069443, z: 1}
+          value: {x: 0, y: 0, z: 0}
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
         stringParams:
         - 
-        byteData: 020000000100000000000000000000000000000000
+        byteData: 040000000000000000000000000000000000000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
@@ -988,12 +988,12 @@ MonoBehaviour:
         paramDataType: 1300000007000000130000001c00000007000000130000001c000000140000000f0000002a000000160000000f000000110000000700000017000000020000000100000007000000
         paramName:
         - storeGameObject
-        - fromOptions
+        - fromOption
         - fromTarget
-        - fromScale
-        - toOptions
+        - fromPosition
+        - toOption
         - toTarget
-        - toScale
+        - toPosition
         - gameObject
         - startDelay
         - easeType
