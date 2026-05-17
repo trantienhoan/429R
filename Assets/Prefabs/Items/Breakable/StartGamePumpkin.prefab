@@ -17038,9 +17038,10 @@ GameObject:
   - component: {fileID: 1758879196726637573}
   - component: {fileID: 4964890316226060746}
   - component: {fileID: 4293165150822861023}
+  - component: {fileID: 8089769245642375563}
   m_Layer: 0
   m_Name: pumpkin_Start
-  m_TagString: Destroyer
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -19840,6 +19841,27 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!65 &8089769245642375563
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1562310346286460977}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.42, y: 0.42, z: 0.42}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1573176379521663954
 GameObject:
   m_ObjectHideFlags: 0
@@ -50913,7 +50935,7 @@ GameObject:
   - component: {fileID: 6736543442810613696}
   m_Layer: 0
   m_Name: pumpkin_0
-  m_TagString: Destroyer
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

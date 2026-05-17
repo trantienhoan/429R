@@ -7767,7 +7767,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 1
           networkSync: 0
-          value: 3
+          value: 6
         - useVariable: 0
           name: 
           tooltip: 
@@ -7843,6 +7843,7 @@ MonoBehaviour:
         - HutongGames.PlayMaker.Actions.ActivateGameObject
         - HutongGames.PlayMaker.Actions.ActivateGameObject
         - HutongGames.PlayMaker.Actions.AudioPlay
+        - HutongGames.PlayMaker.Actions.SetFsmVariable
         customNames:
         - 
         - 
@@ -7850,10 +7851,11 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 010101010101
-        actionIsOpen: 010101010101
-        actionStartIndex: 0000000004000000060000000b0000001000000015000000
-        actionHashCodes: 87aa970015264c01c34b4105b2cf1000b2cf100081294e04
+        - 
+        actionEnabled: 01010101010101
+        actionIsOpen: 01010101010101
+        actionStartIndex: 0000000004000000060000000b00000010000000150000001a000000
+        actionHashCodes: 87aa970015264c01c34b4105b2cf1000b2cf100081294e04fcb1a001
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams:
@@ -7905,6 +7907,14 @@ MonoBehaviour:
             showInInspector: 0
             networkSync: 0
             value: {fileID: 0}
+        - ownerOption: 1
+          gameObject:
+            useVariable: 1
+            name: EnemyManager
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 0}
         animationCurveParams: []
         functionCallParams: []
         fsmTemplateControlParams: []
@@ -7924,6 +7934,18 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: dead
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: EnemyManager
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: TheSpider
         fsmObjectParams:
         - useVariable: 0
           name: 
@@ -7932,7 +7954,31 @@ MonoBehaviour:
           networkSync: 0
           typeName: UnityEngine.AudioClip
           value: {fileID: 8300000, guid: 01fe8e68e54203347902e8ec1c5d1ab1, type: 3}
-        fsmVarParams: []
+        fsmVarParams:
+        - variableName: 
+          objectType: UnityEngine.Object
+          useVariable: 0
+          type: 2
+          floatValue: 0
+          intValue: 0
+          boolValue: 1
+          stringValue: 
+          vector4Value: {x: 0, y: 0, z: 0, w: 0}
+          objectReference: {fileID: 0}
+          arrayValue:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            type: -1
+            objectTypeName: 
+            floatValues: []
+            intValues: 
+            boolValues: 
+            stringValues: []
+            vector4Values: []
+            objectReferences: []
         fsmArrayParams: []
         fsmEnumParams: []
         fsmFloatParams:
@@ -8011,12 +8057,12 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - FINISHED
-        byteData: 0000000000
+        byteData: 000000000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1400000012000000110000001100000014000000110000001400000012000000100000000f0000000100000014000000110000001100000001000000010000001400000011000000110000000100000001000000140000000f000000180000001100000017000000
+        paramDataType: 1400000012000000110000001100000014000000110000001400000012000000100000000f0000000100000014000000110000001100000001000000010000001400000011000000110000000100000001000000140000000f0000001800000011000000170000001400000012000000120000002700000001000000
         paramName:
         - gameObject
         - fsmName
@@ -8044,8 +8090,13 @@ MonoBehaviour:
         - oneShotClip
         - WaitForEndOfClip
         - finishedEvent
-        paramDataPos: 0000000000000000000000000100000001000000020000000200000001000000000000000000000000000000030000000300000004000000010000000200000004000000050000000600000003000000040000000500000001000000000000000700000000000000
-        paramByteDataSize: 0000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000010000000100000000000000000000000000000001000000010000000000000000000000000000000000000000000000
+        - gameObject
+        - fsmName
+        - variableName
+        - setValue
+        - everyFrame
+        paramDataPos: 00000000000000000000000001000000010000000200000002000000010000000000000000000000000000000300000003000000040000000100000002000000040000000500000006000000030000000400000005000000010000000000000007000000000000000600000002000000030000000000000005000000
+        paramByteDataSize: 00000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000100000001000000000000000000000000000000010000000100000000000000000000000000000000000000000000000000000000000000000000000000000001000000
     - name: Deactivate Object
       description: 
       colorIndex: 0
@@ -14893,7 +14944,7 @@ GameObject:
   - component: {fileID: 7627978450270835397}
   - component: {fileID: 535179058647752638}
   m_Layer: 0
-  m_Name: The_Droplet_Pos
+  m_Name: Chest_Piece_Pos
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
