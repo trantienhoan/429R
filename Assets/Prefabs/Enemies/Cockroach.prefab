@@ -468,6 +468,7 @@ Transform:
   - {fileID: 5806284845204062669}
   - {fileID: 1228749019967505159}
   - {fileID: 7929973280657989742}
+  - {fileID: 2885576693740876974}
   - {fileID: 5181342001580771538}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -2688,7 +2689,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 1
+          value: 1.7
         - useVariable: 0
           name: 
           tooltip: 
@@ -3240,12 +3241,12 @@ MonoBehaviour:
         actionHashCodes: 15264c01c34b4105f0eeac010d5f5c01
         unityObjectParams: []
         fsmGameObjectParams:
-        - useVariable: 1
-          name: GAMESTAGES
+        - useVariable: 0
+          name: 
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {fileID: 0}
+          value: {fileID: 7291269856266910662}
         fsmOwnerDefaultParams:
         - ownerOption: 0
           gameObject:
@@ -3300,13 +3301,13 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 0.6
+          value: 0.9
         - useVariable: 0
           name: 
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 0.6
+          value: 1.7
         - useVariable: 0
           name: 
           tooltip: 
@@ -15773,6 +15774,37 @@ Transform:
   - {fileID: 5058949581814619992}
   m_Father: {fileID: 9175536171535489569}
   m_LocalEulerAnglesHint: {x: -14.333933, y: -23.542986, z: -3.770729}
+--- !u!1 &7291269856266910662
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2885576693740876974}
+  m_Layer: 0
+  m_Name: RunBack
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2885576693740876974
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7291269856266910662}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: -3}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5432127017008514071}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7439574402808108719
 GameObject:
   m_ObjectHideFlags: 0
@@ -16011,7 +16043,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &110837220706671524
 Transform:
   m_ObjectHideFlags: 0
