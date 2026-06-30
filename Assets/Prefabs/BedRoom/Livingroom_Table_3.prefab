@@ -5528,7 +5528,10 @@ MonoBehaviour:
         - detachChildren
         paramDataPos: 000000000000000001000000
         paramByteDataSize: 000000000000000000000000
-    events: []
+    events:
+    - name: FINISHED
+      isSystemEvent: 1
+      isGlobal: 0
     globalTransitions: []
     variables:
       floatVariables: []
@@ -7980,8 +7983,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -0.787, y: 0.0012464821, z: -2.097}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 1778322774076228145}
   - {fileID: 3485224814165387368}
@@ -8618,7 +8621,7 @@ MonoBehaviour:
         tooltip: 
         showInInspector: 1
         networkSync: 0
-        value: 15
+        value: 10
       intVariables: []
       boolVariables: []
       stringVariables: []
