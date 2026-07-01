@@ -629,7 +629,7 @@ ParticleSystem:
   ShapeModule:
     serializedVersion: 6
     enabled: 1
-    type: 17
+    type: 0
     angle: 50.12
     length: 5
     boxThickness: {x: 0, y: 0, z: 0}
@@ -716,7 +716,7 @@ ParticleSystem:
     sphericalDirectionAmount: 0
     randomPositionAmount: 0
     radius:
-      value: 0.03
+      value: 0.09
       mode: 0
       spread: 0
       speed:
@@ -9979,7 +9979,7 @@ ParticleSystem:
   ringBufferLoopRange: {x: 0, y: 1}
   emitterVelocityMode: 0
   looping: 1
-  prewarm: 0
+  prewarm: 1
   playOnAwake: 1
   useUnscaledTime: 0
   autoRandomSeed: 1
@@ -14735,7 +14735,7 @@ GameObject:
   - component: {fileID: 2398992702387221134}
   m_Layer: 0
   m_Name: Candy_3
-  m_TagString: Weapon
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -14835,7 +14835,7 @@ Rigidbody:
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 0
-  m_ImplicitCom: 0
+  m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
@@ -14861,7 +14861,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.13
+  m_Radius: 0.3
   m_Center: {x: -0.003616646, y: 0.000000044703484, z: -0.000000115484}
 --- !u!135 &2008773998098728241
 SphereCollider:
@@ -14882,7 +14882,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.3
+  m_Radius: 0.6
   m_Center: {x: -0.003668584, y: 0.000000059604645, z: -0.00000014156103}
 --- !u!114 &-4144848801651552299
 MonoBehaviour:

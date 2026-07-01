@@ -210,7 +210,7 @@ ParticleSystem:
       maxGradient:
         serializedVersion: 2
         key0: {r: 0.74509805, g: 0.5176471, b: 0.18823531, a: 1}
-        key1: {r: 0.44435304, g: 0.43298328, b: 0.6603774, a: 1}
+        key1: {r: 0.65882355, g: 0.5128518, b: 0.43137255, a: 1}
         key2: {r: 0.77647066, g: 0.43529415, b: 0.19215688, a: 0.48235294}
         key3: {r: 0.77647066, g: 0.43529415, b: 0.19215688, a: 0}
         key4: {r: 0.14978641, g: 0.38635373, b: 0.9622642, a: 0}
@@ -716,7 +716,7 @@ ParticleSystem:
     sphericalDirectionAmount: 0
     randomPositionAmount: 0
     radius:
-      value: 0.03
+      value: 0.12
       mode: 0
       spread: 0
       speed:
@@ -5418,7 +5418,7 @@ ParticleSystem:
   ringBufferLoopRange: {x: 0, y: 1}
   emitterVelocityMode: 0
   looping: 1
-  prewarm: 0
+  prewarm: 1
   playOnAwake: 1
   useUnscaledTime: 0
   autoRandomSeed: 1
@@ -14950,7 +14950,7 @@ GameObject:
   - component: {fileID: 3014499143100793104}
   m_Layer: 0
   m_Name: Candy_1
-  m_TagString: Weapon
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -15050,7 +15050,7 @@ Rigidbody:
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 0
-  m_ImplicitCom: 0
+  m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
@@ -15076,7 +15076,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.13
+  m_Radius: 0.3
   m_Center: {x: -0.003616646, y: 0.000000044703484, z: -0.000000115484}
 --- !u!135 &87430314386608863
 SphereCollider:
@@ -15097,7 +15097,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.42
+  m_Radius: 0.6
   m_Center: {x: -0.003616646, y: 0.000000044703484, z: -0.000000115484}
 --- !u!114 &-4144848801651552299
 MonoBehaviour:

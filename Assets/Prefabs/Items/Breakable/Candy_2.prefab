@@ -9970,7 +9970,7 @@ ParticleSystem:
   ringBufferLoopRange: {x: 0, y: 1}
   emitterVelocityMode: 0
   looping: 1
-  prewarm: 0
+  prewarm: 1
   playOnAwake: 1
   useUnscaledTime: 0
   autoRandomSeed: 1
@@ -14718,7 +14718,7 @@ GameObject:
   - component: {fileID: 6305100654819123986}
   - component: {fileID: 5609633583765862568}
   - component: {fileID: 8536146005211852686}
-  - component: {fileID: 810220798753528454}
+  - component: {fileID: 7985789960260389961}
   - component: {fileID: 6142720945904653921}
   - component: {fileID: -4144848801651552299}
   - component: {fileID: 8619799103645025506}
@@ -14726,7 +14726,7 @@ GameObject:
   - component: {fileID: 6944010935677263060}
   m_Layer: 0
   m_Name: Candy_2
-  m_TagString: Weapon
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -14826,15 +14826,15 @@ Rigidbody:
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 0
-  m_ImplicitCom: 0
+  m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!64 &810220798753528454
-MeshCollider:
+--- !u!135 &7985789960260389961
+SphereCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -14851,10 +14851,9 @@ MeshCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 1
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 3511786775537054541, guid: 28cdfddadb322ea41b8084c4d97f5200, type: 3}
+  serializedVersion: 3
+  m_Radius: 0.3
+  m_Center: {x: 0.0004574284, y: -0.044206023, z: 0.00038596243}
 --- !u!135 &6142720945904653921
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -14874,7 +14873,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.3
+  m_Radius: 0.6
   m_Center: {x: 0.0004574284, y: -0.044206023, z: 0.00038596243}
 --- !u!114 &-4144848801651552299
 MonoBehaviour:
