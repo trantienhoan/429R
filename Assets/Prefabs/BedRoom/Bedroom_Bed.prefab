@@ -5907,8 +5907,8 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 259
-        y: 117
+        x: 267
+        y: 118
         width: 115.79
         height: 32
       isBreakpoint: 0
@@ -5927,26 +5927,16 @@ MonoBehaviour:
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.ActivateGameObject
-        - HutongGames.PlayMaker.Actions.SetParent
-        - HutongGames.PlayMaker.Actions.ActivateGameObject
         - HutongGames.PlayMaker.Actions.Explosion
         customNames:
         - 
         - 
-        - 
-        - 
-        actionEnabled: 01010101
-        actionIsOpen: 01010101
-        actionStartIndex: 00000000050000000a0000000f000000
-        actionHashCodes: b2cf1000a0dd8303b2cf1000bc338a03
+        actionEnabled: 0101
+        actionIsOpen: 0101
+        actionStartIndex: 0000000005000000
+        actionHashCodes: b2cf1000bc338a03
         unityObjectParams: []
-        fsmGameObjectParams:
-        - useVariable: 1
-          name: CurrentlySpawnedStuffs
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: {fileID: 0}
+        fsmGameObjectParams: []
         fsmOwnerDefaultParams:
         - ownerOption: 1
           gameObject:
@@ -5956,22 +5946,6 @@ MonoBehaviour:
             showInInspector: 0
             networkSync: 0
             value: {fileID: 4241495259678902441}
-        - ownerOption: 1
-          gameObject:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: {fileID: 414450315641964227}
-        - ownerOption: 1
-          gameObject:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: {fileID: 414450315641964227}
         animationCurveParams: []
         functionCallParams: []
         fsmTemplateControlParams: []
@@ -6027,36 +6001,6 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 1
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 1
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
           value: 0
         fsmVector2Params: []
         fsmVector3Params:
@@ -6070,24 +6014,14 @@ MonoBehaviour:
         fsmRectParams: []
         fsmQuaternionParams: []
         stringParams: []
-        byteData: 000000000000000000
+        byteData: 00000000000000
         arrayParamSizes: 00000000
         arrayParamTypes:
         - HutongGames.PlayMaker.FsmInt
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1400000011000000110000000100000001000000140000001300000011000000110000001100000014000000110000001100000001000000010000001c0000000f0000000f0000000f00000007000000100000000c0000001100000001000000
+        paramDataType: 14000000110000001100000001000000010000001c0000000f0000000f0000000f00000007000000100000000c0000001100000001000000
         paramName:
-        - gameObject
-        - activate
-        - recursive
-        - resetOnExit
-        - everyFrame
-        - gameObject
-        - parent
-        - worldPositionStays
-        - resetLocalPosition
-        - resetLocalRotation
         - gameObject
         - activate
         - recursive
@@ -6102,8 +6036,8 @@ MonoBehaviour:
         - layerMask
         - invertMask
         - everyFrame
-        paramDataPos: 000000000000000001000000000000000100000001000000000000000200000003000000040000000200000005000000060000000200000003000000000000000000000001000000020000000400000000000000000000000700000008000000
-        paramByteDataSize: 000000000000000000000000010000000100000000000000000000000000000000000000000000000000000000000000000000000100000001000000000000000000000000000000000000000400000000000000000000000000000001000000
+        paramDataPos: 0000000000000000010000000000000001000000000000000000000001000000020000000200000000000000000000000200000006000000
+        paramByteDataSize: 0000000000000000000000000100000001000000000000000000000000000000000000000400000000000000000000000000000001000000
     - name: Deactivate Object
       description: 
       colorIndex: 0
