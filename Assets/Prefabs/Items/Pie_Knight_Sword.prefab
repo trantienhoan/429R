@@ -14675,7 +14675,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2637194590290240005}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0ad34abafad169848a38072baa96cdb2, type: 3}
   m_Name: 
@@ -16382,7 +16382,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 11
+          value: 300
         fsmIntParams: []
         fsmBoolParams: []
         fsmVector2Params: []
@@ -16465,12 +16465,14 @@ MonoBehaviour:
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.SetFsmVariable
+        - HutongGames.PlayMaker.Actions.SetFsmVariable
         customNames:
         - 
-        actionEnabled: 01
-        actionIsOpen: 01
-        actionStartIndex: 00000000
-        actionHashCodes: fcb1a001
+        - 
+        actionEnabled: 0101
+        actionIsOpen: 0101
+        actionStartIndex: 0000000005000000
+        actionHashCodes: fcb1a001fcb1a001
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams:
@@ -16478,6 +16480,14 @@ MonoBehaviour:
           gameObject:
             useVariable: 1
             name: GAMESTAGES
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 0}
+        - ownerOption: 1
+          gameObject:
+            useVariable: 1
+            name: Player
             tooltip: 
             showInInspector: 0
             networkSync: 0
@@ -16501,8 +16511,44 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: Sword_Gear
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: Info
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: Sword_Piece
         fsmObjectParams: []
         fsmVarParams:
+        - variableName: 
+          objectType: UnityEngine.Object
+          useVariable: 0
+          type: 2
+          floatValue: 0
+          intValue: 0
+          boolValue: 1
+          stringValue: 
+          vector4Value: {x: 0, y: 0, z: 0, w: 0}
+          objectReference: {fileID: 0}
+          arrayValue:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            type: -1
+            objectTypeName: 
+            floatValues: []
+            intValues: 
+            boolValues: 
+            stringValues: []
+            vector4Values: []
+            objectReferences: []
         - variableName: 
           objectType: UnityEngine.Object
           useVariable: 0
@@ -16538,20 +16584,25 @@ MonoBehaviour:
         fsmRectParams: []
         fsmQuaternionParams: []
         stringParams: []
-        byteData: 00
+        byteData: 0000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1400000012000000120000002700000001000000
+        paramDataType: 14000000120000001200000027000000010000001400000012000000120000002700000001000000
         paramName:
         - gameObject
         - fsmName
         - variableName
         - setValue
         - everyFrame
-        paramDataPos: 0000000000000000010000000000000000000000
-        paramByteDataSize: 0000000000000000000000000000000001000000
+        - gameObject
+        - fsmName
+        - variableName
+        - setValue
+        - everyFrame
+        paramDataPos: 00000000000000000100000000000000000000000100000002000000030000000100000001000000
+        paramByteDataSize: 00000000000000000000000000000000010000000000000000000000000000000000000001000000
     - name: finishit
       description: 
       colorIndex: 6
@@ -16715,8 +16766,8 @@ MonoBehaviour:
       colorIndex: 3
       position:
         serializedVersion: 2
-        x: 230
-        y: 201
+        x: 236
+        y: 198
         width: 108.54
         height: 32
       isBreakpoint: 0
