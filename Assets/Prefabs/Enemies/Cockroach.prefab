@@ -1400,7 +1400,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 0101010101010101
-        actionIsOpen: 0000000101000101
+        actionIsOpen: 0000000000000001
         actionStartIndex: 0000000005000000090000000e00000013000000180000001c00000021000000
         actionHashCodes: 876045022a6e8a0087604502b2cf1000c34b41055e69bb045978870081294e04
         unityObjectParams: []
@@ -1563,8 +1563,6 @@ MonoBehaviour:
           vector4Values: []
           objectReferences:
           - {fileID: 8300000, guid: 619a0ebeedf18ca489233e0f7f2a7c29, type: 3}
-          - {fileID: 8300000, guid: 52d4f2b97068c0b4290fffcf4c6154e7, type: 3}
-          - {fileID: 8300000, guid: f521d273cd7695746a94106640af0cd7, type: 3}
         fsmEnumParams: []
         fsmFloatParams:
         - useVariable: 1
@@ -1608,7 +1606,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 0.333
+          value: 1
         fsmIntParams:
         - useVariable: 1
           name: 
@@ -1787,8 +1785,6 @@ MonoBehaviour:
         vector4Values: []
         objectReferences:
         - {fileID: 8300000, guid: 619a0ebeedf18ca489233e0f7f2a7c29, type: 3}
-        - {fileID: 8300000, guid: 52d4f2b97068c0b4290fffcf4c6154e7, type: 3}
-        - {fileID: 8300000, guid: f521d273cd7695746a94106640af0cd7, type: 3}
       enumVariables: []
       categories:
       - 
@@ -2944,7 +2940,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 0.2
+          value: 0.55
         fsmIntParams:
         - useVariable: 1
           name: 
@@ -3060,15 +3056,17 @@ MonoBehaviour:
         - HutongGames.PlayMaker.Actions.AnimatorPlay
         - HutongGames.PlayMaker.Actions.SmoothLookAt
         - HutongGames.PlayMaker.Actions.RandomWait
+        - HutongGames.PlayMaker.Actions.TweenPunch
         customNames:
         - 
         - 
         - 
         - 
-        actionEnabled: 01010101
-        actionIsOpen: 01010101
-        actionStartIndex: 00000000020000000700000010000000
-        actionHashCodes: 15264c01c34b41054e6613010d5f5c01
+        - 
+        actionEnabled: 0101010101
+        actionIsOpen: 0100000101
+        actionStartIndex: 0000000002000000070000001000000014000000
+        actionHashCodes: 15264c01c34b41054e6613010d5f5c01bac44f04
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
@@ -3102,7 +3100,21 @@ MonoBehaviour:
             showInInspector: 0
             networkSync: 0
             value: {fileID: 0}
-        animationCurveParams: []
+        - ownerOption: 0
+          gameObject:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 0}
+        animationCurveParams:
+        - curve:
+            serializedVersion: 2
+            m_Curve: []
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         functionCallParams: []
         fsmTemplateControlParams: []
         fsmEventTargetParams: []
@@ -3118,7 +3130,14 @@ MonoBehaviour:
         fsmObjectParams: []
         fsmVarParams: []
         fsmArrayParams: []
-        fsmEnumParams: []
+        fsmEnumParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          enumName: 
+          intValue: 0
         fsmFloatParams:
         - useVariable: 1
           name: 
@@ -3143,13 +3162,25 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 0.1
+          value: 0.45
         - useVariable: 0
           name: 
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 0.4
+          value: 0.5
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0.5
         fsmIntParams:
         - useVariable: 1
           name: 
@@ -3176,6 +3207,12 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
         fsmVector2Params: []
         fsmVector3Params:
         - useVariable: 1
@@ -3190,18 +3227,25 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: {x: 0, y: 0, z: 0}
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {x: 0, y: 0, z: 0}
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
         stringParams:
         - 
         - next
-        byteData: 0001
+        - 
+        byteData: 00010200000000000000000000000000000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 14000000110000001400000012000000100000000f0000000100000014000000130000001c0000001c000000110000000f000000110000000f000000170000000f0000000f0000001700000001000000
+        paramDataType: 14000000110000001400000012000000100000000f0000000100000014000000130000001c0000001c000000110000000f000000110000000f000000170000000f0000000f0000001700000001000000070000001c000000140000000f0000002a000000160000000f000000110000000700000017000000020000000100000007000000
         paramName:
         - gameObject
         - isStopped
@@ -3223,8 +3267,21 @@ MonoBehaviour:
         - max
         - finishEvent
         - realTime
-        paramDataPos: 0000000000000000010000000000000000000000000000000000000002000000000000000000000001000000010000000100000002000000020000000000000003000000040000000100000001000000
-        paramByteDataSize: 0000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000
+        - punchType
+        - value
+        - gameObject
+        - startDelay
+        - easeType
+        - customCurve
+        - time
+        - realTime
+        - loopType
+        - finishEvent
+        - normalizedTime
+        - everyFrame
+        - updateType
+        paramDataPos: 0000000000000000010000000000000000000000000000000000000002000000000000000000000001000000010000000100000002000000020000000000000003000000040000000100000001000000020000000200000003000000050000000000000000000000060000000300000006000000020000000a0000000e0000000f000000
+        paramByteDataSize: 000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000004000000000000000000000000000000000000000000000000000000000000000400000000000000040000000100000004000000
     - name: Chase Target 2
       description: 
       colorIndex: 0
