@@ -20138,16 +20138,14 @@ MonoBehaviour:
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.SetFsmVariable
-        - HutongGames.PlayMaker.Actions.ActivateGameObject
         - HutongGames.PlayMaker.Actions.SetFsmVariable
         customNames:
         - 
         - 
-        - 
-        actionEnabled: 010101
-        actionIsOpen: 010101
-        actionStartIndex: 00000000050000000a000000
-        actionHashCodes: fcb1a001b2cf1000fcb1a001
+        actionEnabled: 0101
+        actionIsOpen: 0101
+        actionStartIndex: 0000000005000000
+        actionHashCodes: fcb1a001fcb1a001
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams:
@@ -20159,14 +20157,6 @@ MonoBehaviour:
             showInInspector: 0
             networkSync: 0
             value: {fileID: 0}
-        - ownerOption: 1
-          gameObject:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: {fileID: 2324100466919914367}
         - ownerOption: 1
           gameObject:
             useVariable: 1
@@ -20260,31 +20250,19 @@ MonoBehaviour:
         fsmEnumParams: []
         fsmFloatParams: []
         fsmIntParams: []
-        fsmBoolParams:
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 1
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
+        fsmBoolParams: []
         fsmVector2Params: []
         fsmVector3Params: []
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
         stringParams: []
-        byteData: 00000000
+        byteData: 0000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 140000001200000012000000270000000100000014000000110000001100000001000000010000001400000012000000120000002700000001000000
+        paramDataType: 14000000120000001200000027000000010000001400000012000000120000002700000001000000
         paramName:
         - gameObject
         - fsmName
@@ -20292,17 +20270,12 @@ MonoBehaviour:
         - setValue
         - everyFrame
         - gameObject
-        - activate
-        - recursive
-        - resetOnExit
-        - everyFrame
-        - gameObject
         - fsmName
         - variableName
         - setValue
         - everyFrame
-        paramDataPos: 000000000000000001000000000000000000000001000000000000000100000001000000020000000200000002000000030000000100000003000000
-        paramByteDataSize: 000000000000000000000000000000000100000000000000000000000000000001000000010000000000000000000000000000000000000001000000
+        paramDataPos: 00000000000000000100000000000000000000000100000002000000030000000100000001000000
+        paramByteDataSize: 00000000000000000000000000000000010000000000000000000000000000000000000001000000
     - name: Destroy Self
       description: 
       colorIndex: 6
@@ -20326,7 +20299,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 010101
-        actionIsOpen: 000101
+        actionIsOpen: 010101
         actionStartIndex: 000000001100000014000000
         actionHashCodes: 910fc3009ff80c02230cc800
         unityObjectParams: []
@@ -20446,7 +20419,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {x: 0.5, y: 0.5, z: 0.5}
+          value: {x: 0.1, y: 0.1, z: 0.1}
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
