@@ -270,7 +270,7 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 0.35
+      scalar: 0.15
       minScalar: 0.2
       maxCurve:
         serializedVersion: 2
@@ -716,7 +716,7 @@ ParticleSystem:
     sphericalDirectionAmount: 0
     randomPositionAmount: 0
     radius:
-      value: 0.03
+      value: 0.09
       mode: 0
       spread: 0
       speed:
@@ -1010,7 +1010,7 @@ ParticleSystem:
         m_Curve:
         - serializedVersion: 3
           time: 0
-          value: 0.37574005
+          value: 0.69120026
           inSlope: 4.6615286
           outSlope: 4.6615286
           tangentMode: 0
@@ -1019,7 +1019,7 @@ ParticleSystem:
           outWeight: 0.09034267
         - serializedVersion: 3
           time: 1
-          value: 0.6052971
+          value: 0.7346306
           inSlope: -0.50064284
           outSlope: -0.50064284
           tangentMode: 0
@@ -5200,7 +5200,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {fileID: 3569810238917063108, guid: 5075d28a224617f4597ed08c924dfd6f,
+          value: {fileID: 3569810238917063108, guid: 3c4b81dc3e6d2c84b8134f1846cb20a0,
             type: 3}
         - useVariable: 1
           name: CurrentlySpawnedStuffs
@@ -6629,47 +6629,25 @@ MonoBehaviour:
         actionNames:
         - HutongGames.PlayMaker.Actions.FloatCompare
         - HutongGames.PlayMaker.Actions.RandomWait
-        - HutongGames.PlayMaker.Actions.CollisionEvent
         - HutongGames.PlayMaker.Actions.Explosion
         customNames:
         - 
         - 
         - 
-        - 
-        actionEnabled: 01010101
-        actionIsOpen: 01010101
-        actionStartIndex: 00000000070000000b00000011000000
-        actionHashCodes: 1bcdca040d5f5c01beb33100bc338a03
+        actionEnabled: 010101
+        actionIsOpen: 010101
+        actionStartIndex: 00000000070000000b000000
+        actionHashCodes: 1bcdca040d5f5c01bc338a03
         unityObjectParams: []
-        fsmGameObjectParams:
-        - useVariable: 1
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: {fileID: 0}
-        fsmOwnerDefaultParams:
-        - ownerOption: 0
-          gameObject:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: {fileID: 0}
+        fsmGameObjectParams: []
+        fsmOwnerDefaultParams: []
         animationCurveParams: []
         functionCallParams: []
         fsmTemplateControlParams: []
         fsmEventTargetParams: []
         fsmPropertyParams: []
         layoutOptionParams: []
-        fsmStringParams:
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: Destroyer
+        fsmStringParams: []
         fsmObjectParams: []
         fsmVarParams: []
         fsmArrayParams: []
@@ -6705,12 +6683,6 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 6.7
-        - useVariable: 1
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
         - useVariable: 0
           name: 
           tooltip: 
@@ -6759,14 +6731,13 @@ MonoBehaviour:
         - next
         - 
         - next
-        - Dead
-        byteData: 0101000000000000000000
+        byteData: 01010000000000
         arrayParamSizes: 00000000
         arrayParamTypes:
         - HutongGames.PlayMaker.FsmInt
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 0f0000000f0000000f000000170000001700000017000000010000000f0000000f000000170000000100000014000000070000001200000017000000130000000f0000001c0000000f0000000f0000000f00000007000000100000000c0000001100000001000000
+        paramDataType: 0f0000000f0000000f000000170000001700000017000000010000000f0000000f00000017000000010000001c0000000f0000000f0000000f00000007000000100000000c0000001100000001000000
         paramName:
         - float1
         - float2
@@ -6779,12 +6750,6 @@ MonoBehaviour:
         - max
         - finishEvent
         - realTime
-        - gameObject
-        - collision
-        - collideTag
-        - sendEvent
-        - storeCollider
-        - storeForce
         - center
         - force
         - radius
@@ -6794,8 +6759,8 @@ MonoBehaviour:
         - layerMask
         - invertMask
         - everyFrame
-        paramDataPos: 000000000100000002000000000000000100000002000000000000000300000004000000030000000100000000000000020000000000000004000000000000000500000000000000060000000700000008000000060000000000000000000000000000000a000000
-        paramByteDataSize: 0000000000000000000000000000000000000000000000000100000000000000000000000000000001000000000000000400000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000001000000
+        paramDataPos: 0000000001000000020000000000000001000000020000000000000003000000040000000300000001000000000000000500000006000000070000000200000000000000000000000000000006000000
+        paramByteDataSize: 0000000000000000000000000000000000000000000000000100000000000000000000000000000001000000000000000000000000000000000000000400000000000000000000000000000001000000
     - name: Activate Parts
       description: 
       colorIndex: 0
@@ -7090,7 +7055,7 @@ MonoBehaviour:
         tooltip: 
         showInInspector: 1
         networkSync: 0
-        value: 2
+        value: 1
       intVariables: []
       boolVariables: []
       stringVariables: []
