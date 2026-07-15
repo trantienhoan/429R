@@ -5970,7 +5970,7 @@ MonoBehaviour:
         tooltip: 
         showInInspector: 1
         networkSync: 0
-        value: 7
+        value: 9
       intVariables: []
       boolVariables: []
       stringVariables: []
@@ -6061,7 +6061,7 @@ MonoBehaviour:
         x: 64
         y: 112
         width: 128.22
-        height: 48
+        height: 64
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
@@ -6070,7 +6070,7 @@ MonoBehaviour:
           name: next
           isSystemEvent: 0
           isGlobal: 1
-        toState: Check force
+        toState: Check force 2
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -6080,6 +6080,15 @@ MonoBehaviour:
           isSystemEvent: 1
           isGlobal: 0
         toState: Deal 1 damage
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
+      - fsmEvent:
+          name: check
+          isSystemEvent: 0
+          isGlobal: 0
+        toState: Check force
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -6166,7 +6175,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: Destroyer
+          value: Weapon
         fsmObjectParams: []
         fsmVarParams: []
         fsmArrayParams: []
@@ -6200,7 +6209,7 @@ MonoBehaviour:
         stringParams:
         - next
         - FINISHED
-        - FINISHED
+        - check
         byteData: 000000000000000000000000
         arrayParamSizes: 
         arrayParamTypes: []
@@ -6235,7 +6244,7 @@ MonoBehaviour:
         serializedVersion: 2
         x: 266
         y: 169
-        width: 101.62
+        width: 100.23
         height: 48
       isBreakpoint: 0
       isSequence: 0
@@ -6294,7 +6303,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 10
+          value: 7
         - useVariable: 0
           name: 
           tooltip: 
@@ -6335,7 +6344,7 @@ MonoBehaviour:
         serializedVersion: 2
         x: 431
         y: 115
-        width: 122.3
+        width: 114.31
         height: 32
       isBreakpoint: 0
       isSequence: 0
@@ -6483,8 +6492,8 @@ MonoBehaviour:
           stringValues: []
           vector4Values: []
           objectReferences:
-          - {fileID: 8300000, guid: 485f850c23ef8d74f95b1b8cdfafc966, type: 3}
-          - {fileID: 8300000, guid: 60905b18fcff3b04280b4d367bb7855e, type: 3}
+          - {fileID: 8300000, guid: be9beca93dc0f514c8220a12fd387f63, type: 3}
+          - {fileID: 8300000, guid: 1ab0a3a1ae573ae4a83eec9c81323797, type: 3}
         fsmEnumParams: []
         fsmFloatParams:
         - useVariable: 1
@@ -6594,6 +6603,106 @@ MonoBehaviour:
         - finishedEvent
         paramDataPos: 0000000000000000010000000000000000000000010000000200000001000000020000000100000002000000030000000300000003000000020000000000000001000000040000000500000000000000000000000000000002000000060000000300000004000000000000000300000000000000
         paramByteDataSize: 0000000000000000000000000000000001000000000000000000000001000000010000000000000000000000000000000000000001000000000000000000000000000000010000000100000000000000000000000000000000000000010000000000000000000000000000000000000000000000
+    - name: Check force 2
+      description: 
+      colorIndex: 4
+      position:
+        serializedVersion: 2
+        x: 263
+        y: 257
+        width: 110.67
+        height: 48
+      isBreakpoint: 0
+      isSequence: 0
+      hideUnused: 0
+      transitions:
+      - fsmEvent:
+          name: back
+          isSystemEvent: 0
+          isGlobal: 0
+        toState: Wait for Collision
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
+      - fsmEvent:
+          name: next
+          isSystemEvent: 0
+          isGlobal: 1
+        toState: Deal 1 damage
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
+      actionData:
+        actionNames:
+        - HutongGames.PlayMaker.Actions.FloatCompare
+        customNames:
+        - 
+        actionEnabled: 01
+        actionIsOpen: 01
+        actionStartIndex: 00000000
+        actionHashCodes: 1bcdca04
+        unityObjectParams: []
+        fsmGameObjectParams: []
+        fsmOwnerDefaultParams: []
+        animationCurveParams: []
+        functionCallParams: []
+        fsmTemplateControlParams: []
+        fsmEventTargetParams: []
+        fsmPropertyParams: []
+        layoutOptionParams: []
+        fsmStringParams: []
+        fsmObjectParams: []
+        fsmVarParams: []
+        fsmArrayParams: []
+        fsmEnumParams: []
+        fsmFloatParams:
+        - useVariable: 1
+          name: collisionForce
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 35
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        fsmIntParams: []
+        fsmBoolParams: []
+        fsmVector2Params: []
+        fsmVector3Params: []
+        fsmColorParams: []
+        fsmRectParams: []
+        fsmQuaternionParams: []
+        stringParams:
+        - 
+        - back
+        - next
+        byteData: 00
+        arrayParamSizes: 
+        arrayParamTypes: []
+        customTypeSizes: 
+        customTypeNames: []
+        paramDataType: 0f0000000f0000000f00000017000000170000001700000001000000
+        paramName:
+        - float1
+        - float2
+        - tolerance
+        - equal
+        - lessThan
+        - greaterThan
+        - everyFrame
+        paramDataPos: 00000000010000000200000000000000010000000200000000000000
+        paramByteDataSize: 00000000000000000000000000000000000000000000000001000000
     events:
     - name: next
       isSystemEvent: 0
@@ -6603,6 +6712,9 @@ MonoBehaviour:
       isGlobal: 0
     - name: FINISHED
       isSystemEvent: 1
+      isGlobal: 0
+    - name: check
+      isSystemEvent: 0
       isGlobal: 0
     globalTransitions: []
     variables:
