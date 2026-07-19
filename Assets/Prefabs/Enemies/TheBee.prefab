@@ -16,7 +16,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4559384585545783370
 Transform:
   m_ObjectHideFlags: 0
@@ -664,12 +664,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1464788054387456961}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalRotation: {x: -0.76351494, y: -0.000000035822005, z: 0.000000030298704, w: -0.6457903}
+  m_LocalPosition: {x: 0, y: 0.0014076646, z: -0.0029162886}
+  m_LocalScale: {x: 0.01, y: 0.010000132, z: 0.010000008}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1842538134746187714}
+  m_Father: {fileID: 1990976549988335378}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!135 &4108759221923736492
 SphereCollider:
@@ -690,7 +690,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.28
+  m_Radius: 0.3
   m_Center: {x: 0, y: 0.21, z: -0.09}
 --- !u!114 &789023195325692460
 MonoBehaviour:
@@ -1195,7 +1195,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1990976549988335378}
   - component: {fileID: 7307134475101144660}
-  - component: {fileID: 5749120765265615947}
   - component: {fileID: 727027806397988490}
   m_Layer: 0
   m_Name: Spine
@@ -1229,6 +1228,7 @@ Transform:
   - {fileID: 6558812544549456899}
   - {fileID: 6588554497998374669}
   - {fileID: 8616656239440975821}
+  - {fileID: 16074476439112756}
   m_Father: {fileID: 204921640817907251}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!135 &7307134475101144660
@@ -1252,33 +1252,6 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.003
   m_Center: {x: 0, y: 0.002, z: 0}
---- !u!54 &5749120765265615947
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4032360222730813023}
-  serializedVersion: 5
-  m_Mass: 200
-  m_LinearDamping: 0
-  m_AngularDamping: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 1, y: 1, z: 1}
-  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ImplicitCom: 1
-  m_ImplicitTensor: 1
-  m_UseGravity: 1
-  m_IsKinematic: 0
-  m_Interpolate: 0
-  m_Constraints: 126
-  m_CollisionDetection: 0
 --- !u!114 &727027806397988490
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7207,7 +7180,6 @@ Transform:
   m_Children:
   - {fileID: 7380462696745615558}
   - {fileID: 9204958482618884166}
-  - {fileID: 16074476439112756}
   - {fileID: 3940717263823962418}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -9114,7 +9086,7 @@ MonoBehaviour:
         - ownerOption: 1
           gameObject:
             useVariable: 1
-            name: EnemyManager3
+            name: EnemyManager4
             tooltip: 
             showInInspector: 0
             networkSync: 0
@@ -9958,10 +9930,10 @@ MonoBehaviour:
             networkSync: 0
             value: 0
           gameObject:
-            ownerOption: 1
+            ownerOption: 0
             gameObject:
-              useVariable: 1
-              name: Stone_Pumpkin.003
+              useVariable: 0
+              name: 
               tooltip: 
               showInInspector: 0
               networkSync: 0
@@ -9972,7 +9944,7 @@ MonoBehaviour:
             tooltip: 
             showInInspector: 0
             networkSync: 0
-            value: Health
+            value: Bee
           sendToChildren:
             useVariable: 0
             name: 
@@ -10088,7 +10060,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 0
+          value: 0.05
         - useVariable: 0
           name: 
           tooltip: 
@@ -10407,9 +10379,9 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 1
-  m_IsKinematic: 0
+  m_IsKinematic: 1
   m_Interpolate: 0
-  m_Constraints: 126
+  m_Constraints: 0
   m_CollisionDetection: 0
 --- !u!82 &7650757524378202297
 AudioSource:
