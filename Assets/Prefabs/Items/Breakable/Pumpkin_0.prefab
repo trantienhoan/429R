@@ -5476,7 +5476,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8690403555129543112}
   serializedVersion: 5
-  m_Mass: 10
+  m_Mass: 42000
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: -0.34, z: 0}
@@ -5669,8 +5669,8 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 322
-        y: 196
+        x: 328.29688
+        y: 257.9922
         width: 124.08
         height: 64
       isBreakpoint: 0
@@ -5708,7 +5708,7 @@ MonoBehaviour:
         actionNames:
         - HutongGames.PlayMaker.Actions.ArrayGetRandom
         - HutongGames.PlayMaker.Actions.AudioPlay
-        - HutongGames.PlayMaker.Actions.LookAt
+        - HutongGames.PlayMaker.Actions.SmoothLookAt
         - HutongGames.PlayMaker.Actions.FloatCompare
         - HutongGames.PlayMaker.Actions.Wait
         - HutongGames.PlayMaker.Actions.TriggerEvent
@@ -5720,9 +5720,9 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 010101010101
-        actionIsOpen: 010100010101
-        actionStartIndex: 00000000050000000a00000012000000190000001c000000
-        actionHashCodes: 5978870081294e04d57998051bcdca0448c011019c512400
+        actionIsOpen: 010101010101
+        actionStartIndex: 00000000050000000a000000130000001a0000001d000000
+        actionHashCodes: 5978870081294e044e6613011bcdca0448c011019c512400
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
@@ -5834,12 +5834,24 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 1
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 4
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
         - useVariable: 1
           name: health
           tooltip: 
           showInInspector: 1
           networkSync: 0
-          value: 4
+          value: 3
         - useVariable: 0
           name: 
           tooltip: 
@@ -5904,28 +5916,23 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: {x: 0, y: 0, z: 0}
-        fsmColorParams:
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+        fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
         stringParams:
+        - 
         - 
         - next
         - next
         - 
         - FINISHED
         - deck
-        byteData: 0001010100000000
+        byteData: 00010100000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 2900000027000000100000001100000001000000140000000f00000018000000110000001700000014000000130000001c0000001c000000110000001100000019000000010000000f0000000f0000000f000000170000001700000017000000010000000f00000017000000010000001400000007000000120000001700000013000000
+        paramDataType: 2900000027000000100000001100000001000000140000000f00000018000000110000001700000014000000130000001c0000001c000000110000000f000000110000000f000000170000000f0000000f0000000f000000170000001700000017000000010000000f00000017000000010000001400000007000000120000001700000013000000
         paramName:
         - array
         - storeValue
@@ -5942,9 +5949,10 @@ MonoBehaviour:
         - targetPosition
         - upVector
         - keepVertical
+        - speed
         - debug
-        - debugLineColor
-        - everyFrame
+        - finishTolerance
+        - finishEvent
         - float1
         - float2
         - tolerance
@@ -5960,15 +5968,15 @@ MonoBehaviour:
         - collideTag
         - sendEvent
         - storeCollider
-        paramDataPos: 000000000000000000000000000000000000000000000000000000000000000001000000000000000100000000000000000000000100000002000000030000000000000001000000010000000200000003000000010000000200000003000000020000000400000004000000030000000200000004000000000000000500000001000000
-        paramByteDataSize: 000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000010000000000000000000000010000000000000004000000000000000000000000000000
+        paramDataPos: 00000000000000000000000000000000000000000000000000000000000000000100000000000000010000000000000000000000010000000200000001000000030000000200000001000000030000000400000005000000020000000300000004000000010000000600000005000000020000000200000003000000000000000600000001000000
+        paramByteDataSize: 00000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000010000000000000004000000000000000000000000000000
     - name: Activate Parts
       description: 
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 427.03906
-        y: 415.85156
+        x: 433.33594
+        y: 477.84375
         width: 115.79
         height: 32
       isBreakpoint: 0
@@ -6055,8 +6063,8 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 649
-        y: 321
+        x: 655.2969
+        y: 382.9922
         width: 100.97
         height: 16
       isBreakpoint: 0
@@ -6226,8 +6234,8 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 253
-        y: 368
+        x: 259.29688
+        y: 429.9922
         width: 100
         height: 48
       isBreakpoint: 0
@@ -6349,7 +6357,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 1
           networkSync: 0
-          value: 4
+          value: 3
         - useVariable: 0
           name: 
           tooltip: 
@@ -6489,8 +6497,8 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 53
-        y: 205
+        x: 59.296875
+        y: 266.9922
         width: 134.51999
         height: 64
       isBreakpoint: 0
@@ -6682,7 +6690,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 1
           networkSync: 0
-          value: 4
+          value: 3
         - useVariable: 0
           name: 
           tooltip: 
@@ -6871,7 +6879,7 @@ MonoBehaviour:
         customNames:
         - 
         actionEnabled: 01
-        actionIsOpen: 01
+        actionIsOpen: 00
         actionStartIndex: 00000000
         actionHashCodes: 910fc300
         unityObjectParams: []
