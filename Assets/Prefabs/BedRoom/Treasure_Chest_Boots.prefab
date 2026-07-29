@@ -15548,7 +15548,7 @@ MonoBehaviour:
         x: 50
         y: 100
         width: 118.5
-        height: 32
+        height: 48
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
@@ -15562,21 +15562,32 @@ MonoBehaviour:
         linkConstraint: 0
         linkTarget: 0
         colorIndex: 0
+      - fsmEvent:
+          name: FINISHED
+          isSystemEvent: 1
+          isGlobal: 0
+        toState: Activate Parts
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.TweenPosition
         - HutongGames.PlayMaker.Actions.AudioPlay
         - HutongGames.PlayMaker.Actions.SendEvent
-        - HutongGames.PlayMaker.Actions.SetRandomRotation
+        - HutongGames.PlayMaker.Actions.Rotate
+        - HutongGames.PlayMaker.Actions.Wait
         customNames:
         - 
         - 
         - 
         - 
-        actionEnabled: 01010101
-        actionIsOpen: 00000000
-        actionStartIndex: 0000000011000000160000001a000000
-        actionHashCodes: c1a7050081294e045e69bb04af2a8400
+        - 
+        actionEnabled: 0101010101
+        actionIsOpen: 0000000101
+        actionStartIndex: 0000000011000000160000001a00000024000000
+        actionHashCodes: c1a7050081294e045e69bb04b032740048c01101
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 0
@@ -15704,6 +15715,30 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0.25
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 109
         fsmIntParams: []
         fsmBoolParams:
         - useVariable: 0
@@ -15718,24 +15753,6 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 1
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 1
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
         fsmVector2Params: []
         fsmVector3Params:
         - useVariable: 0
@@ -15750,6 +15767,12 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: {x: 0, y: 0, z: 0}
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {x: 0, y: 0, z: 0}
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
@@ -15757,12 +15780,13 @@ MonoBehaviour:
         - 
         - next
         - ShakeBigger
-        byteData: 01000000000000000000000000000000000000000000
+        - FINISHED
+        byteData: 01000000000000000000000000000000000000000000010000000001000001
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 07000000130000001c00000007000000130000001c000000140000000f0000002a000000160000000f000000110000000700000017000000020000000100000007000000140000000f0000001800000011000000170000001f000000170000000f0000000100000014000000110000001100000011000000
+        paramDataType: 07000000130000001c00000007000000130000001c000000140000000f0000002a000000160000000f000000110000000700000017000000020000000100000007000000140000000f0000001800000011000000170000001f000000170000000f00000001000000140000001c0000000f0000000f0000000f00000007000000010000000100000001000000010000000f0000001700000001000000
         paramName:
         - fromOption
         - fromTarget
@@ -15791,11 +15815,20 @@ MonoBehaviour:
         - delay
         - everyFrame
         - gameObject
-        - x
-        - y
-        - z
-        paramDataPos: 00000000000000000000000004000000010000000100000000000000000000000000000000000000010000000000000008000000000000000c000000100000001100000001000000020000000000000001000000010000000000000002000000030000001500000002000000020000000300000004000000
-        paramByteDataSize: 040000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000040000000000000004000000010000000400000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000
+        - vector
+        - xAngle
+        - yAngle
+        - zAngle
+        - space
+        - perSecond
+        - everyFrame
+        - lateUpdate
+        - fixedUpdate
+        - time
+        - finishEvent
+        - realTime
+        paramDataPos: 00000000000000000000000004000000010000000100000000000000000000000000000000000000010000000000000008000000000000000c00000010000000110000000100000002000000000000000100000001000000000000000200000003000000150000000200000002000000040000000500000006000000160000001a0000001b0000001c0000001d00000007000000030000001e000000
+        paramByteDataSize: 040000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000040000000000000004000000010000000400000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000400000001000000010000000100000001000000000000000000000001000000
     - name: Activate Parts
       description: 
       colorIndex: 0
@@ -16024,8 +16057,8 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 214
-        y: 100
+        x: 215
+        y: 66
         width: 124.08
         height: 32
       isBreakpoint: 0
