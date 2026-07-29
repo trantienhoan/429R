@@ -5846,7 +5846,7 @@ MonoBehaviour:
       position:
         serializedVersion: 2
         x: 78
-        y: 115
+        y: 99
         width: 100
         height: 48
       isBreakpoint: 0
@@ -5960,7 +5960,7 @@ MonoBehaviour:
       position:
         serializedVersion: 2
         x: 509
-        y: 130
+        y: 114
         width: 104.77
         height: 32
       isBreakpoint: 0
@@ -6065,8 +6065,8 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 297
-        y: 55
+        x: 302.67188
+        y: 108.3125
         width: 100
         height: 32
       isBreakpoint: 0
@@ -6170,8 +6170,8 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 304
-        y: 248
+        x: 315.35156
+        y: 237.67188
         width: 100.97
         height: 16
       isBreakpoint: 0
@@ -6246,7 +6246,7 @@ MonoBehaviour:
       position:
         serializedVersion: 2
         x: 65.99219
-        y: 191
+        y: 175
         width: 136.53
         height: 48
       isBreakpoint: 0
@@ -6446,7 +6446,7 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 334.3203
+        x: 366.3203
         y: 195.83594
         width: 124.08
         height: 64
@@ -6805,8 +6805,8 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 452.3203
-        y: 401.83594
+        x: 496.21094
+        y: 398.8047
         width: 115.79
         height: 32
       isBreakpoint: 0
@@ -6893,7 +6893,7 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 661.3203
+        x: 693.3203
         y: 320.83594
         width: 100.97
         height: 16
@@ -7019,7 +7019,7 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 304.3203
+        x: 336.3203
         y: 344.83594
         width: 100
         height: 48
@@ -7028,19 +7028,19 @@ MonoBehaviour:
       hideUnused: 0
       transitions:
       - fsmEvent:
-          name: next
+          name: deck
           isSystemEvent: 0
-          isGlobal: 1
-        toState: Activate Parts
+          isGlobal: 0
+        toState: Destroy Self
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
         colorIndex: 0
       - fsmEvent:
-          name: deck
+          name: next
           isSystemEvent: 0
-          isGlobal: 0
-        toState: Destroy Self
+          isGlobal: 1
+        toState: Activate Parts
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -7282,8 +7282,8 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 65.32031
-        y: 204.83594
+        x: 61.453125
+        y: 224.19531
         width: 134.51999
         height: 64
       isBreakpoint: 0
@@ -7641,7 +7641,7 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 348
+        x: 380
         y: 98
         width: 100
         height: 32
@@ -7664,7 +7664,7 @@ MonoBehaviour:
         customNames:
         - 
         actionEnabled: 01
-        actionIsOpen: 00
+        actionIsOpen: 01
         actionStartIndex: 00000000
         actionHashCodes: 910fc300
         unityObjectParams: []
@@ -7748,7 +7748,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {x: 1, y: 1, z: 1}
+          value: {x: 0.5, y: 0.5, z: 0.5}
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
