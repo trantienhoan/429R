@@ -5381,7 +5381,6 @@ GameObject:
   - component: {fileID: 6868930813533434919}
   - component: {fileID: 3954056255458218357}
   - component: {fileID: 3274211293044186416}
-  - component: {fileID: 418865771548601409}
   - component: {fileID: 1510714556508702323}
   - component: {fileID: -1556007066962999540}
   - component: {fileID: 988587262024724362}
@@ -5631,7 +5630,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  m_ThrowVelocityScale: 1.5
+  m_ThrowVelocityScale: 6
   m_ThrowAngularVelocityScale: 1
   m_ForceGravityOnDetach: 0
   m_RetainTransformParent: 1
@@ -5643,18 +5642,6 @@ MonoBehaviour:
   m_LimitAngularVelocity: 0
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
---- !u!114 &418865771548601409
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8350737783577158643}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 62fb9fb1177925e4b8a383be2b9db66c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UnityEngine.XR.Content.Interaction.RayAttachModifier
 --- !u!114 &1510714556508702323
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5907,7 +5894,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 10
+          value: 5
         - useVariable: 0
           name: 
           tooltip: 
