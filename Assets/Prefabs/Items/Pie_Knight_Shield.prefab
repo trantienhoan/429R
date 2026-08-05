@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 8068694022753851051}
   - component: {fileID: 628785746034657977}
   - component: {fileID: 6481257907973776097}
-  - component: {fileID: 3250570622604512853}
   m_Layer: 0
   m_Name: Shield
   m_TagString: Untagged
@@ -41,7 +40,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 254768395197867629}
-  m_Mesh: {fileID: 4441728974985089079, guid: 0947a23ad85fbc148894eb85afca9d75, type: 3}
+  m_Mesh: {fileID: 6859337389686756106, guid: fa32643746645184d82803d1d932e05a, type: 3}
 --- !u!23 &6481257907973776097
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -67,7 +66,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 67488936bcca1db4ba42383ea5f1f679, type: 2}
+  - {fileID: 2100000, guid: 9dbdbbbc657c48f41950f0c9163ca920, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -91,27 +90,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &3250570622604512853
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 254768395197867629}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 0.08503535, y: 0.42724568, z: 0.37028125}
-  m_Center: {x: -0.00451361, y: 0.026548527, z: 0.000000074505806}
 --- !u!1 &787099039481481093
 GameObject:
   m_ObjectHideFlags: 0
@@ -1375,8 +1353,8 @@ ParticleSystem:
       maxColor: {r: 1, g: 1, b: 1, a: 1}
       maxGradient:
         serializedVersion: 2
-        key0: {r: 0.99726325, g: 1, b: 0.7783019, a: 0}
-        key1: {r: 0.5209432, g: 1, b: 0.09803921, a: 1}
+        key0: {r: 0.8679245, g: 0.65045667, b: 0.50356, a: 0}
+        key1: {r: 1, g: 0.5065458, b: 0.09803921, a: 1}
         key2: {r: 0.990566, g: 0.9581136, b: 0.23829651, a: 1}
         key3: {r: 0, g: 0, b: 0, a: 1}
         key4: {r: 0, g: 0, b: 0, a: 0}
@@ -15416,7 +15394,7 @@ ParticleSystem:
       serializedVersion: 2
       minMaxState: 0
       minColor: {r: 1, g: 1, b: 1, a: 1}
-      maxColor: {r: 0.34509802, g: 1, b: 0.38311487, a: 0.1882353}
+      maxColor: {r: 1, g: 0.5754581, b: 0.34509802, a: 0.1882353}
       maxGradient:
         serializedVersion: 2
         key0: {r: 0.9811321, g: 0.6591732, b: 0.19900322, a: 0.27450982}
@@ -21682,7 +21660,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 01010101
-        actionIsOpen: 01010101
+        actionIsOpen: 01000101
         actionStartIndex: 000000000a0000000f00000017000000
         actionHashCodes: b03274009c512400f6e5be0348c01101
         unityObjectParams: []
@@ -21864,8 +21842,8 @@ MonoBehaviour:
         customNames:
         - 
         - 
-        actionEnabled: 0101
-        actionIsOpen: 0101
+        actionEnabled: 0100
+        actionIsOpen: 0100
         actionStartIndex: 0000000005000000
         actionHashCodes: fcb1a001fcb1a001
         unityObjectParams: []
@@ -28402,7 +28380,7 @@ ParticleSystem:
       maxColor: {r: 1, g: 1, b: 1, a: 1}
       maxGradient:
         serializedVersion: 2
-        key0: {r: 1, g: 1, b: 1, a: 0}
+        key0: {r: 0.8113208, g: 0.47581148, b: 0.37121755, a: 0}
         key1: {r: 1, g: 1, b: 1, a: 1}
         key2: {r: 1, g: 0.5194145, b: 0.15566039, a: 0}
         key3: {r: 0, g: 0, b: 0, a: 0}
@@ -28427,7 +28405,7 @@ ParticleSystem:
         atime6: 0
         atime7: 0
         m_Mode: 0
-        m_ColorSpace: -1
+        m_ColorSpace: 0
         m_NumColorKeys: 2
         m_NumAlphaKeys: 3
       minGradient:
@@ -38526,8 +38504,8 @@ ParticleSystem:
       maxColor: {r: 1, g: 1, b: 1, a: 1}
       maxGradient:
         serializedVersion: 2
-        key0: {r: 0.7188631, g: 1, b: 0.57254905, a: 0}
-        key1: {r: 0.4163825, g: 1, b: 0.02352941, a: 0.011687566}
+        key0: {r: 1, g: 0.72424453, b: 0.57254905, a: 0}
+        key1: {r: 1, g: 0.43266144, b: 0.02352941, a: 0.011687566}
         key2: {r: 1, g: 0.60571146, b: 0.02352941, a: 0.18431373}
         key3: {r: 0, g: 0, b: 0, a: 0.3764706}
         key4: {r: 0, g: 0, b: 0, a: 0.0115843415}

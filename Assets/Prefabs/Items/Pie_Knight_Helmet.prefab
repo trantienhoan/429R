@@ -5278,7 +5278,7 @@ Transform:
   m_GameObject: {fileID: 1517178513893278829}
   serializedVersion: 2
   m_LocalRotation: {x: 1.0048589e-14, y: 0.70710707, z: 1.0048597e-14, w: 0.70710653}
-  m_LocalPosition: {x: -0.79378, y: 0.05101, z: -3.01143}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -5293,7 +5293,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1517178513893278829}
-  m_Mesh: {fileID: 5892285081728658828, guid: 331951a8e792c2d4591a9e7968297bb5, type: 3}
+  m_Mesh: {fileID: 6859337389686756106, guid: fa32643746645184d82803d1d932e05a, type: 3}
 --- !u!23 &8596218290448420256
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5319,7 +5319,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 67488936bcca1db4ba42383ea5f1f679, type: 2}
+  - {fileID: 2100000, guid: 9dbdbbbc657c48f41950f0c9163ca920, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -5607,7 +5607,7 @@ MonoBehaviour:
         customNames:
         - 
         - 
-        actionEnabled: 0101
+        actionEnabled: 0100
         actionIsOpen: 0101
         actionStartIndex: 0000000005000000
         actionHashCodes: fcb1a001fcb1a001
@@ -5617,7 +5617,7 @@ MonoBehaviour:
         - ownerOption: 1
           gameObject:
             useVariable: 1
-            name: Player
+            name: GAMESTAGES
             tooltip: 
             showInInspector: 0
             networkSync: 0
@@ -5625,7 +5625,7 @@ MonoBehaviour:
         - ownerOption: 1
           gameObject:
             useVariable: 1
-            name: GAMESTAGES
+            name: Player
             tooltip: 
             showInInspector: 0
             networkSync: 0
@@ -5642,18 +5642,6 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: Info
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: Head_Piece
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
           value: GAMESTAGES
         - useVariable: 0
           name: 
@@ -5661,6 +5649,18 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: Head_Gear
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: Info
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: Head_Piece
         fsmObjectParams: []
         fsmVarParams:
         - variableName: 
@@ -7501,8 +7501,8 @@ ParticleSystem:
       maxColor: {r: 1, g: 1, b: 1, a: 1}
       maxGradient:
         serializedVersion: 2
-        key0: {r: 0.7188631, g: 1, b: 0.57254905, a: 0}
-        key1: {r: 0.4163825, g: 1, b: 0.02352941, a: 0.011687566}
+        key0: {r: 1, g: 0.849817, b: 0.57254905, a: 0}
+        key1: {r: 1, g: 0.5368242, b: 0.02352941, a: 0.011687566}
         key2: {r: 1, g: 0.60571146, b: 0.02352941, a: 0.18431373}
         key3: {r: 0, g: 0, b: 0, a: 0.3764706}
         key4: {r: 0, g: 0, b: 0, a: 0.0115843415}
@@ -11068,7 +11068,7 @@ Transform:
   m_GameObject: {fileID: 5156194464782701121}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.625, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.13, y: 0.13, z: 0.13}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -17083,7 +17083,7 @@ ParticleSystem:
       maxColor: {r: 1, g: 1, b: 1, a: 1}
       maxGradient:
         serializedVersion: 2
-        key0: {r: 1, g: 1, b: 1, a: 0}
+        key0: {r: 1, g: 0.55344284, b: 0, a: 0}
         key1: {r: 1, g: 1, b: 1, a: 1}
         key2: {r: 1, g: 0.5194145, b: 0.15566039, a: 0}
         key3: {r: 0, g: 0, b: 0, a: 0}
@@ -17108,7 +17108,7 @@ ParticleSystem:
         atime6: 0
         atime7: 0
         m_Mode: 0
-        m_ColorSpace: -1
+        m_ColorSpace: 0
         m_NumColorKeys: 2
         m_NumAlphaKeys: 3
       minGradient:
@@ -21887,7 +21887,7 @@ ParticleSystem:
       maxGradient:
         serializedVersion: 2
         key0: {r: 0.99726325, g: 1, b: 0.7783019, a: 0}
-        key1: {r: 0.5209432, g: 1, b: 0.09803921, a: 1}
+        key1: {r: 1, g: 0.69914925, b: 0.09803921, a: 1}
         key2: {r: 0.990566, g: 0.9581136, b: 0.23829651, a: 1}
         key3: {r: 0, g: 0, b: 0, a: 1}
         key4: {r: 0, g: 0, b: 0, a: 0}
