@@ -31,7 +31,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6471722580608251220}
-  - {fileID: 4348504656366390227}
   m_Father: {fileID: 8139032063423879291}
   m_LocalEulerAnglesHint: {x: 89.98021, y: 0, z: 0}
 --- !u!65 &1016023617606906383
@@ -5272,7 +5271,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4337052619155732277}
   serializedVersion: 5
-  m_Mass: 500
+  m_Mass: 750
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -5290,7 +5289,7 @@ Rigidbody:
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
 --- !u!114 &3991966568878862572
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6754,18 +6753,6 @@ MonoBehaviour:
           m_StringArgument: Fire
           m_BoolArgument: 1
         m_CallState: 2
-      - m_Target: {fileID: 6594331293433729677}
-        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
-        m_MethodName: SetActive
-        m_Mode: 6
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 1
-        m_CallState: 2
   m_Deactivated:
     m_PersistentCalls:
       m_Calls:
@@ -6779,18 +6766,6 @@ MonoBehaviour:
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: Release
-          m_BoolArgument: 0
-        m_CallState: 2
-      - m_Target: {fileID: 6594331293433729677}
-        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
-        m_MethodName: SetActive
-        m_Mode: 6
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
   m_StartingHoverFilters: []
@@ -6841,7 +6816,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  m_ThrowVelocityScale: 4.5
+  m_ThrowVelocityScale: 6.5
   m_ThrowAngularVelocityScale: 1
   m_ForceGravityOnDetach: 0
   m_RetainTransformParent: 1
@@ -7013,59 +6988,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 8139032063423879291}
   m_LocalEulerAnglesHint: {x: 225, y: 0, z: 0}
---- !u!1 &6594331293433729677
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4348504656366390227}
-  - component: {fileID: 4571432001875839358}
-  m_Layer: 0
-  m_Name: Destroyer_Collider
-  m_TagString: Destroyer
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!4 &4348504656366390227
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6594331293433729677}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0.0026405067}
-  m_LocalScale: {x: 0.0025497645, y: 0.0025497647, z: 0.0025497647}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 3672944928627919936}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &4571432001875839358
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6594331293433729677}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1.0111761, y: 1.3737531, z: 0.89970446}
-  m_Center: {x: 0, y: 0, z: -1}
 --- !u!1 &6824092616540618906
 GameObject:
   m_ObjectHideFlags: 0
