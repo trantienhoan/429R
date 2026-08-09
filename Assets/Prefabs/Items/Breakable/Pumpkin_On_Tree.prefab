@@ -5347,12 +5347,12 @@ GameObject:
   - component: {fileID: 8349571965583476304}
   - component: {fileID: 6305100654819123986}
   - component: {fileID: 5609633583765862568}
+  - component: {fileID: 3239902649820247369}
   - component: {fileID: 8536146005211852686}
   - component: {fileID: -4144848801651552299}
   - component: {fileID: 8619799103645025506}
   - component: {fileID: 8529673103472462751}
   - component: {fileID: 444595332533545171}
-  - component: {fileID: 3239902649820247369}
   m_Layer: 0
   m_Name: Pumpkin_On_Tree
   m_TagString: Weapon
@@ -5434,6 +5434,27 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!135 &3239902649820247369
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8690403555129543112}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.30901727
+  m_Center: {x: -0.000000029802322, y: 0.04, z: 0.00430052}
 --- !u!54 &8536146005211852686
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -5460,7 +5481,7 @@ Rigidbody:
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
 --- !u!114 &-4144848801651552299
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6580,7 +6601,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 010101
-        actionIsOpen: 000001
+        actionIsOpen: 000000
         actionStartIndex: 00000000070000000c000000
         actionHashCodes: 1bcdca049c5124000d5f5c01
         unityObjectParams: []
@@ -6623,7 +6644,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 1
           networkSync: 0
-          value: 4
+          value: 7
         - useVariable: 0
           name: 
           tooltip: 
@@ -6641,13 +6662,13 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 69
+          value: 99
         - useVariable: 0
           name: 
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 96
+          value: 129
         fsmIntParams: []
         fsmBoolParams: []
         fsmVector2Params: []
@@ -7039,7 +7060,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {x: 42, y: 42, z: 42}
+          value: {x: 66, y: 66, z: 66}
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
@@ -7097,7 +7118,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 0101
-        actionIsOpen: 0101
+        actionIsOpen: 0000
         actionStartIndex: 0000000011000000
         actionHashCodes: 910fc3000d5f5c01
         unityObjectParams: []
@@ -7179,7 +7200,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 0
+          value: 1
         fsmVector2Params: []
         fsmVector3Params:
         - useVariable: 0
@@ -7410,24 +7431,3 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!135 &3239902649820247369
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8690403555129543112}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 0.30901727
-  m_Center: {x: -0.000000029802322, y: 0.04, z: 0.00430052}
