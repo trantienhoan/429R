@@ -10388,7 +10388,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 01010101
-        actionIsOpen: 00000001
+        actionIsOpen: 01010101
         actionStartIndex: 00000000050000000a00000011000000
         actionHashCodes: 5978870081294e041bcdca049c512400
         unityObjectParams: []
@@ -10913,7 +10913,6 @@ MonoBehaviour:
         vector4Values: []
         objectReferences:
         - {fileID: 8300000, guid: 4dba5763bbfdf884099398c56bd805a5, type: 3}
-        - {fileID: 8300000, guid: 1623b0e7c2bbd37449490192c6033e06, type: 3}
         - {fileID: 8300000, guid: 02ce2fd68c50b4e48806fc778e73983f, type: 3}
       - useVariable: 1
         name: randomBG_Music2
@@ -11239,7 +11238,6 @@ MonoBehaviour:
         - HutongGames.PlayMaker.Actions.GetFsmFloat
         - HutongGames.PlayMaker.Actions.FloatSubtract
         - HutongGames.PlayMaker.Actions.SetFsmFloat
-        - HutongGames.PlayMaker.Actions.TweenPunch
         - HutongGames.PlayMaker.Actions.ArrayGetRandom
         - HutongGames.PlayMaker.Actions.AudioPlay
         - HutongGames.PlayMaker.Actions.Wait
@@ -11250,11 +11248,10 @@ MonoBehaviour:
         - 
         - 
         - 
-        - 
-        actionEnabled: 01010101010101
-        actionIsOpen: 00000000000101
-        actionStartIndex: 0000000005000000090000000e0000001b0000002000000025000000
-        actionHashCodes: 876045022a6e8a0087604502bac44f045978870081294e0448c01101
+        actionEnabled: 010101010101
+        actionIsOpen: 000000000101
+        actionStartIndex: 0000000005000000090000000e0000001300000018000000
+        actionHashCodes: 876045022a6e8a00876045025978870081294e0448c01101
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams:
@@ -11282,21 +11279,7 @@ MonoBehaviour:
             showInInspector: 0
             networkSync: 0
             value: {fileID: 0}
-        - ownerOption: 0
-          gameObject:
-            useVariable: 0
-            name: 
-            tooltip: 
-            showInInspector: 0
-            networkSync: 0
-            value: {fileID: 0}
-        animationCurveParams:
-        - curve:
-            serializedVersion: 2
-            m_Curve: []
-            m_PreInfinity: 2
-            m_PostInfinity: 2
-            m_RotationOrder: 4
+        animationCurveParams: []
         functionCallParams: []
         fsmTemplateControlParams: []
         fsmEventTargetParams: []
@@ -11376,14 +11359,7 @@ MonoBehaviour:
           objectReferences:
           - {fileID: 8300000, guid: 23fd3ece0e623714ebc93c373278dafd, type: 3}
           - {fileID: 8300000, guid: 1ab0a3a1ae573ae4a83eec9c81323797, type: 3}
-        fsmEnumParams:
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          enumName: HutongGames.PlayMaker.None
-          intValue: 0
+        fsmEnumParams: []
         fsmFloatParams:
         - useVariable: 1
           name: health
@@ -11409,18 +11385,6 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0.25
         - useVariable: 0
           name: 
           tooltip: 
@@ -11453,33 +11417,20 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 1
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 1
         fsmVector2Params: []
-        fsmVector3Params:
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: {x: 0, y: 0.07, z: 0}
+        fsmVector3Params: []
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
         stringParams:
         - 
-        - 
         - FINISHED
-        byteData: 0000000000000000000000000000000000000000000001
+        byteData: 000000000001
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1400000012000000120000000f000000010000000f0000000f00000001000000010000001400000012000000120000000f00000001000000070000001c000000140000000f0000002a000000160000000f0000001100000007000000170000000200000001000000070000002900000027000000100000001100000001000000140000000f0000001800000011000000170000000f0000001700000001000000
+        paramDataType: 1400000012000000120000000f000000010000000f0000000f00000001000000010000001400000012000000120000000f000000010000002900000027000000100000001100000001000000140000000f0000001800000011000000170000000f0000001700000001000000
         paramName:
         - gameObject
         - fsmName
@@ -11495,19 +11446,6 @@ MonoBehaviour:
         - variableName
         - setValue
         - everyFrame
-        - punchType
-        - value
-        - gameObject
-        - startDelay
-        - easeType
-        - customCurve
-        - time
-        - realTime
-        - loopType
-        - finishEvent
-        - normalizedTime
-        - everyFrame
-        - updateType
         - array
         - storeValue
         - index
@@ -11521,8 +11459,8 @@ MonoBehaviour:
         - time
         - finishEvent
         - realTime
-        paramDataPos: 0000000000000000010000000000000000000000010000000200000001000000020000000100000002000000030000000300000003000000040000000000000002000000040000000000000000000000050000000000000008000000000000000c000000100000001100000000000000000000000000000001000000150000000300000006000000000000000200000001000000070000000200000016000000
-        paramByteDataSize: 00000000000000000000000000000000010000000000000000000000010000000100000000000000000000000000000000000000010000000400000000000000000000000000000000000000000000000000000000000000040000000000000004000000010000000400000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000
+        paramDataPos: 000000000000000001000000000000000000000001000000020000000100000002000000010000000200000003000000030000000300000000000000000000000000000000000000040000000200000004000000000000000100000000000000050000000100000005000000
+        paramByteDataSize: 000000000000000000000000000000000100000000000000000000000100000001000000000000000000000000000000000000000100000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000
     events:
     - name: next
       isSystemEvent: 0
