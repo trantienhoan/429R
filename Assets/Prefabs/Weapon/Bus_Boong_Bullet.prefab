@@ -79,7 +79,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {fileID: 7362693981994234826, guid: 1873043d6e1b3d54c91bac5dde5c6267,
+          value: {fileID: 7063271974292600174, guid: 56811908d7e66ad449795a54fc2c2790,
             type: 3}
         - useVariable: 1
           name: CurrentlySpawnedStuffs
@@ -909,12 +909,14 @@ MonoBehaviour:
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.CollisionEvent
+        - HutongGames.PlayMaker.Actions.RandomWait
         customNames:
         - 
-        actionEnabled: 01
-        actionIsOpen: 01
-        actionStartIndex: 00000000
-        actionHashCodes: beb33100
+        - 
+        actionEnabled: 0101
+        actionIsOpen: 0101
+        actionStartIndex: 0000000006000000
+        actionHashCodes: beb331000d5f5c01
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
@@ -956,6 +958,18 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0.25
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0.45
         fsmIntParams: []
         fsmBoolParams: []
         fsmVector2Params: []
@@ -965,12 +979,13 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - next
-        byteData: 00000000
+        - next
+        byteData: 0000000001
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 14000000070000001200000017000000130000000f000000
+        paramDataType: 14000000070000001200000017000000130000000f0000000f0000000f0000001700000001000000
         paramName:
         - gameObject
         - collision
@@ -978,8 +993,12 @@ MonoBehaviour:
         - sendEvent
         - storeCollider
         - storeForce
-        paramDataPos: 000000000000000000000000000000000000000000000000
-        paramByteDataSize: 000000000400000000000000000000000000000000000000
+        - min
+        - max
+        - finishEvent
+        - realTime
+        paramDataPos: 00000000000000000000000000000000000000000000000001000000020000000100000004000000
+        paramByteDataSize: 00000000040000000000000000000000000000000000000000000000000000000000000001000000
     events:
     - name: next
       isSystemEvent: 0
