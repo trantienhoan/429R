@@ -243,8 +243,8 @@ Transform:
   m_GameObject: {fileID: 3205803870197947175}
   serializedVersion: 2
   m_LocalRotation: {x: -0.49602655, y: 0.5039424, z: -0.4960264, w: 0.503942}
-  m_LocalPosition: {x: 0, y: 0.094, z: 0.069}
-  m_LocalScale: {x: 0.23, y: 0.23, z: 0.23}
+  m_LocalPosition: {x: 0, y: 0.187, z: -0.002}
+  m_LocalScale: {x: 0.358064, y: 0.358064, z: 0.358064}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 3675610110980597232}
@@ -367,8 +367,8 @@ ParticleSystem:
     startSpeed:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 0.5
-      minScalar: 0.2
+      scalar: 0.45
+      minScalar: 0.35
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -424,9 +424,9 @@ ParticleSystem:
       maxColor: {r: 1, g: 1, b: 1, a: 0.4117647}
       maxGradient:
         serializedVersion: 2
-        key0: {r: 0.7264151, g: 0.595577, b: 0.48313457, a: 1}
-        key1: {r: 0.9339623, g: 0.9308155, b: 0.86788005, a: 1}
-        key2: {r: 0.8113208, g: 0.56767845, b: 0.3329477, a: 0}
+        key0: {r: 0.6509434, g: 0.48261136, b: 0.33468318, a: 1}
+        key1: {r: 0.8113208, g: 0.75297195, b: 0.6314525, a: 1}
+        key2: {r: 0.6886792, g: 0.5912779, b: 0.4970185, a: 0}
         key3: {r: 0, g: 0.8228338, b: 0.8396226, a: 0}
         key4: {r: 0.14978641, g: 0.38635373, b: 0.9622642, a: 0}
         key5: {r: 0.14978641, g: 0.38635373, b: 0.9622642, a: 0}
@@ -844,7 +844,7 @@ ParticleSystem:
   ShapeModule:
     serializedVersion: 6
     enabled: 1
-    type: 17
+    type: 0
     angle: 50.12
     length: 5
     boxThickness: {x: 0, y: 0, z: 0}
@@ -852,7 +852,7 @@ ParticleSystem:
     donutRadius: 0.18
     m_Position: {x: 0, y: 0, z: 0}
     m_Rotation: {x: 90, y: 0, z: 0}
-    m_Scale: {x: 1.57, y: 1, z: 2.45}
+    m_Scale: {x: 2.07, y: 1, z: 1.27}
     placementMode: 0
     m_MeshMaterialIndex: 0
     m_MeshNormalOffset: 0
@@ -989,7 +989,7 @@ ParticleSystem:
           m_RotationOrder: 4
     arc:
       value: 360
-      mode: 0
+      mode: 3
       spread: 0
       speed:
         serializedVersion: 2
@@ -5472,12 +5472,12 @@ GameObject:
   - component: {fileID: 3675610110980597232}
   - component: {fileID: 4598464444358604728}
   - component: {fileID: 2689430776340711734}
+  - component: {fileID: 8804566813649068252}
   - component: {fileID: 4467337711048135296}
   - component: {fileID: 2926084390192529529}
   - component: {fileID: 3991966568878862572}
   - component: {fileID: 9127762408819454023}
   - component: {fileID: 6417217773428796678}
-  - component: {fileID: 8804566813649068252}
   - component: {fileID: 3061643019901991867}
   m_Layer: 0
   m_Name: Hammer_Broom
@@ -5562,6 +5562,27 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &8804566813649068252
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4337052619155732277}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.3443435, y: 0.5862519, z: 0.35189146}
+  m_Center: {x: -0.001978159, y: 0.11826937, z: -0.00077724457}
 --- !u!65 &4467337711048135296
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -5790,7 +5811,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 30
+          value: 15
         - useVariable: 0
           name: 
           tooltip: 
@@ -5829,8 +5850,8 @@ MonoBehaviour:
       colorIndex: 6
       position:
         serializedVersion: 2
-        x: 431
-        y: 115
+        x: 435.39844
+        y: 99.61719
         width: 122.3
         height: 32
       isBreakpoint: 0
@@ -6821,27 +6842,6 @@ MonoBehaviour:
   m_LimitAngularVelocity: 0
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
---- !u!65 &8804566813649068252
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4337052619155732277}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 0.3443435, y: 0.5862519, z: 0.35189146}
-  m_Center: {x: -0.001978159, y: 0.11826937, z: -0.00077724457}
 --- !u!82 &3061643019901991867
 AudioSource:
   m_ObjectHideFlags: 0

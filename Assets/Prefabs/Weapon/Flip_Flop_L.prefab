@@ -28,7 +28,7 @@ Transform:
   m_GameObject: {fileID: 3205803870197947175}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0, y: 0.026, z: 0}
+  m_LocalPosition: {x: -0, y: 0.026, z: 0.0325}
   m_LocalScale: {x: 0.23, y: 0.23, z: 0.23}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -152,8 +152,8 @@ ParticleSystem:
     startSpeed:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 0.05
-      minScalar: 0.1
+      scalar: 0.45
+      minScalar: 0.35
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -774,7 +774,7 @@ ParticleSystem:
           m_RotationOrder: 4
     arc:
       value: 360
-      mode: 0
+      mode: 3
       spread: 0
       speed:
         serializedVersion: 2
@@ -1127,12 +1127,12 @@ ParticleSystem:
         - serializedVersion: 3
           time: 0
           value: 0.21167755
-          inSlope: 1.38653
-          outSlope: 1.38653
+          inSlope: 1.7953758
+          outSlope: 1.7953758
           tangentMode: 0
           weightedMode: 0
           inWeight: 0.33333334
-          outWeight: 0.28418535
+          outWeight: 0.21486811
         - serializedVersion: 3
           time: 0.7595098
           value: 1
@@ -1144,12 +1144,12 @@ ParticleSystem:
           outWeight: 0.33333334
         - serializedVersion: 3
           time: 1
-          value: 0.17560957
-          inSlope: -0.50064284
-          outSlope: -0.50064284
+          value: 0.5587883
+          inSlope: -3.8545833
+          outSlope: -3.8545833
           tangentMode: 0
           weightedMode: 0
-          inWeight: 0.33333334
+          inWeight: 0.2743244
           outWeight: 0.33333334
         m_PreInfinity: 2
         m_PostInfinity: 2
@@ -5958,7 +5958,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 0101
-        actionIsOpen: 0101
+        actionIsOpen: 0100
         actionStartIndex: 0000000007000000
         actionHashCodes: 1bcdca049c512400
         unityObjectParams: []
@@ -6001,7 +6001,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 1
           networkSync: 0
-          value: 77
+          value: 81
         - useVariable: 0
           name: 
           tooltip: 
@@ -6404,7 +6404,7 @@ MonoBehaviour:
         tooltip: 
         showInInspector: 1
         networkSync: 0
-        value: 81
+        value: 21
       intVariables: []
       boolVariables: []
       stringVariables: []
