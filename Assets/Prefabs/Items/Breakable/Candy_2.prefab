@@ -15809,14 +15809,16 @@ MonoBehaviour:
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.SendEvent
+        - HutongGames.PlayMaker.Actions.InventoryAddItem
         - HutongGames.PlayMaker.Actions.TweenScale
         customNames:
         - 
         - 
-        actionEnabled: 0101
-        actionIsOpen: 0101
-        actionStartIndex: 0000000004000000
-        actionHashCodes: 5e69bb04910fc300
+        - 
+        actionEnabled: 010101
+        actionIsOpen: 000100
+        actionStartIndex: 000000000400000008000000
+        actionHashCodes: 5e69bb049b5e1c02910fc300
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 0
@@ -15885,7 +15887,14 @@ MonoBehaviour:
         fsmPropertyParams: []
         layoutOptionParams: []
         fsmStringParams: []
-        fsmObjectParams: []
+        fsmObjectParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          typeName: Game.Inventory.ItemDefinition
+          value: {fileID: 11400000, guid: 44ebf4cbb21be1740b0755839bbb1d75, type: 2}
         fsmVarParams: []
         fsmArrayParams: []
         fsmEnumParams:
@@ -15915,7 +15924,19 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0.21
-        fsmIntParams: []
+        fsmIntParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
         fsmBoolParams:
         - useVariable: 0
           name: 
@@ -15942,18 +15963,23 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - Health1
+        - 
         - FINISHED
         byteData: 00000000000100000000000000000000000000000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1f000000170000000f0000000100000007000000130000001c00000007000000130000001c000000140000000f0000002a000000160000000f000000110000000700000017000000020000000100000007000000
+        paramDataType: 1f000000170000000f000000010000001800000010000000100000001700000007000000130000001c00000007000000130000001c000000140000000f0000002a000000160000000f000000110000000700000017000000020000000100000007000000
         paramName:
         - eventTarget
         - sendEvent
         - delay
         - everyFrame
+        - item
+        - amount
+        - storeNewCount
+        - failedEvent
         - fromOptions
         - fromTarget
         - fromScale
@@ -15971,8 +15997,8 @@ MonoBehaviour:
         - normalizedTime
         - everyFrame
         - updateType
-        paramDataPos: 0000000000000000000000000000000001000000000000000000000005000000010000000100000000000000010000000000000000000000020000000000000009000000010000000d0000001100000012000000
-        paramByteDataSize: 000000000000000000000000010000000400000000000000000000000400000000000000000000000000000000000000000000000000000000000000000000000400000000000000040000000100000004000000
+        paramDataPos: 000000000000000000000000000000000000000000000000010000000100000001000000000000000000000005000000010000000100000000000000010000000000000000000000020000000000000009000000020000000d0000001100000012000000
+        paramByteDataSize: 00000000000000000000000001000000000000000000000000000000000000000400000000000000000000000400000000000000000000000000000000000000000000000000000000000000000000000400000000000000040000000100000004000000
     - name: Destroy Self
       description: 
       colorIndex: 6
