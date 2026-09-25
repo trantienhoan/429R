@@ -26,6 +26,15 @@ namespace Game.Inventory
             public int count;
         }
 
+        /// <summary>Lifetime totals for one item as written to a save file.</summary>
+        [Serializable]
+        public class SavedStats
+        {
+            public string id;
+            public int collected;
+            public int spent;
+        }
+
         [Tooltip("List of every item, used to turn saved ids back into items.")]
         [SerializeField] private ItemDatabase database;
         [Tooltip("What the player starts with.")]
@@ -34,6 +43,9 @@ namespace Game.Inventory
         [SerializeField] private List<Entry> contents = new();
 
         private readonly Dictionary<ItemDefinition, int> counts = new();
+        // Lifetime totals, e.g. every candy eaten and every candy spent. Loading a save doesn't count.
+        private readonly Dictionary<ItemDefinition, int> collected = new();
+        private readonly Dictionary<ItemDefinition, int> spent = new();
 
         public static PlayerInventory Instance { get; private set; }
 
@@ -91,6 +103,7 @@ namespace Game.Inventory
             if (after == before) return 0;
 
             counts[item] = after;
+            AddTo(collected, item, after - before);
             OnChanged(item, after - before, after);
             return after - before;
         }
@@ -104,8 +117,21 @@ namespace Game.Inventory
             if (after == 0) counts.Remove(item);
             else counts[item] = after;
 
+            AddTo(spent, item, amount);
             OnChanged(item, -amount, after);
             return true;
+        }
+
+        /// <summary>How many of the item were ever added, e.g. every candy eaten.</summary>
+        public int GetCollected(ItemDefinition item)
+        {
+            return item != null && collected.TryGetValue(item, out var total) ? total : 0;
+        }
+
+        /// <summary>How many of the item were ever removed, e.g. every candy spent in the shop.</summary>
+        public int GetSpent(ItemDefinition item)
+        {
+            return item != null && spent.TryGetValue(item, out var total) ? total : 0;
         }
 
         public List<SavedEntry> ToSaveData()
@@ -126,13 +152,8 @@ namespace Game.Inventory
             {
                 foreach (var entry in saved)
                 {
-                    var item = database != null ? database.Find(entry.id) : null;
-                    if (item == null)
-                    {
-                        Debug.LogWarning($"[PlayerInventory] Saved item '{entry.id}' isn't in the item database; skipped.", this);
-                        continue;
-                    }
-                    if (entry.count > 0) counts[item] = ClampToStack(item, entry.count);
+                    var item = FindSavedItem(entry.id);
+                    if (item != null && entry.count > 0) counts[item] = ClampToStack(item, entry.count);
                 }
             }
 
@@ -146,6 +167,46 @@ namespace Game.Inventory
                 int after = GetCount(item);
                 if (after != before) Changed?.Invoke(item, after - before, after);
             }
+        }
+
+        public List<SavedStats> StatsToSaveData()
+        {
+            var items = new HashSet<ItemDefinition>(collected.Keys);
+            items.UnionWith(spent.Keys);
+
+            var saved = new List<SavedStats>(items.Count);
+            foreach (var item in items)
+                saved.Add(new SavedStats { id = item.Id, collected = GetCollected(item), spent = GetSpent(item) });
+            return saved;
+        }
+
+        /// <summary>Replaces the lifetime totals with saved ones.</summary>
+        public void LoadStatsSaveData(IEnumerable<SavedStats> saved)
+        {
+            collected.Clear();
+            spent.Clear();
+            if (saved == null) return;
+
+            foreach (var entry in saved)
+            {
+                var item = FindSavedItem(entry.id);
+                if (item == null) continue;
+                if (entry.collected > 0) collected[item] = entry.collected;
+                if (entry.spent > 0) spent[item] = entry.spent;
+            }
+        }
+
+        private ItemDefinition FindSavedItem(string id)
+        {
+            var item = database != null ? database.Find(id) : null;
+            if (item == null) Debug.LogWarning($"[PlayerInventory] Saved item '{id}' isn't in the item database; skipped.", this);
+            return item;
+        }
+
+        private static void AddTo(Dictionary<ItemDefinition, int> totals, ItemDefinition item, int amount)
+        {
+            totals.TryGetValue(item, out var total);
+            totals[item] = total + amount;
         }
 
         private static int ClampToStack(ItemDefinition item, int count)
