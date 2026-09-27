@@ -16,9 +16,10 @@ namespace Game.Shopping
     }
 
     /// <summary>
-    /// The candy shop. By default its panel shows on your right hand while B on the right controller is held,
-    /// like the inventory on the left hand, and you buy with your left hand. Bought items float next to the panel
-    /// until grabbed. FSMs use the actions in PlayMaker's "Shop" category.
+    /// The candy shop. By default its panel shows on your right hand while B on the right controller is held
+    /// (the right menu button on controllers without B), like the inventory on the left hand. It sells a few random
+    /// items from its catalog at a time and picks new ones every few minutes; you buy one by clicking its row with
+    /// your left hand. Bought items float next to the panel until grabbed. FSMs use the actions in PlayMaker's "Shop" category.
     /// </summary>
     [DisallowMultipleComponent]
     public class Shop : MonoBehaviour
@@ -43,11 +44,25 @@ namespace Game.Shopping
         [Tooltip("Left empty, the first shop panel in the scene is used.")]
         [SerializeField] private ShopPanelUI panel;
 
+        [Header("Stock")]
+        [Tooltip("How many items from the catalog are on sale at once, picked at random. 0 = everything, always. " +
+                 "The panel is made to fit this many; after changing it, run Tools > 429 Game > Shop > Rebuild Shop Panel.")]
+        [Min(0)]
+        [SerializeField] private int itemsOnSale = 4;
+        [Tooltip("New items go on sale after a random time between these, in minutes. Never while the panel is open.")]
+        [Min(0.1f)]
+        [SerializeField] private float minRestockMinutes = 1f;
+        [Min(0.1f)]
+        [SerializeField] private float maxRestockMinutes = 4f;
+
         [Header("Opening")]
         [Tooltip("Hold Button: open while held. Toggle Button: press to open, press again to close. Only From FSM: use the Shop Open / Shop Close actions.")]
         [SerializeField] private OpenMode openMode = OpenMode.HoldButton;
         [Tooltip("Defaults to B on the right controller.")]
         [SerializeField] private InputActionProperty openButton = new(new InputAction("Open Shop", InputActionType.Button, "<XRController>{RightHand}/secondaryButton"));
+        [Tooltip("Also opens the shop, for controllers without B (HTC Vive wands, Windows Mixed Reality, basic controllers). " +
+                 "Defaults to the menu button on the right controller; the left one pauses.")]
+        [SerializeField] private InputActionProperty alternateOpenButton = new(new InputAction("Open Shop (No B Button)", InputActionType.Button, "<XRController>{RightHand}/menuButton"));
 
         [Header("Placement")]
         [Tooltip("The hand the panel rides on. Left empty, the Right Controller is found automatically. " +
@@ -66,9 +81,12 @@ namespace Game.Shopping
 
         private static readonly List<Shop> enabledShops = new();
         private readonly Dictionary<string, int> purchases = new();
+        private readonly List<int> onSale = new();
         private Transform head;
         private bool available = true;
         private bool openedByHold;
+        private bool stocked;
+        private float restockAt;
         private XRPokeInteractor blockedPoke;
 
         /// <summary>Master switch for every shop, e.g. turned off by an FSM during a boss fight.</summary>
@@ -87,6 +105,10 @@ namespace Game.Shopping
         public Transform Hand => hand;
         public bool IsOpen { get; private set; }
         public bool Available => available;
+        public int ItemsOnSale => itemsOnSale;
+
+        /// <summary>Where in the catalog the items on sale now are.</summary>
+        public IReadOnlyList<int> OnSale => onSale;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
@@ -114,30 +136,35 @@ namespace Game.Shopping
         {
             enabledShops.Add(this);
             openButton.action?.Enable();
+            alternateOpenButton.action?.Enable();
         }
 
         private void OnDisable()
         {
             Close();
             enabledShops.Remove(this);
-            // Only switch off our own button; a referenced action may be used elsewhere.
+            // Only switch off our own buttons; a referenced action may be used elsewhere.
             if (openButton.reference == null) openButton.action?.Disable();
+            if (alternateOpenButton.reference == null) alternateOpenButton.action?.Disable();
         }
 
         private void Update()
         {
+            // Game time, so the clock stops while paused. Items never change under your finger.
+            if (!IsOpen && (!stocked || Time.time >= restockAt)) Restock();
+
             // No shopping while the game is paused.
             if (Time.timeScale == 0f)
             {
                 Close();
                 return;
             }
-            if (openMode == OpenMode.OnlyFromFsm || openButton.action == null) return;
+            if (openMode == OpenMode.OnlyFromFsm) return;
 
             bool canOpen = available && AllAvailable;
             if (openMode == OpenMode.HoldButton)
             {
-                bool held = openButton.action.IsPressed();
+                bool held = IsPressed(openButton) || IsPressed(alternateOpenButton);
                 if (held && !IsOpen && canOpen)
                 {
                     Open();
@@ -148,11 +175,21 @@ namespace Game.Shopping
                     Close();
                 }
             }
-            else if (openButton.action.WasPressedThisFrame())
+            else if (WasPressedThisFrame(openButton) || WasPressedThisFrame(alternateOpenButton))
             {
                 if (IsOpen) Close();
                 else if (canOpen) Open();
             }
+        }
+
+        private static bool IsPressed(InputActionProperty button)
+        {
+            return button.action != null && button.action.IsPressed();
+        }
+
+        private static bool WasPressedThisFrame(InputActionProperty button)
+        {
+            return button.action != null && button.action.WasPressedThisFrame();
         }
 
         public void SetAvailable(bool value)
@@ -177,6 +214,7 @@ namespace Game.Shopping
             if (target.Owner != null && target.Owner != this) target.Owner.Close();
 
             panel = target;
+            if (!stocked) Restock();
             if (hasHand)
             {
                 // The panel rides on the hand like the inventory. Until the setup menu has put it there, use the default spot.
@@ -226,6 +264,28 @@ namespace Game.Shopping
             PlaySound(buySound, spawned != null ? spawned.transform.position : transform.position);
             AnyPurchased?.Invoke(this, entry.item, entry.price, spawned);
             return PurchaseResult.Bought;
+        }
+
+        /// <summary>Puts a new random pick from the catalog on sale. Happens by itself every few minutes.</summary>
+        public void Restock()
+        {
+            stocked = true;
+            restockAt = Time.time + UnityEngine.Random.Range(minRestockMinutes, maxRestockMinutes) * 60f;
+
+            onSale.Clear();
+            if (catalog != null)
+            {
+                for (int i = 0; i < catalog.Entries.Count; i++)
+                {
+                    var entry = catalog.Entries[i];
+                    if (entry.item != null && !IsSoldOut(entry)) onSale.Add(i);
+                }
+                // Dropping random ones keeps a random pick, still in catalog order.
+                while (itemsOnSale > 0 && onSale.Count > itemsOnSale)
+                    onSale.RemoveAt(UnityEngine.Random.Range(0, onSale.Count));
+            }
+
+            if (IsOpen && panel != null) panel.Refresh();
         }
 
         public int GetPurchaseCount(ItemDefinition item)

@@ -204,6 +204,17 @@ namespace Game.EditorTools
             return label;
         }
 
+        /// <summary>
+        /// Lets text that doesn't fit shrink, down to minSize, instead of being cut off. With Ellipsis, text too tall
+        /// for its box isn't drawn at all.
+        /// </summary>
+        public static void ShrinkToFit(TMP_Text text, float minSize)
+        {
+            text.fontSizeMax = text.fontSize;
+            text.fontSizeMin = Mathf.Min(minSize, text.fontSize);
+            text.enableAutoSizing = true;
+        }
+
         public static Image CreateImage(string name, Transform parent, Color color)
         {
             var image = CreateRect(name, parent).gameObject.AddComponent<Image>();

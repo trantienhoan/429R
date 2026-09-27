@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 namespace Game.Shopping
 {
-    /// <summary>One line of the shop panel: icon, name, price and a Buy button.</summary>
+    /// <summary>One line of the shop panel: icon, name and price. Clicking the line buys the item.</summary>
     public class ShopItemRow : MonoBehaviour
     {
         private static readonly Color CantAffordColor = new(1f, 0.45f, 0.45f);
@@ -15,8 +15,8 @@ namespace Game.Shopping
         [SerializeField] private TMP_Text label;
         [SerializeField] private Image priceIcon;
         [SerializeField] private TMP_Text price;
-        [SerializeField] private Button buyButton;
-        [SerializeField] private TMP_Text buyLabel;
+        [Tooltip("Buys the item when clicked, normally the row itself. Left empty, the first button in the row is used.")]
+        [SerializeField] private Button button;
 
         public void Set(ItemDefinition item, int cost, ItemDefinition currency, bool soldOut, bool canAfford, UnityAction onBuy)
         {
@@ -30,21 +30,22 @@ namespace Game.Shopping
             if (priceIcon != null)
             {
                 priceIcon.sprite = currency != null ? currency.Icon : null;
-                priceIcon.enabled = priceIcon.sprite != null && cost > 0;
+                priceIcon.enabled = priceIcon.sprite != null && cost > 0 && !soldOut;
             }
             if (price != null)
             {
-                price.text = cost > 0 ? cost.ToString() : "Free";
-                price.color = canAfford || cost <= 0 ? Color.white : CantAffordColor;
+                if (soldOut) price.text = "Sold out";
+                else price.text = cost > 0 ? cost.ToString() : "Free";
+                price.color = soldOut || canAfford || cost <= 0 ? Color.white : CantAffordColor;
             }
 
-            if (buyLabel != null) buyLabel.text = soldOut ? "Sold out" : "Buy";
-            if (buyButton != null)
+            if (button == null) button = GetComponentInChildren<Button>(true);
+            if (button != null)
             {
-                // Still clickable when too expensive, so pressing it can say how much more is needed.
-                buyButton.interactable = !soldOut;
-                buyButton.onClick.RemoveAllListeners();
-                buyButton.onClick.AddListener(onBuy);
+                // Still clickable when too expensive, so clicking can say how much more is needed.
+                button.interactable = !soldOut;
+                button.onClick.RemoveAllListeners();
+                button.onClick.AddListener(onBuy);
             }
         }
     }

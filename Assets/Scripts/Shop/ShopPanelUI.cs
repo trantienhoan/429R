@@ -8,7 +8,7 @@ namespace Game.Shopping
 {
     /// <summary>
     /// The world-space shop panel. One lives in the scene, on the right hand like the inventory on the left;
-    /// a Shop borrows it while open. Buttons work with poke and ray.
+    /// a Shop borrows it while open. It lists what's on sale; clicking a row buys it, with poke or ray.
     /// </summary>
     public class ShopPanelUI : MonoBehaviour
     {
@@ -112,19 +112,19 @@ namespace Game.Shopping
             }
             if (currencyCount != null) currencyCount.text = currency != null ? $"You have {money} {currency.DisplayName}" : "";
 
+            // Only what's on sale right now; the shop picks new items every few minutes.
             var entries = catalog.Entries;
-            while (rows.Count < entries.Count)
+            var onSale = Owner.OnSale;
+            while (rows.Count < onSale.Count)
                 rows.Add(Instantiate(rowTemplate, rowParent));
 
             for (int i = 0; i < rows.Count; i++)
             {
-                bool used = i < entries.Count && entries[i].item != null;
+                int index = i < onSale.Count ? onSale[i] : -1;
+                var entry = index >= 0 && index < entries.Count ? entries[index] : null;
+                bool used = entry != null && entry.item != null;
                 rows[i].gameObject.SetActive(used);
-                if (!used) continue;
-
-                int index = i;
-                var entry = entries[i];
-                rows[i].Set(entry.item, entry.price, currency, Owner.IsSoldOut(entry), money >= entry.price, () => OnBuyClicked(index));
+                if (used) rows[i].Set(entry.item, entry.price, currency, Owner.IsSoldOut(entry), money >= entry.price, () => OnBuyClicked(index));
             }
         }
 

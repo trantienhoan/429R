@@ -18,6 +18,13 @@ namespace Game.EditorTools
         private const string DefaultCatalogPath = "Assets/Data/Shop/Candy Shop.asset";
         private const string FirstItemPrefabPath = "Assets/Prefabs/Weapon/Hammer_Tool.prefab";
         private const int DefaultPrice = 5;
+        // Smallest size a row's text shrinks to, e.g. to fit a long name onto two lines.
+        private const float MinRowFontSize = 14f;
+        // The panel's layout: rows are this tall, with the title and money line above them and the status line below.
+        private const float RowHeight = 52f;
+        private const float RowSpacing = 6f;
+        private const float RowsTop = 98f;
+        private const float RowsBottom = 50f;
 
         [MenuItem("Tools/429 Game/Shop/Set Up Candy Shop")]
         public static void SetUpCandyShop()
@@ -44,7 +51,7 @@ namespace Game.EditorTools
             var panel = Object.FindAnyObjectByType<ShopPanelUI>(FindObjectsInactive.Include);
             if (panel == null)
             {
-                panel = CreatePanel(shop.transform, font);
+                panel = CreatePanel(shop.transform, font, RowsShown(shop));
                 notes.Add("created its panel");
             }
             else if (SetupUtility.AssignMissingFonts(panel, font) > 0)
@@ -70,6 +77,57 @@ namespace Game.EditorTools
             Selection.activeObject = catalog;
             Debug.Log("[Shop Setup] Done: " + (notes.Count > 0 ? string.Join("; ", notes) : "everything was already set up") +
                       $". Edit what it sells in '{AssetDatabase.GetAssetPath(catalog)}', then save the scene.");
+        }
+
+        /// <summary>
+        /// Replaces the shop panel with a new one in the same place on the hand, sized for the shop's Items On Sale.
+        /// For panels made by older versions, or after changing Items On Sale.
+        /// </summary>
+        [MenuItem("Tools/429 Game/Shop/Rebuild Shop Panel")]
+        public static void RebuildShopPanel()
+        {
+            var shop = Object.FindAnyObjectByType<Shop>(FindObjectsInactive.Include);
+            if (shop == null)
+            {
+                Debug.LogError("[Shop Setup] Run Tools > 429 Game > Shop > Set Up Candy Shop first.");
+                return;
+            }
+
+            // One undo step for the whole rebuild.
+            Undo.IncrementCurrentGroup();
+            Undo.SetCurrentGroupName("Rebuild Shop Panel");
+            int undoGroup = Undo.GetCurrentGroup();
+
+            var old = Object.FindAnyObjectByType<ShopPanelUI>(FindObjectsInactive.Include);
+            var panel = CreatePanel(old != null ? old.transform.parent : shop.transform, SetupUtility.ResolveFont(), RowsShown(shop));
+            if (old != null)
+            {
+                // Where the old one was, growing or shrinking from its bottom edge like the old one would.
+                var from = (RectTransform)old.transform;
+                var to = (RectTransform)panel.transform;
+                to.SetSiblingIndex(from.GetSiblingIndex());
+                to.pivot = from.pivot;
+                to.localPosition = from.localPosition;
+                to.localRotation = from.localRotation;
+                to.localScale = from.localScale;
+                Undo.DestroyObjectImmediate(old.gameObject);
+            }
+            else if (shop.Hand != null)
+            {
+                panel.PutOnHand(shop.Hand);
+            }
+            SetupUtility.SetReference(shop, "panel", panel);
+
+            Undo.CollapseUndoOperations(undoGroup);
+            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+            Debug.Log($"[Shop Setup] Rebuilt the shop panel with room for {RowsShown(shop)} items. Save the scene to keep it.", panel);
+        }
+
+        [MenuItem("Tools/429 Game/Shop/Rebuild Shop Panel", true)]
+        private static bool CanRebuildShopPanel()
+        {
+            // Changes made while playing are thrown away.
+            return !EditorApplication.isPlaying;
         }
 
         [MenuItem("Tools/429 Game/Shop/Add Selected Prefabs To Shop")]
@@ -158,6 +216,25 @@ namespace Game.EditorTools
             return catalog;
         }
 
+        // Rows the panel has room for: the items on sale at once, or the whole catalog if everything is.
+        private static int RowsShown(Shop shop)
+        {
+            if (shop.ItemsOnSale > 0) return shop.ItemsOnSale;
+            return shop.Catalog != null ? Mathf.Max(1, shop.Catalog.Entries.Count) : 1;
+        }
+
+        // The row is the Buy button: faint until pointed at or poked.
+        private static ColorBlock RowColors()
+        {
+            var colors = ColorBlock.defaultColorBlock;
+            colors.normalColor = new Color(1f, 1f, 1f, 0.08f);
+            colors.highlightedColor = new Color(1f, 1f, 1f, 0.2f);
+            colors.pressedColor = new Color(1f, 1f, 1f, 0.32f);
+            colors.selectedColor = colors.normalColor;
+            colors.disabledColor = new Color(1f, 1f, 1f, 0.03f);
+            return colors;
+        }
+
         private static ItemDefinition FindCurrency()
         {
             ItemDefinition lowest = null;
@@ -169,10 +246,12 @@ namespace Game.EditorTools
             return lowest;
         }
 
-        private static ShopPanelUI CreatePanel(Transform parent, TMP_FontAsset font)
+        private static ShopPanelUI CreatePanel(Transform parent, TMP_FontAsset font, int rowCount)
         {
+            // Exactly as tall as rowCount rows, which never shrink: text too tall for its row isn't drawn.
+            float height = RowsTop + RowsBottom + rowCount * RowHeight + Mathf.Max(0, rowCount - 1) * RowSpacing;
             // Resized when it's put on the hand (ShopPanelUI.PutOnHand).
-            var rect = SetupUtility.CreateWorldCanvas("Shop Panel", parent, new Vector2(420f, 330f), new Color(0.1f, 0.07f, 0.16f, 0.92f));
+            var rect = SetupUtility.CreateWorldCanvas("Shop Panel", parent, new Vector2(420f, height), new Color(0.1f, 0.07f, 0.16f, 0.92f));
 
             var title = SetupUtility.CreateText("Title", rect, "Candy Shop", 30f, TextAlignmentOptions.Left, FontStyles.Bold, font);
             SetupUtility.TopBand(title.rectTransform, 10f, 44f, 16f, 70f);
@@ -201,17 +280,22 @@ namespace Game.EditorTools
             SetupUtility.SetLayout(moneyText.gameObject, flexibleWidth: 1f);
 
             var rows = SetupUtility.CreateRect("Rows", rect);
-            SetupUtility.Stretch(rows, new Vector2(12f, 50f), new Vector2(-12f, -98f));
+            SetupUtility.Stretch(rows, new Vector2(12f, RowsBottom), new Vector2(-12f, -RowsTop));
             var list = rows.gameObject.AddComponent<VerticalLayoutGroup>();
-            list.spacing = 6f;
+            list.spacing = RowSpacing;
             list.childAlignment = TextAnchor.UpperLeft;
             list.childControlWidth = true;
             list.childControlHeight = true;
             list.childForceExpandWidth = true;
             list.childForceExpandHeight = false;
 
-            var row = SetupUtility.CreateImage("Row Template", rows, new Color(1f, 1f, 1f, 0.06f));
-            SetupUtility.SetLayout(row.gameObject, preferredHeight: 52f);
+            // The whole row is the Buy button.
+            var row = SetupUtility.CreateImage("Row Template", rows, Color.white);
+            row.raycastTarget = true;
+            var rowButton = row.gameObject.AddComponent<Button>();
+            rowButton.targetGraphic = row;
+            rowButton.colors = RowColors();
+            SetupUtility.SetLayout(row.gameObject, preferredHeight: RowHeight).minHeight = RowHeight;
             var line = row.gameObject.AddComponent<HorizontalLayoutGroup>();
             line.padding = new RectOffset(8, 8, 4, 4);
             line.spacing = 10f;
@@ -231,16 +315,15 @@ namespace Game.EditorTools
             SetupUtility.SetLayout(priceIcon.gameObject, preferredWidth: 26f);
             var price = SetupUtility.CreateText("Price", row.transform, "0", 22f, TextAlignmentOptions.Right, FontStyles.Bold, font);
             SetupUtility.SetLayout(price.gameObject, preferredWidth: 56f);
-            var buy = SetupUtility.CreateButton("Buy", row.transform, "Buy", 22f, font, new Color(0.3f, 0.58f, 0.32f, 1f));
-            SetupUtility.SetLayout(buy.gameObject, preferredWidth: 110f);
 
             var rowView = row.gameObject.AddComponent<ShopItemRow>();
             SetupUtility.SetReference(rowView, "icon", icon);
             SetupUtility.SetReference(rowView, "label", label);
             SetupUtility.SetReference(rowView, "priceIcon", priceIcon);
             SetupUtility.SetReference(rowView, "price", price);
-            SetupUtility.SetReference(rowView, "buyButton", buy);
-            SetupUtility.SetReference(rowView, "buyLabel", buy.GetComponentInChildren<TextMeshProUGUI>());
+            SetupUtility.SetReference(rowView, "button", rowButton);
+            foreach (var text in row.GetComponentsInChildren<TMP_Text>(true))
+                SetupUtility.ShrinkToFit(text, MinRowFontSize);
             row.gameObject.SetActive(false);
 
             var status = SetupUtility.CreateText("Status", rect, "", 20f, TextAlignmentOptions.Center, FontStyles.Italic, font);
