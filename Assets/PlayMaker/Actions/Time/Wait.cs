@@ -21,6 +21,7 @@ namespace HutongGames.PlayMaker.Actions
 
         private float startTime;
         private float timer;
+        private float lastRealtime;
 
         public override void Reset()
         {
@@ -39,6 +40,7 @@ namespace HutongGames.PlayMaker.Actions
             }
 
             startTime = FsmTime.RealtimeSinceStartup;
+            lastRealtime = startTime;
             timer = 0f;
         }
 
@@ -48,7 +50,11 @@ namespace HutongGames.PlayMaker.Actions
 
             if (realTime)
             {
-                timer = FsmTime.RealtimeSinceStartup - startTime;
+                // 429 Game: real time still stops while the game is paused (the pause menu sets time scale 0).
+                var now = FsmTime.RealtimeSinceStartup;
+                if (Time.timeScale == 0f) startTime += now - lastRealtime;
+                lastRealtime = now;
+                timer = now - startTime;
             }
             else
             {

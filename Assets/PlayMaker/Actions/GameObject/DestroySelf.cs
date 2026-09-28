@@ -43,7 +43,8 @@ namespace HutongGames.PlayMaker.Actions
 
         public override void OnUpdate()
         {
-            elapsedTime += realTime.Value ? Time.unscaledDeltaTime : Time.deltaTime;
+            // 429 Game: real time still stops while the game is paused (the pause menu sets time scale 0).
+            elapsedTime += realTime.Value && Time.timeScale > 0f ? Time.unscaledDeltaTime : Time.deltaTime;
 
             if (elapsedTime > delay.Value)
             {
