@@ -21168,6 +21168,7 @@ GameObject:
   - component: {fileID: 3156849467147980000}
   - component: {fileID: 9065320675508524504}
   - component: {fileID: 7222422428585285325}
+  - component: {fileID: 613111296251371852}
   m_Layer: 0
   m_Name: Elon_Boong
   m_TagString: Weapon
@@ -23033,3 +23034,22 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.109049916, y: 0.07975426, z: 0.10510332}
   m_Center: {x: -0.26189044, y: 0.24987428, z: 0}
+--- !u!114 &613111296251371852
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8652957619629149998}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 982a9014cc7640d408db134d5e3bdf8f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Weapons.HitRumble
+  minHitSpeed: 1
+  fullHitSpeed: 12
+  minStrength: 0.2
+  maxStrength: 1
+  duration: 0.06
+  cooldown: 0.08
+  ignoreTag: Player

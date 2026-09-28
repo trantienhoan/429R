@@ -1917,6 +1917,7 @@ GameObject:
   - component: {fileID: 7242511437987380929}
   - component: {fileID: 5232327368596469220}
   - component: {fileID: 3764571815948920214}
+  - component: {fileID: 7627449132777865989}
   m_Layer: 0
   m_Name: Boong_Gun
   m_TagString: Weapon
@@ -3510,6 +3511,25 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &7627449132777865989
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4098069887184717952}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 982a9014cc7640d408db134d5e3bdf8f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Weapons.HitRumble
+  minHitSpeed: 1
+  fullHitSpeed: 12
+  minStrength: 0.2
+  maxStrength: 1
+  duration: 0.06
+  cooldown: 0.08
+  ignoreTag: Player
 --- !u!1 &4695882866860672089
 GameObject:
   m_ObjectHideFlags: 0

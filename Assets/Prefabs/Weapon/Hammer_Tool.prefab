@@ -5216,6 +5216,7 @@ GameObject:
   - component: {fileID: 9127762408819454023}
   - component: {fileID: 6417217773428796678}
   - component: {fileID: 1129846277705831138}
+  - component: {fileID: 1614799444158985349}
   m_Layer: 0
   m_Name: Hammer_Tool
   m_TagString: Weapon
@@ -6925,6 +6926,25 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &1614799444158985349
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4337052619155732277}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 982a9014cc7640d408db134d5e3bdf8f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Weapons.HitRumble
+  minHitSpeed: 1
+  fullHitSpeed: 12
+  minStrength: 0.2
+  maxStrength: 1
+  duration: 0.06
+  cooldown: 0.08
+  ignoreTag: Player
 --- !u!1 &5546693805270308101
 GameObject:
   m_ObjectHideFlags: 0

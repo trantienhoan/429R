@@ -56,7 +56,7 @@ namespace Game.EditorTools
                 : $"[Hit Rumble] Nothing to add in {where}: {skipped} prefab(s) are not grabbable or already have it.");
         }
 
-        private static List<string> SelectedPrefabPaths()
+        internal static List<string> SelectedPrefabPaths()
         {
             var paths = new List<string>();
             foreach (var go in Selection.gameObjects)
