@@ -58,12 +58,14 @@ namespace Game.Steam
         {
             // Delivers Steam's callbacks (overlay, achievements, ...).
             SteamAPI.RunCallbacks();
+            SteamAchievements.Tick();
         }
 
         private void OnApplicationQuit()
         {
             if (!Initialized) return;
 
+            SteamAchievements.StoreIfChanged();
             Initialized = false;
             SteamAPI.Shutdown();
         }
