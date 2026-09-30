@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 8786968648070198742}
   - component: {fileID: 8936392465128817784}
   - component: {fileID: 2734521681106384096}
+  - component: {fileID: 6795146455033462591}
   m_Layer: 0
   m_Name: TheCockroach
   m_TagString: Enemy
@@ -3515,6 +3516,31 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &6795146455033462591
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1466277309599601579}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3fa9bbce902d9de4989faa4be958db6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.EnemyHitDamage
+  settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
+  toughness: 1.5
+  hitCooldown: 0.3
+  knockBack: 1
+  knockBackDistance: 2.5
+  knockBackTime: 0.45
+  knockBackHop: 0.25
+  knockBackStun: 0.3
+  healthFsm: 
+  healthVariable: health
+  hitEvent: Damage
+  weakHitEvent: ShakeSmall
+  oldDamageFsm: Damage
 --- !u!1 &4879972247851213296
 GameObject:
   m_ObjectHideFlags: 0

@@ -436,6 +436,7 @@ GameObject:
   - component: {fileID: 8348204434708633933}
   - component: {fileID: 8922285488058878979}
   - component: {fileID: 2339789665815214870}
+  - component: {fileID: 4065114345562650264}
   m_Layer: 0
   m_Name: Flea
   m_TagString: Enemy
@@ -3623,6 +3624,31 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.2
   m_Center: {x: 0, y: 0.15, z: -0.06}
+--- !u!114 &4065114345562650264
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 599697807037671329}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3fa9bbce902d9de4989faa4be958db6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.EnemyHitDamage
+  settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
+  toughness: 1
+  hitCooldown: 0.3
+  knockBack: 1
+  knockBackDistance: 1.5
+  knockBackTime: 0.45
+  knockBackHop: 0.25
+  knockBackStun: 0.3
+  healthFsm: 
+  healthVariable: health
+  hitEvent: Damage
+  weakHitEvent: ShakeSmall
+  oldDamageFsm: Damage
 --- !u!1 &701114902661452399
 GameObject:
   m_ObjectHideFlags: 0

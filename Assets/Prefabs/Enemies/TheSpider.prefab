@@ -6089,6 +6089,7 @@ GameObject:
   - component: {fileID: 8710872455122453196}
   - component: {fileID: 6751385551715590777}
   - component: {fileID: 1315112603149819992}
+  - component: {fileID: 7242540530994736258}
   m_Layer: 0
   m_Name: TheSpider
   m_TagString: Enemy
@@ -9559,6 +9560,31 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &7242540530994736258
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3569810238917063108}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3fa9bbce902d9de4989faa4be958db6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.EnemyHitDamage
+  settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
+  toughness: 1.5
+  hitCooldown: 0.3
+  knockBack: 1
+  knockBackDistance: 2.5
+  knockBackTime: 0.45
+  knockBackHop: 0.25
+  knockBackStun: 0.3
+  healthFsm: 
+  healthVariable: health
+  hitEvent: Damage
+  weakHitEvent: ShakeSmall
+  oldDamageFsm: Damage
 --- !u!1 &3625774751695929217
 GameObject:
   m_ObjectHideFlags: 0
