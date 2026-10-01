@@ -51,15 +51,20 @@ namespace Game.EditorTools
             EditorUtility.RevealInFinder(File.Exists(SaveManager.SavePath) ? SaveManager.SavePath : SaveManager.SaveFolder);
         }
 
+        // Deletes the Local save and every Steam ID's: deleting just one, the Local save would be copied back in.
+        // Steam Cloud keeps its own copy, which the Steam version downloads again unless the save is deleted while the
+        // game is running from Steam.
         [MenuItem("Tools/429 Game/Save/Delete Save")]
         public static void DeleteSave()
         {
             if (!EditorUtility.DisplayDialog("Delete Save",
-                    $"Delete the save in\n{SaveManager.SaveFolder}?\n\nThe next play starts with no candies.", "Delete", "Cancel"))
+                    $"Delete every save in\n{SaveManager.SavesRoot}\n(Local and Steam)?\n\nThe next play starts with no candies. " +
+                    "Steam Cloud keeps its copy: to clear that too, delete the save while the game is running from Steam.",
+                    "Delete", "Cancel"))
                 return;
 
-            int deleted = SaveManager.DeleteSaveFiles();
-            Debug.Log(deleted > 0 ? $"[Save Setup] Deleted the save in '{SaveManager.SaveFolder}'." : "[Save Setup] There was no save to delete.");
+            int deleted = SaveManager.DeleteAllSaveFiles();
+            Debug.Log(deleted > 0 ? $"[Save Setup] Deleted {deleted} save file(s) in '{SaveManager.SavesRoot}'." : "[Save Setup] There was no save to delete.");
         }
 
         // While playing, the running game would write the save straight back.

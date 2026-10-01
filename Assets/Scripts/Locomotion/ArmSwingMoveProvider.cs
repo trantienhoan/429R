@@ -12,6 +12,7 @@ namespace Game.Locomotion
     /// speed until you reach Move Speed (on the 4th swing by default).
     /// By default you hold X on the left controller while swinging, so fighting never walks you anywhere. Without the
     /// button, only alternating swings count (one arm forward while the other goes back), which a weapon swing isn't.
+    /// Players pick hold X, no button or off in the pause menu; the choice is remembered on their device.
     /// It's a Continuous Move Provider, so walls, the character controller, gravity and pause work just like the
     /// thumbstick; its Left/Right Hand Move Input fields aren't used. Tools > 429 Game > Locomotion > Set Up Arm Swing adds it.
     /// </summary>
@@ -23,6 +24,16 @@ namespace Game.Locomotion
             Hands,
         }
 
+        public enum SwingMode
+        {
+            /// <summary>Only swings made while holding the button walk you.</summary>
+            HoldButton,
+            /// <summary>No button; only alternating swings walk you.</summary>
+            NoButton,
+            /// <summary>Arm swinging never walks you.</summary>
+            Off,
+        }
+
         private enum HandSwing
         {
             Still,
@@ -32,9 +43,12 @@ namespace Game.Locomotion
 
         // Letting go of the button stops you this quickly, in seconds.
         private const float ReleaseStopTime = 0.1f;
+        // Where the player's choice from the pause menu is kept (PlayerPrefs, so per device).
+        private const string ModeKey = "429 Game.ArmSwingMode";
 
         [Header("Arm Swing")]
-        [Tooltip("On: only swings made while holding the button move you. Off: no button, but only alternating swings count.")]
+        [Tooltip("How it starts for a new player. On: only swings made while holding the button move you. Off: no button, " +
+                 "but only alternating swings count. Players can change it in the pause menu.")]
         [SerializeField] private bool requireButton = true;
         [Tooltip("The button to hold while swinging. Defaults to X on the left controller.")]
         [SerializeField] private InputActionProperty swingButton = new(new InputAction("Arm Swing", InputActionType.Button, "<XRController>{LeftHand}/primaryButton"));
@@ -76,9 +90,25 @@ namespace Game.Locomotion
         private HandSwing rightSwing;
         private int swingCount;
         private float lastSwingTime;
+        private SwingMode mode;
 
         /// <summary>How fast you're walking right now, from 0 to 1 (1 = full Move Speed).</summary>
         public float SwingAmount => amount;
+
+        /// <summary>Hold the button, no button, or off. Remembered on this device when changed.</summary>
+        public SwingMode Mode
+        {
+            get => mode;
+            set
+            {
+                if (mode == value) return;
+
+                mode = value;
+                PlayerPrefs.SetInt(ModeKey, (int)value);
+                PlayerPrefs.Save();
+                ResetBuildUp();
+            }
+        }
 
         /// <summary>How far the walk has built up, from 0 (just started) to 1 (full speed allowed).</summary>
         public float BuildUp
@@ -98,6 +128,9 @@ namespace Game.Locomotion
             leftHandMoveInput.inputSourceMode = XRInputValueReader.InputSourceMode.ManualValue;
             leftHandMoveInput.manualValue = Vector2.zero;
             rightHandMoveInput.inputSourceMode = XRInputValueReader.InputSourceMode.Unused;
+
+            int saved = PlayerPrefs.GetInt(ModeKey, (int)(requireButton ? SwingMode.HoldButton : SwingMode.NoButton));
+            mode = saved >= (int)SwingMode.HoldButton && saved <= (int)SwingMode.Off ? (SwingMode)saved : SwingMode.HoldButton;
         }
 
         protected new void OnEnable()
@@ -126,9 +159,9 @@ namespace Game.Locomotion
         {
             var origin = mediator != null ? mediator.xrOrigin : null;
             float deltaTime = Time.deltaTime;
-            if (deltaTime <= 0f || origin == null || !FindParts(origin))
+            if (mode == SwingMode.Off || deltaTime <= 0f || origin == null || !FindParts(origin))
             {
-                // Paused or no rig: measure afresh afterwards, so hands moved in the meantime don't count as a swing.
+                // Off, paused or no rig: measure afresh afterwards, so hands moved in the meantime don't count as a swing.
                 tracking = false;
                 if (deltaTime > 0f) amount = 0f;
                 return amount;
@@ -141,7 +174,7 @@ namespace Game.Locomotion
             var left = originTransform.InverseTransformPoint(leftHand.position) - headPosition;
             var right = originTransform.InverseTransformPoint(rightHand.position) - headPosition;
 
-            bool held = !requireButton || (swingButton.action != null && swingButton.action.IsPressed());
+            bool held = mode != SwingMode.HoldButton || (swingButton.action != null && swingButton.action.IsPressed());
             if (!held || Time.time - lastSwingTime > swingGap) ResetBuildUp();
 
             float target = 0f;
@@ -176,7 +209,7 @@ namespace Game.Locomotion
         // Walking swings go forward and back, and up and down; sideways hand movement doesn't count.
         private float SwingSpeed(Vector3 leftVelocity, Vector3 rightVelocity, Vector3 forward)
         {
-            if (requireButton)
+            if (mode == SwingMode.HoldButton)
             {
                 float leftSpeed = new Vector2(Vector3.Dot(leftVelocity, forward), leftVelocity.y).magnitude;
                 float rightSpeed = new Vector2(Vector3.Dot(rightVelocity, forward), rightVelocity.y).magnitude;

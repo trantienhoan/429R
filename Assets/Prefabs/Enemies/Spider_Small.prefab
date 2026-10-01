@@ -6011,6 +6011,7 @@ GameObject:
   - component: {fileID: 2054824213020782847}
   - component: {fileID: 6146758334872997403}
   - component: {fileID: 3929055599984753810}
+  - component: {fileID: 7828923186907532034}
   m_Layer: 0
   m_Name: Spider_Small
   m_TagString: Enemy
@@ -6409,13 +6410,13 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {x: 0.4, y: 0.4, z: 0.4}
+          value: {x: 0.5, y: 0.5, z: 0.5}
         - useVariable: 0
           name: 
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {x: 0.5, y: 0.5, z: 0.5}
+          value: {x: 0.6, y: 0.6, z: 0.6}
         fsmColorParams: []
         fsmRectParams: []
         fsmQuaternionParams: []
@@ -8520,7 +8521,7 @@ MonoBehaviour:
         tooltip: 
         showInInspector: 1
         networkSync: 0
-        value: 1
+        value: 5
       - useVariable: 1
         name: collisionForce
         tooltip: 
@@ -9255,7 +9256,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.EnemyHitDamage
   settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
-  toughness: 1
+  toughness: 1.5
   hitCooldown: 0.3
   knockBack: 1
   knockBackDistance: 1.5
@@ -9267,6 +9268,19 @@ MonoBehaviour:
   hitEvent: Damage
   weakHitEvent: ShakeSmall
   oldDamageFsm: Damage
+--- !u!114 &7828923186907532034
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3569810238917063108}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2de34414ec018dc4eae27076b0e24005, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Enemies.LandOnNavMesh
+  searchRadius: 10
 --- !u!1 &3625774751695929217
 GameObject:
   m_ObjectHideFlags: 0

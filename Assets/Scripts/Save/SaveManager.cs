@@ -54,7 +54,9 @@ namespace Game.Saving
         /// </summary>
         public static string Profile { get; set; } = DefaultProfile;
 
-        public static string SaveFolder => Path.Combine(Application.persistentDataPath, "Saves", Profile);
+        /// <summary>The folder holding every player's save folder ("Local", and one per Steam ID).</summary>
+        public static string SavesRoot => Path.Combine(Application.persistentDataPath, "Saves");
+        public static string SaveFolder => Path.Combine(SavesRoot, Profile);
         public static string SavePath => Path.Combine(SaveFolder, FileName);
         private static string BackupPath => SavePath + ".bak";
 
@@ -73,7 +75,7 @@ namespace Game.Saving
         {
             if (string.IsNullOrEmpty(profile)) return;
 
-            string localSave = Path.Combine(Application.persistentDataPath, "Saves", DefaultProfile, FileName);
+            string localSave = Path.Combine(SavesRoot, DefaultProfile, FileName);
             Profile = profile;
             if (File.Exists(SavePath) || !File.Exists(localSave)) return;
 
@@ -98,6 +100,28 @@ namespace Game.Saving
                 if (!File.Exists(path)) continue;
                 File.Delete(path);
                 deleted++;
+            }
+            return deleted;
+        }
+
+        /// <summary>
+        /// Deletes every player's save on this computer (Local and each Steam ID folder), with its backups. Deleting only
+        /// one isn't enough: a Steam player with no save gets the Local one copied in. Returns how many files were deleted.
+        /// </summary>
+        public static int DeleteAllSaveFiles()
+        {
+            if (!Directory.Exists(SavesRoot)) return 0;
+
+            int deleted = 0;
+            foreach (var folder in Directory.GetDirectories(SavesRoot))
+            {
+                foreach (var suffix in new[] { "", ".bak", ".tmp", ".damaged" })
+                {
+                    string path = Path.Combine(folder, FileName + suffix);
+                    if (!File.Exists(path)) continue;
+                    File.Delete(path);
+                    deleted++;
+                }
             }
             return deleted;
         }

@@ -15,12 +15,11 @@ namespace HutongGames.PlayMaker.Actions
         [Tooltip("Punch magnitude.")]
         public FsmVector3 value;
 
+        // The punch is added on top of the object's own movement, and taken back off if the state is left early,
+        // so nothing gets stuck where the punch started (same as the patched Tween Punch).
         private Transform transform;
-        private Vector3 startVector3;
-        private Vector3 endVector3;
-        private Quaternion startRotation;
-        private Quaternion midRotation;
-        private Quaternion endRotation;
+        private Vector3 appliedVector3;
+        private Quaternion appliedRotation = Quaternion.identity;
 
         public override void Reset()
         {
@@ -36,44 +35,40 @@ namespace HutongGames.PlayMaker.Actions
 
             easeType.Value = EasingFunction.Ease.Punch;
             transform = cachedComponent;
-
-            switch (punchType)
-            {
-                case TweenPunch.PunchType.Position:
-                    startVector3 = transform.localPosition;
-                    endVector3 = startVector3 + value.Value;
-                    break;
-                case TweenPunch.PunchType.Rotation:
-                    startRotation = transform.localRotation;
-                    midRotation = startRotation * Quaternion.Euler(value.Value * 0.5f);
-                    endRotation = startRotation * Quaternion.Euler(value.Value);
-                    break;
-                case TweenPunch.PunchType.Scale:
-                    startVector3 = transform.localScale;
-                    endVector3 = startVector3 + value.Value;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+            appliedVector3 = Vector3.zero;
+            appliedRotation = Quaternion.identity;
         }
 
-        // Same motion as Tween Punch, only on the local values.
+        // Same motion as Tween Punch, only on the local values. Clamped like Tween Punch: one way only.
         protected override void DoTween()
         {
-            var lerp = easingFunction(0, 1, normalizedTime);
+            SetPunch(Mathf.Clamp01(easingFunction(0, 1, normalizedTime)));
+        }
 
+        public override void OnExit()
+        {
+            if (transform != null) SetPunch(0f);
+        }
+
+        // Moves the object by the change in punch since last time, so its own movement carries on underneath.
+        private void SetPunch(float amount)
+        {
             switch (punchType)
             {
                 case TweenPunch.PunchType.Position:
-                    transform.localPosition = Vector3.Lerp(startVector3, endVector3, lerp);
+                    var offset = value.Value * amount;
+                    transform.localPosition += offset - appliedVector3;
+                    appliedVector3 = offset;
                     break;
                 case TweenPunch.PunchType.Rotation:
-                    transform.localRotation = lerp < 0.5f
-                        ? Quaternion.Slerp(startRotation, midRotation, lerp * 2f)
-                        : Quaternion.Slerp(midRotation, endRotation, (lerp - 0.5f) * 2f);
+                    var rotation = Quaternion.Euler(value.Value * amount);
+                    transform.localRotation = transform.localRotation * Quaternion.Inverse(appliedRotation) * rotation;
+                    appliedRotation = rotation;
                     break;
                 case TweenPunch.PunchType.Scale:
-                    transform.localScale = Vector3.Lerp(startVector3, endVector3, lerp);
+                    var grow = value.Value * amount;
+                    transform.localScale += grow - appliedVector3;
+                    appliedVector3 = grow;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();

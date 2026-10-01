@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Game.Enemies;
 using UnityEngine;
+using UnityEngine.AI;
 using FsmFloat = HutongGames.PlayMaker.FsmFloat;
 
 namespace Game.Combat
@@ -12,6 +13,9 @@ namespace Game.Combat
     /// (the numbers are in the Hit Settings asset). It lowers the "health" variable of the enemy's Health FSM, which
     /// already watches it, sends "Damage" (or "ShakeSmall" for weak hits) so the enemy's hit reactions play, and
     /// switches off the enemy's old "Damage" FSM so hits aren't counted twice.
+    /// Once the health runs out, however it happened, more hits are ignored and the enemy's NavMesh agent is held
+    /// still: the death states switch off the FSM that walks the enemy, but not the agent, which would carry the body
+    /// on along its last path.
     /// Tools > 429 Game > Combat > Set Up Hit Damage adds it.
     /// </summary>
     [DisallowMultipleComponent]
@@ -62,8 +66,10 @@ namespace Game.Combat
         private readonly List<PlayMakerFSM> fsms = new();
         private FsmFloat health;
         private Knockback knockback;
+        private NavMeshAgent agent;
         private float nextHit;
         private float nextFlinch;
+        private bool dead;
 
         /// <summary>Raised after every hit that hurts an enemy: the enemy, and what the hit did.</summary>
         public static event Action<EnemyHitDamage, HitResult> AnyHit;
@@ -91,12 +97,25 @@ namespace Game.Combat
 
             if (health == null)
                 Debug.LogWarning($"[Hit Damage] '{name}' has no Health FSM with a \"{healthVariable}\" variable, so hits can't hurt it.", this);
+
+            TryGetComponent(out agent);
+        }
+
+        // The Health FSM plays the death itself (it watches the health every frame); this only keeps the body still.
+        private void Update()
+        {
+            if (!dead)
+            {
+                if (health == null || health.Value > 0f) return;
+                dead = true;
+            }
+            HoldStill();
         }
 
         // The enemy's Rigidbody gets the collisions of all its colliders, so any part of it can be hit.
         private void OnCollisionEnter(Collision collision)
         {
-            if (health == null || Time.time < nextHit) return;
+            if (health == null || dead || Time.time < nextHit) return;
 
             float power = collision.relativeVelocity.magnitude * WeaponPower.Of(collision) / toughness;
             var hit = (settings != null ? settings : HitSettings.Defaults).Evaluate(power);
@@ -114,9 +133,30 @@ namespace Game.Combat
 
             health.Value -= hit.Damage;
             nextHit = Time.time + hitCooldown;
+            // The killing blow still plays the hit reaction (sound and sparks); the Health FSM's death state switches
+            // that FSM off later this frame.
             Send(hitEvent);
+            if (health.Value <= 0f)
+            {
+                dead = true;
+                HoldStill();
+            }
+            // A big killing blow still knocks the body back: Knockback moves the agent itself, which works while it's held.
             if (hit.IsBig && knockBack) KnockBackFromPlayer();
             AnyHit?.Invoke(this, hit);
+        }
+
+        // Every frame once dead, in case an FSM that's still running sets the agent walking again.
+        private void HoldStill()
+        {
+            if (agent == null || !agent.enabled || !agent.isOnNavMesh) return;
+
+            if (!agent.isStopped)
+            {
+                agent.isStopped = true;
+                agent.ResetPath();
+            }
+            agent.velocity = Vector3.zero;
         }
 
         private void KnockBackFromPlayer()

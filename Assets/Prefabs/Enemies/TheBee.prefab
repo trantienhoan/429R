@@ -7161,9 +7161,10 @@ GameObject:
   - component: {fileID: 6171928654621168480}
   - component: {fileID: 7650757524378202297}
   - component: {fileID: 3393467563725772781}
+  - component: {fileID: 544292593974196251}
   m_Layer: 0
   m_Name: TheBee
-  m_TagString: Enemy
+  m_TagString: Monster
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -9822,7 +9823,7 @@ MonoBehaviour:
         tooltip: 
         showInInspector: 1
         networkSync: 0
-        value: 6
+        value: 21
       - useVariable: 1
         name: collisionForce
         tooltip: 
@@ -10737,10 +10738,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.EnemyHitDamage
   settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
-  toughness: 1.5
+  toughness: 5
   hitCooldown: 0.3
   knockBack: 1
-  knockBackDistance: 2.5
+  knockBackDistance: 1.5
   knockBackTime: 0.45
   knockBackHop: 0.25
   knockBackStun: 0.3
@@ -10749,6 +10750,19 @@ MonoBehaviour:
   hitEvent: Damage
   weakHitEvent: ShakeSmall
   oldDamageFsm: Damage
+--- !u!114 &544292593974196251
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5493437295386993518}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2de34414ec018dc4eae27076b0e24005, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Enemies.LandOnNavMesh
+  searchRadius: 10
 --- !u!1 &5495325056223515303
 GameObject:
   m_ObjectHideFlags: 0

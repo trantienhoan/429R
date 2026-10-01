@@ -269,15 +269,15 @@ namespace Net.FabreJean.UnityEditor
 		{
 			foreach (BuildTargetGroup group in Enum.GetValues(typeof(BuildTargetGroup)))
 			{
-				if (!IsValidBuildTargetGroup(group)) continue;
+				if (!IsValidBuildTargetGroup(group) || !TryGetNamedBuildTarget(group, out var target)) continue;
 
-				var defineSymbols = PlayerSettings.GetScriptingDefineSymbolsForGroup(group).Split(';').Select(d => d.Trim()).ToList();
+				var defineSymbols = PlayerSettings.GetScriptingDefineSymbols(target).Split(';').Select(d => d.Trim()).ToList();
 				if (!defineSymbols.Contains(defineSymbol))
 				{
 					defineSymbols.Add(defineSymbol);
 					try
 					{
-						PlayerSettings.SetScriptingDefineSymbolsForGroup(group, string.Join(";", defineSymbols.ToArray()));
+						PlayerSettings.SetScriptingDefineSymbols(target, string.Join(";", defineSymbols.ToArray()));
 					}
 					catch (Exception)
 					{
@@ -296,14 +296,30 @@ namespace Net.FabreJean.UnityEditor
 		{
 			foreach (BuildTargetGroup group in Enum.GetValues(typeof(BuildTargetGroup)))
 			{
-				if (!IsValidBuildTargetGroup(group)) continue;
+				if (!IsValidBuildTargetGroup(group) || !TryGetNamedBuildTarget(group, out var target)) continue;
 
-				var defineSymbols = PlayerSettings.GetScriptingDefineSymbolsForGroup(group).Split(';').Select(d => d.Trim()).ToList();
+				var defineSymbols = PlayerSettings.GetScriptingDefineSymbols(target).Split(';').Select(d => d.Trim()).ToList();
 				if (defineSymbols.Contains(defineSymbol))
 				{
 					defineSymbols.Remove(defineSymbol);
-					PlayerSettings.SetScriptingDefineSymbolsForGroup(group, string.Join(";", defineSymbols.ToArray()));
+					PlayerSettings.SetScriptingDefineSymbols(target, string.Join(";", defineSymbols.ToArray()));
 				}
+			}
+		}
+
+		// 429 Game: Unity 6 sets defines per NamedBuildTarget (the BuildTargetGroup versions are obsolete); groups it
+		// doesn't know are skipped.
+		private static bool TryGetNamedBuildTarget(BuildTargetGroup group, out global::UnityEditor.Build.NamedBuildTarget target)
+		{
+			try
+			{
+				target = global::UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(group);
+				return true;
+			}
+			catch (ArgumentException)
+			{
+				target = default;
+				return false;
 			}
 		}
 			

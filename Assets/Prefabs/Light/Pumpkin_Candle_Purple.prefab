@@ -12159,7 +12159,7 @@ Light:
   m_InnerSpotAngle: 21.80208
   m_CookieSize2D: {x: 10, y: 10}
   m_Shadows:
-    m_Type: 2
+    m_Type: 0
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 1
@@ -12276,6 +12276,7 @@ GameObject:
   - component: {fileID: 3523355305661217573}
   - component: {fileID: 3693837360454659341}
   - component: {fileID: 6807129637355103130}
+  - component: {fileID: 4535590380254987716}
   m_Layer: 0
   m_Name: Pumpkin_Candle_Purple
   m_TagString: Weapon
@@ -13875,3 +13876,18 @@ MonoBehaviour:
     handleAnimatorIK: 0
   fsmTemplate: {fileID: 0}
   eventHandlerComponentsAdded: 0
+--- !u!114 &4535590380254987716
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5526814087266095596}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd09f956f5a544542af7f370c540e948, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Lighting.LightOffWhenGrabbed
+  flames:
+  - {fileID: 5011145553217022865}
+  onAgainWhenDropped: 0

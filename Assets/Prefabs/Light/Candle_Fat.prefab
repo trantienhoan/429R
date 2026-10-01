@@ -5239,7 +5239,7 @@ Light:
   m_InnerSpotAngle: 21.80208
   m_CookieSize2D: {x: 10, y: 10}
   m_Shadows:
-    m_Type: 2
+    m_Type: 0
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 1
@@ -10213,6 +10213,7 @@ GameObject:
   - component: {fileID: 2310503600681009975}
   - component: {fileID: 1496152959891402122}
   - component: {fileID: 1287059865351858692}
+  - component: {fileID: 4275069212896515404}
   m_Layer: 0
   m_Name: Candle_Fat
   m_TagString: Weapon
@@ -11544,3 +11545,18 @@ MonoBehaviour:
   m_LimitAngularVelocity: 0
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
+--- !u!114 &4275069212896515404
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7534980169443468169}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd09f956f5a544542af7f370c540e948, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Lighting.LightOffWhenGrabbed
+  flames:
+  - {fileID: 2575376253179971040}
+  onAgainWhenDropped: 0

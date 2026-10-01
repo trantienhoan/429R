@@ -21,12 +21,12 @@ namespace HutongGames.PlayMaker.Actions
         private Transform transform;
         private RectTransform rectTransform;
         
-        private Vector3 startVector3;
-        private Vector3 endVector3;
-
-        private Quaternion startRotation;
-        private Quaternion midRotation;
-        private Quaternion endRotation;
+        // 429 Game: the punch is added on top of the object's own movement (physics, animation, its parent, a teleport)
+        // instead of pinning it to where it was when the punch started, and leaving the state early takes what's left
+        // of the punch back off, so nothing is left hanging in the air or out of place.
+        private Vector3 punch;
+        private Vector3 appliedVector3;
+        private Quaternion appliedRotation = Quaternion.identity;
 
         public override void Reset()
         {
@@ -46,54 +46,57 @@ namespace HutongGames.PlayMaker.Actions
             transform = cachedComponent;
             rectTransform = transform as RectTransform;
 
-            switch (punchType)
-            {
-                case PunchType.Position:
-                    startVector3 = rectTransform != null ? rectTransform.anchoredPosition3D : transform.position;
-                    endVector3 = startVector3 + value.Value;
-                    break;
-                case PunchType.Rotation:
-                    startRotation = transform.rotation;
-                    midRotation = startRotation * Quaternion.Euler(value.Value * 0.5f);
-                    endRotation = startRotation * Quaternion.Euler(value.Value);
-                    break;
-                case PunchType.Scale:
-                    startVector3 = transform.localScale;
-                    endVector3 = startVector3 + value.Value;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+            // 429 Game: a position punch is given in world space; it's kept in the parent's space so it can be taken back
+            // off exactly, even if the parent moves or turns meanwhile.
+            punch = punchType == PunchType.Position && rectTransform == null && transform.parent != null
+                ? transform.parent.InverseTransformVector(value.Value)
+                : value.Value;
+            appliedVector3 = Vector3.zero;
+            appliedRotation = Quaternion.identity;
         }
 
         protected override void DoTween()
         {
-            var lerp = easingFunction(0, 1, normalizedTime);
+            // Clamped like the Lerp and Slerp this used to be: the punch goes one way only.
+            SetPunch(Mathf.Clamp01(easingFunction(0, 1, normalizedTime)));
+        }
 
+        public override void OnExit()
+        {
+            // 429 Game: a punch cut short by leaving the state is taken back off.
+            if (transform != null) SetPunch(0f);
+        }
+
+        // 429 Game: moves the object by the change in punch since last time, so its own movement carries on underneath.
+        private void SetPunch(float amount)
+        {
             switch (punchType)
             {
                 case PunchType.Position:
+                    var offset = punch * amount;
                     if (rectTransform != null)
                     {
-                        rectTransform.anchoredPosition = Vector3.Lerp(startVector3, endVector3, easingFunction(0, 1, normalizedTime));
+                        rectTransform.anchoredPosition3D += offset - appliedVector3;
                     }
                     else
                     {
-                        transform.position = Vector3.Lerp(startVector3, endVector3, easingFunction(0, 1, normalizedTime));
+                        transform.localPosition += offset - appliedVector3;
                     }
+                    appliedVector3 = offset;
                     break;
                 case PunchType.Rotation:
-                    transform.rotation = lerp < 0.5 ? 
-                        Quaternion.Slerp(startRotation, midRotation, lerp * 2f) : 
-                        Quaternion.Slerp(midRotation, endRotation, (lerp - 0.5f) * 2f);
+                    var rotation = Quaternion.Euler(punch * amount);
+                    transform.localRotation = transform.localRotation * Quaternion.Inverse(appliedRotation) * rotation;
+                    appliedRotation = rotation;
                     break;
                 case PunchType.Scale:
-                    transform.localScale = Vector3.Lerp(startVector3, endVector3, lerp);
+                    var grow = punch * amount;
+                    transform.localScale += grow - appliedVector3;
+                    appliedVector3 = grow;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-
         }
 
 #if UNITY_EDITOR

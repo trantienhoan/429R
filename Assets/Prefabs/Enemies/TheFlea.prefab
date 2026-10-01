@@ -221,6 +221,7 @@ GameObject:
   - component: {fileID: 8348204434708633933}
   - component: {fileID: 8922285488058878979}
   - component: {fileID: 5965471225897461560}
+  - component: {fileID: 9000192926655430563}
   m_Layer: 0
   m_Name: TheFlea
   m_TagString: Enemy
@@ -3340,6 +3341,19 @@ MonoBehaviour:
   hitEvent: Damage
   weakHitEvent: ShakeSmall
   oldDamageFsm: Damage
+--- !u!114 &9000192926655430563
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 599697807037671329}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2de34414ec018dc4eae27076b0e24005, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Enemies.LandOnNavMesh
+  searchRadius: 10
 --- !u!1 &701114902661452399
 GameObject:
   m_ObjectHideFlags: 0

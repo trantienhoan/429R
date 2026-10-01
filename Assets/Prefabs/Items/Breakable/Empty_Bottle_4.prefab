@@ -10301,6 +10301,8 @@ GameObject:
   - component: {fileID: 8619799103645025506}
   - component: {fileID: 8529673103472462751}
   - component: {fileID: 8025082335288005962}
+  - component: {fileID: 5150636782481231043}
+  - component: {fileID: 5654352165436896968}
   m_Layer: 0
   m_Name: Empty_Bottle_4
   m_TagString: Weapon
@@ -12051,3 +12053,47 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &5150636782481231043
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8690403555129543112}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4cf0eec19a3a1f54598029d90d97570c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Weapons.Grenade
+  minThrowSpeed: 8
+  radius: 0.5
+  damage: 3
+  push: 4
+  breakApart: 1
+  effects:
+  - {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
+  - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}
+  - {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac, type: 3}
+  sound: {fileID: 8300000, guid: 0c38739de2059ac40ab5b60a42fd1c5f, type: 3}
+  volume: 1
+  rumbleStrength: 1
+  rumbleDuration: 0.3
+--- !u!114 &5654352165436896968
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8690403555129543112}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 982a9014cc7640d408db134d5e3bdf8f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Weapons.HitRumble
+  minHitSpeed: 1
+  fullHitSpeed: 12
+  minStrength: 0.2
+  maxStrength: 1
+  duration: 0.06
+  cooldown: 0.08
+  ignoreTag: Player

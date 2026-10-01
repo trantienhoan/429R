@@ -5209,7 +5209,7 @@ Light:
   m_InnerSpotAngle: 21.80208
   m_CookieSize2D: {x: 10, y: 10}
   m_Shadows:
-    m_Type: 2
+    m_Type: 0
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 1
@@ -10183,6 +10183,7 @@ GameObject:
   - component: {fileID: 38937682078887315}
   - component: {fileID: 3960173273444015582}
   - component: {fileID: 462476716949017532}
+  - component: {fileID: 4237392519975232511}
   m_Layer: 0
   m_Name: Candle_Land_2
   m_TagString: Furniture
@@ -16566,3 +16567,18 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
+--- !u!114 &4237392519975232511
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4630063601930570877}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd09f956f5a544542af7f370c540e948, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Lighting.LightOffWhenGrabbed
+  flames:
+  - {fileID: 2877531949553002204}
+  onAgainWhenDropped: 0

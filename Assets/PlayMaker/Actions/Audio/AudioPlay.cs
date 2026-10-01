@@ -92,6 +92,10 @@ namespace HutongGames.PlayMaker.Actions
 			}
 			else
 			{
+				// 429 Game: while the game is paused (the pause menu pauses all sound) a paused sound reports it isn't
+				// playing; that isn't the end of the clip, so wait instead of sending the Finished Event early.
+				if (AudioListener.pause) return;
+
 				if (!audio.isPlaying)
 				{
 					Fsm.Event(finishedEvent);

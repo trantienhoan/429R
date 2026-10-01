@@ -12272,6 +12272,7 @@ GameObject:
   - component: {fileID: 6171928654621168480}
   - component: {fileID: 1968042068610603886}
   - component: {fileID: 3365325741383144048}
+  - component: {fileID: 7152457518702997080}
   m_Layer: 0
   m_Name: Bee
   m_TagString: Enemy
@@ -13130,7 +13131,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 1.7
+          value: 1.2
         - useVariable: 0
           name: 
           tooltip: 
@@ -13591,7 +13592,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 2
+          value: 1.5
         - useVariable: 0
           name: 
           tooltip: 
@@ -14601,7 +14602,7 @@ MonoBehaviour:
         tooltip: 
         showInInspector: 1
         networkSync: 0
-        value: 2
+        value: 5
       - useVariable: 1
         name: collisionForce
         tooltip: 
@@ -15390,7 +15391,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.EnemyHitDamage
   settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
-  toughness: 1
+  toughness: 3
   hitCooldown: 0.3
   knockBack: 1
   knockBackDistance: 1.5
@@ -15402,6 +15403,19 @@ MonoBehaviour:
   hitEvent: Damage
   weakHitEvent: ShakeSmall
   oldDamageFsm: Damage
+--- !u!114 &7152457518702997080
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5493437295386993518}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2de34414ec018dc4eae27076b0e24005, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Enemies.LandOnNavMesh
+  searchRadius: 10
 --- !u!1 &5495325056223515303
 GameObject:
   m_ObjectHideFlags: 0

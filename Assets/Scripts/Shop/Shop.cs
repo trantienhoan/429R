@@ -19,7 +19,7 @@ namespace Game.Shopping
     /// The candy shop. By default its panel shows on your right hand while B on the right controller is held
     /// (the right menu button on controllers without B), like the inventory on the left hand. It sells a few random
     /// items from its catalog at a time and picks new ones every few minutes; you buy one by clicking its row with
-    /// your left hand. Bought items float next to the panel until grabbed. FSMs use the actions in PlayMaker's "Shop" category.
+    /// your left hand. Bought items pop out of the panel and fall to the floor. FSMs use the actions in PlayMaker's "Shop" category.
     /// </summary>
     [DisallowMultipleComponent]
     public class Shop : MonoBehaviour
@@ -70,6 +70,9 @@ namespace Game.Shopping
         [SerializeField] private Transform hand;
         [Tooltip("Where bought items appear, in metres from the panel's left edge (x right, y up, z away from you).")]
         [SerializeField] private Vector3 itemSpawnOffset = new(-0.12f, -0.04f, 0f);
+        [Tooltip("How fast bought items fly out of the shop, in metres per second (x right, y up, z away from you); " +
+                 "then they fall to the floor. All zero = they just drop.")]
+        [SerializeField] private Vector3 flyOutVelocity = new(0f, 2f, 0.8f);
 
         [Header("Sounds")]
         [SerializeField] private AudioClip openSound;
@@ -366,8 +369,23 @@ namespace Game.Shopping
             }
 
             var spawned = Instantiate(prefab, position, facing * prefab.transform.rotation);
-            if (spawned.TryGetComponent<Rigidbody>(out _)) spawned.AddComponent<FloatUntilGrabbed>();
+            if (spawned.TryGetComponent<Rigidbody>(out var body) && !body.isKinematic)
+            {
+                // "Away from you" is the way the head looks; without a head, away from the panel's face.
+                var away = TryGetHead(out var eyes) ? HeadYaw(eyes) : Quaternion.Euler(0f, facing.eulerAngles.y + 180f, 0f);
+                FlyOut(body, away);
+            }
             return spawned;
+        }
+
+        // Pops the item up and out with a tumble; gravity then drops it to the floor. A little random sideways, so a
+        // few bought in a row don't land in a pile.
+        private void FlyOut(Rigidbody body, Quaternion away)
+        {
+            var velocity = flyOutVelocity;
+            if (velocity.sqrMagnitude > 0f) velocity.x += UnityEngine.Random.Range(-0.3f, 0.3f);
+            body.linearVelocity = away * velocity;
+            body.angularVelocity = UnityEngine.Random.insideUnitSphere * 6f;
         }
 
         private bool TryGetHead(out Transform eyes)

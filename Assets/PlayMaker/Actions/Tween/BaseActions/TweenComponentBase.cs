@@ -53,6 +53,22 @@ namespace HutongGames.PlayMaker.Actions
             }
         }
 
+        public override void OnActionUpdate()
+        {
+            // 429 Game: the tweened object was destroyed before the tween ended. PlayMaker doesn't catch errors, so
+            // tweening it would throw every frame and stop every action listed after this one in the state (it can
+            // freeze a whole stage). End the tween as if it had finished instead.
+            if (cachedComponent == null)
+            {
+                LogWarning("The tweened object was destroyed before the tween ended; ending the tween.");
+                Finish();
+                Fsm.Event(finishEvent);
+                return;
+            }
+
+            base.OnActionUpdate();
+        }
+
         /// <summary>
         /// Check that the GameObject is the same as we cached
         /// and that we have a component reference cached

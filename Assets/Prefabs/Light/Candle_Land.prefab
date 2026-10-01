@@ -4909,7 +4909,7 @@ Light:
   m_InnerSpotAngle: 21.80208
   m_CookieSize2D: {x: 10, y: 10}
   m_Shadows:
-    m_Type: 2
+    m_Type: 0
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 1
@@ -10244,6 +10244,7 @@ GameObject:
   - component: {fileID: 529690528675437274}
   - component: {fileID: 441926359695924278}
   - component: {fileID: 6075806951394553343}
+  - component: {fileID: 4726257144695400500}
   m_Layer: 0
   m_Name: Candle_Land
   m_TagString: Weapon
@@ -11615,3 +11616,18 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &4726257144695400500
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6276000350888690867}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd09f956f5a544542af7f370c540e948, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Lighting.LightOffWhenGrabbed
+  flames:
+  - {fileID: 2281658214145819829}
+  onAgainWhenDropped: 0
