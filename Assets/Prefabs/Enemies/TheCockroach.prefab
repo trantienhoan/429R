@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 2734521681106384096}
   - component: {fileID: 6795146455033462591}
   - component: {fileID: 1259506668801187836}
+  - component: {fileID: 7482245354406862135}
   m_Layer: 0
   m_Name: TheCockroach
   m_TagString: Monster
@@ -14574,7 +14575,7 @@ MonoBehaviour:
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
-          name: CurrentlySpawnedEnemies
+          name: CurrentlySpawnedStuffs
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -15066,3 +15067,22 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 4314571985483460592}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &7482245354406862135
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1466277309599601579}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c6fc086333745fb5d05e28c8def3400, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Enemies.Bulldozer
+  radius: 0.3
+  height: 0.15
+  reachAhead: 0.15
+  pushSpeed: 4
+  lift: 0.3
+  forwardPush: 0.6
+  minMoveSpeed: 0.2

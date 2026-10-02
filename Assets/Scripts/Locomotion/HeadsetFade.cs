@@ -30,6 +30,27 @@ namespace Game.Locomotion
         /// <summary>How dark the view is right now, from 0 (clear) to 1 (fully faded).</summary>
         public float Alpha => alpha;
 
+        /// <summary>Whether a fade is still under way (including its wait before starting).</summary>
+        public bool IsFading => fading;
+
+        /// <summary>The colour the view fades to; changing it also changes a fade already showing.</summary>
+        public Color Color
+        {
+            get => color;
+            set
+            {
+                color = value;
+                if (sphere != null) Apply(alpha);
+            }
+        }
+
+        /// <summary>The headset's fade: the one on the Main Camera, or else any in the scene.</summary>
+        public static HeadsetFade Find()
+        {
+            var onCamera = Camera.main != null ? Camera.main.GetComponentInChildren<HeadsetFade>(true) : null;
+            return onCamera != null ? onCamera : FindAnyObjectByType<HeadsetFade>(FindObjectsInactive.Include);
+        }
+
         /// <summary>Fades the view out to the colour over 'seconds', starting after 'after' seconds.</summary>
         public void FadeOut(float seconds, float after = 0f)
         {

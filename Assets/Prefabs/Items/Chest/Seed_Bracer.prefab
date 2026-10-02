@@ -20087,14 +20087,16 @@ MonoBehaviour:
         - HutongGames.PlayMaker.Actions.SetFsmVariable
         - HutongGames.PlayMaker.Actions.SetFsmVariable
         - HutongGames.PlayMaker.Actions.SendEvent
+        - HutongGames.PlayMaker.Actions.InventoryAddItem
         customNames:
         - 
         - 
         - 
-        actionEnabled: 000101
-        actionIsOpen: 000101
-        actionStartIndex: 00000000050000000a000000
-        actionHashCodes: fcb1a001fcb1a0015e69bb04
+        - 
+        actionEnabled: 00010101
+        actionIsOpen: 00010101
+        actionStartIndex: 00000000050000000a0000000e000000
+        actionHashCodes: fcb1a001fcb1a0015e69bb049b5e1c02
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams:
@@ -20177,7 +20179,14 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: Bracer_Gear
-        fsmObjectParams: []
+        fsmObjectParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          typeName: Game.Inventory.ItemDefinition
+          value: {fileID: 11400000, guid: d5f4273200846c22465cb744257580df, type: 2}
         fsmVarParams:
         - variableName: 
           objectType: UnityEngine.Object
@@ -20236,7 +20245,19 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0
-        fsmIntParams: []
+        fsmIntParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
         fsmBoolParams: []
         fsmVector2Params: []
         fsmVector3Params: []
@@ -20245,12 +20266,13 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - Health1
+        - 
         byteData: 000000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 140000001200000012000000270000000100000014000000120000001200000027000000010000001f000000170000000f00000001000000
+        paramDataType: 140000001200000012000000270000000100000014000000120000001200000027000000010000001f000000170000000f0000000100000018000000100000001000000017000000
         paramName:
         - gameObject
         - fsmName
@@ -20266,8 +20288,12 @@ MonoBehaviour:
         - sendEvent
         - delay
         - everyFrame
-        paramDataPos: 0000000000000000010000000000000000000000010000000200000003000000010000000100000000000000000000000000000002000000
-        paramByteDataSize: 0000000000000000000000000000000001000000000000000000000000000000000000000100000000000000000000000000000001000000
+        - item
+        - amount
+        - storeNewCount
+        - failedEvent
+        paramDataPos: 000000000000000001000000000000000000000001000000020000000300000001000000010000000000000000000000000000000200000000000000000000000100000001000000
+        paramByteDataSize: 000000000000000000000000000000000100000000000000000000000000000000000000010000000000000000000000000000000100000000000000000000000000000000000000
     - name: Destroy Self
       description: 
       colorIndex: 6

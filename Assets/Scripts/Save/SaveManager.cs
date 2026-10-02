@@ -10,10 +10,10 @@ namespace Game.Saving
 {
     /// <summary>
     /// Keeps the player's progress between sessions: what they carry (e.g. candies), how many of each item they
-    /// ever collected and spent, and what they bought. Keep one in the scene. It loads when the game starts and
-    /// saves shortly after anything changes, when the game pauses and when it closes. Dying doesn't touch the
-    /// inventory, so candies are kept through a restart too. FSMs can also save at checkpoints with the
-    /// "Save Game" action (PlayMaker's "Save" category).
+    /// ever collected and spent, what they bought and what they unlocked for good (e.g. paths opened with seeds).
+    /// Keep one in the scene. It loads when the game starts and saves shortly after anything changes, when the game
+    /// pauses and when it closes. Dying doesn't touch the inventory, so candies are kept through a restart too. FSMs
+    /// can also save at checkpoints with the "Save Game" action (PlayMaker's "Save" category).
     /// </summary>
     [DisallowMultipleComponent]
     public class SaveManager : MonoBehaviour
@@ -27,6 +27,8 @@ namespace Game.Saving
             public List<PlayerInventory.SavedEntry> inventory = new();
             public List<PlayerInventory.SavedStats> itemStats = new();
             public List<Shop.SavedPurchase> shopPurchases = new();
+            // What the player unlocked for good, e.g. paths bought open with seeds (see Unlocks).
+            public List<string> unlocks = new();
         }
 
         private const int CurrentVersion = 1;
@@ -155,6 +157,7 @@ namespace Game.Saving
             // Subscribed after loading, so loading itself doesn't count as a change.
             inventory.Changed += OnInventoryChanged;
             Shop.AnyPurchased += OnPurchased;
+            Unlocks.Changed += MarkChanged;
             PauseMenu.PauseChanged += OnPauseChanged;
         }
 
@@ -164,6 +167,7 @@ namespace Game.Saving
 
             if (inventory != null) inventory.Changed -= OnInventoryChanged;
             Shop.AnyPurchased -= OnPurchased;
+            Unlocks.Changed -= MarkChanged;
             PauseMenu.PauseChanged -= OnPauseChanged;
             Instance = null;
         }
@@ -214,6 +218,7 @@ namespace Game.Saving
                 inventory = inventory.ToSaveData(),
                 itemStats = inventory.StatsToSaveData(),
                 shopPurchases = shop != null ? shop.ToSaveData() : new List<Shop.SavedPurchase>(),
+                unlocks = Unlocks.ToSaveData(),
             };
 
             try
@@ -254,6 +259,8 @@ namespace Game.Saving
             }
 
             loaded = true;
+            // Also with no save, so whatever waits for the unlocks knows they're read.
+            Unlocks.LoadSaveData(data?.unlocks);
         }
 
         private SaveData Read(string path)

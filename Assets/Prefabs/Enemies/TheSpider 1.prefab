@@ -6091,6 +6091,7 @@ GameObject:
   - component: {fileID: 1315112603149819992}
   - component: {fileID: 5681485440776169206}
   - component: {fileID: 8219245575786667004}
+  - component: {fileID: 7950232043053796902}
   m_Layer: 0
   m_Name: TheSpider 1
   m_TagString: Monster
@@ -6127,7 +6128,7 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: -902729914
   m_Radius: 0.33
-  m_Speed: 0.777
+  m_Speed: 1.25
   m_Acceleration: 8
   avoidancePriority: 50
   m_AngularSpeed: 360
@@ -9569,6 +9570,25 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Enemies.LandOnNavMesh
   searchRadius: 10
+--- !u!114 &7950232043053796902
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3569810238917063108}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c6fc086333745fb5d05e28c8def3400, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Enemies.Bulldozer
+  radius: 0.4
+  height: 0.25
+  reachAhead: 0.15
+  pushSpeed: 4
+  lift: 0.3
+  forwardPush: 0.6
+  minMoveSpeed: 0.2
 --- !u!1 &3625774751695929217
 GameObject:
   m_ObjectHideFlags: 0
