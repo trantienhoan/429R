@@ -55,7 +55,7 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: -902729914
   m_Radius: 0.17
-  m_Speed: 2
+  m_Speed: 3.5
   m_Acceleration: 11
   avoidancePriority: 50
   m_AngularSpeed: 360
@@ -3556,6 +3556,26 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Enemies.LandOnNavMesh
   searchRadius: 10
+--- !u!114 &7482245354406862135
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1466277309599601579}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c6fc086333745fb5d05e28c8def3400, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Enemies.Bulldozer
+  radius: 0.3
+  height: 0.15
+  reachAhead: 0.15
+  pushSpeed: 4
+  maxPushSpeed: 8
+  lift: 0.3
+  forwardPush: 0.6
+  minMoveSpeed: 0.2
 --- !u!1 &4879972247851213296
 GameObject:
   m_ObjectHideFlags: 0
@@ -15067,22 +15087,3 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 4314571985483460592}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &7482245354406862135
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1466277309599601579}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2c6fc086333745fb5d05e28c8def3400, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Enemies.Bulldozer
-  radius: 0.3
-  height: 0.15
-  reachAhead: 0.15
-  pushSpeed: 4
-  lift: 0.3
-  forwardPush: 0.6
-  minMoveSpeed: 0.2

@@ -11705,6 +11705,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.x
       value: -89.98021
       objectReference: {fileID: 0}
+    - target: {fileID: 832656016575463517, guid: 6f79a690977f953468de116b7a904e71,
+        type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 6f79a690977f953468de116b7a904e71,
         type: 3}
       propertyPath: m_Name
@@ -11801,6 +11806,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 8333468151199027868}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6f79a690977f953468de116b7a904e71,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7905181364548833482}
     - targetCorrespondingSourceObject: {fileID: 7728299111888508900, guid: 6f79a690977f953468de116b7a904e71,
         type: 3}
       insertIndex: -1
@@ -11813,10 +11822,6 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 5565216400307577505}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6f79a690977f953468de116b7a904e71,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 7905181364548833482}
   m_SourcePrefab: {fileID: 100100000, guid: 6f79a690977f953468de116b7a904e71, type: 3}
 --- !u!1 &3669239750392371536 stripped
 GameObject:
@@ -12989,7 +12994,7 @@ MonoBehaviour:
         tooltip: 
         showInInspector: 1
         networkSync: 0
-        value: 121
+        value: 228
       intVariables: []
       boolVariables: []
       stringVariables: []
@@ -13871,6 +13876,25 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &7905181364548833482
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3669239750392371536}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb754aced932206cd3f997ec3d4fe6cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.DamageJiggle
+  healthFsm: Health
+  healthVariable: health
+  strength: 0.1
+  maxSquash: 0.25
+  springiness: 200
+  settle: 5
+  bulge: 0.5
 --- !u!4 &4152339405024068586 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 6f79a690977f953468de116b7a904e71,
@@ -14655,22 +14679,3 @@ MonoBehaviour:
     handleAnimatorIK: 0
   fsmTemplate: {fileID: 0}
   eventHandlerComponentsAdded: 0
---- !u!114 &7905181364548833482
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3669239750392371536}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bb754aced932206cd3f997ec3d4fe6cb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.DamageJiggle
-  healthFsm: Health
-  healthVariable: health
-  strength: 0.1
-  maxSquash: 0.25
-  springiness: 200
-  settle: 5
-  bulge: 0.5
