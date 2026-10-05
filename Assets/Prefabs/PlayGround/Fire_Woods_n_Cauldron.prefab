@@ -101,6 +101,7 @@ GameObject:
   - component: {fileID: 4954600734697429065}
   - component: {fileID: 4311596150384797001}
   - component: {fileID: 616134654510917564}
+  - component: {fileID: 1202100498263671231}
   m_Layer: 0
   m_Name: Magical_Pot
   m_TagString: Untagged
@@ -181,6 +182,27 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!135 &1202100498263671231
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 294014733473341190}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.7
+  m_Center: {x: 0, y: 0.652824, z: 0}
 --- !u!1 &815635875893006812
 GameObject:
   m_ObjectHideFlags: 0
@@ -20843,10 +20865,10 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7200057240857087366}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.85, y: 0.85, z: 0.85}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 4157992092272608128}
   - {fileID: 4757829851908543071}
@@ -20943,7 +20965,7 @@ MonoBehaviour:
   pot: {fileID: 4954600734697429065}
   surface: {fileID: 6378347707688231237}
   fire: {fileID: 708756451242298956}
-  mouthCenter: {x: 0, y: 1.2, z: 0}
+  mouthCenter: {x: 0, y: 1.47, z: 0}
   mouthSize: {x: 1.1, y: 0.4, z: 1.1}
   fireCenter: {x: 0.08, y: 0.3, z: -0.05}
   fireSize: {x: 1.9, y: 0.8, z: 1.9}
@@ -20974,16 +20996,14 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 5559a9c98e6c15148b6eb31df62d8b20, type: 3}
   - {fileID: 8300000, guid: 448f0b20a89331745bbe48dca5ca98d8, type: 3}
   - {fileID: 8300000, guid: bdaf5f6e3901b474f9ea00411277f5d9, type: 3}
-  - {fileID: 8300000, guid: 89aacdef08bfdc54694504d3ea8d2b78, type: 3}
-  - {fileID: 8300000, guid: 96e4dfb4d3f38c14f8da3bfea8b0c4d1, type: 3}
-  successSound: {fileID: 8300000, guid: 2b8bf995953319743856b754dfe7b436, type: 3}
+  successSound: {fileID: 8300000, guid: 6d26084b16a750844979a825f69e9b01, type: 3}
   cookedBool: 
   badPumpkin: {fileID: 4499463359877075850, guid: da7e398cc42e3ac4fb6e39fad6c3b7ec,
     type: 3}
   minBadPumpkins: 1
   maxBadPumpkins: 1
   spitDistance: 2.5
-  failSound: {fileID: 8300000, guid: 72a503379512e9c41b37d775333e7bd2, type: 3}
+  failSound: {fileID: 8300000, guid: c03dca926a3adde41a83f11a0c3205f9, type: 3}
   doneEffect: {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
   doneEffectScale: 0.15
@@ -21726,8 +21746,8 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 2
-      minScalar: 0.68
+      scalar: 1
+      minScalar: 0.5
       maxCurve:
         serializedVersion: 2
         m_Curve:
