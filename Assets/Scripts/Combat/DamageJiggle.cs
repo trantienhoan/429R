@@ -12,7 +12,7 @@ namespace Game.Combat
     [DisallowMultipleComponent]
     public class DamageJiggle : MonoBehaviour
     {
-        [Tooltip("The FSM holding its health, and the float variable in it.")]
+        [Tooltip("The FSM holding its health, and the float variable in it. Empty: it only jiggles when a script says so.")]
         [SerializeField] private string healthFsm = "Health";
         [SerializeField] private string healthVariable = "health";
 
@@ -43,15 +43,19 @@ namespace Game.Combat
 
         private void Start()
         {
-            foreach (var fsm in GetComponents<PlayMakerFSM>())
+            // Empty Health Fsm: only jiggles when a script tells it to (Jiggle), e.g. the PlayGround's ghost tree.
+            if (!string.IsNullOrEmpty(healthFsm))
             {
-                if (fsm.FsmName != healthFsm) continue;
-                // Find, not Get: Get hands back a new, unconnected variable when the name doesn't exist.
-                health = fsm.FsmVariables.FindFsmFloat(healthVariable);
-                break;
+                foreach (var fsm in GetComponents<PlayMakerFSM>())
+                {
+                    if (fsm.FsmName != healthFsm) continue;
+                    // Find, not Get: Get hands back a new, unconnected variable when the name doesn't exist.
+                    health = fsm.FsmVariables.FindFsmFloat(healthVariable);
+                    break;
+                }
+                if (health == null) Debug.LogWarning($"[DamageJiggle] '{name}' has no '{healthFsm}' FSM with a float '{healthVariable}'; it only jiggles when told to.", this);
             }
-            if (health == null) Debug.LogWarning($"[DamageJiggle] '{name}' has no '{healthFsm}' FSM with a float '{healthVariable}'; it only jiggles when told to.", this);
-            else lastHealth = health.Value;
+            if (health != null) lastHealth = health.Value;
 
             restScale = transform.localScale;
             written = restScale;
