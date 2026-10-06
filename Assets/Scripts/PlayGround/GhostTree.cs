@@ -5,15 +5,20 @@ using Game.Enemies;
 using Unity.XR.CoreUtils;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
+using FsmFloat = HutongGames.PlayMaker.FsmFloat;
 using FsmVariables = HutongGames.PlayMaker.FsmVariables;
 
 namespace Game.PlayGround
 {
     /// <summary>
-    /// The PlayGround's haunted tree. Left alone, it lets a ghost balloon out of its crown every so often (up to Max
-    /// Ghosts at a time). Hit it with something (weapons, thrown things, grenades) and it jiggles; enough hits chop it
-    /// down: it drops a few logs of firewood for the cauldron and leaves a bush behind, which pops back up into a tree
-    /// when nobody's watching. Goes on Big_Tree_01_04's root.
+    /// The PlayGround's haunted tree (or anything that should act like one, e.g. the giant skull). Left alone, it lets a
+    /// ghost balloon out of its top every so often (up to Max Ghosts at a time). Hit it with something (weapons, thrown
+    /// things, grenades) and it jiggles; enough hits bring it down: it drops its firewood (if it has any) and leaves
+    /// something behind (a bush), which pops back up into it when nobody's watching. With its own Damage and Health
+    /// FSMs, those count the hits and break it (sounds, smoke, pieces); this then only jiggles it as their health drops
+    /// and, when it reaches 0, leaves the bush and the firewood. Removed any other way (popped by the fairy's shield at
+    /// the end of a stage, or the PlayGround cleared away), it leaves nothing. Goes on the root of Big_Tree_01_04,
+    /// Giant_Skull, ...
     /// </summary>
     [DisallowMultipleComponent]
     public class GhostTree : MonoBehaviour, IHittable
@@ -32,7 +37,8 @@ namespace Game.PlayGround
         [Min(0f)] [SerializeField] private float ghostSpread = 2.5f;
 
         [Header("Chopping down")]
-        [Tooltip("Damage it takes before it falls: a hit does 1 per 4 m/s of speed (at least 1), a grenade 3.")]
+        [Tooltip("Damage it takes before it falls: a hit does 1 per 4 m/s of speed (at least 1), a grenade 3. Not used " +
+                 "when it has its own Damage and Health FSMs: their health counts instead.")]
         [Min(1f)] [SerializeField] private float health = 12f;
         [Tooltip("Hits slower than this, in metres per second, don't hurt it.")]
         [Min(0f)] [SerializeField] private float minHitSpeed = 3f;
@@ -43,17 +49,22 @@ namespace Game.PlayGround
         [Min(0.01f)] [SerializeField] private float fallEffectScale = 0.2f;
 
         [Header("When it falls")]
-        [Tooltip("Firewood it drops (Dropped_Wood_Fuel), and how many.")]
+        [Tooltip("Firewood it drops (Dropped_Wood_Fuel), and how many. Empty: none.")]
         [SerializeField] private GameObject fuel;
         [Min(0)] [SerializeField] private int minFuel = 2;
         [Min(0)] [SerializeField] private int maxFuel = 4;
-        [Tooltip("What's left where it stood (bushes_01).")]
+        [Tooltip("What's left where it stood (a bush whose Tree is this one, e.g. bushes_01 for the tree, " +
+                 "bushes_01_Skull for the skull). Left only when it breaks, not when the fairy's shield pops it.")]
         [SerializeField] private GameObject leftBehind;
 
         private const string SpawnedStuffVariable = "CurrentlySpawnedStuffs";
+        // With its own Health FSM, that removes it; if it hasn't after this many seconds, it goes anyway.
+        private const float FsmRemoveSeconds = 3f;
 
         private readonly List<GameObject> alive = new();
         private DamageJiggle jiggle;
+        private FsmFloat fsmHealth;
+        private float lastFsmHealth;
         private float damageLeft;
         private float nextGhost;
         private bool felled;
@@ -71,6 +82,12 @@ namespace Game.PlayGround
             nextGhost = Time.time + Random.Range(minSeconds, Mathf.Max(minSeconds, maxSeconds));
         }
 
+        private void Start()
+        {
+            fsmHealth = FindFsmHealth();
+            if (fsmHealth != null) lastFsmHealth = fsmHealth.Value;
+        }
+
         private void Update()
         {
             if (felled || Time.time < nextGhost) return;
@@ -80,16 +97,28 @@ namespace Game.PlayGround
             if (alive.Count < maxGhosts) LetGhostOut();
         }
 
+        // With its own Health FSM: jiggles as that health drops, and falls when it's gone. After every Update, so a
+        // Health FSM that removes it this frame can't beat it to it.
+        private void LateUpdate()
+        {
+            if (fsmHealth == null || felled) return;
+
+            float now = fsmHealth.Value;
+            if (now < lastFsmHealth && jiggle != null) jiggle.Jiggle(lastFsmHealth - now);
+            lastFsmHealth = now;
+            if (now <= 0f) Fall();
+        }
+
         /// <summary>Pops it up from small, e.g. when a bush turns back into it.</summary>
         public void GrowIn(float seconds)
         {
             StartCoroutine(Grow(seconds));
         }
 
-        // Hit by something the player holds or threw, or by the player.
+        // Hit by something the player holds or threw, or by the player. Its own Damage FSM, if it has one, counts hits instead.
         private void OnCollisionEnter(Collision collision)
         {
-            if (!PlayerHit.From(collision)) return;
+            if (fsmHealth != null || !PlayerHit.From(collision)) return;
             float speed = collision.relativeVelocity.magnitude;
             if (speed < minHitSpeed) return;
             Hit(speed / 4f, collision.contactCount > 0 ? collision.GetContact(0).point : transform.position);
@@ -100,6 +129,12 @@ namespace Game.PlayGround
             if (felled) return;
 
             float damage = Mathf.Max(1f, strength);
+            if (fsmHealth != null)
+            {
+                // Its Health FSM's health takes it; LateUpdate jiggles it and sees whether it falls.
+                fsmHealth.Value -= damage;
+                return;
+            }
             damageLeft -= damage;
             if (jiggle != null) jiggle.Jiggle(damage);
             if (hitSounds.Length > 0) Play(hitSounds[Random.Range(0, hitSounds.Length)], point);
@@ -119,7 +154,8 @@ namespace Game.PlayGround
             if (ghost != null) alive.Add(ghost.gameObject);
         }
 
-        // Logs tumble down around the trunk; a bush stays where it stood.
+        // Logs tumble down around the trunk; a bush stays where it stood. Its own Health FSM, if it has one, breaks it
+        // (e.g. into pieces) and removes it; otherwise it goes now.
         private void Fall()
         {
             felled = true;
@@ -147,7 +183,21 @@ namespace Game.PlayGround
             }
 
             if (leftBehind != null) Instantiate(leftBehind, foot, transform.rotation, transform.parent);
-            Destroy(gameObject);
+            Destroy(gameObject, fsmHealth != null ? FsmRemoveSeconds : 0f);
+        }
+
+        // The health of its own Health FSM, when it also has a Damage FSM to lower it (the PlayMaker way of breaking
+        // things, which grenades use too); null otherwise.
+        private FsmFloat FindFsmHealth()
+        {
+            PlayMakerFSM damageFsm = null;
+            PlayMakerFSM healthFsm = null;
+            foreach (var fsm in GetComponents<PlayMakerFSM>())
+            {
+                if (fsm.FsmName == "Damage") damageFsm = fsm;
+                else if (fsm.FsmName.EndsWith("Health", System.StringComparison.OrdinalIgnoreCase)) healthFsm = fsm;
+            }
+            return damageFsm != null && healthFsm != null ? healthFsm.FsmVariables.FindFsmFloat("health") : null;
         }
 
         private IEnumerator Grow(float seconds)
@@ -169,13 +219,19 @@ namespace Game.PlayGround
             return 1f + (back + 1f) * u * u * u + back * u * u;
         }
 
-        // Near the top of the tree, where its leaves are.
+        // Near its top (the tree's leaves, the skull's crown). Only its meshes count, not effects like a smoke puff.
         private Vector3 Crown()
         {
-            var renderers = GetComponentsInChildren<Renderer>();
-            if (renderers.Length == 0) return transform.position + Vector3.up * 4f;
-            var bounds = renderers[0].bounds;
-            foreach (var r in renderers) bounds.Encapsulate(r.bounds);
+            var bounds = new Bounds();
+            bool any = false;
+            foreach (var r in GetComponentsInChildren<Renderer>())
+            {
+                if (r is not MeshRenderer && r is not SkinnedMeshRenderer) continue;
+                if (any) bounds.Encapsulate(r.bounds);
+                else bounds = r.bounds;
+                any = true;
+            }
+            if (!any) return transform.position + Vector3.up * 4f;
             return new Vector3(bounds.center.x, bounds.max.y - bounds.extents.y * 0.3f, bounds.center.z);
         }
 

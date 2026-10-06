@@ -4,6 +4,7 @@ using Game.Enemies;
 using Game.Inventory;
 using Game.PlayGround;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
@@ -21,6 +22,8 @@ namespace Game.EditorTools
         private const string HatPath = PlayGroundFolder + "Recipe_Hat.prefab";
         private const string CardPath = PlayGroundFolder + "Recipe_Card.prefab";
         private const string BlackPumpkinPath = PlayGroundFolder + "pumpkin_black.prefab";
+        private const string SkullPath = PlayGroundFolder + "Giant_Skull.prefab";
+        private const string SkullBushPath = PlayGroundFolder + "bushes_01_Skull.prefab";
         private const string PumpkinOnTreePath = "Assets/Prefabs/Items/Breakable/Pumpkin_On_Tree.prefab";
         private const string ResultPath = "Assets/Prefabs/Items/Breakable/Pumpkin_{0}.prefab";
         private const string GhostPath = "Assets/Prefabs/Enemies/PLAYGROUND/Ghost_Balloon_{0}.prefab";
@@ -36,10 +39,10 @@ namespace Game.EditorTools
         };
 
         /// <summary>
-        /// Sets up the cauldron, the seven lollipops, Pumpkin_On_Tree, the firewood, the ghost tree and bush, the black
-        /// pumpkin, the recipe hat (Recipe_Hat, with its Recipe_Card), and gives the ghost balloons their lollipop
-        /// prizes. Run it again any time: settings already made are kept, only missing parts are added. Save and close
-        /// those prefabs first.
+        /// Sets up the cauldron, the seven lollipops, Pumpkin_On_Tree, the firewood, the ghost tree and bush, the giant
+        /// skull, the black pumpkin, the recipe hat (Recipe_Hat, with its Recipe_Card), and gives the ghost balloons
+        /// their lollipop prizes. Run it again any time: settings already made are kept, only missing parts are added.
+        /// Save and close those prefabs first.
         /// </summary>
         [MenuItem("Tools/429 Game/PlayGround/Set Up Cooking Game")]
         public static void SetUpCookingGame()
@@ -50,12 +53,7 @@ namespace Game.EditorTools
                 var lollipop = Load<GameObject>(string.Format(LollipopPath, n));
                 if (lollipop != null) lollipops.Add(lollipop);
             }
-            var ghosts = new List<GameObject>();
-            for (int n = 1; n <= 3; n++)
-            {
-                var ghost = Load<GameObject>(string.Format(GhostPath, n));
-                if (ghost != null) ghosts.Add(ghost);
-            }
+            var ghosts = LoadGhosts();
             var smoke = Load<GameObject>(SmokePath);
             var notes = new List<string>();
 
@@ -121,6 +119,7 @@ namespace Game.EditorTools
                 }
                 ScriptJiggle(root);
             });
+            SetUpGiantSkull(notes, ghosts, smoke);
 
             for (int n = 1; n <= 3; n++)
             {
@@ -184,6 +183,51 @@ namespace Game.EditorTools
 
             Debug.Log("[PlayGround] " + string.Join("; ", notes) + ". Put Recipe_Hat on the table near the cauldron, and give " +
                       "the PlayGround a Ghost Roam Area (Add Component > Ghost Roam Area) so the ghost balloons roam it.");
+        }
+
+        /// <summary>
+        /// Makes Giant_Skull act like the ghost tree: ghost balloons float out of it every so often, it jiggles when hit,
+        /// and when its Health FSM breaks it, it leaves a bush behind (bushes_01_Skull, made here as a variant of
+        /// bushes_01) that pops back up into the skull when nobody's watching. Save and close Giant_Skull first.
+        /// </summary>
+        [MenuItem("Tools/429 Game/PlayGround/Set Up Giant Skull")]
+        public static void SetUpGiantSkullMenu()
+        {
+            var notes = new List<string>();
+            SetUpGiantSkull(notes, LoadGhosts(), Load<GameObject>(SmokePath));
+            Debug.Log("[PlayGround] " + string.Join("; ", notes) + ".");
+        }
+
+        private static void SetUpGiantSkull(List<string> notes, List<GameObject> ghosts, GameObject smoke)
+        {
+            var skullPrefab = Load<GameObject>(SkullPath);
+            var bushPrefab = Load<GameObject>(BushPath);
+            if (skullPrefab == null || bushPrefab == null || !bushPrefab.TryGetComponent<GhostBush>(out _))
+            {
+                notes.Add(skullPrefab == null ? $"no '{SkullPath}'" : "set up bushes_01 first (Set Up Cooking Game)");
+                return;
+            }
+
+            // The bush it leaves: bushes_01, growing back into the skull instead of the tree.
+            if (Load<GameObject>(SkullBushPath) == null)
+            {
+                MakeVariant(bushPrefab, SkullBushPath, notes, root => Set(root.GetComponent<GhostBush>(), "tree", skullPrefab));
+            }
+
+            Edit(SkullPath, notes, root =>
+            {
+                var skull = GetOrAdd<GhostTree>(root, out bool added);
+                if (added)
+                {
+                    SetArray(skull, "ghosts", ghosts);
+                    // Its Damage and Health FSMs make its hit and break sounds, and its pieces drop the pumpkins, so it
+                    // gets no firewood or break sound here; these hit sounds only play if those FSMs are removed.
+                    SetArray(skull, "hitSounds", new List<Object> { Load<AudioClip>(Sfx + "bone_bonk_1.wav"), Load<AudioClip>(Sfx + "bone_bonk_2.wav") });
+                    Set(skull, "fallEffect", smoke);
+                }
+                SetIfEmpty(skull, "leftBehind", Load<GameObject>(SkullBushPath));
+                ScriptJiggle(root);
+            });
         }
 
         /// <summary>Makes the selected object or prefab a magic hat that spits out the recipe card.</summary>
@@ -265,6 +309,35 @@ namespace Game.EditorTools
             var box = root.AddComponent<BoxCollider>();
             box.center = bounds.center;
             box.size = bounds.size;
+        }
+
+        private static List<GameObject> LoadGhosts()
+        {
+            var ghosts = new List<GameObject>();
+            for (int n = 1; n <= 3; n++)
+            {
+                var ghost = Load<GameObject>(string.Format(GhostPath, n));
+                if (ghost != null) ghosts.Add(ghost);
+            }
+            return ghosts;
+        }
+
+        // Saves a Prefab Variant of 'source' at 'path', changed by 'change'. Built in a preview scene, so the open scene
+        // isn't touched.
+        private static void MakeVariant(GameObject source, string path, List<string> notes, System.Action<GameObject> change)
+        {
+            var scene = EditorSceneManager.NewPreviewScene();
+            try
+            {
+                var instance = (GameObject)PrefabUtility.InstantiatePrefab(source, scene);
+                change(instance);
+                PrefabUtility.SaveAsPrefabAsset(instance, path);
+                notes.Add(System.IO.Path.GetFileNameWithoutExtension(path) + " (new)");
+            }
+            finally
+            {
+                EditorSceneManager.ClosePreviewScene(scene);
+            }
         }
 
         private static void Edit(string path, List<string> notes, System.Action<GameObject> change)

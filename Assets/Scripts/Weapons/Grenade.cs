@@ -19,7 +19,8 @@ namespace Game.Weapons
     /// counters) and the player are left alone. Things with a Damage FSM but no health of their own (the whack-a-mole
     /// pumpkins, whose barrels count the hits) are sent the event "Blast"; a Damage FSM with a Blast transition takes
     /// it as a hard hit. Scripts that handle hits themselves (IHittable, e.g. the PlayGround's ghost tree and bush)
-    /// are hit with the damage.
+    /// are hit with the damage first, even when they also have a Health FSM (e.g. for the fairy's shield pop); the ghost
+    /// tree passes it on to that FSM's health.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(XRGrabInteractable))]
@@ -155,12 +156,19 @@ namespace Game.Weapons
             else Destroy(gameObject);
         }
 
-        // Takes 'damage' from the health its own Damage FSM would lower, so breaking, drops and GAMESTAGES flags happen
-        // as usual. Colliders are often on children, so the nearest object upwards with a health FSM is the one hit.
-        // With no health anywhere upwards, a script that handles hits itself (IHittable) is hit, or else the nearest
-        // Damage FSM is sent "Blast".
+        // A script that handles hits itself (IHittable, e.g. the ghost tree or bush) is hit first. Otherwise it takes
+        // 'damage' from the health its own Damage FSM would lower, so breaking, drops and GAMESTAGES flags happen as
+        // usual. Colliders are often on children, so the nearest object upwards with a health FSM is the one hit. With
+        // no health anywhere upwards, the nearest Damage FSM is sent "Blast".
         private void Hurt(Transform part, Vector3 point)
         {
+            var hittable = part.GetComponentInParent<Game.Combat.IHittable>();
+            if (hittable is Component target)
+            {
+                if (hurt.Add(target.gameObject)) hittable.Hit(damage, point);
+                return;
+            }
+
             PlayMakerFSM nearestDamageFsm = null;
             for (var t = part; t != null; t = t.parent)
             {
@@ -171,13 +179,6 @@ namespace Game.Weapons
                 }
 
                 if (health != null && hurt.Add(t.gameObject)) health.Value -= damage;
-                return;
-            }
-
-            var hittable = part.GetComponentInParent<Game.Combat.IHittable>();
-            if (hittable is Component target)
-            {
-                if (hurt.Add(target.gameObject)) hittable.Hit(damage, point);
                 return;
             }
 
