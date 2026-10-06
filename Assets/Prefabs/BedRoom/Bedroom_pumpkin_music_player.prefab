@@ -10191,6 +10191,7 @@ GameObject:
   - component: {fileID: 7723125910269482597}
   - component: {fileID: 6821300073590899193}
   - component: {fileID: 3134161435313059148}
+  - component: {fileID: 138098991583662205}
   - component: {fileID: 3430833460687514626}
   - component: {fileID: 5109568484906990069}
   - component: {fileID: 4959307132516711216}
@@ -10279,6 +10280,27 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &138098991583662205
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8134454340205444463}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.36123627, y: 0.5245613, z: 0.34946957}
+  m_Center: {x: 0.010524863, y: 0.63535583, z: 0.06223296}
 --- !u!64 &3430833460687514626
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -10300,7 +10322,7 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 1
   m_CookingOptions: 30
-  m_Mesh: {fileID: 5626674725089136406, guid: eb2ad093cecc3ec47a2f54060c504665, type: 3}
+  m_Mesh: {fileID: -5496554498347242416, guid: e7d2a9b3686e5da42ae8b6548a339fde, type: 3}
 --- !u!54 &5109568484906990069
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -11025,19 +11047,18 @@ MonoBehaviour:
         - {fileID: 8300000, guid: 4dba5763bbfdf884099398c56bd805a5, type: 3}
         - {fileID: 8300000, guid: 02ce2fd68c50b4e48806fc778e73983f, type: 3}
       - useVariable: 1
-        name: randomBG_Music2
+        name: 
         tooltip: 
         showInInspector: 0
         networkSync: 0
         type: 12
-        objectTypeName: UnityEngine.AudioClip
+        objectTypeName: UnityEngine.Object
         floatValues: []
         intValues: 
         boolValues: 
         stringValues: []
         vector4Values: []
-        objectReferences:
-        - {fileID: 8300000, guid: dcdd52c7cb278cd4896ed30ed2047587, type: 3}
+        objectReferences: []
       enumVariables: []
       categories:
       - 
