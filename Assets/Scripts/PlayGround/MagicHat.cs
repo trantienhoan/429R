@@ -37,6 +37,9 @@ namespace Game.PlayGround
         [Tooltip("The card it spits out (Recipe_Card). Its size in its prefab is its full size.")]
         [SerializeField] private GameObject card;
         [SerializeField] private TMP_FontAsset font;
+        [Tooltip("Colour of the recipe's writing. The card is lit by the scene and looks dark, so a light colour reads " +
+                 "best. Used each time the card comes out, so it can be changed while playing.")]
+        [SerializeField] private Color textColor = new(1f, 0.93f, 0.78f, 1f);
         [Tooltip("How big the card is as it leaves the hat, compared to its full size (0.2 = a fifth).")]
         [Range(0.01f, 1f)]
         [SerializeField] private float startSize = 0.2f;
@@ -81,7 +84,6 @@ namespace Game.PlayGround
         private const float CountWidth = 110f;
         // Going back in takes this share of Fly Seconds.
         private const float BackShare = 0.7f;
-        private static readonly Color InkColor = new(0.3f, 0.16f, 0.08f, 1f);
 
         private readonly List<Collider> colliders = new();
         private Transform[] hands = System.Array.Empty<Transform>();
@@ -323,13 +325,13 @@ namespace Game.PlayGround
             int rows = lines != null ? lines.Count : 0;
             float top = Mathf.Max(0f, (height - TitleHeight - Mathf.Max(1, rows) * RowHeight) * 0.5f);
 
-            var title = WorldUI.CreateText("Title", recipe, "Recipe", 46f, FontStyles.Bold, TextAlignmentOptions.Center, InkColor, font);
+            var title = WorldUI.CreateText("Title", recipe, "Recipe", 46f, FontStyles.Bold, TextAlignmentOptions.Center, textColor, font);
             WorldUI.Place((Graphic)title, 0f, top, CanvasWidth, TitleHeight);
             top += TitleHeight;
 
             if (rows == 0)
             {
-                var none = WorldUI.CreateText("None", recipe, "???", 44f, FontStyles.Bold, TextAlignmentOptions.Center, InkColor, font);
+                var none = WorldUI.CreateText("None", recipe, "???", 44f, FontStyles.Bold, TextAlignmentOptions.Center, textColor, font);
                 WorldUI.Place((Graphic)none, 0f, top, CanvasWidth, RowHeight);
                 return;
             }
@@ -340,7 +342,7 @@ namespace Game.PlayGround
                 var line = lines[i];
                 if (line.icon == null)
                 {
-                    var words = WorldUI.CreateText($"Line {i + 1}", recipe, $"{line.count} x {line.id.Replace('_', ' ')}", 34f, FontStyles.Bold, TextAlignmentOptions.Center, InkColor, font);
+                    var words = WorldUI.CreateText($"Line {i + 1}", recipe, $"{line.count} x {line.id.Replace('_', ' ')}", 34f, FontStyles.Bold, TextAlignmentOptions.Center, textColor, font);
                     WorldUI.Place((Graphic)words, 0f, top, CanvasWidth, RowHeight);
                     continue;
                 }
@@ -349,7 +351,7 @@ namespace Game.PlayGround
                 icon.sprite = line.icon;
                 icon.preserveAspect = true;
                 WorldUI.Place(icon, left, top + (RowHeight - IconSize) * 0.5f, IconSize, IconSize);
-                var count = WorldUI.CreateText($"Count {i + 1}", recipe, $"x {line.count}", 44f, FontStyles.Bold, TextAlignmentOptions.Left, InkColor, font);
+                var count = WorldUI.CreateText($"Count {i + 1}", recipe, $"x {line.count}", 44f, FontStyles.Bold, TextAlignmentOptions.Left, textColor, font);
                 WorldUI.Place((Graphic)count, left + IconSize + 16f, top, CountWidth, RowHeight);
             }
         }
