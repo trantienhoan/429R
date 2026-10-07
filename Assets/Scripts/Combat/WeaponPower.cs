@@ -14,7 +14,11 @@ namespace Game.Combat
         [Min(0f)]
         [SerializeField] private float power = 1f;
 
-        public float Power => power;
+        public float Power
+        {
+            get => power;
+            set => power = Mathf.Max(0f, value);
+        }
 
         /// <summary>The Power of whatever made this collision, or 1 if it has none.</summary>
         public static float Of(Collision collision)

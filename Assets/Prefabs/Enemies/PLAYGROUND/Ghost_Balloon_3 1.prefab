@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 7038164651913242741}
   - component: {fileID: 7451896395164027978}
   m_Layer: 0
-  m_Name: Ghost_Balloon_3
+  m_Name: Ghost_Balloon_3 1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -31,8 +31,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -165,8 +165,8 @@ MonoBehaviour:
   chaseSpeed: 3
   chaseAcceleration: 4
   popDistance: 0.8
-  giveUpSeconds: 12
-  popSpeed: 3
+  giveUpSeconds: 0
+  popSpeed: 0
   faceAngle: 0
   popEffect: {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
@@ -175,9 +175,9 @@ MonoBehaviour:
   popVolume: 1
   playerEvent: Damage
   spiders:
-  - {fileID: 3569810238917063108, guid: 3c4b81dc3e6d2c84b8134f1846cb20a0, type: 3}
-  - {fileID: 3569810238917063108, guid: 5075d28a224617f4597ed08c924dfd6f, type: 3}
-  - {fileID: 3569810238917063108, guid: 5075d28a224617f4597ed08c924dfd6f, type: 3}
+  - {fileID: 5493437295386993518, guid: 8491cd992a35a434f85c589a7d08eb46, type: 3}
+  - {fileID: 5493437295386993518, guid: 8491cd992a35a434f85c589a7d08eb46, type: 3}
+  - {fileID: 5493437295386993518, guid: 8491cd992a35a434f85c589a7d08eb46, type: 3}
   minSpiders: 1
   maxSpiders: 2
   spiderSpread: 3
@@ -191,9 +191,9 @@ MonoBehaviour:
   - {fileID: 2705934757662115548, guid: b83a2b770cc1edb48815d03a234d9fd6, type: 3}
   - {fileID: 2705934757662115548, guid: bdbf460df9ad2b149942ce46760eef35, type: 3}
   - {fileID: 2705934757662115548, guid: 30ccfed19e8511248b72a0b497590624, type: 3}
-  minLollipops: 1
-  maxLollipops: 2
-  travelSpeed: 3
+  minLollipops: 3
+  maxLollipops: 7
+  travelSpeed: 4
   roam: 1
   roamSpeed: 0.6
   minStop: 1

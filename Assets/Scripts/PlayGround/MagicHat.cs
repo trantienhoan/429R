@@ -12,8 +12,9 @@ namespace Game.PlayGround
     /// throw, or slap it) and it shakes and spits out its recipe card (Recipe_Card): the card flies up out of it,
     /// growing from a fifth of its size to full size, and hangs above it with the recipe (each ingredient's picture and
     /// how many) on its blank side, turned to the player. After a few seconds, or once the player walks off, it flies
-    /// back into the hat; another hit brings it out again. When a wrong recipe finishes cooking, the hat shakes and
-    /// giggles, a hint to go and read it. Goes on the hat's root, which needs a collider.
+    /// back into the hat; another hit brings it out again. Once the card has been out, the cauldron shows the recipe
+    /// above its pot too, as ingredients go in. When a wrong recipe finishes cooking, the hat shakes and giggles, a hint
+    /// to go and read it. Goes on the hat's root, which needs a collider.
     /// </summary>
     [DisallowMultipleComponent]
     public class MagicHat : MonoBehaviour
@@ -78,7 +79,6 @@ namespace Game.PlayGround
         // The recipe is written this many pixels wide, over this much of the card's side (its border stays clear).
         private const float CanvasWidth = 300f;
         private const float FaceUse = 0.74f;
-        private const float TitleHeight = 64f;
         private const float RowHeight = 72f;
         private const float IconSize = 60f;
         private const float CountWidth = 110f;
@@ -134,11 +134,13 @@ namespace Game.PlayGround
         private void OnEnable()
         {
             Cauldron.CookFailed += OnCookFailed;
+            Cauldron.RecipeChanged += OnRecipeChanged;
         }
 
         private void OnDisable()
         {
             Cauldron.CookFailed -= OnCookFailed;
+            Cauldron.RecipeChanged -= OnRecipeChanged;
             if (cardShown != null) cardShown.gameObject.SetActive(false);
             state = CardState.Inside;
         }
@@ -259,6 +261,8 @@ namespace Game.PlayGround
             }
 
             BuildRecipe();
+            // The player has seen it now, so the cauldron shows it too.
+            if (cauldron != null) cauldron.RevealRecipe();
             hatTop = Top();
             flyFrom = hatTop;
             flyFromSize = startSize;
@@ -321,38 +325,33 @@ namespace Game.PlayGround
             recipe.localPosition = new Vector3(cardShape.center.x, cardShape.center.y - cardShape.size.y * FaceUse * 0.5f, side);
             recipe.localRotation = otherSide ? Quaternion.Euler(0f, 180f, 0f) : Quaternion.identity;
 
+            // Just the ingredients, each picture with how many: no title or words. All cooked, the card is blank.
             var lines = cauldron != null ? cauldron.Recipe : null;
             int rows = lines != null ? lines.Count : 0;
-            float top = Mathf.Max(0f, (height - TitleHeight - Mathf.Max(1, rows) * RowHeight) * 0.5f);
+            if (rows == 0) return;
+            // More rows than fit are made smaller, so they all stay on the card.
+            float fit = Mathf.Min(1f, height / (rows * RowHeight));
+            float rowHeight = RowHeight * fit;
+            float top = Mathf.Max(0f, (height - rows * rowHeight) * 0.5f);
 
-            var title = WorldUI.CreateText("Title", recipe, "Recipe", 46f, FontStyles.Bold, TextAlignmentOptions.Center, textColor, font);
-            WorldUI.Place((Graphic)title, 0f, top, CanvasWidth, TitleHeight);
-            top += TitleHeight;
-
-            if (rows == 0)
-            {
-                var none = WorldUI.CreateText("None", recipe, "???", 44f, FontStyles.Bold, TextAlignmentOptions.Center, textColor, font);
-                WorldUI.Place((Graphic)none, 0f, top, CanvasWidth, RowHeight);
-                return;
-            }
-
-            const float left = (CanvasWidth - IconSize - 16f - CountWidth) * 0.5f;
-            for (int i = 0; i < rows; i++, top += RowHeight)
+            float iconSize = IconSize * fit;
+            float left = (CanvasWidth - iconSize - 16f - CountWidth) * 0.5f;
+            for (int i = 0; i < rows; i++, top += rowHeight)
             {
                 var line = lines[i];
                 if (line.icon == null)
                 {
-                    var words = WorldUI.CreateText($"Line {i + 1}", recipe, $"{line.count} x {line.id.Replace('_', ' ')}", 34f, FontStyles.Bold, TextAlignmentOptions.Center, textColor, font);
-                    WorldUI.Place((Graphic)words, 0f, top, CanvasWidth, RowHeight);
+                    var words = WorldUI.CreateText($"Line {i + 1}", recipe, $"{line.count} x {line.id.Replace('_', ' ')}", 34f * fit, FontStyles.Bold, TextAlignmentOptions.Center, textColor, font);
+                    WorldUI.Place((Graphic)words, 0f, top, CanvasWidth, rowHeight);
                     continue;
                 }
 
                 var icon = WorldUI.CreateImage($"Icon {i + 1}", recipe, Color.white);
                 icon.sprite = line.icon;
                 icon.preserveAspect = true;
-                WorldUI.Place(icon, left, top + (RowHeight - IconSize) * 0.5f, IconSize, IconSize);
-                var count = WorldUI.CreateText($"Count {i + 1}", recipe, $"x {line.count}", 44f, FontStyles.Bold, TextAlignmentOptions.Left, textColor, font);
-                WorldUI.Place((Graphic)count, left + IconSize + 16f, top, CountWidth, RowHeight);
+                WorldUI.Place(icon, left, top + (rowHeight - iconSize) * 0.5f, iconSize, iconSize);
+                var count = WorldUI.CreateText($"Count {i + 1}", recipe, $"x {line.count}", 44f * fit, FontStyles.Bold, TextAlignmentOptions.Left, textColor, font);
+                WorldUI.Place((Graphic)count, left + iconSize + 16f, top, CountWidth, rowHeight);
             }
         }
 
@@ -453,6 +452,18 @@ namespace Game.PlayGround
         private void OnCookFailed(Cauldron from)
         {
             if (cauldron == null || from == cauldron) Shake();
+        }
+
+        // A new round: a card that's out shows the new recipe at once (and the player sees it there).
+        private void OnRecipeChanged(Cauldron from)
+        {
+            if (cauldron != null && from != cauldron) return;
+            if (cardShown == null || !cardShown.gameObject.activeSelf) return;
+            if (state != CardState.FlyingOut && state != CardState.Out) return;
+
+            cauldron = from;
+            BuildRecipe();
+            cauldron.RevealRecipe();
         }
 
         // The top of the hat, where the card comes out.

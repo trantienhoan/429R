@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 7038164651913242741}
   - component: {fileID: 7451896395164027978}
   m_Layer: 0
-  m_Name: Ghost_Balloon_3
+  m_Name: Ghost_Balloon_3 2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -31,8 +31,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -140,7 +140,7 @@ SphereCollider:
   m_Enabled: 1
   serializedVersion: 3
   m_Radius: 0.4289
-  m_Center: {x: -0.00948, y: 2.61, z: 0.00434}
+  m_Center: {x: -0.00948, y: 2.62, z: 0.00434}
 --- !u!114 &7451896395164027978
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -162,25 +162,25 @@ MonoBehaviour:
   wakeDistance: 3
   wakeSound: {fileID: 8300000, guid: 65c5edb7665d2534d8a6090dd59672e9, type: 3}
   wakeSeconds: 0.8
-  chaseSpeed: 3
-  chaseAcceleration: 4
+  chaseSpeed: 5
+  chaseAcceleration: 8
   popDistance: 0.8
-  giveUpSeconds: 12
-  popSpeed: 3
+  giveUpSeconds: 0
+  popSpeed: 0
   faceAngle: 0
   popEffect: {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
-  popEffectScale: 0.12
+  popEffectScale: 0.25
   popSound: {fileID: 8300000, guid: 9f949067a6ae201488b230123a6baac0, type: 3}
   popVolume: 1
   playerEvent: Damage
   spiders:
-  - {fileID: 3569810238917063108, guid: 3c4b81dc3e6d2c84b8134f1846cb20a0, type: 3}
-  - {fileID: 3569810238917063108, guid: 5075d28a224617f4597ed08c924dfd6f, type: 3}
-  - {fileID: 3569810238917063108, guid: 5075d28a224617f4597ed08c924dfd6f, type: 3}
+  - {fileID: 5493437295386993518, guid: 491f16cbc0940c649aea2d650e4d07c7, type: 3}
+  - {fileID: 5493437295386993518, guid: 491f16cbc0940c649aea2d650e4d07c7, type: 3}
+  - {fileID: 5493437295386993518, guid: 491f16cbc0940c649aea2d650e4d07c7, type: 3}
   minSpiders: 1
   maxSpiders: 2
-  spiderSpread: 3
+  spiderSpread: 0.8
   ignoreEnemyLimit: 0
   inFaceBool: 
   lollipops:
@@ -191,9 +191,9 @@ MonoBehaviour:
   - {fileID: 2705934757662115548, guid: b83a2b770cc1edb48815d03a234d9fd6, type: 3}
   - {fileID: 2705934757662115548, guid: bdbf460df9ad2b149942ce46760eef35, type: 3}
   - {fileID: 2705934757662115548, guid: 30ccfed19e8511248b72a0b497590624, type: 3}
-  minLollipops: 1
-  maxLollipops: 2
-  travelSpeed: 3
+  minLollipops: 3
+  maxLollipops: 7
+  travelSpeed: 5
   roam: 1
   roamSpeed: 0.6
   minStop: 1

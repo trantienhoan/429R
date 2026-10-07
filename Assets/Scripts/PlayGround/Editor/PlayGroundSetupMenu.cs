@@ -158,6 +158,8 @@ namespace Game.EditorTools
             {
                 var cauldron = GetOrAdd<Cauldron>(root, out bool added);
                 SetIfEmpty(cauldron, "badPumpkin", Load<GameObject>(BlackPumpkinPath));
+                SetIfEmpty(cauldron, "addEffect", smoke);
+                SetRoundResults(cauldron);
                 if (!added) return;
 
                 Set(cauldron, "pot", Find(root, "Magical_Pot"));
@@ -167,9 +169,6 @@ namespace Game.EditorTools
                 Set(cauldron, "fire", fire != null ? fire.GetComponent<ParticleSystem>() : null);
                 SetArray(cauldron, "lollipops", lollipops);
                 Set(cauldron, "pumpkin", Load<GameObject>(PumpkinOnTreePath));
-                var results = new List<Object>();
-                for (int n = 0; n <= 2; n++) results.Add(Load<GameObject>(string.Format(ResultPath, n)));
-                SetArray(cauldron, "results", results);
                 var laughs = new List<Object>();
                 for (int n = 1; n <= 5; n++) laughs.Add(Load<AudioClip>($"{Sfx}laughing_pumpkin_{n}.wav"));
                 SetArray(cauldron, "laughs", laughs);
@@ -388,6 +387,22 @@ namespace Game.EditorTools
             var property = serialized.FindProperty(field);
             if (property == null) return;
             property.objectReferenceValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        // Rounds with no result yet make Pumpkin_8, the last one Pumpkin_9.
+        private static void SetRoundResults(Cauldron cauldron)
+        {
+            var serialized = new SerializedObject(cauldron);
+            var rounds = serialized.FindProperty("rounds");
+            if (rounds == null) return;
+            for (int i = 0; i < rounds.arraySize; i++)
+            {
+                var result = rounds.GetArrayElementAtIndex(i).FindPropertyRelative("result");
+                if (result.objectReferenceValue != null) continue;
+                bool last = i == rounds.arraySize - 1;
+                result.objectReferenceValue = Load<GameObject>(string.Format(ResultPath, last ? 9 : 8));
+            }
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 

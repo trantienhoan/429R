@@ -10,14 +10,16 @@ using Random = UnityEngine.Random;
 namespace Game.PlayGround
 {
     /// <summary>
-    /// The PlayGround's witch cauldron. Each time the PlayGround opens it thinks up a recipe: a few lollipops (Lolipop_1
-    /// ... 7, e.g. 3x Lolipop 1 + 1x Lolipop 7) and a Pumpkin_On_Tree; the magic hat shows it. Ingredients dropped or
-    /// thrown into the pot are taken in; once it holds as many as the recipe asks for, it starts cooking: the surface
-    /// bubbles, coloured bubbles and skulls fly out and a meter fills above it. Firewood thrown into the fire under it
-    /// makes the fire roar and the cooking go faster for a while. Done: the right recipe makes a laughing pumpkin
-    /// (Pumpkin_0, 1 or 2) jump out; a wrong one spits out a black pumpkin (pumpkin_black) that bursts into a mini boss
-    /// where it lands, and the magic hat shakes. Then it's empty, ready for the next try. Goes on Fire_Woods_n_Cauldron's
-    /// root; it makes its own zones, meter and pot collider when the game runs.
+    /// The PlayGround's witch cauldron. It cooks a few dishes in a row (Rounds), each with its own recipe of pumpkins
+    /// (Pumpkin_On_Tree) and random lollipops (Lolipop_1 ... 7); the magic hat shows the current one. Ingredients dropped
+    /// or thrown into the pot are taken in with a puff of green smoke; once the player has read the recipe off the hat,
+    /// what's in the pot and what's still missing shows above it. Once it holds as many as the recipe asks for, it starts
+    /// cooking: the surface bubbles, coloured bubbles and skulls fly out and a meter fills above it. Firewood thrown into
+    /// the fire under it makes the fire roar and the cooking go faster for a while. Done: the right recipe makes the
+    /// round's pumpkins (Pumpkin_8, then 2x Pumpkin_9 for the last) jump out and the next round's recipe begins; a wrong
+    /// one spits out a black pumpkin (pumpkin_black) that bursts into a mini boss where it lands, the magic hat shakes,
+    /// and the same recipe has to be tried again. After the last round it's done and takes nothing more. Goes on
+    /// Fire_Woods_n_Cauldron's root; it makes its own zones, panels and pot collider when the game runs.
     /// </summary>
     [DisallowMultipleComponent]
     public class Cauldron : MonoBehaviour
@@ -29,6 +31,20 @@ namespace Game.PlayGround
             public string id;
             public int count;
             public Sprite icon;
+        }
+
+        /// <summary>One dish: what its recipe asks for, and what it makes when cooked right.</summary>
+        [Serializable]
+        public class Round
+        {
+            [Tooltip("How many pumpkins (Pumpkin_On_Tree) the recipe asks for.")]
+            [Min(0)] public int pumpkins = 1;
+            [Tooltip("How many lollipops the recipe asks for; each is picked at random.")]
+            [Min(0)] public int lollipops = 2;
+            [Tooltip("What it makes when cooked right, e.g. Pumpkin_8.")]
+            public GameObject result;
+            [Tooltip("How many of them jump out.")]
+            [Min(1)] public int results = 1;
         }
 
         public enum Zone
@@ -51,18 +67,31 @@ namespace Game.PlayGround
         [SerializeField] private Vector3 fireCenter = new(0.08f, 0.3f, -0.05f);
         [SerializeField] private Vector3 fireSize = new(1.9f, 0.8f, 1.9f);
 
-        [Header("Recipe (a new one each time the PlayGround opens)")]
+        [Header("Rounds (cooked one after another; new random lollipops each time the PlayGround opens)")]
+        [Tooltip("The dishes it cooks, in order. A wrong recipe doesn't count: that round's recipe stays until it's " +
+                 "cooked right. After the last one it takes nothing more.")]
+        [SerializeField] private Round[] rounds =
+        {
+            new() { pumpkins = 1, lollipops = 2 },
+            new() { pumpkins = 1, lollipops = 3 },
+            new() { pumpkins = 1, lollipops = 4 },
+            new() { pumpkins = 2, lollipops = 5, results = 2 },
+        };
         [Tooltip("The lollipops a recipe can ask for (Lolipop_1 ... 7).")]
         [SerializeField] private GameObject[] lollipops = Array.Empty<GameObject>();
-        [Tooltip("How many lollipops a recipe asks for, in all.")]
-        [Min(1)] [SerializeField] private int minLollipops = 3;
-        [Min(1)] [SerializeField] private int maxLollipops = 5;
-        [Tooltip("How many different lollipops a recipe asks for.")]
-        [Min(1)] [SerializeField] private int minKinds = 1;
-        [Min(1)] [SerializeField] private int maxKinds = 2;
-        [Tooltip("The pumpkin every recipe needs (Pumpkin_On_Tree), and how many.")]
+        [Tooltip("Most different lollipops one recipe asks for, so it fits on the card.")]
+        [Min(1)] [SerializeField] private int maxKinds = 3;
+        [Tooltip("The pumpkin recipes ask for (Pumpkin_On_Tree).")]
         [SerializeField] private GameObject pumpkin;
-        [Min(0)] [SerializeField] private int pumpkins = 1;
+        [Tooltip("Each new round's recipe has to be read off the magic hat again before it shows above the cauldron.")]
+        [SerializeField] private bool hatEachRound = true;
+
+        [Header("Taking in")]
+        [Tooltip("Puff at the pot each time an ingredient goes in, e.g. smoke; it's tinted Add Effect Color.")]
+        [SerializeField] private GameObject addEffect;
+        [SerializeField] private Color addEffectColor = new(0.35f, 1f, 0.3f, 1f);
+        [Tooltip("Size of the puff. The Hyper Casual FX smoke is about 13 m wide, so 0.07 makes it about 0.9 m.")]
+        [Min(0.01f)] [SerializeField] private float addEffectScale = 0.07f;
 
         [Header("Cooking")]
         [Tooltip("Seconds it takes to cook with no extra firewood.")]
@@ -75,13 +104,11 @@ namespace Game.PlayGround
         [SerializeField] private AudioClip fuelSound;
 
         [Header("Done")]
-        [Tooltip("What a right recipe makes; one is picked at random (Pumpkin_0, 1, 2).")]
-        [SerializeField] private GameObject[] results = Array.Empty<GameObject>();
-        [Tooltip("Played with it; one at random.")]
+        [Tooltip("Played when a right recipe is done; one at random.")]
         [SerializeField] private AudioClip[] laughs = Array.Empty<AudioClip>();
         [SerializeField] private AudioClip successSound;
-        [Tooltip("Optional: a GAMESTAGES bool that turns true when it cooks the right recipe, for the PlayGround's FSMs. " +
-                 "Add it to the GAMESTAGES FSM's Variables.")]
+        [Tooltip("Optional: a GAMESTAGES bool that turns true once it has cooked its last round, for the PlayGround's " +
+                 "FSMs. Add it to the GAMESTAGES FSM's Variables.")]
         [SerializeField] private string cookedBool;
         [Tooltip("What a wrong recipe spits out (pumpkin_black), and how many; each bursts into a mini boss where it lands.")]
         [SerializeField] private GameObject badPumpkin;
@@ -101,8 +128,10 @@ namespace Game.PlayGround
 
         /// <summary>Raised when a wrong recipe finishes cooking (the magic hat shakes).</summary>
         public static event Action<Cauldron> CookFailed;
-        /// <summary>Raised when a right recipe finishes cooking, with what it made.</summary>
+        /// <summary>Raised when a right recipe finishes cooking, once for each thing it made.</summary>
         public static event Action<Cauldron, GameObject> Cooked;
+        /// <summary>Raised when it moves on to the next round's recipe, or has cooked them all.</summary>
+        public static event Action<Cauldron> RecipeChanged;
 
         // Things it spawns go here, so the stage clean-up removes them.
         private const string SpawnedStuffVariable = "CurrentlySpawnedStuffs";
@@ -114,6 +143,12 @@ namespace Game.PlayGround
         private static readonly Color MeterBack = new(0.1f, 0.07f, 0.16f, 0.85f);
         private static readonly Color MeterFill = new(0.55f, 1f, 0.35f, 1f);
         private static readonly Color MeterHot = new(1f, 0.55f, 0.15f, 1f);
+        private static readonly Color TooMany = new(1f, 0.4f, 0.35f, 1f);
+        // The recipe above the pot: one column per ingredient, its picture over "have/need".
+        private const float ColumnWidth = 96f;
+        private const float ColumnIcon = 64f;
+        private const float ColumnCount = 38f;
+        private const float PanelPad = 12f;
         private static readonly List<Cauldron> cauldrons = new();
 
         private readonly List<Line> recipe = new();
@@ -130,11 +165,21 @@ namespace Game.PlayGround
         private RectTransform meterBar;
         private Image meterFillImage;
         private TMP_Text meterText;
+        private RectTransform recipePanel;
         private Transform head;
+        private int round;
+        private bool recipeKnown;
 
         public IReadOnlyList<Line> Recipe => recipe;
         public bool IsCooking => cooking;
         public float Heat => heat;
+        /// <summary>Which round it's on, from 0; equals RoundCount once it has cooked them all.</summary>
+        public int RoundIndex => round;
+        public int RoundCount => rounds.Length;
+        /// <summary>It has cooked every round and takes nothing more.</summary>
+        public bool AllCooked => round >= rounds.Length;
+        /// <summary>The player has read this round's recipe off the magic hat, so it shows above the pot.</summary>
+        public bool RecipeKnown => recipeKnown;
         /// <summary>The middle of the pot's opening.</summary>
         public Vector3 Mouth => MouthPoint();
 
@@ -202,6 +247,15 @@ namespace Game.PlayGround
         private void OnDestroy()
         {
             if (meter != null) Destroy(meter.gameObject);
+            if (recipePanel != null) Destroy(recipePanel.gameObject);
+        }
+
+        /// <summary>The magic hat showed the recipe: from now on it shows above the pot as ingredients go in.</summary>
+        public void RevealRecipe()
+        {
+            if (recipeKnown) return;
+            recipeKnown = true;
+            RefreshRecipePanel();
         }
 
         private void Update()
@@ -232,6 +286,8 @@ namespace Game.PlayGround
         {
             if (zone == Zone.Mouth)
             {
+                // All cooked: what goes in just lies there.
+                if (AllCooked) return;
                 var ingredient = other.GetComponentInParent<CookingIngredient>();
                 if (ingredient != null && taken.Add(ingredient.gameObject)) AddIngredient(ingredient);
             }
@@ -250,9 +306,77 @@ namespace Game.PlayGround
 
             Play(addSound, MouthPoint());
             if (surface != null) surface.Emit(4);
+            Puff();
             Destroy(ingredient.gameObject);
 
             if (!cooking && count >= RecipeTotal) StartCooking();
+            RefreshRecipePanel();
+        }
+
+        // A puff of green smoke out of the pot.
+        private void Puff()
+        {
+            if (addEffect == null) return;
+            var effect = Instantiate(addEffect, MouthPoint() + Vector3.up * 0.1f, Quaternion.identity);
+            effect.transform.localScale = Vector3.one * addEffectScale;
+            Tint(effect, addEffectColor);
+            Destroy(effect, 4f);
+        }
+
+        // Colours every particle system in 'effect' (it keeps its see-through-ness), then starts it over in that colour.
+        private static void Tint(GameObject effect, Color color)
+        {
+            var systems = effect.GetComponentsInChildren<ParticleSystem>(true);
+            foreach (var system in systems)
+            {
+                var main = system.main;
+                var start = main.startColor;
+                float had = start.mode switch
+                {
+                    ParticleSystemGradientMode.Color => start.color.a,
+                    ParticleSystemGradientMode.TwoColors => start.colorMax.a,
+                    _ => 1f,
+                };
+                float alpha = had * color.a;
+                var light = Color.Lerp(color, Color.white, 0.35f);
+                var dark = color * 0.7f;
+                light.a = alpha;
+                dark.a = alpha;
+                main.startColor = new ParticleSystem.MinMaxGradient(dark, light);
+
+                // Colour over lifetime would colour it again: it keeps only its fading.
+                var life = system.colorOverLifetime;
+                if (life.enabled) life.color = Whiten(life.color);
+            }
+            foreach (var system in systems)
+            {
+                system.Clear(false);
+                system.Play(false);
+            }
+        }
+
+        private static ParticleSystem.MinMaxGradient Whiten(ParticleSystem.MinMaxGradient colors)
+        {
+            switch (colors.mode)
+            {
+                case ParticleSystemGradientMode.Color:
+                    return new ParticleSystem.MinMaxGradient(new Color(1f, 1f, 1f, colors.color.a));
+                case ParticleSystemGradientMode.TwoColors:
+                    return new ParticleSystem.MinMaxGradient(new Color(1f, 1f, 1f, colors.colorMin.a), new Color(1f, 1f, 1f, colors.colorMax.a));
+                case ParticleSystemGradientMode.Gradient:
+                    return new ParticleSystem.MinMaxGradient(Whiten(colors.gradient));
+                case ParticleSystemGradientMode.TwoGradients:
+                    return new ParticleSystem.MinMaxGradient(Whiten(colors.gradientMin), Whiten(colors.gradientMax));
+                default:
+                    return colors;
+            }
+        }
+
+        private static Gradient Whiten(Gradient gradient)
+        {
+            var white = new Gradient { mode = gradient.mode };
+            white.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) }, gradient.alphaKeys);
+            return white;
         }
 
         private void AddFuel(FireFuel fuel)
@@ -284,11 +408,31 @@ namespace Game.PlayGround
                 Destroy(effect, 4f);
             }
 
-            if (RightRecipe()) MakeResult(at);
+            bool right = RightRecipe();
+            if (right) MakeResult(at);
             else Fail(at);
 
             contents.Clear();
             count = 0;
+            if (right) NextRound();
+            RefreshRecipePanel();
+        }
+
+        // On to the next dish, with a new recipe; after the last one it's done.
+        private void NextRound()
+        {
+            round++;
+            if (hatEachRound) recipeKnown = false;
+            if (AllCooked)
+            {
+                recipe.Clear();
+                if (!string.IsNullOrEmpty(cookedBool)) GameStages.SetBool(cookedBool, true, this);
+            }
+            else
+            {
+                MakeRecipe();
+            }
+            RecipeChanged?.Invoke(this);
         }
 
         private bool RightRecipe()
@@ -302,23 +446,28 @@ namespace Game.PlayGround
             return true;
         }
 
-        // A laughing pumpkin jumps out of the pot.
+        // The round's pumpkins jump out of the pot, each off to a different side.
         private void MakeResult(Vector3 at)
         {
-            if (!string.IsNullOrEmpty(cookedBool)) GameStages.SetBool(cookedBool, true, this);
             Play(successSound, at);
             if (laughs.Length > 0) Play(laughs[Random.Range(0, laughs.Length)], at);
 
-            var prefab = results.Length > 0 ? results[Random.Range(0, results.Length)] : null;
-            if (prefab == null) return;
+            var dish = rounds[round];
+            if (dish.result == null) return;
 
-            var made = Instantiate(prefab, at + Vector3.up * 0.3f, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f), SpawnedStuff());
-            if (made.TryGetComponent<Rigidbody>(out var body) && !body.isKinematic)
+            int amount = Mathf.Max(1, dish.results);
+            float start = Random.Range(0f, 360f);
+            for (int i = 0; i < amount; i++)
             {
-                var sideways = Random.insideUnitCircle.normalized * 1.2f;
-                body.linearVelocity = new Vector3(sideways.x, 4.5f, sideways.y);
+                float angle = (start + i * 360f / amount) * Mathf.Deg2Rad;
+                var away = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+                // Side by side, not inside each other.
+                var from = at + Vector3.up * 0.3f + (amount > 1 ? away * 0.35f : Vector3.zero);
+                var made = Instantiate(dish.result, from, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f), SpawnedStuff());
+                if (made.TryGetComponent<Rigidbody>(out var body) && !body.isKinematic)
+                    body.linearVelocity = away * 1.2f + Vector3.up * 4.5f;
+                Cooked?.Invoke(this, made);
             }
-            Cooked?.Invoke(this, made);
         }
 
         // Black pumpkins fly out of the pot in an arc and land around the cauldron, where they burst into mini bosses.
@@ -351,31 +500,35 @@ namespace Game.PlayGround
             return (to - from - 0.5f * seconds * seconds * Physics.gravity) / seconds;
         }
 
-        // A few lollipops of one or two kinds, and the pumpkin.
+        // This round's lollipops, each picked at random (at most Max Kinds different ones), and its pumpkins.
         private void MakeRecipe()
         {
             recipe.Clear();
+            if (AllCooked) return;
+            var dish = rounds[round];
+
             var pool = new List<GameObject>();
             foreach (var lollipop in lollipops)
             {
                 if (lollipop != null) pool.Add(lollipop);
             }
-            for (int i = pool.Count - 1; i > 0; i--)
-            {
-                int j = Random.Range(0, i + 1);
-                (pool[i], pool[j]) = (pool[j], pool[i]);
-            }
 
-            if (pool.Count > 0)
+            var kinds = new List<GameObject>();
+            var counts = new List<int>();
+            for (int i = 0; i < dish.lollipops && pool.Count > 0; i++)
             {
-                int kinds = Mathf.Clamp(Random.Range(minKinds, Mathf.Max(minKinds, maxKinds) + 1), 1, pool.Count);
-                int total = Mathf.Max(kinds, Random.Range(minLollipops, Mathf.Max(minLollipops, maxLollipops) + 1));
-                var counts = new int[kinds];
-                for (int i = 0; i < kinds; i++) counts[i] = 1;
-                for (int left = total - kinds; left > 0; left--) counts[Random.Range(0, kinds)]++;
-                for (int i = 0; i < kinds; i++) recipe.Add(LineFor(pool[i], counts[i]));
+                var pick = kinds.Count >= maxKinds ? kinds[Random.Range(0, kinds.Count)] : pool[Random.Range(0, pool.Count)];
+                int had = kinds.IndexOf(pick);
+                if (had >= 0)
+                {
+                    counts[had]++;
+                    continue;
+                }
+                kinds.Add(pick);
+                counts.Add(1);
             }
-            if (pumpkin != null && pumpkins > 0) recipe.Add(LineFor(pumpkin, pumpkins));
+            for (int i = 0; i < kinds.Count; i++) recipe.Add(LineFor(kinds[i], counts[i]));
+            if (pumpkin != null && dish.pumpkins > 0) recipe.Add(LineFor(pumpkin, dish.pumpkins));
         }
 
         private static Line LineFor(GameObject prefab, int amount)
@@ -410,11 +563,14 @@ namespace Game.PlayGround
             go.AddComponent<CauldronZone>().Setup(this, zone);
         }
 
-        // "2 / 5" while ingredients go in; a filling bar while it cooks, orange when the fire is hot.
+        // A filling bar while it cooks, orange when the fire is hot. Before that, once the player has read the recipe off
+        // the hat and put something in, the recipe with what's in and what's missing (see RefreshRecipePanel).
         private void UpdateMeter()
         {
-            bool show = cooking || count > 0;
-            if (!show)
+            if (head == null && Camera.main != null) head = Camera.main.transform;
+            if (recipePanel != null && recipePanel.gameObject.activeSelf) PlacePanel(recipePanel);
+
+            if (!cooking)
             {
                 if (meter != null && meter.gameObject.activeSelf) meter.gameObject.SetActive(false);
                 return;
@@ -422,16 +578,73 @@ namespace Game.PlayGround
             if (meter == null) BuildMeter();
             if (!meter.gameObject.activeSelf) meter.gameObject.SetActive(true);
 
-            meterText.text = cooking ? (heat > 0.5f ? "Cooking hot!" : "Cooking...") : $"{count} / {RecipeTotal}";
-            meterBar.gameObject.SetActive(cooking);
+            meterText.text = heat > 0.5f ? "Cooking hot!" : "Cooking...";
             var fill = meterFillImage.rectTransform;
             fill.anchorMax = new Vector2(Mathf.Clamp01(progress), 1f);
             meterFillImage.color = Color.Lerp(MeterFill, MeterHot, Mathf.Clamp01(heat / Mathf.Max(0.01f, maxHeat)));
+            PlacePanel(meter);
+        }
 
+        // Floats a panel above the pot, turned to the player.
+        private void PlacePanel(RectTransform panel)
+        {
             var top = pot != null && pot.TryGetComponent<Renderer>(out var shape) ? shape.bounds.max.y : MouthPoint().y;
-            meter.position = new Vector3(transform.position.x, top + meterHeight, transform.position.z);
-            if (head == null && Camera.main != null) head = Camera.main.transform;
-            WorldUI.Face(meter, head);
+            panel.position = new Vector3(transform.position.x, top + meterHeight, transform.position.z);
+            WorldUI.Face(panel, head);
+        }
+
+        // The recipe above the pot: each ingredient's picture over how many are in / how many it needs (green when
+        // there are enough, red when too many), and a red "?" for anything that isn't in the recipe. Shown only once the
+        // magic hat has shown the recipe, and only while ingredients are going in. Rebuilt whenever that changes.
+        private void RefreshRecipePanel()
+        {
+            if (recipePanel != null)
+            {
+                Destroy(recipePanel.gameObject);
+                recipePanel = null;
+            }
+            if (!recipeKnown || cooking || count == 0 || AllCooked || recipe.Count == 0) return;
+
+            int wrong = count;
+            foreach (var line in recipe)
+            {
+                contents.TryGetValue(line.id, out int had);
+                wrong -= Mathf.Min(had, line.count);
+            }
+            int columns = recipe.Count + (wrong > 0 ? 1 : 0);
+            float width = Mathf.Max(ColumnWidth * 2f, columns * ColumnWidth) + PanelPad * 2f;
+            float height = PanelPad + ColumnIcon + ColumnCount + PanelPad;
+            recipePanel = WorldUI.CreatePanel("Cauldron Recipe", width, height, MeterScale, MeterBack);
+
+            float left = (width - columns * ColumnWidth) * 0.5f;
+            for (int i = 0; i < recipe.Count; i++, left += ColumnWidth)
+            {
+                var line = recipe[i];
+                contents.TryGetValue(line.id, out int had);
+                var color = had == line.count ? MeterFill : had > line.count ? TooMany : Color.white;
+                if (line.icon != null)
+                {
+                    var icon = WorldUI.CreateImage($"Icon {i + 1}", recipePanel, Color.white);
+                    icon.sprite = line.icon;
+                    icon.preserveAspect = true;
+                    WorldUI.Place(icon, left + (ColumnWidth - ColumnIcon) * 0.5f, PanelPad, ColumnIcon, ColumnIcon);
+                }
+                else
+                {
+                    var words = WorldUI.CreateText($"Name {i + 1}", recipePanel, line.id.Replace('_', ' '), 18f, FontStyles.Bold, TextAlignmentOptions.Center, Color.white, font);
+                    WorldUI.Place((Graphic)words, left, PanelPad, ColumnWidth, ColumnIcon);
+                }
+                var amount = WorldUI.CreateText($"Count {i + 1}", recipePanel, $"{had}/{line.count}", 30f, FontStyles.Bold, TextAlignmentOptions.Center, color, font);
+                WorldUI.Place((Graphic)amount, left, PanelPad + ColumnIcon, ColumnWidth, ColumnCount);
+            }
+            if (wrong > 0)
+            {
+                var what = WorldUI.CreateText("Wrong", recipePanel, "?", 54f, FontStyles.Bold, TextAlignmentOptions.Center, TooMany, font);
+                WorldUI.Place((Graphic)what, left, PanelPad, ColumnWidth, ColumnIcon);
+                var amount = WorldUI.CreateText("Wrong Count", recipePanel, $"x {wrong}", 30f, FontStyles.Bold, TextAlignmentOptions.Center, TooMany, font);
+                WorldUI.Place((Graphic)amount, left, PanelPad + ColumnIcon, ColumnWidth, ColumnCount);
+            }
+            PlacePanel(recipePanel);
         }
 
         private void BuildMeter()

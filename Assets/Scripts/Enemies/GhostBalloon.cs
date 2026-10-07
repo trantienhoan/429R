@@ -1,7 +1,9 @@
+using Game.Combat;
 using Game.PlayGround;
 using Unity.XR.CoreUtils;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.Serialization;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using FsmVariables = HutongGames.PlayMaker.FsmVariables;
 
@@ -11,12 +13,13 @@ namespace Game.Enemies
     /// A ghost balloon. It floats about, bobbing, drifting and swaying with its string swinging below, and gets knocked
     /// about by whatever hits it. With Roam on it wanders from spot to spot around its Ghost Roam Area (e.g. the
     /// PlayGround), now and then hanging out around the cauldron for a while; otherwise it stays where it's placed.
-    /// Woken (hit by the player: something they hold or throw, or their hand;
-    /// or, with Wake On Near, when the player comes close), it giggles and shakes, then chases the player's face and
-    /// pops in it: a puff of smoke, a pop, a bite of damage, and 3-5 spiders dropped on the floor. Swatted hard while
-    /// it chases, it pops where it is instead and drops 1-2 lollipops as a prize; if it can't reach the player in time it
-    /// just pops. It flies through walls, being a ghost. Trees and bushes let new ones out (Spawn), which float up to
-    /// their spot. Goes on the balloon's root; Tools > 429 Game > Enemies > Set Up Ghost Balloons sets up Ghost_Balloon_1-3.
+    /// One good hit by the player (something they hold or throw, at Pop Speed or faster) pops it at any time, and it
+    /// drops 1-2 lollipops as a prize. A punch or slap of the hand never pops it but pushes it away, also while it
+    /// chases. A hit too soft to pop it, or a punch, makes it angry (as does coming close, with Wake On Near): it
+    /// giggles and shakes, then chases the player's face and pops in it: a puff of smoke, a pop,
+    /// a bite of damage, and 3-5 spiders dropped on the floor. If it can't reach the player in time it just pops. It
+    /// flies through walls, being a ghost. Trees and bushes let new ones out (Spawn), which float up to their spot. Goes
+    /// on the balloon's root; Tools > 429 Game > Enemies > Set Up Ghost Balloons sets up Ghost_Balloon_1-3.
     /// </summary>
     [DisallowMultipleComponent]
     public class GhostBalloon : MonoBehaviour
@@ -26,6 +29,8 @@ namespace Game.Enemies
             Hit,
             Near,
             HitOrNear,
+            // Right away, as soon as it appears (e.g. made by an FSM's Create Object).
+            Start,
         }
 
         private enum Mood
@@ -54,7 +59,8 @@ namespace Game.Enemies
         [SerializeField] private float knock = 1.5f;
 
         [Header("Waking")]
-        [Tooltip("Hit: when the player hits it. Near: when the player comes close. Hit Or Near: either.")]
+        [Tooltip("A hit too soft to pop it always makes it angry. Hit: only that. Near / Hit Or Near: the player coming " +
+                 "close does too. Start: it's angry as soon as it appears and goes straight for the player.")]
         [SerializeField] private WakeOn wakeOn = WakeOn.Hit;
         [Tooltip("With Near: how close the player must come, in metres along the floor (it may float high above them).")]
         [Min(0f)]
@@ -75,13 +81,16 @@ namespace Game.Enemies
         [Tooltip("It pops when its middle is this close to the player's face, in metres.")]
         [Min(0.05f)]
         [SerializeField] private float popDistance = 0.45f;
-        [Tooltip("It gives up and pops where it is after chasing this many seconds.")]
-        [Min(1f)]
-        [SerializeField] private float giveUpSeconds = 12f;
-        [Tooltip("Swatted at least this fast (metres per second) while chasing, it pops where it is, without hurting the " +
-                 "player. 0 = it can't be swatted.")]
+        [Tooltip("It gives up and pops where it is after chasing this many seconds. 0 = it never gives up: it keeps " +
+                 "chasing until it pops in the player's face.")]
         [Min(0f)]
-        [SerializeField] private float swatSpeed = 3f;
+        [SerializeField] private float giveUpSeconds = 12f;
+        [Tooltip("A hit with something held or thrown, or a bullet, at least this fast (metres per second) pops it at once, whatever " +
+                 "it's doing, and it drops its lollipops; a softer hit makes it angry and it chases the player. Punches " +
+                 "push it instead (see Punched). 0 = hits never pop it.")]
+        [Min(0f)]
+        [FormerlySerializedAs("swatSpeed")]
+        [SerializeField] private float popSpeed = 3f;
         [Tooltip("Turns it while it chases, in degrees, if its face isn't on its blue Z arrow.")]
         [SerializeField] private float faceAngle;
 
@@ -97,15 +106,31 @@ namespace Game.Enemies
         [Tooltip("Event sent to the player's Damage FSM when it pops in their face, like a spider's bite: Damage, " +
                  "DamageHeavy, ... Empty: no damage.")]
         [SerializeField] private string playerEvent = "Damage";
-        [Tooltip("Spider prefabs it drops; each picks one at random.")]
+        [Tooltip("What it drops on the floor when it pops in the player's face: spiders, or for a boss balloon mini " +
+                 "bosses (TheSpider, TheCockroach, TheBee ...); each picks one at random.")]
         [SerializeField] private GameObject[] spiders = System.Array.Empty<GameObject>();
         [Min(0)]
         [SerializeField] private int minSpiders = 3;
         [Min(0)]
         [SerializeField] private int maxSpiders = 5;
-        [Tooltip("How far apart the spiders land, in metres.")]
+        [Tooltip("How far apart they land, in metres.")]
         [Min(0f)]
         [SerializeField] private float spiderSpread = 0.8f;
+        [Tooltip("Tick for a boss balloon: what it drops always comes out, even when the game's enemy limit is full " +
+                 "(otherwise it drops only as many as the limit has room for).")]
+        [SerializeField] private bool ignoreEnemyLimit;
+        [Tooltip("Optional: a GAMESTAGES bool that turns true when it pops in the player's face, for the stage's FSMs. " +
+                 "Add it to the GAMESTAGES FSM's Variables.")]
+        [SerializeField] private string inFaceBool;
+
+        [Header("Punched")]
+        [Tooltip("How hard a punch or slap pushes it away: its push speed = the punch's speed x this. Punches never " +
+                 "pop it (weapons do); they make it angry and knock it back, also while it chases.")]
+        [Min(0f)]
+        [SerializeField] private float punchPush = 1f;
+        [Tooltip("Fastest a punch can push it, in metres per second.")]
+        [Min(0f)]
+        [SerializeField] private float maxPunchPush = 6f;
 
         [Header("Popped by the player")]
         [Tooltip("Prizes it drops when the player pops it before it reaches them (Lolipop_1 ... 7); each picks one at random.")]
@@ -169,9 +194,18 @@ namespace Game.Enemies
         private const float CauldronReach = 20f;
         private const float RoamTurnSpeed = 60f;
         private const float HangOutCircling = 12f;
+        // Slower than this (metres per second) is a touch, not a hit.
+        private const float MinHitSpeed = 0.3f;
+        // A hand this close to the balloon's skin, in metres, slaps it.
+        private const float SlapReach = 0.08f;
 
         private Rigidbody body;
         private Vector3 middle;
+        private float radius;
+        private Transform[] hands = System.Array.Empty<Transform>();
+        private Vector3[] lastHand = System.Array.Empty<Vector3>();
+        private bool[] handTouching = System.Array.Empty<bool>();
+        private Vector3 lastMiddle;
         private Vector3 homePosition;
         private Quaternion homeRotation;
         private Vector3 knockOffset;
@@ -249,7 +283,7 @@ namespace Game.Enemies
             body.useGravity = false;
             body.interpolation = RigidbodyInterpolation.Interpolate;
 
-            FindBalloon(gameObject, out middle, out float radius);
+            FindBalloon(gameObject, out middle, out radius);
             if (GetComponentInChildren<Collider>() == null)
             {
                 var sphere = gameObject.AddComponent<SphereCollider>();
@@ -263,6 +297,13 @@ namespace Game.Enemies
 
         private void Start()
         {
+            hands = new[] { XRRig.FindController(left: true), XRRig.FindController(left: false) };
+            lastHand = new Vector3[hands.Length];
+            handTouching = new bool[hands.Length];
+            for (int i = 0; i < hands.Length; i++) lastHand[i] = hands[i] != null ? hands[i].position : Vector3.zero;
+            lastMiddle = Middle();
+            if (wakeOn == WakeOn.Start) Wake();
+
             // Its spot, kept relative to whatever it's placed in, so it goes along when that moves.
             if (homeSet) return;
             homePosition = transform.localPosition;
@@ -271,6 +312,7 @@ namespace Game.Enemies
 
         private void Update()
         {
+            CheckSlaps();
             if (mood != Mood.Floating || wakeOn == WakeOn.Hit || FindHead() == null) return;
 
             var away = head.position - Middle();
@@ -294,28 +336,88 @@ namespace Game.Enemies
             }
         }
 
-        // Hit by something the player holds or threw, or by the player's hand.
+        // Hit by something the player holds or threw, a bullet from their gun, or the player.
         private void OnCollisionEnter(Collision collision)
         {
             if (mood == Mood.Popped) return;
 
+            var hitBy = collision.rigidbody;
             bool byPlayer = collision.collider.GetComponentInParent<XROrigin>() != null;
-            bool byItem = collision.rigidbody != null && collision.rigidbody.GetComponentInParent<XRGrabInteractable>() != null;
-            if (!byPlayer && !byItem) return;
+            bool byItem = hitBy != null && hitBy.GetComponentInParent<XRGrabInteractable>() != null;
+            // Bullets aren't grabbable but have a Weapon Power; fists have one too but push it instead (CheckSlaps).
+            bool byBullet = hitBy != null && hitBy.TryGetComponent<WeaponPower>(out _) && !Fist.IsFistBall(hitBy);
+            if (!byPlayer && !byItem && !byBullet) return;
 
-            float speed = collision.relativeVelocity.magnitude;
-            if (mood == Mood.Chasing)
+            var hitPoint = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
+            TakeHit(collision.relativeVelocity.magnitude, hitPoint);
+        }
+
+        // One good hit pops it, whatever it's doing; a softer one knocks it about and makes it angry.
+        private void TakeHit(float speed, Vector3 hitPoint)
+        {
+            if (mood == Mood.Popped || speed < MinHitSpeed) return;
+            if (popSpeed > 0f && speed >= popSpeed)
             {
-                if (swatSpeed > 0f && speed >= swatSpeed) Pop(PopReason.Swatted);
+                Pop(PopReason.Swatted);
                 return;
             }
+            if (mood == Mood.Chasing) return;
 
             // Knocked away from where it was hit.
-            var hitPoint = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
             var away = Middle() - hitPoint;
             if (away.sqrMagnitude > 0.0001f) knockVelocity += away.normalized * (knock * Mathf.Clamp(speed / 4f, 0.5f, 2f));
+            Wake();
+        }
 
-            if (mood == Mood.Floating && wakeOn != WakeOn.Near) Wake();
+        // A punch or slap: it's pushed away the way the fist was going (and away from it), and gets angry. Chasing,
+        // it's knocked back and has to come at the player again.
+        private void TakePunch(float speed, Vector3 handPoint, Vector3 punchDirection)
+        {
+            if (mood == Mood.Popped || speed < MinHitSpeed) return;
+
+            var away = Middle() - handPoint;
+            away = away.sqrMagnitude > 0.0001f ? away.normalized : punchDirection;
+            var direction = punchDirection.sqrMagnitude > 0.0001f ? (punchDirection.normalized * 0.7f + away * 0.3f).normalized : away;
+            var push = direction * Mathf.Min(speed * punchPush, maxPunchPush);
+
+            if (mood == Mood.Floating)
+            {
+                Wake();
+                // Knocked off its spot; it shakes there angrily, then gives chase from wherever it ends up.
+                velocity = push;
+            }
+            else
+            {
+                velocity += push;
+            }
+        }
+
+        // A hand punching or slapping it pushes it away (hands don't bump into things the way held items do): as fast
+        // as the hand was moving towards it when it touched.
+        private void CheckSlaps()
+        {
+            var at = Middle();
+            float dt = Mathf.Max(Time.deltaTime, 0.0001f);
+            var moved = at - lastMiddle;
+            lastMiddle = at;
+            if (mood == Mood.Popped) return;
+
+            float reach = radius * Mathf.Abs(transform.lossyScale.x) + SlapReach;
+            for (int i = 0; i < hands.Length; i++)
+            {
+                if (hands[i] == null) continue;
+                var now = hands[i].position;
+                var punch = now - lastHand[i] - moved;
+                float speed = punch.magnitude / dt;
+                lastHand[i] = now;
+
+                bool touching = (now - at).sqrMagnitude <= reach * reach;
+                bool slapped = touching && !handTouching[i];
+                handTouching[i] = touching;
+                if (!slapped) continue;
+
+                TakePunch(speed, now, punch);
+            }
         }
 
         /// <summary>Wakes it up: it giggles, shakes, then chases the player.</summary>
@@ -352,6 +454,7 @@ namespace Game.Enemies
             {
                 if (!string.IsNullOrEmpty(playerEvent)) SendToPlayer(playerEvent);
                 DropSpiders(head != null ? head.position : at);
+                if (!string.IsNullOrEmpty(inFaceBool)) GameStages.SetBool(inFaceBool, true, this);
             }
             else if (reason == PopReason.Swatted)
             {
@@ -524,8 +627,11 @@ namespace Game.Enemies
 
         private void Shake()
         {
+            // Still sliding from a punch, slowing down.
+            float dt = Time.fixedDeltaTime;
+            velocity = Vector3.MoveTowards(velocity, Vector3.zero, chaseAcceleration * dt);
             var jitter = Quaternion.Euler(Random.Range(-8f, 8f), Random.Range(-8f, 8f), Random.Range(-8f, 8f));
-            Place(Middle(), jitter * wakeRotation);
+            Place(Middle() + velocity * dt, jitter * wakeRotation);
             if (Time.time - moodSince < wakeSeconds) return;
 
             mood = Mood.Chasing;
@@ -544,7 +650,7 @@ namespace Game.Enemies
                 Pop(PopReason.InFace);
                 return;
             }
-            if (Time.time - moodSince > giveUpSeconds)
+            if (giveUpSeconds > 0f && Time.time - moodSince > giveUpSeconds)
             {
                 Pop(PopReason.GaveUp);
                 return;
@@ -621,7 +727,7 @@ namespace Game.Enemies
             for (int i = 0; i < count; i++)
             {
                 // Within the game's enemy limit, so a popped balloon can't swamp the Quest.
-                if (!EnemyLimit.TryTakeSlot()) break;
+                if (!ignoreEnemyLimit && !EnemyLimit.TryTakeSlot()) break;
 
                 var prefab = spiders[Random.Range(0, spiders.Length)];
                 if (prefab == null) continue;
