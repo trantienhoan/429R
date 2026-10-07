@@ -13,8 +13,9 @@ namespace Game.PlayGround
     /// The PlayGround's witch cauldron. It cooks a few dishes in a row (Rounds), each with its own recipe of pumpkins
     /// (Pumpkin_On_Tree) and random lollipops (Lolipop_1 ... 7); the magic hat shows the current one. Ingredients dropped
     /// or thrown into the pot are taken in with a puff of green smoke; once the player has read the recipe off the hat,
-    /// what's in the pot and what's still missing shows above it. Once it holds as many as the recipe asks for, it starts
-    /// cooking: the surface bubbles, coloured bubbles and skulls fly out and a meter fills above it. Firewood thrown into
+    /// what's in the pot and what's still missing shows above it. Its surface always bubbles. Once it holds as many as
+    /// the recipe asks for, it starts cooking: the surface boils, coloured bubbles and skulls fly out and a meter fills
+    /// above it. It stands fixed on the floor, upright, wherever it appears. Firewood thrown into
     /// the fire under it makes the fire roar and the cooking go faster for a while. Done: the right recipe makes the
     /// round's pumpkins (Pumpkin_8, then 2x Pumpkin_9 for the last) jump out and the next round's recipe begins; a wrong
     /// one spits out a black pumpkin (pumpkin_black) that bursts into a mini boss where it lands, the magic hat shakes,
@@ -66,6 +67,14 @@ namespace Game.PlayGround
         [Tooltip("Where firewood burns: the fire under the pot, in the cauldron's own space.")]
         [SerializeField] private Vector3 fireCenter = new(0.08f, 0.3f, -0.05f);
         [SerializeField] private Vector3 fireSize = new(1.9f, 0.8f, 1.9f);
+        [Tooltip("When it appears it turns upright and drops onto the floor below, then stays fixed there: nothing can " +
+                 "push, tip or knock it off (its Rigidbody is made kinematic).")]
+        [SerializeField] private bool stickToGround = true;
+        [Tooltip("Played when it lands on the floor.")]
+        [SerializeField] private AudioClip landSound;
+        [Tooltip("How much faster the surface bubbles while cooking (it boils): 2 = twice as fast. More with a hot fire.")]
+        [Min(1f)]
+        [SerializeField] private float cookingBubbles = 1.6f;
 
         [Header("Rounds (cooked one after another; new random lollipops each time the PlayGround opens)")]
         [Tooltip("The dishes it cooks, in order. A wrong recipe doesn't count: that round's recipe stays until it's " +
@@ -155,6 +164,10 @@ namespace Game.PlayGround
         private readonly Dictionary<string, int> contents = new();
         private readonly HashSet<GameObject> taken = new();
         private ParticleSystem[] surfaces = Array.Empty<ParticleSystem>();
+        private float[] surfaceRates = Array.Empty<float>();
+        private bool falling;
+        private float fallSpeed;
+        private float groundHeight;
         private int count;
         private bool cooking;
         private float progress;
@@ -220,10 +233,14 @@ namespace Game.PlayGround
 
         private void Start()
         {
+            if (stickToGround) Land();
             if (surface != null)
             {
+                // Always bubbling; busier while it cooks (see Update).
                 surfaces = surface.GetComponentsInChildren<ParticleSystem>(true);
-                surface.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                surfaceRates = new float[surfaces.Length];
+                for (int i = 0; i < surfaces.Length; i++) surfaceRates[i] = surfaces[i].emission.rateOverTimeMultiplier;
+                surface.Play(true);
             }
             if (fire != null)
             {
@@ -264,16 +281,86 @@ namespace Game.PlayGround
             heat = Mathf.Max(0f, heat - heatFade * dt);
             UpdateFire();
 
+            if (falling) Fall(dt);
+            UpdateSurface();
             if (cooking)
             {
                 progress += dt / cookSeconds * (1f + heat);
-                foreach (var system in surfaces)
-                {
-                    var main = system.main;
-                    main.simulationSpeed = 1f + heat * 0.5f;
-                }
                 if (progress >= 1f) Finish();
             }
+        }
+
+        // The surface bubbles gently all the time, and boils (faster, more so with a hot fire) while cooking. Its
+        // effects mostly emit in bursts, so speeding them up is what makes them busier.
+        private void UpdateSurface()
+        {
+            float busy = cooking ? cookingBubbles * (1f + heat * 0.5f) : 1f;
+            for (int i = 0; i < surfaces.Length; i++)
+            {
+                var system = surfaces[i];
+                if (system == null) continue;
+                var emission = system.emission;
+                emission.rateOverTimeMultiplier = surfaceRates[i] * busy;
+                var main = system.main;
+                main.simulationSpeed = busy;
+            }
+        }
+
+        // It always stands upright on the floor, fixed in place: wherever it's made (the seed lets it out in the air,
+        // maybe tilted), it turns upright and drops straight down onto the ground below.
+        private void Land()
+        {
+            if (TryGetComponent<Rigidbody>(out var body))
+            {
+                body.isKinematic = true;
+                body.useGravity = false;
+            }
+            transform.rotation = Quaternion.Euler(0f, transform.eulerAngles.y, 0f);
+            if (!FindGround(out groundHeight)) return;
+
+            if (transform.position.y > groundHeight + 0.01f)
+            {
+                falling = true;
+                fallSpeed = 0f;
+            }
+            else
+            {
+                var at = transform.position;
+                transform.position = new Vector3(at.x, groundHeight, at.z);
+            }
+        }
+
+        private void Fall(float dt)
+        {
+            fallSpeed += -Physics.gravity.y * dt;
+            var at = transform.position;
+            float y = at.y - fallSpeed * dt;
+            if (y <= groundHeight)
+            {
+                y = groundHeight;
+                falling = false;
+                Play(landSound, at);
+            }
+            transform.position = new Vector3(at.x, y, at.z);
+        }
+
+        // The floor under it: the highest solid thing below that isn't part of it, a loose thing or the chest it came
+        // out of (anything with a Rigidbody counts only if it's wide, like the ground).
+        private bool FindGround(out float height)
+        {
+            height = 0f;
+            bool found = false;
+            var from = transform.position + Vector3.up * 1.5f;
+            foreach (var hit in Physics.RaycastAll(from, Vector3.down, 60f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+            {
+                var thing = hit.collider;
+                if (thing.transform.IsChildOf(transform)) continue;
+                if (thing.attachedRigidbody != null && Mathf.Max(thing.bounds.size.x, thing.bounds.size.z) < 2f) continue;
+                if (found && hit.point.y <= height) continue;
+                height = hit.point.y;
+                found = true;
+            }
+            return found;
         }
 
         private void LateUpdate()
@@ -391,14 +478,12 @@ namespace Game.PlayGround
         {
             cooking = true;
             progress = 0f;
-            if (surface != null) surface.Play(true);
         }
 
         private void Finish()
         {
             cooking = false;
             progress = 0f;
-            if (surface != null) surface.Stop(true, ParticleSystemStopBehavior.StopEmitting);
 
             var at = MouthPoint();
             if (doneEffect != null)
