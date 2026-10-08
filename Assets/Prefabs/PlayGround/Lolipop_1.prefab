@@ -5481,10 +5481,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4bb2a0a7f6a64d74d98c3c0aa63f6fe7,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 4529308577949550814}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4bb2a0a7f6a64d74d98c3c0aa63f6fe7,
-        type: 3}
-      insertIndex: -1
       addedObject: {fileID: 1770932476210974067}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4bb2a0a7f6a64d74d98c3c0aa63f6fe7,
         type: 3}
@@ -5514,6 +5510,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 8488868072084544818}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4bb2a0a7f6a64d74d98c3c0aa63f6fe7,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3121226066139359348}
   m_SourcePrefab: {fileID: 100100000, guid: 4bb2a0a7f6a64d74d98c3c0aa63f6fe7, type: 3}
 --- !u!1 &2705934757662115548 stripped
 GameObject:
@@ -5521,27 +5521,6 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 2975754015013895053}
   m_PrefabAsset: {fileID: 0}
---- !u!65 &4529308577949550814
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2705934757662115548}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 0.46646664, y: 0.46689948, z: 0.053611062}
-  m_Center: {x: -0.00013579428, y: 0.6536086, z: 0.000000052154064}
 --- !u!65 &1770932476210974067
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -5571,7 +5550,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2705934757662115548}
   serializedVersion: 5
-  m_Mass: 1
+  m_Mass: 666
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -7210,6 +7189,27 @@ MonoBehaviour:
   rewardAmount: 1
   shrinkTo: 0.6
   buzz: 0.15
+--- !u!135 &3121226066139359348
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2705934757662115548}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.24
+  m_Center: {x: -0.00013579428, y: 0.65, z: 0.000000052154064}
 --- !u!4 &3370585879581367398 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4bb2a0a7f6a64d74d98c3c0aa63f6fe7,

@@ -31,8 +31,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.7, y: 0.7, z: 0.7}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -166,7 +166,7 @@ MonoBehaviour:
   chaseAcceleration: 4
   popDistance: 0.45
   giveUpSeconds: 12
-  swatSpeed: 3
+  popSpeed: 3
   faceAngle: 0
   popEffect: {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
@@ -181,6 +181,10 @@ MonoBehaviour:
   minSpiders: 3
   maxSpiders: 5
   spiderSpread: 0.8
+  ignoreEnemyLimit: 0
+  inFaceBool: 
+  punchPush: 1
+  maxPunchPush: 6
   lollipops:
   - {fileID: 2705934757662115548, guid: 791b7392d2dfac04bba4d65d8f11f64a, type: 3}
   - {fileID: 2705934757662115548, guid: e4d4513574585cb42a83aa2ea54243fd, type: 3}
