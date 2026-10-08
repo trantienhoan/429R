@@ -18,13 +18,13 @@ namespace Game.EditorTools
         };
 
         // A flash, a burst and a puff of smoke from the Hyper Casual FX pack read as one explosion about 3 m across.
-        private static readonly string[] Effects =
+        internal static readonly string[] Effects =
         {
             "Assets/Lana Studio/Hyper Casual FX/Prefabs/Flash/Flash_round_yellow.prefab",
             "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Hit_Blast.prefab",
             "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Smoke_Blast.prefab",
         };
-        private const string Sound = "Assets/Audio/SFX/explosion-312361.wav";
+        internal const string Sound = "Assets/Audio/SFX/explosion-312361.wav";
 
         /// <summary>
         /// Adds Grenade (with the explosion effects and sound) and Hit Rumble to the selected weapon prefabs, or with

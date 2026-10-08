@@ -1919,6 +1919,7 @@ GameObject:
   - component: {fileID: 3764571815948920214}
   - component: {fileID: 7627449132777865989}
   - component: {fileID: 2075216818442432465}
+  - component: {fileID: 4991937432670639671}
   m_Layer: 0
   m_Name: Boong_Gun
   m_TagString: Weapon
@@ -2136,7 +2137,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 623c5848030e9674893bb3bb376834b8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_ProjectilePrefab: {fileID: 9031775881104408046, guid: 3976a13353f30c74891ad6e9052aaa18,
+  m_ProjectilePrefab: {fileID: 9031775881104408046, guid: 6277b9314d2fb7e4ba771023bb7a4f8a,
     type: 3}
   m_StartPoint: {fileID: 5431981241341093243}
   m_LaunchSpeed: 6666
@@ -3544,6 +3545,40 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.WeaponPower
   power: 1.6
+--- !u!114 &4991937432670639671
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4098069887184717952}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1fe9ef84b0965c0438b382d78609d8ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Weapons.Overheat
+  shots: 7
+  seconds: 3
+  warnFrom: 5
+  fuse: 1.5
+  shakePart: {fileID: 1425142191270027977}
+  shake: 0.008
+  warningSound: {fileID: 8300000, guid: 6ffd5f3eee896794fa17506c74259fe3, type: 3}
+  smoke: {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac, type: 3}
+  smokeScale: 0.04
+  radius: 2
+  damage: 5
+  push: 5
+  playerEvent: Damage
+  breakApart: 1
+  effects:
+  - {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
+  - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}
+  - {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac, type: 3}
+  sound: {fileID: 8300000, guid: 0c38739de2059ac40ab5b60a42fd1c5f, type: 3}
+  volume: 1
+  rumbleStrength: 1
+  rumbleDuration: 0.4
 --- !u!1 &4695882866860672089
 GameObject:
   m_ObjectHideFlags: 0

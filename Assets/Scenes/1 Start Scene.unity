@@ -962,6 +962,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!224 &226729186
 RectTransform:
@@ -1753,14 +1754,14 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 410087039}
   m_Enabled: 1
-  serializedVersion: 11
+  serializedVersion: 12
   m_Type: 1
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Intensity: 1.53
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
-  m_CookieSize: 10
+  m_CookieSize2D: {x: 10, y: 10}
   m_Shadows:
     m_Type: 0
     m_Resolution: -1
@@ -3438,6 +3439,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!33 &770233793
 MeshFilter:
@@ -6020,6 +6022,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!33 &973988831
 MeshFilter:
@@ -10688,6 +10691,8 @@ MonoBehaviour:
   m_DisableVisualsWhenBlockedInGroup: 1
   m_StartingSelectedInteractable: {fileID: 0}
   m_StartingTargetFilter: {fileID: 0}
+  m_AutoFindParentInteractableInHierarchy: 0
+  m_ParentInteractableObject: {fileID: 0}
   m_HoverEntered:
     m_PersistentCalls:
       m_Calls: []
@@ -11364,6 +11369,7 @@ GameObject:
   - component: {fileID: 1899527838}
   - component: {fileID: 1899527837}
   - component: {fileID: 1899527836}
+  - component: {fileID: 1899527848}
   m_Layer: 3
   m_Name: XR Origin
   m_TagString: Player
@@ -11709,6 +11715,26 @@ MonoBehaviour:
   m_CameraFloorOffsetObject: {fileID: 1968127488}
   m_RequestedTrackingOriginMode: 0
   m_CameraYOffset: 1
+--- !u!114 &1899527848
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1899527834}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1546d0ef0e68634a87e11450853cd89, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.ThrowAssist
+  strength: 0.8
+  maxAngle: 15
+  minSpeed: 2.5
+  maxDistance: 15
+  maxExtraSpeed: 0.3
+  targetTags:
+  - Enemy
+  - Monster
 --- !u!1001 &1902689599
 PrefabInstance:
   m_ObjectHideFlags: 0

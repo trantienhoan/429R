@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using Unity.XR.CoreUtils;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
@@ -18,7 +16,7 @@ namespace Game.Weapons
     /// with a 'health' float, next to a "Damage" FSM. Objects without a Damage FSM (story objects, minigame
     /// counters) and the player are left alone. Things with a Damage FSM but no health of their own (the whack-a-mole
     /// pumpkins, whose barrels count the hits) are sent the event "Blast"; a Damage FSM with a Blast transition takes
-    /// it as a hard hit. Scripts that handle hits themselves (IHittable, e.g. the PlayGround's ghost tree and bush)
+    /// it as a hard hit. Scripts that handle hits themselves (IHittable, e.g. the PlayGround's ghost tree, bush and balloons)
     /// are hit with the damage first, even when they also have a Health FSM (e.g. for the fairy's shield pop); the ghost
     /// tree passes it on to that FSM's health.
     /// </summary>
@@ -63,15 +61,6 @@ namespace Game.Weapons
         // XR Toolkit gives a thrown object its speed at the end of the frame it's let go, so the throw is judged over
         // a short moment after that.
         private const float ThrowWindow = 0.2f;
-        // Spawned effects are removed after this many seconds; they don't remove themselves.
-        private const float EffectLifetime = 4f;
-        // Sent to things in the blast that have a Damage FSM but no health (see the class summary).
-        private const string BlastEvent = "Blast";
-
-        private static readonly Collider[] hits = new Collider[256];
-        private static readonly HashSet<GameObject> hurt = new();
-        private static readonly HashSet<Rigidbody> pushed = new();
-        private static readonly List<PlayMakerFSM> fsms = new();
 
         private XRGrabInteractable grab;
         private Rigidbody body;
@@ -121,7 +110,7 @@ namespace Game.Weapons
         // The first thing it hits after leaving the hand decides: thrown hard, it explodes; otherwise it's a weapon again.
         private void OnCollisionEnter(Collision collision)
         {
-            if (!inFlight || exploded || IsPlayer(collision.collider)) return;
+            if (!inFlight || exploded || Blast.IsPlayer(collision.collider)) return;
 
             if (Time.time - releasedAt <= ThrowWindow) throwSpeed = Mathf.Max(throwSpeed, collision.relativeVelocity.magnitude);
             inFlight = false;
@@ -132,94 +121,12 @@ namespace Game.Weapons
         {
             exploded = true;
 
-            foreach (var effect in effects)
-            {
-                if (effect != null) Destroy(Instantiate(effect, point, Quaternion.identity), EffectLifetime);
-            }
-            if (sound != null) AudioSource.PlayClipAtPoint(sound, point, volume);
             if (thrower != null && rumbleStrength > 0f) thrower.SendHapticImpulse(rumbleStrength, rumbleDuration);
-
-            hurt.Clear();
-            pushed.Clear();
-            int count = Physics.OverlapSphereNonAlloc(point, radius, hits, Physics.AllLayers, QueryTriggerInteraction.Ignore);
-            for (int i = 0; i < count; i++)
-            {
-                var hit = hits[i];
-                if (hit.attachedRigidbody == body || IsPlayer(hit)) continue;
-
-                Hurt(hit.transform, point);
-                Push(hit.attachedRigidbody, point);
-            }
+            Blast.Explode(point, radius, damage, push, body, effects, sound, volume);
 
             // Breaking the usual way lets its own Health FSM drop the pieces and remove it; otherwise it just vanishes.
-            if (breakApart && HasHealth(gameObject, out var ownHealth, out _) && ownHealth != null) ownHealth.Value = 0f;
+            if (breakApart && Blast.HasHealth(gameObject, out var ownHealth, out _) && ownHealth != null) ownHealth.Value = 0f;
             else Destroy(gameObject);
-        }
-
-        // A script that handles hits itself (IHittable, e.g. the ghost tree or bush) is hit first. Otherwise it takes
-        // 'damage' from the health its own Damage FSM would lower, so breaking, drops and GAMESTAGES flags happen as
-        // usual. Colliders are often on children, so the nearest object upwards with a health FSM is the one hit. With
-        // no health anywhere upwards, the nearest Damage FSM is sent "Blast".
-        private void Hurt(Transform part, Vector3 point)
-        {
-            var hittable = part.GetComponentInParent<Game.Combat.IHittable>();
-            if (hittable is Component target)
-            {
-                if (hurt.Add(target.gameObject)) hittable.Hit(damage, point);
-                return;
-            }
-
-            PlayMakerFSM nearestDamageFsm = null;
-            for (var t = part; t != null; t = t.parent)
-            {
-                if (!HasHealth(t.gameObject, out var health, out var damageFsm))
-                {
-                    if (nearestDamageFsm == null) nearestDamageFsm = damageFsm;
-                    continue;
-                }
-
-                if (health != null && hurt.Add(t.gameObject)) health.Value -= damage;
-                return;
-            }
-
-            if (nearestDamageFsm != null && hurt.Add(nearestDamageFsm.gameObject)) nearestDamageFsm.SendEvent(BlastEvent);
-        }
-
-        // Whether it has a health FSM, and if it can be hit (a Damage FSM next to it), the health to lower.
-        // Also hands back its Damage FSM, if it has one.
-        private static bool HasHealth(GameObject target, out HutongGames.PlayMaker.FsmFloat health, out PlayMakerFSM damageFsm)
-        {
-            health = null;
-            damageFsm = null;
-            target.GetComponents(fsms);
-            PlayMakerFSM healthFsm = null;
-            foreach (var fsm in fsms)
-            {
-                string name = fsm.FsmName;
-                if (name == "Damage") damageFsm = fsm;
-                else if (name.EndsWith("Health", StringComparison.OrdinalIgnoreCase)) healthFsm = fsm;
-            }
-            if (healthFsm == null) return false;
-
-            // The player's and the fairy's health are never touched.
-            if (damageFsm != null && healthFsm.FsmName != "PlayerHealth" && healthFsm.FsmName != "FairyHealth")
-                health = healthFsm.FsmVariables.GetFsmFloat("health");
-            return true;
-        }
-
-        private void Push(Rigidbody target, Vector3 point)
-        {
-            if (push <= 0f || target == null || target.isKinematic || !pushed.Add(target)) return;
-            // Things in someone's hand stay there.
-            if (target.TryGetComponent<XRGrabInteractable>(out var held) && held.isSelected) return;
-
-            target.AddExplosionForce(push, point, radius, 0.5f, ForceMode.VelocityChange);
-        }
-
-        // The player's body, head and hands: everything under the XR Origin.
-        private static bool IsPlayer(Collider collider)
-        {
-            return collider.GetComponentInParent<XROrigin>() != null;
         }
     }
 }

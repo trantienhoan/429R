@@ -22,7 +22,7 @@ namespace Game.Enemies
     /// on the balloon's root; Tools > 429 Game > Enemies > Set Up Ghost Balloons sets up Ghost_Balloon_1-3.
     /// </summary>
     [DisallowMultipleComponent]
-    public class GhostBalloon : MonoBehaviour
+    public class GhostBalloon : MonoBehaviour, IHittable
     {
         public enum WakeOn
         {
@@ -350,6 +350,15 @@ namespace Game.Enemies
 
             var hitPoint = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
             TakeHit(collision.relativeVelocity.magnitude, hitPoint);
+        }
+
+        /// <summary>
+        /// A blast (a grenade, an overheated gun) hits it like a swing at strength x 4 metres per second: one at Pop
+        /// Speed or harder pops it, a weaker one makes it angry. Pop Speed 0 balloons never pop from it.
+        /// </summary>
+        public void Hit(float strength, Vector3 point)
+        {
+            TakeHit(strength * 4f, point);
         }
 
         // One good hit pops it, whatever it's doing; a softer one knocks it about and makes it angry.

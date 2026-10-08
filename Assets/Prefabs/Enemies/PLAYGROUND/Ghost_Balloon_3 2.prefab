@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 7771224253153618235}
   - component: {fileID: 7038164651913242741}
   - component: {fileID: 7451896395164027978}
+  - component: {fileID: 8632130082543579928}
   m_Layer: 0
   m_Name: Ghost_Balloon_3 2
   m_TagString: Untagged
@@ -183,6 +184,8 @@ MonoBehaviour:
   spiderSpread: 0.8
   ignoreEnemyLimit: 0
   inFaceBool: 
+  punchPush: 1
+  maxPunchPush: 6
   lollipops:
   - {fileID: 2705934757662115548, guid: 791b7392d2dfac04bba4d65d8f11f64a, type: 3}
   - {fileID: 2705934757662115548, guid: e4d4513574585cb42a83aa2ea54243fd, type: 3}
@@ -202,3 +205,16 @@ MonoBehaviour:
   cauldronChance: 0.3
   minHangOut: 5
   maxHangOut: 8
+--- !u!114 &8632130082543579928
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 536671009098668575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55d1afb1c229b1c4085c2e75d21beb16, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.ThrowAssistTarget
+  aimPoint: {fileID: 0}
