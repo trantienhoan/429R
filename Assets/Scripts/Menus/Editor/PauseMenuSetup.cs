@@ -24,8 +24,8 @@ namespace Game.EditorTools
         private static readonly Color OptionColor = new(0.25f, 0.3f, 0.52f, 1f);
 
         /// <summary>
-        /// Creates the pause menu, or adds what an existing one is missing (the Arm swing and Height options), puts
-        /// Player Height on the XR Origin and makes the XR Origin track from the real floor.
+        /// Creates the pause menu, or adds what an existing one is missing (the Arm swing, Height and Comfort vignette
+        /// options), puts Player Height on the XR Origin and makes the XR Origin track from the real floor.
         /// </summary>
         [MenuItem("Tools/429 Game/Menu/Set Up Pause Menu")]
         public static void SetUpPauseMenu()
@@ -48,6 +48,7 @@ namespace Game.EditorTools
             }
 
             if (AddOptions(menu, font)) notes.Add("added the Arm swing and Height options");
+            if (AddVignetteOption(menu, font)) notes.Add("added the Comfort vignette option");
 
             var origin = Object.FindAnyObjectByType<XROrigin>(FindObjectsInactive.Include);
             if (origin != null)
@@ -158,6 +159,34 @@ namespace Game.EditorTools
             SetupUtility.SetReference(menu, "heightDownButton", down);
             SetupUtility.SetReference(menu, "heightUpButton", up);
             SetupUtility.SetReference(menu, "heightText", label);
+            return true;
+        }
+
+        // Adds the Comfort vignette row under the other options, for menus made before it existed too: the options
+        // band and the panel grow by one row, so Resume and Quit (anchored to the bottom) move down to make room.
+        private static bool AddVignetteOption(PauseMenu menu, TMP_FontAsset font)
+        {
+            var serialized = new SerializedObject(menu);
+            if (serialized.FindProperty("vignetteButton").objectReferenceValue != null) return false;
+            if (serialized.FindProperty("panel").objectReferenceValue is not GameObject panelObject ||
+                panelObject.transform is not RectTransform panel) return false;
+            var options = panel.Find("Options") as RectTransform;
+            if (options == null)
+            {
+                Debug.LogWarning("[Pause Menu Setup] The Pause Menu panel has no Options group, so the Comfort vignette option wasn't added.", menu);
+                return false;
+            }
+
+            const float grow = OptionRowHeight + OptionSpacing;
+            Undo.RecordObject(panel, "Add Comfort Vignette Option");
+            panel.sizeDelta = new Vector2(panel.sizeDelta.x, panel.sizeDelta.y + grow);
+            Undo.RecordObject(options, "Add Comfort Vignette Option");
+            options.offsetMin = new Vector2(options.offsetMin.x, options.offsetMin.y - grow);
+
+            var vignette = SetupUtility.CreateButton("Comfort Vignette", options, "Comfort vignette: low", 24f, font, OptionColor);
+            Undo.RegisterCreatedObjectUndo(vignette.gameObject, "Add Comfort Vignette Option");
+            SetupUtility.SetReference(menu, "vignetteButton", vignette);
+            SetupUtility.SetReference(menu, "vignetteText", vignette.GetComponentInChildren<TMP_Text>(true));
             return true;
         }
 

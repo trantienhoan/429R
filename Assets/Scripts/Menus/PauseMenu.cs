@@ -10,8 +10,8 @@ namespace Game.Menus
 {
     /// <summary>
     /// Pause menu. The menu button on the left controller (or A on the right, or Esc) stops the game
-    /// and shows Resume, Quit, a random tip and two options in front of you: how arm swinging works, and the
-    /// player's height (to play seated, or stand taller or shorter).
+    /// and shows Resume, Quit, a random tip and three options in front of you: how arm swinging works, the player's
+    /// height (to play seated, or stand taller or shorter) and how strong the comfort vignette is.
     /// </summary>
     public class PauseMenu : MonoBehaviour
     {
@@ -29,6 +29,9 @@ namespace Game.Menus
         [SerializeField] private Button heightDownButton;
         [SerializeField] private Button heightUpButton;
         [SerializeField] private TMP_Text heightText;
+        [Tooltip("Each press switches the comfort vignette to the next strength: low, medium, high, off.")]
+        [SerializeField] private Button vignetteButton;
+        [SerializeField] private TMP_Text vignetteText;
         [Tooltip("Left empty, the one in the scene is used.")]
         [SerializeField] private ArmSwingMoveProvider armSwing;
         [Tooltip("Left empty, the one on the XR Origin is used.")]
@@ -88,6 +91,7 @@ namespace Game.Menus
             if (armSwingButton != null) armSwingButton.onClick.AddListener(NextArmSwingMode);
             if (heightDownButton != null) heightDownButton.onClick.AddListener(() => ChangeHeight(-1));
             if (heightUpButton != null) heightUpButton.onClick.AddListener(() => ChangeHeight(1));
+            if (vignetteButton != null) vignetteButton.onClick.AddListener(NextVignetteLevel);
         }
 
         private void OnEnable()
@@ -184,6 +188,18 @@ namespace Game.Menus
             ShowOptions();
         }
 
+        private void NextVignetteLevel()
+        {
+            ComfortVignetteLevel.Current = ComfortVignetteLevel.Current switch
+            {
+                ComfortVignetteLevel.Level.Low => ComfortVignetteLevel.Level.Medium,
+                ComfortVignetteLevel.Level.Medium => ComfortVignetteLevel.Level.High,
+                ComfortVignetteLevel.Level.High => ComfortVignetteLevel.Level.Off,
+                _ => ComfortVignetteLevel.Level.Low,
+            };
+            ShowOptions();
+        }
+
         private void ShowOptions()
         {
             FindOptions();
@@ -193,6 +209,8 @@ namespace Game.Menus
             if (heightDownButton != null) heightDownButton.interactable = playerHeight != null;
             if (heightUpButton != null) heightUpButton.interactable = playerHeight != null;
             if (heightText != null) heightText.text = playerHeight != null ? HeightLabel(playerHeight.Offset) : "Height: not set up";
+
+            if (vignetteText != null) vignetteText.text = ComfortVignetteLevel.Label(ComfortVignetteLevel.Current);
         }
 
         private void FindOptions()

@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using Unity.XR.CoreUtils;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.XR.Interaction.Toolkit.Filtering;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 namespace Game.Combat
@@ -11,10 +13,13 @@ namespace Game.Combat
     /// hand turns on a small invisible ball at the knuckles that follows the hand by physics, so it hits things like a
     /// held weapon does: enemies take damage by how fast the punch was (x Power; it takes several hard punches to kill a
     /// spider, and mini bosses barely feel it), loose things get pushed, and the controller rumbles.
+    /// A fist doesn't pull things from a distance: with the trigger squeezed too, the hand only grabs what's within its
+    /// reach, so making a fist while pointing at something doesn't yank it into the hand instead of punching it.
+    /// Pointing (trigger let go) and squeezing the grip still pulls things from afar.
     /// Goes on each controller (Left Controller, Right Controller), next to the hand model.
     /// </summary>
     [DisallowMultipleComponent]
-    public class Fist : MonoBehaviour
+    public class Fist : MonoBehaviour, IXRSelectFilter
     {
         [Tooltip("Multiplies the punch speed for damage, like a weapon's Power. At 1.2 a firm punch hurts small bugs, a " +
                  "hard one hurts spiders and cockroaches, and mini bosses (Toughness 5-7) barely feel it. A fist moves " +
@@ -34,6 +39,10 @@ namespace Game.Combat
         [Tooltip("Squeeze held this long, in seconds, before the fist counts, so grabbing something doesn't punch it away first.")]
         [Min(0f)]
         [SerializeField] private float formSeconds = 0.12f;
+        [Tooltip("With the trigger squeezed at least this much, the hand doesn't pull things from a distance (it's making " +
+                 "a fist); it still grabs what's within its reach. 0 = fists pull things from afar too.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float noFarGrabTrigger = 0.25f;
 
         [Header("Input (left empty: the hand model's own)")]
         [SerializeField] private InputActionProperty grip;
@@ -50,12 +59,15 @@ namespace Game.Combat
         // Farther than this from the hand (stuck on a wall), the ball jumps back to it.
         private const float SnapDistance = 0.3f;
         private const float MaxSpeed = 25f;
+        // Things this close to the hand, in metres, are within its reach (the same as Gentle Far Grab's far distance).
+        private const float Reach = 0.4f;
 
         private static readonly List<Fist> fists = new();
 
         private InputAction gripAction;
         private InputAction triggerAction;
         private readonly List<IXRSelectInteractor> interactors = new();
+        private readonly List<NearFarInteractor> nearFars = new();
         private XRBaseInputInteractor rumbler;
         private Transform knuckleA;
         private Transform knuckleB;
@@ -83,6 +95,7 @@ namespace Game.Combat
             if (gripAction == null) Debug.LogWarning($"[Fist] '{name}' has no grip input, so it can't make a fist.", this);
 
             GetComponentsInChildren(true, interactors);
+            GetComponentsInChildren(true, nearFars);
             rumbler = GetComponentInChildren<XRBaseInputInteractor>(true);
             FindKnuckles();
             MakeBall();
@@ -91,12 +104,17 @@ namespace Game.Combat
         private void OnEnable()
         {
             fists.Add(this);
+            foreach (var nearFar in nearFars) nearFar.selectFilters.Add(this);
             if (body != null) body.gameObject.SetActive(true);
         }
 
         private void OnDisable()
         {
             fists.Remove(this);
+            foreach (var nearFar in nearFars)
+            {
+                if (nearFar != null) nearFar.selectFilters.Remove(this);
+            }
             Open();
             if (body != null) body.gameObject.SetActive(false);
         }
@@ -159,6 +177,16 @@ namespace Game.Combat
             if (!closed) return;
             closed = false;
             if (ball != null) ball.enabled = false;
+        }
+
+        public bool canProcess => isActiveAndEnabled;
+
+        // Asked by the hand's Near-Far Interactor before it grabs something: with the trigger squeezed (a fist), only
+        // things within reach.
+        public bool Process(IXRSelectInteractor interactor, IXRSelectInteractable interactable)
+        {
+            if (noFarGrabTrigger <= 0f || interactor is not NearFarInteractor || Read(triggerAction) < noFarGrabTrigger) return true;
+            return GentleFarGrab.HandDistance(interactor.transform, interactable) <= Reach;
         }
 
         // Anything in this hand (a weapon, a lollipop, ...) means it isn't a fist.

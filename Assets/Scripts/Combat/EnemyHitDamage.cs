@@ -77,6 +77,13 @@ namespace Game.Combat
         /// <summary>The most recent hit on this enemy, whether it hurt or not.</summary>
         public HitResult LastHit { get; private set; }
 
+        /// <summary>How far a big hit knocks it back, in metres (e.g. less for a big spider).</summary>
+        public float KnockBackDistance
+        {
+            get => knockBackDistance;
+            set => knockBackDistance = Mathf.Max(0f, value);
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
         {

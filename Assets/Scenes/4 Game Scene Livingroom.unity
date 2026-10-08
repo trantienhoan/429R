@@ -3972,6 +3972,7 @@ GameObject:
   - component: {fileID: 1182267128}
   - component: {fileID: 1182267127}
   - component: {fileID: 1182267139}
+  - component: {fileID: 1182267140}
   m_Layer: 30
   m_Name: XR Origin
   m_TagString: Player
@@ -4337,6 +4338,21 @@ MonoBehaviour:
   targetTags:
   - Enemy
   - Monster
+--- !u!114 &1182267140
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1182267125}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6ba871054ba85747b7874ab2b5ba982, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.GentleFarGrab
+  farDistance: 0.4
+  pullSpeed: 6
+  maxPullSeconds: 0.6
 --- !u!1001 &1263217613
 PrefabInstance:
   m_ObjectHideFlags: 0

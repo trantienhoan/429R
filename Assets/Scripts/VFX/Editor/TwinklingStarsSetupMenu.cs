@@ -22,8 +22,8 @@ namespace Game.EditorTools
         private const float StarDistance = 30f;
         private const int MaxStars = 180;
         private const float MinLifetime = 4f, MaxLifetime = 9f;
-        // Star size as a fraction of StarDistance: roughly 1 to 2.5 degrees across.
-        private const float MinStarSize = 0.02f, MaxStarSize = 0.045f;
+        // Star size as a fraction of StarDistance: roughly 0.2 to 0.5 degrees across (the full moon is 0.5).
+        private const float MinStarSize = 0.004f, MaxStarSize = 0.009f;
 
         /// <summary>
         /// Adds a "Twinkling Stars" particle system to the Skydome, or refreshes it if it's already there. Stars appear

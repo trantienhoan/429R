@@ -55,6 +55,12 @@ namespace Game.EditorTools
                 notes.Add("it's hidden whenever it's fully open, so it costs nothing while standing still");
             }
 
+            if (!vignette.TryGetComponent(out ComfortVignetteLevel _))
+            {
+                Undo.AddComponent<ComfortVignetteLevel>(vignette.gameObject);
+                notes.Add("its strength follows the player's choice in the pause menu (Comfort Vignette Level; new players get Low)");
+            }
+
             // Every way to move or turn on the rig (thumbstick move, arm swing, smooth and snap turn, teleport).
             Undo.RecordObject(vignette, "Add Comfort Vignette");
             var providers = vignette.locomotionVignetteProviders;
@@ -71,7 +77,7 @@ namespace Game.EditorTools
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
             Selection.activeGameObject = vignette.gameObject;
             Debug.Log("[Comfort Vignette] " + (notes.Count > 0 ? string.Join("; ", notes) : "already set up, nothing to change") +
-                      ". Strength and fade times are on the Tunneling Vignette Controller (Default Parameters). Save the scene.");
+                      ". The strength of each pause-menu level is on Comfort Vignette Level, fade times on the Tunneling Vignette Controller. Save the scene.");
         }
     }
 }
