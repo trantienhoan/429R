@@ -95,6 +95,37 @@ Transform:
   - {fileID: 1869085316639950136}
   m_Father: {fileID: 5380579752060560771}
   m_LocalEulerAnglesHint: {x: 31.553984, y: 31.052116, z: -26.163944}
+--- !u!1 &587566424998947813
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5286600639341419219}
+  m_Layer: 0
+  m_Name: Web_Ball
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5286600639341419219
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 587566424998947813}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.00000011920929, y: -1.2334715e-21, z: 1, w: -6.123234e-17}
+  m_LocalPosition: {x: 0.000000001192093, y: 0.0036382051, z: 0.005}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2205526779239161683}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &717461559909622988
 GameObject:
   m_ObjectHideFlags: 0
@@ -5799,6 +5830,7 @@ SkinnedMeshRenderer:
   - {fileID: 3971092411471630588}
   - {fileID: 8305137339244320959}
   - {fileID: 6820195639991712825}
+  - {fileID: 5286600639341419219}
   m_BlendShapeWeights: []
   m_RootBone: {fileID: 2205526779239161683}
   m_AABB:
@@ -8029,7 +8061,7 @@ MonoBehaviour:
     pitch: 0.7
     dodgeChance: 0.15
     webs: 1
-  appearAnimation: 
+  appearAnimation: appear
   appearSeconds: 0
   appearRise: 0
   sightRange: 8
@@ -8064,22 +8096,54 @@ MonoBehaviour:
     playerEvent: Damage
     sound: {fileID: 8300000, guid: b019b2d89c3814a4d97fc7001ac02603, type: 3}
     fsmEvent: 
+  - name: Claw R
+    usedBy: 7
+    animation: attack_2
+    weight: 1
+    minDistance: 0.3
+    maxDistance: 1.6
+    lunge: 0.4
+    hitFrom: 0.45
+    hitUntil: 0.65
+    duration: 1.1
+    reach: 0.5
+    biteRadius: 0.3
+    playerEvent: Damage
+    sound: {fileID: 8300000, guid: b019b2d89c3814a4d97fc7001ac02603, type: 3}
+    fsmEvent: 
+  - name: Claw L
+    usedBy: 7
+    animation: attack_3
+    weight: 1
+    minDistance: 0.3
+    maxDistance: 1.6
+    lunge: 0.4
+    hitFrom: 0.45
+    hitUntil: 0.65
+    duration: 1.1
+    reach: 0.5
+    biteRadius: 0.3
+    playerEvent: Damage
+    sound: {fileID: 8300000, guid: b019b2d89c3814a4d97fc7001ac02603, type: 3}
+    fsmEvent: 
   maxAttackers: 2
   attackCooldown: {x: 1.2, y: 2.4}
   retreatDistance: 1.2
+  walkBackSpeed: 0.7
   heldThingsBlock: 1
-  dodgeBackAnimation: 
-  dodgeLeftAnimation: 
-  dodgeRightAnimation: 
+  dodgeBackAnimation: dodge_back
+  dodgeLeftAnimation: dodge_left
+  dodgeRightAnimation: dodge_right
   dodgeDistance: 1
   dodgeSeconds: 0.35
   dodgeCooldown: 2.5
   swingSpeed: 2.5
   throwSpeed: 4
   webBall: {fileID: 6150295160977680806, guid: 9eaf3d3347c3e0b4c817dd6887f816a6, type: 3}
-  webAnimation: 
-  webReleaseTime: 0.5
-  webDuration: 1
+  webAnimation: shoot_web
+  webReleaseTime: 1.25
+  webHoldBone: Web_Ball
+  webDuration: 1.75
   webRange: {x: 2, y: 7}
   webCooldown: {x: 5, y: 9}
   webSpeed: 9
@@ -8095,9 +8159,11 @@ MonoBehaviour:
   idleAnimation: idle
   walkAnimation: Spider_Walk
   runAnimation: run
+  walkBackAnimation: walk_back
   alertAnimation: alert
   hitAnimation: hit
-  runAnimationSpeed: 2.2
+  runAnimationSpeed: 1.42
+  walkBackAnimationSpeed: 0.61
   growFrom: 0.7
   growSeconds: 7
   hitEffect: {fileID: 2161603157673772253}
@@ -8109,7 +8175,7 @@ MonoBehaviour:
   hitSounds:
   - {fileID: 8300000, guid: f521d273cd7695746a94106640af0cd7, type: 3}
   - {fileID: 8300000, guid: 52d4f2b97068c0b4290fffcf4c6154e7, type: 3}
-  blockedSound: {fileID: 0}
+  blockedSound: {fileID: 8300000, guid: 9f33a6c57f37b904caaa68322aa2e0eb, type: 3}
   volume: 1
 --- !u!1 &3625774751695929217
 GameObject:
@@ -8253,6 +8319,7 @@ SkinnedMeshRenderer:
   - {fileID: 3971092411471630588}
   - {fileID: 8305137339244320959}
   - {fileID: 6820195639991712825}
+  - {fileID: 5286600639341419219}
   m_BlendShapeWeights: []
   m_RootBone: {fileID: 2205526779239161683}
   m_AABB:
@@ -8698,6 +8765,7 @@ SkinnedMeshRenderer:
   - {fileID: 3971092411471630588}
   - {fileID: 8305137339244320959}
   - {fileID: 6820195639991712825}
+  - {fileID: 5286600639341419219}
   m_BlendShapeWeights: []
   m_RootBone: {fileID: 2205526779239161683}
   m_AABB:
@@ -9505,6 +9573,7 @@ Transform:
   - {fileID: 5205437571041943132}
   - {fileID: 3352918933607338547}
   - {fileID: 1855289098684023842}
+  - {fileID: 5286600639341419219}
   m_Father: {fileID: 5151433082594337178}
   m_LocalEulerAnglesHint: {x: 5.323756e-12, y: 0.00001334701, z: -180}
 --- !u!1 &6950044262361840064

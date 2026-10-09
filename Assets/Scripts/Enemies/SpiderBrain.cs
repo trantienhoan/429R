@@ -84,6 +84,11 @@ namespace Game.Enemies
             public AudioClip sound;
             [Tooltip("Optional: also sent to the spider's own FSMs as this attack starts.")]
             public string fsmEvent = "";
+            [Tooltip("A leap at the player's face: it springs up to their face (Lunge is how far it jumps), clings there " +
+                     "biting from Hit From to Hit Until, then drops off. It can be swatted out of the air.")]
+            public bool leapToFace;
+            [Tooltip("Afterwards it turns and runs away (Run Away Distance) instead of backing off facing the player.")]
+            public bool runAwayAfter;
         }
 
         public enum SizeClass
@@ -236,6 +241,15 @@ namespace Game.Enemies
         [Tooltip("How long the wind-up lasts, in seconds: the player's warning.")]
         [Min(0f)]
         [SerializeField] private float prepareSeconds = 0.6f;
+        [Tooltip("The player's body for bites: a standing cylinder this wide (radius, metres) under their head, from " +
+                 "the floor up. A bite that reaches it hurts, even where the player's own colliders are thinner.")]
+        [Min(0f)]
+        [SerializeField] private float playerBodyRadius = 0.2f;
+        [Tooltip("Face leaps: seconds to spring up to the player's face (x), and to drop back down after the bite (y).")]
+        [SerializeField] private Vector2 leapRiseFall = new(0.2f, 0.3f);
+        [Tooltip("How far it runs away after an attack that runs away, in metres.")]
+        [Min(0f)]
+        [SerializeField] private float runAwayDistance = 3f;
         [Tooltip("What it does when the wind-up ends: one of these that fits the distance, picked by Weight.")]
         [SerializeField] private List<AttackMove> attacks = new() { new AttackMove() };
         [Tooltip("At most this many spiders attack at the same time; the others circle and wait.")]
@@ -246,6 +260,9 @@ namespace Game.Enemies
         [Tooltip("How far it backs off after an attack, in metres.")]
         [Min(0f)]
         [SerializeField] private float retreatDistance = 1.2f;
+        [Tooltip("How fast it backs off, in metres per second, when it has a Walk Back Animation (without one it runs back).")]
+        [Min(0.1f)]
+        [SerializeField] private float walkBackSpeed = 0.7f;
         [Tooltip("A weapon held in the way of the bite, or a fist, blocks it.")]
         [SerializeField] private bool heldThingsBlock = true;
 
@@ -279,6 +296,10 @@ namespace Game.Enemies
         [Tooltip("When the ball leaves its mouth, in seconds after the shot starts.")]
         [Min(0f)]
         [SerializeField] private float webReleaseTime = 0.5f;
+        [Tooltip("Bone in the model the ball is made on before it's shot: it follows the bone, and the bone's scale is " +
+                 "how big the ball is so far (Spider_Shoot_Web_Ball grows it). Empty or not in the model: the ball " +
+                 "appears at its mouth when it shoots.")]
+        [SerializeField] private string webHoldBone = "Web_Ball";
         [Tooltip("How long the whole shot takes, in seconds.")]
         [Min(0.1f)]
         [SerializeField] private float webDuration = 1f;
@@ -318,12 +339,20 @@ namespace Game.Enemies
         [SerializeField] private string idleAnimation = "idle";
         [SerializeField] private string walkAnimation = "Spider_Walk";
         [SerializeField] private string runAnimation = "run";
+        [Tooltip("Backing off after an attack, still facing the player. Empty or not in the Animator: it runs back instead.")]
+        [SerializeField] private string walkBackAnimation = "walk_back";
         [Tooltip("Its wind-up (rearing up) and the hiss when it notices the player.")]
         [SerializeField] private string alertAnimation = "alert";
         [SerializeField] private string hitAnimation = "hit";
         [Tooltip("The speed (m/s) at which the run animation looks right; it plays faster or slower to match.")]
         [Min(0.1f)]
         [SerializeField] private float runAnimationSpeed = 2.2f;
+        [Tooltip("The speed (m/s) at which the walk-back animation looks right; it plays faster or slower to match.")]
+        [Min(0.1f)]
+        [SerializeField] private float walkBackAnimationSpeed = 0.61f;
+        [Tooltip("How much slower and faster than normal its walk and run animations may play to keep pace with its " +
+                 "feet (0.6 = 60%, 2.5 = 250%). Past these its feet slide.")]
+        [SerializeField] private Vector2 legSpeedRange = new(0.6f, 2.5f);
         [Tooltip("It appears at this share of its full size (0.6 = 60%)...")]
         [Range(0.05f, 1f)]
         [SerializeField] private float growFrom = 0.6f;
@@ -401,6 +430,7 @@ namespace Game.Enemies
         private bool attackResolved;
         private float lungeLeft;
         private float lungeTotal;
+        private float hitShownUntil;
 
         private float nextDodge;
         private float nextThreatScan;
@@ -413,6 +443,17 @@ namespace Game.Enemies
         private bool isShooting;
         private bool webLaunched;
         private float webStart;
+        private Transform webHold;
+        private GameObject heldWeb;
+        private Vector3 heldWebScale;
+        // Face leap: how high (metres) its model is lifted right now, and how fast it's falling when it lets go.
+        private float leapLift;
+        private float leapDropFrom;
+        private float leapFallSpeed;
+        private bool leapShown;
+        private bool runningAway;
+        private readonly List<Collider> bodyColliders = new();
+        private readonly List<Vector3> bodyColliderCentres = new();
 
         /// <summary>What it's doing right now (for debugging and FSMs that want to know).</summary>
         public string Doing => state.ToString();
@@ -441,6 +482,7 @@ namespace Game.Enemies
             TryGetComponent(out speaker);
             ChooseSize();
             PickModel();
+            if (models != null) modelsHome = models.localPosition;
         }
 
         private void Start()
@@ -527,6 +569,7 @@ namespace Game.Enemies
                 case State.Dodge: DoDodge(); break;
                 case State.WebShot: DoWebShot(); break;
             }
+            FallIfLifted();
         }
 
         // ---- Senses ----
@@ -761,8 +804,8 @@ namespace Game.Enemies
             Enter(State.Attack, move.duration);
             attackStart = Time.time;
             attackResolved = false;
-            // Just far enough to put its mouth where the player is now.
-            lungeTotal = lungeLeft = Mathf.Clamp(distance - move.reach * Size() - 0.05f, 0f, move.lunge);
+            // Just far enough to put its mouth where the player is now (a face leap stops just in front of the face).
+            lungeTotal = lungeLeft = Mathf.Clamp(distance - move.reach * Size() - (move.leapToFace ? 0.1f : 0.05f), 0f, move.lunge);
             Play(move.animation, true);
             if (move.sound != null) PlayOne(move.sound);
             SendToOwnFsms("Attack");
@@ -777,14 +820,17 @@ namespace Game.Enemies
             var target = PlayerFloor();
             if (t < move.hitFrom) Face(target);
 
-            float lungeStart = Mathf.Max(0f, move.hitFrom - LungeLead);
-            if (t >= lungeStart && t <= move.hitUntil && lungeLeft > 0f)
+            // A face leap covers the distance while it springs up; a bite lunges until its bite window ends.
+            float lungeStart = move.leapToFace ? Mathf.Max(0f, move.hitFrom - leapRiseFall.x) : Mathf.Max(0f, move.hitFrom - LungeLead);
+            float lungeEnd = move.leapToFace ? move.hitFrom : move.hitUntil;
+            if (t >= lungeStart && t <= lungeEnd && lungeLeft > 0f)
             {
-                float window = Mathf.Max(0.05f, move.hitUntil - lungeStart);
+                float window = Mathf.Max(0.05f, lungeEnd - lungeStart);
                 float step = Mathf.Min(lungeLeft, lungeTotal / window * Time.deltaTime);
                 agent.Move(transform.forward * step);
                 lungeLeft -= step;
             }
+            if (move.leapToFace) Leap(t);
 
             if (!attackResolved && t >= move.hitFrom && t <= move.hitUntil) TryBite();
             if (!attackResolved && t > move.hitUntil)
@@ -793,13 +839,112 @@ namespace Game.Enemies
                 SendToOwnFsms("Missed");
             }
 
-            if (Time.time >= stateUntil) StartRetreat(retreatDistance, 0.6f);
+            // A leaper waits until it's back on the floor.
+            if (Time.time < stateUntil || leapLift > 0.001f) return;
+            if (move.runAwayAfter) StartRunAway();
+            else StartRetreat(retreatDistance, 0.6f);
+        }
+
+        // Up to the player's face (it follows their head height while it clings), then a quickening drop.
+        private void Leap(float t)
+        {
+            float takeoff = Mathf.Max(0f, move.hitFrom - leapRiseFall.x);
+            float face = Mathf.Max(0f, player.Camera.transform.position.y - 0.1f - transform.position.y - 0.15f * Size());
+            if (t < takeoff)
+            {
+                leapLift = 0f;
+            }
+            else if (t < move.hitFrom)
+            {
+                float s = (t - takeoff) / Mathf.Max(0.01f, leapRiseFall.x);
+                leapLift = face * (1f - (1f - s) * (1f - s));
+            }
+            else if (t < move.hitUntil)
+            {
+                leapLift = face;
+                leapDropFrom = face;
+            }
+            else
+            {
+                float s = Mathf.Clamp01((t - move.hitUntil) / Mathf.Max(0.01f, leapRiseFall.y));
+                leapLift = leapDropFrom * (1f - s * s);
+            }
+            leapFallSpeed = 0f;
+        }
+
+        // Anything that ends an attack early (a hit, a block, a dodge) lets a leaper fall from where it is.
+        private void FallIfLifted()
+        {
+            if (leapLift <= 0f || (state == State.Attack && move != null && move.leapToFace)) return;
+            leapFallSpeed += 9.81f * Time.deltaTime;
+            leapLift = Mathf.Max(0f, leapLift - leapFallSpeed * Time.deltaTime);
+        }
+
+        // Its model (and its body's collider, so it can be swatted out of the air) at the leap's height.
+        private void ShowLeap()
+        {
+            if (models == null || (!leapShown && leapLift <= 0f)) return;
+            float local = leapLift / Mathf.Max(0.01f, transform.lossyScale.y);
+            models.localPosition = modelsHome + Vector3.up * local;
+            if (bodyColliders.Count == 0 && bodyColliderCentres.Count == 0)
+            {
+                foreach (var c in GetComponents<Collider>())
+                {
+                    if (c.isTrigger) continue;
+                    bodyColliders.Add(c);
+                    bodyColliderCentres.Add(Centre(c));
+                }
+            }
+            for (int i = 0; i < bodyColliders.Count; i++) SetCentre(bodyColliders[i], bodyColliderCentres[i] + Vector3.up * local);
+            leapShown = leapLift > 0f;
+        }
+
+        private static Vector3 Centre(Collider c) => c switch
+        {
+            SphereCollider s => s.center,
+            CapsuleCollider k => k.center,
+            BoxCollider b => b.center,
+            _ => Vector3.zero,
+        };
+
+        private static void SetCentre(Collider c, Vector3 centre)
+        {
+            switch (c)
+            {
+                case SphereCollider s: s.center = centre; break;
+                case CapsuleCollider k: k.center = centre; break;
+                case BoxCollider b: b.center = centre; break;
+            }
+        }
+
+        // Killed in the air: it still falls (the brain is switched off by then).
+        private System.Collections.IEnumerator FallWhenDead()
+        {
+            while (leapLift > 0f)
+            {
+                leapFallSpeed += 9.81f * Time.deltaTime;
+                leapLift = Mathf.Max(0f, leapLift - leapFallSpeed * Time.deltaTime);
+                ShowLeap();
+                yield return null;
+            }
+        }
+
+        // Turns tail and runs off (after a face leap), then its turn is over.
+        private void StartRunAway()
+        {
+            Enter(State.Retreat, runAwayDistance / Mathf.Max(0.5f, RunSpeed) + 0.4f);
+            runningAway = true;
+            var away = transform.position - PlayerFloor();
+            away.y = 0f;
+            if (away.sqrMagnitude < 0.01f) away = -transform.forward;
+            var point = transform.position + away.normalized * runAwayDistance;
+            if (NavMesh.SamplePosition(point, out var hit, runAwayDistance + 0.5f, NavMesh.AllAreas)) GoTo(hit.position, RunSpeed, true);
         }
 
         private void TryBite()
         {
             float size = Size();
-            var mouth = transform.position + transform.forward * (move.reach * size) + Vector3.up * (0.15f * size);
+            var mouth = transform.position + transform.forward * (move.reach * size) + Vector3.up * (0.15f * size + leapLift);
             int count = Physics.OverlapSphereNonAlloc(mouth, move.biteRadius * size, touching, Physics.AllLayers, QueryTriggerInteraction.Ignore);
             bool bitPlayer = false;
             for (int i = 0; i < count; i++)
@@ -812,11 +957,15 @@ namespace Game.Enemies
                     if (blockedSound != null) PlayOne(blockedSound);
                     SendToOwnFsms("Blocked");
                     Play(hitAnimation, true);
+                    hitShownUntil = Time.time + flinchSeconds;
                     StartRetreat(retreatDistance + 0.5f, 0.8f);
                     return;
                 }
                 if (!other.isTrigger && IsPlayer(other)) bitPlayer = true;
             }
+            // The player's colliders sit on the rig, not always under their head (room-scale), and a small spider's
+            // bite is small: the body around where they stand counts too.
+            if (!bitPlayer) bitPlayer = ReachesBody(mouth, move.biteRadius * size);
             if (!bitPlayer) return;
 
             attackResolved = true;
@@ -824,23 +973,45 @@ namespace Game.Enemies
             SendToOwnFsms("Bite");
         }
 
+        private bool ReachesBody(Vector3 mouth, float radius)
+        {
+            var flat = mouth - PlayerFloor();
+            float headHeight = player.Camera.transform.position.y;
+            flat.y = 0f;
+            return flat.magnitude <= radius + playerBodyRadius && mouth.y - radius <= headHeight;
+        }
+
         private void StartRetreat(float distance, float seconds)
         {
+            // Walking back is slower than running back, so it gets the time to cover the distance.
+            bool walkBack = HasAnimationQuiet(walkBackAnimation);
+            float speed = walkBack ? walkBackSpeed * kind.speed : RunSpeed * 0.8f;
+            if (walkBack) seconds = Mathf.Max(seconds, distance / speed);
             Enter(State.Retreat, seconds);
+            runningAway = false;
             var away = transform.position - PlayerFloor();
             away.y = 0f;
             if (away.sqrMagnitude < 0.01f) away = -transform.forward;
             var point = transform.position + away.normalized * distance;
-            if (NavMesh.SamplePosition(point, out var hit, distance + 0.5f, NavMesh.AllAreas)) GoTo(hit.position, RunSpeed * 0.8f, false);
+            if (NavMesh.SamplePosition(point, out var hit, distance + 0.5f, NavMesh.AllAreas)) GoTo(hit.position, speed, false);
         }
 
         // Backs off still facing the player, then its turn is over.
         private void DoRetreat()
         {
-            Face(PlayerFloor());
-            Play(runAnimation);
+            if (runningAway)
+            {
+                Play(runAnimation);
+            }
+            else
+            {
+                Face(PlayerFloor());
+                // A blocked bite shows its recoil (the hit animation) before it walks back.
+                if (Time.time >= hitShownUntil) Play(HasAnimationQuiet(walkBackAnimation) ? walkBackAnimation : runAnimation);
+            }
             SetLegs();
             if (Time.time < stateUntil) return;
+            runningAway = false;
             GiveUpTurn();
             nextAttack = Time.time + Random.Range(attackCooldown.x, attackCooldown.y);
             Enter(State.Circle, 0f);
@@ -886,8 +1057,42 @@ namespace Game.Enemies
             Enter(State.WebShot, webDuration);
             Stop();
             Play(!string.IsNullOrEmpty(webAnimation) && HasAnimation(webAnimation) ? webAnimation : alertAnimation, true);
+            if (playing == webAnimation) StartMakingWeb();
             SendToOwnFsms("WebShot");
             return true;
+        }
+
+        // With a web animation and its bone, the ball is there from the start, growing on the bone until it's shot.
+        private void StartMakingWeb()
+        {
+            if (webHold == null && !string.IsNullOrEmpty(webHoldBone) && animator != null) webHold = FindBone(animator.transform, webHoldBone);
+            if (webHold == null) return;
+
+            heldWebScale = webBall.transform.localScale * Mathf.Clamp(Size(), 0.6f, 1.6f);
+            heldWeb = Instantiate(webBall, webHold.position, webHold.rotation);
+            heldWeb.transform.localScale = Vector3.zero;
+            if (heldWeb.TryGetComponent(out WebBall web)) web.Hold();
+        }
+
+        private static Transform FindBone(Transform under, string boneName)
+        {
+            if (under.name == boneName) return under;
+            foreach (Transform child in under)
+            {
+                var found = FindBone(child, boneName);
+                if (found != null) return found;
+            }
+            return null;
+        }
+
+        // After the Animator has posed the bone.
+        private void LateUpdate()
+        {
+            ShowLeap();
+            if (heldWeb == null || webHold == null) return;
+            heldWeb.transform.SetPositionAndRotation(webHold.position, webHold.rotation);
+            float parentScale = webHold.parent != null ? Mathf.Max(0.0001f, webHold.parent.lossyScale.x) : 1f;
+            heldWeb.transform.localScale = heldWebScale * Mathf.Max(0f, webHold.lossyScale.x / parentScale);
         }
 
         // Faces the player and spits the ball at Web Release Time, aimed a little ahead if they're moving.
@@ -915,8 +1120,20 @@ namespace Game.Enemies
             var lead = playerBody != null ? Vector3.ProjectOnPlane(playerBody.velocity, Vector3.up) : Vector3.zero;
             chest += lead * ((chest - mouth).magnitude / webSpeed);
 
-            var ball = Instantiate(webBall, mouth, Quaternion.identity);
-            ball.transform.localScale = webBall.transform.localScale * Mathf.Clamp(size, 0.6f, 1.6f);
+            GameObject ball;
+            if (heldWeb != null)
+            {
+                // Thrown from where its legs hold it, at full size.
+                ball = heldWeb;
+                heldWeb = null;
+                mouth = ball.transform.position;
+                ball.transform.localScale = heldWebScale;
+            }
+            else
+            {
+                ball = Instantiate(webBall, mouth, Quaternion.identity);
+                ball.transform.localScale = webBall.transform.localScale * Mathf.Clamp(size, 0.6f, 1.6f);
+            }
             var velocity = WebBall.Aim(mouth, chest, webSpeed, -Physics.gravity.y);
             if (ball.TryGetComponent(out WebBall web)) web.Launch(velocity, transform);
             else if (ball.TryGetComponent(out Rigidbody body)) body.linearVelocity = velocity;
@@ -925,6 +1142,13 @@ namespace Game.Enemies
 
         private void StopShooting()
         {
+            // Interrupted (hit, killed, ...) before it was thrown: the half-made ball bursts.
+            if (heldWeb != null)
+            {
+                if (heldWeb.TryGetComponent(out WebBall web)) web.Burst();
+                else Destroy(heldWeb);
+                heldWeb = null;
+            }
             if (!isShooting) return;
             isShooting = false;
             webShootersNow = Mathf.Max(0, webShootersNow - 1);
@@ -1115,6 +1339,7 @@ namespace Game.Enemies
             StopShooting();
             Stop();
             if (animator != null) animator.speed = 1f;
+            if (leapLift > 0f) StartCoroutine(FallWhenDead());
             foreach (var flag in setOnDeath)
             {
                 if (flag != null && !string.IsNullOrEmpty(flag.boolName)) GameStages.SetFsmBool(flag.globalObject, flag.fsm, flag.boolName, flag.value, this);
@@ -1162,7 +1387,17 @@ namespace Game.Enemies
 
         private bool Fits(AttackMove attack, float distance)
         {
-            return attack != null && attack.weight > 0f && distance >= attack.minDistance && distance <= attack.maxDistance && UsedByMe(attack);
+            // An attack whose animation isn't in the Animator yet is left out (a face leap without its animation would
+            // just float up in whatever pose it's in).
+            return attack != null && attack.weight > 0f && distance >= attack.minDistance && distance <= attack.maxDistance &&
+                   distance <= Reachable(attack) && UsedByMe(attack) && HasAnimationQuiet(attack.animation);
+        }
+
+        // The furthest the player can be for this attack to land: its hop, then its reach and bite at this size, then
+        // the player's body. A short hop isn't picked from too far (it closes in and tries again).
+        private float Reachable(AttackMove attack)
+        {
+            return attack.lunge + (attack.reach + attack.biteRadius) * Size() + playerBodyRadius;
         }
 
         private bool UsedByMe(AttackMove attack)
@@ -1278,9 +1513,12 @@ namespace Game.Enemies
         {
             if (animator == null) return;
             float speed = agent.velocity.magnitude;
-            animator.speed = playing == runAnimation || playing == walkAnimation
-                ? Mathf.Clamp(speed / (runAnimationSpeed * Size()), 0.6f, 1.8f)
-                : 1f;
+            if (!string.IsNullOrEmpty(walkBackAnimation) && playing == walkBackAnimation)
+                animator.speed = Mathf.Clamp(speed / (walkBackAnimationSpeed * Size()), legSpeedRange.x, legSpeedRange.y);
+            else
+                animator.speed = playing == runAnimation || playing == walkAnimation
+                    ? Mathf.Clamp(speed / (runAnimationSpeed * Size()), legSpeedRange.x, legSpeedRange.y)
+                    : 1f;
         }
 
         private void Grow()

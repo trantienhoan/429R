@@ -5686,7 +5686,7 @@ MonoBehaviour:
     manualUpdate: 0
     outVariableIndices: 
     keepDelayedEventsOnStateExit: 0
-    preprocessed: 0
+    preprocessed: 1
     ExposedEvents: []
     OutputEvents: []
     RestartOnEnable: 1
@@ -8157,7 +8157,7 @@ MonoBehaviour:
     manualUpdate: 0
     outVariableIndices: 
     keepDelayedEventsOnStateExit: 0
-    preprocessed: 0
+    preprocessed: 1
     ExposedEvents: []
     OutputEvents: []
     RestartOnEnable: 1
@@ -8229,7 +8229,7 @@ MonoBehaviour:
           name: FINISHED
           isSystemEvent: 1
           isGlobal: 0
-        toState: Loop Spawns
+        toState: Wait for Slot
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -8238,15 +8238,19 @@ MonoBehaviour:
         actionNames:
         - HutongGames.PlayMaker.Actions.SetFsmVariable
         - HutongGames.PlayMaker.Actions.SetFsmVariable
+        - HutongGames.PlayMaker.Actions.StartWave
+        - HutongGames.PlayMaker.Actions.SetIntValue
         - HutongGames.PlayMaker.Actions.Wait
         customNames:
         - 
         - 
         - 
-        actionEnabled: 010101
-        actionIsOpen: 000001
-        actionStartIndex: 00000000050000000a000000
-        actionHashCodes: fcb1a001fcb1a00148c01101
+        - 
+        - 
+        actionEnabled: 0101010101
+        actionIsOpen: 0000010101
+        actionStartIndex: 00000000050000000a0000000a0000000d000000
+        actionHashCodes: fcb1a001fcb1a00100000000603dd90548c01101
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams:
@@ -8356,7 +8360,19 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0.1
-        fsmIntParams: []
+        fsmIntParams:
+        - useVariable: 1
+          name: numberOfEnemies
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
         fsmBoolParams: []
         fsmVector2Params: []
         fsmVector3Params: []
@@ -8365,12 +8381,12 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - FINISHED
-        byteData: 000001
+        byteData: 00000001
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 140000001200000012000000270000000100000014000000120000001200000027000000010000000f0000001700000001000000
+        paramDataType: 140000001200000012000000270000000100000014000000120000001200000027000000010000001000000010000000010000000f0000001700000001000000
         paramName:
         - gameObject
         - fsmName
@@ -8382,11 +8398,14 @@ MonoBehaviour:
         - variableName
         - setValue
         - everyFrame
+        - intVariable
+        - intValue
+        - everyFrame
         - time
         - finishEvent
         - realTime
-        paramDataPos: 00000000000000000100000000000000000000000100000002000000030000000100000001000000000000000000000002000000
-        paramByteDataSize: 00000000000000000000000000000000010000000000000000000000000000000000000001000000000000000000000001000000
+        paramDataPos: 00000000000000000100000000000000000000000100000002000000030000000100000001000000000000000100000002000000000000000000000003000000
+        paramByteDataSize: 00000000000000000000000000000000010000000000000000000000000000000000000001000000000000000000000001000000000000000000000001000000
     - name: Loop Spawns
       description: 
       colorIndex: 0
@@ -8404,7 +8423,7 @@ MonoBehaviour:
           name: LoopEvent
           isSystemEvent: 0
           isGlobal: 0
-        toState: Wait for Slot
+        toState: Spawn Enemies
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -8413,7 +8432,7 @@ MonoBehaviour:
           name: next
           isSystemEvent: 0
           isGlobal: 1
-        toState: wait
+        toState: Loop Spawns
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -8503,7 +8522,16 @@ MonoBehaviour:
           name: FINISHED
           isSystemEvent: 1
           isGlobal: 0
-        toState: Loop
+        toState: Wait for Slot
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
+      - fsmEvent:
+          name: Wave Done
+          isSystemEvent: 0
+          isGlobal: 0
+        toState: Wait Cleared
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -8516,10 +8544,12 @@ MonoBehaviour:
         - HutongGames.PlayMaker.Actions.Vector3AddXYZ
         - HutongGames.PlayMaker.Actions.NavMeshSamplePosition
         - HutongGames.PlayMaker.Actions.CreateObject
+        - HutongGames.PlayMaker.Actions.AddEnemyToWave
         - HutongGames.PlayMaker.Actions.IntAdd
+        - HutongGames.PlayMaker.Actions.ActivateGameObject
+        - HutongGames.PlayMaker.Actions.ActivateGameObject
+        - HutongGames.PlayMaker.Actions.IntCompare
         - HutongGames.PlayMaker.Actions.RandomWait
-        - HutongGames.PlayMaker.Actions.ActivateGameObject
-        - HutongGames.PlayMaker.Actions.ActivateGameObject
         customNames:
         - 
         - 
@@ -8531,10 +8561,12 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 01010101010101010101
-        actionIsOpen: 00000000000100010101
-        actionStartIndex: 00000000070000000a0000000d000000130000001e00000024000000270000002b00000030000000
-        actionHashCodes: 5552ad052ee017042ee01704192194058e44e90260532301603dd9050d5f5c01b2cf1000b2cf1000
+        - 
+        - 
+        actionEnabled: 010101010101010101010101
+        actionIsOpen: 000000000001010001010101
+        actionStartIndex: 00000000070000000a0000000d000000130000001e0000002400000025000000280000002d0000003200000038000000
+        actionHashCodes: 5552ad052ee017042ee01704192194058e44e902605323015c004505603dd905b2cf1000b2cf100009faa1020d5f5c01
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 0
@@ -8542,7 +8574,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {fileID: 1466277309599601579, guid: d8aa458306020af4c9d7b94e3462b698,
+          value: {fileID: 3397754568903227887, guid: 9d68f40626cd378448edce75bb037da3,
             type: 3}
         - useVariable: 1
           name: CurrentlySpawnedStuffs
@@ -8552,6 +8584,12 @@ MonoBehaviour:
           value: {fileID: 0}
         - useVariable: 0
           name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 0}
+        - useVariable: 1
+          name: EnemyAdded
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -8676,7 +8714,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 5
+          value: 10
         - useVariable: 1
           name: 
           tooltip: 
@@ -8720,6 +8758,19 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 1
+        - useVariable: 1
+          name: numberOfEnemies
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 1
+          name: waveSize
+          tooltip: How many regular enemies this wave spawns in total (before the
+            boss).
+          showInInspector: 1
+          networkSync: 0
+          value: 10
         fsmBoolParams:
         - useVariable: 1
           name: 
@@ -8807,13 +8858,16 @@ MonoBehaviour:
         stringParams:
         - 
         - 
+        - Wave Done
+        - 
+        - Wave Done
         - FINISHED
-        byteData: 00000000000000000100000000
+        byteData: 0000000000000000000000000001
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 140000001c0000000f0000000f0000000f00000007000000010000000f0000000f0000000f0000000f0000000f0000000f0000001c0000000f0000000f0000000f00000001000000010000001c000000100000000f0000001100000017000000170000001c0000001c0000000f00000010000000110000001300000013000000130000001c0000001c000000130000001000000010000000010000000f0000000f000000170000000100000014000000110000001100000001000000010000001400000011000000110000000100000001000000
+        paramDataType: 140000001c0000000f0000000f0000000f00000007000000010000000f0000000f0000000f0000000f0000000f0000000f0000001c0000000f0000000f0000000f00000001000000010000001c000000100000000f0000001100000017000000170000001c0000001c0000000f00000010000000110000001300000013000000130000001c0000001c0000001300000013000000100000001000000001000000140000001100000011000000010000000100000014000000110000001100000001000000010000001000000010000000170000001700000017000000010000000f0000000f0000001700000001000000
         paramName:
         - gameObject
         - vector
@@ -8851,25 +8905,32 @@ MonoBehaviour:
         - position
         - rotation
         - storeObject
+        - enemy
         - intVariable
         - add
+        - everyFrame
+        - gameObject
+        - activate
+        - recursive
+        - resetOnExit
+        - everyFrame
+        - gameObject
+        - activate
+        - recursive
+        - resetOnExit
+        - everyFrame
+        - integer1
+        - integer2
+        - equal
+        - lessThan
+        - greaterThan
         - everyFrame
         - min
         - max
         - finishEvent
         - realTime
-        - gameObject
-        - activate
-        - recursive
-        - resetOnExit
-        - everyFrame
-        - gameObject
-        - activate
-        - recursive
-        - resetOnExit
-        - everyFrame
-        paramDataPos: 0000000000000000000000000100000002000000000000000400000003000000040000000500000006000000070000000800000001000000090000000a0000000b000000050000000600000002000000000000000c00000000000000000000000100000003000000040000000d00000001000000010000000000000001000000020000000500000006000000030000000200000003000000070000000e0000000f0000000200000008000000010000000200000003000000090000000a0000000200000004000000050000000b0000000c000000
-        paramByteDataSize: 0000000000000000000000000000000000000000040000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000100000000000000000000000000000001000000010000000000000000000000000000000100000001000000
+        paramDataPos: 0000000000000000000000000100000002000000000000000400000003000000040000000500000006000000070000000800000001000000090000000a0000000b000000050000000600000002000000000000000c00000000000000000000000100000003000000040000000d00000001000000010000000000000001000000020000000500000006000000030000000400000002000000030000000700000001000000020000000300000008000000090000000200000004000000050000000a0000000b00000004000000050000000200000003000000040000000c0000000e0000000f000000050000000d000000
+        paramByteDataSize: 000000000000000000000000000000000000000004000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000100000001000000000000000000000000000000010000000100000000000000000000000000000000000000000000000100000000000000000000000000000001000000
     - name: COMPLETE
       description: 
       colorIndex: 0
@@ -9057,96 +9118,6 @@ MonoBehaviour:
         - realTime
         paramDataPos: 0000000000000000000000000000000000000000010000000000000001000000010000000200000002000000020000000300000003000000040000000300000004000000050000000500000006000000010000000000000007000000
         paramByteDataSize: 0000000000000000000000000000000001000000000000000000000000000000010000000100000000000000000000000000000001000000010000000000000000000000000000000100000001000000000000000000000001000000
-    - name: Loop
-      description: 
-      colorIndex: 0
-      position:
-        serializedVersion: 2
-        x: 250
-        y: 233
-        width: 100
-        height: 48
-      isBreakpoint: 0
-      isSequence: 0
-      hideUnused: 0
-      transitions:
-      - fsmEvent:
-          name: LoopEvent
-          isSystemEvent: 0
-          isGlobal: 0
-        toState: Spawn Enemies
-        linkStyle: 0
-        linkConstraint: 2
-        linkTarget: 0
-        colorIndex: 0
-      - fsmEvent:
-          name: next
-          isSystemEvent: 0
-          isGlobal: 1
-        toState: Loop Spawns
-        linkStyle: 0
-        linkConstraint: 0
-        linkTarget: 0
-        colorIndex: 0
-      actionData:
-        actionNames:
-        - HutongGames.PlayMaker.Actions.Loop
-        customNames:
-        - 
-        actionEnabled: 01
-        actionIsOpen: 01
-        actionStartIndex: 00000000
-        actionHashCodes: 65c84b02
-        unityObjectParams: []
-        fsmGameObjectParams: []
-        fsmOwnerDefaultParams: []
-        animationCurveParams: []
-        functionCallParams: []
-        fsmTemplateControlParams: []
-        fsmEventTargetParams: []
-        fsmPropertyParams: []
-        layoutOptionParams: []
-        fsmStringParams: []
-        fsmObjectParams: []
-        fsmVarParams: []
-        fsmArrayParams: []
-        fsmEnumParams: []
-        fsmFloatParams: []
-        fsmIntParams:
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 2
-        - useVariable: 1
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
-        fsmBoolParams: []
-        fsmVector2Params: []
-        fsmVector3Params: []
-        fsmColorParams: []
-        fsmRectParams: []
-        fsmQuaternionParams: []
-        stringParams:
-        - LoopEvent
-        - next
-        byteData: 
-        arrayParamSizes: 
-        arrayParamTypes: []
-        customTypeSizes: 
-        customTypeNames: []
-        paramDataType: 10000000100000001700000017000000
-        paramName:
-        - loops
-        - storeCurrentLoop
-        - loopEvent
-        - finishEvent
-        paramDataPos: 00000000010000000000000001000000
-        paramByteDataSize: 00000000000000000000000000000000
     - name: Call Boss
       description: 
       colorIndex: 0
@@ -9191,7 +9162,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {fileID: 1466277309599601579, guid: 5d748bfcd0965bc4cabf508af3003159,
+          value: {fileID: 5720646805313591138, guid: ac753d69e579d974d93034fae15d06d4,
             type: 3}
         - useVariable: 1
           name: CurrentlySpawnedStuffs
@@ -9216,7 +9187,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {fileID: 1466277309599601579, guid: 21a97b1e06d395e4d9a2703628f41b26,
+          value: {fileID: 586764779664862803, guid: f58ed6f82075fcc42b834290bed4b7b4,
             type: 3}
         - useVariable: 1
           name: CurrentlySpawnedStuffs
@@ -9640,20 +9611,20 @@ MonoBehaviour:
           name: FINISHED
           isSystemEvent: 1
           isGlobal: 0
-        toState: Spawn Enemies
+        toState: Loop Spawns
         linkStyle: 0
-        linkConstraint: 2
+        linkConstraint: 0
         linkTarget: 0
         colorIndex: 0
       actionData:
         actionNames:
-        - HutongGames.PlayMaker.Actions.WaitForEnemySlot
+        - HutongGames.PlayMaker.Actions.WaitForWaveRoom
         customNames:
         - 
         actionEnabled: 01
         actionIsOpen: 01
         actionStartIndex: 00000000
-        actionHashCodes: 66e6a403
+        actionHashCodes: 16e49400
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams: []
@@ -9670,7 +9641,99 @@ MonoBehaviour:
         fsmEnumParams: []
         fsmFloatParams: []
         fsmIntParams:
+        - useVariable: 1
+          name: maxAlive
+          tooltip: Most enemies of this wave alive at the same time.
+          showInInspector: 1
+          networkSync: 0
+          value: 4
+        fsmBoolParams:
         - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
+        fsmVector2Params: []
+        fsmVector3Params: []
+        fsmColorParams: []
+        fsmRectParams: []
+        fsmQuaternionParams: []
+        stringParams:
+        - 
+        byteData: 
+        arrayParamSizes: 
+        arrayParamTypes: []
+        customTypeSizes: 
+        customTypeNames: []
+        paramDataType: 100000001100000017000000
+        paramName:
+        - maxAlive
+        - useEnemyLimit
+        - finishEvent
+        paramDataPos: 000000000000000000000000
+        paramByteDataSize: 000000000000000000000000
+    - name: Wait Cleared
+      description: 
+      colorIndex: 0
+      position:
+        serializedVersion: 2
+        x: 61
+        y: 174
+        width: 100
+        height: 32
+      isBreakpoint: 0
+      isSequence: 0
+      hideUnused: 0
+      transitions:
+      - fsmEvent:
+          name: FINISHED
+          isSystemEvent: 1
+          isGlobal: 0
+        toState: wait
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
+      actionData:
+        actionNames:
+        - HutongGames.PlayMaker.Actions.WaitForWaveCleared
+        customNames:
+        - 
+        actionEnabled: 01
+        actionIsOpen: 01
+        actionStartIndex: 00000000
+        actionHashCodes: 9b059f02
+        unityObjectParams: []
+        fsmGameObjectParams: []
+        fsmOwnerDefaultParams: []
+        animationCurveParams: []
+        functionCallParams: []
+        fsmTemplateControlParams: []
+        fsmEventTargetParams: []
+        fsmPropertyParams: []
+        layoutOptionParams: []
+        fsmStringParams: []
+        fsmObjectParams: []
+        fsmVarParams: []
+        fsmArrayParams: []
+        fsmEnumParams: []
+        fsmFloatParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 90
+        fsmIntParams:
+        - useVariable: 1
+          name: bossWhenLeft
+          tooltip: The boss comes when this many or fewer of the wave are still alive
+            (0 = all dead).
+          showInInspector: 1
+          networkSync: 0
+          value: 2
+        - useVariable: 1
           name: 
           tooltip: 
           showInInspector: 0
@@ -9683,18 +9746,20 @@ MonoBehaviour:
         fsmRectParams: []
         fsmQuaternionParams: []
         stringParams:
-        - FINISHED
+        - 
         byteData: 
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1000000017000000
+        paramDataType: 100000000f0000001000000017000000
         paramName:
-        - maxEnemies
+        - leftAlive
+        - giveUpAfter
+        - storeAlive
         - finishEvent
-        paramDataPos: 0000000000000000
-        paramByteDataSize: 0000000000000000
+        paramDataPos: 00000000000000000100000000000000
+        paramByteDataSize: 00000000000000000000000000000000
     events:
     - name: FINISHED
       isSystemEvent: 1
@@ -9708,6 +9773,9 @@ MonoBehaviour:
     - name: next
       isSystemEvent: 0
       isGlobal: 1
+    - name: Wave Done
+      isSystemEvent: 0
+      isGlobal: 0
     globalTransitions: []
     variables:
       floatVariables:
@@ -9730,6 +9798,25 @@ MonoBehaviour:
         showInInspector: 0
         networkSync: 0
         value: 0
+      - useVariable: 1
+        name: waveSize
+        tooltip: How many regular enemies this wave spawns in total (before the boss).
+        showInInspector: 1
+        networkSync: 0
+        value: 10
+      - useVariable: 1
+        name: maxAlive
+        tooltip: Most enemies of this wave alive at the same time.
+        showInInspector: 1
+        networkSync: 0
+        value: 4
+      - useVariable: 1
+        name: bossWhenLeft
+        tooltip: The boss comes when this many or fewer of the wave are still alive
+          (0 = all dead).
+        showInInspector: 1
+        networkSync: 0
+        value: 2
       boolVariables:
       - useVariable: 1
         name: BigRoachDown
@@ -9775,7 +9862,7 @@ MonoBehaviour:
       enumVariables: []
       categories:
       - 
-      variableCategoryIDs: 0000000000000000000000000000000000000000000000000000000000000000
+      variableCategoryIDs: 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
     description: 
     docUrl: 
     showStateLabel: 0
@@ -9786,7 +9873,7 @@ MonoBehaviour:
     manualUpdate: 0
     outVariableIndices: 
     keepDelayedEventsOnStateExit: 0
-    preprocessed: 0
+    preprocessed: 1
     ExposedEvents: []
     OutputEvents: []
     RestartOnEnable: 1
@@ -10127,7 +10214,7 @@ MonoBehaviour:
     manualUpdate: 0
     outVariableIndices: 
     keepDelayedEventsOnStateExit: 0
-    preprocessed: 0
+    preprocessed: 1
     ExposedEvents: []
     OutputEvents: []
     RestartOnEnable: 1
@@ -54713,7 +54800,7 @@ MonoBehaviour:
           name: FINISHED
           isSystemEvent: 1
           isGlobal: 0
-        toState: Loop Spawns
+        toState: Wait for Slot
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -54721,14 +54808,18 @@ MonoBehaviour:
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.SetFsmVariable
+        - HutongGames.PlayMaker.Actions.StartWave
+        - HutongGames.PlayMaker.Actions.SetIntValue
         - HutongGames.PlayMaker.Actions.Wait
         customNames:
         - 
         - 
-        actionEnabled: 0101
-        actionIsOpen: 0000
-        actionStartIndex: 0000000005000000
-        actionHashCodes: fcb1a00148c01101
+        - 
+        - 
+        actionEnabled: 01010101
+        actionIsOpen: 00010100
+        actionStartIndex: 00000000050000000500000008000000
+        actionHashCodes: fcb1a00100000000603dd90548c01101
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams:
@@ -54794,7 +54885,19 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0.1
-        fsmIntParams: []
+        fsmIntParams:
+        - useVariable: 1
+          name: numberOfEnemies
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
         fsmBoolParams: []
         fsmVector2Params: []
         fsmVector3Params: []
@@ -54803,23 +54906,26 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - FINISHED
-        byteData: 0001
+        byteData: 000001
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 14000000120000001200000027000000010000000f0000001700000001000000
+        paramDataType: 14000000120000001200000027000000010000001000000010000000010000000f0000001700000001000000
         paramName:
         - gameObject
         - fsmName
         - variableName
         - setValue
         - everyFrame
+        - intVariable
+        - intValue
+        - everyFrame
         - time
         - finishEvent
         - realTime
-        paramDataPos: 0000000000000000010000000000000000000000000000000000000001000000
-        paramByteDataSize: 0000000000000000000000000000000001000000000000000000000001000000
+        paramDataPos: 0000000000000000010000000000000000000000000000000100000001000000000000000000000002000000
+        paramByteDataSize: 0000000000000000000000000000000001000000000000000000000001000000000000000000000001000000
     - name: Loop Spawns
       description: 
       colorIndex: 0
@@ -54837,7 +54943,7 @@ MonoBehaviour:
           name: LoopEvent
           isSystemEvent: 0
           isGlobal: 0
-        toState: Wait for Slot
+        toState: Spawn Enemies
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -54846,7 +54952,7 @@ MonoBehaviour:
           name: next
           isSystemEvent: 0
           isGlobal: 1
-        toState: wait
+        toState: Loop Spawns
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -54936,7 +55042,16 @@ MonoBehaviour:
           name: FINISHED
           isSystemEvent: 1
           isGlobal: 0
-        toState: Loop
+        toState: Wait for Slot
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
+      - fsmEvent:
+          name: Wave Done
+          isSystemEvent: 0
+          isGlobal: 0
+        toState: Wait Cleared
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -54949,10 +55064,12 @@ MonoBehaviour:
         - HutongGames.PlayMaker.Actions.Vector3AddXYZ
         - HutongGames.PlayMaker.Actions.NavMeshSamplePosition
         - HutongGames.PlayMaker.Actions.CreateObject
+        - HutongGames.PlayMaker.Actions.AddEnemyToWave
         - HutongGames.PlayMaker.Actions.IntAdd
+        - HutongGames.PlayMaker.Actions.ActivateGameObject
+        - HutongGames.PlayMaker.Actions.ActivateGameObject
+        - HutongGames.PlayMaker.Actions.IntCompare
         - HutongGames.PlayMaker.Actions.RandomWait
-        - HutongGames.PlayMaker.Actions.ActivateGameObject
-        - HutongGames.PlayMaker.Actions.ActivateGameObject
         customNames:
         - 
         - 
@@ -54964,10 +55081,12 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 01010101010101010101
-        actionIsOpen: 00000000000100010000
-        actionStartIndex: 00000000070000000a0000000d000000130000001e00000024000000270000002b00000030000000
-        actionHashCodes: 5552ad052ee017042ee01704192194058e44e90260532301603dd9050d5f5c01b2cf1000b2cf1000
+        - 
+        - 
+        actionEnabled: 010101010101010101010101
+        actionIsOpen: 000000000001010000000101
+        actionStartIndex: 00000000070000000a0000000d000000130000001e0000002400000025000000280000002d0000003200000038000000
+        actionHashCodes: 5552ad052ee017042ee01704192194058e44e902605323015c004505603dd905b2cf1000b2cf100009faa1020d5f5c01
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 0
@@ -54975,7 +55094,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {fileID: 3569810238917063108, guid: 5075d28a224617f4597ed08c924dfd6f,
+          value: {fileID: 2515223889021974101, guid: 3f36e39c26e449b448cf35bde06ec618,
             type: 3}
         - useVariable: 1
           name: CurrentlySpawnedStuffs
@@ -54985,6 +55104,12 @@ MonoBehaviour:
           value: {fileID: 0}
         - useVariable: 0
           name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 0}
+        - useVariable: 1
+          name: EnemyAdded
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -55153,6 +55278,19 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 1
+        - useVariable: 1
+          name: numberOfEnemies
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 1
+          name: waveSize
+          tooltip: How many regular enemies this wave spawns in total (before the
+            boss).
+          showInInspector: 1
+          networkSync: 0
+          value: 12
         fsmBoolParams:
         - useVariable: 1
           name: 
@@ -55240,13 +55378,16 @@ MonoBehaviour:
         stringParams:
         - 
         - 
+        - Wave Done
+        - 
+        - Wave Done
         - FINISHED
-        byteData: 00000000000000000100000000
+        byteData: 0000000000000000000000000001
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 140000001c0000000f0000000f0000000f00000007000000010000000f0000000f0000000f0000000f0000000f0000000f0000001c0000000f0000000f0000000f00000001000000010000001c000000100000000f0000001100000017000000170000001c0000001c0000000f00000010000000110000001300000013000000130000001c0000001c000000130000001000000010000000010000000f0000000f000000170000000100000014000000110000001100000001000000010000001400000011000000110000000100000001000000
+        paramDataType: 140000001c0000000f0000000f0000000f00000007000000010000000f0000000f0000000f0000000f0000000f0000000f0000001c0000000f0000000f0000000f00000001000000010000001c000000100000000f0000001100000017000000170000001c0000001c0000000f00000010000000110000001300000013000000130000001c0000001c0000001300000013000000100000001000000001000000140000001100000011000000010000000100000014000000110000001100000001000000010000001000000010000000170000001700000017000000010000000f0000000f0000001700000001000000
         paramName:
         - gameObject
         - vector
@@ -55284,25 +55425,32 @@ MonoBehaviour:
         - position
         - rotation
         - storeObject
+        - enemy
         - intVariable
         - add
+        - everyFrame
+        - gameObject
+        - activate
+        - recursive
+        - resetOnExit
+        - everyFrame
+        - gameObject
+        - activate
+        - recursive
+        - resetOnExit
+        - everyFrame
+        - integer1
+        - integer2
+        - equal
+        - lessThan
+        - greaterThan
         - everyFrame
         - min
         - max
         - finishEvent
         - realTime
-        - gameObject
-        - activate
-        - recursive
-        - resetOnExit
-        - everyFrame
-        - gameObject
-        - activate
-        - recursive
-        - resetOnExit
-        - everyFrame
-        paramDataPos: 0000000000000000000000000100000002000000000000000400000003000000040000000500000006000000070000000800000001000000090000000a0000000b000000050000000600000002000000000000000c00000000000000000000000100000003000000040000000d00000001000000010000000000000001000000020000000500000006000000030000000200000003000000070000000e0000000f0000000200000008000000010000000200000003000000090000000a0000000200000004000000050000000b0000000c000000
-        paramByteDataSize: 0000000000000000000000000000000000000000040000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000100000000000000000000000000000001000000010000000000000000000000000000000100000001000000
+        paramDataPos: 0000000000000000000000000100000002000000000000000400000003000000040000000500000006000000070000000800000001000000090000000a0000000b000000050000000600000002000000000000000c00000000000000000000000100000003000000040000000d00000001000000010000000000000001000000020000000500000006000000030000000400000002000000030000000700000001000000020000000300000008000000090000000200000004000000050000000a0000000b00000004000000050000000200000003000000040000000c0000000e0000000f000000050000000d000000
+        paramByteDataSize: 000000000000000000000000000000000000000004000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000100000001000000000000000000000000000000010000000100000000000000000000000000000000000000000000000100000000000000000000000000000001000000
     - name: COMPLETE
       description: 
       colorIndex: 0
@@ -55343,7 +55491,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {fileID: 3569810238917063108, guid: 234298def27389c4ebaa1d134eed58a6,
+          value: {fileID: 2127008026668659143, guid: 6349495089300b0418865a3798db7edc,
             type: 3}
         - useVariable: 1
           name: CurrentlySpawnedStuffs
@@ -55423,96 +55571,6 @@ MonoBehaviour:
         - everyFrame
         paramDataPos: 00000000010000000200000000000000010000000300000000000000000000000100000000000000
         paramByteDataSize: 00000000000000000000000000000000000000000000000000000000000000000000000001000000
-    - name: Loop
-      description: 
-      colorIndex: 0
-      position:
-        serializedVersion: 2
-        x: 254
-        y: 230
-        width: 100
-        height: 48
-      isBreakpoint: 0
-      isSequence: 0
-      hideUnused: 0
-      transitions:
-      - fsmEvent:
-          name: LoopEvent
-          isSystemEvent: 0
-          isGlobal: 0
-        toState: Spawn Enemies
-        linkStyle: 0
-        linkConstraint: 2
-        linkTarget: 0
-        colorIndex: 0
-      - fsmEvent:
-          name: next
-          isSystemEvent: 0
-          isGlobal: 1
-        toState: Loop Spawns
-        linkStyle: 0
-        linkConstraint: 0
-        linkTarget: 0
-        colorIndex: 0
-      actionData:
-        actionNames:
-        - HutongGames.PlayMaker.Actions.Loop
-        customNames:
-        - 
-        actionEnabled: 01
-        actionIsOpen: 01
-        actionStartIndex: 00000000
-        actionHashCodes: 65c84b02
-        unityObjectParams: []
-        fsmGameObjectParams: []
-        fsmOwnerDefaultParams: []
-        animationCurveParams: []
-        functionCallParams: []
-        fsmTemplateControlParams: []
-        fsmEventTargetParams: []
-        fsmPropertyParams: []
-        layoutOptionParams: []
-        fsmStringParams: []
-        fsmObjectParams: []
-        fsmVarParams: []
-        fsmArrayParams: []
-        fsmEnumParams: []
-        fsmFloatParams: []
-        fsmIntParams:
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 3
-        - useVariable: 1
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
-        fsmBoolParams: []
-        fsmVector2Params: []
-        fsmVector3Params: []
-        fsmColorParams: []
-        fsmRectParams: []
-        fsmQuaternionParams: []
-        stringParams:
-        - LoopEvent
-        - next
-        byteData: 
-        arrayParamSizes: 
-        arrayParamTypes: []
-        customTypeSizes: 
-        customTypeNames: []
-        paramDataType: 10000000100000001700000017000000
-        paramName:
-        - loops
-        - storeCurrentLoop
-        - loopEvent
-        - finishEvent
-        paramDataPos: 00000000010000000000000001000000
-        paramByteDataSize: 00000000000000000000000000000000
     - name: End
       description: 
       colorIndex: 0
@@ -55777,20 +55835,20 @@ MonoBehaviour:
           name: FINISHED
           isSystemEvent: 1
           isGlobal: 0
-        toState: Spawn Enemies
+        toState: Loop Spawns
         linkStyle: 0
-        linkConstraint: 2
+        linkConstraint: 0
         linkTarget: 0
         colorIndex: 0
       actionData:
         actionNames:
-        - HutongGames.PlayMaker.Actions.WaitForEnemySlot
+        - HutongGames.PlayMaker.Actions.WaitForWaveRoom
         customNames:
         - 
         actionEnabled: 01
         actionIsOpen: 01
         actionStartIndex: 00000000
-        actionHashCodes: 66e6a403
+        actionHashCodes: 16e49400
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams: []
@@ -55807,7 +55865,99 @@ MonoBehaviour:
         fsmEnumParams: []
         fsmFloatParams: []
         fsmIntParams:
+        - useVariable: 1
+          name: maxAlive
+          tooltip: Most enemies of this wave alive at the same time.
+          showInInspector: 1
+          networkSync: 0
+          value: 5
+        fsmBoolParams:
         - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
+        fsmVector2Params: []
+        fsmVector3Params: []
+        fsmColorParams: []
+        fsmRectParams: []
+        fsmQuaternionParams: []
+        stringParams:
+        - 
+        byteData: 
+        arrayParamSizes: 
+        arrayParamTypes: []
+        customTypeSizes: 
+        customTypeNames: []
+        paramDataType: 100000001100000017000000
+        paramName:
+        - maxAlive
+        - useEnemyLimit
+        - finishEvent
+        paramDataPos: 000000000000000000000000
+        paramByteDataSize: 000000000000000000000000
+    - name: Wait Cleared
+      description: 
+      colorIndex: 0
+      position:
+        serializedVersion: 2
+        x: 64
+        y: 169
+        width: 100
+        height: 32
+      isBreakpoint: 0
+      isSequence: 0
+      hideUnused: 0
+      transitions:
+      - fsmEvent:
+          name: FINISHED
+          isSystemEvent: 1
+          isGlobal: 0
+        toState: wait
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
+      actionData:
+        actionNames:
+        - HutongGames.PlayMaker.Actions.WaitForWaveCleared
+        customNames:
+        - 
+        actionEnabled: 01
+        actionIsOpen: 01
+        actionStartIndex: 00000000
+        actionHashCodes: 9b059f02
+        unityObjectParams: []
+        fsmGameObjectParams: []
+        fsmOwnerDefaultParams: []
+        animationCurveParams: []
+        functionCallParams: []
+        fsmTemplateControlParams: []
+        fsmEventTargetParams: []
+        fsmPropertyParams: []
+        layoutOptionParams: []
+        fsmStringParams: []
+        fsmObjectParams: []
+        fsmVarParams: []
+        fsmArrayParams: []
+        fsmEnumParams: []
+        fsmFloatParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 90
+        fsmIntParams:
+        - useVariable: 1
+          name: bossWhenLeft
+          tooltip: The boss comes when this many or fewer of the wave are still alive
+            (0 = all dead).
+          showInInspector: 1
+          networkSync: 0
+          value: 2
+        - useVariable: 1
           name: 
           tooltip: 
           showInInspector: 0
@@ -55820,18 +55970,20 @@ MonoBehaviour:
         fsmRectParams: []
         fsmQuaternionParams: []
         stringParams:
-        - FINISHED
+        - 
         byteData: 
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1000000017000000
+        paramDataType: 100000000f0000001000000017000000
         paramName:
-        - maxEnemies
+        - leftAlive
+        - giveUpAfter
+        - storeAlive
         - finishEvent
-        paramDataPos: 0000000000000000
-        paramByteDataSize: 0000000000000000
+        paramDataPos: 00000000000000000100000000000000
+        paramByteDataSize: 00000000000000000000000000000000
     events:
     - name: FINISHED
       isSystemEvent: 1
@@ -55845,6 +55997,9 @@ MonoBehaviour:
     - name: next
       isSystemEvent: 0
       isGlobal: 1
+    - name: Wave Done
+      isSystemEvent: 0
+      isGlobal: 0
     globalTransitions: []
     variables:
       floatVariables:
@@ -55867,6 +56022,25 @@ MonoBehaviour:
         showInInspector: 0
         networkSync: 0
         value: 0
+      - useVariable: 1
+        name: waveSize
+        tooltip: How many regular enemies this wave spawns in total (before the boss).
+        showInInspector: 1
+        networkSync: 0
+        value: 12
+      - useVariable: 1
+        name: maxAlive
+        tooltip: Most enemies of this wave alive at the same time.
+        showInInspector: 1
+        networkSync: 0
+        value: 5
+      - useVariable: 1
+        name: bossWhenLeft
+        tooltip: The boss comes when this many or fewer of the wave are still alive
+          (0 = all dead).
+        showInInspector: 1
+        networkSync: 0
+        value: 2
       boolVariables:
       - useVariable: 1
         name: BigSpiderDown
@@ -55906,7 +56080,7 @@ MonoBehaviour:
       enumVariables: []
       categories:
       - 
-      variableCategoryIDs: 00000000000000000000000000000000000000000000000000000000
+      variableCategoryIDs: 00000000000000000000000000000000000000000000000000000000000000000000000000000000
     description: 
     docUrl: 
     showStateLabel: 0
@@ -55917,7 +56091,7 @@ MonoBehaviour:
     manualUpdate: 0
     outVariableIndices: 
     keepDelayedEventsOnStateExit: 0
-    preprocessed: 0
+    preprocessed: 1
     ExposedEvents: []
     OutputEvents: []
     RestartOnEnable: 1
@@ -76495,7 +76669,7 @@ MonoBehaviour:
     manualUpdate: 0
     outVariableIndices: 
     keepDelayedEventsOnStateExit: 0
-    preprocessed: 0
+    preprocessed: 1
     ExposedEvents: []
     OutputEvents: []
     RestartOnEnable: 1
@@ -279809,7 +279983,7 @@ MonoBehaviour:
           name: FINISHED
           isSystemEvent: 1
           isGlobal: 0
-        toState: Loop Spawns
+        toState: Wait for Slot
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -279817,14 +279991,18 @@ MonoBehaviour:
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.SetFsmVariable
+        - HutongGames.PlayMaker.Actions.StartWave
+        - HutongGames.PlayMaker.Actions.SetIntValue
         - HutongGames.PlayMaker.Actions.Wait
         customNames:
         - 
         - 
-        actionEnabled: 0101
-        actionIsOpen: 0101
-        actionStartIndex: 0000000005000000
-        actionHashCodes: fcb1a00148c01101
+        - 
+        - 
+        actionEnabled: 01010101
+        actionIsOpen: 01010101
+        actionStartIndex: 00000000050000000500000008000000
+        actionHashCodes: fcb1a00100000000603dd90548c01101
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams:
@@ -279890,7 +280068,19 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0.1
-        fsmIntParams: []
+        fsmIntParams:
+        - useVariable: 1
+          name: numberOfEnemies
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
         fsmBoolParams: []
         fsmVector2Params: []
         fsmVector3Params: []
@@ -279899,23 +280089,26 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - FINISHED
-        byteData: 0001
+        byteData: 000001
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 14000000120000001200000027000000010000000f0000001700000001000000
+        paramDataType: 14000000120000001200000027000000010000001000000010000000010000000f0000001700000001000000
         paramName:
         - gameObject
         - fsmName
         - variableName
         - setValue
         - everyFrame
+        - intVariable
+        - intValue
+        - everyFrame
         - time
         - finishEvent
         - realTime
-        paramDataPos: 0000000000000000010000000000000000000000000000000000000001000000
-        paramByteDataSize: 0000000000000000000000000000000001000000000000000000000001000000
+        paramDataPos: 0000000000000000010000000000000000000000000000000100000001000000000000000000000002000000
+        paramByteDataSize: 0000000000000000000000000000000001000000000000000000000001000000000000000000000001000000
     - name: Loop Spawns
       description: 
       colorIndex: 0
@@ -279933,7 +280126,7 @@ MonoBehaviour:
           name: LoopEvent
           isSystemEvent: 0
           isGlobal: 0
-        toState: Wait for Slot
+        toState: Spawn Enemies
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -279942,7 +280135,7 @@ MonoBehaviour:
           name: next
           isSystemEvent: 0
           isGlobal: 1
-        toState: wait
+        toState: Loop Spawns
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -280032,7 +280225,16 @@ MonoBehaviour:
           name: FINISHED
           isSystemEvent: 1
           isGlobal: 0
-        toState: Loop
+        toState: Wait for Slot
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
+      - fsmEvent:
+          name: Wave Done
+          isSystemEvent: 0
+          isGlobal: 0
+        toState: Wait Cleared
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -280045,9 +280247,11 @@ MonoBehaviour:
         - HutongGames.PlayMaker.Actions.Vector3AddXYZ
         - HutongGames.PlayMaker.Actions.NavMeshSamplePosition
         - HutongGames.PlayMaker.Actions.CreateObject
+        - HutongGames.PlayMaker.Actions.AddEnemyToWave
         - HutongGames.PlayMaker.Actions.IntAdd
-        - HutongGames.PlayMaker.Actions.RandomWait
         - HutongGames.PlayMaker.Actions.ActivateGameObject
+        - HutongGames.PlayMaker.Actions.IntCompare
+        - HutongGames.PlayMaker.Actions.RandomWait
         customNames:
         - 
         - 
@@ -280058,10 +280262,12 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 010101010101010101
-        actionIsOpen: 000000000001000100
-        actionStartIndex: 00000000070000000a0000000d000000130000001e00000024000000270000002b000000
-        actionHashCodes: 5552ad052ee017042ee01704192194058e44e90260532301603dd9050d5f5c01b2cf1000
+        - 
+        - 
+        actionEnabled: 0101010101010101010101
+        actionIsOpen: 0000000000010100000101
+        actionStartIndex: 00000000070000000a0000000d000000130000001e0000002400000025000000280000002d00000033000000
+        actionHashCodes: 5552ad052ee017042ee01704192194058e44e902605323015c004505603dd905b2cf100009faa1020d5f5c01
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 0
@@ -280069,7 +280275,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {fileID: 3569810238917063108, guid: 3c4b81dc3e6d2c84b8134f1846cb20a0,
+          value: {fileID: 9003613759866821804, guid: e99e0ff83f2a2134db4a1ec3a6357312,
             type: 3}
         - useVariable: 1
           name: CurrentlySpawnedStuffs
@@ -280084,7 +280290,13 @@ MonoBehaviour:
           networkSync: 0
           value: {fileID: 0}
         - useVariable: 1
-          name: 
+          name: EnemyAdded
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 0}
+        - useVariable: 1
+          name: EnemyAdded
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -280172,8 +280384,8 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0
-        - useVariable: 0
-          name: 
+        - useVariable: 1
+          name: randomX
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -280184,8 +280396,8 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0
-        - useVariable: 0
-          name: 
+        - useVariable: 1
+          name: randomZ
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -280195,7 +280407,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 0
+          value: 10
         - useVariable: 0
           name: 
           tooltip: 
@@ -280220,7 +280432,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: 0
+          value: -1
         - useVariable: 0
           name: 
           tooltip: 
@@ -280238,7 +280450,20 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
+          value: 1
+        - useVariable: 1
+          name: numberOfEnemies
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
           value: 0
+        - useVariable: 1
+          name: waveSize
+          tooltip: How many regular enemies this wave spawns in total (before the
+            boss).
+          showInInspector: 1
+          networkSync: 0
+          value: 6
         fsmBoolParams:
         - useVariable: 0
           name: 
@@ -280278,14 +280503,14 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: {x: 0, y: 0, z: 0}
-        - useVariable: 0
-          name: 
+        - useVariable: 1
+          name: spawn_v3
           tooltip: 
           showInInspector: 0
           networkSync: 0
           value: {x: 0, y: 0, z: 0}
-        - useVariable: 0
-          name: 
+        - useVariable: 1
+          name: spawn_v3
           tooltip: 
           showInInspector: 0
           networkSync: 0
@@ -280314,13 +280539,16 @@ MonoBehaviour:
         stringParams:
         - 
         - 
+        - Wave Done
+        - 
+        - Wave Done
         - FINISHED
-        byteData: 0000000000000000010000
+        byteData: 000000000000000000000001
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 140000001c0000000f0000000f0000000f00000007000000010000000f0000000f0000000f0000000f0000000f0000000f0000001c0000000f0000000f0000000f00000001000000010000001c000000100000000f0000001100000017000000170000001c0000001c0000000f00000010000000110000001300000013000000130000001c0000001c000000130000001000000010000000010000000f0000000f00000017000000010000001400000011000000110000000100000001000000
+        paramDataType: 140000001c0000000f0000000f0000000f00000007000000010000000f0000000f0000000f0000000f0000000f0000000f0000001c0000000f0000000f0000000f00000001000000010000001c000000100000000f0000001100000017000000170000001c0000001c0000000f00000010000000110000001300000013000000130000001c0000001c000000130000001300000010000000100000000100000014000000110000001100000001000000010000001000000010000000170000001700000017000000010000000f0000000f0000001700000001000000
         paramName:
         - gameObject
         - vector
@@ -280358,20 +280586,27 @@ MonoBehaviour:
         - position
         - rotation
         - storeObject
+        - enemy
         - intVariable
         - add
         - everyFrame
-        - min
-        - max
-        - finishEvent
-        - realTime
         - gameObject
         - activate
         - recursive
         - resetOnExit
         - everyFrame
-        paramDataPos: 0000000000000000000000000100000002000000000000000400000003000000040000000500000006000000070000000800000001000000090000000a0000000b000000050000000600000002000000000000000c00000000000000000000000100000003000000040000000d00000001000000010000000000000001000000020000000500000006000000030000000200000003000000070000000e0000000f0000000200000008000000010000000200000003000000090000000a000000
-        paramByteDataSize: 000000000000000000000000000000000000000004000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000010000000000000000000000000000000100000001000000
+        - integer1
+        - integer2
+        - equal
+        - lessThan
+        - greaterThan
+        - everyFrame
+        - min
+        - max
+        - finishEvent
+        - realTime
+        paramDataPos: 0000000000000000000000000100000002000000000000000400000003000000040000000500000006000000070000000800000001000000090000000a0000000b000000050000000600000002000000000000000c00000000000000000000000100000003000000040000000d000000010000000100000000000000010000000200000005000000060000000300000004000000020000000300000007000000010000000200000003000000080000000900000004000000050000000200000003000000040000000a0000000e0000000f000000050000000b000000
+        paramByteDataSize: 00000000000000000000000000000000000000000400000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000010000000100000000000000000000000000000000000000000000000100000000000000000000000000000001000000
     - name: COMPLETE
       description: 
       colorIndex: 0
@@ -280412,7 +280647,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {fileID: 3569810238917063108, guid: 02a57bcc81cc48d4d85016db493a4a54,
+          value: {fileID: 8737675529452535309, guid: 2dc3a50fdaa9b6f49a54e2b71aff4733,
             type: 3}
         - useVariable: 1
           name: CurrentlySpawnedStuffs
@@ -280492,96 +280727,6 @@ MonoBehaviour:
         - everyFrame
         paramDataPos: 00000000010000000200000000000000010000000300000000000000000000000100000000000000
         paramByteDataSize: 00000000000000000000000000000000000000000000000000000000000000000000000001000000
-    - name: Loop
-      description: 
-      colorIndex: 0
-      position:
-        serializedVersion: 2
-        x: 254
-        y: 230
-        width: 100
-        height: 48
-      isBreakpoint: 0
-      isSequence: 0
-      hideUnused: 0
-      transitions:
-      - fsmEvent:
-          name: LoopEvent
-          isSystemEvent: 0
-          isGlobal: 0
-        toState: Spawn Enemies
-        linkStyle: 0
-        linkConstraint: 2
-        linkTarget: 0
-        colorIndex: 0
-      - fsmEvent:
-          name: next
-          isSystemEvent: 0
-          isGlobal: 1
-        toState: Loop Spawns
-        linkStyle: 0
-        linkConstraint: 0
-        linkTarget: 0
-        colorIndex: 0
-      actionData:
-        actionNames:
-        - HutongGames.PlayMaker.Actions.Loop
-        customNames:
-        - 
-        actionEnabled: 01
-        actionIsOpen: 01
-        actionStartIndex: 00000000
-        actionHashCodes: 65c84b02
-        unityObjectParams: []
-        fsmGameObjectParams: []
-        fsmOwnerDefaultParams: []
-        animationCurveParams: []
-        functionCallParams: []
-        fsmTemplateControlParams: []
-        fsmEventTargetParams: []
-        fsmPropertyParams: []
-        layoutOptionParams: []
-        fsmStringParams: []
-        fsmObjectParams: []
-        fsmVarParams: []
-        fsmArrayParams: []
-        fsmEnumParams: []
-        fsmFloatParams: []
-        fsmIntParams:
-        - useVariable: 0
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 1
-        - useVariable: 1
-          name: 
-          tooltip: 
-          showInInspector: 0
-          networkSync: 0
-          value: 0
-        fsmBoolParams: []
-        fsmVector2Params: []
-        fsmVector3Params: []
-        fsmColorParams: []
-        fsmRectParams: []
-        fsmQuaternionParams: []
-        stringParams:
-        - LoopEvent
-        - next
-        byteData: 
-        arrayParamSizes: 
-        arrayParamTypes: []
-        customTypeSizes: 
-        customTypeNames: []
-        paramDataType: 10000000100000001700000017000000
-        paramName:
-        - loops
-        - storeCurrentLoop
-        - loopEvent
-        - finishEvent
-        paramDataPos: 00000000010000000000000001000000
-        paramByteDataSize: 00000000000000000000000000000000
     - name: End
       description: 
       colorIndex: 0
@@ -280819,20 +280964,20 @@ MonoBehaviour:
           name: FINISHED
           isSystemEvent: 1
           isGlobal: 0
-        toState: Spawn Enemies
+        toState: Loop Spawns
         linkStyle: 0
-        linkConstraint: 2
+        linkConstraint: 0
         linkTarget: 0
         colorIndex: 0
       actionData:
         actionNames:
-        - HutongGames.PlayMaker.Actions.WaitForEnemySlot
+        - HutongGames.PlayMaker.Actions.WaitForWaveRoom
         customNames:
         - 
         actionEnabled: 01
         actionIsOpen: 01
         actionStartIndex: 00000000
-        actionHashCodes: 66e6a403
+        actionHashCodes: 16e49400
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams: []
@@ -280849,7 +280994,99 @@ MonoBehaviour:
         fsmEnumParams: []
         fsmFloatParams: []
         fsmIntParams:
+        - useVariable: 1
+          name: maxAlive
+          tooltip: Most enemies of this wave alive at the same time.
+          showInInspector: 1
+          networkSync: 0
+          value: 3
+        fsmBoolParams:
         - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
+        fsmVector2Params: []
+        fsmVector3Params: []
+        fsmColorParams: []
+        fsmRectParams: []
+        fsmQuaternionParams: []
+        stringParams:
+        - 
+        byteData: 
+        arrayParamSizes: 
+        arrayParamTypes: []
+        customTypeSizes: 
+        customTypeNames: []
+        paramDataType: 100000001100000017000000
+        paramName:
+        - maxAlive
+        - useEnemyLimit
+        - finishEvent
+        paramDataPos: 000000000000000000000000
+        paramByteDataSize: 000000000000000000000000
+    - name: Wait Cleared
+      description: 
+      colorIndex: 0
+      position:
+        serializedVersion: 2
+        x: 62
+        y: 182
+        width: 100
+        height: 32
+      isBreakpoint: 0
+      isSequence: 0
+      hideUnused: 0
+      transitions:
+      - fsmEvent:
+          name: FINISHED
+          isSystemEvent: 1
+          isGlobal: 0
+        toState: wait
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
+      actionData:
+        actionNames:
+        - HutongGames.PlayMaker.Actions.WaitForWaveCleared
+        customNames:
+        - 
+        actionEnabled: 01
+        actionIsOpen: 01
+        actionStartIndex: 00000000
+        actionHashCodes: 9b059f02
+        unityObjectParams: []
+        fsmGameObjectParams: []
+        fsmOwnerDefaultParams: []
+        animationCurveParams: []
+        functionCallParams: []
+        fsmTemplateControlParams: []
+        fsmEventTargetParams: []
+        fsmPropertyParams: []
+        layoutOptionParams: []
+        fsmStringParams: []
+        fsmObjectParams: []
+        fsmVarParams: []
+        fsmArrayParams: []
+        fsmEnumParams: []
+        fsmFloatParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 90
+        fsmIntParams:
+        - useVariable: 1
+          name: bossWhenLeft
+          tooltip: The boss comes when this many or fewer of the wave are still alive
+            (0 = all dead).
+          showInInspector: 1
+          networkSync: 0
+          value: 1
+        - useVariable: 1
           name: 
           tooltip: 
           showInInspector: 0
@@ -280862,18 +281099,20 @@ MonoBehaviour:
         fsmRectParams: []
         fsmQuaternionParams: []
         stringParams:
-        - FINISHED
+        - 
         byteData: 
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1000000017000000
+        paramDataType: 100000000f0000001000000017000000
         paramName:
-        - maxEnemies
+        - leftAlive
+        - giveUpAfter
+        - storeAlive
         - finishEvent
-        paramDataPos: 0000000000000000
-        paramByteDataSize: 0000000000000000
+        paramDataPos: 00000000000000000100000000000000
+        paramByteDataSize: 00000000000000000000000000000000
     events:
     - name: FINISHED
       isSystemEvent: 1
@@ -280887,6 +281126,9 @@ MonoBehaviour:
     - name: next
       isSystemEvent: 0
       isGlobal: 1
+    - name: Wave Done
+      isSystemEvent: 0
+      isGlobal: 0
     globalTransitions: []
     variables:
       floatVariables:
@@ -280909,6 +281151,25 @@ MonoBehaviour:
         showInInspector: 0
         networkSync: 0
         value: 0
+      - useVariable: 1
+        name: waveSize
+        tooltip: How many regular enemies this wave spawns in total (before the boss).
+        showInInspector: 1
+        networkSync: 0
+        value: 6
+      - useVariable: 1
+        name: maxAlive
+        tooltip: Most enemies of this wave alive at the same time.
+        showInInspector: 1
+        networkSync: 0
+        value: 3
+      - useVariable: 1
+        name: bossWhenLeft
+        tooltip: The boss comes when this many or fewer of the wave are still alive
+          (0 = all dead).
+        showInInspector: 1
+        networkSync: 0
+        value: 1
       boolVariables:
       - useVariable: 1
         name: WhiteSpiderDown
@@ -280935,6 +281196,12 @@ MonoBehaviour:
         showInInspector: 0
         networkSync: 0
         value: {fileID: 0}
+      - useVariable: 1
+        name: EnemyAdded
+        tooltip: 
+        showInInspector: 0
+        networkSync: 0
+        value: {fileID: 0}
       objectVariables: []
       materialVariables: []
       textureVariables: []
@@ -280942,7 +281209,7 @@ MonoBehaviour:
       enumVariables: []
       categories:
       - 
-      variableCategoryIDs: 000000000000000000000000000000000000000000000000
+      variableCategoryIDs: 00000000000000000000000000000000000000000000000000000000000000000000000000000000
     description: 
     docUrl: 
     showStateLabel: 0

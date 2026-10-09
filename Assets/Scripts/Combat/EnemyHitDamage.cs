@@ -77,6 +77,9 @@ namespace Game.Combat
         /// <summary>The most recent hit on this enemy, whether it hurt or not.</summary>
         public HitResult LastHit { get; private set; }
 
+        /// <summary>True once its health has run out (its body may still be playing the death).</summary>
+        public bool IsDead => dead || (health != null && health.Value <= 0f);
+
         /// <summary>How far a big hit knocks it back, in metres (e.g. less for a big spider).</summary>
         public float KnockBackDistance
         {

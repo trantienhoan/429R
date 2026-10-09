@@ -56,6 +56,7 @@ namespace Game.Enemies
         private Vector3 lastPosition;
         private float dieAt;
         private bool done;
+        private bool held;
 
         private void Awake()
         {
@@ -65,12 +66,36 @@ namespace Game.Enemies
             dieAt = Time.time + lifetime;
         }
 
+        /// <summary>
+        /// Keeps it still and harmless while the spider makes it (the spider moves it); Launch lets it go.
+        /// </summary>
+        public void Hold()
+        {
+            held = true;
+            body.isKinematic = true;
+            body.interpolation = RigidbodyInterpolation.None;
+        }
+
         /// <summary>Sends it flying at this velocity; the shooter's own body is never hit.</summary>
         public void Launch(Vector3 velocity, Transform from)
         {
             shooter = from;
+            if (held)
+            {
+                held = false;
+                body.position = transform.position;
+                body.isKinematic = false;
+                body.interpolation = RigidbodyInterpolation.Interpolate;
+            }
             body.linearVelocity = velocity;
             lastPosition = body.position;
+            dieAt = Time.time + lifetime;
+        }
+
+        /// <summary>Bursts where it is, e.g. a half-made ball when its spider is interrupted.</summary>
+        public void Burst()
+        {
+            if (!done) Splat(transform.position, splatSound);
         }
 
         /// <summary>
@@ -92,7 +117,7 @@ namespace Game.Enemies
         // Sweeps from where it was to where it is: the first thing in between decides.
         private void FixedUpdate()
         {
-            if (done) return;
+            if (done || held) return;
             var now = body.position;
             var step = now - lastPosition;
             float size = Mathf.Max(0.01f, transform.lossyScale.x);
