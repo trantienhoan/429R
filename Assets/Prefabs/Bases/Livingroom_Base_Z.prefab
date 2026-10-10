@@ -2112,6 +2112,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 3088241764196755935}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: e12c2ad3619d15645bcbadc59263ab38,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1620327756603300028}
     - targetCorrespondingSourceObject: {fileID: -3765968960586137544, guid: e12c2ad3619d15645bcbadc59263ab38,
         type: 3}
       insertIndex: -1
@@ -3018,6 +3022,24 @@ MonoBehaviour:
     handleAnimatorIK: 0
   fsmTemplate: {fileID: 0}
   eventHandlerComponentsAdded: 0
+--- !u!114 &1620327756603300028
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3838043469124499657}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb9046cb8eb602b43915c8676988cd16, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Rooms.DropWallHungProps
+  animator: {fileID: 0}
+  wallsGoStates:
+  - LivingRoom_GO
+  - GO4
+  delay: 0.7
+  roomRadius: 9
 --- !u!1 &4320879298894403685 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -9046384513918050819, guid: e12c2ad3619d15645bcbadc59263ab38,

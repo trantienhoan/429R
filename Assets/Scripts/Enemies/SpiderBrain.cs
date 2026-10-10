@@ -4,6 +4,7 @@ using Game.Combat;
 using Unity.XR.CoreUtils;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.Serialization;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using FsmFloat = HutongGames.PlayMaker.FsmFloat;
 using FsmVariables = HutongGames.PlayMaker.FsmVariables;
@@ -21,11 +22,17 @@ namespace Game.Enemies
     /// A hit makes it flinch (not again for a moment, so it can't be stun-locked); low on health it runs away once.
     /// Size picks Small, Normal or Boss (or one at random by Weight): each has its own size range, health, speed and
     /// bite. It can first play an appearing animation (e.g. climbing out of the ground) before it does anything.
-    /// While it waits for its turn it may shoot a web ball (Web Shot) that hurts and slows the player. Once its dodge
+    /// While it waits for its turn it may shoot a web ball (Web Shot) that hurts and slows the player. A flier (Flies,
+    /// e.g. the bee) flies at heights the brain sets (its animations stay at the root): it circles up high, dives to the
+    /// player's chest to sting whenever it's ready (no waiting for a turn), and after a sting, a hit or a dodge goes
+    /// back up, flies around a little and dives again. Low on health it loses its wings, drops to the floor and from
+    /// then on behaves like a spider (Flying section). Once its dodge
     /// animations are added it dodges swings (back) and things thrown or shot at it (to the side), now and then.
     /// Health, death and hits stay with its Health FSM and Enemy Hit Damage. It sends events to its own FSMs (Noticed,
     /// Attack, Bite, Blocked, Missed, Flinch, Flee, Died) for sounds and effects made in PlayMaker, and when it dies it
     /// can set bools in other FSMs, like the old bosses' Set Fsm Variable (e.g. BigSpiderDown in an EnemyManager).
+    /// With Target on Tagged Object it ignores the player and goes for the nearest object with that tag instead (the
+    /// tree spiders: the PumpkinTree, whose Damage FSM its bites hurt).
     /// Goes on the spider's root, next to its NavMesh Agent; Tools > 429 Game > Enemies > Set Up Smarter Spider adds it.
     /// </summary>
     [DisallowMultipleComponent]
@@ -89,6 +96,24 @@ namespace Game.Enemies
             public bool leapToFace;
             [Tooltip("Afterwards it turns and runs away (Run Away Distance) instead of backing off facing the player.")]
             public bool runAwayAfter;
+            [Tooltip("For fliers (Flies): Always, only while Flying, or only once Grounded (wings lost). A Flying attack " +
+                     "is still used on the ground while no Grounded attack has its animation yet.")]
+            public When usedWhen = When.Always;
+        }
+
+        /// <summary>When a flier uses an attack.</summary>
+        public enum When
+        {
+            Always,
+            Flying,
+            Grounded,
+        }
+
+        /// <summary>What it goes for.</summary>
+        public enum TargetKind
+        {
+            Player,
+            TaggedObject,
         }
 
         public enum SizeClass
@@ -148,6 +173,17 @@ namespace Game.Enemies
             public float dodgeChance = 0.35f;
             [Tooltip("Whether this size shoots web balls.")]
             public bool webs = true;
+            [Tooltip("Multiplies the rest between its attacks (Attack Cooldown) and how far it backs off after one: " +
+                     "below 1 it comes back sooner and attacks more often.")]
+            [Range(0.1f, 2f)]
+            public float rest = 1f;
+            [Tooltip("A bite that lands throws the player this high, in metres (0 = not at all). The Pumpkin boss's slam " +
+                     "throws about 3 m; boss bugs about a quarter of that.")]
+            [Min(0f)]
+            public float launchHeight;
+            [Tooltip("...and this far away along the floor, in metres.")]
+            [Min(0f)]
+            public float launchDistance;
         }
 
         private enum State
@@ -165,6 +201,7 @@ namespace Game.Enemies
             Flee,
             Dodge,
             WebShot,
+            WingsOff,
             Dead,
         }
 
@@ -176,7 +213,7 @@ namespace Game.Enemies
         [SerializeField] private SizeSettings boss = new()
         {
             weight = 10f, scale = new Vector2(1.25f, 1.5f), health = new Vector2Int(20, 25), speed = 0.9f, windUp = 1.3f,
-            playerEvent = "DamageHeavy", knockBack = 0.35f, pitch = 0.7f, dodgeChance = 0.15f,
+            playerEvent = "DamageHeavy", knockBack = 0.35f, pitch = 0.7f, dodgeChance = 0.15f, rest = 0.4f, launchHeight = 0.8f, launchDistance = 1.6f,
         };
 
         [Header("Appearing")]
@@ -190,6 +227,17 @@ namespace Game.Enemies
                  "and rises while it plays. 0 = off.")]
         [Min(0f)]
         [SerializeField] private float appearRise;
+
+        [Header("Target")]
+        [Tooltip("What it goes for: the player, or the nearest object with Target Tag (the tree spiders go for the " +
+                 "PumpkinTree and leave the player alone).")]
+        [SerializeField] private TargetKind target = TargetKind.Player;
+        [Tooltip("With Target on Tagged Object: the tag of what it goes for.")]
+        [SerializeField] private string targetTag = "PumpkinTree";
+        [Tooltip("When its bite lands on that object, Target Event is sent to the object's FSM called Target Fsm (the " +
+                 "tree's Damage FSM takes 1 health per Damage). Empty Target Fsm: every FSM on it.")]
+        [SerializeField] private string targetFsm = "Damage";
+        [SerializeField] private string targetEvent = "Damage";
 
         [Header("Senses")]
         [Tooltip("It notices the player this far away, in metres, if nothing blocks its view.")]
@@ -315,6 +363,65 @@ namespace Game.Enemies
         [SerializeField] private int maxWebShooters = 1;
         [SerializeField] private AudioClip webSound;
 
+        [Header("Flying")]
+        [Tooltip("It flies, at the heights below (the brain lifts its model; its animations stay at the root). It " +
+                 "circles up high, dives to sting whenever its cooldown is over, without waiting for a turn (Max Attackers " +
+                 "doesn't count it), and goes back up after a sting, a hit or a dodge. It doesn't skitter. It can dodge " +
+                 "without dodge animations (it darts away on its fly animation). Off: a walker, like the spider.")]
+        [SerializeField] private bool flies;
+        [Tooltip("How high it flies while it waits for its chance, in metres above the floor (random between, changing " +
+                 "now and then): out of the player's reach.")]
+        [SerializeField] private Vector2 cruiseHeight = new(2f, 2.5f);
+        [Tooltip("How high it hovers and flies around before it has noticed the player, in metres. A flier never lands " +
+                 "while it has its wings: it only comes down when it loses them.")]
+        [Min(0f)]
+        [SerializeField] private float wanderHeight = 0.8f;
+        [Tooltip("It dives to this far below the player's head to sting (their chest), in metres.")]
+        [Min(0f)]
+        [SerializeField] private float attackBelowHead = 0.6f;
+        [Tooltip("How fast it climbs, and how fast it dives, in metres per second.")]
+        [Min(0.1f)]
+        [SerializeField] private float climbSpeed = 2f;
+        [Min(0.1f)]
+        [SerializeField] private float diveSpeed = 3.5f;
+        [Tooltip("After a sting, a hit or a dodge it flies around up high for this many seconds (random between) " +
+                 "before it dives again.")]
+        [SerializeField] private Vector2 highWait = new(2f, 4f);
+        [Tooltip("How much it bobs up and down while flying, in metres.")]
+        [Min(0f)]
+        [SerializeField] private float bob = 0.08f;
+        [Tooltip("With this share of its health left or less (0.4 = 40%), it loses its wings: it drops to the floor " +
+                 "and from then on behaves like a spider (takes turns, skitters, Grounded animations). 0 = never.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float groundBelowHealth = 0.4f;
+        [Tooltip("The wing bones in its model: they shrink away when the wings are lost.")]
+        [SerializeField] private string[] wingBones = Array.Empty<string>();
+        [Tooltip("Animator state for losing its wings and falling. Empty or not in the Animator: its hit animation.")]
+        [SerializeField] private string wingsOffAnimation = "";
+        [Tooltip("How long losing its wings stops it, in seconds.")]
+        [Min(0.1f)]
+        [SerializeField] private float wingsOffSeconds = 0.8f;
+        [Tooltip("For animations that still lift it themselves: how high, in metres at size 1 (the bee's old flying " +
+                 "clips: 0.65). Every animation not in On Floor Animations and not a Grounded one is lowered by this much, " +
+                 "so the brain alone decides the height. 0 once all its animations stay at the root.")]
+        [Min(0f)]
+        [FormerlySerializedAs("hoverHeight")]
+        [SerializeField] private float animationHover;
+        [Tooltip("Its animations that already stay at the root (e.g. the bee's idle): never lowered.")]
+        [SerializeField] private string[] onFloorAnimations = Array.Empty<string>();
+        [Tooltip("Multiplies its walking and running speed once it's on the ground.")]
+        [Min(0.1f)]
+        [SerializeField] private float groundSpeed = 0.7f;
+        [Tooltip("Animator states once it's on the ground. Empty or not in the Animator: its flying ones (lowered).")]
+        [SerializeField] private string groundIdleAnimation = "";
+        [SerializeField] private string groundWalkAnimation = "";
+        [SerializeField] private string groundRunAnimation = "";
+        [SerializeField] private string groundAlertAnimation = "";
+        [SerializeField] private string groundHitAnimation = "";
+        [Tooltip("The speed (m/s) at which the ground walk and run animations look right.")]
+        [Min(0.1f)]
+        [SerializeField] private float groundRunAnimationSpeed = 1f;
+
         [Header("Getting hit")]
         [Tooltip("How long a hit stops it, in seconds.")]
         [Min(0f)]
@@ -344,6 +451,9 @@ namespace Game.Enemies
         [Tooltip("Its wind-up (rearing up) and the hiss when it notices the player.")]
         [SerializeField] private string alertAnimation = "alert";
         [SerializeField] private string hitAnimation = "hit";
+        [Tooltip("Played when it dies (its Health FSM still does the rest: smoke, sound, shrinking away). A flier killed " +
+                 "in the air falls to the floor while it plays. Empty or not in the Animator: none.")]
+        [SerializeField] private string deathAnimation = "";
         [Tooltip("The speed (m/s) at which the run animation looks right; it plays faster or slower to match.")]
         [Min(0.1f)]
         [SerializeField] private float runAnimationSpeed = 2.2f;
@@ -373,6 +483,13 @@ namespace Game.Enemies
         [SerializeField] private AudioClip blockedSound;
         [Range(0f, 1f)]
         [SerializeField] private float volume = 1f;
+        [Tooltip("At most this many alert, attack and web sounds play at once, counting every enemy (a swarm doesn't " +
+                 "pile them up). Hit and blocked sounds always play.")]
+        [Min(1)]
+        [SerializeField] private int maxVoices = 3;
+        [Tooltip("The same sound isn't started again, by any enemy, within this many seconds.")]
+        [Min(0f)]
+        [SerializeField] private float sameSoundGap = 0.3f;
 
         private const string PlayerVariable = "Player";
         private const string PlayerDamageFsm = "Damage";
@@ -388,6 +505,9 @@ namespace Game.Enemies
         private static readonly List<PlayMakerFSM> fsmBuffer = new();
         private static int attackersNow;
         private static int webShootersNow;
+        // Every enemy's sounds together: when the ones playing end, and when each sound last started.
+        private static readonly List<float> voiceEnds = new();
+        private static readonly Dictionary<AudioClip, float> soundStarted = new();
         private static readonly Collider[] nearby = new Collider[48];
         private static XROrigin player;
 
@@ -402,7 +522,21 @@ namespace Game.Enemies
         private State state;
         private float stateUntil;
         private bool noticed;
+        private Transform targetObject;
+        private float targetRadius;
+        private float nextTargetSearch;
         private bool hasTurn;
+        private bool turnCounted;
+        private bool grounded;
+        private float wingsOffAt;
+        private float animationDrop;
+        private bool dropShown;
+        // A flier's height above the floor (metres), what it cruises at now, and its bob's phase.
+        private float flyLift;
+        private float cruiseNow;
+        private float nextCruiseChange;
+        private float bobPhase;
+        private readonly List<Transform> wings = new();
         private bool fled;
         private float lastSeen;
         private float nextSenses;
@@ -461,8 +595,20 @@ namespace Game.Enemies
         /// <summary>Which size it turned out to be: Small, Normal or Boss.</summary>
         public string SizeName => kindName.ToString();
 
-        private float WalkSpeed => walkSpeed * kind.speed;
-        private float RunSpeed => runSpeed * kind.speed;
+        private float WalkSpeed => walkSpeed * kind.speed * (grounded ? groundSpeed : 1f);
+        private float RunSpeed => runSpeed * kind.speed * (grounded ? groundSpeed : 1f);
+        private float Rest => kind != null ? kind.rest : 1f;
+
+        /// <summary>Flying right now (a flier that hasn't lost its wings).</summary>
+        public bool IsFlying => flies && !grounded;
+
+        // On the ground a flier uses its Grounded animations, or its flying ones while those aren't made yet.
+        private string Look(string ground, string flying) => grounded && HasAnimationQuiet(ground) ? ground : flying;
+        private string IdleLook => Look(groundIdleAnimation, idleAnimation);
+        private string WalkLook => Look(groundWalkAnimation, walkAnimation);
+        private string RunLook => Look(groundRunAnimation, runAnimation);
+        private string AlertLook => Look(groundAlertAnimation, alertAnimation);
+        private string HitLook => Look(groundHitAnimation, hitAnimation);
 
         /// <summary>Raised with the same names as the events it sends its FSMs (Noticed, Attack, Bite, Blocked, ...).</summary>
         public event Action<SpiderBrain, string> Signalled;
@@ -473,6 +619,8 @@ namespace Game.Enemies
             spiders.Clear();
             attackersNow = 0;
             webShootersNow = 0;
+            voiceEnds.Clear();
+            soundStarted.Clear();
             player = null;
         }
 
@@ -504,9 +652,10 @@ namespace Game.Enemies
             bornAt = Time.time;
             orbitAngle = Random.Range(0f, 360f);
             orbitDirection = Random.value < 0.5f ? -1f : 1f;
+            bobPhase = Random.Range(0f, 10f);
             agent.avoidancePriority = Random.Range(35, 65);
-            nextAttack = Time.time + Random.Range(0f, attackCooldown.y);
-            nextWeb = Time.time + Random.Range(2f, Mathf.Max(2f, webCooldown.y));
+            nextAttack = Time.time + Random.Range(0f, attackCooldown.y) * Rest;
+            nextWeb =Time.time + Random.Range(2f, Mathf.Max(2f, webCooldown.y));
             EnemyHitDamage.AnyHit += OnAnyHit;
 
             if (StartAppearing()) return;
@@ -552,6 +701,8 @@ namespace Game.Enemies
 
             if (Time.time >= nextSenses) Sense();
             if (Time.time >= nextThreatScan) ScanThreats();
+            if (IsFlying && groundBelowHealth > 0f && state != State.Appear && health != null && health.Value / startHealth <= groundBelowHealth)
+                LoseWings();
 
             switch (state)
             {
@@ -568,8 +719,10 @@ namespace Game.Enemies
                 case State.Flee: DoFlee(); break;
                 case State.Dodge: DoDodge(); break;
                 case State.WebShot: DoWebShot(); break;
+                case State.WingsOff: DoWingsOff(); break;
             }
             FallIfLifted();
+            if (flies) UpdateHeight();
         }
 
         // ---- Senses ----
@@ -577,6 +730,11 @@ namespace Game.Enemies
         private void Sense()
         {
             nextSenses = Time.time + SensesEvery;
+            if (GoesForObject)
+            {
+                SenseObject();
+                return;
+            }
             float distance = PlayerDistance();
             bool hears = distance <= hearRange;
             bool sees = !hears && distance <= sightRange && CanSeePlayer();
@@ -591,11 +749,60 @@ namespace Game.Enemies
             else if (distance > loseInterestRange && Time.time - lastSeen > loseInterestSeconds) CalmDown();
         }
 
+        private bool GoesForObject => target == TargetKind.TaggedObject;
+
+        // Its object (e.g. the tree) is all it cares about: it goes for it as soon as one is there, and calms down if
+        // it's gone.
+        private void SenseObject()
+        {
+            if (targetObject == null || !targetObject.gameObject.activeInHierarchy)
+            {
+                targetObject = null;
+                if (Time.time >= nextTargetSearch)
+                {
+                    nextTargetSearch = Time.time + 1f;
+                    FindTargetObject();
+                }
+                if (targetObject == null)
+                {
+                    if (noticed) CalmDown();
+                    return;
+                }
+            }
+            if (!noticed) Notice(false);
+            lastSeen = Time.time;
+        }
+
+        private void FindTargetObject()
+        {
+            if (string.IsNullOrEmpty(targetTag)) return;
+            GameObject[] found;
+            try { found = GameObject.FindGameObjectsWithTag(targetTag); }
+            catch (UnityException) { return; }    // the tag doesn't exist in this project
+            float best = float.MaxValue;
+            foreach (var candidate in found)
+            {
+                if (candidate == null || !candidate.activeInHierarchy) continue;
+                float d = (candidate.transform.position - transform.position).sqrMagnitude;
+                if (d < best) { best = d; targetObject = candidate.transform; }
+            }
+            if (targetObject == null) return;
+            // How far from its middle its surface is: its sphere's radius (most of it: the tree's sphere is generous),
+            // otherwise its bounds.
+            var scale = targetObject.lossyScale;
+            if (targetObject.TryGetComponent(out SphereCollider sphere))
+                targetRadius = sphere.radius * Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.z)) * 0.7f;
+            else if (targetObject.TryGetComponent(out Collider any))
+                targetRadius = Mathf.Max(any.bounds.extents.x, any.bounds.extents.z) * 0.8f;
+            else targetRadius = 0.3f;
+            targetRadius = Mathf.Max(0.2f, targetRadius);
+        }
+
         // Nothing solid between its eyes and the player's head. Loose things (props, other enemies, the player's own
         // body) don't block the view.
         private bool CanSeePlayer()
         {
-            var eyes = transform.position + Vector3.up * (0.3f * Size());
+            var eyes = transform.position + Vector3.up * (0.3f * Size() + flyLift);
             var head = player.Camera.transform.position;
             var toHead = head - eyes;
             int count = Physics.RaycastNonAlloc(eyes, toHead.normalized, sightHits, toHead.magnitude, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
@@ -619,6 +826,7 @@ namespace Game.Enemies
         private void Notice(bool tellFriends)
         {
             if (state == State.Dead || noticed) return;
+            if (GoesForObject && targetObject == null) return;
             noticed = true;
             lastSeen = Time.time;
             // Still climbing out: it goes for the player once it's out.
@@ -629,7 +837,7 @@ namespace Game.Enemies
             }
             Enter(State.Notice, NoticeSeconds);
             Stop();
-            Play(alertAnimation);
+            Play(AlertLook);
             PlayOne(noticeSounds);
             SendToOwnFsms("Noticed");
             if (tellFriends) TellFriends();
@@ -637,7 +845,7 @@ namespace Game.Enemies
 
         private void TellFriends()
         {
-            if (alertFriendsRange <= 0f) return;
+            if (alertFriendsRange <= 0f || GoesForObject) return;
             foreach (var other in spiders)
             {
                 if (other != this && !other.noticed &&
@@ -705,7 +913,9 @@ namespace Game.Enemies
         private void DoIdle()
         {
             Stop();
-            Play(idleAnimation);
+            Play(IdleLook);
+            // Its idle may be the same animation as its walk (a flier hovering), sped up or slowed down for walking.
+            if (animator != null) animator.speed = 1f;
             if (Time.time < stateUntil) return;
             var point = home + Random.insideUnitSphere * wanderRadius;
             if (NavMesh.SamplePosition(point, out var hit, wanderRadius, NavMesh.AllAreas)) GoTo(hit.position, WalkSpeed, true);
@@ -714,7 +924,7 @@ namespace Game.Enemies
 
         private void DoWander()
         {
-            Play(walkAnimation);
+            Play(WalkLook);
             SetLegs();
             if (Time.time >= stateUntil || (!agent.pathPending && agent.remainingDistance <= 0.2f))
                 Enter(State.Idle, Random.Range(1f, 3f));
@@ -734,6 +944,14 @@ namespace Game.Enemies
             {
                 if (distance <= WindUpDistance())
                 {
+                    // A flier first comes down to the player's chest.
+                    if (IsFlying && Mathf.Abs(flyLift - AttackHeight()) > 0.2f)
+                    {
+                        Stop();
+                        Face(PlayerFloor());
+                        Play(RunLook);
+                        return;
+                    }
                     StartPrepare();
                     return;
                 }
@@ -744,7 +962,8 @@ namespace Game.Enemies
             if (TryStartWebShot(distance)) return;
             if (distance <= circleDistance + 0.6f)
             {
-                orbitAngle = Mathf.Atan2(transform.position.z - PlayerFloor().z, transform.position.x - PlayerFloor().x) * Mathf.Rad2Deg;
+                var orbit = OrbitCenter();
+                orbitAngle = Mathf.Atan2(transform.position.z - orbit.z, transform.position.x - orbit.x) * Mathf.Rad2Deg;
                 Enter(State.Circle, 0f);
                 return;
             }
@@ -773,8 +992,8 @@ namespace Game.Enemies
             }
             orbitAngle += orbitDirection * circleSpeed * Time.deltaTime;
             float radians = orbitAngle * Mathf.Deg2Rad;
-            var center = PlayerFloor();
-            var point = center + new Vector3(Mathf.Cos(radians), 0f, Mathf.Sin(radians)) * circleDistance;
+            var center = OrbitCenter();
+            var point = center + new Vector3(Mathf.Cos(radians), 0f, Mathf.Sin(radians)) * OrbitRadius();
             Run(point, 0.7f);
         }
 
@@ -782,7 +1001,7 @@ namespace Game.Enemies
         {
             Enter(State.Prepare, prepareSeconds * kind.windUp);
             Stop();
-            Play(alertAnimation);
+            Play(AlertLook);
             SendToOwnFsms("Prepare");
         }
 
@@ -842,7 +1061,7 @@ namespace Game.Enemies
             // A leaper waits until it's back on the floor.
             if (Time.time < stateUntil || leapLift > 0.001f) return;
             if (move.runAwayAfter) StartRunAway();
-            else StartRetreat(retreatDistance, 0.6f);
+            else StartRetreat(retreatDistance * Rest, 0.6f * Rest);
         }
 
         // Up to the player's face (it follows their head height while it clings), then a quickening drop.
@@ -883,9 +1102,14 @@ namespace Game.Enemies
         // Its model (and its body's collider, so it can be swatted out of the air) at the leap's height.
         private void ShowLeap()
         {
-            if (models == null || (!leapShown && leapLift <= 0f)) return;
-            float local = leapLift / Mathf.Max(0.01f, transform.lossyScale.y);
-            models.localPosition = modelsHome + Vector3.up * local;
+            if (models == null) return;
+            float lift = leapLift + flyLift;
+            bool lifted = leapShown || lift > 0f;
+            if (!lifted && !dropShown && animationDrop <= 0f) return;
+            float local = lift / Mathf.Max(0.01f, transform.lossyScale.y);
+            models.localPosition = modelsHome + Vector3.up * (local - animationDrop);
+            dropShown = animationDrop > 0f;
+            if (!lifted) return;
             if (bodyColliders.Count == 0 && bodyColliderCentres.Count == 0)
             {
                 foreach (var c in GetComponents<Collider>())
@@ -896,7 +1120,7 @@ namespace Game.Enemies
                 }
             }
             for (int i = 0; i < bodyColliders.Count; i++) SetCentre(bodyColliders[i], bodyColliderCentres[i] + Vector3.up * local);
-            leapShown = leapLift > 0f;
+            leapShown = lift > 0f;
         }
 
         private static Vector3 Centre(Collider c) => c switch
@@ -920,10 +1144,11 @@ namespace Game.Enemies
         // Killed in the air: it still falls (the brain is switched off by then).
         private System.Collections.IEnumerator FallWhenDead()
         {
-            while (leapLift > 0f)
+            while (leapLift > 0f || flyLift > 0f)
             {
                 leapFallSpeed += 9.81f * Time.deltaTime;
                 leapLift = Mathf.Max(0f, leapLift - leapFallSpeed * Time.deltaTime);
+                flyLift = Mathf.Max(0f, flyLift - leapFallSpeed * Time.deltaTime);
                 ShowLeap();
                 yield return null;
             }
@@ -944,9 +1169,9 @@ namespace Game.Enemies
         private void TryBite()
         {
             float size = Size();
-            var mouth = transform.position + transform.forward * (move.reach * size) + Vector3.up * (0.15f * size + leapLift);
+            var mouth = transform.position + transform.forward * (move.reach * size) + Vector3.up * (0.15f * size + leapLift + flyLift);
             int count = Physics.OverlapSphereNonAlloc(mouth, move.biteRadius * size, touching, Physics.AllLayers, QueryTriggerInteraction.Ignore);
-            bool bitPlayer = false;
+            bool bitPlayer = false, bitObject = false;
             for (int i = 0; i < count; i++)
             {
                 var other = touching[i];
@@ -954,14 +1179,30 @@ namespace Game.Enemies
                 if (heldThingsBlock && IsHeldOrFist(other))
                 {
                     attackResolved = true;
-                    if (blockedSound != null) PlayOne(blockedSound);
+                    if (blockedSound != null) PlayOne(blockedSound, true);
                     SendToOwnFsms("Blocked");
-                    Play(hitAnimation, true);
+                    Play(HitLook, true);
                     hitShownUntil = Time.time + flinchSeconds;
                     StartRetreat(retreatDistance + 0.5f, 0.8f);
                     return;
                 }
                 if (!other.isTrigger && IsPlayer(other)) bitPlayer = true;
+                if (GoesForObject && targetObject != null && other.transform.IsChildOf(targetObject)) bitObject = true;
+            }
+            if (GoesForObject)
+            {
+                if (targetObject == null) return;
+                if (!bitObject)
+                {
+                    var flat = mouth - targetObject.position;
+                    flat.y = 0f;
+                    bitObject = flat.magnitude <= targetRadius + move.biteRadius * size + 0.15f;
+                }
+                if (!bitObject) return;
+                attackResolved = true;
+                SendToTarget();
+                SendToOwnFsms("Bite");
+                return;
             }
             // The player's colliders sit on the rig, not always under their head (room-scale), and a small spider's
             // bite is small: the body around where they stand counts too.
@@ -970,6 +1211,8 @@ namespace Game.Enemies
 
             attackResolved = true;
             SendToPlayer(string.IsNullOrEmpty(kind.playerEvent) ? move.playerEvent : kind.playerEvent);
+            if (kind.launchHeight > 0f || kind.launchDistance > 0f)
+                Game.Combat.PlayerLaunch.Launch(transform.position, kind.launchHeight, kind.launchDistance);
             SendToOwnFsms("Bite");
         }
 
@@ -1001,19 +1244,24 @@ namespace Game.Enemies
         {
             if (runningAway)
             {
-                Play(runAnimation);
+                Play(RunLook);
             }
             else
             {
                 Face(PlayerFloor());
                 // A blocked bite shows its recoil (the hit animation) before it walks back.
-                if (Time.time >= hitShownUntil) Play(HasAnimationQuiet(walkBackAnimation) ? walkBackAnimation : runAnimation);
+                if (Time.time >= hitShownUntil) Play(HasAnimationQuiet(walkBackAnimation) ? walkBackAnimation : RunLook);
             }
             SetLegs();
             if (Time.time < stateUntil) return;
             runningAway = false;
+            if (IsFlying)
+            {
+                GoHigh();
+                return;
+            }
             GiveUpTurn();
-            nextAttack = Time.time + Random.Range(attackCooldown.x, attackCooldown.y);
+            nextAttack = Time.time + Random.Range(attackCooldown.x, attackCooldown.y) * Rest;
             Enter(State.Circle, 0f);
         }
 
@@ -1033,20 +1281,162 @@ namespace Game.Enemies
                 SendToOwnFsms("Flee");
                 return;
             }
+            if (IsFlying && noticed)
+            {
+                GoHigh();
+                return;
+            }
             Enter(noticed ? State.Chase : State.Idle, 1f);
         }
 
         private void DoFlee()
         {
-            Play(runAnimation);
+            Play(RunLook);
             SetLegs();
             if (Time.time >= stateUntil || (!agent.pathPending && agent.remainingDistance <= 0.3f)) Enter(State.Chase, 0f);
         }
+
+        // ---- Losing its wings ----
+
+        // Low on health a flier's wings come off: it stops, drops to the floor and walks from then on.
+        private void LoseWings()
+        {
+            grounded = true;
+            wingsOffAt = Time.time;
+            GiveUpTurn();
+            StopShooting();
+            Stop();
+            Enter(State.WingsOff, wingsOffSeconds);
+            Play(HasAnimationQuiet(wingsOffAnimation) ? wingsOffAnimation : HitLook, true);
+            if (hitEffect != null) hitEffect.SetActive(true);
+            if (animator != null)
+            {
+                foreach (var bone in wingBones)
+                {
+                    var wing = string.IsNullOrEmpty(bone) ? null : FindBone(animator.transform, bone);
+                    if (wing != null) wings.Add(wing);
+                }
+            }
+            SendToOwnFsms("WingsOff");
+        }
+
+        private void DoWingsOff()
+        {
+            Stop();
+            if (Time.time < stateUntil) return;
+            playing = null;
+            Enter(noticed ? State.Chase : State.Idle, Random.Range(0.5f, 1.5f));
+        }
+
+        // After the Animator: the wings shrink away.
+        private void ShrinkWings()
+        {
+            float shrink = Mathf.Clamp01(1f - (Time.time - wingsOffAt) / 0.15f);
+            foreach (var wing in wings)
+            {
+                if (wing != null) wing.localScale = Vector3.one * Mathf.Max(0.001f, shrink);
+            }
+        }
+
+        // An animation that still lifts it itself (Animation Hover) is lowered by that much, so it's where the brain
+        // puts it, flying or on the ground. During a cross-fade it follows the blend, so it never dips into the floor.
+        private void DropAnimationHover()
+        {
+            if (animationHover <= 0f || animator == null || !animator.isActiveAndEnabled)
+            {
+                animationDrop = 0f;
+                return;
+            }
+            float drop = HoverOf(animator.GetCurrentAnimatorStateInfo(0));
+            if (animator.IsInTransition(0))
+                drop = Mathf.Lerp(drop, HoverOf(animator.GetNextAnimatorStateInfo(0)), animator.GetAnimatorTransitionInfo(0).normalizedTime);
+            animationDrop = drop;
+        }
+
+        private float HoverOf(AnimatorStateInfo info)
+        {
+            foreach (var name in onFloorAnimations)
+            {
+                if (!string.IsNullOrEmpty(name) && info.IsName(name)) return 0f;
+            }
+            return IsGroundState(info) ? 0f : animationHover;
+        }
+
+        // ---- Flying height ----
+
+        // How high a flier wants to be now, in metres above the floor.
+        private float TargetHeight()
+        {
+            if (grounded || state == State.Dead) return 0f;
+            switch (state)
+            {
+                case State.Appear:
+                    return 0f;
+                case State.Idle:
+                case State.Wander:
+                    return wanderHeight;
+                case State.Prepare:
+                case State.Attack:
+                    return AttackHeight();
+                case State.Chase:
+                    return hasTurn ? AttackHeight() : CruiseHeight();
+                case State.Flinch:
+                    return flyLift;
+                default:
+                    return CruiseHeight();
+            }
+        }
+
+        // Up out of reach, changing a little now and then.
+        private float CruiseHeight()
+        {
+            if (Time.time >= nextCruiseChange)
+            {
+                nextCruiseChange = Time.time + Random.Range(1.5f, 3.5f);
+                cruiseNow = Random.Range(cruiseHeight.x, Mathf.Max(cruiseHeight.x, cruiseHeight.y));
+            }
+            return cruiseNow;
+        }
+
+        // Its sting at the player's chest: Attack Below Head under their head (a big one a little lower).
+        private float AttackHeight()
+        {
+            float head = player != null && player.Camera != null ? player.Camera.transform.position.y - transform.position.y : 1.6f;
+            return Mathf.Max(0.3f, head - attackBelowHead - 0.2f * Size());
+        }
+
+        // Climbs or dives towards its height (fast when dodging up, a drop when the wings come off), bobbing in flight.
+        private void UpdateHeight()
+        {
+            float target = TargetHeight();
+            if (target > 0.3f && state != State.Prepare && state != State.Attack) target += Mathf.Sin((Time.time + bobPhase) * 3.5f) * bob;
+            float speed = grounded ? 6f : state == State.Dodge ? climbSpeed * 2f : target >= flyLift ? climbSpeed : diveSpeed;
+            flyLift = Mathf.MoveTowards(flyLift, target, speed * Time.deltaTime);
+        }
+
+        // After a sting, a hit or a dodge a flier goes back up, flies around a little, then dives again.
+        private void GoHigh()
+        {
+            GiveUpTurn();
+            nextAttack = Time.time + Random.Range(highWait.x, Mathf.Max(highWait.x, highWait.y));
+            nextCruiseChange = 0f;
+            var center = OrbitCenter();
+            orbitAngle = Mathf.Atan2(transform.position.z - center.z, transform.position.x - center.x) * Mathf.Rad2Deg;
+            Enter(State.Circle, 0f);
+        }
+
+        private bool IsGroundState(AnimatorStateInfo info) =>
+            IsState(info, groundIdleAnimation) || IsState(info, groundWalkAnimation) || IsState(info, groundRunAnimation) ||
+            IsState(info, groundAlertAnimation) || IsState(info, groundHitAnimation) ||
+            attacks.Exists(a => a != null && a.usedWhen == When.Grounded && IsState(info, a.animation));
+
+        private static bool IsState(AnimatorStateInfo info, string animation) => !string.IsNullOrEmpty(animation) && info.IsName(animation);
 
         // ---- Web shot ----
 
         private bool TryStartWebShot(float distance)
         {
+            if (GoesForObject) return false;
             if (webBall == null || !kind.webs || Time.time < nextWeb || webShootersNow >= maxWebShooters) return false;
             if (distance < webRange.x || distance > webRange.y || !CanSeePlayer()) return false;
 
@@ -1056,7 +1446,7 @@ namespace Game.Enemies
             webStart = Time.time;
             Enter(State.WebShot, webDuration);
             Stop();
-            Play(!string.IsNullOrEmpty(webAnimation) && HasAnimation(webAnimation) ? webAnimation : alertAnimation, true);
+            Play(!string.IsNullOrEmpty(webAnimation) && HasAnimation(webAnimation) ? webAnimation : AlertLook, true);
             if (playing == webAnimation) StartMakingWeb();
             SendToOwnFsms("WebShot");
             return true;
@@ -1088,6 +1478,8 @@ namespace Game.Enemies
         // After the Animator has posed the bone.
         private void LateUpdate()
         {
+            if (grounded) ShrinkWings();
+            if (flies) DropAnimationHover();
             ShowLeap();
             if (heldWeb == null || webHold == null) return;
             heldWeb.transform.SetPositionAndRotation(webHold.position, webHold.rotation);
@@ -1157,7 +1549,8 @@ namespace Game.Enemies
 
         // ---- Dodging ----
 
-        private bool HasDodge => HasAnimationQuiet(dodgeBackAnimation) || HasAnimationQuiet(dodgeLeftAnimation) || HasAnimationQuiet(dodgeRightAnimation);
+        // A flier dodges even without its dodge animations; once it has lost its wings it doesn't (they're flying ones).
+        private bool HasDodge => IsFlying || (!(flies && grounded) && (HasAnimationQuiet(dodgeBackAnimation) || HasAnimationQuiet(dodgeLeftAnimation) || HasAnimationQuiet(dodgeRightAnimation)));
 
         // About 30 times a second while it could dodge: is a swing or something thrown about to reach it? Hands and
         // held weapons are tracked by how fast they move; flying things by their velocity.
@@ -1172,7 +1565,7 @@ namespace Game.Enemies
             bool measure = canDodge && elapsed > 0.001f && elapsed < 0.12f;
 
             float size = Size();
-            var center = transform.position + Vector3.up * (0.2f * size);
+            var center = transform.position + Vector3.up * (0.2f * size + flyLift + leapLift);
             if (hands.Count == 0) FindHands();
 
             Vector3 threatVelocity = Vector3.zero, threatPoint = Vector3.zero;
@@ -1249,6 +1642,8 @@ namespace Game.Enemies
             foreach (var direction in choices)
             {
                 var animation = DodgeAnimationFor(direction);
+                // A flier without its dodge animations darts away on its fly animation (never forwards).
+                if (animation == null && IsFlying && Vector3.Dot(direction, transform.forward) < 0.7f) animation = RunLook;
                 if (animation == null || !HasRoom(direction)) continue;
 
                 dodgeVelocity = direction * (dodgeDistance / dodgeSeconds);
@@ -1265,6 +1660,11 @@ namespace Game.Enemies
         {
             agent.Move(dodgeVelocity * Time.deltaTime);
             if (Time.time < stateUntil) return;
+            if (IsFlying)
+            {
+                GoHigh();
+                return;
+            }
             Enter(hasTurn ? State.Chase : State.Circle, 0f);
         }
 
@@ -1309,16 +1709,16 @@ namespace Game.Enemies
             if (enemy == null || enemy.gameObject != gameObject || state == State.Dead) return;
 
             if (hitEffect != null) hitEffect.SetActive(true);
-            PlayOne(hitSounds);
+            PlayOne(hitSounds, true);
             if (!noticed) Notice(true);
-            if (state == State.Appear || Time.time < nextFlinch) return;
+            if (state == State.Appear || state == State.WingsOff || Time.time < nextFlinch) return;
 
             nextFlinch = Time.time + flinchCooldown;
             GiveUpTurn();
             StopShooting();
             Enter(State.Flinch, flinchSeconds);
             Stop();
-            Play(hitAnimation, true);
+            Play(HitLook, true);
             SendToOwnFsms("Flinch");
         }
 
@@ -1339,7 +1739,12 @@ namespace Game.Enemies
             StopShooting();
             Stop();
             if (animator != null) animator.speed = 1f;
-            if (leapLift > 0f) StartCoroutine(FallWhenDead());
+            if (HasAnimationQuiet(deathAnimation)) Play(deathAnimation, true);
+            if (leapLift > 0f || flyLift > 0f)
+            {
+                leapFallSpeed = 0f;
+                StartCoroutine(FallWhenDead());
+            }
             foreach (var flag in setOnDeath)
             {
                 if (flag != null && !string.IsNullOrEmpty(flag.boolName)) GameStages.SetFsmBool(flag.globalObject, flag.fsm, flag.boolName, flag.value, this);
@@ -1353,8 +1758,17 @@ namespace Game.Enemies
         private bool TryTakeTurn()
         {
             if (hasTurn) return true;
-            if (Time.time < nextAttack || attackersNow >= maxAttackers) return false;
+            if (Time.time < nextAttack) return false;
+            // A flier doesn't wait for a turn, and doesn't take one from the walkers.
+            if (IsFlying)
+            {
+                hasTurn = true;
+                turnCounted = false;
+                return true;
+            }
+            if (attackersNow >= maxAttackers) return false;
             hasTurn = true;
+            turnCounted = true;
             attackersNow++;
             return true;
         }
@@ -1363,7 +1777,8 @@ namespace Game.Enemies
         {
             if (!hasTurn) return;
             hasTurn = false;
-            attackersNow = Mathf.Max(0, attackersNow - 1);
+            if (turnCounted) attackersNow = Mathf.Max(0, attackersNow - 1);
+            turnCounted = false;
         }
 
         private AttackMove PickAttack(float distance)
@@ -1390,7 +1805,15 @@ namespace Game.Enemies
             // An attack whose animation isn't in the Animator yet is left out (a face leap without its animation would
             // just float up in whatever pose it's in).
             return attack != null && attack.weight > 0f && distance >= attack.minDistance && distance <= attack.maxDistance &&
-                   distance <= Reachable(attack) && UsedByMe(attack) && HasAnimationQuiet(attack.animation);
+                   distance <= Reachable(attack) && UsedByMe(attack) && UsedNow(attack) && HasAnimationQuiet(attack.animation);
+        }
+
+        private bool UsedNow(AttackMove attack)
+        {
+            if (!flies || attack.usedWhen == When.Always) return true;
+            if (attack.usedWhen == When.Grounded) return grounded;
+            // A flying attack stands in on the ground until a ground attack's animation is made.
+            return !grounded || !attacks.Exists(a => a != null && a.usedWhen == When.Grounded && a.weight > 0f && UsedByMe(a) && HasAnimationQuiet(a.animation));
         }
 
         // The furthest the player can be for this attack to land: its hop, then its reach and bite at this size, then
@@ -1431,15 +1854,16 @@ namespace Game.Enemies
         private void Run(Vector3 point, float speedShare = 1f)
         {
             // Skittering: bursts of running with tiny stops in between.
-            if (skitter && Time.time >= burstUntil)
+            bool skitters = skitter && !IsFlying;
+            if (skitters && Time.time >= burstUntil)
             {
                 pausing = !pausing;
                 burstUntil = Time.time + (pausing ? Random.Range(pauseSeconds.x, pauseSeconds.y) : Random.Range(burstSeconds.x, burstSeconds.y));
             }
-            if (skitter && pausing)
+            if (skitters && pausing)
             {
                 Stop();
-                Play(idleAnimation);
+                Play(IdleLook);
                 return;
             }
 
@@ -1448,7 +1872,7 @@ namespace Game.Enemies
                 nextRepath = Time.time + RepathEvery;
                 GoTo(point, RunSpeed * speedShare, true);
             }
-            Play(runAnimation);
+            Play(RunLook);
             SetLegs();
         }
 
@@ -1515,6 +1939,8 @@ namespace Game.Enemies
             float speed = agent.velocity.magnitude;
             if (!string.IsNullOrEmpty(walkBackAnimation) && playing == walkBackAnimation)
                 animator.speed = Mathf.Clamp(speed / (walkBackAnimationSpeed * Size()), legSpeedRange.x, legSpeedRange.y);
+            else if (grounded && !string.IsNullOrEmpty(playing) && (playing == groundRunAnimation || playing == groundWalkAnimation))
+                animator.speed = Mathf.Clamp(speed / (groundRunAnimationSpeed * Size()), legSpeedRange.x, legSpeedRange.y);
             else
                 animator.speed = playing == runAnimation || playing == walkAnimation
                     ? Mathf.Clamp(speed / (runAnimationSpeed * Size()), legSpeedRange.x, legSpeedRange.y)
@@ -1570,11 +1996,39 @@ namespace Game.Enemies
             return Mathf.Max(0.01f, transform.lossyScale.y);
         }
 
-        // Where the player stands: under their head, at the spider's height.
+        // Where the player stands: under their head, at the spider's height. For an object goer: the point of its
+        // object's surface nearest to it.
         private Vector3 PlayerFloor()
         {
+            if (GoesForObject && targetObject != null)
+            {
+                var c = targetObject.position;
+                var flat = transform.position - c;
+                flat.y = 0f;
+                var p = c + (flat.sqrMagnitude > 0.0001f ? flat.normalized : -transform.forward) * targetRadius;
+                return new Vector3(p.x, transform.position.y, p.z);
+            }
             var head = player.Camera.transform.position;
             return new Vector3(head.x, transform.position.y, head.z);
+        }
+
+        // What it circles round while it waits for its turn: the player, or its object's middle (outside the object).
+        private Vector3 OrbitCenter()
+        {
+            if (!GoesForObject || targetObject == null) return PlayerFloor();
+            return new Vector3(targetObject.position.x, transform.position.y, targetObject.position.z);
+        }
+
+        private float OrbitRadius() => circleDistance + (GoesForObject && targetObject != null ? targetRadius : 0f);
+
+        private void SendToTarget()
+        {
+            if (targetObject == null || string.IsNullOrEmpty(targetEvent)) return;
+            targetObject.GetComponents(fsmBuffer);
+            foreach (var fsm in fsmBuffer)
+            {
+                if (string.IsNullOrEmpty(targetFsm) || fsm.FsmName == targetFsm) fsm.SendEvent(targetEvent);
+            }
         }
 
         private float PlayerDistance()
@@ -1619,15 +2073,23 @@ namespace Game.Enemies
             }
         }
 
-        private void PlayOne(AudioClip[] clips)
+        private void PlayOne(AudioClip[] clips, bool important = false)
         {
             if (clips == null || clips.Length == 0) return;
-            PlayOne(clips[Random.Range(0, clips.Length)]);
+            PlayOne(clips[Random.Range(0, clips.Length)], important);
         }
 
-        private void PlayOne(AudioClip clip)
+        // A swarm doesn't pile up the same sounds: the same clip isn't restarted within Same Sound Gap, and at most Max
+        // Voices alert/attack/web sounds play at once (important ones, hits and blocks, always play).
+        private void PlayOne(AudioClip clip, bool important = false)
         {
             if (clip == null) return;
+            float now = Time.time;
+            if (soundStarted.TryGetValue(clip, out float started) && now - started < sameSoundGap) return;
+            voiceEnds.RemoveAll(end => end <= now);
+            if (!important && voiceEnds.Count >= maxVoices) return;
+            soundStarted[clip] = now;
+            voiceEnds.Add(now + clip.length / Mathf.Max(0.3f, speaker != null ? speaker.pitch : 1f));
             if (speaker != null) speaker.PlayOneShot(clip, volume);
             else AudioSource.PlayClipAtPoint(clip, transform.position, volume);
         }

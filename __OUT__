@@ -1,0 +1,122 @@
+COMP Animator controller=Bedroom_Animator rootMotion=False
+=== FSM Info (start: Init)
+  vars: 
+  [Init] 
+COMP DropWallHungProps {animator=none, wallsGoStates=Generic, delay=0.7, roomRadius=6.5}
+COMP Teleport Area/TeleportationArea {m_InteractionManager=none, m_Colliders=Generic, m_InteractionLayers=Generic, m_DistanceCalculationMode=Collider Position, m_SelectMode=Multiple, m_FocusMode=Single, m_CustomReticle=none, m_AllowGazeInteraction=False, m_AllowGazeSelect=False, m_OverrideGazeTimeToSelect=False, m_GazeTimeToSelect=0.5, m_OverrideTimeToAutoDeselectGaze=False, m_TimeToAutoDeselectGaze=3, m_AllowGazeAssistance=False, m_FirstHoverEntered=Generic, m_LastHoverExited=Generic, m_HoverEntered=Generic, m_HoverExited=Generic, m_FirstSelectEntered=Generic, m_LastSelectExited=Generic, m_SelectEntered=Generic, m_SelectExited=Generic, m_FirstFocusEntered=Generic, m_LastFocusExited=Generic, m_FocusEntered=Generic, m_FocusExited=Generic, m_Activated=Generic, m_Deactivated=Generic, m_StartingHoverFilters=Generic, m_StartingSelectFilters=Generic, m_StartingInteractionStrengthFilters=Generic, m_AutoFindParentInteractableInHierarchy=False, m_ParentInteractableObject=none, m_TeleportationProvider=none, m_MatchOrientation=World Space Up, m_MatchDirectionalInput=True, m_TeleportTrigger=On Select Exit, m_FilterSelectionByHitNormal=False, m_UpNormalToleranceDegrees=30, m_Teleporting=Generic}
+COMP Cube/BoxCollider trigger=False size=(1.00, 4.81, 1.00)
+COMP Floor/BoxCollider trigger=True size=(6.90, 1.79, 6.79)
+COMP Floor/PlayMakerTriggerEnter {TargetFSMs=Generic}
+COMP Bedroom_Base_Z_Door/BoxCollider trigger=False size=(1.07, 1.90, 0.16)
+COMP Bedroom_Base_Z_Door/Rigidbody mass=999 kin=True gravity=True constraints=None
+=== FSM Bedroom_Base_Z_Door/FSM (start: Wait for Player)
+  vars: 
+  [Wait for Player] next->Close Door
+     TriggerEvent gameObject=[Floor] trigger=OnTriggerEnter collideTag=Player sendEvent=->next storeCollider=[]none
+  [Close Door] 
+     SetRotation gameObject=Owner quaternion=[](0.00000, 0.00000, 0.00000, 0.00000) vector=[](0.00, 0.00, 0.00) xAngle=[]0 yAngle=0 zAngle=[]0 space=World everyFrame=False lateUpdate=False
+     AudioPlay gameObject=Owner volume=1 oneShotClip=sofa_hit_1 WaitForEndOfClip=True
+COMP Bedroom_Base_Z_Door/AudioSource
+COMP outline/BoxCollider trigger=False size=(0.16, 1.89, 1.05)
+COMP Bedroom_Base_Z_Door/BoxCollider trigger=False size=(1.05, 1.90, 0.14)
+COMP Bedroom_Base_Z_Door/Rigidbody mass=420 kin=True gravity=True constraints=None
+=== FSM Bedroom_Base_Z_Door/Health (start: Compare Health)
+  vars: health=100
+  [Compare Health] next->Activate Parts
+     FloatCompare float1=[health]100 float2=0 tolerance=0 equal=->next lessThan=->next everyFrame=True
+  [Activate Parts] FINISHED->Deactivate Object
+     ActivateGameObject gameObject=[Door_Break_Drop_Pos] activate=True recursive=False resetOnExit=False everyFrame=False
+     Explosion center=(0.00, 0.00, 0.00) force=200 radius=0 upwardsModifier=20 forceMode=Force layer=13 layerMask={} invertMask=False everyFrame=False
+     Wait time=0.1 finishEvent=->FINISHED realTime=True
+  [Deactivate Object] 
+     DestroySelf delay=0 realTime=True detachChildren=False
+=== FSM Bedroom_Base_Z_Door/Damage (start: Wait for Collision)
+  vars: collisionForce=0; randomHit=none; randomHitSound=System.Object[]
+  [Wait for Collision] next->Check force  FINISHED->Deal 1 damage
+     CollisionEvent gameObject=Owner collision=OnCollisionEnter collideTag=Weapon sendEvent=->next storeCollider=[]none storeForce=[collisionForce]0
+     CollisionEvent gameObject=Owner collision=OnCollisionEnter collideTag=Enemy sendEvent=->FINISHED storeCollider=[]none storeForce=[collisionForce]0
+  [Check force] back->Wait for Collision  next->Deal 1 damage
+     FloatCompare float1=[collisionForce]0 float2=10 tolerance=0 lessThan=->back greaterThan=->next everyFrame=False
+  [Deal 1 damage] FINISHED->Wait for Collision
+     GetFsmFloat gameObject=Owner fsmName=Health variableName=health storeValue=[health]0 everyFrame=False
+     FloatSubtract floatVariable=[health]0 subtract=1 everyFrame=False perSecond=False
+     SetFsmFloat gameObject=Owner fsmName=Health variableName=health setValue=[health]0 everyFrame=False
+     ArrayGetRandom array=[randomHitSound]System.Object[] storeValue=None index=[]0 noRepeat=True everyFrame=False
+     AudioPlay gameObject=Owner volume=1 oneShotClip=[randomHit]none WaitForEndOfClip=True finishedEvent=->FINISHED
+     TweenPunch punchType=Position value=(0.00, 0.50, 0.00) gameObject=Owner startDelay=0 easeType=None customCurve=HutongGames.PlayMaker.FsmAnimationCurve time=0.25 realTime=True loopType=None normalizedTime=0 everyFrame=False updateType=OnUpdate
+COMP Bedroom_Base_Z_Door/AudioSource
+=== FSM Door_Break_Drop_Pos/FSM (start: State 1)
+  vars: 
+  [State 1] 
+COMP Bedroom_Base_Z_Door 2/BoxCollider trigger=False size=(1.05, 1.90, 0.14)
+COMP Bedroom_Base_Z_Door 2/Rigidbody mass=420 kin=True gravity=True constraints=None
+=== FSM Bedroom_Base_Z_Door 2/Health (start: Compare Health)
+  vars: health=100
+  [Compare Health] next->Activate Parts
+     FloatCompare float1=[health]100 float2=0 tolerance=0 equal=->next lessThan=->next everyFrame=True
+  [Activate Parts] FINISHED->Deactivate Object
+     ActivateGameObject gameObject=[Door_Break_Drop_Pos] activate=True recursive=False resetOnExit=False everyFrame=False
+     Explosion center=(0.00, 0.00, 0.00) force=200 radius=0 upwardsModifier=20 forceMode=Force layer=13 layerMask={} invertMask=False everyFrame=False
+     Wait time=0.1 finishEvent=->FINISHED realTime=True
+  [Deactivate Object] 
+     DestroySelf delay=0 realTime=True detachChildren=False
+=== FSM Bedroom_Base_Z_Door 2/Damage (start: Wait for Collision)
+  vars: collisionForce=0; randomHit=none; randomHitSound=System.Object[]
+  [Wait for Collision] next->Check force  FINISHED->Deal 1 damage
+     CollisionEvent gameObject=Owner collision=OnCollisionEnter collideTag=Weapon sendEvent=->next storeCollider=[]none storeForce=[collisionForce]0
+     CollisionEvent gameObject=Owner collision=OnCollisionEnter collideTag=Enemy sendEvent=->FINISHED storeCollider=[]none storeForce=[collisionForce]0
+  [Check force] back->Wait for Collision  next->Deal 1 damage
+     FloatCompare float1=[collisionForce]0 float2=10 tolerance=0 lessThan=->back greaterThan=->next everyFrame=False
+  [Deal 1 damage] FINISHED->Wait for Collision
+     GetFsmFloat gameObject=Owner fsmName=Health variableName=health storeValue=[health]0 everyFrame=False
+     FloatSubtract floatVariable=[health]0 subtract=1 everyFrame=False perSecond=False
+     SetFsmFloat gameObject=Owner fsmName=Health variableName=health setValue=[health]0 everyFrame=False
+     ArrayGetRandom array=[randomHitSound]System.Object[] storeValue=None index=[]0 noRepeat=True everyFrame=False
+     AudioPlay gameObject=Owner volume=1 oneShotClip=[randomHit]none WaitForEndOfClip=True finishedEvent=->FINISHED
+     TweenPunch punchType=Position value=(0.00, 0.50, 0.00) gameObject=Owner startDelay=0 easeType=None customCurve=HutongGames.PlayMaker.FsmAnimationCurve time=0.25 realTime=True loopType=None normalizedTime=0 everyFrame=False updateType=OnUpdate
+COMP Bedroom_Base_Z_Door 2/AudioSource
+=== FSM Door_Break_Drop_Pos/FSM (start: State 1)
+  vars: 
+  [State 1] 
+COMP Wall01/BoxCollider trigger=False size=(3.24, 3.58, 0.54)
+COMP Wall01/BoxCollider trigger=False size=(1.26, 3.58, 0.54)
+COMP Wall01/BoxCollider trigger=False size=(1.11, 1.49, 0.54)
+COMP Wall01/Rigidbody mass=1000 kin=True gravity=False constraints=None
+COMP Wall01/NavMeshObstacle
+COMP Wall02/BoxCollider trigger=False size=(0.58, 3.58, 5.56)
+COMP Wall02/Rigidbody mass=1000 kin=True gravity=False constraints=None
+COMP Rooftop/BoxCollider trigger=False size=(6.02, 0.35, 6.09)
+COMP Point Light/Light
+COMP Point Light/UniversalAdditionalLightData {m_UsePipelineSettings=True, m_AdditionalLightsShadowResolutionTier=2, m_CustomShadowLayers=False, m_LightCookieSize=Vector2, m_LightCookieOffset=Vector2, m_SoftShadowQuality=Use settings from Render Pipeline Asset, m_RenderingLayersMask=RenderingLayerMask, m_ShadowRenderingLayersMask=RenderingLayerMask, m_Version=Rendering Layers Mask, m_LightLayerMask=Light Layer Default, m_ShadowLayerMask=Light Layer Default, m_RenderingLayers=1, m_ShadowRenderingLayers=1}
+=== FSM Point Light/FSM (start: Init)
+  vars: 
+  [Init] 
+COMP Wall03/BoxCollider trigger=False size=(5.60, 3.58, 0.58)
+COMP Wall03/Rigidbody mass=1000 kin=True gravity=False constraints=None
+COMP Wall04/BoxCollider trigger=False size=(0.41, 3.57, 0.91)
+COMP Wall04/BoxCollider trigger=False size=(0.41, 3.57, 3.47)
+COMP Wall04/BoxCollider trigger=False size=(0.41, 1.49, 1.17)
+COMP Wall04/Rigidbody mass=1000 kin=True gravity=False constraints=None
+COMP Wall04/NavMeshObstacle
+COMP Wall05/BoxCollider trigger=False size=(6.34, 3.56, 0.36)
+COMP Wall05/BoxCollider trigger=False size=(0.41, 3.56, 0.37)
+COMP Wall05/BoxCollider trigger=False size=(1.41, 1.47, 0.36)
+COMP Wall05/Rigidbody mass=1000 kin=True gravity=False constraints=None
+COMP Wall06/BoxCollider trigger=False size=(0.38, 3.58, 8.43)
+COMP Wall06/Rigidbody mass=1000 kin=True gravity=False constraints=None
+COMP Wall06/NavMeshObstacle
+COMP Wall07/BoxCollider trigger=False size=(8.17, 3.57, 0.39)
+COMP Wall07/Rigidbody mass=1000 kin=True gravity=False constraints=None
+COMP Wall07/NavMeshObstacle
+COMP Wall08/BoxCollider trigger=False size=(0.41, 3.57, 8.59)
+COMP Wall08/Rigidbody mass=1000 kin=True gravity=False constraints=None
+COMP Wall08/NavMeshObstacle
+=== ANIMATOR Bedroom_Animator
+  state START motion=Bedroom_Base_Z_Start -> 
+  state Bedroom_GO2 motion=Bedroom_Base_GO2 -> 
+  state Bedroom_Base_Z_Setup motion=Bedroom_Base_Z_Setup -> 
+  state Bedroom_GO motion=Bedroom_Base_GO -> 
+  state Bedroom_COME motion=Bedroom_Base_COME -> 
+  state Bedroom_Mini_GO motion=Bedroom_Mini_GO -> 
+  state Bedroom_Mini_GO2 motion=Bedroom_Mini_GO2 -> 
+  state Bedroom_Mini_COME motion=Bedroom_Mini_COME -> 

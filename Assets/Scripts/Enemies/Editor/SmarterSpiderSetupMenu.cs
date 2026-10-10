@@ -122,6 +122,7 @@ namespace Game.EditorTools
 
             SetUpBoss(notes);
             if (MakePumpkinButtBoss()) notes.Add("made Spider_Boss_PumpkinButt (TheSpider's pumpkin, skull and crown; BigSpiderDown in EnemyManager 1)");
+            if (MakeTreeSpider()) notes.Add("made Spider_Tree (a small spider that only goes for the PumpkinTree, like the old Spider_Small_Tree)");
 
             Selection.activeObject = AssetDatabase.LoadAssetAtPath<GameObject>(SpiderPath);
             Debug.Log("[Smarter Spider] " + (notes.Count > 0 ? string.Join("; ", notes) : "already set up, nothing to change") +
@@ -302,6 +303,33 @@ namespace Game.EditorTools
         }
 
         // A Prefab Variant of Spider_Smarter that's always this size; everything else follows Spider_Smarter.
+        // Spider_Tree: a small spider that leaves the player alone and goes for the nearest PumpkinTree, biting its Damage
+        // FSM (Spider Brain > Target), in place of the old Spider_Small_Tree.
+        private static bool MakeTreeSpider()
+        {
+            string path = string.Format(VariantPath, "Tree");
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(path) != null) return false;
+            var scene = EditorSceneManager.NewPreviewScene();
+            try
+            {
+                var instance = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(SpiderPath), scene);
+                var serialized = new SerializedObject(instance.GetComponent<SpiderBrain>());
+                serialized.FindProperty("size").enumValueIndex = (int)SpiderBrain.SizeClass.Small;
+                serialized.FindProperty("target").enumValueIndex = (int)SpiderBrain.TargetKind.TaggedObject;
+                serialized.FindProperty("targetTag").stringValue = "PumpkinTree";
+                serialized.FindProperty("targetFsm").stringValue = "Damage";
+                serialized.FindProperty("targetEvent").stringValue = "Damage";
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                instance.name = "Spider_Tree";
+                PrefabUtility.SaveAsPrefabAsset(instance, path);
+                return true;
+            }
+            finally
+            {
+                EditorSceneManager.ClosePreviewScene(scene);
+            }
+        }
+
         private static bool MakeSizeVariant(SpiderBrain.SizeClass sizeClass)
         {
             string path = string.Format(VariantPath, sizeClass);

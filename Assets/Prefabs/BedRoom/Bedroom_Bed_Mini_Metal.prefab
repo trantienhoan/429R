@@ -91,6 +91,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!65 &5415260966567393741
 BoxCollider:
@@ -5454,7 +5455,7 @@ ParticleSystem:
     vectorLabel1_3: W
 --- !u!199 &2588219569977350438
 ParticleSystemRenderer:
-  serializedVersion: 6
+  serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -5500,6 +5501,7 @@ ParticleSystemRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_RenderMode: 3
   m_MeshDistribution: 0
   m_SortMode: 0
@@ -5531,7 +5533,6 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
-  m_MaskInteraction: 0
 --- !u!1 &1332874316927326338
 GameObject:
   m_ObjectHideFlags: 0
@@ -10937,7 +10938,7 @@ ParticleSystem:
     vectorLabel1_3: W
 --- !u!199 &1080280581008354814
 ParticleSystemRenderer:
-  serializedVersion: 6
+  serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -10983,6 +10984,7 @@ ParticleSystemRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_RenderMode: 3
   m_MeshDistribution: 0
   m_SortMode: 0
@@ -11014,7 +11016,6 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
-  m_MaskInteraction: 0
 --- !u!1 &2192244983426636686
 GameObject:
   m_ObjectHideFlags: 0
@@ -11106,6 +11107,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!65 &9140974092997939016
 BoxCollider:
@@ -16382,7 +16384,7 @@ ParticleSystem:
     vectorLabel1_3: W
 --- !u!199 &391517451306831460
 ParticleSystemRenderer:
-  serializedVersion: 6
+  serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -16428,6 +16430,7 @@ ParticleSystemRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 3
+  m_MaskInteraction: 0
   m_RenderMode: 3
   m_MeshDistribution: 0
   m_SortMode: 0
@@ -16459,7 +16462,6 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
-  m_MaskInteraction: 0
 --- !u!114 &2024589940269419415
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21756,7 +21758,7 @@ ParticleSystem:
     vectorLabel1_3: W
 --- !u!199 &7385818226972243460
 ParticleSystemRenderer:
-  serializedVersion: 6
+  serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -21802,6 +21804,7 @@ ParticleSystemRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 3
+  m_MaskInteraction: 0
   m_RenderMode: 3
   m_MeshDistribution: 0
   m_SortMode: 0
@@ -21833,7 +21836,6 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
-  m_MaskInteraction: 0
 --- !u!114 &8015196335262672986
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -22173,6 +22175,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!54 &435036047429373658
 Rigidbody:
@@ -22277,7 +22280,7 @@ MonoBehaviour:
       - fsmEvent:
           name: next
           isSystemEvent: 0
-          isGlobal: 0
+          isGlobal: 1
         toState: Activate Parts
         linkStyle: 0
         linkConstraint: 0
@@ -22810,7 +22813,7 @@ MonoBehaviour:
     events:
     - name: next
       isSystemEvent: 0
-      isGlobal: 0
+      isGlobal: 1
     - name: FINISHED
       isSystemEvent: 1
       isGlobal: 0
@@ -22946,7 +22949,7 @@ MonoBehaviour:
       - fsmEvent:
           name: next
           isSystemEvent: 0
-          isGlobal: 0
+          isGlobal: 1
         toState: Check force
         linkStyle: 0
         linkConstraint: 0
@@ -23095,7 +23098,7 @@ MonoBehaviour:
       - fsmEvent:
           name: next
           isSystemEvent: 0
-          isGlobal: 0
+          isGlobal: 1
         toState: Deal 1 damage
         linkStyle: 0
         linkConstraint: 0
@@ -23474,7 +23477,7 @@ MonoBehaviour:
     events:
     - name: next
       isSystemEvent: 0
-      isGlobal: 0
+      isGlobal: 1
     - name: back
       isSystemEvent: 0
       isGlobal: 0
@@ -28673,7 +28676,7 @@ ParticleSystem:
     vectorLabel1_3: W
 --- !u!199 &6186005765936071514
 ParticleSystemRenderer:
-  serializedVersion: 6
+  serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -28719,6 +28722,7 @@ ParticleSystemRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 1
+  m_MaskInteraction: 0
   m_RenderMode: 3
   m_MeshDistribution: 0
   m_SortMode: 0
@@ -28750,7 +28754,6 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
-  m_MaskInteraction: 0
 --- !u!1 &7032294586304565773
 GameObject:
   m_ObjectHideFlags: 0
@@ -29045,7 +29048,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {fileID: 1466277309599601579, guid: d8aa458306020af4c9d7b94e3462b698,
+          value: {fileID: 8879391879696220359, guid: 05da503bb47783844a68712d2fd9719c,
             type: 3}
         - useVariable: 1
           name: CurrentlySpawnedStuffs
@@ -29272,6 +29275,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!65 &7879438502076188600
 BoxCollider:
@@ -29800,6 +29804,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!65 &4767686716583896140
 BoxCollider:

@@ -10197,6 +10197,7 @@ GameObject:
   - component: {fileID: 6064064852394545018}
   - component: {fileID: 6749772457013995910}
   - component: {fileID: 191276601269561603}
+  - component: {fileID: 2073650598235613097}
   m_Layer: 0
   m_Name: Livingroom_pumpkin_music_player
   m_TagString: Furniture
@@ -10485,7 +10486,7 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 01010101
+        actionEnabled: 00000101
         actionIsOpen: 01010000
         actionStartIndex: 00000000050000000a00000011000000
         actionHashCodes: 5978870081294e041bcdca049c512400
@@ -10574,7 +10575,8 @@ MonoBehaviour:
           stringValues: []
           vector4Values: []
           objectReferences:
-          - {fileID: 8300000, guid: 86f0abfe7a8bc3b43bca42250f1d9e4f, type: 3}
+          - {fileID: 8300000, guid: dcdd52c7cb278cd4896ed30ed2047587, type: 3}
+          - {fileID: 8300000, guid: 399b37ae26fae094abea6cfd6ca0149e, type: 3}
         fsmEnumParams: []
         fsmFloatParams:
         - useVariable: 0
@@ -11886,6 +11888,275 @@ MonoBehaviour:
       - 
       variableCategoryIDs: 
     description: 
+    docUrl: 
+    showStateLabel: 0
+    maxLoopCount: 0
+    watermark: 
+    password: 
+    locked: 0
+    manualUpdate: 0
+    outVariableIndices: 
+    keepDelayedEventsOnStateExit: 0
+    preprocessed: 0
+    ExposedEvents: []
+    OutputEvents: []
+    RestartOnEnable: 1
+    ResetVariablesOnEnable: 0
+    EnableDebugFlow: 0
+    EnableBreakpoints: 1
+    editorFlags: 225
+    activeStateName: 
+    mouseEvents: 0
+    handleLevelLoaded: 0
+    handleTriggerEnter2D: 0
+    handleTriggerExit2D: 0
+    handleTriggerStay2D: 0
+    handleCollisionEnter2D: 0
+    handleCollisionExit2D: 0
+    handleCollisionStay2D: 0
+    handleTriggerEnter: 0
+    handleTriggerExit: 0
+    handleTriggerStay: 0
+    handleCollisionEnter: 0
+    handleCollisionExit: 0
+    handleCollisionStay: 0
+    handleParticleCollision: 0
+    handleControllerColliderHit: 0
+    handleJointBreak: 0
+    handleJointBreak2D: 0
+    handleOnGUI: 0
+    handleFixedUpdate: 0
+    handleLateUpdate: 0
+    handleApplicationEvents: 0
+    handleUiEvents: 0
+    handleLegacyNetworking: 0
+    handleAnimatorMove: 0
+    handleAnimatorIK: 0
+  fsmTemplate: {fileID: 0}
+  eventHandlerComponentsAdded: 0
+--- !u!114 &2073650598235613097
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8134454340205444463}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1384774831, guid: e743331561ef77147ae48cda9bcb8209, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: PlayMaker.dll::PlayMakerFSM
+  fsm:
+    dataVersion: 2
+    usedInTemplate: {fileID: 0}
+    name: Music
+    startState: Play Song
+    states:
+    - name: Play Song
+      description: 
+      colorIndex: 0
+      position:
+        serializedVersion: 2
+        x: 80
+        y: 120
+        width: 110
+        height: 32
+      isBreakpoint: 0
+      isSequence: 0
+      hideUnused: 0
+      transitions:
+      - fsmEvent:
+          name: FINISHED
+          isSystemEvent: 1
+          isGlobal: 0
+        toState: Play Song
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
+      actionData:
+        actionNames:
+        - HutongGames.PlayMaker.Actions.ArrayGetRandom
+        - HutongGames.PlayMaker.Actions.AudioPlay
+        customNames:
+        - 
+        - 
+        actionEnabled: 0101
+        actionIsOpen: 0101
+        actionStartIndex: 0000000005000000
+        actionHashCodes: 5978870081294e04
+        unityObjectParams: []
+        fsmGameObjectParams: []
+        fsmOwnerDefaultParams:
+        - ownerOption: 0
+          gameObject:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 0}
+        animationCurveParams: []
+        functionCallParams: []
+        fsmTemplateControlParams: []
+        fsmEventTargetParams: []
+        fsmPropertyParams: []
+        layoutOptionParams: []
+        fsmStringParams: []
+        fsmObjectParams:
+        - useVariable: 1
+          name: song
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          typeName: UnityEngine.AudioClip
+          value: {fileID: 0}
+        fsmVarParams:
+        - variableName: song
+          objectType: UnityEngine.AudioClip
+          useVariable: 1
+          type: 12
+          floatValue: 0
+          intValue: 0
+          boolValue: 0
+          stringValue: 
+          vector4Value: {x: 0, y: 0, z: 0, w: 0}
+          objectReference: {fileID: 0}
+          arrayValue:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            type: -1
+            objectTypeName: 
+            floatValues: []
+            intValues: 
+            boolValues: 
+            stringValues: []
+            vector4Values: []
+            objectReferences: []
+        fsmArrayParams:
+        - useVariable: 1
+          name: songs
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          type: 12
+          objectTypeName: UnityEngine.AudioClip
+          floatValues: []
+          intValues: 
+          boolValues: 
+          stringValues: []
+          vector4Values: []
+          objectReferences:
+          - {fileID: 8300000, guid: dcdd52c7cb278cd4896ed30ed2047587, type: 3}
+          - {fileID: 8300000, guid: 399b37ae26fae094abea6cfd6ca0149e, type: 3}
+          - {fileID: 8300000, guid: 86f0abfe7a8bc3b43bca42250f1d9e4f, type: 3}
+        fsmEnumParams: []
+        fsmFloatParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0.666
+        fsmIntParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        fsmBoolParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
+        fsmVector2Params: []
+        fsmVector3Params: []
+        fsmColorParams: []
+        fsmRectParams: []
+        fsmQuaternionParams: []
+        stringParams:
+        - FINISHED
+        byteData: 00
+        arrayParamSizes: 
+        arrayParamTypes: []
+        customTypeSizes: 
+        customTypeNames: []
+        paramDataType: 2900000027000000100000001100000001000000140000000f000000180000001100000017000000
+        paramName:
+        - array
+        - storeValue
+        - index
+        - noRepeat
+        - everyFrame
+        - gameObject
+        - volume
+        - oneShotClip
+        - WaitForEndOfClip
+        - finishedEvent
+        paramDataPos: 00000000000000000000000000000000000000000000000000000000000000000100000000000000
+        paramByteDataSize: 00000000000000000000000000000000010000000000000000000000000000000000000000000000
+    events:
+    - name: FINISHED
+      isSystemEvent: 1
+      isGlobal: 0
+    globalTransitions: []
+    variables:
+      floatVariables: []
+      intVariables: []
+      boolVariables: []
+      stringVariables: []
+      vector2Variables: []
+      vector3Variables: []
+      colorVariables: []
+      rectVariables: []
+      quaternionVariables: []
+      gameObjectVariables: []
+      objectVariables:
+      - useVariable: 1
+        name: song
+        tooltip: 
+        showInInspector: 0
+        networkSync: 0
+        typeName: UnityEngine.AudioClip
+        value: {fileID: 0}
+      materialVariables: []
+      textureVariables: []
+      arrayVariables:
+      - useVariable: 1
+        name: songs
+        tooltip: 
+        showInInspector: 0
+        networkSync: 0
+        type: 12
+        objectTypeName: UnityEngine.AudioClip
+        floatValues: []
+        intValues: 
+        boolValues: 
+        stringValues: []
+        vector4Values: []
+        objectReferences:
+        - {fileID: 8300000, guid: dcdd52c7cb278cd4896ed30ed2047587, type: 3}
+        - {fileID: 8300000, guid: 399b37ae26fae094abea6cfd6ca0149e, type: 3}
+        - {fileID: 8300000, guid: 86f0abfe7a8bc3b43bca42250f1d9e4f, type: 3}
+      enumVariables: []
+      categories:
+      - 
+      variableCategoryIDs: 
+    description: Plays the radio's songs one after another in random order (never
+      the same one twice in a row) until the radio breaks. Add or remove songs in
+      the 'songs' variable.
     docUrl: 
     showStateLabel: 0
     maxLoopCount: 0

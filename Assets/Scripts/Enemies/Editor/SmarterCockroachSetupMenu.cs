@@ -13,8 +13,10 @@ namespace Game.EditorTools
     /// Makes the smarter cockroach the same way as the smarter spider (Tools > 429 Game > Enemies):
     /// Cockroach_Smarter (a copy of Cockroach with Spider Brain instead of its old "Cockroach" FSM), its size variants
     /// Cockroach_Small / _Normal / _Boss, and Cockroach_Boss_PumpkinButt (a variant of the boss).
-    /// Cockroach_Boss takes TheCockroach's place (its skull mask, Bulldozer, toughness; BigRoachDown in EnemyManager 2),
-    /// Cockroach_Boss_PumpkinButt takes TheCockroach 1's (its pumpkin and skull; BigRoach1Down in EnemyManager 2).
+    /// Cockroach_Boss takes TheCockroach's place (its skull mask, Bulldozer, toughness; BigRoachDown in EnemyManager 2)
+    /// and wears the white cockroach material (Cockroach_Smol_White_Painted_Mat, made like the white spider's).
+    /// Cockroach_Boss_PumpkinButt takes TheCockroach 1's (its pumpkin and skull, its brown look; BigRoach1Down in
+    /// EnemyManager 3, the manager that calls it).
     /// Run it again any time: whatever is already set up keeps its settings.
     /// </summary>
     public static class SmarterCockroachSetupMenu
@@ -26,6 +28,9 @@ namespace Game.EditorTools
         private const string PumpkinButtPath = Folder + "Cockroach_Boss_PumpkinButt.prefab";
         private const string TheRoachPath = "Assets/Prefabs/Enemies/TheCockroach.prefab";
         private const string TheRoach1Path = "Assets/Prefabs/Enemies/TheCockroach 1.prefab";
+        private const string WhiteMaterialPath = "Assets/Materials/Cockroach_Smol_White_Painted_Mat.mat";
+        // Cockroach_Boss_PumpkinButt is EnemyManager 3's boss (it used to be EnemyManager 2's second one).
+        private const string PumpkinButtManager = "EnemyManager3";
         private const string OldBrainFsm = "Cockroach";
         private const string AttackSound = "Assets/Audio/SFX/bug_Attack.wav";
 
@@ -130,7 +135,8 @@ namespace Game.EditorTools
                 if (MakeSizeVariant(sizeClass)) notes.Add($"made Cockroach_{sizeClass}");
             }
             SetUpBoss(notes);
-            if (MakePumpkinButtBoss()) notes.Add("made Cockroach_Boss_PumpkinButt (TheCockroach 1's pumpkin and skull; BigRoach1Down)");
+            if (MakePumpkinButtBoss()) notes.Add($"made Cockroach_Boss_PumpkinButt (TheCockroach 1's pumpkin and skull; BigRoach1Down in {PumpkinButtManager})");
+            else UpdatePumpkinButtBoss(notes);
 
             Selection.activeObject = AssetDatabase.LoadAssetAtPath<GameObject>(RoachPath);
             Debug.Log("[Smarter Cockroach] " + (notes.Count > 0 ? string.Join("; ", notes) : "already set up, nothing to change") + ".");
@@ -202,6 +208,12 @@ namespace Game.EditorTools
                     changed = true;
                 }
                 if (CopyToughness(oldBoss, root)) changed = true;
+                var white = AssetDatabase.LoadAssetAtPath<Material>(WhiteMaterialPath);
+                if (white != null && Wear(root, white))
+                {
+                    notes.Add("Cockroach_Boss wears the white cockroach material");
+                    changed = true;
+                }
                 if (changed) PrefabUtility.SaveAsPrefabAsset(root, path);
             }
             finally
@@ -211,7 +223,7 @@ namespace Game.EditorTools
         }
 
         // A variant of Cockroach_Boss that takes TheCockroach 1's place: its pumpkin and skull (the boss's own skull mask
-        // is switched off), its toughness, and BigRoach1Down in EnemyManager 2.
+        // is switched off), its brown look, its toughness, and BigRoach1Down in EnemyManager 3.
         private static bool MakePumpkinButtBoss()
         {
             var oldBoss = AssetDatabase.LoadAssetAtPath<GameObject>(TheRoach1Path);
@@ -226,11 +238,12 @@ namespace Game.EditorTools
                     if (IsGear(gear)) gear.gameObject.SetActive(false);
                 }
                 CopyGear(oldBoss, instance);
+                WearOwnLook(oldBoss, instance);
                 var brain = instance.GetComponent<SpiderBrain>();
                 var s = new SerializedObject(brain);
                 var list = s.FindProperty("setOnDeath");
                 list.arraySize = 0;
-                SetFlag(list, "EnemyManager2", "BigRoach1Down");
+                SetFlag(list, PumpkinButtManager, "BigRoach1Down");
                 s.ApplyModifiedPropertiesWithoutUndo();
                 PrefabUtility.RecordPrefabInstancePropertyModifications(brain);
                 CopyToughness(oldBoss, instance);
@@ -241,6 +254,71 @@ namespace Game.EditorTools
             {
                 EditorSceneManager.ClosePreviewScene(scene);
             }
+        }
+
+        // An existing Cockroach_Boss_PumpkinButt: keeps TheCockroach 1's brown look when the boss under it turns white,
+        // and its BigRoach1Down moves from EnemyManager 2 to EnemyManager 3, the manager that calls it now.
+        private static void UpdatePumpkinButtBoss(List<string> notes)
+        {
+            var oldBoss = AssetDatabase.LoadAssetAtPath<GameObject>(TheRoach1Path);
+            if (oldBoss == null || AssetDatabase.LoadAssetAtPath<GameObject>(PumpkinButtPath) == null) return;
+            var root = PrefabUtility.LoadPrefabContents(PumpkinButtPath);
+            try
+            {
+                bool changed = false;
+                if (WearOwnLook(oldBoss, root))
+                {
+                    notes.Add("Cockroach_Boss_PumpkinButt keeps TheCockroach 1's brown look");
+                    changed = true;
+                }
+                var brain = root.GetComponent<SpiderBrain>();
+                var s = new SerializedObject(brain);
+                var list = s.FindProperty("setOnDeath");
+                for (int i = 0; i < list.arraySize; i++)
+                {
+                    var flag = list.GetArrayElementAtIndex(i);
+                    var manager = flag.FindPropertyRelative("globalObject");
+                    if (flag.FindPropertyRelative("boolName").stringValue != "BigRoach1Down" || manager.stringValue != "EnemyManager2") continue;
+                    manager.stringValue = PumpkinButtManager;
+                    notes.Add($"Cockroach_Boss_PumpkinButt now sets BigRoach1Down in {PumpkinButtManager}");
+                    changed = true;
+                }
+                if (!changed) return;
+                s.ApplyModifiedPropertiesWithoutUndo();
+                PrefabUtility.RecordPrefabInstancePropertyModifications(brain);
+                PrefabUtility.SaveAsPrefabAsset(root, PumpkinButtPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        // The old boss's own material on the cockroach models (it wasn't white).
+        private static bool WearOwnLook(GameObject oldBoss, GameObject target)
+        {
+            var oldModel = oldBoss.GetComponentInChildren<SkinnedMeshRenderer>(true);
+            return oldModel != null && oldModel.sharedMaterial != null && Wear(target, oldModel.sharedMaterial);
+        }
+
+        // Puts the material on its model variants (Cockroach_Smol, _2, _3). False if they all wear it already.
+        private static bool Wear(GameObject root, Material material)
+        {
+            bool changed = false;
+            foreach (var model in root.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                if (!model.name.StartsWith("Cockroach_Smol")) continue;
+                var materials = model.sharedMaterials;
+                for (int i = 0; i < materials.Length; i++)
+                {
+                    if (materials[i] == material) continue;
+                    materials[i] = material;
+                    changed = true;
+                }
+                model.sharedMaterials = materials;
+                PrefabUtility.RecordPrefabInstancePropertyModifications(model);
+            }
+            return changed;
         }
 
         private static bool IsGear(Transform t) => t.name.StartsWith("pumpkin") || t.name.StartsWith("Skull");

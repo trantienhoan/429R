@@ -7112,6 +7112,9 @@ MonoBehaviour:
     pitch: 1.3
     dodgeChance: 0.5
     webs: 0
+    rest: 1
+    launchHeight: 0
+    launchDistance: 0
   normal:
     weight: 45
     scale: {x: 0.85, y: 1.1}
@@ -7123,6 +7126,9 @@ MonoBehaviour:
     pitch: 1
     dodgeChance: 0.35
     webs: 0
+    rest: 1
+    launchHeight: 0
+    launchDistance: 0
   boss:
     weight: 10
     scale: {x: 1.9, y: 2.2}
@@ -7134,9 +7140,16 @@ MonoBehaviour:
     pitch: 0.7
     dodgeChance: 0.15
     webs: 0
+    rest: 0.4
+    launchHeight: 0.8
+    launchDistance: 1.6
   appearAnimation: appear
   appearSeconds: 0
   appearRise: 0
+  target: 0
+  targetTag: PumpkinTree
+  targetFsm: Damage
+  targetEvent: Damage
   sightRange: 8
   hearRange: 2.5
   alertFriendsRange: 6
@@ -7174,6 +7187,7 @@ MonoBehaviour:
     fsmEvent: 
     leapToFace: 0
     runAwayAfter: 0
+    usedWhen: 0
   - name: Face Leap
     usedBy: 7
     animation: attack_leap
@@ -7191,6 +7205,7 @@ MonoBehaviour:
     fsmEvent: 
     leapToFace: 1
     runAwayAfter: 1
+    usedWhen: 0
   - name: Dive Bomb
     usedBy: 7
     animation: attack_2
@@ -7208,6 +7223,7 @@ MonoBehaviour:
     fsmEvent: 
     leapToFace: 0
     runAwayAfter: 0
+    usedWhen: 0
   maxAttackers: 2
   attackCooldown: {x: 1.2, y: 2.4}
   retreatDistance: 1.2
@@ -7231,6 +7247,27 @@ MonoBehaviour:
   webSpeed: 9
   maxWebShooters: 1
   webSound: {fileID: 0}
+  flies: 0
+  cruiseHeight: {x: 2, y: 2.5}
+  wanderHeight: 0.8
+  attackBelowHead: 0.6
+  climbSpeed: 2
+  diveSpeed: 3.5
+  highWait: {x: 2, y: 4}
+  bob: 0.08
+  groundBelowHealth: 0.4
+  wingBones: []
+  wingsOffAnimation: 
+  wingsOffSeconds: 0.8
+  animationHover: 0
+  onFloorAnimations: []
+  groundSpeed: 0.7
+  groundIdleAnimation: 
+  groundWalkAnimation: 
+  groundRunAnimation: 
+  groundAlertAnimation: 
+  groundHitAnimation: 
+  groundRunAnimationSpeed: 1
   flinchSeconds: 0.4
   flinchCooldown: 1
   fleeBelowHealth: 0.3
@@ -7244,6 +7281,7 @@ MonoBehaviour:
   walkBackAnimation: walk_back
   alertAnimation: alert
   hitAnimation: hit
+  deathAnimation: 
   runAnimationSpeed: 2.28
   walkBackAnimationSpeed: 0.51
   legSpeedRange: {x: 0.6, y: 2.5}
@@ -7259,6 +7297,8 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 619a0ebeedf18ca489233e0f7f2a7c29, type: 3}
   blockedSound: {fileID: 0}
   volume: 1
+  maxVoices: 3
+  sameSoundGap: 0.3
 --- !u!1 &5106415279579626434
 GameObject:
   m_ObjectHideFlags: 0
