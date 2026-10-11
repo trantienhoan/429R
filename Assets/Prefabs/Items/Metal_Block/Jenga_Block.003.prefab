@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: 3546920736780168784}
   - component: {fileID: 3289922312594895040}
   - component: {fileID: 7584166501937993195}
+  - component: {fileID: 768792171357752999}
   m_Layer: 0
   m_Name: Jenga_Block.003
   m_TagString: Destroyer
@@ -1616,6 +1617,25 @@ MonoBehaviour:
   m_LimitAngularVelocity: 0
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
+--- !u!114 &768792171357752999
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 891425667784877490}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 49ddf735799362b4d871087b7face453, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.FallingBlockDamage
+  lightHitSpeed: 2.5
+  lightHitEvent: Damage
+  heavyHitSpeed: 5
+  heavyHitEvent: DamageHeavy
+  playerHealthFsm: PlayerHealth
+  bodyRadius: 0.3
+  sharedCooldown: 1
 --- !u!1 &5874997788430606806
 GameObject:
   m_ObjectHideFlags: 0

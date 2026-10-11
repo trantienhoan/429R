@@ -1,8 +1,10 @@
 using System;
 using Game.Locomotion;
+using Game.Saving;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
@@ -11,7 +13,8 @@ namespace Game.Menus
     /// <summary>
     /// Pause menu. The menu button on the left controller (or A on the right, or Esc) stops the game
     /// and shows Resume, Quit, a random tip and three options in front of you: how arm swinging works, the player's
-    /// height (to play seated, or stand taller or shorter) and how strong the comfort vignette is.
+    /// height (to play seated, or stand taller or shorter) and how strong the comfort vignette is. Holding the title
+    /// for a while (7 s) asks whether to reset all saved progress and start the game over.
     /// </summary>
     public class PauseMenu : MonoBehaviour
     {
@@ -36,6 +39,14 @@ namespace Game.Menus
         [SerializeField] private ArmSwingMoveProvider armSwing;
         [Tooltip("Left empty, the one on the XR Origin is used.")]
         [SerializeField] private PlayerHeight playerHeight;
+
+        [Header("Reset progress")]
+        [Tooltip("On the title: holding it long enough asks whether to reset progress.")]
+        [SerializeField] private PressAndHold resetHold;
+        [Tooltip("The box over the menu that asks; hidden until then.")]
+        [SerializeField] private GameObject resetConfirmPanel;
+        [SerializeField] private Button resetConfirmButton;
+        [SerializeField] private Button resetCancelButton;
 
         [Header("Opening")]
         [Tooltip("Defaults to the menu button on the left controller, A on the right controller and Esc on the keyboard.")]
@@ -92,6 +103,10 @@ namespace Game.Menus
             if (heightDownButton != null) heightDownButton.onClick.AddListener(() => ChangeHeight(-1));
             if (heightUpButton != null) heightUpButton.onClick.AddListener(() => ChangeHeight(1));
             if (vignetteButton != null) vignetteButton.onClick.AddListener(NextVignetteLevel);
+            if (resetHold != null) resetHold.Held += AskResetProgress;
+            if (resetConfirmButton != null) resetConfirmButton.onClick.AddListener(ResetProgressAndRestart);
+            if (resetCancelButton != null) resetCancelButton.onClick.AddListener(HideResetConfirm);
+            HideResetConfirm();
         }
 
         private void OnEnable()
@@ -135,6 +150,7 @@ namespace Game.Menus
 
             ShowRandomTip();
             ShowOptions();
+            HideResetConfirm();
             PlacePanel();
             if (panel != null) panel.SetActive(true);
             PauseChanged?.Invoke();
@@ -148,8 +164,34 @@ namespace Game.Menus
             Time.timeScale = timeScaleBeforePause;
             if (pauseAudio) AudioListener.pause = false;
 
+            HideResetConfirm();
             if (panel != null) panel.SetActive(false);
             PauseChanged?.Invoke();
+        }
+
+        private void AskResetProgress()
+        {
+            if (IsPaused && resetConfirmPanel != null) resetConfirmPanel.SetActive(true);
+        }
+
+        private void HideResetConfirm()
+        {
+            if (resetConfirmPanel != null) resetConfirmPanel.SetActive(false);
+        }
+
+        // Wipes the save (and, through the emptied file, the cloud save), then starts the whole game over from a fresh
+        // scene, so everything progress opened (e.g. paths opened with seeds) is closed again.
+        private void ResetProgressAndRestart()
+        {
+            HideResetConfirm();
+            if (SaveManager.Instance != null) SaveManager.Instance.ResetProgress();
+            else
+            {
+                SaveManager.DeleteSaveFiles();
+                Unlocks.Reset();
+            }
+            Resume();
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
 
         public void Quit()

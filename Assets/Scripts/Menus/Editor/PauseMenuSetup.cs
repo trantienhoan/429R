@@ -49,6 +49,7 @@ namespace Game.EditorTools
 
             if (AddOptions(menu, font)) notes.Add("added the Arm swing and Height options");
             if (AddVignetteOption(menu, font)) notes.Add("added the Comfort vignette option");
+            if (AddResetProgress(menu, font)) notes.Add("added Reset Progress (hold the title for 7 s)");
 
             var origin = Object.FindAnyObjectByType<XROrigin>(FindObjectsInactive.Include);
             if (origin != null)
@@ -187,6 +188,62 @@ namespace Game.EditorTools
             Undo.RegisterCreatedObjectUndo(vignette.gameObject, "Add Comfort Vignette Option");
             SetupUtility.SetReference(menu, "vignetteButton", vignette);
             SetupUtility.SetReference(menu, "vignetteText", vignette.GetComponentInChildren<TMP_Text>(true));
+            return true;
+        }
+
+        // Hidden on purpose, so nobody resets by accident: holding the title for 7 s (it slowly turns red) opens a box
+        // over the whole menu that asks whether to reset all progress and start over. Cancel is on the left.
+        private static bool AddResetProgress(PauseMenu menu, TMP_FontAsset font)
+        {
+            var serialized = new SerializedObject(menu);
+            if (serialized.FindProperty("resetHold").objectReferenceValue != null) return false;
+            if (serialized.FindProperty("panel").objectReferenceValue is not GameObject panelObject ||
+                panelObject.transform is not RectTransform panel) return false;
+            var title = panel.Find("Title") != null ? panel.Find("Title").GetComponent<TMP_Text>() : null;
+            if (title == null)
+            {
+                Debug.LogWarning("[Pause Menu Setup] The Pause Menu panel has no Title text, so Reset Progress wasn't added.", menu);
+                return false;
+            }
+
+            Undo.RecordObject(title, "Add Reset Progress");
+            title.raycastTarget = true;
+            var hold = Undo.AddComponent<PressAndHold>(title.gameObject);
+
+            var box = SetupUtility.CreateRect("Reset Progress", panel);
+            Undo.RegisterCreatedObjectUndo(box.gameObject, "Add Reset Progress");
+            SetupUtility.Stretch(box, Vector2.zero, Vector2.zero);
+            var background = box.gameObject.AddComponent<Image>();
+            background.color = new Color(0.17f, 0.05f, 0.09f, 0.98f);
+            // Catches the pointer, so nothing on the menu behind it can be pressed while it asks.
+            background.raycastTarget = true;
+
+            var heading = SetupUtility.CreateText("Heading", box, "Reset progress?", 34f, TextAlignmentOptions.Center, FontStyles.Bold, font);
+            SetupUtility.TopBand(heading.rectTransform, 24f, 50f, 20f, 20f);
+            var message = SetupUtility.CreateText("Message", box,
+                "This deletes all your saved progress: your candies, everything you bought and every path you opened, " +
+                "including your cloud save. Then the game starts over from the beginning.\n\nThis can't be undone.",
+                23f, TextAlignmentOptions.Center, FontStyles.Normal, font);
+            SetupUtility.TopBand(message.rectTransform, 86f, 250f, 26f, 26f);
+            SetupUtility.ShrinkToFit(message, 16f);
+
+            var buttons = SetupUtility.CreateRect("Buttons", box);
+            SetupUtility.BottomBand(buttons, 24f, 64f, 24f, 24f);
+            var row = buttons.gameObject.AddComponent<HorizontalLayoutGroup>();
+            row.spacing = 20f;
+            row.childAlignment = TextAnchor.MiddleCenter;
+            row.childControlWidth = true;
+            row.childControlHeight = true;
+            row.childForceExpandWidth = true;
+            row.childForceExpandHeight = true;
+            var cancel = SetupUtility.CreateButton("Cancel", buttons, "Cancel", 26f, font, OptionColor);
+            var confirm = SetupUtility.CreateButton("Reset", buttons, "Reset & restart", 24f, font, new Color(0.7f, 0.16f, 0.2f, 1f));
+            box.gameObject.SetActive(false);
+
+            SetupUtility.SetReference(menu, "resetHold", hold);
+            SetupUtility.SetReference(menu, "resetConfirmPanel", box.gameObject);
+            SetupUtility.SetReference(menu, "resetConfirmButton", confirm);
+            SetupUtility.SetReference(menu, "resetCancelButton", cancel);
             return true;
         }
 

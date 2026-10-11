@@ -205,6 +205,28 @@ namespace Game.Saving
             if (dirty) SaveNow();
         }
 
+        /// <summary>
+        /// Wipes the player's progress: what they carry, what they ever collected and spent, what they bought and what
+        /// they unlocked. The save is emptied straight away rather than deleted (its backup is deleted), so Steam Cloud
+        /// replaces the old one too. Restart the scene afterwards so the world matches, e.g. paths opened with seeds.
+        /// </summary>
+        public void ResetProgress()
+        {
+            if (inventory != null)
+            {
+                inventory.LoadSaveData(null);
+                inventory.LoadStatsSaveData(null);
+            }
+            if (shop != null) shop.LoadSaveData(null);
+            Unlocks.Reset();
+
+            // Gone first, so writing the empty save doesn't keep the old one as its backup.
+            try { DeleteSaveFiles(); }
+            catch (Exception e) { Debug.LogWarning($"[SaveManager] Couldn't delete the old save ({e.Message}).", this); }
+            dirty = false;
+            if (SaveNow()) Debug.Log($"[SaveManager] Progress reset: '{SavePath}' now holds an empty save.", this);
+        }
+
         /// <summary>Writes the save file now. Returns false if it couldn't (the reason is logged).</summary>
         public bool SaveNow()
         {

@@ -6255,7 +6255,7 @@ MonoBehaviour:
         tooltip: 
         showInInspector: 1
         networkSync: 0
-        value: 42
+        value: 429
       - useVariable: 1
         name: distanceToPlayer
         tooltip: 
@@ -7544,18 +7544,18 @@ MonoBehaviour:
   wakeUpSeconds: 33
   buried:
   - 1.72
-  - 1.4
-  - 1.18
-  - 0.8
+  - 1.41
+  - 1.22
+  - 1.06
   headScale: 1.7
   upperScale: 1.7
   trueScale: 2.1
   trueSpeed: 5
   upperSpeed: 0.6
-  dizzyAfterDamage: 0.15
-  dizzyFadePerSecond: 0.02
-  dizzySeconds: 4
-  dizzyCooldown: 8
+  dizzyAfterDamage: 0.0294
+  dizzyFadePerSecond: 0.0029
+  dizzySeconds: 3
+  dizzyCooldown: 20
   upperHitEvent: PumpkinBossHit
   trueHitEvent: PumpkinBossHitHeavy
   playerHealthFsm: PlayerHealth
@@ -7582,6 +7582,10 @@ MonoBehaviour:
   smoke: {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac, type: 3}
   gameStagesBool: BOSS
   gameStagesEvent: Win
+  roomVariables:
+  - Bedroom_Base
+  - Livingroom_Base
+  roomGoneAfter: 3.5
   laughs:
   - {fileID: 8300000, guid: 5559a9c98e6c15148b6eb31df62d8b20, type: 3}
   - {fileID: 8300000, guid: 448f0b20a89331745bbe48dca5ca98d8, type: 3}
@@ -7589,6 +7593,9 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 857ce67cde0be99499a305deaddb0544, type: 3}
   - {fileID: 8300000, guid: 0163b2b4caca6d24282896703f1797c4, type: 3}
   - {fileID: 8300000, guid: 9e9e1a6f68461564fa43a78d3e0e1c51, type: 3}
+  - {fileID: 8300000, guid: d40ed08980898f448b69f7c5fe4dc5da, type: 3}
+  laughGap: 0.1
+  laughVolume: 1
   attackSound: {fileID: 8300000, guid: 7655546cf456af942b5c94d157a4d512, type: 3}
   hurtSound: {fileID: 8300000, guid: a4661761129bc014490b3df27a00e952, type: 3}
   roarSound: {fileID: 8300000, guid: 4bddb8652ad22904b9967add726a6706, type: 3}

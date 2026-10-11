@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 4655343786605892966}
   - component: {fileID: 4328518648831350838}
   - component: {fileID: 4433719787390285479}
+  - component: {fileID: 7560382978866814818}
   m_Layer: 0
   m_Name: Jenga_Block.002
   m_TagString: Destroyer
@@ -1200,6 +1201,25 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &7560382978866814818
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4241164772485233792}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 49ddf735799362b4d871087b7face453, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.FallingBlockDamage
+  lightHitSpeed: 2.5
+  lightHitEvent: Damage
+  heavyHitSpeed: 5
+  heavyHitEvent: DamageHeavy
+  playerHealthFsm: PlayerHealth
+  bodyRadius: 0.3
+  sharedCooldown: 1
 --- !u!1 &8742594149375985958
 GameObject:
   m_ObjectHideFlags: 0

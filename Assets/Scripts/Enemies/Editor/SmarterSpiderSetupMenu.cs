@@ -25,7 +25,8 @@ namespace Game.EditorTools
         private const string WebBallModel = "Assets/Prefabs/Items/Breakable/Web_Ball_On_Web.prefab";
         private const string SplatEffect = "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Smoke_Blast.prefab";
         private const string SpitSound = "Assets/Audio/SFX/magic_hat_spit_card.wav";
-        private const string WebHitSound = "Assets/Audio/SFX/Bug_Squish_Bedroom.wav";
+        // Hitting the player splats with the same sound (no Hit Sound). Bug_Squish_Bedroom is EnemyManager 1's battle
+        // music, not a squish: as the hit sound it restarted the music on every web that hit the player.
         private const string WebSplatSound = "Assets/Audio/SFX/bubble_pop_1.wav";
 
         /// <summary>
@@ -150,7 +151,7 @@ namespace Game.EditorTools
                 body.angularVelocity = Vector3.zero;
                 var webBall = new SerializedObject(ball.AddComponent<WebBall>());
                 webBall.FindProperty("splatEffect").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(SplatEffect);
-                webBall.FindProperty("hitSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(WebHitSound);
+                webBall.FindProperty("hitSound").objectReferenceValue = null;
                 webBall.FindProperty("splatSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(WebSplatSound);
                 webBall.ApplyModifiedPropertiesWithoutUndo();
                 return PrefabUtility.SaveAsPrefabAsset(ball, WebBallPath);

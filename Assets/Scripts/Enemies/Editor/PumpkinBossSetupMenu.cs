@@ -222,7 +222,7 @@ namespace Game.EditorTools
                 so.FindProperty("burstInto").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(BigBurstPath);
                 so.FindProperty("smoke").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(SmokePath);
                 SetArray(so.FindProperty("bugs"), BugPaths.Select(p => (Object)AssetDatabase.LoadAssetAtPath<GameObject>(p)).ToArray());
-                SetArray(so.FindProperty("laughs"), new[] { "laughing_pumpkin_1", "laughing_pumpkin_2", "laughing_pumpkin_3", "pumpkin_laugh_1", "pumpkin_laugh_2", "pumpkin_laugh_3" }
+                SetArray(so.FindProperty("laughs"), new[] { "laughing_pumpkin_1", "laughing_pumpkin_2", "laughing_pumpkin_3", "pumpkin_laugh_1", "pumpkin_laugh_2", "pumpkin_laugh_3", "pumpkin_laugh_4" }
                     .Select(n => (Object)AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + n + ".wav")).ToArray());
                 so.FindProperty("attackSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "pumpkin_boss_attack.wav");
                 so.FindProperty("hurtSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "ouch_pumpkin_2.wav");

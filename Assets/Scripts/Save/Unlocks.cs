@@ -49,6 +49,13 @@ namespace Game.Saving
             return list;
         }
 
+        /// <summary>Forgets everything unlocked (Reset Progress). Nothing counts as unlocked until a save is read again.</summary>
+        public static void Reset()
+        {
+            unlocked.Clear();
+            IsLoaded = false;
+        }
+
         /// <summary>Adds the saved unlocks. Anything unlocked before the save was read is kept too.</summary>
         public static void LoadSaveData(IEnumerable<string> saved)
         {

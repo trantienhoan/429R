@@ -9,10 +9,12 @@ using FsmVariables = HutongGames.PlayMaker.FsmVariables;
 namespace Game.Enemies
 {
     /// <summary>
-    /// The Pumpkin boss (pumpkin_boss_Z). It starts as just its head sitting on the floor; every hit the player lands
-    /// raises it one pumpkin out of the ground, and after the third one its arms and body come out and it chases the
-    /// player, punching and slamming; hurt too much too fast, it stands there dizzy for a few seconds. Left alone it
-    /// wakes itself up once, after Wake Up Seconds. Below True Form Below of its health it climbs out on two legs,
+    /// The Pumpkin boss (pumpkin_boss_Z). It laughs non-stop from the moment it appears, and breaks the room it comes
+    /// up in (the bedroom or the living room). It starts as just its head sitting on the floor; every hit the player
+    /// lands raises it one pumpkin out of the ground, and after the third one its arms and body come out, it slams
+    /// both arms down and then chases the player, punching and slamming; hurt a lot very fast, it stands there dizzy
+    /// for a few seconds. Left alone it wakes itself up once, after Wake Up Seconds. Below True Form Below of its
+    /// health it climbs out on two legs,
     /// grows, and runs with more attacks: a pumpkin full of bugs thrown at the player, a jump with a body slam, bugs
     /// vomited out, and a rare cyclone spin that leaves it dizzy; hits never stop it. Its hits throw the player
     /// (Player Launch) and only hurt when they really land. Every health it loses drops a pumpkin to throw back at it.
@@ -52,8 +54,9 @@ namespace Game.Enemies
         [Min(1f)]
         [SerializeField] private float wakeUpSeconds = 33f;
         [Tooltip("How far the model sits under the floor (model units, before its scale): head only, then one more " +
-                 "pumpkin out per hit; the last one is the upper body.")]
-        [SerializeField] private float[] buried = { 1.72f, 1.40f, 1.18f, 0.80f };
+                 "pumpkin out per hit; the last one is the upper body, with the vines under its bottom pumpkin kept " +
+                 "under the floor.")]
+        [SerializeField] private float[] buried = { 1.72f, 1.41f, 1.22f, 1.06f };
 
         [Header("Size and speed")]
         [SerializeField] private float headScale = 1.7f;
@@ -66,18 +69,18 @@ namespace Game.Enemies
         [SerializeField] private float upperSpeed = 0.6f;
 
         [Header("Getting dizzy (upper body)")]
-        [Tooltip("It's stunned once it loses this share of its health in quick succession. What it has lost fades away " +
-                 "by Dizzy Fade Per Second, so slow hits never add up.")]
+        [Tooltip("It's stunned once it loses this share of its health in quick succession (0.0294 of 429 = about 13 " +
+                 "health). What it has lost fades away by Dizzy Fade Per Second, so slow hits never add up.")]
         [Range(0.02f, 1f)]
-        [SerializeField] private float dizzyAfterDamage = 0.15f;
+        [SerializeField] private float dizzyAfterDamage = 0.0294f;
         [Range(0f, 0.5f)]
-        [SerializeField] private float dizzyFadePerSecond = 0.02f;
+        [SerializeField] private float dizzyFadePerSecond = 0.0029f;
         [Tooltip("How long it stands there dizzy (being_hit), in seconds.")]
         [Min(0.5f)]
-        [SerializeField] private float dizzySeconds = 4f;
+        [SerializeField] private float dizzySeconds = 3f;
         [Tooltip("After coming round, it can't be made dizzy again for this many seconds.")]
         [Min(0f)]
-        [SerializeField] private float dizzyCooldown = 8f;
+        [SerializeField] private float dizzyCooldown = 20f;
 
         [Header("Hitting the player")]
         [Tooltip("Sent to the player's PlayerHealth FSM when an upper-body hit lands (35-45) / a true-form hit (55-70).")]
@@ -123,8 +126,22 @@ namespace Game.Enemies
         [SerializeField] private string gameStagesBool = "BOSS";
         [SerializeField] private string gameStagesEvent = "Win";
 
+        [Header("Breaking the room")]
+        [Tooltip("GAMESTAGES' global variables holding the rooms. When it appears it breaks whichever is standing: the " +
+                 "walls fall away and the room is removed (there's ground under them).")]
+        [SerializeField] private string[] roomVariables = { "Bedroom_Base", "Livingroom_Base" };
+        [Tooltip("Seconds from the walls starting to fall until the room is removed (the fall-away clips last 3.3 s).")]
+        [Min(0f)]
+        [SerializeField] private float roomGoneAfter = 3.5f;
+
         [Header("Sounds")]
+        [Tooltip("It laughs non-stop until it dies: one of these after another, never the same twice in a row.")]
         [SerializeField] private AudioClip[] laughs = System.Array.Empty<AudioClip>();
+        [Tooltip("Seconds of quiet between two laughs.")]
+        [Min(0f)]
+        [SerializeField] private float laughGap = 0.1f;
+        [Range(0f, 1f)]
+        [SerializeField] private float laughVolume = 1f;
         [SerializeField] private AudioClip attackSound;
         [SerializeField] private AudioClip hurtSound;
         [SerializeField] private AudioClip roarSound;
@@ -146,6 +163,10 @@ namespace Game.Enemies
         private readonly List<PlayMakerFSM> fsmBuffer = new();
         private NavMeshAgent agent;
         private AudioSource speaker;
+        private AudioSource laughSpeaker;
+        private int lastLaugh = -1;
+        private float nextLaugh;
+        private bool actImpact;
         private FsmFloat health;
         private float maxHealth;
         private float lastHealth;
@@ -175,6 +196,18 @@ namespace Game.Enemies
         {
             agent = GetComponent<NavMeshAgent>();
             speaker = GetComponent<AudioSource>();
+            // Its laughing has its own speaker, so yelps and roars play over it instead of cutting it off.
+            if (speaker != null)
+            {
+                laughSpeaker = gameObject.AddComponent<AudioSource>();
+                laughSpeaker.playOnAwake = false;
+                laughSpeaker.outputAudioMixerGroup = speaker.outputAudioMixerGroup;
+                laughSpeaker.spatialBlend = speaker.spatialBlend;
+                laughSpeaker.rolloffMode = speaker.rolloffMode;
+                laughSpeaker.minDistance = speaker.minDistance;
+                laughSpeaker.maxDistance = speaker.maxDistance;
+                laughSpeaker.priority = speaker.priority;
+            }
             foreach (var fsm in GetComponents<PlayMakerFSM>())
             {
                 if (fsm.FsmName != healthFsm) continue;
@@ -185,14 +218,15 @@ namespace Game.Enemies
 
         private void Start()
         {
-            maxHealth = lastHealth = health != null ? Mathf.Max(1f, health.Value) : 42f;
+            maxHealth = lastHealth = health != null ? Mathf.Max(1f, health.Value) : 429f;
             targetBuried = buried.Length > 0 ? buried[0] : 0f;
             targetScale = headScale;
             if (model != null) { model.localScale = Vector3.one * headScale * 0.1f; SetBuried(targetBuried + 1f, model.localScale.x); }
             lastHitAt = Time.time;
             Stop();
             PlayState(Laugh);
-            PlaySound(laughs);
+            LaughNow();
+            BreakRooms();
             EnemyHitDamage.AnyHit += OnAnyHit;
         }
 
@@ -223,6 +257,7 @@ namespace Game.Enemies
 
         private void Update()
         {
+            KeepLaughing();
             if (!FindPlayer()) return;
             TrackHealth();
             UpdateModel();
@@ -289,7 +324,7 @@ namespace Game.Enemies
                 // Bored of waiting: it punches itself awake, once.
                 wokeItself = true;
                 PlayState(GetHit, true);
-                PlaySound(laughs);
+                LaughNow();
                 Puff();
                 StartRising();
                 return;
@@ -303,16 +338,17 @@ namespace Game.Enemies
             targetBuried = buried[buried.Length - 1];
             targetScale = upperScale;
             PlayState(Come, true);
-            PlaySound(laughs);
+            LaughNow();
             phaseUntil = Time.time + 2.3f;
         }
 
+        // Out of the ground it comes out swinging: a two-arm slam on the spot first, then the chase.
         private void EnterUpper()
         {
             phase = Phase.Upper;
             agent.speed = trueSpeed * upperSpeed;
-            nextAct = Time.time + 0.5f;
-            PlayState(Move);
+            Begin(Act.Slam, Slam, 2.75f);
+            PlaySound(attackSound);
         }
 
         // ---------- fighting ----------
@@ -385,6 +421,7 @@ namespace Game.Enemies
             actStarted = Time.time;
             actUntil = Time.time + seconds;
             actHit = false;
+            actImpact = false;
             Stop();
             PlayState(state, true);
         }
@@ -404,6 +441,17 @@ namespace Game.Enemies
                 case Act.Slam:
                     if (t < 1.3f) Face(target, 200f);
                     if (t >= 1.5f && t <= 1.8f) { TryHit(handL, 0.42f, slamLaunch, false); TryHit(handR, 0.42f, slamLaunch, false); }
+                    // The fists smash into the floor: dust and a shake.
+                    if (!actImpact && t >= 1.58f)
+                    {
+                        actImpact = true;
+                        SendShake("ShakeMed");
+                        if (smoke != null)
+                        {
+                            foreach (var fist in new[] { handL, handR })
+                                if (fist != null) Instantiate(smoke, new Vector3(fist.position.x, transform.position.y, fist.position.z), Quaternion.identity, transform.parent);
+                        }
+                    }
                     break;
                 case Act.Throw:
                     Face(target, 260f);
@@ -502,7 +550,6 @@ namespace Game.Enemies
             Begin(Act.Vomit, VomitState, 2.0f);
             bugsLeft = vomitBugs;
             retchesDone = 0;
-            PlaySound(laughs);
         }
 
         // A puff out of its mouth on every retch, bugs or not.
@@ -654,6 +701,70 @@ namespace Game.Enemies
             }
             Destroy(gameObject, 1.6f);
         }
+
+        // ---------- laughing and breaking the room ----------
+
+        // Non-stop: the next laugh starts Laugh Gap after the last one ends, until it dies.
+        private void KeepLaughing()
+        {
+            if (phase == Phase.Dying || laughSpeaker == null) return;
+            if (!laughSpeaker.isPlaying && Time.time >= nextLaugh) LaughNow();
+        }
+
+        // A new laugh right now (its big moments: appearing, waking, coming out of the ground).
+        private void LaughNow()
+        {
+            if (laughSpeaker == null || laughs.Length == 0) return;
+            int i = Random.Range(0, laughs.Length);
+            if (laughs.Length > 1 && i == lastLaugh) i = (i + 1 + Random.Range(0, laughs.Length - 1)) % laughs.Length;
+            lastLaugh = i;
+            var clip = laughs[i];
+            if (clip == null) return;
+            laughSpeaker.clip = clip;
+            laughSpeaker.volume = laughVolume;
+            laughSpeaker.Play();
+            nextLaugh = Time.time + clip.length + laughGap;
+        }
+
+        // The walls of whichever room is standing fall away (its own fall-away clip), then the room is removed.
+        private void BreakRooms()
+        {
+            bool broke = false;
+            foreach (var name in roomVariables)
+            {
+                var room = FsmVariables.GlobalVariables.FindFsmGameObject(name)?.Value;
+                if (room == null || !room.activeInHierarchy) continue;
+                var walls = room.GetComponentInChildren<Animator>();
+                var fallAway = walls != null ? FallAwayState(walls) : null;
+                if (fallAway != null) walls.CrossFadeInFixedTime(fallAway, 0.1f, 0, 0f);
+                Destroy(room, fallAway != null ? roomGoneAfter : 0.5f);
+                broke = true;
+            }
+            if (!broke) return;
+            SendShake("ShakeBig");
+            Puff();
+        }
+
+        // Which clip takes the room's walls down from where they are now; none when they're already down.
+        private static string FallAwayState(Animator walls)
+        {
+            var now = walls.GetCurrentAnimatorStateInfo(0);
+            foreach (var (from, to) in FallAway)
+            {
+                if (!now.IsName(from)) continue;
+                return to != null && walls.HasState(0, Animator.StringToHash(to)) ? to : null;
+            }
+            return null;
+        }
+
+        // Room animator states (Bedroom_Base_Z, Livingroom_Base_Z) and the clip that takes those walls down.
+        private static readonly (string from, string to)[] FallAway =
+        {
+            ("Bedroom_Mini_COME", "Bedroom_Mini_GO"), ("Bedroom_Mini_GO2", "Bedroom_Mini_GO"),
+            ("Bedroom_COME", "Bedroom_GO"), ("Bedroom_GO2", "Bedroom_GO"), ("Bedroom_Base_Z_Setup", "Bedroom_GO"),
+            ("COME", "LivingRoom_GO"), ("LivingRoom_GO2", "LivingRoom_GO"), ("Livingroom_Setup", "LivingRoom_GO"),
+            ("COME2", "GO4"),
+        };
 
         // ---------- helpers ----------
 
