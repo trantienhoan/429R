@@ -26,7 +26,8 @@ namespace Game.Enemies
         [SerializeField] private float reachAhead = 0.15f;
 
         [Header("Push")]
-        [Tooltip("How fast things are shoved away, in metres per second; the same for light and heavy things.")]
+        [Tooltip("How fast things are shoved away, in metres per second; the same for light and heavy things, except the " +
+                 "very heaviest (Mass 1,000,000 or more, e.g. the Stone_Cube_Dice), which stay put.")]
         [Min(0f)]
         [SerializeField] private float pushSpeed = 4f;
         [Tooltip("A fast enemy pushes harder (1.5 times its speed), but never faster than this, in metres per second, so " +
@@ -80,6 +81,8 @@ namespace Game.Enemies
                 var body = hits[i].attachedRigidbody;
                 if (body == null || body == ownBody || body.isKinematic || !pushed.Add(body)) continue;
                 if (IsHeldOrPlayer(body)) continue;
+                // The very heaviest things (the stone blocks that close a path) stay put.
+                if (Game.Combat.PushWeight.IsImmovable(body)) continue;
                 // Candy it's about to eat isn't pushed away.
                 if (vacuum != null && vacuum.IsCandy(body)) continue;
 

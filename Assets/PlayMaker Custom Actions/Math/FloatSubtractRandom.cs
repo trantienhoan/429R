@@ -1,7 +1,8 @@
 namespace HutongGames.PlayMaker.Actions
 {
     [ActionCategory(ActionCategory.Math)]
-    [Tooltip("Subtracts a random amount between Min and Max from a Float Variable, e.g. damage of 1 to 3.")]
+    [Tooltip("Subtracts a random amount between Min and Max from a Float Variable, e.g. damage of 1 to 3. With Player " +
+             "Toughness ticked (damage to the player), the amount is cut by the player's Toughness level-up stat.")]
     public class FloatSubtractRandom : FsmStateAction
     {
         [RequiredField]
@@ -24,6 +25,10 @@ namespace HutongGames.PlayMaker.Actions
         [Tooltip("Optional: store the amount that was rolled.")]
         public FsmFloat storeAmount;
 
+        [Tooltip("Tick for damage to the player: the amount is cut by the player's Toughness (a level-up stat), never " +
+                 "below 1.")]
+        public FsmBool playerToughness;
+
         public override void Reset()
         {
             floatVariable = null;
@@ -31,11 +36,19 @@ namespace HutongGames.PlayMaker.Actions
             max = 3f;
             wholeNumbers = true;
             storeAmount = null;
+            playerToughness = false;
         }
 
         public override void OnEnter()
         {
             float amount = RandomAmount.Roll(min.Value, max.Value, wholeNumbers.Value);
+            // Added after FSMs already used this action, so it can be missing (unticked) in them.
+            if (playerToughness != null && playerToughness.Value && amount > 0f)
+            {
+                amount *= Game.Leveling.PlayerLevel.DamageShare;
+                if (wholeNumbers.Value) amount = UnityEngine.Mathf.Round(amount);
+                amount = UnityEngine.Mathf.Max(amount, 1f);
+            }
             floatVariable.Value -= amount;
             if (!storeAmount.IsNone) storeAmount.Value = amount;
             Finish();

@@ -168,6 +168,7 @@ MonoBehaviour:
   popDistance: 0.8
   giveUpSeconds: 12
   popSpeed: 3
+  hitsToPop: 1
   faceAngle: 0
   popEffect: {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
@@ -183,6 +184,13 @@ MonoBehaviour:
   maxSpiders: 2
   spiderSpread: 3
   ignoreEnemyLimit: 0
+  limitFullEvent: Damage
+  insideDown:
+    globalObject: EnemyManager
+    fsm: EnemyManager
+    boolName: 
+    value: 1
+  exp: 2
   inFaceBool: 
   punchPush: 1
   maxPunchPush: 6

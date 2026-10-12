@@ -167,7 +167,8 @@ MonoBehaviour:
   chaseAcceleration: 8
   popDistance: 0.8
   giveUpSeconds: 0
-  popSpeed: 0
+  popSpeed: 4
+  hitsToPop: 10
   faceAngle: 0
   popEffect: {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
@@ -180,9 +181,16 @@ MonoBehaviour:
   - {fileID: 6775784304709424700, guid: e2163260a8879b84e9f42ec1adc63dac, type: 3}
   - {fileID: 6775784304709424700, guid: e2163260a8879b84e9f42ec1adc63dac, type: 3}
   minSpiders: 1
-  maxSpiders: 2
+  maxSpiders: 1
   spiderSpread: 0.8
   ignoreEnemyLimit: 0
+  limitFullEvent: DamageHeavy
+  insideDown:
+    globalObject: EnemyManager4
+    fsm: EnemyManager
+    boolName: BigBee1Down
+    value: 1
+  exp: 5
   inFaceBool: 
   punchPush: 1
   maxPunchPush: 6

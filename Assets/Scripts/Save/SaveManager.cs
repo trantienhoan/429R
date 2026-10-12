@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Game.Inventory;
+using Game.Leveling;
 using Game.Menus;
 using Game.Shopping;
 using UnityEngine;
@@ -10,7 +11,9 @@ namespace Game.Saving
 {
     /// <summary>
     /// Keeps the player's progress between sessions: what they carry (e.g. candies), how many of each item they
-    /// ever collected and spent, what they bought and what they unlocked for good (e.g. paths opened with seeds).
+    /// ever collected and spent, what they bought, what they unlocked for good (e.g. paths opened with seeds),
+    /// lasting boosts (e.g. the higher health cap from Boss Seeds, see PlayerBoosts) and their level, EXP and stat
+    /// points (see Player Level).
     /// Keep one in the scene. It loads when the game starts and saves shortly after anything changes, when the game
     /// pauses and when it closes. Dying doesn't touch the inventory, so candies are kept through a restart too. FSMs
     /// can also save at checkpoints with the "Save Game" action (PlayMaker's "Save" category).
@@ -29,6 +32,10 @@ namespace Game.Saving
             public List<Shop.SavedPurchase> shopPurchases = new();
             // What the player unlocked for good, e.g. paths bought open with seeds (see Unlocks).
             public List<string> unlocks = new();
+            // How much Boss Seeds have raised the health cap (see PlayerBoosts).
+            public float healthCapBonus;
+            // The player's level, EXP and stat points (see Player Level).
+            public PlayerLevel.SavedLevel level = new();
         }
 
         private const int CurrentVersion = 1;
@@ -158,6 +165,8 @@ namespace Game.Saving
             inventory.Changed += OnInventoryChanged;
             Shop.AnyPurchased += OnPurchased;
             Unlocks.Changed += MarkChanged;
+            PlayerBoosts.Changed += MarkChanged;
+            PlayerLevel.Changed += MarkChanged;
             PauseMenu.PauseChanged += OnPauseChanged;
         }
 
@@ -168,6 +177,8 @@ namespace Game.Saving
             if (inventory != null) inventory.Changed -= OnInventoryChanged;
             Shop.AnyPurchased -= OnPurchased;
             Unlocks.Changed -= MarkChanged;
+            PlayerBoosts.Changed -= MarkChanged;
+            PlayerLevel.Changed -= MarkChanged;
             PauseMenu.PauseChanged -= OnPauseChanged;
             Instance = null;
         }
@@ -206,8 +217,8 @@ namespace Game.Saving
         }
 
         /// <summary>
-        /// Wipes the player's progress: what they carry, what they ever collected and spent, what they bought and what
-        /// they unlocked. The save is emptied straight away rather than deleted (its backup is deleted), so Steam Cloud
+        /// Wipes the player's progress: what they carry, what they ever collected and spent, what they bought, what
+        /// they unlocked, and their level. The save is emptied straight away rather than deleted (its backup is deleted), so Steam Cloud
         /// replaces the old one too. Restart the scene afterwards so the world matches, e.g. paths opened with seeds.
         /// </summary>
         public void ResetProgress()
@@ -219,6 +230,8 @@ namespace Game.Saving
             }
             if (shop != null) shop.LoadSaveData(null);
             Unlocks.Reset();
+            PlayerBoosts.Reset();
+            PlayerLevel.Load(null);
 
             // Gone first, so writing the empty save doesn't keep the old one as its backup.
             try { DeleteSaveFiles(); }
@@ -241,6 +254,8 @@ namespace Game.Saving
                 itemStats = inventory.StatsToSaveData(),
                 shopPurchases = shop != null ? shop.ToSaveData() : new List<Shop.SavedPurchase>(),
                 unlocks = Unlocks.ToSaveData(),
+                healthCapBonus = PlayerBoosts.HealthCapBonus,
+                level = PlayerLevel.Save(),
             };
 
             try
@@ -283,6 +298,8 @@ namespace Game.Saving
             loaded = true;
             // Also with no save, so whatever waits for the unlocks knows they're read.
             Unlocks.LoadSaveData(data?.unlocks);
+            PlayerBoosts.LoadSaveData(data != null ? data.healthCapBonus : 0f);
+            PlayerLevel.Load(data?.level);
         }
 
         private SaveData Read(string path)

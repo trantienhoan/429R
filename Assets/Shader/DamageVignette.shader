@@ -1,6 +1,7 @@
 // Red hit lines around the edges of the player's view (Damage Vignette). Drawn on the inside of a sphere around the
 // headset camera, so it lines up in both eyes. Thin spikes point in towards the middle of the view, each with its own
 // width and length, over a soft red glow at the rim; _Intensity (0-1) fades it, pulling the spikes back out to the edge.
+// _HitDir (camera space, w = 1) lights only the arc of the edge on the side the hit came from; w = 0 lights it all.
 Shader "429/Damage Vignette"
 {
     Properties
@@ -16,6 +17,9 @@ Shader "429/Damage Vignette"
         _Glow("Edge glow", Range(0, 1)) = 0.45
         _GlowFrom("Edge glow starts (degrees off centre)", Range(0, 90)) = 32
         _GlowTo("Edge glow full (degrees off centre)", Range(0, 90)) = 60
+        _HitDir("Hit direction (camera space; w 1 = on)", Vector) = (0, 0, 1, 0)
+        _Arc("Half-width of the lit arc (degrees)", Range(10, 180)) = 60
+        _AllAround("Strength all around when the hit is straight ahead or behind", Range(0, 1)) = 0.6
     }
     SubShader
     {
@@ -59,6 +63,9 @@ Shader "429/Damage Vignette"
             float _Glow;
             float _GlowFrom;
             float _GlowTo;
+            float4 _HitDir;
+            float _Arc;
+            float _AllAround;
 
             v2f vert(appdata v)
             {
@@ -95,7 +102,19 @@ Shader "429/Damage Vignette"
                 float lineMask = smoothstep(edge, edge + 0.08, across) * step(tip, offCentre) * step(0.25, hash(id + 57.1));
 
                 float glow = smoothstep(_GlowFrom, _GlowTo, offCentre) * _Glow;
-                float alpha = saturate(lineMask * 0.95 + glow) * _Intensity * _Color.a;
+                // Only the side the hit came from: how close this point of the edge is (around the view) to the hit's
+                // direction. A hit from almost straight ahead or behind has no side, so the whole edge glows, weaker.
+                float side = 1.0;
+                if (_HitDir.w > 0.5)
+                {
+                    float2 here = d.xy / max(length(d.xy), 1e-4);
+                    float hitLength = length(_HitDir.xy);
+                    float2 from = _HitDir.xy / max(hitLength, 1e-4);
+                    float arc = smoothstep(cos(radians(_Arc)), 1.0, dot(here, from));
+                    float noSide = 1.0 - saturate(hitLength / 0.3);
+                    side = max(arc, noSide * _AllAround);
+                }
+                float alpha = saturate(lineMask * 0.95 + glow) * _Intensity * _Color.a * side;
                 fixed3 colour = lerp(_Color.rgb * 0.6, _Color.rgb, lineMask);
                 return fixed4(colour, alpha);
             }

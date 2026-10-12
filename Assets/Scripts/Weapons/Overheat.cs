@@ -198,7 +198,11 @@ namespace Game.Weapons
 
             bool playerHurt = Blast.Explode(body.worldCenterOfMass, radius, damage, push, body, effects, sound, volume) || grab.isSelected;
             Buzz(rumbleStrength, rumbleDuration);
-            if (playerHurt && !string.IsNullOrEmpty(playerEvent)) SendToPlayer(playerEvent);
+            if (playerHurt && !string.IsNullOrEmpty(playerEvent))
+            {
+                Game.Combat.DamageVignette.HitFrom(body.worldCenterOfMass);
+                SendToPlayer(playerEvent);
+            }
 
             // Breaking the usual way lets its own Health FSM drop the pieces and remove it; otherwise it just vanishes.
             if (breakApart && Blast.HasHealth(gameObject, out var ownHealth, out _) && ownHealth != null) ownHealth.Value = 0f;

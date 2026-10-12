@@ -5354,6 +5354,7 @@ GameObject:
   - component: {fileID: 8529673103472462751}
   - component: {fileID: 444595332533545171}
   - component: {fileID: 4596500312514394995}
+  - component: {fileID: 5446972659357586647}
   m_Layer: 0
   m_Name: Pumpkin_On_Tree
   m_TagString: Weapon
@@ -5758,15 +5759,26 @@ MonoBehaviour:
         linkConstraint: 0
         linkTarget: 0
         colorIndex: 0
+      - fsmEvent:
+          name: ignore
+          isSystemEvent: 0
+          isGlobal: 0
+        toState: Wait for Collision
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.FloatCompare
+        - HutongGames.PlayMaker.Actions.FloatCompare
         customNames:
         - 
-        actionEnabled: 01
-        actionIsOpen: 01
-        actionStartIndex: 00000000
-        actionHashCodes: 1bcdca04
+        - 
+        actionEnabled: 0101
+        actionIsOpen: 0101
+        actionStartIndex: 0000000007000000
+        actionHashCodes: 1bcdca041bcdca04
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams: []
@@ -5782,6 +5794,24 @@ MonoBehaviour:
         fsmArrayParams: []
         fsmEnumParams: []
         fsmFloatParams:
+        - useVariable: 1
+          name: collisionForce
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 2
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
         - useVariable: 1
           name: collisionForce
           tooltip: 
@@ -5809,14 +5839,17 @@ MonoBehaviour:
         fsmQuaternionParams: []
         stringParams:
         - 
+        - ignore
+        - 
+        - 
         - back
         - next
-        byteData: 00
+        byteData: 0000
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 0f0000000f0000000f00000017000000170000001700000001000000
+        paramDataType: 0f0000000f0000000f000000170000001700000017000000010000000f0000000f0000000f00000017000000170000001700000001000000
         paramName:
         - float1
         - float2
@@ -5825,8 +5858,15 @@ MonoBehaviour:
         - lessThan
         - greaterThan
         - everyFrame
-        paramDataPos: 00000000010000000200000000000000010000000200000000000000
-        paramByteDataSize: 00000000000000000000000000000000000000000000000001000000
+        - float1
+        - float2
+        - tolerance
+        - equal
+        - lessThan
+        - greaterThan
+        - everyFrame
+        paramDataPos: 0000000001000000020000000000000001000000020000000000000003000000040000000500000003000000040000000500000001000000
+        paramByteDataSize: 0000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000001000000
     - name: Deal 1 damage
       description: 
       colorIndex: 6
@@ -6227,6 +6267,9 @@ MonoBehaviour:
     - name: Dead
       isSystemEvent: 0
       isGlobal: 1
+    - name: ignore
+      isSystemEvent: 0
+      isGlobal: 0
     globalTransitions: []
     variables:
       floatVariables:
@@ -7240,3 +7283,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.PlayGround.CookingIngredient
   ingredientId: Pumpkin_On_Tree
   icon: {fileID: 21300000, guid: 9b401bd18235d77763c823344ac12464, type: 3}
+--- !u!114 &5446972659357586647
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8690403555129543112}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75d3ced9600c4dd4ba71d9dedca52b16, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.LiveLimit
+  group: Pumpkin_On_Tree
+  limit: 42
+  popFsm: Health
+  popEvent: Dead
+  popState: pop

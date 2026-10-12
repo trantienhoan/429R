@@ -160,6 +160,7 @@ namespace Game.Enemies
             }
             if (IsPlayer(other))
             {
+                DamageVignette.HitFrom(shooter != null ? shooter.position : point);
                 SendToPlayer(playerEvent);
                 PlayerSlow.Apply(slowTo, slowSeconds);
                 Splat(point, hitSound != null ? hitSound : splatSound);

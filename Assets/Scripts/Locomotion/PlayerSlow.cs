@@ -22,6 +22,22 @@ namespace Game.Locomotion
         /// <summary>True while the player is slowed.</summary>
         public bool IsSlowed => speedShare < 1f;
 
+        /// <summary>The provider's walking speed without the slow.</summary>
+        public float NormalSpeed(ContinuousMoveProvider provider)
+        {
+            return IsSlowed && normalSpeeds.TryGetValue(provider, out float speed) ? speed : provider.moveSpeed;
+        }
+
+        /// <summary>
+        /// Changes the speed the provider goes back to when the slow ends, e.g. the player got faster meanwhile (the
+        /// Move Speed level-up stat). The slow carries on from the new speed.
+        /// </summary>
+        public void SetNormalSpeed(ContinuousMoveProvider provider, float speed)
+        {
+            if (IsSlowed) normalSpeeds[provider] = speed;
+            else provider.moveSpeed = speed;
+        }
+
         /// <summary>
         /// Slows the player to <paramref name="share"/> of their walking speed (0.4 = 40%) for
         /// <paramref name="seconds"/> seconds.

@@ -117,6 +117,8 @@ namespace Game.Weapons
         private static void Push(Rigidbody target, Vector3 point, float radius, float push)
         {
             if (push <= 0f || target == null || target.isKinematic || !pushed.Add(target)) return;
+            // The very heaviest things (the stone blocks that close a path) stay put.
+            if (Game.Combat.PushWeight.IsImmovable(target)) return;
             // Things in someone's hand stay there.
             if (target.TryGetComponent<XRGrabInteractable>(out var held) && held.isSelected) return;
 

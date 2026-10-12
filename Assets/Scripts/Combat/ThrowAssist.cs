@@ -84,9 +84,11 @@ namespace Game.Combat
             return GetAssistedVelocity(source, velocity, gravity, maxAngle);
         }
 
-        public Vector3 GetAssistedVelocity(in Vector3 source, in Vector3 velocity, float gravity, float maxAngle)
+        public Vector3 GetAssistedVelocity(in Vector3 source, in Vector3 thrownAt, float gravity, float maxAngle)
         {
             var thrown = TakeReleased(source);
+            // A real throw (not a drop or a gentle toss) leaves faster with the Throw Power level-up stat, helped or not.
+            var velocity = thrownAt.magnitude >= Mathf.Max(minSpeed, 0.1f) ? thrownAt * Game.Leveling.PlayerLevel.ThrowScale : thrownAt;
             float speed = velocity.magnitude;
             if (!isActiveAndEnabled || strength <= 0f || speed < Mathf.Max(minSpeed, 0.1f) || OptsOut(thrown)) return velocity;
 

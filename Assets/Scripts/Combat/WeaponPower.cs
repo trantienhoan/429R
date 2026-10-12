@@ -5,7 +5,8 @@ namespace Game.Combat
     /// <summary>
     /// How much harder this weapon hits than a bare swing: its hit speed is multiplied by Power before the damage is
     /// worked out, so a hammer (2) turns a normal swing into a big hit. Anything without it counts as 1.
-    /// Goes on the weapon's root (the object with the Rigidbody).
+    /// Goes on the weapon's root (the object with the Rigidbody). The player's Weapon Efficiency (a level-up stat)
+    /// makes every weapon hit harder still; fists don't count, they have Fist Size.
     /// </summary>
     [DisallowMultipleComponent]
     public class WeaponPower : MonoBehaviour
@@ -26,7 +27,8 @@ namespace Game.Combat
             WeaponPower weapon = null;
             if (collision.rigidbody != null) collision.rigidbody.TryGetComponent(out weapon);
             if (weapon == null && collision.collider != null) weapon = collision.collider.GetComponentInParent<WeaponPower>();
-            return weapon != null ? weapon.power : 1f;
+            if (weapon == null) return 1f;
+            return Fist.IsFistBall(weapon) ? weapon.power : weapon.power * Game.Leveling.PlayerLevel.WeaponDamageScale;
         }
     }
 }

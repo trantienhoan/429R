@@ -6,10 +6,13 @@ using FsmFloat = HutongGames.PlayMaker.FsmFloat;
 namespace Game.Combat
 {
     /// <summary>
-    /// A burst of red lines around the edges of the player's view whenever their health drops, from any hit (bites,
-    /// webs, bosses). Bigger hits give a stronger burst, and each hit gets a new pattern of lines, which then pull back
-    /// out to the edge and fade. Goes on the XR Origin next to the PlayerHealth FSM; it draws on a sphere around the
-    /// headset camera, so it works in both eyes. Tools > 429 Game > Combat > Add Damage Vignette sets it up.
+    /// A burst of red lines at the edge of the player's view on the side a hit came from, whenever their health drops
+    /// (bites, webs, bosses). Bigger hits give a stronger burst, and each hit gets a new pattern of lines, which then
+    /// pull back out to the edge and fade; while they fade they keep pointing at the attacker as the player turns.
+    /// Where a hit came from: C# attackers report it with HitFrom (spiders, cockroaches, web balls, ghost balloons,
+    /// falling blocks, overheating weapons); for the PlayMaker enemies it's the nearest object tagged Enemy. With
+    /// neither, the whole edge flashes. Goes on the XR Origin next to the PlayerHealth FSM; it draws on a sphere around
+    /// the headset camera, so it works in both eyes. Tools > 429 Game > Combat > Add Damage Vignette sets it up.
     /// </summary>
     [DisallowMultipleComponent]
     public class DamageVignette : MonoBehaviour
@@ -20,6 +23,9 @@ namespace Game.Combat
         [Tooltip("The FSM on this object that holds the player's health, and its float variable.")]
         [SerializeField] private string healthFsm = "PlayerHealth";
         [SerializeField] private string healthVariable = "PlayerHealth";
+        [Tooltip("How see-through the lines are overall (1 = as the material sets them).")]
+        [Range(0f, 1f)]
+        [SerializeField] private float opacity = 0.5f;
         [Tooltip("A hit this big or bigger gives the full burst; smaller ones a weaker one.")]
         [Min(1f)]
         [SerializeField] private float fullBurstDamage = 30f;
@@ -32,15 +38,56 @@ namespace Game.Combat
         [Min(0.05f)]
         [SerializeField] private float fadeSeconds = 0.6f;
 
+        [Header("Direction")]
+        [Tooltip("How wide the lit part of the edge is, in degrees either side of the hit's direction.")]
+        [Range(10f, 180f)]
+        [SerializeField] private float arcDegrees = 60f;
+        [Tooltip("Hits nobody reported (PlayMaker enemies) come from the nearest object with one of these tags...")]
+        [SerializeField] private string[] enemyTags = { "Enemy", "Monster" };
+        [Tooltip("...within this many metres of the head. Further than that, or none: the whole edge flashes.")]
+        [Min(0.5f)]
+        [SerializeField] private float nearestEnemyRange = 6f;
+
         private static readonly int IntensityId = Shader.PropertyToID("_Intensity");
         private static readonly int SeedId = Shader.PropertyToID("_Seed");
+        private static readonly int HitDirId = Shader.PropertyToID("_HitDir");
+        private static readonly int ArcId = Shader.PropertyToID("_Arc");
+        private static readonly int ColorId = Shader.PropertyToID("_Color");
+
+        // How long a reported source stays good for the health drop that follows it (the FSM lowers health a frame or
+        // so after the attacker sends its damage event).
+        private const float ReportedSeconds = 0.5f;
+        private static Vector3 reportedPoint;
+        private static Transform reportedTransform;
+        private static float reportedAt = -100f;
 
         private FsmFloat health;
         private float lastHealth;
         private MeshRenderer view;
+        private Transform head;
         private Material instance;
         private float peak;
         private float hitAt = -100f;
+        private bool hasSource;
+        private Vector3 sourcePoint;
+        private Transform sourceTransform;
+
+        /// <summary>An attacker about to hurt the player tells where from, so the red lines show on that side.</summary>
+        public static void HitFrom(Vector3 worldPoint)
+        {
+            reportedPoint = worldPoint;
+            reportedTransform = null;
+            reportedAt = Time.unscaledTime;
+        }
+
+        /// <summary>As HitFrom(point), and the lines keep pointing at the attacker while it moves.</summary>
+        public static void HitFrom(Transform attacker)
+        {
+            if (attacker == null) return;
+            reportedPoint = attacker.position;
+            reportedTransform = attacker;
+            reportedAt = Time.unscaledTime;
+        }
 
         private void Start()
         {
@@ -58,6 +105,7 @@ namespace Game.Combat
                 return;
             }
             lastHealth = health.Value;
+            head = cam.transform;
 
             // A sphere around the head, a quarter of a metre out: well past the camera's near clip.
             var temp = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -69,6 +117,9 @@ namespace Game.Combat
             sphere.AddComponent<MeshFilter>().sharedMesh = mesh;
             view = sphere.AddComponent<MeshRenderer>();
             instance = new Material(material);
+            var colour = instance.GetColor(ColorId);
+            colour.a *= opacity;
+            instance.SetColor(ColorId, colour);
             view.sharedMaterial = instance;
             view.shadowCastingMode = ShadowCastingMode.Off;
             view.receiveShadows = false;
@@ -92,7 +143,10 @@ namespace Game.Combat
             float intensity = CurrentIntensity();
             bool show = intensity > 0.002f;
             if (view.enabled != show) view.enabled = show;
-            if (show) instance.SetFloat(IntensityId, intensity);
+            if (!show) return;
+            instance.SetFloat(IntensityId, intensity);
+            instance.SetFloat(ArcId, arcDegrees);
+            instance.SetVector(HitDirId, HitDirection());
         }
 
         private void Hit(float damage)
@@ -102,6 +156,51 @@ namespace Game.Combat
             peak = Mathf.Max(strength, CurrentIntensity());
             hitAt = Time.unscaledTime;
             instance.SetFloat(SeedId, Random.Range(0f, 100f));
+            FindSource();
+        }
+
+        private void FindSource()
+        {
+            if (Time.unscaledTime - reportedAt <= ReportedSeconds)
+            {
+                hasSource = true;
+                sourcePoint = reportedPoint;
+                sourceTransform = reportedTransform;
+                reportedAt = -100f;
+                return;
+            }
+            // Nobody reported it: a PlayMaker enemy, most likely the nearest one.
+            hasSource = false;
+            sourceTransform = null;
+            float best = nearestEnemyRange * nearestEnemyRange;
+            foreach (var tag in enemyTags)
+            {
+                if (string.IsNullOrEmpty(tag)) continue;
+                GameObject[] enemies;
+                try { enemies = GameObject.FindGameObjectsWithTag(tag); }
+                catch (UnityException) { continue; }   // the tag doesn't exist
+                foreach (var enemy in enemies)
+                {
+                    if (enemy == null || !enemy.activeInHierarchy) continue;
+                    float d = (enemy.transform.position - head.position).sqrMagnitude;
+                    if (d >= best) continue;
+                    best = d;
+                    hasSource = true;
+                    sourceTransform = enemy.transform;
+                    sourcePoint = enemy.transform.position;
+                }
+            }
+        }
+
+        // The hit's direction in the camera's space (w = 1), so the shader lights that side; w = 0 lights all of it.
+        private Vector4 HitDirection()
+        {
+            if (!hasSource) return Vector4.zero;
+            if (sourceTransform != null) sourcePoint = sourceTransform.position;
+            var toward = sourcePoint - head.position;
+            if (toward.sqrMagnitude < 0.0001f) return Vector4.zero;
+            var local = head.InverseTransformDirection(toward.normalized);
+            return new Vector4(local.x, local.y, local.z, 1f);
         }
 
         private float CurrentIntensity()

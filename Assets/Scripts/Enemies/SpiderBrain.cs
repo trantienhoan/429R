@@ -1210,6 +1210,7 @@ namespace Game.Enemies
             if (!bitPlayer) return;
 
             attackResolved = true;
+            DamageVignette.HitFrom(transform);
             SendToPlayer(string.IsNullOrEmpty(kind.playerEvent) ? move.playerEvent : kind.playerEvent);
             if (kind.launchHeight > 0f || kind.launchDistance > 0f)
                 Game.Combat.PlayerLaunch.Launch(transform.position, kind.launchHeight, kind.launchDistance);

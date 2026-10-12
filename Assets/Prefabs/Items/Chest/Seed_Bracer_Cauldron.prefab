@@ -20086,15 +20086,17 @@ MonoBehaviour:
         actionNames:
         - HutongGames.PlayMaker.Actions.SetFsmVariable
         - HutongGames.PlayMaker.Actions.SendEvent
+        - HutongGames.PlayMaker.Actions.PlayerHealthBonus
         - HutongGames.PlayMaker.Actions.InventoryAddItem
         customNames:
         - 
         - 
         - 
-        actionEnabled: 010101
-        actionIsOpen: 000001
-        actionStartIndex: 000000000500000009000000
-        actionHashCodes: fcb1a0015e69bb049b5e1c02
+        - 
+        actionEnabled: 01010101
+        actionIsOpen: 00000101
+        actionStartIndex: 0000000005000000090000000f000000
+        actionHashCodes: fcb1a0015e69bb04dc9dfc049b5e1c02
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams:
@@ -20199,7 +20201,37 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 7
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0.7
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
         fsmIntParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 6
         - useVariable: 0
           name: 
           tooltip: 
@@ -20212,7 +20244,13 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0
-        fsmBoolParams: []
+        fsmBoolParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
         fsmVector2Params: []
         fsmVector3Params: []
         fsmColorParams: []
@@ -20226,7 +20264,7 @@ MonoBehaviour:
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 14000000120000001200000027000000010000001f000000170000000f0000000100000018000000100000001000000017000000
+        paramDataType: 14000000120000001200000027000000010000001f000000170000000f00000001000000100000000f0000000f0000000f0000000f0000001100000018000000100000001000000017000000
         paramName:
         - gameObject
         - fsmName
@@ -20237,12 +20275,18 @@ MonoBehaviour:
         - sendEvent
         - delay
         - everyFrame
+        - extraCandies
+        - candyMin
+        - candyMax
+        - aboveShare
+        - raiseCap
+        - healTheRaise
         - item
         - amount
         - storeNewCount
         - failedEvent
-        paramDataPos: 00000000000000000100000000000000000000000000000000000000000000000100000000000000000000000100000001000000
-        paramByteDataSize: 00000000000000000000000000000000010000000000000000000000000000000100000000000000000000000000000000000000
+        paramDataPos: 00000000000000000100000000000000000000000000000000000000000000000100000000000000010000000200000003000000040000000000000000000000010000000200000001000000
+        paramByteDataSize: 00000000000000000000000000000000010000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000
     - name: Destroy Self
       description: 
       colorIndex: 6

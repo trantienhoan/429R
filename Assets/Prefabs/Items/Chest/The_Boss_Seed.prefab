@@ -20094,14 +20094,16 @@ MonoBehaviour:
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.SendEvent
+        - HutongGames.PlayMaker.Actions.PlayerHealthBonus
         - HutongGames.PlayMaker.Actions.InventoryAddItem
         customNames:
         - 
         - 
-        actionEnabled: 0101
-        actionIsOpen: 0101
-        actionStartIndex: 0000000004000000
-        actionHashCodes: 5e69bb049b5e1c02
+        - 
+        actionEnabled: 010101
+        actionIsOpen: 010101
+        actionStartIndex: 00000000040000000a000000
+        actionHashCodes: 5e69bb04dc9dfc049b5e1c02
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams: []
@@ -20162,7 +20164,37 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 7
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0.7
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 30
         fsmIntParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
         - useVariable: 0
           name: 
           tooltip: 
@@ -20175,7 +20207,13 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0
-        fsmBoolParams: []
+        fsmBoolParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
         fsmVector2Params: []
         fsmVector3Params: []
         fsmColorParams: []
@@ -20189,18 +20227,24 @@ MonoBehaviour:
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1f000000170000000f0000000100000018000000100000001000000017000000
+        paramDataType: 1f000000170000000f00000001000000100000000f0000000f0000000f0000000f0000001100000018000000100000001000000017000000
         paramName:
         - eventTarget
         - sendEvent
         - delay
         - everyFrame
+        - extraCandies
+        - candyMin
+        - candyMax
+        - aboveShare
+        - raiseCap
+        - healTheRaise
         - item
         - amount
         - storeNewCount
         - failedEvent
-        paramDataPos: 0000000000000000000000000000000000000000000000000100000001000000
-        paramByteDataSize: 0000000000000000000000000100000000000000000000000000000000000000
+        paramDataPos: 0000000000000000000000000000000000000000010000000200000003000000040000000000000000000000010000000200000001000000
+        paramByteDataSize: 0000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000
     - name: Destroy Self
       description: 
       colorIndex: 6

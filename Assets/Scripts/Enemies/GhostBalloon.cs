@@ -18,8 +18,12 @@ namespace Game.Enemies
     /// chases. A hit too soft to pop it, or a punch, makes it angry (as does coming close, with Wake On Near): it
     /// giggles and shakes, then chases the player's face and pops in it: a puff of smoke, a pop,
     /// a bite of damage, and 3-5 spiders dropped on the floor. If it can't reach the player in time it just pops. It
-    /// flies through walls, being a ghost. Trees and bushes let new ones out (Spawn), which float up to their spot. Goes
-    /// on the balloon's root; Tools > 429 Game > Enemies > Set Up Ghost Balloons sets up Ghost_Balloon_1-3.
+    /// flies through walls, being a ghost. Trees and bushes let new ones out (Spawn), which float up to their spot. When
+    /// the game's enemy limit has no room for what it drops, it hits harder instead (Limit Full Event). A boss balloon
+    /// (Ghost_Balloon_3 1 / 3 2, each carrying a Big Bee) takes many good hits to pop (Hits To Pop), and Inside Down
+    /// tells its manager when the one inside is done for: popped by the player (it dies with the balloon), or let out in
+    /// the player's face and then killed. Goes on the balloon's root; Tools > 429 Game > Enemies > Set Up Ghost Balloons
+    /// sets up Ghost_Balloon_1-3.
     /// </summary>
     [DisallowMultipleComponent]
     public class GhostBalloon : MonoBehaviour, IHittable
@@ -91,6 +95,10 @@ namespace Game.Enemies
         [Min(0f)]
         [FormerlySerializedAs("swatSpeed")]
         [SerializeField] private float popSpeed = 3f;
+        [Tooltip("How many hits at Pop Speed or harder it takes to pop. 1 = one good hit. More: each good hit that doesn't " +
+                 "pop it knocks it back hard (also while it chases) - for a tough boss balloon.")]
+        [Min(1)]
+        [SerializeField] private int hitsToPop = 1;
         [Tooltip("Turns it while it chases, in degrees, if its face isn't on its blue Z arrow.")]
         [SerializeField] private float faceAngle;
 
@@ -119,6 +127,17 @@ namespace Game.Enemies
         [Tooltip("Tick for a boss balloon: what it drops always comes out, even when the game's enemy limit is full " +
                  "(otherwise it drops only as many as the limit has room for).")]
         [SerializeField] private bool ignoreEnemyLimit;
+        [Tooltip("Extra damage, sent to the player's Damage FSM, when it pops in their face and the game's enemy limit " +
+                 "has no room for what it drops (Damage, DamageHeavy ...). Empty: none.")]
+        [SerializeField] private string limitFullEvent = "Damage";
+        [Tooltip("Optional, for a boss balloon: a bool set when the one inside is done for, e.g. EnemyManager4 / " +
+                 "EnemyManager / BigBeeDown. Popped by the player: right away (it dies with the balloon). Popped in the " +
+                 "player's face: once what it dropped is dead, or right away if the enemy limit kept it in. Empty Bool " +
+                 "Name: none.")]
+        [SerializeField] private SpiderBrain.DeathFlag insideDown = new() { boolName = "" };
+        [Tooltip("EXP the player gets for popping it (not when it pops in their face or gives up). 0 = none.")]
+        [Min(0)]
+        [SerializeField] private int exp;
         [Tooltip("Optional: a GAMESTAGES bool that turns true when it pops in the player's face, for the stage's FSMs. " +
                  "Add it to the GAMESTAGES FSM's Variables.")]
         [SerializeField] private string inFaceBool;
@@ -231,6 +250,7 @@ namespace Game.Enemies
         private float hangAngle;
         private float hangRadius;
         private float hangHeight;
+        private int goodHits;
 
         /// <summary>
         /// Makes a ghost balloon with its balloon part at 'from' (e.g. in a treetop), which then floats up to 'home' and
@@ -367,7 +387,17 @@ namespace Game.Enemies
             if (mood == Mood.Popped || speed < MinHitSpeed) return;
             if (popSpeed > 0f && speed >= popSpeed)
             {
-                Pop(PopReason.Swatted);
+                if (++goodHits >= hitsToPop)
+                {
+                    Pop(PopReason.Swatted);
+                    return;
+                }
+                // A tough one holds: knocked back hard, even mid-chase, and angry.
+                var back = Middle() - hitPoint;
+                back = back.sqrMagnitude > 0.0001f ? back.normalized : -transform.forward;
+                if (mood == Mood.Chasing) velocity += back * Mathf.Min(speed * punchPush, maxPunchPush);
+                else knockVelocity += back * (knock * Mathf.Clamp(speed / 4f, 0.5f, 2f));
+                Wake();
                 return;
             }
             if (mood == Mood.Chasing) return;
@@ -376,6 +406,15 @@ namespace Game.Enemies
             var away = Middle() - hitPoint;
             if (away.sqrMagnitude > 0.0001f) knockVelocity += away.normalized * (knock * Mathf.Clamp(speed / 4f, 0.5f, 2f));
             Wake();
+        }
+
+        /// <summary>
+        /// A punch that reaches it from afar (a fist's flying jab): pushed away and angry like a hand's punch or slap,
+        /// never popped.
+        /// </summary>
+        public void Punched(float speed, Vector3 point, Vector3 punchDirection)
+        {
+            TakePunch(speed, point, punchDirection);
         }
 
         // A punch or slap: it's pushed away the way the fist was going (and away from it), and gets angry. Chasing,
@@ -461,13 +500,27 @@ namespace Game.Enemies
 
             if (reason == PopReason.InFace)
             {
-                if (!string.IsNullOrEmpty(playerEvent)) SendToPlayer(playerEvent);
-                DropSpiders(head != null ? head.position : at);
+                if (!string.IsNullOrEmpty(playerEvent))
+                {
+                    DamageVignette.HitFrom(at);
+                    SendToPlayer(playerEvent);
+                }
+                var dropped = DropSpiders(head != null ? head.position : at, out bool limitFull);
+                // No room for what it carries: it hits harder instead.
+                if (limitFull && !string.IsNullOrEmpty(limitFullEvent)) SendToPlayer(limitFullEvent);
+                // The one inside is done for once what came out is dead (now, if nothing came out).
+                FlagWhenAllGone.Watch(dropped, insideDown, SpawnedStuff());
                 if (!string.IsNullOrEmpty(inFaceBool)) GameStages.SetBool(inFaceBool, true, this);
             }
-            else if (reason == PopReason.Swatted)
+            else
             {
-                DropLollipops(at);
+                if (reason == PopReason.Swatted)
+                {
+                    DropLollipops(at);
+                    if (exp > 0) Game.Leveling.PlayerLevel.AddExp(exp);
+                }
+                // Popped by the player (or giving up): the one inside goes with it.
+                FlagWhenAllGone.Set(insideDown, this);
             }
             Destroy(gameObject);
         }
@@ -726,9 +779,12 @@ namespace Game.Enemies
             }
         }
 
-        private void DropSpiders(Vector3 above)
+        // Drops what it carries; limitFull: the enemy limit kept some of it in.
+        private System.Collections.Generic.List<GameObject> DropSpiders(Vector3 above, out bool limitFull)
         {
-            if (spiders == null || spiders.Length == 0 || maxSpiders <= 0) return;
+            var dropped = new System.Collections.Generic.List<GameObject>();
+            limitFull = false;
+            if (spiders == null || spiders.Length == 0 || maxSpiders <= 0) return dropped;
 
             var floor = FloorBelow(above);
             var parent = SpawnedStuff();
@@ -736,7 +792,11 @@ namespace Game.Enemies
             for (int i = 0; i < count; i++)
             {
                 // Within the game's enemy limit, so a popped balloon can't swamp the Quest.
-                if (!ignoreEnemyLimit && !EnemyLimit.TryTakeSlot()) break;
+                if (!ignoreEnemyLimit && !EnemyLimit.TryTakeSlot())
+                {
+                    limitFull = true;
+                    break;
+                }
 
                 var prefab = spiders[Random.Range(0, spiders.Length)];
                 if (prefab == null) continue;
@@ -744,8 +804,9 @@ namespace Game.Enemies
                 var spread = Random.insideUnitCircle * spiderSpread;
                 var spot = floor + new Vector3(spread.x, 0f, spread.y);
                 if (NavMesh.SamplePosition(spot, out var onMesh, 2f, NavMesh.AllAreas)) spot = onMesh.position;
-                Instantiate(prefab, spot, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f), parent);
+                dropped.Add(Instantiate(prefab, spot, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f), parent));
             }
+            return dropped;
         }
 
         // The first thing under 'point' that isn't the player or this balloon.

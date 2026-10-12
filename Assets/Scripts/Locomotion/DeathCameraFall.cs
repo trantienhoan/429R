@@ -20,7 +20,7 @@ namespace Game.Locomotion
         [SerializeField] private Transform head;
         [Tooltip("How long the fall takes, in seconds.")]
         [Min(0.1f)]
-        [SerializeField] private float fallTime = 1.1f;
+        [SerializeField] private float fallTime = 1.57f;
         [Tooltip("Eye height above the floor once lying down, in metres.")]
         [Min(0f)]
         [SerializeField] private float lyingHeight = 0.2f;

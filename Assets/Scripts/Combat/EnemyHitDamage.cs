@@ -51,6 +51,12 @@ namespace Game.Combat
         [Min(0f)]
         [SerializeField] private float knockBackStun = 0.3f;
 
+        [Header("Level")]
+        [Tooltip("EXP the player gets when it dies: 1 for a small enemy, 2 for a normal one, 5 for a mini boss, 50 for " +
+                 "pumpkin_boss_Z. 0 = none. Tools > 429 Game > Player > Set Up Level System fills it in where it's 0.")]
+        [Min(0)]
+        [SerializeField] private int exp;
+
         [Header("PlayMaker")]
         [Tooltip("The FSM holding the enemy's health. Left empty, the FSM whose name ends in \"Health\".")]
         [SerializeField] private string healthFsm = "";
@@ -70,6 +76,9 @@ namespace Game.Combat
         private float nextHit;
         private float nextFlinch;
         private bool dead;
+        private float scaledUntil = -1f;
+        private float scaledDistance = 1f;
+        private float scaledHop = 1f;
 
         /// <summary>Raised after every hit that hurts an enemy: the enemy, and what the hit did.</summary>
         public static event Action<EnemyHitDamage, HitResult> AnyHit;
@@ -117,7 +126,7 @@ namespace Game.Combat
             if (!dead)
             {
                 if (health == null || health.Value > 0f) return;
-                dead = true;
+                Die();
             }
             HoldStill();
         }
@@ -148,12 +157,20 @@ namespace Game.Combat
             Send(hitEvent);
             if (health.Value <= 0f)
             {
-                dead = true;
+                Die();
                 HoldStill();
             }
             // A big killing blow still knocks the body back: Knockback moves the agent itself, which works while it's held.
             if (hit.IsBig && knockBack) KnockBackFromPlayer();
             AnyHit?.Invoke(this, hit);
+        }
+
+        // Its health has run out, however that happened: the player gets its EXP, once.
+        private void Die()
+        {
+            if (dead) return;
+            dead = true;
+            if (exp > 0) Game.Leveling.PlayerLevel.AddExp(exp);
         }
 
         // Every frame once dead, in case an FSM that's still running sets the agent walking again.
@@ -169,13 +186,29 @@ namespace Game.Combat
             agent.velocity = Vector3.zero;
         }
 
+        /// <summary>
+        /// Knocks it back away from the player as a big hit does, whatever the hit did, e.g. a fist's uppercut: this
+        /// many times as far, hopping this many times as high. Not if Knock Back is off (bosses that stand their ground).
+        /// </summary>
+        public void KnockBack(float distanceScale = 1f, float hopScale = 1f)
+        {
+            if (!knockBack) return;
+            // A big hit landing in the same moment keeps these, whichever of the two comes first.
+            scaledUntil = Time.time + 0.1f;
+            scaledDistance = distanceScale;
+            scaledHop = hopScale;
+            KnockBackFromPlayer();
+        }
+
         private void KnockBackFromPlayer()
         {
             var eyes = Camera.main;
             if (eyes == null) return;
 
+            bool scaled = Time.time < scaledUntil;
             if (knockback == null && !TryGetComponent(out knockback)) knockback = gameObject.AddComponent<Knockback>();
-            knockback.Push(eyes.transform.position, knockBackDistance, knockBackTime, knockBackHop, knockBackStun);
+            knockback.Push(eyes.transform.position, knockBackDistance * (scaled ? scaledDistance : 1f), knockBackTime,
+                knockBackHop * (scaled ? scaledHop : 1f), knockBackStun);
         }
 
         private void Send(string eventName)

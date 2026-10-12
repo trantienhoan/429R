@@ -33,13 +33,15 @@ namespace Game.Combat
 
         /// <summary>
         /// Throws the player: <paramref name="height"/> metres up and <paramref name="distance"/> metres along the floor,
-        /// away from <paramref name="from"/>. Returns false when there's no player to throw.
+        /// away from <paramref name="from"/>. The player's Toughness (a level-up stat) cuts both. Returns false when
+        /// there's no player to throw.
         /// </summary>
         public static bool Launch(Vector3 from, float height, float distance)
         {
             var launcher = Find();
             if (launcher == null) return false;
-            launcher.Begin(from, height, distance);
+            float share = Game.Leveling.PlayerLevel.PushShare;
+            launcher.Begin(from, height * share, distance * share);
             return true;
         }
 

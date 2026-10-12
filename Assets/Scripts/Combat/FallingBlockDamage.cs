@@ -65,6 +65,7 @@ namespace Game.Combat
             if (grab != null && grab.enabled && grab.isSelected) return;
             if (!FindPlayer() || !TouchesPlayer()) return;
             nextHitAt = Time.time + sharedCooldown;
+            DamageVignette.HitFrom(transform.position);
             HurtPlayer(fall >= heavyHitSpeed ? heavyHitEvent : lightHitEvent);
         }
 
