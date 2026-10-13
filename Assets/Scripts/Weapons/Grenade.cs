@@ -1,6 +1,7 @@
 using System;
 using Unity.XR.CoreUtils;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
@@ -16,8 +17,8 @@ namespace Game.Weapons
     /// With Shake To Charge (the bottles), shaking it in the hand charges it: shaken long enough (the first step of
     /// Charge), it explodes on whatever it hits first once it leaves the hand, however it left it, and the longer it
     /// was shaken the bigger and harder the blast; shaken to the last step it goes off in the hand (In Hand Event).
-    /// The hand buzzes while it charges, harder at each step, a puff of smoke marks each step, and once charged it
-    /// beeps, faster and faster.
+    /// The hand buzzes while it charges, harder at each step, a puff of smoke marks each step, the bottle rattles
+    /// (Shake Sound) while it's shaken, and just before it would go off in the hand it sounds its warning (Warning Sound).
     /// "Can be hit" means what the game's PlayMaker damage uses: a "Health" FSM (or "SpiderHealth", "BeeHealth", ...)
     /// with a 'health' float, next to a "Damage" FSM. Objects without a Damage FSM (story objects, minigame
     /// counters) are left alone. Things with a Damage FSM but no health of their own (the whack-a-mole
@@ -59,7 +60,7 @@ namespace Game.Weapons
         [SerializeField] private bool shakeToCharge;
         [Tooltip("Seconds shaken (x) and the blast's reach in metres (y) that gives; in between, the reach is in between. " +
                  "Shaken less than the first x, it's the plain grenade above. Shaken to the last x, it goes off in the hand.")]
-        [SerializeField] private Vector2[] charge = { new(1f, 0.5f), new(2f, 1f), new(2.5f, 2.5f), new(3f, 3f) };
+        [SerializeField] private Vector2[] charge = { new(1f, 0.5f), new(2f, 1f), new(2.5f, 1.25f), new(3f, 1.5f) };
         [Tooltip("Health everything in a charged blast loses: x at the first step of Charge, y at the last.")]
         [SerializeField] private Vector2 chargeDamage = new(3f, 8f);
         [Tooltip("How fast a charged blast pushes loose things away: x at the first step of Charge, y at the last.")]
@@ -70,8 +71,16 @@ namespace Game.Weapons
         [SerializeField] private float shakeStrength = 20f;
         [Tooltip("Event sent to the player's Damage FSM when it goes off in their hand.")]
         [SerializeField] private string inHandEvent = "DamageHeavy";
-        [Tooltip("Played once it's charged, faster and faster as it gets close to going off (e.g. a beep).")]
-        [SerializeField] private AudioClip chargeSound;
+        [Tooltip("Played from it while it's being shaken (looping, paused when the shaking stops), e.g. a bottle rattling.")]
+        [SerializeField] private AudioClip shakeSound;
+        [Range(0f, 1f)]
+        [SerializeField] private float shakeVolume = 0.8f;
+        [Tooltip("Played once from it just before it goes off in the hand (Warn Before), e.g. a beep.")]
+        [FormerlySerializedAs("chargeSound")]
+        [SerializeField] private AudioClip warningSound;
+        [Tooltip("The warning sounds when this many seconds of shaking are left before it goes off in the hand.")]
+        [Min(0f)]
+        [SerializeField] private float warnBefore = 0.7f;
 
         [Header("Effects")]
         [Tooltip("Particle effects that appear where it explodes.")]
@@ -97,7 +106,6 @@ namespace Game.Weapons
 
         private XRGrabInteractable grab;
         private Rigidbody body;
-        private AudioSource speaker;
         private XRBaseInputInteractor thrower;
         private bool inFlight;
         private float releasedAt;
@@ -113,9 +121,14 @@ namespace Game.Weapons
         private Vector3 lastHandVelocity;
         private int stepReached = -1;
         private float nextBuzz;
-        private float nextBeep;
         private Transform smokePuff;
         private XROrigin origin;
+        // Its own speaker in the world, for the rattle (looping) and the warning.
+        private AudioSource rattle;
+        private bool rattling;
+        private bool warned;
+        // A shake this much weaker than Shake Strength still keeps the rattle going, so it doesn't stutter at the edge.
+        private const float KeepRattling = 0.7f;
 
         /// <summary>Seconds it has been shaken (Shake To Charge).</summary>
         public float Shaken => shaken;
@@ -126,7 +139,6 @@ namespace Game.Weapons
         {
             grab = GetComponent<XRGrabInteractable>();
             body = GetComponent<Rigidbody>();
-            speaker = GetComponent<AudioSource>();
             grab.selectEntered.AddListener(OnGrabbed);
             grab.selectExited.AddListener(OnLetGo);
             // Ready at load, so the first explosion doesn't stutter.
@@ -135,6 +147,21 @@ namespace Game.Weapons
             foreach (var child in GetComponentsInChildren<Transform>(true))
             {
                 if (child != transform && child.name == "Smoke_Blast") smokePuff = child;
+            }
+
+            if (shakeToCharge && (shakeSound != null || warningSound != null))
+            {
+                var go = new GameObject("Shake Sound");
+                go.transform.SetParent(transform, false);
+                rattle = go.AddComponent<AudioSource>();
+                rattle.playOnAwake = false;
+                rattle.loop = true;
+                rattle.clip = shakeSound;
+                rattle.volume = shakeVolume;
+                // Heard from the bottle, where it is.
+                rattle.spatialBlend = 1f;
+                rattle.minDistance = 0.5f;
+                rattle.maxDistance = 15f;
             }
         }
 
@@ -161,6 +188,17 @@ namespace Game.Weapons
             releasedAt = Time.time;
             throwSpeed = 0f;
             hasLastHand = false;
+            Rattle(false);
+        }
+
+        // The bottle's rattle on or off (paused, so it goes on where it left off).
+        private void Rattle(bool on)
+        {
+            if (rattle == null || rattle.clip == null || on == rattling) return;
+            rattling = on;
+            if (!on) rattle.Pause();
+            else if (rattle.time > 0f) rattle.UnPause();
+            else rattle.Play();
         }
 
         private void Update()
@@ -212,12 +250,19 @@ namespace Game.Weapons
             shakeLevel = Mathf.Lerp(shakeLevel, acceleration.magnitude, 1f - Mathf.Exp(-dt / ShakeSmoothing));
             bool shaking = shakeLevel >= shakeStrength;
             if (shaking) shaken += dt;
+            Rattle(shaking || (rattling && shakeLevel >= shakeStrength * KeepRattling));
 
             float blowUp = charge[charge.Length - 1].x;
             if (shaken >= blowUp)
             {
                 ExplodeCharged(body.worldCenterOfMass, true);
                 return;
+            }
+            // Nearly there: the warning, once, from the bottle.
+            if (!warned && warningSound != null && rattle != null && shaken >= blowUp - warnBefore)
+            {
+                warned = true;
+                rattle.PlayOneShot(warningSound, volume);
             }
 
             // Each step reached: a strong buzz and a puff of smoke.
@@ -242,14 +287,6 @@ namespace Game.Weapons
             {
                 Buzz(Mathf.Lerp(0.15f, 0.6f, progress), BuzzEvery);
                 nextBuzz = Time.time + BuzzEvery;
-            }
-            // Charged: it beeps, faster and faster towards going off.
-            if (Charged && chargeSound != null && Time.time >= nextBeep)
-            {
-                if (speaker != null) speaker.PlayOneShot(chargeSound, volume);
-                else AudioSource.PlayClipAtPoint(chargeSound, transform.position, volume);
-                float towards = Mathf.InverseLerp(charge[0].x, blowUp, shaken);
-                nextBeep = Time.time + Mathf.Lerp(0.6f, 0.12f, towards);
             }
         }
 

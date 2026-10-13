@@ -25,8 +25,12 @@ namespace Game.EditorTools
             "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Smoke_Blast.prefab",
         };
         internal const string Sound = "Assets/Audio/SFX/explosion-312361.wav";
-        // The beep of a charged bottle (the Boong gun's overheat beep).
-        private const string ChargeSound = "Assets/Audio/SFX/elon_boong_beep_beep.wav";
+        // A bottle about to go off in the hand warns with the Boong gun's overheat beep; while shaken, it rattles.
+        private const string WarningSound = "Assets/Audio/SFX/elon_boong_beep_beep.wav";
+        private const string ShakeSound = "Assets/Audio/SFX/poision_bottle_shake.wav";
+
+        // Seconds shaken and the blast's reach then: small enough that a blast doesn't break a whole room at once.
+        private static readonly Vector2[] BottleCharge = { new(1f, 0.5f), new(2f, 1f), new(2.5f, 1.25f), new(3f, 1.5f) };
 
         private static readonly string[] Bottles =
         {
@@ -39,13 +43,15 @@ namespace Game.EditorTools
 
         /// <summary>
         /// Makes the empty bottles shake-to-charge grenades (see Grenade): shaken 1 s they blow 0.5 m wide, 2 s 1 m,
-        /// 2.5 s 2.5 m, and at 3 s they go off in the hand. Also has the explosion and beep sounds loaded with the
-        /// scene, so the first explosion doesn't stutter while they load. Bottles keep their other grenade settings.
+        /// 2.5 s 1.25 m, and at 3 s they go off in the hand (1.5 m). They rattle while shaken and beep a warning just
+        /// before going off in the hand. Also has the explosion, rattle and beep sounds loaded with the scene, so they
+        /// don't stutter the first time. Bottles keep their other grenade settings.
         /// </summary>
         [MenuItem("Tools/429 Game/Weapons/Make Bottles Shake To Charge")]
         public static void MakeBottlesShakeToCharge()
         {
-            var beep = AssetDatabase.LoadAssetAtPath<AudioClip>(ChargeSound);
+            var beep = AssetDatabase.LoadAssetAtPath<AudioClip>(WarningSound);
+            var rattle = AssetDatabase.LoadAssetAtPath<AudioClip>(ShakeSound);
             var made = new List<string>();
             foreach (var path in Bottles)
             {
@@ -65,8 +71,13 @@ namespace Game.EditorTools
                     }
                     var serialized = new SerializedObject(grenade);
                     serialized.FindProperty("shakeToCharge").boolValue = true;
-                    if (serialized.FindProperty("chargeSound").objectReferenceValue == null)
-                        serialized.FindProperty("chargeSound").objectReferenceValue = beep;
+                    var steps = serialized.FindProperty("charge");
+                    steps.arraySize = BottleCharge.Length;
+                    for (int i = 0; i < BottleCharge.Length; i++) steps.GetArrayElementAtIndex(i).vector2Value = BottleCharge[i];
+                    if (serialized.FindProperty("warningSound").objectReferenceValue == null)
+                        serialized.FindProperty("warningSound").objectReferenceValue = beep;
+                    if (serialized.FindProperty("shakeSound").objectReferenceValue == null)
+                        serialized.FindProperty("shakeSound").objectReferenceValue = rattle;
                     serialized.ApplyModifiedPropertiesWithoutUndo();
                     PrefabUtility.SaveAsPrefabAsset(root, path);
                     made.Add(root.name);
@@ -77,7 +88,7 @@ namespace Game.EditorTools
                 }
             }
 
-            int preloaded = PreloadSounds(Sound, ChargeSound);
+            int preloaded = PreloadSounds(Sound, WarningSound, ShakeSound);
             Debug.Log($"[Grenade] Shake to charge on: {string.Join(", ", made)}." +
                       (preloaded > 0 ? $" {preloaded} explosion sound(s) now load with the scene." : ""));
         }
