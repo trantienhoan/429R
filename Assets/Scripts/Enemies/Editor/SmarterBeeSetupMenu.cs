@@ -17,9 +17,10 @@ namespace Game.EditorTools
     /// _Boss, and Bee_Boss_PumpkinButt (a variant of the boss). The bee hovers in its own animations, so the brain moves
     /// it on the NavMesh like the others. Bees fly (Spider Brain > Flying): they attack without waiting for a turn, and at
     /// 40% health they lose their wings, drop to the floor and behave like spiders.
-    /// Bee_Boss takes TheBee's place (its pumpkin crown, toughness) and wears the white bee material
-    /// (Bee_Smol_White_Painted_Mat); it sets whack_6 in GAMESTAGES when it dies. Bee_Boss_PumpkinButt takes TheBee 1's
-    /// (its pumpkin and skull mask, its own look) and sets whack_7. Both come out of the whack barrels (Set Up Bee Barrels).
+    /// Bee_Boss takes TheBee's place (its pumpkin crown; toughness 2, not TheBee's 5, so throws and swings hurt it) and
+    /// wears the white bee material (Bee_Smol_White_Painted_Mat); it sets whack_6 in GAMESTAGES when it dies.
+    /// Bee_Boss_PumpkinButt takes TheBee 1's (its pumpkin and skull mask, its own look, toughness 2) and sets whack_7.
+    /// Both come out of the whack barrels (Set Up Bee Barrels).
     /// Run it again any time: whatever is already set up keeps its settings.
     /// </summary>
     public static class SmarterBeeSetupMenu
@@ -39,6 +40,10 @@ namespace Game.EditorTools
         private const string StagesObject = "GAMESTAGES";
         private const string BossBool = "whack_6";
         private const string PumpkinButtBool = "whack_7";
+        // Hit power is divided by this: TheBee's 5 let thrown pumpkins and most swings do nothing to the boss. Every mini
+        // boss has 2 (a normal hammer swing does 2); the Pumpkin Butt one is tougher through its health and Stun Guard.
+        private const float BossToughness = 2f;
+        private const float PumpkinButtToughness = 2f;
 
         [MenuItem("Tools/429 Game/Enemies/Set Up Smarter Bee")]
         public static void SetUp()
@@ -366,7 +371,7 @@ namespace Game.EditorTools
                     notes.Add("Bee_Boss wears TheBee's crown");
                     changed = true;
                 }
-                if (CopyToughness(oldBoss, root)) changed = true;
+                if (CopyToughness(oldBoss, root, BossToughness)) changed = true;
                 var white = AssetDatabase.LoadAssetAtPath<Material>(WhiteMaterialPath);
                 if (white != null && Wear(root, white))
                 {
@@ -405,7 +410,7 @@ namespace Game.EditorTools
                 SetFlag(list, StagesObject, StagesObject, PumpkinButtBool);
                 s.ApplyModifiedPropertiesWithoutUndo();
                 PrefabUtility.RecordPrefabInstancePropertyModifications(brain);
-                CopyToughness(oldBoss, instance);
+                CopyToughness(oldBoss, instance, PumpkinButtToughness);
                 PrefabUtility.SaveAsPrefabAsset(instance, PumpkinButtPath);
                 return true;
             }
@@ -467,18 +472,24 @@ namespace Game.EditorTools
             return count;
         }
 
-        private static bool CopyToughness(GameObject oldBoss, GameObject target)
+        // The old boss's knock-back distance, and the toughness the bee boss should have.
+        private static bool CopyToughness(GameObject oldBoss, GameObject target, float toughness)
         {
             if (!oldBoss.TryGetComponent(out EnemyHitDamage oldHits) || !target.TryGetComponent(out EnemyHitDamage hits)) return false;
             var from = new SerializedObject(oldHits);
             var to = new SerializedObject(hits);
             bool changed = false;
-            foreach (var field in new[] { "toughness", "knockBackDistance" })
+            var knockBack = from.FindProperty("knockBackDistance");
+            var ourKnockBack = to.FindProperty("knockBackDistance");
+            if (knockBack != null && ourKnockBack != null && !Mathf.Approximately(knockBack.floatValue, ourKnockBack.floatValue))
             {
-                var a = from.FindProperty(field);
-                var b = to.FindProperty(field);
-                if (a == null || b == null || Mathf.Approximately(a.floatValue, b.floatValue)) continue;
-                b.floatValue = a.floatValue;
+                ourKnockBack.floatValue = knockBack.floatValue;
+                changed = true;
+            }
+            var ourToughness = to.FindProperty("toughness");
+            if (ourToughness != null && !Mathf.Approximately(ourToughness.floatValue, toughness))
+            {
+                ourToughness.floatValue = toughness;
                 changed = true;
             }
             to.ApplyModifiedPropertiesWithoutUndo();

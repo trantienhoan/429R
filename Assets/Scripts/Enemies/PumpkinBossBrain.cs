@@ -110,7 +110,11 @@ namespace Game.Enemies
         [Header("Bugs")]
         [Tooltip("Small bugs it vomits and that come out of its thrown pumpkin; one at random each time.")]
         [SerializeField] private GameObject[] bugs = System.Array.Empty<GameObject>();
-        [Min(0)] [SerializeField] private int vomitBugs = 4;
+        [Tooltip("Bugs per vomit. It only vomits in its true form, so always below True Form Below (40%) of its health.")]
+        [Min(0)] [SerializeField] private int vomitBugs = 6;
+        [Tooltip("As it turns into its true form it calls its bugs: a vomit of this many, right away (if the game isn't " +
+                 "already full of enemies). 0 = none.")]
+        [Min(0)] [SerializeField] private int trueFormVomitBugs = 6;
         [Tooltip("The pumpkin full of bugs it throws (Bug Pumpkin).")]
         [SerializeField] private GameObject bugPumpkin;
 
@@ -289,7 +293,8 @@ namespace Game.Enemies
             if (now <= 0f) { StartDying(); return; }
             if (phase != Phase.Upper) return;
             if (now <= maxHealth * trueFormBelow && act == Act.None) StartTransform();
-            else if (daze >= dizzyAfterDamage && act != Act.Dizzy) StartDizzy(BeingHit, dizzySeconds);
+            // Too much damage too fast makes it dizzy, but only between moves: a punch or slam under way always finishes.
+            else if (daze >= dizzyAfterDamage && act == Act.None) StartDizzy(BeingHit, dizzySeconds);
         }
 
         // Whatever it was doing, it stands there swaying, arms hanging, for a few seconds: being_hit for the upper body
@@ -346,6 +351,8 @@ namespace Game.Enemies
         private void EnterUpper()
         {
             phase = Phase.Upper;
+            // Hits it took as a head or while rising don't count towards its first dizzy spell.
+            daze = 0f;
             agent.speed = trueSpeed * upperSpeed;
             Begin(Act.Slam, Slam, 2.75f);
             PlaySound(attackSound);
@@ -398,17 +405,19 @@ namespace Game.Enemies
                 StartCyclone();
                 return true;
             }
+            // A vomit while the game is already full of enemies would bring up nothing: then it slams or throws instead.
+            bool canVomit = CanVomit();
             if (distance <= 3.2f)
             {
-                if (Random.value < 0.7f) StartJumpSlam(); else StartVomit();
+                if (!canVomit || Random.value < 0.7f) StartJumpSlam(); else StartVomit(vomitBugs);
                 return true;
             }
             if (distance <= 14f)
             {
                 float r = Random.value;
                 if (r < 0.38f && distance <= 9f) StartJumpSlam();
-                else if (r < 0.72f) { Begin(Act.Throw, ThrowState, 1.5f); PlaySound(attackSound); }
-                else StartVomit();
+                else if (r < 0.72f || !canVomit) { Begin(Act.Throw, ThrowState, 1.5f); PlaySound(attackSound); }
+                else StartVomit(vomitBugs);
                 return true;
             }
             return false;
@@ -545,12 +554,14 @@ namespace Game.Enemies
             PlaySound(roarSound != null ? roarSound : attackSound);
         }
 
-        private void StartVomit()
+        private void StartVomit(int count)
         {
             Begin(Act.Vomit, VomitState, 2.0f);
-            bugsLeft = vomitBugs;
+            bugsLeft = count;
             retchesDone = 0;
         }
+
+        private bool CanVomit() => bugs.Length > 0 && EnemyLimit.AliveCount < EnemyLimit.Max;
 
         // A puff out of its mouth on every retch, bugs or not.
         private void Retch()
@@ -569,7 +580,9 @@ namespace Game.Enemies
             var forward = transform.forward;
             var spot = transform.position + forward * Random.Range(1.5f, 3.5f) + transform.right * Random.Range(-1.5f, 1.5f);
             if (!NavMesh.SamplePosition(spot, out var hit, 2.5f, NavMesh.AllAreas)) return;
-            Instantiate(prefab, hit.position, Quaternion.LookRotation(forward), transform.parent);
+            var bug = Instantiate(prefab, hit.position, Quaternion.LookRotation(forward), transform.parent);
+            // Vomited up to fight: it goes for the player at once instead of looking around first.
+            if (bug.TryGetComponent(out SpiderBrain brain)) brain.ComeAtOnce();
         }
 
         private void ThrowBugPumpkin()
@@ -660,7 +673,9 @@ namespace Game.Enemies
             agent.speed = trueSpeed;
             nextAct = Time.time + 0.4f;
             nextCyclone = Time.time + cycloneCooldown * 0.5f;
-            PlayState(Run);
+            // Its true form opens by calling its bugs: a big vomit, right away (unless the game is already full).
+            if (trueFormVomitBugs > 0 && CanVomit()) StartVomit(trueFormVomitBugs);
+            else PlayState(Run);
         }
 
         private void StartDying()

@@ -97,7 +97,8 @@ namespace Game.Enemies
                 if (prefab == null) continue;
                 var around = Random.insideUnitCircle * 1.2f;
                 if (!NavMesh.SamplePosition(at + new Vector3(around.x, 0f, around.y), out var hit, 2.5f, NavMesh.AllAreas)) continue;
-                Instantiate(prefab, hit.position, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f), transform.parent);
+                var bug = Instantiate(prefab, hit.position, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f), transform.parent);
+                if (bug.TryGetComponent(out SpiderBrain brain)) brain.ComeAtOnce();
             }
             Destroy(gameObject);
         }

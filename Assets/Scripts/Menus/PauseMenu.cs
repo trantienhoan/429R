@@ -1,4 +1,5 @@
 using System;
+using Game.Combat;
 using Game.Locomotion;
 using Game.Saving;
 using TMPro;
@@ -12,8 +13,9 @@ namespace Game.Menus
 {
     /// <summary>
     /// Pause menu. The menu button on the left controller (or A on the right, or Esc) stops the game
-    /// and shows Resume, Quit, a random tip and three options in front of you: how arm swinging works, the player's
-    /// height (to play seated, or stand taller or shorter) and how strong the comfort vignette is. Holding the title
+    /// and shows Resume, Quit, a random tip and four options in front of you: how arm swinging works, the player's
+    /// height (to play seated, or stand taller or shorter), how strong the comfort vignette is and whether damage
+    /// numbers show over hit enemies. Holding the title
     /// for a while (7 s) asks whether to reset all saved progress and start the game over. Quit asks how: Re-Dream
     /// (start a new run from the very beginning, keeping candies and items) or Get a Rest (close the game; next time it
     /// continues from the last checkpoint).
@@ -37,6 +39,9 @@ namespace Game.Menus
         [Tooltip("Each press switches the comfort vignette to the next strength: low, medium, high, off.")]
         [SerializeField] private Button vignetteButton;
         [SerializeField] private TMP_Text vignetteText;
+        [Tooltip("Each press switches the damage numbers over hit enemies on or off.")]
+        [SerializeField] private Button damageNumbersButton;
+        [SerializeField] private TMP_Text damageNumbersText;
         [Tooltip("Left empty, the one in the scene is used.")]
         [SerializeField] private ArmSwingMoveProvider armSwing;
         [Tooltip("Left empty, the one on the XR Origin is used.")]
@@ -145,6 +150,7 @@ namespace Game.Menus
             if (heightDownButton != null) heightDownButton.onClick.AddListener(() => ChangeHeight(-1));
             if (heightUpButton != null) heightUpButton.onClick.AddListener(() => ChangeHeight(1));
             if (vignetteButton != null) vignetteButton.onClick.AddListener(NextVignetteLevel);
+            if (damageNumbersButton != null) damageNumbersButton.onClick.AddListener(ToggleDamageNumbers);
             if (resetHold != null) resetHold.Held += AskResetProgress;
             if (resetConfirmButton != null) resetConfirmButton.onClick.AddListener(ResetProgressAndRestart);
             if (resetCancelButton != null) resetCancelButton.onClick.AddListener(HideResetConfirm);
@@ -332,6 +338,12 @@ namespace Game.Menus
             ShowOptions();
         }
 
+        private void ToggleDamageNumbers()
+        {
+            DamageNumbers.Enabled = !DamageNumbers.Enabled;
+            ShowOptions();
+        }
+
         private void ShowOptions()
         {
             FindOptions();
@@ -343,6 +355,7 @@ namespace Game.Menus
             if (heightText != null) heightText.text = playerHeight != null ? HeightLabel(playerHeight.Offset) : "Height: not set up";
 
             if (vignetteText != null) vignetteText.text = ComfortVignetteLevel.Label(ComfortVignetteLevel.Current);
+            if (damageNumbersText != null) damageNumbersText.text = DamageNumbers.Label();
         }
 
         private void FindOptions()

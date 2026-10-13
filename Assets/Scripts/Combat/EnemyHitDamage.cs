@@ -73,6 +73,7 @@ namespace Game.Combat
         private FsmFloat health;
         private Knockback knockback;
         private NavMeshAgent agent;
+        private SpiderBrain brain;
         private float nextHit;
         private float nextFlinch;
         private bool dead;
@@ -89,6 +90,9 @@ namespace Game.Combat
 
         /// <summary>Raised after every hit that hurts an enemy: the enemy, and what the hit did.</summary>
         public static event Action<EnemyHitDamage, HitResult> AnyHit;
+
+        /// <summary>Raised for a hit too weak to hurt (but more than a touch), at most every Flinch Interval: the enemy.</summary>
+        public static event Action<EnemyHitDamage> WeakHit;
 
         /// <summary>The most recent hit on this enemy, whether it hurt or not.</summary>
         public HitResult LastHit { get; private set; }
@@ -107,6 +111,14 @@ namespace Game.Combat
         private static void ResetStatics()
         {
             AnyHit = null;
+            WeakHit = null;
+        }
+
+        // Its Spider Brain, if it has one: with a Stun Guard the brain decides whether a knock-back may stop it. In
+        // Awake, so a knock-back in the frame it spawns (a fist, a level-up burst) already asks it.
+        private void Awake()
+        {
+            TryGetComponent(out brain);
         }
 
         // In Start, so every PlayMakerFSM has set itself up in Awake first.
@@ -153,12 +165,15 @@ namespace Game.Combat
                 {
                     nextFlinch = Time.time + FlinchInterval;
                     Send(weakHitEvent);
+                    WeakHit?.Invoke(this);
                 }
                 return;
             }
 
             health.Value -= hit.Damage;
             nextHit = Time.time + hitCooldown;
+            // Its damage number (Damage Numbers watches the health) shows big.
+            if (hit.IsBig) DamageNumbers.NoteBigHit(gameObject);
             // The killing blow still plays the hit reaction (sound and sparks); the Health FSM's death state switches
             // that FSM off later this frame.
             Send(hitEvent);
@@ -221,6 +236,8 @@ namespace Game.Combat
             if (hit.Damage > 0f)
             {
                 health.Value -= hit.Damage;
+                // A knock-out blow's damage number shows big.
+                DamageNumbers.NoteBigHit(gameObject);
                 Send(hitEvent);
                 if (health.Value <= 0f)
                 {
@@ -305,9 +322,13 @@ namespace Game.Combat
             if (eyes == null) return;
 
             bool scaled = Time.time < scaledUntil;
+            float stun = scaled ? scaledStun : knockBackStun;
+            // A boss with a Stun Guard shrugs it off while its guard is up (the hit's damage already counted). A killing
+            // blow still throws the body.
+            if (!dead && brain != null && !brain.TryStun(knockBackTime + stun)) return;
             if (knockback == null && !TryGetComponent(out knockback)) knockback = gameObject.AddComponent<Knockback>();
             knockback.Push(eyes.transform.position, knockBackDistance * (scaled ? scaledDistance : 1f), knockBackTime,
-                knockBackHop * (scaled ? scaledHop : 1f), scaled ? scaledStun : knockBackStun);
+                knockBackHop * (scaled ? scaledHop : 1f), stun);
         }
 
         private void Send(string eventName)

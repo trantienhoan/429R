@@ -28,8 +28,8 @@ namespace Game.EditorTools
             "Get a Rest: close the game. Next time you play, you go on from your last checkpoint.";
 
         /// <summary>
-        /// Creates the pause menu, or adds what an existing one is missing (the Arm swing, Height and Comfort vignette
-        /// options), puts Player Height on the XR Origin and makes the XR Origin track from the real floor.
+        /// Creates the pause menu, or adds what an existing one is missing (the Arm swing, Height, Comfort vignette and
+        /// Damage numbers options), puts Player Height on the XR Origin and makes the XR Origin track from the real floor.
         /// </summary>
         [MenuItem("Tools/429 Game/Menu/Set Up Pause Menu")]
         public static void SetUpPauseMenu()
@@ -53,6 +53,7 @@ namespace Game.EditorTools
 
             if (AddOptions(menu, font)) notes.Add("added the Arm swing and Height options");
             if (AddVignetteOption(menu, font)) notes.Add("added the Comfort vignette option");
+            if (AddDamageNumbersOption(menu, font)) notes.Add("added the Damage numbers option");
             if (AddResetProgress(menu, font)) notes.Add("added Reset Progress (hold the title for 7 s)");
             if (AddQuitChoice(menu, font)) notes.Add("Quit now asks: Re-Dream or Get a Rest");
             if (TidyQuitChoice(menu)) notes.Add("the Quit box now has Re-Dream and Get a Rest, and Back is an arrow in its top left");
@@ -194,6 +195,33 @@ namespace Game.EditorTools
             Undo.RegisterCreatedObjectUndo(vignette.gameObject, "Add Comfort Vignette Option");
             SetupUtility.SetReference(menu, "vignetteButton", vignette);
             SetupUtility.SetReference(menu, "vignetteText", vignette.GetComponentInChildren<TMP_Text>(true));
+            return true;
+        }
+
+        // Adds the Damage numbers on/off row under the other options, the same way as the Comfort vignette row.
+        private static bool AddDamageNumbersOption(PauseMenu menu, TMP_FontAsset font)
+        {
+            var serialized = new SerializedObject(menu);
+            if (serialized.FindProperty("damageNumbersButton").objectReferenceValue != null) return false;
+            if (serialized.FindProperty("panel").objectReferenceValue is not GameObject panelObject ||
+                panelObject.transform is not RectTransform panel) return false;
+            var options = panel.Find("Options") as RectTransform;
+            if (options == null)
+            {
+                Debug.LogWarning("[Pause Menu Setup] The Pause Menu panel has no Options group, so the Damage numbers option wasn't added.", menu);
+                return false;
+            }
+
+            const float grow = OptionRowHeight + OptionSpacing;
+            Undo.RecordObject(panel, "Add Damage Numbers Option");
+            panel.sizeDelta = new Vector2(panel.sizeDelta.x, panel.sizeDelta.y + grow);
+            Undo.RecordObject(options, "Add Damage Numbers Option");
+            options.offsetMin = new Vector2(options.offsetMin.x, options.offsetMin.y - grow);
+
+            var toggle = SetupUtility.CreateButton("Damage Numbers", options, "Damage numbers: on", 24f, font, OptionColor);
+            Undo.RegisterCreatedObjectUndo(toggle.gameObject, "Add Damage Numbers Option");
+            SetupUtility.SetReference(menu, "damageNumbersButton", toggle);
+            SetupUtility.SetReference(menu, "damageNumbersText", toggle.GetComponentInChildren<TMP_Text>(true));
             return true;
         }
 

@@ -13,7 +13,7 @@ namespace Game.EditorTools
     /// Makes the smarter cockroach the same way as the smarter spider (Tools > 429 Game > Enemies):
     /// Cockroach_Smarter (a copy of Cockroach with Spider Brain instead of its old "Cockroach" FSM), its size variants
     /// Cockroach_Small / _Normal / _Boss, and Cockroach_Boss_PumpkinButt (a variant of the boss).
-    /// Cockroach_Boss takes TheCockroach's place (its skull mask, Bulldozer, toughness; BigRoachDown in EnemyManager 2)
+    /// Cockroach_Boss takes TheCockroach's place (its skull mask, Bulldozer; toughness 2; BigRoachDown in EnemyManager 2)
     /// and wears the white cockroach material (Cockroach_Smol_White_Painted_Mat, made like the white spider's).
     /// Cockroach_Boss_PumpkinButt takes TheCockroach 1's (its pumpkin and skull, its brown look; BigRoach1Down in
     /// EnemyManager 3, the manager that calls it).
@@ -33,6 +33,8 @@ namespace Game.EditorTools
         private const string PumpkinButtManager = "EnemyManager3";
         private const string OldBrainFsm = "Cockroach";
         private const string AttackSound = "Assets/Audio/SFX/bug_Attack.wav";
+        // Hit power is divided by this: TheCockroach's 5 meant a normal hammer swing did nothing. Every mini boss has 2.
+        private const float BossToughness = 2f;
 
         [MenuItem("Tools/429 Game/Enemies/Set Up Smarter Cockroach")]
         public static void SetUp()
@@ -207,7 +209,7 @@ namespace Game.EditorTools
                     notes.Add("Cockroach_Boss wears TheCockroach's skull mask");
                     changed = true;
                 }
-                if (CopyToughness(oldBoss, root)) changed = true;
+                if (CopyToughness(oldBoss, root, BossToughness)) changed = true;
                 var white = AssetDatabase.LoadAssetAtPath<Material>(WhiteMaterialPath);
                 if (white != null && Wear(root, white))
                 {
@@ -246,7 +248,7 @@ namespace Game.EditorTools
                 SetFlag(list, PumpkinButtManager, "BigRoach1Down");
                 s.ApplyModifiedPropertiesWithoutUndo();
                 PrefabUtility.RecordPrefabInstancePropertyModifications(brain);
-                CopyToughness(oldBoss, instance);
+                CopyToughness(oldBoss, instance, BossToughness);
                 PrefabUtility.SaveAsPrefabAsset(instance, PumpkinButtPath);
                 return true;
             }
@@ -346,18 +348,24 @@ namespace Game.EditorTools
             return count;
         }
 
-        private static bool CopyToughness(GameObject oldBoss, GameObject target)
+        // The old boss's knock-back distance, and the toughness the cockroach boss should have.
+        private static bool CopyToughness(GameObject oldBoss, GameObject target, float toughness)
         {
             if (!oldBoss.TryGetComponent(out EnemyHitDamage oldHits) || !target.TryGetComponent(out EnemyHitDamage hits)) return false;
             var from = new SerializedObject(oldHits);
             var to = new SerializedObject(hits);
             bool changed = false;
-            foreach (var field in new[] { "toughness", "knockBackDistance" })
+            var knockBack = from.FindProperty("knockBackDistance");
+            var ourKnockBack = to.FindProperty("knockBackDistance");
+            if (knockBack != null && ourKnockBack != null && !Mathf.Approximately(knockBack.floatValue, ourKnockBack.floatValue))
             {
-                var a = from.FindProperty(field);
-                var b = to.FindProperty(field);
-                if (a == null || b == null || Mathf.Approximately(a.floatValue, b.floatValue)) continue;
-                b.floatValue = a.floatValue;
+                ourKnockBack.floatValue = knockBack.floatValue;
+                changed = true;
+            }
+            var ourToughness = to.FindProperty("toughness");
+            if (ourToughness != null && !Mathf.Approximately(ourToughness.floatValue, toughness))
+            {
+                ourToughness.floatValue = toughness;
                 changed = true;
             }
             to.ApplyModifiedPropertiesWithoutUndo();

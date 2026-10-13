@@ -19,18 +19,22 @@ namespace Game.Enemies
     /// attack starts with a wind-up (it rears up: the player's chance to step back or block), then it picks one of its
     /// Attacks that fits the distance, lunges and bites. The bite only hurts if its mouth actually touches the player's
     /// body collider; a weapon held in the way, or a fist, blocks it. Afterwards it backs off and circles again.
-    /// A hit makes it flinch (not again for a moment, so it can't be stun-locked); low on health it runs away once.
+    /// A hit makes it flinch (not again for Flinch Cooldown; with a Stun Guard nothing stops it again for that many
+    /// seconds after any stop, so a boss can't be stun-locked); low on health it runs away once.
     /// Size picks Small, Normal or Boss (or one at random by Weight): each has its own size range, health, speed and
     /// bite. It can first play an appearing animation (e.g. climbing out of the ground) before it does anything.
     /// While it waits for its turn it may shoot a web ball (Web Shot) that hurts and slows the player. A flier (Flies,
     /// e.g. the bee) flies at heights the brain sets (its animations stay at the root): it circles up high, dives to the
     /// player's chest to sting whenever it's ready (no waiting for a turn), and after a sting, a hit or a dodge goes
     /// back up, flies around a little and dives again. Low on health it loses its wings, drops to the floor and from
-    /// then on behaves like a spider (Flying section). Once its dodge
+    /// then on walks like a spider, but still attacks without waiting for a turn (Flying section). Once its dodge
     /// animations are added it dodges swings (back) and things thrown or shot at it (to the side), now and then.
     /// Health, death and hits stay with its Health FSM and Enemy Hit Damage. It sends events to its own FSMs (Noticed,
-    /// Attack, Bite, Blocked, Missed, Flinch, Flee, Died) for sounds and effects made in PlayMaker, and when it dies it
-    /// can set bools in other FSMs, like the old bosses' Set Fsm Variable (e.g. BigSpiderDown in an EnemyManager).
+    /// Attack, Bite, Blocked, Missed, Flinch, WeakFlinch, Flee, CallMinions, Died) for sounds and effects made in
+    /// PlayMaker, and when it dies it can set bools in other FSMs, like the old bosses' Set Fsm Variable (e.g.
+    /// BigSpiderDown in an EnemyManager).
+    /// A boss with a Minion (Calling minions) calls for help once, low on health: the enemies around it come for the
+    /// player and a few of its minions come out around it.
     /// With Target on Tagged Object it ignores the player and goes for the nearest object with that tag instead (the
     /// tree spiders: the PumpkinTree, whose Damage FSM its bites hurt).
     /// Goes on the spider's root, next to its NavMesh Agent; Tools > 429 Game > Enemies > Set Up Smarter Spider adds it.
@@ -67,7 +71,8 @@ namespace Game.Enemies
             [Min(0f)]
             public float maxDistance = 1.8f;
             [Tooltip("The furthest it hops at the player during the attack, in metres. It hops just far enough to reach " +
-                     "where the player was as the attack started, so stepping back then makes it miss.")]
+                     "where the player was as the attack started, so stepping back then makes it miss (a flier with Homing " +
+                     "Sting follows them instead).")]
             [Min(0f)]
             public float lunge = 1f;
             [Tooltip("When the bite can hurt, in seconds after the attack starts: from...")]
@@ -384,6 +389,14 @@ namespace Game.Enemies
         [SerializeField] private float climbSpeed = 2f;
         [Min(0.1f)]
         [SerializeField] private float diveSpeed = 3.5f;
+        [Tooltip("It keeps after the player while it stings: during the wind-up it drifts after them if they back off, " +
+                 "and during the sting it keeps turning to them and darts to where they are now, not where they were " +
+                 "when the sting started. So a small step back doesn't dodge it; a block, a dodge to the side or " +
+                 "running away still do. Off: it lunges at where the player was, like the spider.")]
+        [SerializeField] private bool homingSting = true;
+        [Tooltip("How much further than the attack's Lunge it may chase a player who backs off, in metres.")]
+        [Min(0f)]
+        [SerializeField] private float homingReach = 0.7f;
         [Tooltip("After a sting, a hit or a dodge it flies around up high for this many seconds (random between) " +
                  "before it dives again.")]
         [SerializeField] private Vector2 highWait = new(2f, 4f);
@@ -391,7 +404,8 @@ namespace Game.Enemies
         [Min(0f)]
         [SerializeField] private float bob = 0.08f;
         [Tooltip("With this share of its health left or less (0.4 = 40%), it loses its wings: it drops to the floor " +
-                 "and from then on behaves like a spider (takes turns, skitters, Grounded animations). 0 = never.")]
+                 "and from then on walks and stings with its Grounded animations (Ground Speed; it skitters only if " +
+                 "Skitter is on), still without waiting for a turn. 0 = never.")]
         [Range(0f, 1f)]
         [SerializeField] private float groundBelowHealth = 0.4f;
         [Tooltip("The wing bones in its model: they shrink away when the wings are lost.")]
@@ -429,6 +443,20 @@ namespace Game.Enemies
         [Tooltip("After a flinch, more hits don't stop it for this long, in seconds (they still hurt).")]
         [Min(0f)]
         [SerializeField] private float flinchCooldown = 1f;
+        [Tooltip("Stun guard: after something stops it (a flinch, a knock-back, a knock-out), nothing can stop it again " +
+                 "for this many seconds, counted from when it's back on its feet. Light taps never make it jerk, and a " +
+                 "flier comes straight back at the player after a hit instead of flying up. Hits still hurt. 0 = off " +
+                 "(minions and the white mini bosses can be stun-locked). Pumpkin Butt mini bosses: 4.")]
+        [Min(0f)]
+        [SerializeField] private float stunGuardSeconds;
+        [Tooltip("A hit too weak to hurt it (a soft throw, a light tap) still makes it flinch this long, in seconds: it " +
+                 "jerks back a little with its hit look and hit sound, then carries on with what it was doing. A sting, " +
+                 "bite or web shot already under way isn't stopped. 0 = no reaction.")]
+        [Min(0f)]
+        [SerializeField] private float weakFlinchSeconds = 0.25f;
+        [Tooltip("How far a weak hit pushes it back, in metres.")]
+        [Min(0f)]
+        [SerializeField] private float weakFlinchPush = 0.15f;
         [Tooltip("With this share of its health left or less (0.3 = 30%), it runs away once. 0 = never.")]
         [Range(0f, 1f)]
         [SerializeField] private float fleeBelowHealth = 0.3f;
@@ -477,6 +505,33 @@ namespace Game.Enemies
                  "that EnemyManager knows its boss is down. Empty: none.")]
         [SerializeField] private List<DeathFlag> setOnDeath = new();
 
+        [Header("Calling minions (bosses)")]
+        [Tooltip("The minion a boss calls when it gets low on health: Spider_Small for the white Spider_Boss, " +
+                 "Spider_Normal for Spider_Boss_PumpkinButt, and so on. Empty: it never calls (every regular enemy).")]
+        [SerializeField] private GameObject minion;
+        [Tooltip("With this share of its health left or less (0.4 = 40%) it calls, once: it cries out, every enemy " +
+                 "within Rally Range comes for the player, and Minion Count minions come out around it.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float callBelowHealth = 0.4f;
+        [Tooltip("How many minions come, random between (both included).")]
+        [SerializeField] private Vector2Int minionCount = new(3, 5);
+        [Tooltip("Seconds between one minion and the next (random between).")]
+        [SerializeField] private Vector2 minionGap = new(0.4f, 0.9f);
+        [Tooltip("How far from it they come out, in metres (random between), on floor it can walk to.")]
+        [SerializeField] private Vector2 minionSpread = new(2f, 4.5f);
+        [Tooltip("They never come out closer to the player than this, in metres.")]
+        [Min(0f)]
+        [SerializeField] private float minionMinPlayerDistance = 2f;
+        [Tooltip("Made where each minion comes out, e.g. Smoke_Blast (removed after 3 s). Empty: none.")]
+        [SerializeField] private GameObject minionEffect;
+        [Tooltip("When it calls, every enemy this close to it, in metres, comes for the player too (the stage's " +
+                 "minions already there). 0 = none.")]
+        [Min(0f)]
+        [SerializeField] private float rallyRange = 20f;
+        [Tooltip("Each minion waits for room in the Enemy Limit (12 on Quest, 20 on PC): with the game full, the next " +
+                 "one comes as soon as another enemy dies. Off: they all come regardless.")]
+        [SerializeField] private bool minionsUseEnemyLimit = true;
+
         [Header("Sounds")]
         [SerializeField] private AudioClip[] noticeSounds = Array.Empty<AudioClip>();
         [SerializeField] private AudioClip[] hitSounds = Array.Empty<AudioClip>();
@@ -493,6 +548,7 @@ namespace Game.Enemies
 
         private const string PlayerVariable = "Player";
         private const string PlayerDamageFsm = "Damage";
+        private const string SpawnedStuffVariable = "CurrentlySpawnedStuffs";
         private const float SensesEvery = 0.2f;
         private const float RepathEvery = 0.25f;
         private const float NoticeSeconds = 0.5f;
@@ -538,11 +594,27 @@ namespace Game.Enemies
         private float bobPhase;
         private readonly List<Transform> wings = new();
         private bool fled;
+        // Calling minions: done (once), how many are still to come, and when the next one may.
+        private bool called;
+        private int minionsLeft;
+        private float nextMinion;
         private float lastSeen;
         private float nextSenses;
         private float nextRepath;
         private float nextAttack;
         private float nextFlinch;
+        private float weakFlinchUntil;
+        private float nextWeakFlinch;
+        private Vector3 weakFlinchAway;
+        private bool weakFlinching;
+        private State weakFlinchState;
+        // Stun guard: until when nothing can stop it, and the frame of the last stop (one hit's knock-back and flinch
+        // come in the same frame and count as one stop).
+        private float stunGuardUntil;
+        private int stunFrame = -1;
+        // Where its agent was going before a weak flinch stopped it, so it carries on afterwards.
+        private bool resumeAgent;
+        private bool resumeTurning;
         private float burstUntil;
         private bool pausing;
         private float orbitAngle;
@@ -594,6 +666,8 @@ namespace Game.Enemies
 
         /// <summary>Which size it turned out to be: Small, Normal or Boss.</summary>
         public string SizeName => kindName.ToString();
+        /// <summary>True while its Stun Guard is up: hits hurt but don't stop it (for debugging and FSMs).</summary>
+        public bool IsStunGuarded => stunGuardSeconds > 0f && Time.time < stunGuardUntil;
 
         private float WalkSpeed => walkSpeed * kind.speed * (grounded ? groundSpeed : 1f);
         private float RunSpeed => runSpeed * kind.speed * (grounded ? groundSpeed : 1f);
@@ -601,6 +675,8 @@ namespace Game.Enemies
 
         /// <summary>Flying right now (a flier that hasn't lost its wings).</summary>
         public bool IsFlying => flies && !grounded;
+        // How much further it may chase a backing-off player while it stings (fliers with Homing Sting; 0 otherwise).
+        private float HomingExtra => flies && homingSting ? homingReach : 0f;
 
         // On the ground a flier uses its Grounded animations, or its flying ones while those aren't made yet.
         private string Look(string ground, string flying) => grounded && HasAnimationQuiet(ground) ? ground : flying;
@@ -657,6 +733,7 @@ namespace Game.Enemies
             nextAttack = Time.time + Random.Range(0f, attackCooldown.y) * Rest;
             nextWeb =Time.time + Random.Range(2f, Mathf.Max(2f, webCooldown.y));
             EnemyHitDamage.AnyHit += OnAnyHit;
+            EnemyHitDamage.WeakHit += OnWeakHit;
 
             if (StartAppearing()) return;
             if (noticeOnSpawn) Notice(true);
@@ -678,6 +755,7 @@ namespace Game.Enemies
         private void OnDestroy()
         {
             EnemyHitDamage.AnyHit -= OnAnyHit;
+            EnemyHitDamage.WeakHit -= OnWeakHit;
         }
 
         private void Update()
@@ -693,6 +771,9 @@ namespace Game.Enemies
             if (player == null) player = FindAnyObjectByType<XROrigin>();
             if (player == null || player.Camera == null || !agent.isOnNavMesh) return;
 
+            // Low on health a boss calls its minions, even while it's knocked back or knocked out.
+            UpdateCall();
+
             // Knockback moves the agent itself; wait until it's done.
             if (knockback != null || TryGetComponent(out knockback))
             {
@@ -703,6 +784,23 @@ namespace Game.Enemies
             if (Time.time >= nextThreatScan) ScanThreats();
             if (IsFlying && groundBelowHealth > 0f && state != State.Appear && health != null && health.Value / startHealth <= groundBelowHealth)
                 LoseWings();
+
+            // A weak hit's flinch: a short jerk back, then whatever it was doing carries on.
+            // Something bigger (a real hit, a dodge) took over: that state handles the agent from here.
+            if (weakFlinching && state != weakFlinchState) weakFlinching = false;
+            if (weakFlinching)
+            {
+                if (Time.time < weakFlinchUntil)
+                {
+                    agent.Move(weakFlinchAway * (weakFlinchPush / Mathf.Max(0.05f, weakFlinchSeconds) * Time.deltaTime));
+                    FallIfLifted();
+                    if (flies) UpdateHeight();
+                    return;
+                }
+                weakFlinching = false;
+                agent.isStopped = !resumeAgent;
+                agent.updateRotation = resumeTurning;
+            }
 
             switch (state)
             {
@@ -821,6 +919,17 @@ namespace Game.Enemies
         public void Notice()
         {
             Notice(true);
+        }
+
+        /// <summary>
+        /// For an enemy just made by a boss or a spawner: it comes for the player as soon as it's out (like Notice On
+        /// Spawn) instead of looking around first. Safe to call straight after Instantiate.
+        /// </summary>
+        public void ComeAtOnce()
+        {
+            noticeOnSpawn = true;
+            // Until Start has run, and while it climbs out, its state is Appear: Start, or the end of appearing, does it.
+            if (state != State.Appear) Notice(true);
         }
 
         private void Notice(bool tellFriends)
@@ -1009,6 +1118,13 @@ namespace Game.Enemies
         private void DoPrepare()
         {
             Face(PlayerFloor());
+            if (HomingExtra > 0f)
+            {
+                // Keeps the gap it wound up at, so backing off a little during the warning doesn't throw it off.
+                var to = PlayerFloor() - transform.position;
+                float gap = to.magnitude - WindUpDistance();
+                if (gap > 0.05f) agent.Move(to.normalized * Mathf.Min(gap, RunSpeed * 0.6f * Time.deltaTime));
+            }
             if (Time.time < stateUntil) return;
 
             float distance = PlayerDistance();
@@ -1025,6 +1141,8 @@ namespace Game.Enemies
             attackResolved = false;
             // Just far enough to put its mouth where the player is now (a face leap stops just in front of the face).
             lungeTotal = lungeLeft = Mathf.Clamp(distance - move.reach * Size() - (move.leapToFace ? 0.1f : 0.05f), 0f, move.lunge);
+            // A homing sting may go further, up to its whole budget, if the player backs off.
+            if (HomingExtra > 0f && !move.leapToFace) lungeLeft = move.lunge + HomingExtra;
             Play(move.animation, true);
             if (move.sound != null) PlayOne(move.sound);
             SendToOwnFsms("Attack");
@@ -1037,7 +1155,8 @@ namespace Game.Enemies
         {
             float t = Time.time - attackStart;
             var target = PlayerFloor();
-            if (t < move.hitFrom) Face(target);
+            bool homing = HomingExtra > 0f && !move.leapToFace;
+            if (t < move.hitFrom || (homing && t <= move.hitUntil)) Face(target);
 
             // A face leap covers the distance while it springs up; a bite lunges until its bite window ends.
             float lungeStart = move.leapToFace ? Mathf.Max(0f, move.hitFrom - leapRiseFall.x) : Mathf.Max(0f, move.hitFrom - LungeLead);
@@ -1045,9 +1164,22 @@ namespace Game.Enemies
             if (t >= lungeStart && t <= lungeEnd && lungeLeft > 0f)
             {
                 float window = Mathf.Max(0.05f, lungeEnd - lungeStart);
-                float step = Mathf.Min(lungeLeft, lungeTotal / window * Time.deltaTime);
-                agent.Move(transform.forward * step);
-                lungeLeft -= step;
+                if (homing)
+                {
+                    // Darts at where the player is now, stopping with its sting on them, fast enough to cover its
+                    // whole budget in the window.
+                    var to = target - transform.position;
+                    float need = to.magnitude - move.reach * Size() - 0.05f;
+                    float step = Mathf.Min(lungeLeft, Mathf.Max(0f, need), (move.lunge + HomingExtra) / window * Time.deltaTime);
+                    if (step > 0f) agent.Move(to.normalized * step);
+                    lungeLeft -= step;
+                }
+                else
+                {
+                    float step = Mathf.Min(lungeLeft, lungeTotal / window * Time.deltaTime);
+                    agent.Move(transform.forward * step);
+                    lungeLeft -= step;
+                }
             }
             if (move.leapToFace) Leap(t);
 
@@ -1282,7 +1414,8 @@ namespace Game.Enemies
                 SendToOwnFsms("Flee");
                 return;
             }
-            if (IsFlying && noticed)
+            // A flier goes back up after a hit; one with a Stun Guard (a Pumpkin Butt boss) comes straight back instead.
+            if (IsFlying && noticed && stunGuardSeconds <= 0f)
             {
                 GoHigh();
                 return;
@@ -1295,6 +1428,85 @@ namespace Game.Enemies
             Play(RunLook);
             SetLegs();
             if (Time.time >= stateUntil || (!agent.pathPending && agent.remainingDistance <= 0.3f)) Enter(State.Chase, 0f);
+        }
+
+        // ---- Calling minions (bosses) ----
+
+        // Low on health a boss calls for help, once: a cry, every enemy around comes for the player, and its minions
+        // come out around it one after another, each waiting for room in the Enemy Limit. Nothing more once it's dead
+        // (Update no longer runs).
+        private void UpdateCall()
+        {
+            if (minion == null || callBelowHealth <= 0f || health == null) return;
+            if (!called)
+            {
+                if (state == State.Appear || health.Value / startHealth > callBelowHealth) return;
+                called = true;
+                minionsLeft = Random.Range(minionCount.x, Mathf.Max(minionCount.x, minionCount.y) + 1);
+                nextMinion = Time.time + 0.3f;
+                PlayOne(noticeSounds, true);
+                SendToOwnFsms("CallMinions");
+                RallyMinions();
+                return;
+            }
+            if (minionsLeft <= 0 || Time.time < nextMinion) return;
+            // The game is full: it tries again next frame, so the next one comes as soon as another enemy dies.
+            if (minionsUseEnemyLimit && !EnemyLimit.TryTakeSlot()) return;
+            minionsLeft--;
+            nextMinion = Time.time + Random.Range(minionGap.x, Mathf.Max(minionGap.x, minionGap.y));
+            CallMinion();
+        }
+
+        // The stage's enemies already around it stop wandering and come for the player (not the tree spiders).
+        private void RallyMinions()
+        {
+            if (rallyRange <= 0f) return;
+            foreach (var other in spiders)
+            {
+                if (other == this || other.GoesForObject || other.state == State.Dead) continue;
+                if ((other.transform.position - transform.position).sqrMagnitude <= rallyRange * rallyRange) other.Notice(false);
+            }
+        }
+
+        private void CallMinion()
+        {
+            var spot = MinionSpot();
+            var parent = SpawnedStuff();
+            if (parent == null) parent = transform.parent;
+            var made = Instantiate(minion, spot, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f), parent);
+            // It comes for the player as soon as it's out (a spider or roach still climbs out of the ground first).
+            if (made.TryGetComponent(out SpiderBrain brain)) brain.ComeAtOnce();
+            // The effect (Smoke_Blast) doesn't remove itself.
+            if (minionEffect != null) Destroy(Instantiate(minionEffect, spot, Quaternion.identity, parent), 3f);
+        }
+
+        // On floor around it that it can walk to in a straight line (not behind a wall or up on a table), and not on top
+        // of the player. Its own spot when nothing else fits.
+        private Vector3 MinionSpot()
+        {
+            // From its own spot on the NavMesh: a knockback's hop lifts it off the floor.
+            var from = NavMesh.SamplePosition(transform.position, out var own, 2f, NavMesh.AllAreas) ? own.position : transform.position;
+            var playerFloor = PlayerFloor();
+            for (int i = 0; i < 10; i++)
+            {
+                float angle = Random.Range(0f, Mathf.PI * 2f);
+                float distance = Random.Range(minionSpread.x, Mathf.Max(minionSpread.x, minionSpread.y));
+                var point = from + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * distance;
+                if (!NavMesh.SamplePosition(point, out var hit, 1.5f, NavMesh.AllAreas)) continue;
+                if (NavMesh.Raycast(from, hit.position, out _, NavMesh.AllAreas)) continue;
+                var fromPlayer = hit.position - playerFloor;
+                fromPlayer.y = 0f;
+                if (fromPlayer.sqrMagnitude < minionMinPlayerDistance * minionMinPlayerDistance) continue;
+                return hit.position;
+            }
+            return from;
+        }
+
+        // Where spawned things go (PlayMaker global CurrentlySpawnedStuffs), so the stage clean-up removes them too.
+        private static Transform SpawnedStuff()
+        {
+            var holder = FsmVariables.GlobalVariables.FindFsmGameObject(SpawnedStuffVariable);
+            return holder != null && holder.Value != null ? holder.Value.transform : null;
         }
 
         // ---- Losing its wings ----
@@ -1705,6 +1917,23 @@ namespace Game.Enemies
 
         // ---- Hits and death ----
 
+        /// <summary>
+        /// Asked before anything stops it for this many seconds (its flinch, and Enemy Hit Damage's knock-backs and
+        /// knock-outs). Without a Stun Guard always yes. With one: no while the guard is up; otherwise yes, and the guard
+        /// then lasts until Stun Guard Seconds after that stop ends. Everything one hit does (its knock-back and its
+        /// flinch) happens in one frame and counts as one stop: the longest of them sets the guard.
+        /// </summary>
+        public bool TryStun(float seconds)
+        {
+            if (stunGuardSeconds <= 0f || state == State.Dead) return true;
+            bool sameHit = stunFrame == Time.frameCount;
+            if (!sameHit && Time.time < stunGuardUntil) return false;
+            float until = Time.time + Mathf.Max(0f, seconds) + stunGuardSeconds;
+            stunGuardUntil = sameHit ? Mathf.Max(stunGuardUntil, until) : until;
+            stunFrame = Time.frameCount;
+            return true;
+        }
+
         private void OnAnyHit(EnemyHitDamage enemy, HitResult hit)
         {
             if (enemy == null || enemy.gameObject != gameObject || state == State.Dead) return;
@@ -1713,6 +1942,8 @@ namespace Game.Enemies
             PlayOne(hitSounds, true);
             if (!noticed) Notice(true);
             if (state == State.Appear || state == State.WingsOff || Time.time < nextFlinch) return;
+            // A boss with a Stun Guard that was stopped a moment ago shrugs this one off: it hurts, the attack goes on.
+            if (!TryStun(flinchSeconds)) return;
 
             nextFlinch = Time.time + flinchCooldown;
             GiveUpTurn();
@@ -1721,6 +1952,46 @@ namespace Game.Enemies
             Stop();
             Play(HitLook, true);
             SendToOwnFsms("Flinch");
+        }
+
+        // A hit too weak to hurt: it notices, flinches for a moment and is pushed back a little, then carries on (a
+        // wind-up still ends in its sting). In the middle of a sting or bite only the sound: light taps can't cancel it.
+        private void OnWeakHit(EnemyHitDamage enemy)
+        {
+            if (enemy == null || enemy.gameObject != gameObject || state == State.Dead || weakFlinchSeconds <= 0f) return;
+            if (Time.time < nextWeakFlinch) return;
+            nextWeakFlinch = Time.time + Mathf.Max(0.5f, weakFlinchSeconds * 2f);
+
+            PlayOne(hitSounds);
+            if (!noticed) Notice(true);
+            // A boss with a Stun Guard doesn't even jerk at a light tap (only the sound): taps can't slow it down, and
+            // they don't use up its guard either.
+            if (stunGuardSeconds > 0f) return;
+            switch (state)
+            {
+                case State.Appear:
+                case State.Attack:
+                case State.Flinch:
+                case State.Dodge:
+                case State.WebShot:
+                case State.WingsOff:
+                    return;
+            }
+
+            if (!weakFlinching)
+            {
+                resumeAgent = !agent.isStopped;
+                resumeTurning = agent.updateRotation;
+            }
+            weakFlinching = true;
+            weakFlinchState = state;
+            weakFlinchUntil = Time.time + weakFlinchSeconds;
+            Stop();
+            weakFlinchAway = transform.position - PlayerFloor();
+            weakFlinchAway.y = 0f;
+            weakFlinchAway = weakFlinchAway.sqrMagnitude > 0.0001f ? weakFlinchAway.normalized : -transform.forward;
+            Play(HitLook, true);
+            SendToOwnFsms("WeakFlinch");
         }
 
         // The Health FSM leaves its first state when the spider dies or is popped by the fairy's shield.
@@ -1760,8 +2031,9 @@ namespace Game.Enemies
         {
             if (hasTurn) return true;
             if (Time.time < nextAttack) return false;
-            // A flier doesn't wait for a turn, and doesn't take one from the walkers.
-            if (IsFlying)
+            // A flier (with or without its wings) doesn't wait for a turn, and doesn't take one from the walkers. Nor does a
+            // boss (only the mini bosses are Boss size), so the minions it calls can't crowd it out of attacking.
+            if (flies || kindName == SizeClass.Boss)
             {
                 hasTurn = true;
                 turnCounted = false;
@@ -1805,8 +2077,9 @@ namespace Game.Enemies
         {
             // An attack whose animation isn't in the Animator yet is left out (a face leap without its animation would
             // just float up in whatever pose it's in).
-            return attack != null && attack.weight > 0f && distance >= attack.minDistance && distance <= attack.maxDistance &&
-                   distance <= Reachable(attack) && UsedByMe(attack) && UsedNow(attack) && HasAnimationQuiet(attack.animation);
+            float extra = attack != null && !attack.leapToFace ? HomingExtra : 0f;
+            return attack != null && attack.weight > 0f && distance >= attack.minDistance && distance <= attack.maxDistance + extra &&
+                   distance <= Reachable(attack) + extra && UsedByMe(attack) && UsedNow(attack) && HasAnimationQuiet(attack.animation);
         }
 
         private bool UsedNow(AttackMove attack)

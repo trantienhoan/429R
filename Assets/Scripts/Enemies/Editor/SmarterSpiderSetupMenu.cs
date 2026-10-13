@@ -36,7 +36,7 @@ namespace Game.EditorTools
         /// Spider_Small, Spider_Normal and Spider_Boss next to it: variants that are always that size (Spider_Smarter
         /// itself picks one at random). Spider_Boss takes TheSpider 1's place: it gets a Bulldozer like the old bosses, the
         /// white spider's material (Spider_Smol_White_Painted_Mat) and sets WhiteSpiderDown in EnemyManager 0 when it dies. Spider_Boss_PumpkinButt, a variant of it, takes TheSpider's
-        /// place: TheSpider's pumpkin, skull and crown, its toughness, and BigSpiderDown in EnemyManager 1.
+        /// place: TheSpider's pumpkin, skull and crown, toughness 2, and BigSpiderDown in EnemyManager 1.
         /// Also makes Spider_Web_Ball (the web shot: hurts and slows the player) and gives it to the spiders.
         /// Run it again any time: whatever is already set up keeps its settings.
         /// </summary>
@@ -270,7 +270,8 @@ namespace Game.EditorTools
                 if (oldBoss.TryGetComponent(out Game.Combat.EnemyHitDamage oldHits) && instance.TryGetComponent(out Game.Combat.EnemyHitDamage hits))
                 {
                     var toughness = new SerializedObject(hits);
-                    toughness.FindProperty("toughness").floatValue = new SerializedObject(oldHits).FindProperty("toughness").floatValue;
+                    // Every mini boss has toughness 2 (a normal hammer swing does 2); TheSpider's 3 made it shrug most hits off.
+                    toughness.FindProperty("toughness").floatValue = 2f;
                     toughness.ApplyModifiedPropertiesWithoutUndo();
                 }
 
