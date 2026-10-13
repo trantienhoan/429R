@@ -1,3 +1,4 @@
+using Game.Menus;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -6,10 +7,12 @@ namespace Game.Leveling
 {
     /// <summary>
     /// The Level Up notice, shown in front of the player (like the Health Warning) at the levels that need one: at
-    /// Teach Levels (level 1) it explains how to open the Level Up menu (two fists bumped together twice), and at
-    /// Remind Levels (level 3) it's a short reminder of that. Every other level up only plays the Level Up Sound, which
-    /// plays at all of them. A notice stays until a trigger is pulled (after a short reading time), the menu is opened,
-    /// or its seconds are over. If the player looks away it glides back in front of them. The game doesn't pause.
+    /// Teach Levels (level 1) it explains how to open the Level Up menu (two fists bumped together twice), at
+    /// Remind Levels (level 3) it's a short reminder of that, and at Bonus Levels (level 10) it tells about the Bonus
+    /// Stats and the arrow on the menu's right. Every other level up only plays the Level Up Sound, which
+    /// plays at all of them. A notice comes up a moment after the level up (Show Delay), once the level-up aura has
+    /// burst, and pauses the game while it's up (Pause Game). It stays until a trigger is pulled (after a short reading
+    /// time) or its seconds are over. If the player looks away it glides back in front of them.
     /// Tools > 429 Game > Player > Set Up Level System builds it.
     /// </summary>
     public class LevelUpNotice : MonoBehaviour
@@ -31,6 +34,9 @@ namespace Game.Leveling
         [TextArea(2, 6)]
         [SerializeField] private string shortText =
             "Level {level}: {points} points to spend.\nBump your fists together twice to open the Level Up menu.";
+        [TextArea(2, 6)]
+        [SerializeField] private string bonusText =
+            "Level {level}! Bonus Stats unlocked.\n\nOpen the Level Up menu (bump your fists twice) and press the arrow on its right.";
 
         [Header("When")]
         [Tooltip("Reaching one of these levels shows the notice that teaches how to open the Level Up menu (Teach Text).")]
@@ -38,8 +44,15 @@ namespace Game.Leveling
         [Tooltip("Reaching one of these levels shows the short reminder (Short Text). At every other level there's no " +
                  "notice, only the sound.")]
         [SerializeField] private int[] remindLevels = { 3 };
+        [Tooltip("Reaching one of these levels shows the Bonus Stats notice (Bonus Text). It stays like the teaching one.")]
+        [SerializeField] private int[] bonusLevels = { 10 };
         [Tooltip("Played at every level up, with or without a notice.")]
         [SerializeField] private AudioClip levelUpSound;
+        [Tooltip("The game is paused while a notice is up (time and sound; the level-up sound still plays).")]
+        [SerializeField] private bool pauseGame = true;
+        [Tooltip("Seconds of game time from the level up to the notice, so the level-up aura bursts first.")]
+        [Min(0f)]
+        [SerializeField] private float showDelay = 1.2f;
 
         [Header("Timing")]
         [Tooltip("Seconds before a notice can be closed with a trigger, so it gets read.")]
@@ -60,9 +73,23 @@ namespace Game.Leveling
         [Tooltip("Seconds to fade in and out.")]
         [SerializeField] private float fadeTime = 0.4f;
 
+        // Which notice: when several levels come at once, the higher one wins.
+        private enum Kind
+        {
+            Remind,
+            Teach,
+            Bonus,
+        }
+
         private float shownAt;
         private float stays;
         private int soundFrame = -1;
+        private AudioSource sound;
+        // A notice waiting for Show Delay: the level, and which notice.
+        private int pendingLevel = -1;
+        private Kind pendingKind;
+        private float pendingAt;
+        private bool holding;
         private bool showing;
         private bool closing;
         private bool gliding;
@@ -80,6 +107,11 @@ namespace Game.Leveling
         private void Awake()
         {
             if (panel != null) panel.gameObject.SetActive(false);
+            // Its own speaker for the level-up sound, heard even while the notice pauses the game's sound.
+            sound = gameObject.AddComponent<AudioSource>();
+            sound.playOnAwake = false;
+            sound.spatialBlend = 0f;
+            sound.ignoreListenerPause = true;
         }
 
         private void OnEnable()
@@ -95,42 +127,59 @@ namespace Game.Leveling
             if (continueButton.reference == null) continueButton.action?.Disable();
             PlayerLevel.LeveledUp -= OnLeveledUp;
             LevelUpMenu.Opened -= Close;
+            // Never leave the game paused (e.g. the scene closing while a notice is up).
+            Unpause();
+            pendingLevel = -1;
         }
 
-        // Every level up is heard; only some are shown.
+        // Every level up is heard; only some are shown, a moment later.
         private void OnLeveledUp(int level)
         {
             PlaySound();
-            if (System.Array.IndexOf(teachLevels, level) >= 0) Show(level, true);
-            else if (System.Array.IndexOf(remindLevels, level) >= 0) Show(level, false);
+            Kind kind;
+            if (System.Array.IndexOf(bonusLevels, level) >= 0) kind = Kind.Bonus;
+            else if (System.Array.IndexOf(teachLevels, level) >= 0) kind = Kind.Teach;
+            else if (System.Array.IndexOf(remindLevels, level) >= 0) kind = Kind.Remind;
+            else return;
+            // Bonus wins over teaching, teaching over reminding, when several levels come at once.
+            if (pendingLevel >= 0 && pendingKind > kind) return;
+            pendingLevel = level;
+            pendingKind = kind;
+            pendingAt = Time.time + showDelay;
         }
 
         // Once, when several levels are gained at the same moment.
         private void PlaySound()
         {
-            if (levelUpSound == null || soundFrame == Time.frameCount) return;
+            if (levelUpSound == null || sound == null || soundFrame == Time.frameCount) return;
             soundFrame = Time.frameCount;
-            if (head == null && Camera.main != null) head = Camera.main.transform;
-            AudioSource.PlayClipAtPoint(levelUpSound, head != null ? head.position : transform.position);
+            sound.PlayOneShot(levelUpSound);
         }
 
         /// <summary>
         /// Fades the notice in, in front of the player, for a level: the one that teaches how to open the Level Up
         /// menu, or the short reminder.
         /// </summary>
-        public void Show(int level, bool teaching)
+        public void Show(int level, bool teaching) => Show(level, teaching ? Kind.Teach : Kind.Remind);
+
+        /// <summary>Fades the Bonus Stats notice in, in front of the player, for a level.</summary>
+        public void ShowBonus(int level) => Show(level, Kind.Bonus);
+
+        private void Show(int level, Kind kind)
         {
             if (panel == null) return;
 
             int points = PlayerLevel.Instance != null ? PlayerLevel.Instance.UnspentPoints : 0;
-            // Several levels gained at once: the notice names the one the player is at now.
-            if (PlayerLevel.Instance != null) level = Mathf.Max(level, PlayerLevel.Instance.Level);
+            // Several levels gained at once: the notice names the one the player is at now (the bonus one names the
+            // level that unlocked the Bonus Stats).
+            if (PlayerLevel.Instance != null && kind != Kind.Bonus) level = Mathf.Max(level, PlayerLevel.Instance.Level);
             if (title != null) title.text = Fill(titleText, level, points);
-            if (body != null) body.text = Fill(teaching ? teachText : shortText, level, points);
+            string text = kind == Kind.Bonus ? bonusText : kind == Kind.Teach ? teachText : shortText;
+            if (body != null) body.text = Fill(text, level, points);
             if (continueText != null) continueText.enabled = false;
 
             shownAt = Time.unscaledTime;
-            stays = teaching ? teachSeconds : shortSeconds;
+            stays = kind == Kind.Remind ? shortSeconds : teachSeconds;
             showing = true;
             closing = false;
             gliding = false;
@@ -139,6 +188,11 @@ namespace Game.Leveling
             panel.blocksRaycasts = false;
             panel.gameObject.SetActive(true);
             if (TryGetPlacement(out var position, out var rotation)) panel.transform.SetPositionAndRotation(position, rotation);
+            if (pauseGame && !holding)
+            {
+                holding = true;
+                PauseMenu.Hold(this);
+            }
         }
 
         /// <summary>Fades the notice out.</summary>
@@ -152,8 +206,21 @@ namespace Game.Leveling
             return string.IsNullOrEmpty(text) ? "" : text.Replace("{level}", level.ToString()).Replace("{points}", points.ToString());
         }
 
+        private void Unpause()
+        {
+            if (!holding) return;
+            holding = false;
+            PauseMenu.Release(this);
+        }
+
         private void Update()
         {
+            // Game time: a notice due while the pause menu is open waits for it to close.
+            if (pendingLevel >= 0 && !showing && Time.time >= pendingAt)
+            {
+                Show(pendingLevel, pendingKind);
+                pendingLevel = -1;
+            }
             if (!showing) return;
 
             // Unscaled time: the notice works the same if something pauses the game underneath it.
@@ -169,6 +236,7 @@ namespace Game.Leveling
             {
                 panel.gameObject.SetActive(false);
                 showing = false;
+                Unpause();
                 return;
             }
 

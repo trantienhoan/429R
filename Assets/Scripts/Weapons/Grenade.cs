@@ -1,4 +1,5 @@
 using System;
+using Unity.XR.CoreUtils;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
@@ -8,13 +9,18 @@ namespace Game.Weapons
 {
     /// <summary>
     /// Turns a weapon into a grenade: thrown hard enough, it explodes on the first thing it hits. Everything in the
-    /// blast that can be hit loses health, loose objects are pushed away, the hand that threw it buzzes, and the
-    /// weapon is gone (with Break Apart, it shatters into its pieces, like a bottle). Dropped or tossed gently, it stays
-    /// a normal weapon. Goes on the weapon's root, next to its
-    /// XR Grab Interactable; Tools > 429 Game > Weapons > Make Flip-Flops Explode adds it.
+    /// blast that can be hit loses health, loose objects are pushed away, the player is hurt like a bug bite if they're
+    /// in it too (Player Event), the hand that threw it buzzes, and the weapon is gone (with Break Apart, it shatters
+    /// into its pieces, like a bottle). Dropped or tossed gently, it stays a normal weapon. Goes on the weapon's root,
+    /// next to its XR Grab Interactable; Tools > 429 Game > Weapons > Make Flip-Flops Explode adds it.
+    /// With Shake To Charge (the bottles), shaking it in the hand charges it: shaken long enough (the first step of
+    /// Charge), it explodes on whatever it hits first once it leaves the hand, however it left it, and the longer it
+    /// was shaken the bigger and harder the blast; shaken to the last step it goes off in the hand (In Hand Event).
+    /// The hand buzzes while it charges, harder at each step, a puff of smoke marks each step, and once charged it
+    /// beeps, faster and faster.
     /// "Can be hit" means what the game's PlayMaker damage uses: a "Health" FSM (or "SpiderHealth", "BeeHealth", ...)
     /// with a 'health' float, next to a "Damage" FSM. Objects without a Damage FSM (story objects, minigame
-    /// counters) and the player are left alone. Things with a Damage FSM but no health of their own (the whack-a-mole
+    /// counters) are left alone. Things with a Damage FSM but no health of their own (the whack-a-mole
     /// pumpkins, whose barrels count the hits) are sent the event "Blast"; a Damage FSM with a Blast transition takes
     /// it as a hard hit. Scripts that handle hits themselves (IHittable, e.g. the PlayGround's ghost tree, bush and balloons)
     /// are hit with the damage first, even when they also have a Health FSM (e.g. for the fairy's shield pop); the ghost
@@ -41,9 +47,31 @@ namespace Game.Weapons
                  "light and heavy things, less further out. 0 = no push.")]
         [Min(0f)]
         [SerializeField] private float push = 4f;
+        [Tooltip("Event sent to the player's Damage FSM if they're in the blast: Damage (a bug bite), DamageHeavy, ... " +
+                 "Empty: it never hurts the player.")]
+        [SerializeField] private string playerEvent = "Damage";
         [Tooltip("On: exploding breaks it the way it normally breaks (its Health FSM drops its pieces, like a bottle's " +
                  "glass). Off: it just vanishes.")]
         [SerializeField] private bool breakApart;
+
+        [Header("Shake to charge")]
+        [Tooltip("Shaking it in the hand charges it (the bottles): see Charge. Off: a plain grenade.")]
+        [SerializeField] private bool shakeToCharge;
+        [Tooltip("Seconds shaken (x) and the blast's reach in metres (y) that gives; in between, the reach is in between. " +
+                 "Shaken less than the first x, it's the plain grenade above. Shaken to the last x, it goes off in the hand.")]
+        [SerializeField] private Vector2[] charge = { new(1f, 0.5f), new(2f, 1f), new(2.5f, 2.5f), new(3f, 3f) };
+        [Tooltip("Health everything in a charged blast loses: x at the first step of Charge, y at the last.")]
+        [SerializeField] private Vector2 chargeDamage = new(3f, 8f);
+        [Tooltip("How fast a charged blast pushes loose things away: x at the first step of Charge, y at the last.")]
+        [SerializeField] private Vector2 chargePush = new(4f, 10f);
+        [Tooltip("How hard the hand must shake for it to count, in metres per second squared: a real shake is 30-60, " +
+                 "just moving the hand about stays under 10.")]
+        [Min(1f)]
+        [SerializeField] private float shakeStrength = 20f;
+        [Tooltip("Event sent to the player's Damage FSM when it goes off in their hand.")]
+        [SerializeField] private string inHandEvent = "DamageHeavy";
+        [Tooltip("Played once it's charged, faster and faster as it gets close to going off (e.g. a beep).")]
+        [SerializeField] private AudioClip chargeSound;
 
         [Header("Effects")]
         [Tooltip("Particle effects that appear where it explodes.")]
@@ -61,21 +89,53 @@ namespace Game.Weapons
         // XR Toolkit gives a thrown object its speed at the end of the frame it's let go, so the throw is judged over
         // a short moment after that.
         private const float ThrowWindow = 0.2f;
+        // The effects are made for a blast about this wide (in metres of reach); charged blasts scale them to theirs.
+        private const float EffectReach = 2f;
+        // How quickly the shake reading follows the hand, in seconds.
+        private const float ShakeSmoothing = 0.12f;
+        private const float BuzzEvery = 0.1f;
 
         private XRGrabInteractable grab;
         private Rigidbody body;
+        private AudioSource speaker;
         private XRBaseInputInteractor thrower;
         private bool inFlight;
         private float releasedAt;
         private float throwSpeed;
         private bool exploded;
 
+        // Shaking: seconds shaken so far, how hard the hand shakes now, and the hand's last place and speed (in the play
+        // area's space, so walking and turning don't count).
+        private float shaken;
+        private float shakeLevel;
+        private bool hasLastHand;
+        private Vector3 lastHand;
+        private Vector3 lastHandVelocity;
+        private int stepReached = -1;
+        private float nextBuzz;
+        private float nextBeep;
+        private Transform smokePuff;
+        private XROrigin origin;
+
+        /// <summary>Seconds it has been shaken (Shake To Charge).</summary>
+        public float Shaken => shaken;
+
+        private bool Charged => shakeToCharge && charge != null && charge.Length > 0 && shaken >= charge[0].x;
+
         private void Awake()
         {
             grab = GetComponent<XRGrabInteractable>();
             body = GetComponent<Rigidbody>();
+            speaker = GetComponent<AudioSource>();
             grab.selectEntered.AddListener(OnGrabbed);
             grab.selectExited.AddListener(OnLetGo);
+            // Ready at load, so the first explosion doesn't stutter.
+            Blast.Warm(effects);
+            // The bottles' own puff of smoke (shown when they take a hit) marks each step of the charge.
+            foreach (var child in GetComponentsInChildren<Transform>(true))
+            {
+                if (child != transform && child.name == "Smoke_Blast") smokePuff = child;
+            }
         }
 
         private void OnDestroy()
@@ -88,6 +148,7 @@ namespace Game.Weapons
         private void OnGrabbed(SelectEnterEventArgs args)
         {
             inFlight = false;
+            hasLastHand = false;
         }
 
         private void OnLetGo(SelectExitEventArgs args)
@@ -99,6 +160,12 @@ namespace Game.Weapons
             inFlight = true;
             releasedAt = Time.time;
             throwSpeed = 0f;
+            hasLastHand = false;
+        }
+
+        private void Update()
+        {
+            if (shakeToCharge && !exploded && grab.isSelected) WatchShaking();
         }
 
         private void FixedUpdate()
@@ -107,26 +174,122 @@ namespace Game.Weapons
                 throwSpeed = Mathf.Max(throwSpeed, body.linearVelocity.magnitude);
         }
 
-        // The first thing it hits after leaving the hand decides: thrown hard, it explodes; otherwise it's a weapon again.
+        // The first thing it hits after leaving the hand decides: charged, or thrown hard, it explodes; otherwise it's
+        // a weapon again.
         private void OnCollisionEnter(Collision collision)
         {
             if (!inFlight || exploded || Blast.IsPlayer(collision.collider)) return;
 
             if (Time.time - releasedAt <= ThrowWindow) throwSpeed = Mathf.Max(throwSpeed, collision.relativeVelocity.magnitude);
             inFlight = false;
-            if (throwSpeed >= minThrowSpeed) Explode(collision.contactCount > 0 ? collision.GetContact(0).point : body.position);
+            var point = collision.contactCount > 0 ? collision.GetContact(0).point : body.position;
+            if (Charged) ExplodeCharged(point, false);
+            else if (throwSpeed >= minThrowSpeed) Explode(point, radius, damage, push, playerEvent, false, shakeToCharge ? EffectScale(radius) : 1f);
         }
 
-        private void Explode(Vector3 point)
+        // Measures how hard the hand holding it shakes: the change in its speed, smoothed. Shaking hard enough adds to
+        // the charge; the hand buzzes as it charges, harder at each step, and it beeps once charged.
+        private void WatchShaking()
+        {
+            float dt = Time.deltaTime;
+            var hand = grab.firstInteractorSelecting as Component;
+            if (dt <= 0f || hand == null) return;
+            if (origin == null) origin = FindAnyObjectByType<XROrigin>();
+            var space = origin != null && origin.CameraFloorOffsetObject != null ? origin.CameraFloorOffsetObject.transform : null;
+            var position = space != null ? space.InverseTransformPoint(hand.transform.position) : hand.transform.position;
+            if (!hasLastHand)
+            {
+                lastHand = position;
+                lastHandVelocity = Vector3.zero;
+                hasLastHand = true;
+                return;
+            }
+
+            var velocity = (position - lastHand) / dt;
+            var acceleration = (velocity - lastHandVelocity) / dt;
+            lastHand = position;
+            lastHandVelocity = velocity;
+            shakeLevel = Mathf.Lerp(shakeLevel, acceleration.magnitude, 1f - Mathf.Exp(-dt / ShakeSmoothing));
+            bool shaking = shakeLevel >= shakeStrength;
+            if (shaking) shaken += dt;
+
+            float blowUp = charge[charge.Length - 1].x;
+            if (shaken >= blowUp)
+            {
+                ExplodeCharged(body.worldCenterOfMass, true);
+                return;
+            }
+
+            // Each step reached: a strong buzz and a puff of smoke.
+            int step = -1;
+            for (int i = 0; i < charge.Length; i++)
+            {
+                if (shaken >= charge[i].x) step = i;
+            }
+            if (step > stepReached)
+            {
+                stepReached = step;
+                Buzz(0.9f, 0.12f);
+                if (smokePuff != null)
+                {
+                    smokePuff.gameObject.SetActive(false);
+                    smokePuff.gameObject.SetActive(true);
+                }
+            }
+
+            float progress = Mathf.Clamp01(shaken / Mathf.Max(blowUp, 0.01f));
+            if (shaking && Time.time >= nextBuzz)
+            {
+                Buzz(Mathf.Lerp(0.15f, 0.6f, progress), BuzzEvery);
+                nextBuzz = Time.time + BuzzEvery;
+            }
+            // Charged: it beeps, faster and faster towards going off.
+            if (Charged && chargeSound != null && Time.time >= nextBeep)
+            {
+                if (speaker != null) speaker.PlayOneShot(chargeSound, volume);
+                else AudioSource.PlayClipAtPoint(chargeSound, transform.position, volume);
+                float towards = Mathf.InverseLerp(charge[0].x, blowUp, shaken);
+                nextBeep = Time.time + Mathf.Lerp(0.6f, 0.12f, towards);
+            }
+        }
+
+        // The blast as big as the shaking made it: in between two steps of Charge, in between their reach.
+        private void ExplodeCharged(Vector3 point, bool inHand)
+        {
+            float reach = charge[charge.Length - 1].y;
+            for (int i = 0; i < charge.Length - 1; i++)
+            {
+                if (shaken > charge[i + 1].x) continue;
+                reach = Mathf.Lerp(charge[i].y, charge[i + 1].y, Mathf.InverseLerp(charge[i].x, charge[i + 1].x, shaken));
+                break;
+            }
+            float strength = Mathf.InverseLerp(charge[0].x, charge[charge.Length - 1].x, shaken);
+            Explode(point, reach, Mathf.Lerp(chargeDamage.x, chargeDamage.y, strength), Mathf.Lerp(chargePush.x, chargePush.y, strength),
+                inHand ? inHandEvent : playerEvent, inHand, EffectScale(reach));
+        }
+
+        private static float EffectScale(float reach)
+        {
+            return Mathf.Clamp(reach / EffectReach, 0.3f, 1.3f);
+        }
+
+        private void Explode(Vector3 point, float reach, float hurt, float force, string eventForPlayer, bool inHand, float effectScale)
         {
             exploded = true;
 
-            if (thrower != null && rumbleStrength > 0f) thrower.SendHapticImpulse(rumbleStrength, rumbleDuration);
-            Blast.Explode(point, radius, damage, push, body, effects, sound, volume);
+            var hand = inHand && grab.firstInteractorSelecting is XRBaseInputInteractor holder ? holder : thrower;
+            if (hand != null && rumbleStrength > 0f) hand.SendHapticImpulse(rumbleStrength, rumbleDuration);
+            Blast.Explode(point, reach, hurt, force, body, effects, sound, volume, eventForPlayer, inHand, effectScale);
 
             // Breaking the usual way lets its own Health FSM drop the pieces and remove it; otherwise it just vanishes.
             if (breakApart && Blast.HasHealth(gameObject, out var ownHealth, out _) && ownHealth != null) ownHealth.Value = 0f;
             else Destroy(gameObject);
+        }
+
+        // The hand holding it.
+        private void Buzz(float strength, float duration)
+        {
+            if (grab.firstInteractorSelecting is XRBaseInputInteractor hand) hand.SendHapticImpulse(strength, duration);
         }
     }
 }

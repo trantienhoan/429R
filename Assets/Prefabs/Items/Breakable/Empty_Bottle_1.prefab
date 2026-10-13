@@ -12071,7 +12071,19 @@ MonoBehaviour:
   radius: 0.15
   damage: 3
   push: 4
+  playerEvent: Damage
   breakApart: 1
+  shakeToCharge: 1
+  charge:
+  - {x: 1, y: 0.5}
+  - {x: 2, y: 1}
+  - {x: 2.5, y: 2.5}
+  - {x: 3, y: 3}
+  chargeDamage: {x: 3, y: 8}
+  chargePush: {x: 4, y: 10}
+  shakeStrength: 20
+  inHandEvent: DamageHeavy
+  chargeSound: {fileID: 8300000, guid: 6ffd5f3eee896794fa17506c74259fe3, type: 3}
   effects:
   - {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
   - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}

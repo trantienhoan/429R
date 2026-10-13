@@ -9,12 +9,12 @@ namespace Game.Weapons
     /// <summary>
     /// The game's explosion, shared by Grenade and Overheat: its effects and sound play, everything in reach that can be
     /// hit loses health, and loose objects are pushed away. "Can be hit" is what the game's PlayMaker damage uses (see
-    /// Grenade). The player is never hurt by it; Explode only says whether they were in reach.
+    /// Grenade). The player in reach (their body or head, or holding the thing that explodes) is hurt like a bug bite:
+    /// the Player Event (e.g. "Damage") goes to their Damage FSM. The effects come from the Effect Pool: copies kept
+    /// ready, warmed up at load, and never drawn bigger than half the view.
     /// </summary>
     public static class Blast
     {
-        // Spawned effects are removed after this many seconds; they don't remove themselves.
-        private const float EffectLifetime = 4f;
         // Sent to things in the blast that have a Damage FSM but no health (see Grenade).
         private const string BlastEvent = "Blast";
 
@@ -24,18 +24,20 @@ namespace Game.Weapons
         private static readonly List<PlayMakerFSM> fsms = new();
 
         /// <summary>
-        /// Explodes at 'point', leaving out 'self' (the thing exploding). Returns whether the player was in reach.
+        /// Explodes at 'point', leaving out 'self' (the thing exploding), its effects this many times their size. The
+        /// player is hurt if they're in reach, or 'held' (it went off in their hand): 'playerEvent' is sent to their Damage
+        /// FSM (empty: never). Returns whether the player was hurt.
         /// </summary>
         public static bool Explode(Vector3 point, float radius, float damage, float push, Rigidbody self,
-            GameObject[] effects, AudioClip sound, float volume)
+            GameObject[] effects, AudioClip sound, float volume, string playerEvent, bool held = false, float effectScale = 1f)
         {
             foreach (var effect in effects)
             {
-                if (effect != null) UnityEngine.Object.Destroy(UnityEngine.Object.Instantiate(effect, point, Quaternion.identity), EffectLifetime);
+                if (effect != null) EffectPool.Play(effect, point, effectScale);
             }
             if (sound != null) AudioSource.PlayClipAtPoint(sound, point, volume);
 
-            bool player = false;
+            bool player = held || HeadInReach(point, radius);
             hurt.Clear();
             pushed.Clear();
             int count = Physics.OverlapSphereNonAlloc(point, radius, hits, Physics.AllLayers, QueryTriggerInteraction.Ignore);
@@ -52,7 +54,36 @@ namespace Game.Weapons
                 Hurt(hit.transform, point, damage);
                 Push(hit.attachedRigidbody, point, radius, push);
             }
-            return player;
+
+            if (!player || string.IsNullOrEmpty(playerEvent)) return false;
+            Game.Combat.DamageVignette.HitFrom(point);
+            SendToPlayer(playerEvent);
+            return true;
+        }
+
+        /// <summary>Gets an explosion's effects ready at load, so the first one doesn't stutter.</summary>
+        public static void Warm(GameObject[] effects)
+        {
+            if (effects == null) return;
+            foreach (var effect in effects) EffectPool.Warm(effect);
+        }
+
+        // The head counts too: the body's collider may be switched off (e.g. while the player is thrown).
+        private static bool HeadInReach(Vector3 point, float radius)
+        {
+            var eyes = Camera.main;
+            return eyes != null && (eyes.transform.position - point).sqrMagnitude <= radius * radius;
+        }
+
+        /// <summary>Sends an event to the player's Damage FSM, e.g. "Damage" (a bug bite) or "DamageHeavy".</summary>
+        public static void SendToPlayer(string eventName)
+        {
+            var player = HutongGames.PlayMaker.FsmVariables.GlobalVariables.FindFsmGameObject("Player");
+            if (player == null || player.Value == null) return;
+            foreach (var fsm in player.Value.GetComponents<PlayMakerFSM>())
+            {
+                if (fsm.FsmName == "Damage") fsm.SendEvent(eventName);
+            }
         }
 
         /// <summary>

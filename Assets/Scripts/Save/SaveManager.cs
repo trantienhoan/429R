@@ -12,8 +12,8 @@ namespace Game.Saving
     /// <summary>
     /// Keeps the player's progress between sessions: what they carry (e.g. candies), how many of each item they
     /// ever collected and spent, what they bought, what they unlocked for good (e.g. paths opened with seeds),
-    /// lasting boosts (e.g. the higher health cap from Boss Seeds, see PlayerBoosts) and their level, EXP and stat
-    /// points (see Player Level).
+    /// lasting boosts (e.g. the higher health cap from Boss Seeds, see PlayerBoosts), their level, EXP and stat
+    /// points (see Player Level), and the checkpoint they reached this run (see Checkpoints).
     /// Keep one in the scene. It loads when the game starts and saves shortly after anything changes, when the game
     /// pauses and when it closes. Dying doesn't touch the inventory, so candies are kept through a restart too. FSMs
     /// can also save at checkpoints with the "Save Game" action (PlayMaker's "Save" category).
@@ -36,6 +36,9 @@ namespace Game.Saving
             public float healthCapBonus;
             // The player's level, EXP and stat points (see Player Level).
             public PlayerLevel.SavedLevel level = new();
+            // The checkpoint reached this run, where the player stood, the revives left and the health kept by Get a
+            // Rest (see Checkpoints).
+            public Checkpoints.SavedCheckpoint checkpoint = new();
         }
 
         private const int CurrentVersion = 1;
@@ -167,6 +170,7 @@ namespace Game.Saving
             Unlocks.Changed += MarkChanged;
             PlayerBoosts.Changed += MarkChanged;
             PlayerLevel.Changed += MarkChanged;
+            Checkpoints.Changed += MarkChanged;
             PauseMenu.PauseChanged += OnPauseChanged;
         }
 
@@ -179,6 +183,7 @@ namespace Game.Saving
             Unlocks.Changed -= MarkChanged;
             PlayerBoosts.Changed -= MarkChanged;
             PlayerLevel.Changed -= MarkChanged;
+            Checkpoints.Changed -= MarkChanged;
             PauseMenu.PauseChanged -= OnPauseChanged;
             Instance = null;
         }
@@ -232,6 +237,7 @@ namespace Game.Saving
             Unlocks.Reset();
             PlayerBoosts.Reset();
             PlayerLevel.Load(null);
+            Checkpoints.Reset();
 
             // Gone first, so writing the empty save doesn't keep the old one as its backup.
             try { DeleteSaveFiles(); }
@@ -256,6 +262,7 @@ namespace Game.Saving
                 unlocks = Unlocks.ToSaveData(),
                 healthCapBonus = PlayerBoosts.HealthCapBonus,
                 level = PlayerLevel.Save(),
+                checkpoint = Checkpoints.ToSaveData(),
             };
 
             try
@@ -296,10 +303,22 @@ namespace Game.Saving
             }
 
             loaded = true;
+            // The level first: its Extra Revive bonus counts in the checkpoint's revives.
+            PlayerLevel.Load(data?.level);
+            // Before anything else reads it: GAMESTAGES asks where to start (Go To Checkpoint) as the game begins.
+            Checkpoints.LoadSaveData(data?.checkpoint);
             // Also with no save, so whatever waits for the unlocks knows they're read.
             Unlocks.LoadSaveData(data?.unlocks);
             PlayerBoosts.LoadSaveData(data != null ? data.healthCapBonus : 0f);
-            PlayerLevel.Load(data?.level);
+
+            // The health the player had when they picked Get a Rest, once the cap bonuses are in (they heal).
+            float rested = Checkpoints.TakeRestHealth();
+            if (rested > 0f && PlayerBoosts.SetHealth(rested))
+            {
+                Debug.Log($"[SaveManager] Health back to {rested:0} (as at Get a Rest).", this);
+                // Written soon, so it's only given back once.
+                MarkChanged();
+            }
         }
 
         private SaveData Read(string path)

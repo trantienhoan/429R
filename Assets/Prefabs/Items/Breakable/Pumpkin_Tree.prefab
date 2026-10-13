@@ -13355,13 +13355,15 @@ MonoBehaviour:
         actionNames:
         - HutongGames.PlayMaker.Actions.GetPosition
         - HutongGames.PlayMaker.Actions.CreateObject
+        - HutongGames.PlayMaker.Actions.StickToAnchor
         customNames:
         - 
         - 
-        actionEnabled: 0101
-        actionIsOpen: 0101
-        actionStartIndex: 0000000007000000
-        actionHashCodes: 5552ad0560532301
+        - 
+        actionEnabled: 010101
+        actionIsOpen: 010101
+        actionStartIndex: 00000000070000000d000000
+        actionHashCodes: 5552ad0560532301aa34a204
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 0
@@ -13389,11 +13391,25 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: {fileID: 0}
+        - useVariable: 1
+          name: idleSpawn
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 0}
         fsmOwnerDefaultParams:
         - ownerOption: 1
           gameObject:
             useVariable: 1
             name: idleSpawn
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 0}
+        - ownerOption: 1
+          gameObject:
+            useVariable: 1
+            name: EnemyAdded
             tooltip: 
             showInInspector: 0
             networkSync: 0
@@ -13429,7 +13445,13 @@ MonoBehaviour:
           networkSync: 0
           value: 0
         fsmIntParams: []
-        fsmBoolParams: []
+        fsmBoolParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 1
         fsmVector2Params: []
         fsmVector3Params:
         - useVariable: 1
@@ -13459,7 +13481,7 @@ MonoBehaviour:
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 140000001c0000000f0000000f0000000f00000007000000010000001300000013000000130000001c0000001c00000013000000
+        paramDataType: 140000001c0000000f0000000f0000000f00000007000000010000001300000013000000130000001c0000001c00000013000000140000001300000011000000
         paramName:
         - gameObject
         - vector
@@ -13474,8 +13496,11 @@ MonoBehaviour:
         - position
         - rotation
         - storeObject
-        paramDataPos: 00000000000000000000000001000000020000000000000004000000000000000100000002000000010000000200000003000000
-        paramByteDataSize: 00000000000000000000000000000000000000000400000001000000000000000000000000000000000000000000000000000000
+        - gameObject
+        - anchor
+        - destroyWithAnchor
+        paramDataPos: 00000000000000000000000001000000020000000000000004000000000000000100000002000000010000000200000003000000010000000400000000000000
+        paramByteDataSize: 00000000000000000000000000000000000000000400000001000000000000000000000000000000000000000000000000000000000000000000000000000000
     - name: COMPLETE
       description: 
       colorIndex: 0

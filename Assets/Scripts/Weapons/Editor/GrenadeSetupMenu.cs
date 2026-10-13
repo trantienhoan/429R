@@ -25,6 +25,82 @@ namespace Game.EditorTools
             "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Smoke_Blast.prefab",
         };
         internal const string Sound = "Assets/Audio/SFX/explosion-312361.wav";
+        // The beep of a charged bottle (the Boong gun's overheat beep).
+        private const string ChargeSound = "Assets/Audio/SFX/elon_boong_beep_beep.wav";
+
+        private static readonly string[] Bottles =
+        {
+            "Assets/Prefabs/Items/Breakable/Empty_Bottle_1.prefab",
+            "Assets/Prefabs/Items/Breakable/Empty_Bottle_2.prefab",
+            "Assets/Prefabs/Items/Breakable/Empty_Bottle_3.prefab",
+            "Assets/Prefabs/Items/Breakable/Empty_Bottle_4.prefab",
+            "Assets/Prefabs/Items/Breakable/Empty_Bottle_5.prefab",
+        };
+
+        /// <summary>
+        /// Makes the empty bottles shake-to-charge grenades (see Grenade): shaken 1 s they blow 0.5 m wide, 2 s 1 m,
+        /// 2.5 s 2.5 m, and at 3 s they go off in the hand. Also has the explosion and beep sounds loaded with the
+        /// scene, so the first explosion doesn't stutter while they load. Bottles keep their other grenade settings.
+        /// </summary>
+        [MenuItem("Tools/429 Game/Weapons/Make Bottles Shake To Charge")]
+        public static void MakeBottlesShakeToCharge()
+        {
+            var beep = AssetDatabase.LoadAssetAtPath<AudioClip>(ChargeSound);
+            var made = new List<string>();
+            foreach (var path in Bottles)
+            {
+                if (AssetDatabase.LoadAssetAtPath<GameObject>(path) == null)
+                {
+                    Debug.LogWarning($"[Grenade] '{path}' doesn't exist; skipped.");
+                    continue;
+                }
+                var root = PrefabUtility.LoadPrefabContents(path);
+                try
+                {
+                    var grenade = root.GetComponent<Grenade>();
+                    if (grenade == null)
+                    {
+                        Debug.LogWarning($"[Grenade] '{path}' isn't a grenade yet (Make Flip-Flops Explode with it selected first); skipped.");
+                        continue;
+                    }
+                    var serialized = new SerializedObject(grenade);
+                    serialized.FindProperty("shakeToCharge").boolValue = true;
+                    if (serialized.FindProperty("chargeSound").objectReferenceValue == null)
+                        serialized.FindProperty("chargeSound").objectReferenceValue = beep;
+                    serialized.ApplyModifiedPropertiesWithoutUndo();
+                    PrefabUtility.SaveAsPrefabAsset(root, path);
+                    made.Add(root.name);
+                }
+                finally
+                {
+                    PrefabUtility.UnloadPrefabContents(root);
+                }
+            }
+
+            int preloaded = PreloadSounds(Sound, ChargeSound);
+            Debug.Log($"[Grenade] Shake to charge on: {string.Join(", ", made)}." +
+                      (preloaded > 0 ? $" {preloaded} explosion sound(s) now load with the scene." : ""));
+        }
+
+        /// <summary>
+        /// Has these sounds loaded with the scene (Preload Audio Data), so the first time one plays the game doesn't
+        /// stop to load it. Returns how many changed.
+        /// </summary>
+        internal static int PreloadSounds(params string[] paths)
+        {
+            int changed = 0;
+            foreach (var path in paths)
+            {
+                if (AssetImporter.GetAtPath(path) is not AudioImporter importer) continue;
+                var settings = importer.defaultSampleSettings;
+                if (settings.preloadAudioData) continue;
+                settings.preloadAudioData = true;
+                importer.defaultSampleSettings = settings;
+                importer.SaveAndReimport();
+                changed++;
+            }
+            return changed;
+        }
 
         /// <summary>
         /// Adds Grenade (with the explosion effects and sound) and Hit Rumble to the selected weapon prefabs, or with

@@ -9,8 +9,9 @@ namespace Game.Combat
     /// The player's health on the head-locked canvas: a heart and the health as a number. The heart drains from the top
     /// as health drops below the starting health (the PlayerHealth FSM's DefautPlayerHealth, 120), and turns green,
     /// with little green sparkles flying up around it, when candy has pushed health above it. Health has no cap, so the number tells the rest. Each change pops a
-    /// "-8" / "+5" next to the number. The HUD shows for a few seconds after any change, then fades, and stays up
-    /// while health is low. It only reads the FSM, so damage and heals still all happen there.
+    /// "-8" / "+5" next to the number, and a heal makes the heart pop. The HUD shows for a few seconds after any change, then fades, and stays up
+    /// while health is low. Once the player has died and got back up this run (a revive), the heart is cracked
+    /// (until a new run). It only reads the FSM, so damage and heals still all happen there.
     /// Goes on the HUD canvas under the Main Camera. Tools > 429 Game > Player > Set Up Health HUD sets it up.
     /// </summary>
     [DisallowMultipleComponent]
@@ -33,6 +34,8 @@ namespace Game.Combat
         [SerializeField] private TMP_Text change;
         [Tooltip("Sparkles around the heart while health is above the starting health (optional). They fade with the HUD.")]
         [SerializeField] private ParticleSystem bonusSparkles;
+        [Tooltip("The crack over the heart, shown once the player has died this run (optional).")]
+        [SerializeField] private Image crack;
 
         [Header("Colours")]
         [SerializeField] private Color healthColor = new(0.93f, 0.16f, 0.2f);
@@ -50,6 +53,11 @@ namespace Game.Combat
         [SerializeField] private float lowShare = 0.25f;
         [Tooltip("Heartbeats per second at low health.")]
         [SerializeField] private float beatsPerSecond = 1.6f;
+        [Tooltip("How much bigger the heart pops on a heal (0.2 = 20%), and for how long.")]
+        [Min(0f)]
+        [SerializeField] private float healPop = 0.2f;
+        [Min(0.05f)]
+        [SerializeField] private float healPopSeconds = 0.3f;
 
         [Header("Showing")]
         [Tooltip("Never fade out.")]
@@ -84,6 +92,8 @@ namespace Game.Combat
         private float changeAmount;
         private Vector2 changeHome;
         private bool ready;
+        private float healedAt = -100f;
+        private bool cracked;
         private ParticleSystemRenderer sparkleRenderer;
         private MaterialPropertyBlock sparkleBlock;
         private static readonly int ColorId = Shader.PropertyToID("_Color");
@@ -157,12 +167,20 @@ namespace Game.Combat
                 Changed(now - lastHealth);
                 lastHealth = now;
             }
+            // Cracked once the player has died this run: shown as it happens.
+            bool crackedNow = Game.Saving.Checkpoints.DeathsThisRun > 0;
+            if (crackedNow != cracked)
+            {
+                cracked = crackedNow;
+                changedAt = Time.unscaledTime;
+            }
             Refresh(false);
         }
 
         private void Changed(float amount)
         {
             changedAt = Time.unscaledTime;
+            if (amount > 0f) healedAt = Time.unscaledTime;
             if (change == null) return;
             // Quick hits in a row add up in one pop instead of flickering.
             bool sameWay = Mathf.Sign(amount) == Mathf.Sign(changeAmount);
@@ -201,8 +219,12 @@ namespace Game.Combat
                     if (phase < 0.25f) beat = Mathf.Sin(phase * 4f * Mathf.PI);
                     else if (phase < 0.5f) beat = 0.6f * Mathf.Sin((phase - 0.25f) * 4f * Mathf.PI);
                 }
-                heart.localScale = Vector3.one * (1f + 0.12f * beat);
+                // A heal: one quick swell and back.
+                float popT = (time - healedAt) / healPopSeconds;
+                float pop = popT >= 0f && popT < 1f ? healPop * Mathf.Sin(popT * Mathf.PI) : 0f;
+                heart.localScale = Vector3.one * (1f + 0.12f * beat + pop);
             }
+            if (crack != null && crack.enabled != cracked) crack.enabled = cracked;
             if (number != null)
             {
                 number.SetText("{0}", Mathf.Max(0, Mathf.CeilToInt(hp - 0.001f)));

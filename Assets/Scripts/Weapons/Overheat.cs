@@ -3,7 +3,6 @@ using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
-using FsmVariables = HutongGames.PlayMaker.FsmVariables;
 using Random = UnityEngine.Random;
 
 namespace Game.Weapons
@@ -58,8 +57,8 @@ namespace Game.Weapons
         [Tooltip("How fast loose objects in the middle of the blast are pushed away, in metres per second. 0 = no push.")]
         [Min(0f)]
         [SerializeField] private float push = 5f;
-        [Tooltip("Event sent to the player's Damage FSM if they're in the blast (holding it counts): Damage, " +
-                 "DamageHeavy, ... Empty: it never hurts the player.")]
+        [Tooltip("Event sent to the player's Damage FSM if they're in the blast (holding it counts): Damage (a bug " +
+                 "bite), DamageHeavy, ... Empty: it never hurts the player.")]
         [SerializeField] private string playerEvent = "Damage";
         [Tooltip("On: it breaks the way it normally breaks (its Health FSM drops its pieces). Off: it just vanishes.")]
         [SerializeField] private bool breakApart = true;
@@ -76,9 +75,7 @@ namespace Game.Weapons
         [Min(0f)]
         [SerializeField] private float rumbleDuration = 0.4f;
 
-        private const string PlayerVariable = "Player";
-        private const string PlayerDamageFsm = "Damage";
-        private const float PuffEvery = 0.3f;
+        private const float PuffEvery = 0.5f;
         private const float BuzzEvery = 0.1f;
 
         private XRGrabInteractable grab;
@@ -102,6 +99,9 @@ namespace Game.Weapons
             for (int i = 0; i < shotTimes.Length; i++) shotTimes[i] = float.NegativeInfinity;
             grab.activated.AddListener(OnShot);
             grab.selectEntered.AddListener(OnGrabbed);
+            // Ready at load, so the first explosion doesn't stutter.
+            Blast.Warm(effects);
+            EffectPool.Warm(smoke);
         }
 
         private void OnDestroy()
@@ -162,9 +162,9 @@ namespace Game.Weapons
             }
             if (now >= nextPuff && smoke != null)
             {
-                var puff = Instantiate(smoke, body.worldCenterOfMass, Quaternion.identity);
-                puff.transform.localScale = Vector3.one * smokeScale;
-                Destroy(puff, 2f);
+                // Smoke Scale is the puff's size; the pool scales the prefab's own size.
+                float prefabScale = Mathf.Max(smoke.transform.localScale.x, 0.0001f);
+                EffectPool.Play(smoke, body.worldCenterOfMass, smokeScale / prefabScale);
                 nextPuff = now + PuffEvery;
             }
             if (now >= nextBuzz)
@@ -196,13 +196,9 @@ namespace Game.Weapons
             exploded = true;
             StopShaking();
 
-            bool playerHurt = Blast.Explode(body.worldCenterOfMass, radius, damage, push, body, effects, sound, volume) || grab.isSelected;
+            // The player is hurt if they're in the blast, or still holding it.
+            Blast.Explode(body.worldCenterOfMass, radius, damage, push, body, effects, sound, volume, playerEvent, grab.isSelected);
             Buzz(rumbleStrength, rumbleDuration);
-            if (playerHurt && !string.IsNullOrEmpty(playerEvent))
-            {
-                Game.Combat.DamageVignette.HitFrom(body.worldCenterOfMass);
-                SendToPlayer(playerEvent);
-            }
 
             // Breaking the usual way lets its own Health FSM drop the pieces and remove it; otherwise it just vanishes.
             if (breakApart && Blast.HasHealth(gameObject, out var ownHealth, out _) && ownHealth != null) ownHealth.Value = 0f;
@@ -217,14 +213,5 @@ namespace Game.Weapons
             if (hand != null) hand.SendHapticImpulse(strength, duration);
         }
 
-        private static void SendToPlayer(string eventName)
-        {
-            var player = FsmVariables.GlobalVariables.FindFsmGameObject(PlayerVariable);
-            if (player == null || player.Value == null) return;
-            foreach (var fsm in player.Value.GetComponents<PlayMakerFSM>())
-            {
-                if (fsm.FsmName == PlayerDamageFsm) fsm.SendEvent(eventName);
-            }
-        }
     }
 }

@@ -1068,6 +1068,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8272359235214968938}
   - component: {fileID: 578168107850016550}
+  - component: {fileID: 1224824020358571570}
   m_Layer: 0
   m_Name: Pumpkin_Boss
   m_TagString: Monster
@@ -1114,6 +1115,30 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &1224824020358571570
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8756829779268293328}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 690cca8c5f3f6f04d9d8e2b13b49c8bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Enemies.GiantPumpkin
+  hands: []
+  handReach: 0.9
+  poundReach: 2.2
+  breaks:
+  - Pumpkin_On_Tree
+  playerEvent: Pumpkin_Boss_Damage
+  hurtCooldown: 2
+  poundSpeed: 6
+  poundEffect: {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac,
+    type: 3}
+  poundEffectSize: 1.5
+  poundShake: ShakeMed
 --- !u!1 &8783265240672790677
 GameObject:
   m_ObjectHideFlags: 0

@@ -15,13 +15,15 @@ namespace Game.Combat
     /// spider, and mini bosses barely feel it), loose things get pushed, and the controller rumbles. While it's a fist
     /// the hand swells to Fist Scale (half as big again) with a little buzz, so the player sees it's ready and punches
     /// land easier; the ball grows with it.
-    /// Three punches thrown well do more, and fly: an echo of the fist goes on ahead (Jab Reach) and hits the first
-    /// thing in its way. A jab is a fast, straight punch out where the player is looking, and flies the way it was
-    /// thrown. A swing (a hook: the fist sweeps sideways) hits harder (Swing Power), and an uppercut (the fist drives
-    /// upwards) sends things flying, up and away, and knocks enemies back (Uppercut Push); those two fly at what the
-    /// player is looking at, and count the same when the fist itself lands. Which one a punch is goes by where the
-    /// hand went, from the player's point of view, measured in the play area's own space, so walking and turning don't
-    /// count as punching. Slow pushes and hammer fists are just punches.
+    /// Three punches thrown well do more, and fly: an echo of the fist, as big as the fist is now, goes on the way the
+    /// punch went (Jab Reach) and hits the first thing in its way. A jab is a fast, straight punch out where the player
+    /// is looking, and flies straight ahead. A swing (a hook: the fist sweeps sideways) hits harder (Swing Power) and
+    /// flies on sideways, level, the way the fist swept (a left hook sweeping to the right flies to the right). An
+    /// uppercut (the fist drives upwards) flies up, sends things flying up and away and knocks enemies back (Uppercut
+    /// Push); on an enemy's head it's a knock-out (Head Power, Knock Out Seconds). They count the same when the fist
+    /// itself lands. Which one a punch is goes by where the hand went, from the player's point of view, measured in the
+    /// play area's own space, so walking and turning don't count as punching. Slow pushes and hammer fists are just
+    /// punches.
     /// A fist doesn't pull things from a distance: with the trigger squeezed too, the hand only grabs what's within its
     /// reach, so making a fist while pointing at something doesn't yank it into the hand instead of punching it.
     /// Pointing (trigger let go) and squeezing the grip still pulls things from afar.
@@ -112,8 +114,8 @@ namespace Game.Combat
         [SerializeField] private AudioClip jabSound;
 
         [Header("Swing")]
-        [Tooltip("A fast sideways sweep of the fist (a hook) hits harder, and flies at what the player is looking at. " +
-                 "Untick to turn it off.")]
+        [Tooltip("A fast sideways sweep of the fist (a hook) hits harder, and flies on sideways, level, the way the fist " +
+                 "swept. Untick to turn it off.")]
         [SerializeField] private bool swing = true;
         [Tooltip("How fast the fist must sweep at its fastest, in metres per second, to count as a swing.")]
         [Min(0.5f)]
@@ -124,7 +126,7 @@ namespace Game.Combat
 
         [Header("Uppercut")]
         [Tooltip("A fast drive of the fist upwards sends loose things flying, up and away, knocks enemies back with a " +
-                 "high hop, and flies at what the player is looking at. Untick to turn it off.")]
+                 "high hop, and flies on upwards. Untick to turn it off.")]
         [SerializeField] private bool uppercut = true;
         [Tooltip("How fast the fist must rise at its fastest, in metres per second, to count as an uppercut.")]
         [Min(0.5f)]
@@ -133,6 +135,14 @@ namespace Game.Combat
                  "higher a knocked-back enemy hops.")]
         [Min(1f)]
         [SerializeField] private float uppercutPush = 2f;
+        [Tooltip("An uppercut that lands on an enemy's head is a knock-out: an extra hit this many times as strong as the " +
+                 "punch, thrown back farther and higher.")]
+        [Min(1f)]
+        [SerializeField] private float headPower = 2.5f;
+        [Tooltip("How long a knocked-out enemy lies stunned, in seconds, before it gets up again (bosses that stand their " +
+                 "ground only take the damage).")]
+        [Min(0f)]
+        [SerializeField] private float knockOutSeconds = 2.5f;
 
         [Header("Input (left empty: the hand model's own)")]
         [SerializeField] private InputActionProperty grip;
@@ -140,7 +150,7 @@ namespace Game.Combat
 
         [Header("Feel")]
         [Tooltip("Shown where a good punch lands: a flying punch, or the fist itself landing a swing, an uppercut or " +
-                 "anything at Jab Speed or faster (e.g. Smoke_Blast). A copy is made at the hit and destroyed once it has played. Empty: none.")]
+                 "anything at Jab Speed or faster (e.g. Smoke_Blast). It plays at the hit from copies kept ready (Effect Pool). Empty: none.")]
         [SerializeField] private GameObject goodPunchEffect;
         [Tooltip("Size of that effect, compared with its prefab.")]
         [Min(0.01f)]
@@ -168,14 +178,10 @@ namespace Game.Combat
         private const float UppercutAngle = 45f;
         // Longest a swing or an uppercut may take, in seconds (they travel farther than a jab).
         private const float LongMoveSeconds = 0.7f;
-        // A flying swing is this much bigger than a flying jab.
-        private const float SwingSize = 1.3f;
         // Shortest time between two flying punches from one hand.
         private const float FlyCooldown = 0.25f;
         // How fast the flying fist flies, in metres per second; its damage is worked out from the punch's own speed.
         private const float FlySpeed = 8f;
-        // The good-punch effect's copy is destroyed after this long, in seconds.
-        private const float PuffSeconds = 2f;
         // Punches slower than this (metres per second) don't send things flying, and nothing leaves faster than Max.
         // A hand moving slower than this (metres per second) isn't punching: no rumble, push, puff or pumpkin help.
         private const float MinPunchSpeed = 1f;
@@ -246,6 +252,9 @@ namespace Game.Combat
             if (rumbler != null) rumbler.SendHapticImpulse(strength, seconds);
         }
 
+        // Power, with the Punch Power level-up bonus.
+        private float Power => power * Game.Leveling.PlayerLevel.PunchPowerScale;
+
         /// <summary>Whether this is a fist's punching ball (it has a Weapon Power like a weapon, but it's a hand).</summary>
         public static bool IsFistBall(Component thing)
         {
@@ -271,6 +280,8 @@ namespace Game.Combat
             rumbler = GetComponentInChildren<XRBaseInputInteractor>(true);
             FindKnuckles();
             MakeBall();
+            // Ready at load, so the first good punch doesn't stutter.
+            Game.EffectPool.Warm(goodPunchEffect);
         }
 
         private void OnEnable()
@@ -328,7 +339,7 @@ namespace Game.Combat
                 // Only the hand's own movement hits: walking, turning or being carried along with a still fist adds
                 // to how fast the ball goes, but not to the punch.
                 float ballSpeed = body.linearVelocity.magnitude;
-                weapon.Power = ballSpeed > 0.01f ? power * Mathf.Clamp01(handVelocity.magnitude / ballSpeed) : power;
+                weapon.Power = ballSpeed > 0.01f ? Power * Mathf.Clamp01(handVelocity.magnitude / ballSpeed) : Power;
                 // A swing lands harder.
                 if (CurrentMove == Move.Swing) weapon.Power *= swingPower;
             }
@@ -362,13 +373,28 @@ namespace Game.Combat
             }
             HelpPlayMaker(collision, punchSpeed);
             Push(collision, punchSpeed, flying, move);
+            float puff = 1f;
             if (move == Move.Uppercut)
             {
-                // Enemies walk by themselves and can't be pushed by physics: an uppercut knocks them back, hopping high.
+                // Enemies walk by themselves and can't be pushed by physics: an uppercut knocks them back, hopping high,
+                // and on the head it knocks them out.
                 var enemy = collision.collider.GetComponentInParent<EnemyHitDamage>();
-                if (enemy != null) enemy.KnockBack(1f, uppercutPush);
+                if (enemy != null)
+                {
+                    var point = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
+                    if (enemy.IsHead(point))
+                    {
+                        enemy.KnockOut(punchSpeed * Power * headPower, 1.5f, uppercutPush * 1.5f, knockOutSeconds);
+                        puff = 2f;
+                        Buzz(1f, 0.15f);
+                    }
+                    else
+                    {
+                        enemy.KnockBack(1f, uppercutPush);
+                    }
+                }
             }
-            if (flying || move != Move.None || punchSpeed >= jabSpeed) ShowGoodPunch(collision);
+            if (flying || move != Move.None || punchSpeed >= jabSpeed) ShowGoodPunch(collision, puff);
             if (rumbler == null) return;
             float hard = Mathf.InverseLerp(1f, HardPunch, flying ? collision.relativeVelocity.magnitude : punchSpeed);
             if (hard <= 0f) return;
@@ -388,7 +414,7 @@ namespace Game.Combat
                 if (force == null || System.Array.Find(fsm.FsmStates, state => state.Name == "Check force") == null) continue;
                 // Already hurt by this hit (or by one just before): not twice.
                 if (fsm.ActiveStateName != "Wait for Collision" && fsm.ActiveStateName != "shake" && fsm.ActiveStateName != "Check force") continue;
-                force.Value = punchSpeed * pumpkinForce;
+                force.Value = punchSpeed * pumpkinForce * Game.Leveling.PlayerLevel.PunchPowerScale;
                 fsm.SetState("Check force");
             }
         }
@@ -418,30 +444,27 @@ namespace Game.Combat
                 direction = (direction * 0.5f + Vector3.up).normalized;
             }
             // Up to that speed along the punch, not on top of what the bump already gave it.
-            float wanted = Mathf.Min(punchSpeed * push, MaxPushSpeed) * share;
+            float wanted = Mathf.Min(punchSpeed * push * Game.Leveling.PlayerLevel.PunchPowerScale, MaxPushSpeed) * share;
             float has = Vector3.Dot(thing.linearVelocity, direction);
             if (has >= wanted) return;
             var at = collision.contactCount > 0 ? collision.GetContact(0).point : thing.worldCenterOfMass;
             thing.AddForceAtPosition(direction * (wanted - has), Vector3.Lerp(at, thing.worldCenterOfMass, 0.7f), ForceMode.VelocityChange);
         }
 
-        // A puff where a good punch landed; the copy is destroyed after it has played.
-        private void ShowGoodPunch(Collision collision)
+        // A puff where a good punch landed (bigger for a knock-out); the copy is destroyed after it has played.
+        private void ShowGoodPunch(Collision collision, float scale)
         {
             if (goodPunchEffect == null || Time.time < nextPuff) return;
             nextPuff = Time.time + 0.15f;
             var at = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
-            var puff = Instantiate(goodPunchEffect, at, Quaternion.identity);
-            puff.transform.localScale *= goodPunchEffectSize;
-            puff.SetActive(true);
-            Destroy(puff, PuffSeconds);
+            Game.EffectPool.Play(goodPunchEffect, at, goodPunchEffectSize * scale);
         }
 
         private void Close()
         {
             closed = true;
             // Power and size are read each time, so they can be changed while playing.
-            weapon.Power = power;
+            weapon.Power = Power;
             ball.radius = radius * grown;
             // Starts right at the hand, so it doesn't sweep through whatever is between.
             body.position = FistPoint();
@@ -538,7 +561,7 @@ namespace Game.Combat
             lastStrokeDirection = travel.sqrMagnitude > 0.000001f ? travel.normalized : Vector3.zero;
             // The fist landing just after still counts as that punch.
             strokeMoveUntil = Time.time + 0.1f;
-            if (snapped && strokeMove != Move.None) TryFly(strokeMove, quality, eyes.transform);
+            if (snapped && strokeMove != Move.None) TryFly(strokeMove, quality);
         }
 
         // Which punch a stroke is, by where the hand went from the player's point of view (ahead where they look: a jab;
@@ -596,31 +619,23 @@ namespace Game.Combat
             return move;
         }
 
-        // A good punch that hit nothing flies on from the knuckles: the better it was, the farther.
-        private void TryFly(Move move, float quality, Transform eyes)
+        // A good punch that hit nothing flies on from the knuckles, the way the fist went: a jab straight ahead, a swing
+        // sideways (level, the way it swept), an uppercut up. The better it was, the farther.
+        private void TryFly(Move move, float quality)
         {
             if (!closed || Time.time < nextFly || lastBallHit >= strokeStartTime) return;
+
+            var direction = transform.parent != null ? transform.parent.TransformDirection(lastStrokeDirection) : lastStrokeDirection;
+            // A swing sweeps across, not into the floor or the sky.
+            if (move == Move.Swing) direction.y = 0f;
+            if (direction.sqrMagnitude < 0.0001f) return;
             nextFly = Time.time + FlyCooldown;
 
             float reach = Mathf.Lerp(jabReach.x, jabReach.y, quality);
             var from = FistPoint();
-            Vector3 direction;
-            if (move == Move.Jab)
-            {
-                // A jab goes on the way it was thrown.
-                direction = transform.parent != null ? transform.parent.TransformDirection(lastStrokeDirection) : lastStrokeDirection;
-            }
-            else
-            {
-                // A swing or an uppercut isn't thrown at its target: it goes for what the player is looking at.
-                float along = Mathf.Max(Vector3.Dot(from - eyes.position, eyes.forward), 0f) + reach;
-                direction = (eyes.position + eyes.forward * along - from).normalized;
-                if (move == Move.Uppercut) direction = (direction + Vector3.up * 0.25f).normalized;
-            }
-
             // It hits as hard as the fist would at the punch's speed (x Jab Power; a swing harder still).
             if (flyer == null) flyer = MakeFlyer();
-            flyer.Launch(from, direction, reach, strokePeak * jabPower * (move == Move.Swing ? swingPower : 1f), move);
+            flyer.Launch(from, direction.normalized, reach, strokePeak * jabPower * (move == Move.Swing ? swingPower : 1f), move);
             if (rumbler != null) rumbler.SendHapticImpulse(move == Move.Jab ? 0.5f : 0.7f, 0.06f);
             if (jabSound != null) AudioSource.PlayClipAtPoint(jabSound, from);
         }
@@ -768,7 +783,7 @@ namespace Game.Combat
             ball.radius = radius;
             ball.enabled = false;
             weapon = go.AddComponent<WeaponPower>();
-            weapon.Power = power;
+            weapon.Power = Power;
             go.AddComponent<Punch>().owner = this;
             IgnorePlayer(ball);
         }
@@ -798,8 +813,8 @@ namespace Game.Combat
         }
 
         /// <summary>
-        /// A flying jab: the punch carried on ahead of the fist, seen as a still copy of the fist (its echo). It flies
-        /// straight, hits the first thing in its way (enemies take damage as from the fist, ghost balloons get pushed,
+        /// A flying punch: the punch carried on ahead of the fist, seen as a still copy of the fist as big as it is now
+        /// (its echo). It flies straight, hits the first thing in its way (enemies take damage as from the fist, ghost balloons get pushed,
         /// loose things get knocked), then quickly shrinks away where it stopped.
         /// </summary>
         private class FlyingFist : MonoBehaviour
@@ -819,7 +834,6 @@ namespace Game.Combat
             private float reach;
             private float flown;
             private float hitSpeed;
-            private float size = 1f;
             private Move move;
             private bool done;
             private float fade;
@@ -840,8 +854,6 @@ namespace Game.Combat
             public void Launch(Vector3 from, Vector3 towards, float distance, float punchSpeed, Move thrown)
             {
                 move = thrown;
-                // A swing is a bigger fist.
-                size = thrown == Move.Swing ? SwingSize : 1f;
                 gameObject.SetActive(false);
                 transform.SetPositionAndRotation(from, Quaternion.identity);
                 if (echo != null && owner.handSkin != null)
@@ -852,16 +864,15 @@ namespace Game.Combat
                     echo.localScale = Vector3.one;
                     echoShape.SetPositionAndRotation(skin.position, skin.rotation);
                     echoShape.localScale = Vector3.one;
-                    echo.localScale = Vector3.one * size;
                 }
                 gameObject.SetActive(true);
                 // Switched off, a collider may forget what it ignores.
                 owner.IgnorePlayer(Ball);
 
                 // As big as the fist ball, and as hard as the fist at the punch's speed, however fast it flies.
-                Ball.radius = owner.radius * owner.grown * size;
+                Ball.radius = owner.radius * owner.grown;
                 Ball.enabled = true;
-                weapon.Power = owner.power * punchSpeed / FlySpeed;
+                weapon.Power = owner.Power * punchSpeed / FlySpeed;
                 hitSpeed = punchSpeed;
                 direction = towards.normalized;
                 reach = Mathf.Max(distance, 0.01f);
@@ -879,7 +890,7 @@ namespace Game.Combat
                     // Stopped: it hits nothing more, and the echo shrinks away where it is.
                     if (Ball.enabled) Ball.enabled = false;
                     fade += Time.fixedDeltaTime / FadeSeconds;
-                    if (echo != null) echo.localScale = Vector3.one * (size * Mathf.Max(0f, 1f - fade));
+                    if (echo != null) echo.localScale = Vector3.one * Mathf.Max(0f, 1f - fade);
                     if (fade >= 1f) gameObject.SetActive(false);
                     return;
                 }

@@ -79,6 +79,13 @@ namespace Game.Combat
         private float scaledUntil = -1f;
         private float scaledDistance = 1f;
         private float scaledHop = 1f;
+        private float scaledStun;
+        private Transform head;
+        private bool headSearched;
+
+        // A hit this close to the head counts as on it: this share of the enemy's size, at least Min Head Reach metres.
+        private const float HeadShare = 0.3f;
+        private const float MinHeadReach = 0.12f;
 
         /// <summary>Raised after every hit that hurts an enemy: the enemy, and what the hit did.</summary>
         public static event Action<EnemyHitDamage, HitResult> AnyHit;
@@ -197,7 +204,99 @@ namespace Game.Combat
             scaledUntil = Time.time + 0.1f;
             scaledDistance = distanceScale;
             scaledHop = hopScale;
+            scaledStun = knockBackStun;
             KnockBackFromPlayer();
+        }
+
+        /// <summary>
+        /// A knock-out blow, e.g. a fist's uppercut to the head: an extra hit of this power on top of the one that just
+        /// landed (Toughness still counts), then it's knocked back this many times as far and hopping this many times as
+        /// high, and lies stunned for this many seconds (enemies with Knock Back off only take the damage).
+        /// </summary>
+        public void KnockOut(float power, float distanceScale, float hopScale, float stunSeconds)
+        {
+            if (health == null || dead) return;
+
+            var hit = (settings != null ? settings : HitSettings.Defaults).Evaluate(power / toughness);
+            if (hit.Damage > 0f)
+            {
+                health.Value -= hit.Damage;
+                Send(hitEvent);
+                if (health.Value <= 0f)
+                {
+                    Die();
+                    HoldStill();
+                }
+                AnyHit?.Invoke(this, hit);
+            }
+
+            if (!knockBack) return;
+            scaledUntil = Time.time + 0.1f;
+            scaledDistance = distanceScale;
+            scaledHop = hopScale;
+            scaledStun = Mathf.Max(knockBackStun, stunSeconds);
+            KnockBackFromPlayer();
+        }
+
+        /// <summary>
+        /// Whether a point on it is on its head: near its head (the child named "Head"), or, for an enemy without one,
+        /// in the top or the front part of its body.
+        /// </summary>
+        public bool IsHead(Vector3 point)
+        {
+            if (!headSearched)
+            {
+                headSearched = true;
+                head = FindHead();
+            }
+            if (!TryGetBodyBounds(out var body)) return head != null;
+
+            float size = Mathf.Max(body.size.x, Mathf.Max(body.size.y, body.size.z));
+            if (head != null)
+            {
+                float reach = Mathf.Max(MinHeadReach, size * HeadShare);
+                return (point - head.position).sqrMagnitude <= reach * reach;
+            }
+
+            var forward = transform.forward;
+            float frontExtent = Vector3.Dot(body.extents, new Vector3(Mathf.Abs(forward.x), Mathf.Abs(forward.y), Mathf.Abs(forward.z)));
+            float front = Vector3.Dot(point - body.center, forward) / Mathf.Max(0.01f, frontExtent);
+            float up = (point.y - body.min.y) / Mathf.Max(0.01f, body.size.y);
+            return front > 0.4f || up > 0.7f;
+        }
+
+        private Transform FindHead()
+        {
+            Transform contains = null;
+            foreach (var t in GetComponentsInChildren<Transform>(true))
+            {
+                if (t == transform) continue;
+                if (string.Equals(t.name, "Head", StringComparison.OrdinalIgnoreCase)) return t;
+                if (contains == null && t.name.IndexOf("head", StringComparison.OrdinalIgnoreCase) >= 0) contains = t;
+            }
+            return contains;
+        }
+
+        // Its solid colliders together (its renderers if it has none).
+        private bool TryGetBodyBounds(out Bounds bounds)
+        {
+            bounds = default;
+            bool any = false;
+            foreach (var c in GetComponentsInChildren<Collider>())
+            {
+                if (c.isTrigger || !c.enabled) continue;
+                if (any) bounds.Encapsulate(c.bounds);
+                else bounds = c.bounds;
+                any = true;
+            }
+            if (any) return true;
+            foreach (var r in GetComponentsInChildren<Renderer>())
+            {
+                if (any) bounds.Encapsulate(r.bounds);
+                else bounds = r.bounds;
+                any = true;
+            }
+            return any;
         }
 
         private void KnockBackFromPlayer()
@@ -208,7 +307,7 @@ namespace Game.Combat
             bool scaled = Time.time < scaledUntil;
             if (knockback == null && !TryGetComponent(out knockback)) knockback = gameObject.AddComponent<Knockback>();
             knockback.Push(eyes.transform.position, knockBackDistance * (scaled ? scaledDistance : 1f), knockBackTime,
-                knockBackHop * (scaled ? scaledHop : 1f), knockBackStun);
+                knockBackHop * (scaled ? scaledHop : 1f), scaled ? scaledStun : knockBackStun);
         }
 
         private void Send(string eventName)

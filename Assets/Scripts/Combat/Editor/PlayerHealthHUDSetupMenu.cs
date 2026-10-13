@@ -1,4 +1,8 @@
+using System.Collections.Generic;
+using System.Linq;
 using Game.Combat;
+using HutongGames.PlayMaker;
+using HutongGames.PlayMaker.Actions;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -14,6 +18,7 @@ namespace Game.EditorTools
     {
         private const string HeartSprite = "Assets/Images/heart_white.png";
         private const string ShineSprite = "Assets/Images/heart_shine.png";
+        private const string CrackSprite = "Assets/Images/heart_crack.png";
         private const string MaterialFolder = "Assets/Data/UI";
         private const string ImageMaterialPath = MaterialFolder + "/HUD Image Overlay.mat";
         private const string TextMaterialPath = MaterialFolder + "/HUD Text Overlay.mat";
@@ -163,12 +168,160 @@ namespace Game.EditorTools
             hudSettings.FindProperty("bonusColor").colorValue = BonusGreen;
             hudSettings.ApplyModifiedProperties();
             hud.Place();
+            AddCrack(hud);
+            ShowHeals(fsm, root);
+            BringBackAfterHiding(fsm, root);
 
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
             Selection.activeGameObject = root;
             Debug.Log($"[Health HUD] {(added ? "Set up" : "Updated")} on '{root.name}' (under '{root.transform.parent.name}'): heart + number, " +
                       "drawn over the scene, green with sparkles above the starting health, shows for 3 s after any change and stays up at low health. Distance, angles, colours " +
                       "and timings are on the Player Health HUD component. Save the scene.");
+        }
+
+        /// <summary>
+        /// Updates a health HUD set up before: adds the cracked heart (shown once the player has died and got back up
+        /// this run), and makes every heal show the HUD: the PlayerHealth FSM's heal state (Health1) switches
+        /// the HUD on first, like the hits do, and Off Canvas no longer switches it off 3 s later (the HUD fades by
+        /// itself). FSMs that hide the HUD (the XR Origin's Info on Game Over) switch it on again in their next state,
+        /// so it's back after dying. Leaves everything else as it is. Safe to run again.
+        /// </summary>
+        [MenuItem("Tools/429 Game/Player/Update Health HUD (Cracked Heart, Show Heals)")]
+        public static void UpdateHud()
+        {
+            var hud = Object.FindAnyObjectByType<PlayerHealthHUD>(FindObjectsInactive.Include);
+            PlayMakerFSM fsm = null;
+            foreach (var f in Object.FindObjectsByType<PlayMakerFSM>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (f.FsmName == "PlayerHealth") { fsm = f; break; }
+            }
+            if (hud == null || fsm == null)
+            {
+                Debug.LogError("[Health HUD] Needs the Player Health HUD and the PlayerHealth FSM in the open scene (run Set Up Health HUD first). Nothing changed.");
+                return;
+            }
+
+            var notes = new List<string>();
+            if (AddCrack(hud)) notes.Add("added the cracked heart");
+            int changed = ShowHeals(fsm, hud.gameObject);
+            if (changed > 0) notes.Add($"heals now show the HUD ({changed} PlayerHealth state(s) changed)");
+            int back = BringBackAfterHiding(fsm, hud.gameObject);
+            if (back > 0) notes.Add($"the HUD comes back after being hidden, e.g. after dying ({back} state(s) changed)");
+            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+            Debug.Log("[Health HUD] " + (notes.Count > 0 ? string.Join("; ", notes) : "already up to date") + ". Save the scene.", hud);
+        }
+
+        [MenuItem("Tools/429 Game/Player/Update Health HUD (Cracked Heart, Show Heals)", true)]
+        private static bool CanUpdateHud() => !EditorApplication.isPlaying;
+
+        // The crack over the heart, between its fill and its shine; hidden until the player has died this run.
+        private static bool AddCrack(PlayerHealthHUD hud)
+        {
+            var settings = new SerializedObject(hud);
+            if (settings.FindProperty("crack").objectReferenceValue != null) return false;
+            var heart = settings.FindProperty("heart").objectReferenceValue as RectTransform;
+            var fill = settings.FindProperty("heartFill").objectReferenceValue as Image;
+            var sprite = PrepareSprite(CrackSprite);
+            if (heart == null || sprite == null)
+            {
+                Debug.LogWarning($"[Health HUD] No heart on the HUD or no '{CrackSprite}', so the cracked heart wasn't added.", hud);
+                return false;
+            }
+
+            var crack = FindOrCreateImage(heart, "Crack");
+            crack.sprite = sprite;
+            crack.color = Color.white;
+            crack.material = fill != null ? fill.material : null;
+            crack.preserveAspect = true;
+            crack.raycastTarget = false;
+            crack.type = Image.Type.Simple;
+            crack.rectTransform.localScale = Vector3.one;
+            SetupUtility.Stretch(crack.rectTransform, Vector2.zero, Vector2.zero);
+            crack.transform.SetSiblingIndex(fill != null ? fill.transform.GetSiblingIndex() + 1 : heart.childCount - 1);
+            crack.enabled = false;
+            SetupUtility.SetReference(hud, "crack", crack);
+            return true;
+        }
+
+        // Health1 (a heal) switches the HUD on first, as the hits do; Off Canvas no longer switches it off.
+        private static int ShowHeals(PlayMakerFSM fsm, GameObject canvas)
+        {
+            if (!fsm.Fsm.Initialized) fsm.Fsm.Init(fsm);
+            foreach (var state in fsm.FsmStates) state.LoadActions();
+            int changed = 0;
+
+            var heal = fsm.FsmStates.FirstOrDefault(s => s.Name == "Health1");
+            if (heal != null && SwitchOnFirst(heal, canvas)) changed++;
+
+            var off = fsm.FsmStates.FirstOrDefault(s => s.Name == "Off Canvas");
+            if (off != null && off.Actions.Any(a => Switches(a, canvas, false)))
+            {
+                off.Actions = off.Actions.Where(a => !Switches(a, canvas, false)).ToArray();
+                changed++;
+            }
+
+            if (changed > 0)
+            {
+                Undo.RecordObject(fsm, "Show Heals On The Health HUD");
+                foreach (var state in fsm.FsmStates) state.SaveActions();
+                EditorUtility.SetDirty(fsm);
+            }
+            return changed;
+        }
+
+        // Other FSMs that hide the HUD (the XR Origin's Info hides it on Game Over, in Deactivate All) switch it on again
+        // in the state they go to next (Init), so after dying the heart is back, cracked.
+        private static int BringBackAfterHiding(PlayMakerFSM health, GameObject canvas)
+        {
+            int changed = 0;
+            foreach (var fsm in Object.FindObjectsByType<PlayMakerFSM>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (fsm == health) continue;
+                if (!fsm.Fsm.Initialized) fsm.Fsm.Init(fsm);
+                bool changedHere = false;
+                foreach (var state in fsm.FsmStates)
+                {
+                    state.LoadActions();
+                    if (!state.Actions.Any(a => Switches(a, canvas, false))) continue;
+                    foreach (var transition in state.Transitions)
+                    {
+                        var next = fsm.FsmStates.FirstOrDefault(s => s.Name == transition.ToState);
+                        if (next == null || next == state) continue;
+                        next.LoadActions();
+                        if (SwitchOnFirst(next, canvas)) { changedHere = true; changed++; }
+                    }
+                }
+                if (!changedHere) continue;
+                Undo.RecordObject(fsm, "Bring Back The Health HUD");
+                foreach (var state in fsm.FsmStates) state.SaveActions();
+                EditorUtility.SetDirty(fsm);
+            }
+            return changed;
+        }
+
+        // Puts "switch the canvas on" first in the state, unless it already switches it on.
+        private static bool SwitchOnFirst(FsmState state, GameObject canvas)
+        {
+            if (state.Actions.Any(a => Switches(a, canvas, true))) return false;
+            var on = new ActivateGameObject();
+            on.Reset();
+            on.gameObject = new FsmOwnerDefault
+            {
+                OwnerOption = OwnerDefaultOption.SpecifyGameObject,
+                GameObject = new FsmGameObject { Value = canvas },
+            };
+            on.activate = true;
+            state.Actions = new FsmStateAction[] { on }.Concat(state.Actions).ToArray();
+            return true;
+        }
+
+        // Whether the action switches the canvas on (or off).
+        private static bool Switches(FsmStateAction action, GameObject canvas, bool on)
+        {
+            return action is ActivateGameObject activate && activate.gameObject != null &&
+                   activate.gameObject.OwnerOption == OwnerDefaultOption.SpecifyGameObject &&
+                   activate.gameObject.GameObject != null && activate.gameObject.GameObject.Value == canvas &&
+                   activate.activate != null && activate.activate.Value == on;
         }
 
         private static Sprite PrepareSprite(string path)

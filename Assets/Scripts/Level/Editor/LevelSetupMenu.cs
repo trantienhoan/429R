@@ -8,6 +8,7 @@ using Unity.XR.CoreUtils;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
@@ -30,6 +31,23 @@ namespace Game.EditorTools
         private const float RowsTop = 132f;
         private const float RowsBottom = 62f;
 
+        // The arrow on the menu's right edge and the Bonus Stats panel beside it, turned towards the player like the
+        // next page of a book.
+        private static readonly Color ArrowColor = new(0.85f, 0.62f, 0.15f, 1f);
+        private const float ArrowGap = 10f;
+        private const float ArrowWidth = 64f;
+        private const float ArrowHeight = 170f;
+        private const float BonusWidth = 600f;
+        private const float BonusTop = 118f;
+        private const float BonusBottom = 24f;
+        private const float BonusTurn = 20f;
+
+        // The aura's look: a copy of URP's particle material, made additive so it glows.
+        private const string AuraMaterialPath = "Assets/Data/Level/Level Up Aura.mat";
+        private const string ParticleMaterialPath = "Packages/com.unity.render-pipelines.universal/Runtime/Materials/ParticlesUnlit.mat";
+        private static readonly Color AuraGold = new(1f, 0.82f, 0.32f, 0.85f);
+        private static readonly Color AuraWhite = new(1f, 0.97f, 0.85f, 1f);
+
         // EXP by the kind of enemy.
         private const int SmallExp = 1;
         private const int NormalExp = 2;
@@ -37,7 +55,7 @@ namespace Game.EditorTools
         private const int BossExp = 50;
 
         /// <summary>
-        /// Sets up the level system in the open scene: the Player Level, the Level Up menu and notice, Fist Bump on the
+        /// Sets up the level system in the open scene: the Player Level, the Level Up menu, notice and aura, Fist Bump on the
         /// XR Origin (two fists bumped twice opens the menu), the EXP each enemy prefab gives (where it's still 0), and
         /// Player Toughness on the PlayerHealth FSM's damage. Running it again only adds what's missing.
         /// </summary>
@@ -68,6 +86,7 @@ namespace Game.EditorTools
             {
                 notes.Add("fixed the Level Up menu's fonts");
             }
+            if (AddBonusPanel(menu, font)) notes.Add("added the Bonus Stats arrow and panel to the Level Up menu");
 
             var notice = Object.FindAnyObjectByType<LevelUpNotice>(FindObjectsInactive.Include);
             if (notice == null)
@@ -78,6 +97,12 @@ namespace Game.EditorTools
             else if (SetupUtility.AssignMissingFonts(notice, font) > 0)
             {
                 notes.Add("fixed the Level Up notice's fonts");
+            }
+
+            if (Object.FindAnyObjectByType<LevelUpAura>(FindObjectsInactive.Include) == null)
+            {
+                CreateAura(level.transform);
+                notes.Add($"created the Level Up aura (its look uses '{AuraMaterialPath}')");
             }
 
             if (head != null)
@@ -134,10 +159,13 @@ namespace Game.EditorTools
             var levelText = SetupUtility.CreateText("Level", rect, "LEVEL 0", 40f, TextAlignmentOptions.Left, FontStyles.Bold, font);
             levelText.color = TitleColor;
             SetupUtility.TopBand(levelText.rectTransform, 18f, 52f, 28f, 300f);
+            // "LEVEL 21 (MAX)" and "42 points + 2 bonus" shrink to fit instead of being cut off.
+            SetupUtility.ShrinkToFit(levelText, 24f);
 
             var pointsText = SetupUtility.CreateText("Points", rect, "0 points to spend", 24f, TextAlignmentOptions.Right, FontStyles.Bold, font);
             pointsText.color = GoodColor;
             SetupUtility.TopBand(pointsText.rectTransform, 24f, 44f, 330f, 28f);
+            SetupUtility.ShrinkToFit(pointsText, 16f);
 
             var bar = SetupUtility.CreateImage("EXP Bar", rect, new Color(1f, 1f, 1f, 0.12f));
             SetupUtility.TopBand(bar.rectTransform, 80f, 34f, 28f, 28f);
@@ -221,6 +249,92 @@ namespace Game.EditorTools
             return menu;
         }
 
+        /// <summary>
+        /// Adds the Bonus Stats arrow and panel to the Level Up menu in the open scene, if it hasn't got them yet: a gold
+        /// arrow on the menu's right edge (shown from the first bonus level on) that opens and closes a Bonus Stats panel
+        /// beside the menu, with the bonus points and the bonus stats (a row each).
+        /// </summary>
+        [MenuItem("Tools/429 Game/Player/Add Bonus Stats Panel")]
+        public static void AddBonusStatsPanel()
+        {
+            var menu = Object.FindAnyObjectByType<LevelUpMenu>(FindObjectsInactive.Include);
+            if (menu == null)
+            {
+                Debug.LogError("[Level Setup] No Level Up menu in the open scene: run Set Up Level System.");
+                return;
+            }
+            bool added = AddBonusPanel(menu, SetupUtility.ResolveFont());
+            if (added) EditorSceneManager.MarkSceneDirty(menu.gameObject.scene);
+            Debug.Log(added
+                ? "[Level Setup] Added the Bonus Stats arrow and panel to the Level Up menu. Save the scene."
+                : "[Level Setup] The Level Up menu already has its Bonus Stats panel.", menu);
+        }
+
+        [MenuItem("Tools/429 Game/Player/Add Bonus Stats Panel", true)]
+        private static bool CanAddBonusStatsPanel() => !EditorApplication.isPlaying;
+
+        // The arrow and the panel are part of the menu's panel (its canvas), so pointing at them counts as pointing at
+        // the menu: clicking them doesn't close it.
+        private static bool AddBonusPanel(LevelUpMenu menu, TMP_FontAsset font)
+        {
+            var serialized = new SerializedObject(menu);
+            if (serialized.FindProperty("bonusPanel").objectReferenceValue != null) return false;
+            if (!(serialized.FindProperty("panel").objectReferenceValue is RectTransform panel)) return false;
+
+            // The arrow: a tab on the menu's right edge, halfway up.
+            var arrow = SetupUtility.CreateButton("Bonus Arrow", panel, ">", 52f, font, ArrowColor);
+            Undo.RegisterCreatedObjectUndo(arrow.gameObject, "Add Bonus Stats Panel");
+            var arrowRect = (RectTransform)arrow.transform;
+            arrowRect.anchorMin = arrowRect.anchorMax = new Vector2(1f, 0.5f);
+            arrowRect.pivot = new Vector2(0f, 0.5f);
+            arrowRect.anchoredPosition = new Vector2(ArrowGap, 0f);
+            arrowRect.sizeDelta = new Vector2(ArrowWidth, ArrowHeight);
+            var colors = arrow.colors;
+            colors.normalColor = new Color(0.9f, 0.9f, 0.9f, 1f);
+            colors.highlightedColor = Color.white;
+            colors.selectedColor = colors.normalColor;
+            colors.pressedColor = new Color(0.65f, 0.65f, 0.65f, 1f);
+            arrow.colors = colors;
+            arrow.gameObject.SetActive(false);
+
+            // The panel: beside the arrow, the same height as five rows, turned a little towards the player.
+            var box = SetupUtility.CreateImage("Bonus Stats Panel", panel, PanelColor);
+            Undo.RegisterCreatedObjectUndo(box.gameObject, "Add Bonus Stats Panel");
+            box.raycastTarget = true;
+            var rect = box.rectTransform;
+            rect.anchorMin = rect.anchorMax = new Vector2(1f, 0.5f);
+            rect.pivot = new Vector2(0f, 0.5f);
+            rect.anchoredPosition = new Vector2(ArrowGap + ArrowWidth + ArrowGap, 0f);
+            int count = PlayerLevel.BonusStats.Length;
+            rect.sizeDelta = new Vector2(BonusWidth, BonusTop + BonusBottom + count * RowHeight + (count - 1) * RowSpacing);
+            rect.localRotation = Quaternion.Euler(0f, BonusTurn, 0f);
+
+            var title = SetupUtility.CreateText("Title", rect, "BONUS STATS", 38f, TextAlignmentOptions.Left, FontStyles.Bold, font);
+            title.color = TitleColor;
+            SetupUtility.TopBand(title.rectTransform, 18f, 50f, 28f, 28f);
+            var points = SetupUtility.CreateText("Points", rect, "0 bonus points to spend", 24f, TextAlignmentOptions.Left, FontStyles.Bold, font);
+            points.color = GoodColor;
+            SetupUtility.TopBand(points.rectTransform, 70f, 36f, 28f, 28f);
+            SetupUtility.ShrinkToFit(points, 16f);
+
+            var rows = SetupUtility.CreateRect("Rows", rect);
+            SetupUtility.Stretch(rows, new Vector2(20f, BonusBottom), new Vector2(-20f, -BonusTop));
+            var list = rows.gameObject.AddComponent<VerticalLayoutGroup>();
+            list.spacing = RowSpacing;
+            list.childAlignment = TextAnchor.UpperLeft;
+            list.childControlWidth = true;
+            list.childControlHeight = true;
+            list.childForceExpandWidth = true;
+            list.childForceExpandHeight = false;
+            rect.gameObject.SetActive(false);
+
+            SetupUtility.SetReference(menu, "bonusArrow", arrow);
+            SetupUtility.SetReference(menu, "bonusPanel", rect);
+            SetupUtility.SetReference(menu, "bonusPointsText", points);
+            SetupUtility.SetReference(menu, "bonusRowParent", rows);
+            return true;
+        }
+
         private static LevelUpNotice CreateNotice(Transform parent, TMP_FontAsset font)
         {
             var go = new GameObject("Level Up Notice");
@@ -251,6 +365,147 @@ namespace Game.EditorTools
             // Hidden in the editor; the notice shows it at a level up.
             rect.gameObject.SetActive(false);
             return notice;
+        }
+
+        // The aura: a flat flash on the floor, a ring of light that rushes out to the edge (as the push does), and sparks
+        // rising around the player. All made for a 1 m aura; Level Up Aura scales it to its reach.
+        private static void CreateAura(Transform parent)
+        {
+            var go = new GameObject("Level Up Aura");
+            Undo.RegisterCreatedObjectUndo(go, "Create Level Up Aura");
+            go.transform.SetParent(parent, false);
+            var aura = go.AddComponent<LevelUpAura>();
+            var material = AuraMaterial();
+
+            var flash = NewParticles("Aura Effect", go.transform, material, Vector3.zero, 1);
+            flash.transform.localPosition = new Vector3(0f, 0.03f, 0f);
+            var main = flash.main;
+            main.startLifetime = 0.5f;
+            main.startSpeed = 0f;
+            main.startSize = 2.3f;
+            main.startColor = AuraGold;
+            Burst(flash, 1);
+            FadeOut(flash);
+            var grow = flash.sizeOverLifetime;
+            grow.enabled = true;
+            grow.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 0.5f, 1f, 1.1f));
+            flash.GetComponent<ParticleSystemRenderer>().renderMode = ParticleSystemRenderMode.HorizontalBillboard;
+
+            // Lying flat: a particle system's circle is across its own Z, which is turned to point up.
+            var wave = NewParticles("Wave", flash.transform, material, new Vector3(-90f, 0f, 0f), 120);
+            wave.transform.localPosition = new Vector3(0f, 0.12f, 0f);
+            main = wave.main;
+            main.startLifetime = 0.5f;
+            main.startSpeed = 2f;
+            main.startSize = 0.22f;
+            main.startColor = new ParticleSystem.MinMaxGradient(AuraGold, AuraWhite);
+            Burst(wave, 90);
+            var waveShape = wave.shape;
+            waveShape.enabled = true;
+            waveShape.shapeType = ParticleSystemShapeType.Circle;
+            waveShape.radius = 0.05f;
+            waveShape.radiusThickness = 0f;
+            FadeOut(wave);
+
+            var sparks = NewParticles("Sparks", flash.transform, material, new Vector3(-90f, 0f, 0f), 120);
+            main = sparks.main;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.8f, 1.4f);
+            main.startSpeed = 0f;
+            main.startSize = new ParticleSystem.MinMaxCurve(0.04f, 0.1f);
+            main.startColor = new ParticleSystem.MinMaxGradient(AuraGold, AuraWhite);
+            var emission = sparks.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[]
+            {
+                new ParticleSystem.Burst(0f, 30),
+                new ParticleSystem.Burst(0.15f, 20),
+                new ParticleSystem.Burst(0.3f, 20),
+            });
+            var sparkShape = sparks.shape;
+            sparkShape.enabled = true;
+            sparkShape.shapeType = ParticleSystemShapeType.Circle;
+            sparkShape.radius = 0.8f;
+            sparkShape.radiusThickness = 1f;
+            var rise = sparks.velocityOverLifetime;
+            rise.enabled = true;
+            rise.space = ParticleSystemSimulationSpace.Local;
+            rise.x = new ParticleSystem.MinMaxCurve(0f, 0f);
+            rise.y = new ParticleSystem.MinMaxCurve(0f, 0f);
+            rise.z = new ParticleSystem.MinMaxCurve(0.5f, 1f);
+            var fadeInOut = new Gradient();
+            fadeInOut.SetKeys(
+                new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.2f), new GradientAlphaKey(0f, 1f) });
+            var sparkColor = sparks.colorOverLifetime;
+            sparkColor.enabled = true;
+            sparkColor.color = new ParticleSystem.MinMaxGradient(fadeInOut);
+
+            SetupUtility.SetReference(aura, "effect", flash);
+        }
+
+        private static ParticleSystem NewParticles(string name, Transform parent, Material material, Vector3 euler, int maxParticles)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.localEulerAngles = euler;
+            var particles = go.AddComponent<ParticleSystem>();
+            particles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main = particles.main;
+            main.duration = 1.5f;
+            main.loop = false;
+            main.playOnAwake = false;
+            // Scaled with the aura's reach, and moving with the player.
+            main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+            main.simulationSpace = ParticleSystemSimulationSpace.Local;
+            main.maxParticles = maxParticles;
+            var shape = particles.shape;
+            shape.enabled = false;
+            var renderer = go.GetComponent<ParticleSystemRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            return particles;
+        }
+
+        private static void Burst(ParticleSystem particles, int count)
+        {
+            var emission = particles.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, (short)count) });
+        }
+
+        private static void FadeOut(ParticleSystem particles)
+        {
+            var fade = new Gradient();
+            fade.SetKeys(
+                new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0f, 1f) });
+            var color = particles.colorOverLifetime;
+            color.enabled = true;
+            color.color = new ParticleSystem.MinMaxGradient(fade);
+        }
+
+        // URP's own particle material (a soft round dot), copied and made additive, so the aura glows.
+        private static Material AuraMaterial()
+        {
+            var material = AssetDatabase.LoadAssetAtPath<Material>(AuraMaterialPath);
+            if (material != null) return material;
+
+            SetupUtility.EnsureFolder("Assets/Data/Level");
+            if (AssetDatabase.CopyAsset(ParticleMaterialPath, AuraMaterialPath))
+                material = AssetDatabase.LoadAssetAtPath<Material>(AuraMaterialPath);
+            if (material == null)
+            {
+                material = new Material(Shader.Find("Universal Render Pipeline/Particles/Unlit"));
+                AssetDatabase.CreateAsset(material, AuraMaterialPath);
+            }
+            // Additive: light adds up where particles overlap (Blend 2 = Additive in the material's inspector).
+            material.SetFloat("_Blend", 2f);
+            material.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
+            material.SetFloat("_DstBlend", (float)BlendMode.One);
+            EditorUtility.SetDirty(material);
+            AssetDatabase.SaveAssetIfDirty(material);
+            return material;
         }
 
         // Damage to the player (the PlayerHealth FSM's Float Subtract Random actions on PlayerHealth) is cut by Toughness.

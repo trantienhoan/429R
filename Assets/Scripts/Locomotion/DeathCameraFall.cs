@@ -11,6 +11,8 @@ namespace Game.Locomotion
     /// nothing jumps, then plays a fall: the head drops to the floor and tips onto its side, and the hands fall with it,
     /// while the headset view fades to black. The headset keeps tracking the whole time, so looking around still works.
     /// When the Restart state takes the camera back out, everything goes back to normal and the view fades back in.
+    /// A revive (Player Revive) first stops the fall part way (Stop Part Way: the fall and the fade hold there), then
+    /// calls Rise: the fall plays backwards, the view fades back in, and the camera goes back to the rig.
     /// Tools > 429 Game > Player > Set Up Death Fall adds it.
     /// </summary>
     [DisallowMultipleComponent]
@@ -56,6 +58,39 @@ namespace Game.Locomotion
         private Vector3 tipAxis;
         private float tipAngle;
         private float drop;
+        private bool rising;
+        private float riseSpeed;
+        // How much of the fall this death plays (1: all of it; a revive stops it part way), and whether the fade has
+        // been held there.
+        private float stopAt = 1f;
+        private bool holding;
+
+        /// <summary>Whether the player is down (the camera is on this, falling or fallen).</summary>
+        public bool IsDown => fallen;
+
+        /// <summary>Whether the fall has got to where Stop Part Way stops it, and is holding there.</summary>
+        public bool IsHolding => fallen && !rising && holding;
+
+        /// <summary>
+        /// This death's fall stops part way (0.5 = half way) and holds there, the view's fade too, until Rise: a revive.
+        /// Call it as the player dies (before or just after the fall starts). The next death falls all the way again.
+        /// </summary>
+        public void StopPartWay(float share)
+        {
+            stopAt = Mathf.Clamp01(share);
+        }
+
+        /// <summary>
+        /// Gets the player back up (a revive): the fall plays backwards over this many seconds while the view fades back
+        /// in, then the camera goes back to the rig. Nothing happens if the player isn't down.
+        /// </summary>
+        public void Rise(float seconds)
+        {
+            if (!fallen) return;
+            rising = true;
+            riseSpeed = elapsed / Mathf.Max(0.05f, seconds);
+            if (fade != null) fade.FadeIn(Mathf.Max(0.05f, seconds));
+        }
 
         private void Awake()
         {
@@ -70,7 +105,7 @@ namespace Game.Locomotion
 
         private void OnDisable()
         {
-            if (fallen) GetUp();
+            if (fallen) GetUp(true);
         }
 
         private void LateUpdate()
@@ -93,17 +128,19 @@ namespace Game.Locomotion
             }
             else if (!headHere)
             {
-                GetUp();
+                GetUp(true);
                 return;
             }
 
-            Fall();
+            if (rising) RiseStep();
+            else Fall();
         }
 
         private void StartFall()
         {
             fallen = true;
             elapsed = 0f;
+            holding = false;
 
             // On top of the Camera Offset, with the head back where it was: the view doesn't move yet.
             transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
@@ -135,10 +172,38 @@ namespace Game.Locomotion
 
         private void Fall()
         {
-            if (elapsed >= fallTime) return;
+            float end = fallTime * stopAt;
+            if (elapsed >= end)
+            {
+                // Stopped part way: it holds there, and the view stays as dark as it got.
+                if (stopAt < 1f && !holding)
+                {
+                    holding = true;
+                    if (fade != null) fade.FadeTo(fade.Alpha, 0f);
+                }
+                return;
+            }
 
-            elapsed = Mathf.Min(elapsed + Time.deltaTime, fallTime);
-            float t = elapsed / fallTime;
+            elapsed = Mathf.Min(elapsed + Time.deltaTime, end);
+            Pose(elapsed / fallTime);
+        }
+
+        // The fall backwards; once all the way up, the camera goes back to the rig, right where it is.
+        private void RiseStep()
+        {
+            elapsed = Mathf.Max(0f, elapsed - Time.deltaTime * riseSpeed);
+            Pose(elapsed / fallTime);
+            if (elapsed > 0f) return;
+
+            rising = false;
+            // Back up, this lines up with the Camera Offset, so the head keeps its tracked local pose and doesn't move.
+            head.SetParent(offset, false);
+            GetUp(false);
+        }
+
+        // Where the view is, t of the way through the fall.
+        private void Pose(float t)
+        {
             // Falls faster and faster, like a body; tips over smoothly.
             float down = t * t;
             float tip = t * t * (3f - 2f * t);
@@ -147,16 +212,19 @@ namespace Game.Locomotion
             transform.SetLocalPositionAndRotation(pivot - rotation * pivot + Vector3.down * (drop * down), rotation);
         }
 
-        private void GetUp()
+        private void GetUp(bool fadeIn)
         {
             fallen = false;
+            rising = false;
+            stopAt = 1f;
+            holding = false;
             foreach (var hand in hands)
             {
                 if (hand != null) hand.SetParent(offset, false);
             }
             hands.Clear();
             transform.SetLocalPositionAndRotation(homePosition, homeRotation);
-            if (fade != null) fade.FadeIn(fadeInTime);
+            if (fadeIn && fade != null) fade.FadeIn(fadeInTime);
         }
     }
 }

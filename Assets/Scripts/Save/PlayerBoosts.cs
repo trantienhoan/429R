@@ -65,6 +65,34 @@ namespace Game.Saving
             Apply(true);
         }
 
+        /// <summary>The player's health right now (PlayerHealth). False when there's no PlayerHealth FSM.</summary>
+        public static bool TryGetHealth(out float value)
+        {
+            value = 0f;
+            if (!Find(out var health, out _)) return false;
+            value = health.Value;
+            return true;
+        }
+
+        /// <summary>Sets the player's health (e.g. back to what it was at Get a Rest). False when there's no PlayerHealth FSM.</summary>
+        public static bool SetHealth(float value)
+        {
+            if (!Find(out var health, out _)) return false;
+            health.Value = value;
+            return true;
+        }
+
+        /// <summary>
+        /// Sets the player's health to full: the cap (DefautPlayerHealth, with the bonuses), e.g. a revive. False when
+        /// there's no PlayerHealth FSM.
+        /// </summary>
+        public static bool HealToFull()
+        {
+            if (!Find(out var health, out var cap)) return false;
+            health.Value = cap.Value;
+            return true;
+        }
+
         /// <summary>Takes the Boss Seeds' bonus off again (Reset Progress).</summary>
         public static void Reset()
         {

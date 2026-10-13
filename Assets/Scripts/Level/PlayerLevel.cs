@@ -10,7 +10,10 @@ using UnityEngine.XR.Interaction.Toolkit.Locomotion.Movement;
 
 namespace Game.Leveling
 {
-    /// <summary>What the player can put level-up points into.</summary>
+    /// <summary>
+    /// What the player can put level-up points into: the six normal stats, then the bonus stats (from Extra Revive on),
+    /// which only take bonus points. New ones go at the end: the save keeps the points in this order.
+    /// </summary>
     public enum Stat
     {
         MaxHealth,
@@ -19,6 +22,11 @@ namespace Game.Leveling
         FistSize,
         ThrowPower,
         MoveSpeed,
+        ExtraRevive,
+        // No longer offered (Extra Revive gives the health now); kept so the saved points keep their places.
+        BonusMaxHealth,
+        BonusFistSize,
+        BonusPower,
     }
 
     /// <summary>
@@ -29,13 +37,24 @@ namespace Game.Leveling
     /// Max Health raises the health cap; Toughness cuts the damage enemies do and how far big hits throw the player;
     /// Weapon Efficiency makes weapons hit harder and wear out slower; Fist Size grows the fists; Throw Power makes
     /// throws leave the hand faster; Move Speed makes walking faster. What one point gives is set below.
+    /// Reaching a Bonus Level (10, 20, 21) also gives a bonus point for the three bonus stats (the menu's Bonus Stats
+    /// panel): Fist Size at Bonus Multiplier (10) times a normal point, Power (throws as Bonus Multiplier times a normal
+    /// Throw Power point, and punches hit and push harder) and Extra Revive (one more revive every run, see Checkpoints,
+    /// and a higher health cap).
     /// The level, the EXP and the points are kept in the save (Save Manager). Keep one in the scene;
     /// Tools > 429 Game > Player > Set Up Level System makes it, with its menu and its notice.
     /// </summary>
     [DisallowMultipleComponent]
     public class PlayerLevel : MonoBehaviour
     {
-        public const int StatCount = 6;
+        public const int StatCount = 10;
+
+        /// <summary>The stats every level's points go into, in the menu's order.</summary>
+        public static readonly Stat[] NormalStats =
+            { Stat.MaxHealth, Stat.Toughness, Stat.WeaponEfficiency, Stat.FistSize, Stat.ThrowPower, Stat.MoveSpeed };
+
+        /// <summary>The bonus stats, in the order of the menu's Bonus Stats panel.</summary>
+        public static readonly Stat[] BonusStats = { Stat.BonusFistSize, Stat.BonusPower, Stat.ExtraRevive };
 
         /// <summary>What the save keeps.</summary>
         [Serializable]
@@ -50,13 +69,29 @@ namespace Game.Leveling
         [Header("Levels")]
         [Tooltip("EXP needed to go up from each level: the first number is from level 0 to 1, the next from 1 to 2, and so " +
                  "on. The player starts at level 0; there are as many levels as numbers here.")]
-        [SerializeField] private int[] expToNextLevel = { 100, 200, 300, 400, 400, 400, 400, 400, 400, 400 };
+        [SerializeField] private int[] expToNextLevel =
+            { 100, 200, 300, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400 };
         [Tooltip("Points to spend on stats, given at every level up.")]
         [Min(0)]
         [SerializeField] private int pointsPerLevel = 2;
         [Tooltip("The most points one stat can have.")]
         [Min(1)]
         [SerializeField] private int maxPointsPerStat = 10;
+
+        [Header("Bonus stats")]
+        [Tooltip("Reaching each of these levels gives a bonus point, for the bonus stats only. The menu's Bonus Stats page " +
+                 "shows from the first of them on.")]
+        [SerializeField] private int[] bonusLevels = { 10, 20, 21 };
+        [Tooltip("A bonus point in Fist Size, and Power's throws, give this many times what a normal point does.")]
+        [Min(1f)]
+        [SerializeField] private float bonusMultiplier = 10f;
+        [Tooltip("Power: besides the throws, punches hit, break and push this share harder (0.25 = 25% more a bonus point).")]
+        [Min(0f)]
+        [SerializeField] private float punchPowerPerPoint = 0.25f;
+        [Tooltip("Extra Revive: besides one more revive every run, the health cap goes up by this much a bonus point (and " +
+                 "the player is healed that much).")]
+        [Min(0f)]
+        [SerializeField] private float reviveHealthPerPoint = 50f;
 
         [Header("What one point gives")]
         [Tooltip("Max Health: the health cap goes up by this much (and the player is healed that much).")]
@@ -121,20 +156,64 @@ namespace Game.Leveling
 
         public int MaxPointsPerStat => maxPointsPerStat;
 
-        /// <summary>Points not yet put into a stat.</summary>
+        /// <summary>Points not yet put into a stat (bonus points not counted).</summary>
         public int UnspentPoints
         {
             get
             {
                 int spent = 0;
-                foreach (int p in points) spent += p;
+                for (int i = 0; i < StatCount; i++)
+                {
+                    if (!IsBonus((Stat)i)) spent += points[i];
+                }
                 return Mathf.Max(0, level * pointsPerLevel - spent);
             }
         }
 
+        /// <summary>Bonus points the levels reached so far gave (one at each Bonus Level).</summary>
+        public int BonusPoints
+        {
+            get
+            {
+                int count = 0;
+                if (bonusLevels != null)
+                {
+                    foreach (int at in bonusLevels)
+                    {
+                        if (at > 0 && level >= at) count++;
+                    }
+                }
+                return count;
+            }
+        }
+
+        /// <summary>Bonus points not yet put into a bonus stat.</summary>
+        public int UnspentBonusPoints
+        {
+            get
+            {
+                int spent = 0;
+                foreach (var stat in BonusStats) spent += points[(int)stat];
+                return Mathf.Max(0, BonusPoints - spent);
+            }
+        }
+
+        /// <summary>The levels that give a bonus point.</summary>
+        public IReadOnlyList<int> BonusLevels => bonusLevels ?? Array.Empty<int>();
+
+        /// <summary>Whether the stat takes bonus points instead of the points every level gives.</summary>
+        public static bool IsBonus(Stat stat) => stat >= Stat.ExtraRevive;
+
         public int Points(Stat stat) => points[(int)stat];
 
-        public bool CanRaise(Stat stat) => UnspentPoints > 0 && Points(stat) < maxPointsPerStat;
+        /// <summary>The most points the stat can have (a bonus stat: one for each Bonus Level).</summary>
+        public int MaxPoints(Stat stat) => IsBonus(stat) ? Mathf.Max(1, bonusLevels != null ? bonusLevels.Length : 0) : maxPointsPerStat;
+
+        /// <summary>Whether the Level Up menu shows the stat (the bonus stats once the first bonus point is in).</summary>
+        public bool IsShown(Stat stat) => !IsBonus(stat) || BonusPoints > 0;
+
+        public bool CanRaise(Stat stat) =>
+            Points(stat) < MaxPoints(stat) && (IsBonus(stat) ? UnspentBonusPoints > 0 : UnspentPoints > 0);
 
         // What the stats do, read by the things they change. Without a Player Level in the scene nothing changes.
 
@@ -150,18 +229,24 @@ namespace Game.Leveling
         /// <summary>The share of a hit's wear a weapon takes (Weapon Efficiency): 1 = all of it.</summary>
         public static float WeaponWearShare => Instance != null ? Instance.Cut(Stat.WeaponEfficiency, Instance.weaponWearCutPerPoint) : 1f;
 
-        /// <summary>How much bigger the fist is, in hand sizes (Fist Size): 0 = as always.</summary>
-        public static float FistSizeBonus => Instance != null ? Instance.Points(Stat.FistSize) * Instance.fistSizePerPoint : 0f;
+        /// <summary>How much bigger the fist is, in hand sizes (Fist Size and its bonus): 0 = as always.</summary>
+        public static float FistSizeBonus => Instance != null ? Instance.WithBonus(Stat.FistSize, Stat.BonusFistSize) * Instance.fistSizePerPoint : 0f;
 
-        /// <summary>How much faster throws leave the hand (Throw Power): 1 = as always.</summary>
-        public static float ThrowScale => Instance != null ? Instance.Gain(Stat.ThrowPower, Instance.throwPerPoint) : 1f;
+        /// <summary>How much faster throws leave the hand (Throw Power, and the Power bonus): 1 = as always.</summary>
+        public static float ThrowScale => Instance != null ? 1f + Instance.WithBonus(Stat.ThrowPower, Stat.BonusPower) * Instance.throwPerPoint : 1f;
 
         /// <summary>How much faster the player walks (Move Speed): 1 = as always.</summary>
         public static float SpeedScale => Instance != null ? Instance.Gain(Stat.MoveSpeed, Instance.speedPerPoint) : 1f;
 
+        /// <summary>How much harder punches hit, break and push (the Power bonus): 1 = as always.</summary>
+        public static float PunchPowerScale => Instance != null ? Instance.Gain(Stat.BonusPower, Instance.punchPowerPerPoint) : 1f;
+
         private float Cut(Stat stat, float perPoint) => Mathf.Clamp(1f - Points(stat) * perPoint, 0.1f, 1f);
 
         private float Gain(Stat stat, float perPoint) => 1f + Points(stat) * perPoint;
+
+        // A stat's points with its bonus stat's on top, each bonus point worth Bonus Multiplier normal ones.
+        private float WithBonus(Stat stat, Stat bonus) => Points(stat) + bonusMultiplier * Points(bonus);
 
         /// <summary>The stat's name on the Level Up menu.</summary>
         public static string Name(Stat stat)
@@ -173,22 +258,39 @@ namespace Game.Leveling
                 case Stat.WeaponEfficiency: return "Weapon Efficiency";
                 case Stat.FistSize: return "Fist Size";
                 case Stat.ThrowPower: return "Throw Power";
-                default: return "Move Speed";
+                case Stat.MoveSpeed: return "Move Speed";
+                case Stat.BonusFistSize: return "Fist Size " + Times;
+                case Stat.BonusPower: return "Power";
+                default: return "Extra Revive";
             }
         }
 
-        /// <summary>What the stat gives right now, for the Level Up menu, e.g. "+30 health".</summary>
+        // "x10": how many normal points a bonus point is worth.
+        private static string Times => "x" + (Instance != null ? Instance.bonusMultiplier : 10f).ToString("0.#");
+
+        /// <summary>
+        /// What the stat's points give right now, for the Level Up menu, e.g. "+30 health" (a bonus stat with no point
+        /// yet: what one gives).
+        /// </summary>
         public string Describe(Stat stat)
         {
             int p = Points(stat);
+            // A bonus stat shows what a point would give until it has one.
+            int shown = IsBonus(stat) && p == 0 ? 1 : p;
+            string each = IsBonus(stat) && p == 0 ? " a point" : "";
             switch (stat)
             {
                 case Stat.MaxHealth: return $"+{p * healthPerPoint:0} health";
                 case Stat.Toughness: return $"-{Percent(1f - DamageShare)} damage, -{Percent(1f - PushShare)} knockback";
                 case Stat.WeaponEfficiency: return $"+{Percent(WeaponDamageScale - 1f)} damage, -{Percent(1f - WeaponWearShare)} wear";
-                case Stat.FistSize: return $"+{Percent(FistSizeBonus)} size";
-                case Stat.ThrowPower: return $"+{Percent(ThrowScale - 1f)} throw speed";
-                default: return $"+{Percent(SpeedScale - 1f)} walking speed";
+                case Stat.FistSize: return $"+{Percent(p * fistSizePerPoint)} size";
+                case Stat.ThrowPower: return $"+{Percent(p * throwPerPoint)} throw speed";
+                case Stat.MoveSpeed: return $"+{Percent(SpeedScale - 1f)} walking speed";
+                case Stat.BonusFistSize: return $"+{Percent(shown * bonusMultiplier * fistSizePerPoint)} fist size{each}";
+                case Stat.BonusPower: return $"+{Percent(shown * bonusMultiplier * throwPerPoint)} throws, +{Percent(shown * punchPowerPerPoint)} punches{each}";
+                default:
+                    return (shown == 1 ? "+1 revive every run" : $"+{shown} revives every run") +
+                           $", +{shown * reviveHealthPerPoint:0} max health{each}";
             }
         }
 
@@ -223,7 +325,7 @@ namespace Game.Leveling
         {
             if (!CanRaise(stat)) return false;
             points[(int)stat]++;
-            Apply(true);
+            Apply(true, true);
             Changed?.Invoke();
             return true;
         }
@@ -240,14 +342,24 @@ namespace Game.Leveling
             level = saved != null ? Mathf.Clamp(saved.level, 0, MaxLevel) : 0;
             exp = saved != null && !IsMaxLevel ? Mathf.Clamp(saved.exp, 0, ExpNeeded - 1) : 0;
             int left = level * pointsPerLevel;
+            int bonusLeft = BonusPoints;
             for (int i = 0; i < StatCount; i++)
             {
                 int wanted = saved != null && saved.points != null && i < saved.points.Count ? saved.points[i] : 0;
                 // Never more than the level has given (e.g. after Points Per Level was lowered).
+                if (IsBonus((Stat)i))
+                {
+                    // A bonus stat no longer offered gives its points back.
+                    if (Array.IndexOf(BonusStats, (Stat)i) < 0) wanted = 0;
+                    points[i] = Mathf.Clamp(wanted, 0, Mathf.Min(MaxPoints((Stat)i), bonusLeft));
+                    bonusLeft -= points[i];
+                    continue;
+                }
                 points[i] = Mathf.Clamp(wanted, 0, Mathf.Min(maxPointsPerStat, left));
                 left -= points[i];
             }
-            Apply(true);
+            // The saved revives already count the bonus revives the player has.
+            Apply(true, false);
             Changed?.Invoke();
         }
 
@@ -313,11 +425,13 @@ namespace Game.Leveling
             if (args.interactableObject is Component thing) WeaponWear.Watch(thing.gameObject);
         }
 
-        // The stats that are set on something (the others are read when needed): the health cap and the walking speed.
-        private void Apply(bool heal)
+        // The stats that are set on something (the others are read when needed): the health cap, the walking speed and
+        // the revives. Heal: a raised cap heals too. Give Revives: a new bonus revive is one more right now too.
+        private void Apply(bool heal, bool giveRevives)
         {
-            PlayerBoosts.SetLevelHealthBonus(Points(Stat.MaxHealth) * healthPerPoint, heal);
+            PlayerBoosts.SetLevelHealthBonus(Points(Stat.MaxHealth) * healthPerPoint + Points(Stat.ExtraRevive) * reviveHealthPerPoint, heal);
             ApplySpeed();
+            Checkpoints.SetLevelRevives(Points(Stat.ExtraRevive), giveRevives);
         }
 
         private void ApplySpeed()

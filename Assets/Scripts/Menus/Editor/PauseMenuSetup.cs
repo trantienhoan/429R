@@ -22,6 +22,10 @@ namespace Game.EditorTools
         // Tall enough for the title, tip, options and buttons.
         private const float PanelHeightWithOptions = 390f;
         private static readonly Color OptionColor = new(0.25f, 0.3f, 0.52f, 1f);
+        private const string BackArrowSprite = "Assets/Images/icon_back_arrow.png";
+        private const string QuitMessage =
+            "Re-Dream: start over from the very beginning. Your candies, items and level are kept.\n\n" +
+            "Get a Rest: close the game. Next time you play, you go on from your last checkpoint.";
 
         /// <summary>
         /// Creates the pause menu, or adds what an existing one is missing (the Arm swing, Height and Comfort vignette
@@ -50,6 +54,8 @@ namespace Game.EditorTools
             if (AddOptions(menu, font)) notes.Add("added the Arm swing and Height options");
             if (AddVignetteOption(menu, font)) notes.Add("added the Comfort vignette option");
             if (AddResetProgress(menu, font)) notes.Add("added Reset Progress (hold the title for 7 s)");
+            if (AddQuitChoice(menu, font)) notes.Add("Quit now asks: Re-Dream or Get a Rest");
+            if (TidyQuitChoice(menu)) notes.Add("the Quit box now has Re-Dream and Get a Rest, and Back is an arrow in its top left");
 
             var origin = Object.FindAnyObjectByType<XROrigin>(FindObjectsInactive.Include);
             if (origin != null)
@@ -214,7 +220,7 @@ namespace Game.EditorTools
             Undo.RegisterCreatedObjectUndo(box.gameObject, "Add Reset Progress");
             SetupUtility.Stretch(box, Vector2.zero, Vector2.zero);
             var background = box.gameObject.AddComponent<Image>();
-            background.color = new Color(0.17f, 0.05f, 0.09f, 0.98f);
+            background.color = new Color(0.17f, 0.05f, 0.09f, 1f);
             // Catches the pointer, so nothing on the menu behind it can be pressed while it asks.
             background.raycastTarget = true;
 
@@ -224,6 +230,7 @@ namespace Game.EditorTools
                 "This deletes all your saved progress: your candies, everything you bought and every path you opened, " +
                 "including your cloud save. Then the game starts over from the beginning.\n\nThis can't be undone.",
                 23f, TextAlignmentOptions.Center, FontStyles.Normal, font);
+            message.textWrappingMode = TextWrappingModes.Normal;
             SetupUtility.TopBand(message.rectTransform, 86f, 250f, 26f, 26f);
             SetupUtility.ShrinkToFit(message, 16f);
 
@@ -244,6 +251,147 @@ namespace Game.EditorTools
             SetupUtility.SetReference(menu, "resetConfirmPanel", box.gameObject);
             SetupUtility.SetReference(menu, "resetConfirmButton", confirm);
             SetupUtility.SetReference(menu, "resetCancelButton", cancel);
+            return true;
+        }
+
+        /// <summary>
+        /// Brings a Quit box made before up to date: two buttons, Re-Dream (was "To the Start") and Get a Rest, with Back
+        /// as an arrow in the box's top left corner. Running it again changes nothing.
+        /// </summary>
+        [MenuItem("Tools/429 Game/Menu/Update Quit Choice")]
+        public static void UpdateQuitChoice()
+        {
+            var menu = Object.FindAnyObjectByType<PauseMenu>(FindObjectsInactive.Include);
+            if (menu == null)
+            {
+                Debug.LogError("[Pause Menu Setup] No Pause Menu in the open scene: run Set Up Pause Menu.");
+                return;
+            }
+            bool changed = TidyQuitChoice(menu);
+            if (changed) EditorSceneManager.MarkSceneDirty(menu.gameObject.scene);
+            Debug.Log(changed
+                ? "[Pause Menu Setup] The Quit box now has Re-Dream and Get a Rest, and Back is an arrow in its top left. Save the scene."
+                : "[Pause Menu Setup] The Quit box is already up to date.", menu);
+        }
+
+        [MenuItem("Tools/429 Game/Menu/Update Quit Choice", true)]
+        private static bool CanUpdateQuitChoice() => !EditorApplication.isPlaying;
+
+        // Renames To the Start to Re-Dream (button and message), and moves Back out of the button row to the top left
+        // corner as an arrow.
+        private static bool TidyQuitChoice(PauseMenu menu)
+        {
+            var serialized = new SerializedObject(menu);
+            if (serialized.FindProperty("quitPanel").objectReferenceValue is not GameObject boxObject ||
+                boxObject.transform is not RectTransform box) return false;
+            bool changed = false;
+
+            var message = box.Find("Message") != null ? box.Find("Message").GetComponent<TMP_Text>() : null;
+            if (message != null && message.text != QuitMessage)
+            {
+                Undo.RecordObject(message, "Update Quit Choice");
+                message.text = QuitMessage;
+                changed = true;
+            }
+
+            if (serialized.FindProperty("toStartButton").objectReferenceValue is Button toStart)
+            {
+                var label = toStart.GetComponentInChildren<TMP_Text>(true);
+                if (label != null && label.text != "Re-Dream")
+                {
+                    Undo.RecordObject(label, "Update Quit Choice");
+                    label.text = "Re-Dream";
+                    Undo.RecordObject(toStart.gameObject, "Update Quit Choice");
+                    toStart.gameObject.name = "Re-Dream";
+                    changed = true;
+                }
+            }
+
+            if (serialized.FindProperty("quitBackButton").objectReferenceValue is Button back && back.transform.parent != box)
+            {
+                MakeBackArrow(back, box);
+                changed = true;
+            }
+            return changed;
+        }
+
+        // The Back button as an arrow in the box's top left corner.
+        private static void MakeBackArrow(Button back, RectTransform box)
+        {
+            var rect = (RectTransform)back.transform;
+            Undo.SetTransformParent(rect, box, "Back Arrow");
+            Undo.RecordObject(rect, "Back Arrow");
+            rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 1f);
+            rect.anchoredPosition = new Vector2(14f, -14f);
+            rect.sizeDelta = new Vector2(60f, 60f);
+            rect.localScale = Vector3.one;
+            rect.localRotation = Quaternion.identity;
+
+            var label = back.GetComponentInChildren<TMP_Text>(true);
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(BackArrowSprite);
+            if (sprite == null)
+            {
+                // No icon: an arrow drawn with the font.
+                if (label != null)
+                {
+                    Undo.RecordObject(label, "Back Arrow");
+                    label.text = "<";
+                }
+                return;
+            }
+            if (label != null) Undo.DestroyObjectImmediate(label.gameObject);
+            var icon = SetupUtility.CreateImage("Arrow", rect, Color.white);
+            Undo.RegisterCreatedObjectUndo(icon.gameObject, "Back Arrow");
+            icon.sprite = sprite;
+            icon.preserveAspect = true;
+            SetupUtility.Stretch(icon.rectTransform, new Vector2(8f, 8f), new Vector2(-8f, -8f));
+        }
+
+        // The box Quit opens, over the whole menu: Re-Dream (a new run from the very beginning) or Get a Rest (close
+        // the game; it continues from the last checkpoint), and Back (an arrow in its top left corner).
+        private static bool AddQuitChoice(PauseMenu menu, TMP_FontAsset font)
+        {
+            var serialized = new SerializedObject(menu);
+            if (serialized.FindProperty("quitPanel").objectReferenceValue != null) return false;
+            if (serialized.FindProperty("panel").objectReferenceValue is not GameObject panelObject ||
+                panelObject.transform is not RectTransform panel) return false;
+
+            var box = SetupUtility.CreateRect("Quit Choice", panel);
+            Undo.RegisterCreatedObjectUndo(box.gameObject, "Add Quit Choice");
+            SetupUtility.Stretch(box, Vector2.zero, Vector2.zero);
+            var background = box.gameObject.AddComponent<Image>();
+            background.color = new Color(0.08f, 0.06f, 0.14f, 1f);
+            // Catches the pointer, so nothing on the menu behind it can be pressed while it asks.
+            background.raycastTarget = true;
+
+            var heading = SetupUtility.CreateText("Heading", box, "Leaving?", 34f, TextAlignmentOptions.Center, FontStyles.Bold, font);
+            SetupUtility.TopBand(heading.rectTransform, 22f, 50f, 20f, 20f);
+            var message = SetupUtility.CreateText("Message", box, QuitMessage, 22f, TextAlignmentOptions.Center, FontStyles.Normal, font);
+            message.textWrappingMode = TextWrappingModes.Normal;
+            SetupUtility.TopBand(message.rectTransform, 80f, 170f, 26f, 26f);
+            SetupUtility.ShrinkToFit(message, 15f);
+
+            var buttons = SetupUtility.CreateRect("Buttons", box);
+            SetupUtility.BottomBand(buttons, 24f, 64f, 20f, 20f);
+            var row = buttons.gameObject.AddComponent<HorizontalLayoutGroup>();
+            row.spacing = 14f;
+            row.childAlignment = TextAnchor.MiddleCenter;
+            row.childControlWidth = true;
+            row.childControlHeight = true;
+            row.childForceExpandWidth = true;
+            row.childForceExpandHeight = true;
+            var toStart = SetupUtility.CreateButton("Re-Dream", buttons, "Re-Dream", 24f, font, new Color(0.6f, 0.35f, 0.15f, 1f));
+            var rest = SetupUtility.CreateButton("Get a Rest", buttons, "Get a Rest", 24f, font, new Color(0.6f, 0.22f, 0.28f, 1f));
+            foreach (var text in buttons.GetComponentsInChildren<TMP_Text>(true)) SetupUtility.ShrinkToFit(text, 14f);
+            var back = SetupUtility.CreateButton("Back", box, "<", 30f, font, OptionColor);
+            MakeBackArrow(back, box);
+            box.gameObject.SetActive(false);
+
+            SetupUtility.SetReference(menu, "quitPanel", box.gameObject);
+            SetupUtility.SetReference(menu, "toStartButton", toStart);
+            SetupUtility.SetReference(menu, "restButton", rest);
+            SetupUtility.SetReference(menu, "quitBackButton", back);
             return true;
         }
 

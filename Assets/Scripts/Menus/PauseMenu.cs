@@ -14,7 +14,9 @@ namespace Game.Menus
     /// Pause menu. The menu button on the left controller (or A on the right, or Esc) stops the game
     /// and shows Resume, Quit, a random tip and three options in front of you: how arm swinging works, the player's
     /// height (to play seated, or stand taller or shorter) and how strong the comfort vignette is. Holding the title
-    /// for a while (7 s) asks whether to reset all saved progress and start the game over.
+    /// for a while (7 s) asks whether to reset all saved progress and start the game over. Quit asks how: Re-Dream
+    /// (start a new run from the very beginning, keeping candies and items) or Get a Rest (close the game; next time it
+    /// continues from the last checkpoint).
     /// </summary>
     public class PauseMenu : MonoBehaviour
     {
@@ -48,6 +50,13 @@ namespace Game.Menus
         [SerializeField] private Button resetConfirmButton;
         [SerializeField] private Button resetCancelButton;
 
+        [Header("Quit")]
+        [Tooltip("The box over the menu that asks how to quit; hidden until Quit is pressed. Empty: Quit closes the game.")]
+        [SerializeField] private GameObject quitPanel;
+        [SerializeField] private Button toStartButton;
+        [SerializeField] private Button restButton;
+        [SerializeField] private Button quitBackButton;
+
         [Header("Opening")]
         [Tooltip("Defaults to the menu button on the left controller, A on the right controller and Esc on the keyboard.")]
         [SerializeField] private InputActionProperty menuButton = new(CreateDefaultButton());
@@ -73,7 +82,14 @@ namespace Game.Menus
         private float timeScaleBeforePause = 1f;
         private int lastTip = -1;
 
+        // Things that stopped the game without this menu (Hold), e.g. the Level Up notice.
+        private static readonly System.Collections.Generic.HashSet<object> holds = new();
+        private static float timeScaleBeforeHold = 1f;
+
         public static bool IsPaused { get; private set; }
+
+        /// <summary>Whether something has stopped the game without the pause menu (see Hold).</summary>
+        public static bool IsHeld => holds.Count > 0;
 
         /// <summary>Raised when the game pauses or resumes; read IsPaused for which.</summary>
         public static event Action PauseChanged;
@@ -83,6 +99,29 @@ namespace Game.Menus
         {
             IsPaused = false;
             PauseChanged = null;
+            holds.Clear();
+            timeScaleBeforeHold = 1f;
+        }
+
+        /// <summary>
+        /// Stops the game (time and sound) without showing the pause menu, e.g. while a notice is read, until the same
+        /// thing calls Release. The pause menu can still open and close meanwhile; the game stays stopped until every
+        /// hold is released.
+        /// </summary>
+        public static void Hold(object who)
+        {
+            if (who == null || !holds.Add(who) || holds.Count > 1 || IsPaused) return;
+            timeScaleBeforeHold = Time.timeScale > 0f ? Time.timeScale : 1f;
+            Time.timeScale = 0f;
+            AudioListener.pause = true;
+        }
+
+        /// <summary>Lets the game go on again after Hold (once nothing else holds it and the pause menu is closed).</summary>
+        public static void Release(object who)
+        {
+            if (who == null || !holds.Remove(who) || holds.Count > 0 || IsPaused) return;
+            Time.timeScale = timeScaleBeforeHold;
+            AudioListener.pause = false;
         }
 
         private static InputAction CreateDefaultButton()
@@ -98,7 +137,10 @@ namespace Game.Menus
         {
             if (panel != null) panel.SetActive(false);
             if (resumeButton != null) resumeButton.onClick.AddListener(Resume);
-            if (quitButton != null) quitButton.onClick.AddListener(Quit);
+            if (quitButton != null) quitButton.onClick.AddListener(AskQuit);
+            if (toStartButton != null) toStartButton.onClick.AddListener(ToTheStart);
+            if (restButton != null) restButton.onClick.AddListener(GetARest);
+            if (quitBackButton != null) quitBackButton.onClick.AddListener(HideQuitChoice);
             if (armSwingButton != null) armSwingButton.onClick.AddListener(NextArmSwingMode);
             if (heightDownButton != null) heightDownButton.onClick.AddListener(() => ChangeHeight(-1));
             if (heightUpButton != null) heightUpButton.onClick.AddListener(() => ChangeHeight(1));
@@ -107,6 +149,7 @@ namespace Game.Menus
             if (resetConfirmButton != null) resetConfirmButton.onClick.AddListener(ResetProgressAndRestart);
             if (resetCancelButton != null) resetCancelButton.onClick.AddListener(HideResetConfirm);
             HideResetConfirm();
+            HideQuitChoice();
         }
 
         private void OnEnable()
@@ -144,13 +187,15 @@ namespace Game.Menus
             if (IsPaused) return;
 
             IsPaused = true;
-            timeScaleBeforePause = Time.timeScale > 0f ? Time.timeScale : 1f;
+            // Opened while something holds the game: going back to that hold's speed when both are over.
+            timeScaleBeforePause = IsHeld ? timeScaleBeforeHold : Time.timeScale > 0f ? Time.timeScale : 1f;
             Time.timeScale = 0f;
             if (pauseAudio) AudioListener.pause = true;
 
             ShowRandomTip();
             ShowOptions();
             HideResetConfirm();
+            HideQuitChoice();
             PlacePanel();
             if (panel != null) panel.SetActive(true);
             PauseChanged?.Invoke();
@@ -161,10 +206,21 @@ namespace Game.Menus
             if (!IsPaused) return;
 
             IsPaused = false;
-            Time.timeScale = timeScaleBeforePause;
-            if (pauseAudio) AudioListener.pause = false;
+            if (IsHeld)
+            {
+                // Something else still holds the game (e.g. the Level Up notice): it stays stopped until that's done.
+                timeScaleBeforeHold = timeScaleBeforePause;
+                Time.timeScale = 0f;
+                AudioListener.pause = true;
+            }
+            else
+            {
+                Time.timeScale = timeScaleBeforePause;
+                if (pauseAudio) AudioListener.pause = false;
+            }
 
             HideResetConfirm();
+            HideQuitChoice();
             if (panel != null) panel.SetActive(false);
             PauseChanged?.Invoke();
         }
@@ -192,6 +248,40 @@ namespace Game.Menus
             }
             Resume();
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        }
+
+        // Quit asks how; with no question set up, it just closes the game.
+        private void AskQuit()
+        {
+            if (quitPanel != null) quitPanel.SetActive(true);
+            else Quit();
+        }
+
+        private void HideQuitChoice()
+        {
+            if (quitPanel != null) quitPanel.SetActive(false);
+        }
+
+        /// <summary>
+        /// Starts a new run from the very beginning: no checkpoint, all revives. What the player has (candies, items,
+        /// level) is kept; the scene loads again so everything is as at the start.
+        /// </summary>
+        public void ToTheStart()
+        {
+            HideQuitChoice();
+            Checkpoints.StartNewRun();
+            if (SaveManager.Instance != null) SaveManager.Instance.SaveNow();
+            Resume();
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        }
+
+        /// <summary>Closes the game, saved: next time it continues from the last checkpoint, with the health they have now.</summary>
+        public void GetARest()
+        {
+            HideQuitChoice();
+            if (PlayerBoosts.TryGetHealth(out float health)) Checkpoints.Rest(health);
+            if (SaveManager.Instance != null) SaveManager.Instance.SaveNow();
+            Quit();
         }
 
         public void Quit()
