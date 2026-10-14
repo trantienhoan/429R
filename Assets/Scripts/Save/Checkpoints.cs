@@ -7,7 +7,9 @@ namespace Game.Saving
     /// <summary>
     /// The player's run: the last stage start reached (e.g. "CP Bedroom"), and how many times this run they can still
     /// die and get back up where they fell (Revives Left: 1 a run, plus Extra Revives earned for good, e.g. from a
-    /// special chest, plus the Extra Revive level-up bonus; Player Revive does the getting up). A run starts at the very
+    /// special chest, plus the Extra Revive level-up bonus; Player Revive does the getting up). Each revive left is a
+    /// lucky coin flipped when the player goes down (Revive Coins): a clover gets them up and uses one up, all skulls
+    /// and the run is over. A run starts at the very
     /// start and ends when the player dies with no revive left (back to the start, a new run), beats the game, or picks
     /// "Re-Dream" in the pause menu's Quit box. "Get a Rest" keeps the run and the player's health: the game goes on from the
     /// checkpoint next time. The Save Manager keeps it all. GAMESTAGES uses the PlayMaker actions "Set Checkpoint",
@@ -84,6 +86,17 @@ namespace Game.Saving
             RevivesLeft--;
             Changed?.Invoke();
             return true;
+        }
+
+        /// <summary>
+        /// The player died and stays down although revives were left (the lucky coins all landed on skulls): the run's
+        /// revives are gone, so the game over starts a new run.
+        /// </summary>
+        public static void UseAllRevives()
+        {
+            if (RevivesLeft <= 0) return;
+            RevivesLeft = 0;
+            Changed?.Invoke();
         }
 
         /// <summary>

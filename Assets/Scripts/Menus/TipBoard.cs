@@ -44,7 +44,7 @@ namespace Game.Menus
             "Eat as much candies as you want, this is a game",
             "Nothing to throw? Make a fist and start punching",
             "Clean your room and watch out for the bug bite",
-            "Don't run, Don't Give Up, Don't Fear",
+            "Do Not Run\nDo Not Fear\nDo Not Give Up",
             "Remember to drink more water",
             "Bump your fists together twice to spend your level-up points",
             "Shake a bottle before you throw it. Not too long!",

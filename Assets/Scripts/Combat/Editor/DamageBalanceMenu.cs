@@ -8,7 +8,7 @@ namespace Game.EditorTools
 {
     /// <summary>
     /// Sets the Damage (and for new ones the Power) of every weapon and throwable, so they hit by what they are: a
-    /// fist's best hit does 5, a hammer's 8, a heavy throw (barrel, chair) 6, a medium one (wood box, pumpkin) 4, a light
+    /// fist's best hit does 5, a hammer's 8, a heavy throw (barrel, chair) 7, a medium one (wood box, pumpkin) 6, a light
     /// one (book, paper box, candy) 2, a bottle 2 plus its blast. Throwables fly at 15-40 m/s (their Throw Velocity
     /// Scale), far past the fastest swing, so without this every throw did a fist's best.
     /// Weapons keep their Power (how easily they land big hits); things without a Weapon Power get one (Power 1).
@@ -18,11 +18,15 @@ namespace Game.EditorTools
     {
         // Damage multipliers. A fist is 1: its best hit does 5 (Hit Settings), so these do 5 x the number at best.
         private const float Hammer = 1.6f;   // 8
-        private const float Heavy = 1.2f;    // 6: broom, heavy throws
+        private const float Heavy = 1.2f;    // 6: the broom
         private const float FistLike = 1f;   // 5: flip-flops, guns swung as clubs
         private const float Medium = 0.8f;   // 4
         private const float Soft = 0.6f;     // 3: the pillow
         private const float Small = 0.4f;    // 2: and bottles, which also blow up
+        // Thrown things do a little more than a fist (a throw costs you what you threw): a heavy throw 7, a medium one 6.
+        // Light ones stay at 2: 3 is already a big hit, which would make a thrown book knock enemies back.
+        private const float ThrowHeavy = 1.4f;  // 7
+        private const float ThrowMedium = 1.2f; // 6
 
         private static readonly (string path, float damage, float power)[] Table =
         {
@@ -46,34 +50,35 @@ namespace Game.EditorTools
             ("Items/Pie_Knight_Shield_Legendary", Medium, 0f),
 
             // Heavy throws.
-            ("BedRoom/Wood_Barrel", Heavy, 0f),
-            ("BedRoom/Wood_Barrel2", Heavy, 0f),
-            ("PlayGround/Wood_Barrel2", Heavy, 0f),
-            ("BedRoom/Livingroom_Chair", Heavy, 0f),
-            ("BedRoom/Bedroom_Work_Table_Chair", Heavy, 0f),
-            ("BedRoom/Bedroom_Work_Table_Chair_Metal", Heavy, 0f),
-            ("BedRoom/Bedroom_Candy_Basket", Heavy, 0f),
-            ("BedRoom/Bedroom_Candy_Basket_Metal", Heavy, 0f),
-            ("BedRoom/Bedroom_Candy_Basket_P", Heavy, 0f),
-            ("BedRoom/Livingroom_Cloth_Hanger_Tree", Heavy, 0f),
-            ("PlayGround/Lolipop_Basket", Heavy, 0f),
-            ("Items/Metal_Block/Jenga_Block.003", Heavy, 0f),
+            ("BedRoom/Wood_Barrel", ThrowHeavy, 0f),
+            ("BedRoom/Wood_Barrel2", ThrowHeavy, 0f),
+            ("PlayGround/Wood_Barrel2", ThrowHeavy, 0f),
+            ("BedRoom/Livingroom_Chair", ThrowHeavy, 0f),
+            ("BedRoom/Bedroom_Work_Table_Chair", ThrowHeavy, 0f),
+            ("BedRoom/Bedroom_Work_Table_Chair_Metal", ThrowHeavy, 0f),
+            ("BedRoom/Bedroom_Candy_Basket", ThrowHeavy, 0f),
+            ("BedRoom/Bedroom_Candy_Basket_Metal", ThrowHeavy, 0f),
+            ("BedRoom/Bedroom_Candy_Basket_P", ThrowHeavy, 0f),
+            ("BedRoom/Livingroom_Cloth_Hanger_Tree", ThrowHeavy, 0f),
+            ("PlayGround/Lolipop_Basket", ThrowHeavy, 0f),
+            ("Items/Metal_Block/Jenga_Block.003", ThrowHeavy, 0f),
 
             // Medium throws. Pumpkins too: the tree keeps growing them, and they last a few throws.
-            ("Items/Breakable/Pumpkin_On_Tree", Medium, 0f),
-            ("Items/Breakable/Pumpkin_2", Medium, 0f),
-            ("Items/Breakable/Pumpkin_51", Medium, 0f),
-            ("Items/Breakable/pumpkin_Z", Medium, 0f),
-            ("Items/Breakable/pumpkin_bag", Medium, 0f),
-            ("BedRoom/Wood_Box", Medium, 0f),
-            ("BedRoom/Wood_Box_Weapon_Main", Medium, 0f),
-            ("BedRoom/Bedroom_Treasure_Chest", Medium, 0f),
-            ("BedRoom/LivingRoom_Stool", Medium, 0f),
-            ("BedRoom/Bedroom_Bed_Stool_Metal", Medium, 0f),
-            ("BedRoom/Livingroom_Wood_Holder", Medium, 0f),
-            ("Light/Pumpkin_Candle", Medium, 0f),
-            ("Light/Pumpkin_Candle_Purple", Medium, 0f),
-            ("Light/Skull_And_Candle", Medium, 0f),
+            ("Items/Breakable/Pumpkin_On_Tree", ThrowMedium, 0f),
+            ("Items/Breakable/Pumpkin_2", ThrowMedium, 0f),
+            ("Items/Breakable/Pumpkin_51", ThrowMedium, 0f),
+            ("Items/Breakable/pumpkin_Z", ThrowMedium, 0f),
+            ("Items/Breakable/pumpkin_bag", ThrowMedium, 0f),
+            ("BedRoom/Wood_Box", ThrowMedium, 0f),
+            ("BedRoom/Wood_Box_Weapon_Main", ThrowMedium, 0f),
+            ("BedRoom/Bedroom_Treasure_Chest", ThrowMedium, 0f),
+            ("BedRoom/LivingRoom_Stool", ThrowMedium, 0f),
+            ("BedRoom/Bedroom_Bed_Stool_Metal", ThrowMedium, 0f),
+            ("BedRoom/Livingroom_Wood_Holder", ThrowMedium, 0f),
+            ("Light/Pumpkin_Candle", ThrowMedium, 0f),
+            ("Light/Pumpkin_Candle_Purple", ThrowMedium, 0f),
+            ("Light/Skull_And_Candle", ThrowMedium, 0f),
+            // Held, not thrown: stays Medium.
             ("Items/Pie_Knight_Shield", Medium, 0f),
 
             // Bottles: a light hit, then the blast (their Grenade) does its own damage.

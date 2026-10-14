@@ -18,7 +18,8 @@ namespace Game.Enemies
     /// bursts, and circles at a distance; only Max Attackers spiders attack at a time, the rest wait their turn. An
     /// attack starts with a wind-up (it rears up: the player's chance to step back or block), then it picks one of its
     /// Attacks that fits the distance, lunges and bites. The bite only hurts if its mouth actually touches the player's
-    /// body collider; a weapon held in the way, or a fist, blocks it. Afterwards it backs off and circles again.
+    /// body collider; a weapon held in the way, or a fist, blocks it. An attack can also slow the player's walking for a
+    /// moment when it lands (Slow Player To, e.g. the cockroach's face leap). Afterwards it backs off and circles again.
     /// A hit makes it flinch (not again for Flinch Cooldown; with a Stun Guard nothing stops it again for that many
     /// seconds after any stop, so a boss can't be stun-locked); low on health it runs away once.
     /// Size picks Small, Normal or Boss (or one at random by Weight): each has its own size range, health, speed and
@@ -94,6 +95,8 @@ namespace Game.Enemies
             public string playerEvent = "Damage";
             [Tooltip("Played as the attack starts.")]
             public AudioClip sound;
+            [Tooltip("Played when the attack lands on the player, e.g. a screech as it grabs their face. Empty: none.")]
+            public AudioClip landSound;
             [Tooltip("Optional: also sent to the spider's own FSMs as this attack starts.")]
             public string fsmEvent = "";
             [Tooltip("A leap at the player's face: it springs up to their face (Lunge is how far it jumps), clings there " +
@@ -101,6 +104,13 @@ namespace Game.Enemies
             public bool leapToFace;
             [Tooltip("Afterwards it turns and runs away (Run Away Distance) instead of backing off facing the player.")]
             public bool runAwayAfter;
+            [Tooltip("When this attack lands, the player walks at this share of their speed (0.35 = 35%) for Slow " +
+                     "Seconds, like a web ball does. Only with Slow Seconds above 0.")]
+            [Range(0.1f, 1f)]
+            public float slowPlayerTo = 1f;
+            [Tooltip("How long the slow lasts, in seconds; it eases back to normal over the last half second. 0 = none.")]
+            [Min(0f)]
+            public float slowSeconds;
             [Tooltip("For fliers (Flies): Always, only while Flying, or only once Grounded (wings lost). A Flying attack " +
                      "is still used on the ground while no Grounded attack has its animation yet.")]
             public When usedWhen = When.Always;
@@ -1345,6 +1355,8 @@ namespace Game.Enemies
             attackResolved = true;
             DamageVignette.HitFrom(transform);
             SendToPlayer(string.IsNullOrEmpty(kind.playerEvent) ? move.playerEvent : kind.playerEvent);
+            if (move.slowSeconds > 0f) Game.Locomotion.PlayerSlow.Apply(move.slowPlayerTo, move.slowSeconds);
+            if (move.landSound != null) PlayOne(move.landSound, true);
             if (kind.launchHeight > 0f || kind.launchDistance > 0f)
                 Game.Combat.PlayerLaunch.Launch(transform.position, kind.launchHeight, kind.launchDistance);
             SendToOwnFsms("Bite");

@@ -89,6 +89,157 @@ namespace Game.EditorTools
         [MenuItem("Tools/429 Game/Player/Set Up Revive", true)]
         private static bool CanSetUp() => !EditorApplication.isPlaying;
 
+        private const string CoinFolder = "Assets/Prefabs/Items/Revive_Coin";
+        private const string StandInCoin = CoinFolder + "/Revive_Coin_StandIn.prefab";
+        private const string Sfx = "Assets/Audio/SFX/";
+
+        /// <summary>
+        /// Puts Revive Coins on the XR Origin (next to Player Revive), so the revives left are lucky coins flipped when
+        /// the player goes down. Empty slots get the stand-in coin (made from coin_clover.png and coin_skull.png in
+        /// Prefabs/Items/Revive_Coin if it isn't there yet) and the game's sounds; whatever is already set stays.
+        /// </summary>
+        [MenuItem("Tools/429 Game/Player/Set Up Revive Coins")]
+        public static void SetUpCoins()
+        {
+            var origin = Object.FindAnyObjectByType<XROrigin>(FindObjectsInactive.Include);
+            if (origin == null || !origin.TryGetComponent<PlayerRevive>(out _))
+            {
+                Debug.LogError("[Revive Coins] Needs the XR Origin with Player Revive in the open scene (Tools > 429 Game > Player > Set Up Revive first). Nothing changed.");
+                return;
+            }
+
+            var coin = AssetDatabase.LoadAssetAtPath<GameObject>(StandInCoin);
+            string coinNote = "";
+            if (coin == null)
+            {
+                coin = MakeStandInCoin();
+                coinNote = coin != null ? "made the stand-in coin; " : "couldn't make the stand-in coin (coin_clover.png / coin_skull.png missing); ";
+            }
+
+            bool added = !origin.TryGetComponent<ReviveCoins>(out var coins);
+            if (added) coins = Undo.AddComponent<ReviveCoins>(origin.gameObject);
+            var so = new SerializedObject(coins);
+            int filled = 0;
+            filled += Fill(so, "coinPrefab", coin);
+            filled += Fill(so, "tossSound", AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "whoosh.wav"));
+            filled += Fill(so, "cloverSound", AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "shop_buy_success.wav"));
+            filled += Fill(so, "skullSound", AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "Low,_rumbling_hmmmm.wav"));
+            filled += Fill(so, "winSound", AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "health_sfx.wav"));
+            var land = so.FindProperty("landSounds");
+            if (land.arraySize == 0)
+            {
+                var clips = new[] { "metal_object_hit_1.wav", "metal_object_hit_2.wav", "metal_object_hit_3.wav" }
+                    .Select(n => AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + n)).Where(c => c != null).ToArray();
+                land.arraySize = clips.Length;
+                for (int i = 0; i < clips.Length; i++) land.GetArrayElementAtIndex(i).objectReferenceValue = clips[i];
+                if (clips.Length > 0) filled++;
+            }
+            so.ApplyModifiedProperties();
+
+            EditorSceneManager.MarkSceneDirty(origin.gameObject.scene);
+            Selection.activeGameObject = origin.gameObject;
+            Debug.Log($"[Revive Coins] {coinNote}{(added ? "added Revive Coins to the XR Origin" : "the XR Origin already has Revive Coins")}" +
+                      $"{(filled > 0 ? $", filled {filled} empty slot(s)" : "")}. Save the scene.", origin);
+        }
+
+        [MenuItem("Tools/429 Game/Player/Set Up Revive Coins", true)]
+        private static bool CanSetUpCoins() => !EditorApplication.isPlaying;
+
+        private static int Fill(SerializedObject so, string property, Object value)
+        {
+            var p = so.FindProperty(property);
+            if (p == null || p.objectReferenceValue != null || value == null) return 0;
+            p.objectReferenceValue = value;
+            return 1;
+        }
+
+        // A gold coin with the clover on its top (Y) and the skull underneath, both pictures with their top towards Z.
+        private static GameObject MakeStandInCoin()
+        {
+            var clover = Face("coin_clover");
+            var skull = Face("coin_skull");
+            if (clover == null || skull == null) return null;
+
+            var lit = Shader.Find("Universal Render Pipeline/Lit");
+            var gold = new Material(lit) { name = "Revive_Coin_Gold" };
+            gold.SetColor("_BaseColor", new Color(1f, 0.76f, 0.28f, 1f));
+            gold.SetFloat("_Metallic", 0.8f);
+            gold.SetFloat("_Smoothness", 0.65f);
+            Glow(gold, new Color(0.3f, 0.2f, 0.05f, 1f), null);
+            AssetDatabase.CreateAsset(gold, CoinFolder + "/Revive_Coin_Gold.mat");
+
+            var root = new GameObject("Revive_Coin_StandIn");
+            try
+            {
+                var body = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                body.name = "Body";
+                Object.DestroyImmediate(body.GetComponent<Collider>());
+                body.transform.SetParent(root.transform, false);
+                body.transform.localScale = new Vector3(1f, 0.06f, 1f);
+                body.GetComponent<MeshRenderer>().sharedMaterial = gold;
+
+                FaceQuad(root.transform, "Clover", clover, 1f);
+                FaceQuad(root.transform, "Skull", skull, -1f);
+                return PrefabUtility.SaveAsPrefabAsset(root, StandInCoin);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        // The face picture as a cut-out, lit, a little glowing material.
+        private static Material Face(string picture)
+        {
+            string path = $"{CoinFolder}/{picture}.png";
+            // A picture just put in the folder isn't imported yet.
+            if (AssetImporter.GetAtPath(path) == null) AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+            if (AssetImporter.GetAtPath(path) is TextureImporter importer)
+            {
+                importer.alphaIsTransparency = true;
+                importer.wrapMode = TextureWrapMode.Clamp;
+                importer.mipmapEnabled = true;
+                importer.SaveAndReimport();
+            }
+            var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            if (texture == null) return null;
+
+            var face = new Material(Shader.Find("Universal Render Pipeline/Lit")) { name = "Revive_" + picture };
+            face.SetTexture("_BaseMap", texture);
+            face.SetColor("_BaseColor", Color.white);
+            face.SetFloat("_Metallic", 0.45f);
+            face.SetFloat("_Smoothness", 0.6f);
+            face.SetFloat("_AlphaClip", 1f);
+            face.SetFloat("_Cutoff", 0.5f);
+            face.EnableKeyword("_ALPHATEST_ON");
+            face.renderQueue = (int)UnityEngine.Rendering.RenderQueue.AlphaTest;
+            Glow(face, new Color(0.4f, 0.4f, 0.4f, 1f), texture);
+            AssetDatabase.CreateAsset(face, $"{CoinFolder}/Revive_{picture}.mat");
+            return face;
+        }
+
+        // A little self-light, so the coin shows in the dark.
+        private static void Glow(Material material, Color color, Texture texture)
+        {
+            material.EnableKeyword("_EMISSION");
+            material.SetColor("_EmissionColor", color);
+            if (texture != null) material.SetTexture("_EmissionMap", texture);
+            material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
+        }
+
+        // A quad just off the coin's top (up = 1) or bottom (up = -1), facing out, its picture's top towards Z.
+        private static void FaceQuad(Transform coin, string name, Material material, float up)
+        {
+            var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            quad.name = name;
+            Object.DestroyImmediate(quad.GetComponent<Collider>());
+            quad.transform.SetParent(coin, false);
+            quad.transform.localPosition = new Vector3(0f, 0.0605f * up, 0f);
+            // A quad shows towards its -Z: point its Z into the coin.
+            quad.transform.localRotation = Quaternion.LookRotation(up > 0f ? Vector3.down : Vector3.up, Vector3.forward);
+            quad.GetComponent<MeshRenderer>().sharedMaterial = material;
+        }
+
         private static FsmState NewState(Fsm f, string name, Rect near, float x, float y)
         {
             var state = new FsmState(f) { Name = name, Position = new Rect(near.x + x, near.y + y, near.width, near.height) };

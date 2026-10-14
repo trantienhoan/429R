@@ -93,6 +93,17 @@ namespace Game.Saving
             return true;
         }
 
+        /// <summary>
+        /// Sets the player's health to this share of the cap (0.5 = half, 2 = twice the cap: health has no cap), e.g. a
+        /// revive with lucky coins. False when there's no PlayerHealth FSM.
+        /// </summary>
+        public static bool HealToShare(float share)
+        {
+            if (!Find(out var health, out var cap)) return false;
+            health.Value = cap.Value * Mathf.Max(0f, share);
+            return true;
+        }
+
         /// <summary>Takes the Boss Seeds' bonus off again (Reset Progress).</summary>
         public static void Reset()
         {

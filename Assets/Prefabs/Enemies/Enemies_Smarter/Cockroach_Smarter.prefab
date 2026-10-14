@@ -7185,14 +7185,17 @@ MonoBehaviour:
     biteRadius: 0.25
     playerEvent: Damage
     sound: {fileID: 8300000, guid: b019b2d89c3814a4d97fc7001ac02603, type: 3}
+    landSound: {fileID: 0}
     fsmEvent: 
     leapToFace: 0
     runAwayAfter: 0
+    slowPlayerTo: 1
+    slowSeconds: 0
     usedWhen: 0
   - name: Face Leap
     usedBy: 7
     animation: attack_leap
-    weight: 1.5
+    weight: 3
     minDistance: 0.6
     maxDistance: 1.9
     lunge: 1.6
@@ -7203,9 +7206,12 @@ MonoBehaviour:
     biteRadius: 0.25
     playerEvent: Damage
     sound: {fileID: 8300000, guid: b019b2d89c3814a4d97fc7001ac02603, type: 3}
+    landSound: {fileID: 8300000, guid: a4b58480c18e0374e9c1d2b386d637a0, type: 3}
     fsmEvent: 
     leapToFace: 1
     runAwayAfter: 1
+    slowPlayerTo: 0.35
+    slowSeconds: 1.5
     usedWhen: 0
   - name: Dive Bomb
     usedBy: 7
@@ -7221,9 +7227,12 @@ MonoBehaviour:
     biteRadius: 0.3
     playerEvent: Damage
     sound: {fileID: 8300000, guid: b019b2d89c3814a4d97fc7001ac02603, type: 3}
+    landSound: {fileID: 0}
     fsmEvent: 
     leapToFace: 0
     runAwayAfter: 0
+    slowPlayerTo: 1
+    slowSeconds: 0
     usedWhen: 0
   maxAttackers: 2
   attackCooldown: {x: 1.2, y: 2.4}

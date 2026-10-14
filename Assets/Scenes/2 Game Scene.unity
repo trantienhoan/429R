@@ -362929,6 +362929,7 @@ GameObject:
   - component: {fileID: 8317466445825997490}
   - component: {fileID: 8317466445825997491}
   - component: {fileID: 8317466445825997492}
+  - component: {fileID: 8317466445825997493}
   m_Layer: 3
   m_Name: XR Origin
   m_TagString: Player
@@ -367222,6 +367223,7 @@ MonoBehaviour:
   notYetSound: {fileID: 0}
   fallShare: 0.7
   holdSeconds: {x: 1, y: 2}
+  holdAfterCoins: {x: 0.3, y: 0.6}
   riseSeconds: 1.2
   safeSeconds: 1.5
   auraStrength: 1
@@ -367253,6 +367255,63 @@ MonoBehaviour:
   catchUpSpeed: 1
   catchUpTurn: 360
   graceSeconds: 0.4
+--- !u!114 &8317466445825997493
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4959017627811525935}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f46ef3d44c17a3489e9edc5f4e53df1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.ReviveCoins
+  coinPrefab: {fileID: 1253764030465891958, guid: 00cc00210f62fcb49a887b71382e8877,
+    type: 3}
+  cloverSide: 0
+  pictureUp: 3
+  coinWidth: 0.09
+  maxCoins: 4
+  healthPerClover: 0.5
+  cloverChance: 0.5
+  physicsThrow: 0
+  tableDistance: 0.6
+  tableRadius: 0.19
+  throwHeight: 0.15
+  turnsPerSecond: {x: 2, y: 4}
+  tossScale: 6.5
+  bounciness: 0.25
+  friction: 0.4
+  maxThrowSeconds: 4
+  tablePrefab: {fileID: 5526991553153236614, guid: 262bbaf07912f754b88feaa684076f3a,
+    type: 3}
+  tableColor: {r: 0.09, g: 0.04, b: 0.13, a: 0.8}
+  tableRimColor: {r: 1, g: 0.78, b: 0.3, a: 0.9}
+  fallFirst: 0.45
+  distance: 0.5
+  belowEyes: 0.04
+  spacing: 0.11
+  tossHeight: 0.015
+  flipSeconds: 1.8
+  turns: 7
+  nextCoinAfter: 0.55
+  rockDegrees: 12
+  resultSeconds: 1.5
+  cloverColor: {r: 0.35, g: 1, b: 0.4, a: 1}
+  skullColor: {r: 1, g: 0.22, b: 0.18, a: 1}
+  coinLight: {r: 1, g: 0.93, b: 0.78, a: 1}
+  coinLightIntensity: 0.35
+  font: {fileID: 0}
+  tossSound: {fileID: 8300000, guid: 97d2e1dfb0c1d454cb1ef3d2f8ce2511, type: 3}
+  landSounds:
+  - {fileID: 8300000, guid: 693c989e9dcc7c2439a5fc1361c295ed, type: 3}
+  - {fileID: 8300000, guid: 1d3e9a2d9af772241983787c2066f8ec, type: 3}
+  - {fileID: 8300000, guid: 841f5f6ac64768e4b83dad4eb3584bc5, type: 3}
+  cloverSound: {fileID: 8300000, guid: 2b8bf995953319743856b754dfe7b436, type: 3}
+  skullSound: {fileID: 8300000, guid: c03dca926a3adde41a83f11a0c3205f9, type: 3}
+  winSound: {fileID: 8300000, guid: c7ac2a1c6db96564da7cefd0a2d27c7b, type: 3}
+  volume: 0.9
 --- !u!4 &8385630121836801222
 Transform:
   m_ObjectHideFlags: 0

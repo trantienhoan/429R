@@ -11,7 +11,8 @@ namespace Game.Combat
     /// Getting back up after dying, while the run has a revive left (see Checkpoints): instead of the game over, the
     /// death fall stops part way (most of the way) and holds there for a moment (1-2 s), the player hears "Not yet", and the
     /// fall plays backwards as they get up, at
-    /// full health, with a wake-up aura (the level-up aura's burst, pushing enemies and loose things away) and the heart
+    /// full health (or the share the lucky coins won: Revive Coins), with a wake-up aura (the level-up aura's burst,
+    /// pushing enemies and loose things away) and the heart
     /// on the health HUD cracked for the rest of the run. Nothing can hurt them while they're down, nor for a moment
     /// after. The PlayerDeath FSM starts with "Revive?" (Try Revive): with a revive left it goes to "Not Yet" (Revive
     /// Player), which runs this; with none, the game over goes on as before. Goes on the XR Origin;
@@ -35,6 +36,8 @@ namespace Game.Combat
         [SerializeField] private float fallShare = 0.7f;
         [Tooltip("Seconds the fall holds there before the player gets up: a random time from x to y.")]
         [SerializeField] private Vector2 holdSeconds = new(1f, 2f);
+        [Tooltip("The hold after the lucky coins were flipped (they already kept the player waiting): from x to y seconds.")]
+        [SerializeField] private Vector2 holdAfterCoins = new(0.3f, 0.6f);
         [Tooltip("Seconds getting back up takes: the fall played backwards, while the view fades back in.")]
         [Min(0.1f)]
         [SerializeField] private float riseSeconds = 1.2f;
@@ -54,6 +57,22 @@ namespace Game.Combat
 
         /// <summary>Whether a revive is going on (from the fall until the player can be hurt again).</summary>
         public bool IsReviving { get; private set; }
+
+        /// <summary>
+        /// The health the next revive gives, as a share of the cap (1 = full), e.g. what the lucky coins won. Set it
+        /// before Revive; it goes back to full afterwards.
+        /// </summary>
+        public float NextHealthShare { get; set; } = 1f;
+
+        // The next revive comes after the lucky coins, so its hold is shorter.
+        private bool afterCoins;
+
+        /// <summary>The lucky coins were flipped: the next revive gives this share of the health, after a short hold.</summary>
+        public void SetCoinResult(float healthShare)
+        {
+            NextHealthShare = healthShare;
+            afterCoins = true;
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics() => Instance = null;
@@ -117,7 +136,8 @@ namespace Game.Combat
             if (fall != null) fall.StopPartWay(fallShare);
             for (float waited = 0f; fall != null && !fall.IsHolding && waited < 3f; waited += Time.deltaTime) yield return null;
 
-            float hold = Random.Range(Mathf.Min(holdSeconds.x, holdSeconds.y), Mathf.Max(holdSeconds.x, holdSeconds.y));
+            var range = afterCoins ? holdAfterCoins : holdSeconds;
+            float hold = Random.Range(Mathf.Min(range.x, range.y), Mathf.Max(range.x, range.y));
             if (voiceDelay < 0f)
             {
                 // "Not yet" while still down, then up.
@@ -131,8 +151,10 @@ namespace Game.Combat
                 StartCoroutine(SayNotYetIn(voiceDelay));
             }
 
-            // Full health (the HUD shows it, the heart cracked), up again, and the aura bursts out.
-            PlayerBoosts.HealToFull();
+            // Full health, or what the coins won (the HUD shows it, the heart cracked), up again, and the aura bursts out.
+            PlayerBoosts.HealToShare(NextHealthShare);
+            NextHealthShare = 1f;
+            afterCoins = false;
             if (fall != null && fall.IsDown) fall.Rise(riseSeconds);
             else BackOnRig();
             var aura = FindAnyObjectByType<LevelUpAura>();

@@ -12,9 +12,9 @@ namespace Game.EditorTools
         private const string KnightPath = "Assets/Prefabs/Player/Knight.prefab";
         // Where the board goes: the middle of the path, just above the weapon the knight holds across it (measured with
         // the knight standing at its spawn point, Knight_pos, under GAMESTAGES' Fairy_Pos).
-        private static readonly Vector3 BoardCenter = new(0f, 1.7f, -6.95f);
-        private static readonly Vector2 BoardSize = new(900f, 380f);
-        // About 0.9 x 0.38 m.
+        private static readonly Vector3 BoardCenter = new(0f, 1.8f, -6.95f);
+        private static readonly Vector2 BoardSize = new(1000f, 460f);
+        // About 1 x 0.46 m.
         private const float MetresPerUnit = 0.001f;
         private static readonly Color FrameColor = new(0.45f, 0.3f, 0.16f, 1f);
         private static readonly Color WoodColor = new(0.17f, 0.1f, 0.05f, 0.95f);

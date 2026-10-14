@@ -39,8 +39,8 @@ namespace Game.Leveling
     /// throws leave the hand faster; Move Speed makes walking faster. What one point gives is set below.
     /// Reaching a Bonus Level (10, 20, 21) also gives a bonus point for the three bonus stats (the menu's Bonus Stats
     /// panel): Fist Size at Bonus Multiplier (10) times a normal point, Power (throws as Bonus Multiplier times a normal
-    /// Throw Power point, and punches hit and push harder) and Extra Revive (one more revive every run, see Checkpoints,
-    /// and a higher health cap).
+    /// Throw Power point, and punches hit and push harder) and Extra Revive (one more revive every run, see Checkpoints:
+    /// one more lucky coin to flip when the player goes down, see Revive Coins; and a higher health cap).
     /// The level, the EXP and the points are kept in the save (Save Manager). Keep one in the scene;
     /// Tools > 429 Game > Player > Set Up Level System makes it, with its menu and its notice.
     /// </summary>
@@ -289,7 +289,7 @@ namespace Game.Leveling
                 case Stat.BonusFistSize: return $"+{Percent(shown * bonusMultiplier * fistSizePerPoint)} fist size{each}";
                 case Stat.BonusPower: return $"+{Percent(shown * bonusMultiplier * throwPerPoint)} throws, +{Percent(shown * punchPowerPerPoint)} punches{each}";
                 default:
-                    return (shown == 1 ? "+1 revive every run" : $"+{shown} revives every run") +
+                    return (shown == 1 ? "+1 lucky coin every run" : $"+{shown} lucky coins every run") +
                            $", +{shown * reviveHealthPerPoint:0} max health{each}";
             }
         }
