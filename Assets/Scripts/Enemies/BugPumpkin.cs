@@ -68,6 +68,11 @@ namespace Game.Enemies
             var p = transform.position;
             var closest = new Vector3(head.x, Mathf.Clamp(p.y, feet, head.y), head.z);
             if ((closest - p).magnitude > hitRadius + 0.2f) return;
+            if (Game.Weapons.LegendaryGear.TryBlock(p))
+            {
+                Burst(p);
+                return;
+            }
             player.gameObject.GetComponents(fsms);
             foreach (var fsm in fsms)
             {

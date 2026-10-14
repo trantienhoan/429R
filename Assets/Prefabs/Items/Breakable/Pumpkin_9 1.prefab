@@ -5678,6 +5678,9 @@ GameObject:
   - component: {fileID: 8289588276485476532}
   - component: {fileID: 1344823483077781989}
   - component: {fileID: 6144666242245051080}
+  - component: {fileID: 4853706391710212907}
+  - component: {fileID: 8732974791939725435}
+  - component: {fileID: 5721212171915514260}
   m_Layer: 0
   m_Name: Pumpkin_9 1
   m_TagString: Untagged
@@ -5712,7 +5715,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8690403555129543112}
   serializedVersion: 5
-  m_Mass: 50000
+  m_Mass: 25
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: -0.42, z: 0}
@@ -5730,7 +5733,7 @@ Rigidbody:
   m_IsKinematic: 0
   m_Interpolate: 1
   m_Constraints: 80
-  m_CollisionDetection: 2
+  m_CollisionDetection: 3
 --- !u!64 &1553171448782159517
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -6175,7 +6178,7 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 010101
+        actionEnabled: 010001
         actionIsOpen: 010101
         actionStartIndex: 00000000050000000b000000
         actionHashCodes: b2cf10006053230148c01101
@@ -7179,6 +7182,213 @@ MonoBehaviour:
   - {fileID: 8690403555129543112, guid: 676a3126f33c8de41885ed4c0d0b0878, type: 3}
   - {fileID: 8690403555129543112, guid: ec76c087b6f2f7e449bd46ac0079ccba, type: 3}
   - {fileID: 8690403555129543112, guid: 423da62656a4eb74a94fb73d5dce640f, type: 3}
-  spacing: 0.75
-  maxCandies: 35
+  spacing: 1
+  maxCandies: 60
   minSpeed: 1
+--- !u!114 &4853706391710212907
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8690403555129543112}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ad34abafad169848a38072baa96cdb2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.XR.Interaction.Toolkit::UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable
+  m_InteractionManager: {fileID: 0}
+  m_Colliders: []
+  m_InteractionLayers:
+    m_Bits: 1
+  m_DistanceCalculationMode: 1
+  m_SelectMode: 0
+  m_FocusMode: 1
+  m_CustomReticle: {fileID: 0}
+  m_AllowGazeInteraction: 0
+  m_AllowGazeSelect: 0
+  m_OverrideGazeTimeToSelect: 0
+  m_GazeTimeToSelect: 0.5
+  m_OverrideTimeToAutoDeselectGaze: 0
+  m_TimeToAutoDeselectGaze: 3
+  m_AllowGazeAssistance: 0
+  m_FirstHoverEntered:
+    m_PersistentCalls:
+      m_Calls: []
+  m_LastHoverExited:
+    m_PersistentCalls:
+      m_Calls: []
+  m_HoverEntered:
+    m_PersistentCalls:
+      m_Calls: []
+  m_HoverExited:
+    m_PersistentCalls:
+      m_Calls: []
+  m_FirstSelectEntered:
+    m_PersistentCalls:
+      m_Calls: []
+  m_LastSelectExited:
+    m_PersistentCalls:
+      m_Calls: []
+  m_SelectEntered:
+    m_PersistentCalls:
+      m_Calls: []
+  m_SelectExited:
+    m_PersistentCalls:
+      m_Calls: []
+  m_FirstFocusEntered:
+    m_PersistentCalls:
+      m_Calls: []
+  m_LastFocusExited:
+    m_PersistentCalls:
+      m_Calls: []
+  m_FocusEntered:
+    m_PersistentCalls:
+      m_Calls: []
+  m_FocusExited:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Activated:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Deactivated:
+    m_PersistentCalls:
+      m_Calls: []
+  m_StartingHoverFilters: []
+  m_StartingSelectFilters: []
+  m_StartingInteractionStrengthFilters: []
+  m_AutoFindParentInteractableInHierarchy: 0
+  m_ParentInteractableObject: {fileID: 0}
+  m_AttachTransform: {fileID: 0}
+  m_SecondaryAttachTransform: {fileID: 0}
+  m_UseDynamicAttach: 1
+  m_MatchAttachPosition: 1
+  m_MatchAttachRotation: 1
+  m_SnapToColliderVolume: 1
+  m_ReinitializeDynamicAttachEverySingleGrab: 1
+  m_AttachEaseInTime: 0.15
+  m_MovementType: 0
+  m_PredictedVisualsTransform: {fileID: 0}
+  m_VelocityDamping: 1
+  m_VelocityScale: 1
+  m_AngularVelocityDamping: 1
+  m_AngularVelocityScale: 1
+  m_TrackPosition: 1
+  m_SmoothPosition: 0
+  m_SmoothPositionAmount: 8
+  m_TightenPosition: 0.1
+  m_TrackRotation: 1
+  m_SmoothRotation: 0
+  m_SmoothRotationAmount: 8
+  m_TightenRotation: 0.1
+  m_TrackScale: 1
+  m_SmoothScale: 0
+  m_SmoothScaleAmount: 8
+  m_TightenScale: 0.1
+  m_ThrowOnDetach: 1
+  m_ThrowSmoothingDuration: 0.25
+  m_ThrowSmoothingCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  m_ThrowVelocityScale: 1.5
+  m_ThrowAngularVelocityScale: 1
+  m_ForceGravityOnDetach: 0
+  m_RetainTransformParent: 1
+  m_StartingSingleGrabTransformers: []
+  m_StartingMultipleGrabTransformers: []
+  m_AddDefaultGrabTransformers: 1
+  m_FarAttachMode: 0
+  m_LimitLinearVelocity: 0
+  m_LimitAngularVelocity: 0
+  m_MaxLinearVelocityDelta: 10
+  m_MaxAngularVelocityDelta: 20
+--- !u!114 &8732974791939725435
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8690403555129543112}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4d200c95669af14dbc0c023ef34b2d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.PlayGround.NearGrabOnly
+  reach: 0.25
+--- !u!114 &5721212171915514260
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8690403555129543112}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5993803b60ffde408cd68af1ad4c3fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.PlayGround.LaughingPumpkin
+  canRun: 1
+  stamina: 90
+  staminaUsePerSecond: 10
+  regenPerSecond: 1
+  restBeforeRegen: 3
+  restedShare: 0.5
+  hopSpeed: 3
+  hopUp: 2.4
+  catchRange: 1.3
+  fleeRange: 4
+  calmRange: 7
+  cornerSeconds: 1.5
+  holdSeconds: 1.5
+  hitSpeed: 1.5
+  knock: {x: 3.5, y: 3}
+  hitSettings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
+  toughness: 1
+  staminaPerDamage: 6
+  handBlastEffects:
+  - {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
+  - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}
+  - {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac, type: 3}
+  handBlastSound: {fileID: 8300000, guid: 9fa3ff2a48ede5a43bc3e1b550e1dc2d, type: 3}
+  handBlastEffectScale: 0.5
+  handBlastRadius: 1
+  handBlastDamage: 2
+  handBlastPush: 3
+  handBlastEvent: Damage
+  candyEveryHealth: 10
+  candies: []
+  candyLaunchSpeed: 4.5
+  laughs:
+  - {fileID: 8300000, guid: 5559a9c98e6c15148b6eb31df62d8b20, type: 3}
+  - {fileID: 8300000, guid: 448f0b20a89331745bbe48dca5ca98d8, type: 3}
+  - {fileID: 8300000, guid: bdaf5f6e3901b474f9ea00411277f5d9, type: 3}
+  - {fileID: 8300000, guid: 89aacdef08bfdc54694504d3ea8d2b78, type: 3}
+  hitSounds:
+  - {fileID: 8300000, guid: 857ce67cde0be99499a305deaddb0544, type: 3}
+  - {fileID: 8300000, guid: 0163b2b4caca6d24282896703f1797c4, type: 3}
+  - {fileID: 8300000, guid: 9e9e1a6f68461564fa43a78d3e0e1c51, type: 3}
+  - {fileID: 8300000, guid: d40ed08980898f448b69f7c5fe4dc5da, type: 3}
+  - {fileID: 8300000, guid: 96e4dfb4d3f38c14f8da3bfea8b0c4d1, type: 3}
+  laughEvery: {x: 1.4, y: 2.8}
+  tiredLaughEvery: {x: 2.8, y: 4.5}
+  tiredPitch: 0.78
+  tiredVolume: 0.5
+  runPitch: 1.15
+  healthFsm: Health
+  healthVariable: health
+  oldDamageFsm: Damage
+  onCaught:
+    m_PersistentCalls:
+      m_Calls: []

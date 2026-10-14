@@ -1310,12 +1310,7 @@ namespace Game.Enemies
                 if (other.transform.IsChildOf(transform)) continue;
                 if (heldThingsBlock && IsHeldOrFist(other))
                 {
-                    attackResolved = true;
-                    if (blockedSound != null) PlayOne(blockedSound, true);
-                    SendToOwnFsms("Blocked");
-                    Play(HitLook, true);
-                    hitShownUntil = Time.time + flinchSeconds;
-                    StartRetreat(retreatDistance + 0.5f, 0.8f);
+                    BiteBlocked();
                     return;
                 }
                 if (!other.isTrigger && IsPlayer(other)) bitPlayer = true;
@@ -1340,6 +1335,12 @@ namespace Game.Enemies
             // bite is small: the body around where they stand counts too.
             if (!bitPlayer) bitPlayer = ReachesBody(mouth, move.biteRadius * size);
             if (!bitPlayer) return;
+            // A legendary shield held between it and the player's head stops it, even if the bite missed the shield.
+            if (heldThingsBlock && Game.Weapons.LegendaryGear.TryBlock(mouth))
+            {
+                BiteBlocked();
+                return;
+            }
 
             attackResolved = true;
             DamageVignette.HitFrom(transform);
@@ -1347,6 +1348,17 @@ namespace Game.Enemies
             if (kind.launchHeight > 0f || kind.launchDistance > 0f)
                 Game.Combat.PlayerLaunch.Launch(transform.position, kind.launchHeight, kind.launchDistance);
             SendToOwnFsms("Bite");
+        }
+
+        // Bit a held weapon or a fist (or a shield covered the player): it flinches and backs off.
+        private void BiteBlocked()
+        {
+            attackResolved = true;
+            if (blockedSound != null) PlayOne(blockedSound, true);
+            SendToOwnFsms("Blocked");
+            Play(HitLook, true);
+            hitShownUntil = Time.time + flinchSeconds;
+            StartRetreat(retreatDistance + 0.5f, 0.8f);
         }
 
         private bool ReachesBody(Vector3 mouth, float radius)

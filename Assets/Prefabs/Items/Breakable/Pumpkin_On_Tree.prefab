@@ -5355,6 +5355,7 @@ GameObject:
   - component: {fileID: 444595332533545171}
   - component: {fileID: 4596500312514394995}
   - component: {fileID: 5446972659357586647}
+  - component: {fileID: 4464856856857844396}
   m_Layer: 0
   m_Name: Pumpkin_On_Tree
   m_TagString: Weapon
@@ -7297,6 +7298,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.LiveLimit
   group: Pumpkin_On_Tree
   limit: 42
+  breakOldest: 1
   popFsm: Health
+  healthVariable: health
   popEvent: Dead
   popState: pop
+--- !u!114 &4464856856857844396
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8690403555129543112}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a734df36b309084a8510f3c4d97437e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.WeaponPower
+  power: 1
+  damage: 0.8

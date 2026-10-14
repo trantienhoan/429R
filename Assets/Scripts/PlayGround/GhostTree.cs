@@ -13,7 +13,7 @@ namespace Game.PlayGround
     /// <summary>
     /// The PlayGround's haunted tree (or anything that should act like one, e.g. the giant skull). Left alone, it lets a
     /// ghost balloon out of its top every so often (up to Max Ghosts at a time). Hit it with something (weapons, thrown
-    /// things, grenades) and it jiggles; enough hits bring it down: it drops its firewood (if it has any) and leaves
+    /// things, grenades) and it jiggles and a few ghosts fly out (Ghosts Per Hit); enough hits bring it down: it drops its firewood (if it has any) and leaves
     /// something behind (a bush), which pops back up into it when nobody's watching. With its own Damage and Health
     /// FSMs, those count the hits and break it (sounds, smoke, pieces); this then only jiggles it as their health drops
     /// and, when it reaches 0, leaves the bush and the firewood. Removed any other way (popped by the fairy's shield at
@@ -35,6 +35,11 @@ namespace Game.PlayGround
         [SerializeField] private float ghostHeight = 2f;
         [Tooltip("How far around the crown they spread, in metres.")]
         [Min(0f)] [SerializeField] private float ghostSpread = 2.5f;
+        [Tooltip("Ghosts that fly out each time it's hit (min, max); at most one burst every Hit Ghost Cooldown " +
+                 "seconds, and never more than Max Ghosts When Hit of its ghosts about at once.")]
+        [SerializeField] private Vector2Int ghostsPerHit = new(1, 2);
+        [Min(0f)] [SerializeField] private float hitGhostCooldown = 1.5f;
+        [Min(0)] [SerializeField] private int maxGhostsWhenHit = 6;
 
         [Header("Chopping down")]
         [Tooltip("Damage it takes before it falls: a hit does 1 per 4 m/s of speed (at least 1), a grenade 3. Not used " +
@@ -67,6 +72,7 @@ namespace Game.PlayGround
         private float lastFsmHealth;
         private float damageLeft;
         private float nextGhost;
+        private float nextHitGhosts;
         private bool felled;
 
         private void Awake()
@@ -90,6 +96,7 @@ namespace Game.PlayGround
 
         private void Update()
         {
+            WatchFsmHealth();
             if (felled || Time.time < nextGhost) return;
 
             nextGhost = Time.time + Random.Range(minSeconds, Mathf.Max(minSeconds, maxSeconds));
@@ -97,14 +104,32 @@ namespace Game.PlayGround
             if (alive.Count < maxGhosts) LetGhostOut();
         }
 
-        // With its own Health FSM: jiggles as that health drops, and falls when it's gone. After every Update, so a
-        // Health FSM that removes it this frame can't beat it to it.
         private void LateUpdate()
+        {
+            WatchFsmHealth();
+        }
+
+        // Its Health FSM can remove it in the same frame its health runs out (Compare Health -> Destroy Self), before a
+        // LateUpdate check would see it: if it's being removed with no health left, it still falls (bush, firewood).
+        // Removed any other way (the fairy's shield, a stage clear-up), its health isn't 0, so it leaves nothing.
+        private void OnDestroy()
+        {
+            if (felled || fsmHealth == null || fsmHealth.Value > 0f || !gameObject.scene.isLoaded) return;
+            Fall();
+        }
+
+        // With its own Health FSM: jiggles as that health drops, lets ghosts out, and falls when it's gone. Checked in
+        // Update and LateUpdate (and OnDestroy) so its Health FSM can't remove it unseen.
+        private void WatchFsmHealth()
         {
             if (fsmHealth == null || felled) return;
 
             float now = fsmHealth.Value;
-            if (now < lastFsmHealth && jiggle != null) jiggle.Jiggle(lastFsmHealth - now);
+            if (now < lastFsmHealth)
+            {
+                if (jiggle != null) jiggle.Jiggle(lastFsmHealth - now);
+                if (now > 0f) GhostsOnHit();
+            }
             lastFsmHealth = now;
             if (now <= 0f) Fall();
         }
@@ -139,6 +164,17 @@ namespace Game.PlayGround
             if (jiggle != null) jiggle.Jiggle(damage);
             if (hitSounds.Length > 0) Play(hitSounds[Random.Range(0, hitSounds.Length)], point);
             if (damageLeft <= 0f) Fall();
+            else GhostsOnHit();
+        }
+
+        // Hit, a few ghosts fly out (not too often, and not too many about).
+        private void GhostsOnHit()
+        {
+            if (Time.time < nextHitGhosts) return;
+            nextHitGhosts = Time.time + hitGhostCooldown;
+            alive.RemoveAll(ghost => ghost == null);
+            int count = Random.Range(Mathf.Min(ghostsPerHit.x, ghostsPerHit.y), Mathf.Max(ghostsPerHit.x, ghostsPerHit.y) + 1);
+            for (int i = 0; i < count && alive.Count < maxGhostsWhenHit; i++) LetGhostOut();
         }
 
         private void LetGhostOut()

@@ -41,6 +41,30 @@ namespace Game.Enemies
             return list.Count;
         }
 
+        /// <summary>Every enemy of the spawner's wave still alive dies (its Health FSM's health goes to 0), and the wave
+        /// is forgotten.</summary>
+        public static void KillAll(object spawner)
+        {
+            if (spawner == null || !waves.TryGetValue(spawner, out var list)) return;
+            foreach (var enemy in list.ToArray()) Kill(enemy);
+            waves.Remove(spawner);
+        }
+
+        /// <summary>Kills one enemy through its Health FSM, so it plays its own death; destroyed if it has none.</summary>
+        public static void Kill(GameObject enemy)
+        {
+            if (!IsAlive(enemy)) return;
+            foreach (var fsm in enemy.GetComponentsInChildren<PlayMakerFSM>())
+            {
+                if (!fsm.FsmName.EndsWith("Health")) continue;
+                var health = fsm.FsmVariables.FindFsmFloat("health");
+                if (health == null) continue;
+                health.Value = 0f;
+                return;
+            }
+            Object.Destroy(enemy);
+        }
+
         /// <summary>Gone, switched off, or out of health (still playing its death) all count as dead.</summary>
         public static bool IsAlive(GameObject enemy)
         {

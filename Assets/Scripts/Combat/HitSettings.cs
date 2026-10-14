@@ -56,6 +56,20 @@ namespace Game.Combat
             }
         }
 
+        /// <summary>
+        /// What a hit of this power does with a weapon of this Damage (see Weapon Power): the damage times it, a whole
+        /// number, at least 1 for a hit that counts. It's only a big hit (knock-back) if it still does a big hit's damage,
+        /// so a thrown book doesn't send an enemy flying.
+        /// </summary>
+        public HitResult Evaluate(float power, float damageScale)
+        {
+            var hit = Evaluate(power);
+            if (hit.Damage <= 0f || Mathf.Approximately(damageScale, 1f)) return hit;
+
+            float damage = Mathf.Max(1f, Whole(hit.Damage * damageScale));
+            return new HitResult(power, damage, hit.IsBig && damage >= bigHitDamage.x);
+        }
+
         /// <summary>Works out what a hit of this power does. Damage is a whole number.</summary>
         public HitResult Evaluate(float power)
         {

@@ -2,8 +2,12 @@ using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using Game.Enemies;
+using Unity.XR.CoreUtils;
 using UnityEngine.AI;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using FsmVariables = HutongGames.PlayMaker.FsmVariables;
 using Random = UnityEngine.Random;
 
@@ -11,15 +15,17 @@ namespace Game.PlayGround
 {
     /// <summary>
     /// The PlayGround's witch cauldron. It cooks a few dishes in a row (Rounds), each with its own recipe of pumpkins
-    /// (Pumpkin_On_Tree) and random lollipops (Lolipop_1 ... 7); the magic hat shows the current one. Ingredients dropped
+    /// (Pumpkin_On_Tree) and random candies (Candy_1 ... 8); the magic hat shows the current one. Ingredients dropped
     /// or thrown into the pot are taken in with a puff of green smoke; once the player has read the recipe off the hat,
     /// what's in the pot and what's still missing shows above it. Its surface always bubbles. Once it holds as many as
-    /// the recipe asks for, it starts cooking: the surface boils, coloured bubbles and skulls fly out and a meter fills
-    /// above it. It stands fixed on the floor, upright, wherever it appears. Firewood thrown into
-    /// the fire under it makes the fire roar and the cooking go faster for a while. Done: the right recipe makes the
-    /// round's pumpkins (Pumpkin_8, then 2x Pumpkin_9 for the last) jump out and the next round's recipe begins; a wrong
-    /// one spits out a black pumpkin (pumpkin_black) that bursts into a mini boss where it lands, the magic hat shakes,
-    /// and the same recipe has to be tried again. After the last round it's done and takes nothing more. Goes on
+    /// the recipe asks for, it starts cooking (Cooking Started): the surface boils, coloured bubbles and skulls fly out
+    /// and a meter fills above it. It stands fixed on the floor, upright, wherever it appears. Firewood thrown into
+    /// the fire under it makes the fire roar and the cooking go faster for a while. Done: the right recipe spits the
+    /// round's laughing pumpkin out to the middle of the PlayGround; a wrong one spits out a black pumpkin
+    /// (pumpkin_black) that bursts into a mini boss where it lands, the magic hat shakes, and the same recipe has to be
+    /// tried again. With a PlayGround Rounds director next to it, the next round waits until the pumpkin is caught and
+    /// the chest's seed taken (Continue). After the last round comes the mystery pot: ? ? ? ? ?, anything thrown in
+    /// counts; it cooks, swells, and bursts into candy and the final seed (Pot Broken). Goes on
     /// Fire_Woods_n_Cauldron's root; it makes its own zones, panels and pot collider when the game runs.
     /// </summary>
     [DisallowMultipleComponent]
@@ -40,8 +46,9 @@ namespace Game.PlayGround
         {
             [Tooltip("How many pumpkins (Pumpkin_On_Tree) the recipe asks for.")]
             [Min(0)] public int pumpkins = 1;
-            [Tooltip("How many lollipops the recipe asks for; each is picked at random.")]
-            [Min(0)] public int lollipops = 2;
+            [Tooltip("How many candies the recipe asks for; each is picked at random.")]
+            [FormerlySerializedAs("lollipops")]
+            [Min(0)] public int candies = 3;
             [Tooltip("What it makes when cooked right, e.g. Pumpkin_8.")]
             public GameObject result;
             [Tooltip("How many of them jump out.")]
@@ -76,19 +83,20 @@ namespace Game.PlayGround
         [Min(1f)]
         [SerializeField] private float cookingBubbles = 1.6f;
 
-        [Header("Rounds (cooked one after another; new random lollipops each time the PlayGround opens)")]
+        [Header("Rounds (cooked one after another; new random candies each time the PlayGround opens)")]
         [Tooltip("The dishes it cooks, in order. A wrong recipe doesn't count: that round's recipe stays until it's " +
                  "cooked right. After the last one it takes nothing more.")]
         [SerializeField] private Round[] rounds =
         {
-            new() { pumpkins = 1, lollipops = 2 },
-            new() { pumpkins = 1, lollipops = 3 },
-            new() { pumpkins = 1, lollipops = 4 },
-            new() { pumpkins = 2, lollipops = 5, results = 2 },
+            new() { pumpkins = 1, candies = 3 },
+            new() { pumpkins = 1, candies = 4 },
+            new() { pumpkins = 1, candies = 5 },
+            new() { pumpkins = 1, candies = 5 },
         };
-        [Tooltip("The lollipops a recipe can ask for (Lolipop_1 ... 7).")]
-        [SerializeField] private GameObject[] lollipops = Array.Empty<GameObject>();
-        [Tooltip("Most different lollipops one recipe asks for, so it fits on the card.")]
+        [Tooltip("The candies a recipe can ask for (Candy_1 ... 8); each needs a Cooking Ingredient.")]
+        [FormerlySerializedAs("lollipops")]
+        [SerializeField] private GameObject[] candies = Array.Empty<GameObject>();
+        [Tooltip("Most different candies one recipe asks for, so it fits on the card.")]
         [Min(1)] [SerializeField] private int maxKinds = 3;
         [Tooltip("The pumpkin recipes ask for (Pumpkin_On_Tree).")]
         [SerializeField] private GameObject pumpkin;
@@ -130,6 +138,27 @@ namespace Game.PlayGround
         [SerializeField] private GameObject doneEffect;
         [Min(0.01f)] [SerializeField] private float doneEffectScale = 0.15f;
 
+        [Header("Pumpkin out")]
+        [Tooltip("A right recipe's pumpkin is spat out in an arc to the middle of the PlayGround (its Ghost Roam " +
+                 "Area); without one it lands Spit Distance away.")]
+        [SerializeField] private bool spitToMiddle = true;
+
+        [Header("Last: the mystery pot")]
+        [Tooltip("After the last round it asks for this many mystery ingredients, shown as ???: anything grabbable " +
+                 "thrown in counts. Then it cooks, swells up and bursts. 0 = no mystery pot (done after the last round).")]
+        [Min(0)] [SerializeField] private int mysteryCount = 5;
+        [Tooltip("Seconds the mystery pot cooks (fire still speeds it up).")]
+        [Min(1f)] [SerializeField] private float mysteryCookSeconds = 15f;
+        [Tooltip("What's left when it bursts, e.g. The_Seed (the Green Seed).")]
+        [SerializeField] private GameObject finalSeed;
+        [Tooltip("Candies that fly out when it bursts; each picked at random from Candies.")]
+        [Min(0)] [SerializeField] private int finalCandies = 24;
+        [Tooltip("Burst when it breaks, e.g. smoke.")]
+        [SerializeField] private GameObject breakEffect;
+        [Min(0.01f)] [SerializeField] private float breakEffectScale = 0.35f;
+        [SerializeField] private AudioClip swellSound;
+        [SerializeField] private AudioClip breakSound;
+
         [Header("Meter")]
         [SerializeField] private TMP_FontAsset font;
         [Tooltip("How far above the pot's rim the meter floats, in metres.")]
@@ -141,6 +170,10 @@ namespace Game.PlayGround
         public static event Action<Cauldron, GameObject> Cooked;
         /// <summary>Raised when it moves on to the next round's recipe, or has cooked them all.</summary>
         public static event Action<Cauldron> RecipeChanged;
+        /// <summary>Raised when it starts cooking (any recipe, right or wrong, or the mystery pot).</summary>
+        public static event Action<Cauldron> CookingStarted;
+        /// <summary>Raised when the mystery pot bursts (the cauldron is gone).</summary>
+        public static event Action<Cauldron> PotBroken;
 
         // Things it spawns go here, so the stage clean-up removes them.
         private const string SpawnedStuffVariable = "CurrentlySpawnedStuffs";
@@ -182,6 +215,8 @@ namespace Game.PlayGround
         private Transform head;
         private int round;
         private bool recipeKnown;
+        private bool waitingForNext;
+        private bool potBroken;
 
         public IReadOnlyList<Line> Recipe => recipe;
         public bool IsCooking => cooking;
@@ -189,8 +224,18 @@ namespace Game.PlayGround
         /// <summary>Which round it's on, from 0; equals RoundCount once it has cooked them all.</summary>
         public int RoundIndex => round;
         public int RoundCount => rounds.Length;
-        /// <summary>It has cooked every round and takes nothing more.</summary>
+        /// <summary>It has cooked every round (the mystery pot may still be to come).</summary>
         public bool AllCooked => round >= rounds.Length;
+        /// <summary>After the last round, asking for ??? (anything thrown in counts), until it bursts.</summary>
+        public bool InMystery => AllCooked && mysteryCount > 0 && !potBroken;
+        public int MysteryCount => mysteryCount;
+        public bool IsBroken => potBroken;
+        /// <summary>
+        /// Set by a PlayGround Rounds director: after a right recipe the next round waits until it calls Continue()
+        /// (the player has caught the pumpkin and taken the chest's seed). Takes nothing in meanwhile.
+        /// </summary>
+        public bool HoldBetweenRounds { get; set; }
+        public bool WaitingForNextRound => waitingForNext;
         /// <summary>The player has read this round's recipe off the magic hat, so it shows above the pot.</summary>
         public bool RecipeKnown => recipeKnown;
         /// <summary>The middle of the pot's opening.</summary>
@@ -285,7 +330,7 @@ namespace Game.PlayGround
             UpdateSurface();
             if (cooking)
             {
-                progress += dt / cookSeconds * (1f + heat);
+                progress += dt / (InMystery ? mysteryCookSeconds : cookSeconds) * (1f + heat);
                 if (progress >= 1f) Finish();
             }
         }
@@ -373,7 +418,15 @@ namespace Game.PlayGround
         {
             if (zone == Zone.Mouth)
             {
-                // All cooked: what goes in just lies there.
+                // Between rounds, or done: what goes in just lies there.
+                if (potBroken || waitingForNext) return;
+                if (InMystery)
+                {
+                    if (cooking) return;
+                    var thing = MysteryThing(other);
+                    if (thing != null && taken.Add(thing)) AddMystery(thing);
+                    return;
+                }
                 if (AllCooked) return;
                 var ingredient = other.GetComponentInParent<CookingIngredient>();
                 if (ingredient != null && taken.Add(ingredient.gameObject)) AddIngredient(ingredient);
@@ -478,12 +531,20 @@ namespace Game.PlayGround
         {
             cooking = true;
             progress = 0f;
+            RefreshRecipePanel();
+            CookingStarted?.Invoke(this);
         }
 
         private void Finish()
         {
             cooking = false;
             progress = 0f;
+
+            if (InMystery)
+            {
+                StartCoroutine(BreakPot());
+                return;
+            }
 
             var at = MouthPoint();
             if (doneEffect != null)
@@ -499,11 +560,27 @@ namespace Game.PlayGround
 
             contents.Clear();
             count = 0;
-            if (right) NextRound();
+            if (right)
+            {
+                if (HoldBetweenRounds) waitingForNext = true;
+                else NextRound();
+            }
             RefreshRecipePanel();
         }
 
-        // On to the next dish, with a new recipe; after the last one it's done.
+        /// <summary>
+        /// The PlayGround Rounds director's go-ahead after a right recipe (pumpkin caught, seed taken): on to the next
+        /// round's recipe (or the mystery pot).
+        /// </summary>
+        public void Continue()
+        {
+            if (!waitingForNext) return;
+            waitingForNext = false;
+            NextRound();
+            RefreshRecipePanel();
+        }
+
+        // On to the next dish, with a new recipe; after the last one it's done (or asks for the mystery pot).
         private void NextRound()
         {
             round++;
@@ -511,7 +588,9 @@ namespace Game.PlayGround
             if (AllCooked)
             {
                 recipe.Clear();
-                if (!string.IsNullOrEmpty(cookedBool)) GameStages.SetBool(cookedBool, true, this);
+                count = 0;
+                taken.Clear();
+                if (mysteryCount <= 0 && !string.IsNullOrEmpty(cookedBool)) GameStages.SetBool(cookedBool, true, this);
             }
             else
             {
@@ -519,6 +598,86 @@ namespace Game.PlayGround
             }
             RecipeChanged?.Invoke(this);
         }
+
+        // Anything the player can pick up or throw counts for the mystery pot: not the player, not the cauldron,
+        // not the magic hat or its card, not something nailed down.
+        private GameObject MysteryThing(Collider other)
+        {
+            if (other.isTrigger) return null;
+            if (other.transform.IsChildOf(transform)) return null;
+            if (other.GetComponentInParent<XROrigin>() != null) return null;
+            if (other.GetComponentInParent<MagicHat>() != null) return null;
+            var grab = other.GetComponentInParent<XRGrabInteractable>();
+            if (grab != null) return grab.gameObject;
+            var body = other.attachedRigidbody;
+            if (body != null && !body.isKinematic) return body.gameObject;
+            return null;
+        }
+
+        private void AddMystery(GameObject thing)
+        {
+            count++;
+            Play(addSound, MouthPoint());
+            if (surface != null) surface.Emit(4);
+            Puff();
+            Destroy(thing);
+            if (count >= mysteryCount) StartCooking();
+            else RefreshRecipePanel();
+        }
+
+        // The mystery pot: it shakes and swells, then bursts into smoke, lots of candy and the final seed, and is gone.
+        private System.Collections.IEnumerator BreakPot()
+        {
+            potBroken = true;
+            RefreshRecipePanel();
+            var at = MouthPoint();
+            Play(swellSound, at);
+            var size = transform.localScale;
+            var home = transform.position;
+            const float swellSeconds = 1.8f;
+            for (float t = 0f; t < swellSeconds; t += Time.deltaTime)
+            {
+                float k = t / swellSeconds;
+                transform.localScale = size * (1f + 0.3f * k * k);
+                transform.position = home + new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f)) * (0.06f * k);
+                if (surface != null && Random.value < 0.3f) surface.Emit(2);
+                yield return null;
+            }
+            transform.position = home;
+            transform.localScale = size;
+
+            Play(breakSound, at);
+            if (breakEffect != null)
+            {
+                var effect = Instantiate(breakEffect, at, Quaternion.identity);
+                effect.transform.localScale = Vector3.one * breakEffectScale;
+                Destroy(effect, 5f);
+            }
+
+            var parent = SpawnedStuff();
+            for (int i = 0; i < finalCandies && candies.Length > 0; i++)
+            {
+                var prefab = candies[Random.Range(0, candies.Length)];
+                if (prefab == null) continue;
+                var landing = transform.position + Quaternion.Euler(0f, Random.Range(0f, 360f), 0f) * Vector3.forward * Random.Range(1.5f, 4.5f);
+                var candy = Instantiate(prefab, at + Vector3.up * 0.3f, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f), parent);
+                if (candy.TryGetComponent<Rigidbody>(out var body) && !body.isKinematic) body.linearVelocity = Throw(candy.transform.position, landing, Random.Range(0.9f, 1.4f));
+            }
+            // The Green Seed is left right where the cauldron stood (no chest).
+            if (finalSeed != null) Instantiate(finalSeed, transform.position + Vector3.up * 0.5f, Quaternion.identity, parent);
+
+            // The cauldron itself is gone: hide it, stop its effects, drop its colliders.
+            foreach (var shape in GetComponentsInChildren<Renderer>(true)) shape.enabled = false;
+            foreach (var effect in GetComponentsInChildren<ParticleSystem>(true)) effect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            foreach (var part in GetComponentsInChildren<Collider>(true)) part.enabled = false;
+            if (meter != null) meter.gameObject.SetActive(false);
+
+            if (!string.IsNullOrEmpty(cookedBool)) GameStages.SetBool(cookedBool, true, this);
+            PotBroken?.Invoke(this);
+            Destroy(gameObject, 3f);
+        }
+
+        private static Vector3 Flat(Vector3 v) => new(v.x, 0f, v.z);
 
         private bool RightRecipe()
         {
@@ -542,15 +701,28 @@ namespace Game.PlayGround
 
             int amount = Mathf.Max(1, dish.results);
             float start = Random.Range(0f, 360f);
+            var middle = spitToMiddle ? PlayGroundMiddle() : (Vector3?)null;
             for (int i = 0; i < amount; i++)
             {
                 float angle = (start + i * 360f / amount) * Mathf.Deg2Rad;
                 var away = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
-                // Side by side, not inside each other.
-                var from = at + Vector3.up * 0.3f + (amount > 1 ? away * 0.35f : Vector3.zero);
+                // Side by side, not inside each other, and clear of the pot.
+                var from = at + Vector3.up * 0.9f + (amount > 1 ? away * 0.35f : Vector3.zero);
                 var made = Instantiate(dish.result, from, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f), SpawnedStuff());
+                IgnorePot(made);
                 if (made.TryGetComponent<Rigidbody>(out var body) && !body.isKinematic)
-                    body.linearVelocity = away * 1.2f + Vector3.up * 4.5f;
+                {
+                    if (middle.HasValue)
+                    {
+                        // An arc out of the pot down to the middle of the PlayGround.
+                        var landing = middle.Value + (amount > 1 ? away * 1.2f : Vector3.zero);
+                        body.linearVelocity = Throw(from, landing, 1.4f);
+                    }
+                    else
+                    {
+                        body.linearVelocity = away * 1.2f + Vector3.up * 4.5f;
+                    }
+                }
                 Cooked?.Invoke(this, made);
             }
         }
@@ -579,13 +751,39 @@ namespace Game.PlayGround
             CookFailed?.Invoke(this);
         }
 
+        // What it spits out passes through the cauldron, so it isn't shoved sideways out of the pot.
+        private void IgnorePot(GameObject made)
+        {
+            var mine = GetComponentsInChildren<Collider>(true);
+            foreach (var theirs in made.GetComponentsInChildren<Collider>(true))
+            {
+                foreach (var own in mine)
+                {
+                    if (own != null && theirs != null) Physics.IgnoreCollision(theirs, own);
+                }
+            }
+        }
+
+        // The floor in the middle of the PlayGround (its Ghost Roam Area), on the NavMesh if there is one; null without
+        // a PlayGround around.
+        private Vector3? PlayGroundMiddle()
+        {
+            var area = GhostRoamArea.Around(transform.position);
+            if (area == null) return null;
+            var middle = area.Middle;
+            if (Physics.Raycast(middle + Vector3.up * 2f, Vector3.down, out var hit, 30f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+                middle = hit.point;
+            if (NavMesh.SamplePosition(middle, out var onMesh, 3f, NavMesh.AllAreas)) middle = onMesh.position;
+            return middle + Vector3.up * 0.3f;
+        }
+
         // How fast to throw something from 'from' so it comes down on 'to' after 'seconds'.
         private static Vector3 Throw(Vector3 from, Vector3 to, float seconds)
         {
             return (to - from - 0.5f * seconds * seconds * Physics.gravity) / seconds;
         }
 
-        // This round's lollipops, each picked at random (at most Max Kinds different ones), and its pumpkins.
+        // This round's candies, each picked at random (at most Max Kinds different ones), and its pumpkins.
         private void MakeRecipe()
         {
             recipe.Clear();
@@ -593,14 +791,14 @@ namespace Game.PlayGround
             var dish = rounds[round];
 
             var pool = new List<GameObject>();
-            foreach (var lollipop in lollipops)
+            foreach (var candy in candies)
             {
-                if (lollipop != null) pool.Add(lollipop);
+                if (candy != null) pool.Add(candy);
             }
 
             var kinds = new List<GameObject>();
             var counts = new List<int>();
-            for (int i = 0; i < dish.lollipops && pool.Count > 0; i++)
+            for (int i = 0; i < dish.candies && pool.Count > 0; i++)
             {
                 var pick = kinds.Count >= maxKinds ? kinds[Random.Range(0, kinds.Count)] : pool[Random.Range(0, pool.Count)];
                 int had = kinds.IndexOf(pick);
@@ -688,7 +886,12 @@ namespace Game.PlayGround
                 Destroy(recipePanel.gameObject);
                 recipePanel = null;
             }
-            if (!recipeKnown || cooking || count == 0 || AllCooked || recipe.Count == 0) return;
+            if (InMystery && !cooking && !waitingForNext)
+            {
+                BuildMysteryPanel();
+                return;
+            }
+            if (!recipeKnown || cooking || count == 0 || AllCooked || recipe.Count == 0 || waitingForNext) return;
 
             int wrong = count;
             foreach (var line in recipe)
@@ -728,6 +931,24 @@ namespace Game.PlayGround
                 WorldUI.Place((Graphic)what, left, PanelPad, ColumnWidth, ColumnIcon);
                 var amount = WorldUI.CreateText("Wrong Count", recipePanel, $"x {wrong}", 30f, FontStyles.Bold, TextAlignmentOptions.Center, TooMany, font);
                 WorldUI.Place((Graphic)amount, left, PanelPad + ColumnIcon, ColumnWidth, ColumnCount);
+            }
+            PlacePanel(recipePanel);
+        }
+
+        // The mystery pot's recipe: one "?" per thing it wants, green once something has gone in for it. Shown from
+        // the start (no magic hat needed).
+        private void BuildMysteryPanel()
+        {
+            int columns = Mathf.Max(1, mysteryCount);
+            float width = Mathf.Max(ColumnWidth * 2f, columns * ColumnWidth) + PanelPad * 2f;
+            float height = PanelPad + ColumnIcon + PanelPad;
+            recipePanel = WorldUI.CreatePanel("Cauldron Mystery", width, height, MeterScale, MeterBack);
+            float left = (width - columns * ColumnWidth) * 0.5f;
+            for (int i = 0; i < columns; i++, left += ColumnWidth)
+            {
+                var color = i < count ? MeterFill : Color.white;
+                var mark = WorldUI.CreateText($"Mystery {i + 1}", recipePanel, "?", 60f, FontStyles.Bold, TextAlignmentOptions.Center, color, font);
+                WorldUI.Place((Graphic)mark, left, PanelPad, ColumnWidth, ColumnIcon);
             }
             PlacePanel(recipePanel);
         }

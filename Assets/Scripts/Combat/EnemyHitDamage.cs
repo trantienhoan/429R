@@ -10,7 +10,7 @@ namespace Game.Combat
     /// <summary>
     /// Turns hits into damage for an enemy made in PlayMaker. Hit power = hit speed x the weapon's Power / Toughness:
     /// too weak does nothing (the enemy just flinches), a normal hit does 1-2 damage, a big hit 3-5 and knocks it back
-    /// (the numbers are in the Hit Settings asset). It lowers the "health" variable of the enemy's Health FSM, which
+    /// (the numbers are in the Hit Settings asset), times the weapon's Damage (a hammer more, a thrown book less). It lowers the "health" variable of the enemy's Health FSM, which
     /// already watches it, sends "Damage" (or "ShakeSmall" for weak hits) so the enemy's hit reactions play, and
     /// switches off the enemy's old "Damage" FSM so hits aren't counted twice.
     /// Once the health runs out, however it happened, more hits are ignored and the enemy's NavMesh agent is held
@@ -156,7 +156,7 @@ namespace Game.Combat
             if (health == null || dead || Time.time < nextHit) return;
 
             float power = collision.relativeVelocity.magnitude * WeaponPower.Of(collision) / toughness;
-            var hit = (settings != null ? settings : HitSettings.Defaults).Evaluate(power);
+            var hit = (settings != null ? settings : HitSettings.Defaults).Evaluate(power, WeaponPower.DamageOf(collision));
             LastHit = hit;
 
             if (hit.Damage <= 0f)

@@ -158,6 +158,11 @@ namespace Game.Enemies
                 Splat(point, splatSound);
                 return;
             }
+            if (IsPlayer(other) && Game.Weapons.LegendaryGear.TryBlock(lastPosition))
+            {
+                Splat(point, splatSound);
+                return;
+            }
             if (IsPlayer(other))
             {
                 DamageVignette.HitFrom(shooter != null ? shooter.position : point);

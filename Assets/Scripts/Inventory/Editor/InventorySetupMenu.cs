@@ -140,6 +140,29 @@ namespace Game.EditorTools
                 : "[Item Icons] Select item assets that have a World Prefab first.");
         }
 
+        /// <summary>Makes an icon for every item that has none, from its World Prefab. Items with an icon keep it.</summary>
+        [MenuItem("Tools/429 Game/Inventory/Make Missing Item Icons")]
+        public static void MakeMissingItemIcons()
+        {
+            var made = new List<string>();
+            var noPrefab = new List<string>();
+            foreach (var item in SetupUtility.FindAllItems())
+            {
+                if (item.Icon != null) continue;
+                if (item.WorldPrefab == null)
+                {
+                    noPrefab.Add(item.name);
+                    continue;
+                }
+                if (PrefabIconMaker.MakeNow(item.WorldPrefab, item)) made.Add(item.name);
+                else PrefabIconMaker.Queue(item.WorldPrefab, item);
+            }
+
+            string result = made.Count > 0 ? $"Made icons for {string.Join(", ", made)}." : "Every item with a World Prefab already has an icon.";
+            if (noPrefab.Count > 0) result += $" No World Prefab to draw (give these an icon by hand): {string.Join(", ", noPrefab)}.";
+            Debug.Log("[Item Icons] " + result);
+        }
+
         /// <summary>Makes sure the Candy item and the item database exist, and that the database lists every item.</summary>
         internal static ItemDatabase EnsureAssets()
         {

@@ -51,6 +51,28 @@ namespace Game.Enemies
             return transform.TransformPoint(center + Vector3.Scale(inside, size));
         }
 
+        /// <summary>The middle of the box.</summary>
+        public Vector3 Middle => transform.TransformPoint(center);
+
+        /// <summary>A spot on the box's outline (its height in the middle), Inset metres in from the edge.</summary>
+        public Vector3 RandomEdgePoint(float inset = 0.5f)
+        {
+            var half = new Vector3(Mathf.Max(0f, size.x * 0.5f - inset), 0f, Mathf.Max(0f, size.z * 0.5f - inset));
+            float along = Random.value * 2f - 1f;
+            var local = Random.value < 0.5f
+                ? new Vector3(along * half.x, 0f, Random.value < 0.5f ? -half.z : half.z)
+                : new Vector3(Random.value < 0.5f ? -half.x : half.x, 0f, along * half.z);
+            return transform.TransformPoint(center + local);
+        }
+
+        /// <summary>Is 'point' inside the box's floor plan (its height ignored)?</summary>
+        public bool ContainsFlat(Vector3 point)
+        {
+            var local = transform.InverseTransformPoint(point);
+            var half = size * 0.5f;
+            return Mathf.Abs(local.x - center.x) <= half.x && Mathf.Abs(local.z - center.z) <= half.z;
+        }
+
         // The spot in it nearest to 'point' ('point' itself when it's inside).
         private Vector3 ClosestPoint(Vector3 point)
         {

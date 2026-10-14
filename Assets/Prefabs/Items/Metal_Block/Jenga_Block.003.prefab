@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 3289922312594895040}
   - component: {fileID: 7584166501937993195}
   - component: {fileID: 768792171357752999}
+  - component: {fileID: 7070497042659600656}
   m_Layer: 0
   m_Name: Jenga_Block.003
   m_TagString: Destroyer
@@ -1636,6 +1637,20 @@ MonoBehaviour:
   playerHealthFsm: PlayerHealth
   bodyRadius: 0.3
   sharedCooldown: 1
+--- !u!114 &7070497042659600656
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 891425667784877490}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a734df36b309084a8510f3c4d97437e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.WeaponPower
+  power: 1
+  damage: 1.2
 --- !u!1 &5874997788430606806
 GameObject:
   m_ObjectHideFlags: 0

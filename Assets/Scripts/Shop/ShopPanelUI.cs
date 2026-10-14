@@ -19,8 +19,15 @@ namespace Game.Shopping
         [SerializeField] private Transform rowParent;
         [SerializeField] private TMP_Text statusText;
         [SerializeField] private Button closeButton;
+        [Tooltip("Counts down to the next new items.")]
+        [SerializeField] private TMP_Text restockText;
+        [Tooltip("The special offer: its title and line. Hidden when the catalog has no specials.")]
+        [SerializeField] private GameObject specialSection;
+        [SerializeField] private ShopItemRow specialRow;
         [Tooltip("How long messages like 'Not enough Candy' stay on screen.")]
         [SerializeField] private float statusSeconds = 2.5f;
+        [Tooltip("Clicks this soon after new items come in are ignored, so you don't buy something you didn't aim at.")]
+        [SerializeField] private float clickGuardSeconds = 0.4f;
         [Tooltip("The headset camera. Left empty, Camera.main is used.")]
         [SerializeField] private Transform head;
         [Tooltip("Turn the panel towards your eyes so it's always readable, like the inventory.")]
@@ -36,10 +43,16 @@ namespace Game.Shopping
 
         private static readonly Color GoodColor = new(0.55f, 1f, 0.55f);
         private static readonly Color BadColor = new(1f, 0.5f, 0.5f);
+        private static readonly Color NewsColor = new(1f, 0.85f, 0.4f);
+        private const string SpecialTitle = "Special Offer";
+        private const string LegendaryTitle = "Legendary Offer!";
 
         private readonly List<ShopItemRow> rows = new();
         private PlayerInventory inventory;
         private float statusHideTime;
+        private float clicksFrom;
+        private int shownSeconds = -1;
+        private TMP_Text specialTitle;
 
         public Shop Owner { get; private set; }
 
@@ -57,6 +70,25 @@ namespace Game.Shopping
         private void Update()
         {
             if (statusText != null && statusText.text.Length > 0 && Time.unscaledTime >= statusHideTime) statusText.text = "";
+            ShowCountdown();
+        }
+
+        /// <summary>New items came in while the panel is open.</summary>
+        public void Restocked()
+        {
+            clicksFrom = Time.unscaledTime + clickGuardSeconds;
+            Refresh();
+            ShowStatus("New items!", NewsColor);
+        }
+
+        private void ShowCountdown()
+        {
+            if (restockText == null || Owner == null) return;
+
+            int seconds = Mathf.CeilToInt(Owner.SecondsToRestock);
+            if (seconds == shownSeconds) return;
+            shownSeconds = seconds;
+            restockText.text = $"New items in {seconds / 60}:{seconds % 60:00}";
         }
 
         private void LateUpdate()
@@ -88,6 +120,8 @@ namespace Game.Shopping
             Unsubscribe();
             inventory = PlayerInventory.Instance;
             if (inventory != null) inventory.Changed += OnInventoryChanged;
+            shownSeconds = -1;
+            ShowCountdown();
             Refresh();
         }
 
@@ -126,18 +160,80 @@ namespace Game.Shopping
                 rows[i].gameObject.SetActive(used);
                 if (used) rows[i].Set(entry.item, entry.price, currency, Owner.IsSoldOut(entry), money >= entry.price, () => OnBuyClicked(index));
             }
+
+            RefreshSpecial(money);
+        }
+
+        private void RefreshSpecial(int money)
+        {
+            var special = Owner.CurrentSpecial;
+            if (specialSection != null) specialSection.SetActive(special != null);
+            if (special == null || specialRow == null) return;
+
+            // Its title says when the offer is a legendary one.
+            if (specialTitle == null && specialSection != null)
+            {
+                var title = specialSection.transform.Find("Title");
+                if (title != null) specialTitle = title.GetComponent<TMP_Text>();
+            }
+            if (specialTitle != null) specialTitle.text = Owner.IsLegendaryOffer ? LegendaryTitle : SpecialTitle;
+
+            var catalog = Owner.Catalog;
+            if (Owner.SpecialUnlocked)
+            {
+                specialRow.Set(special.item, special.price, catalog.Currency, Owner.IsSpecialSoldOut, money >= special.price, OnSpecialClicked);
+                return;
+            }
+
+            // Locked: a dark shape of today's special and what opening the line costs.
+            var key = catalog.SpecialUnlockCurrency;
+            int keys = inventory != null ? inventory.GetCount(key) : 0;
+            specialRow.Show(special.item.Icon, Color.black, "Unlock", catalog.SpecialUnlockPrice, key, false, keys >= catalog.SpecialUnlockPrice, OnSpecialClicked);
+        }
+
+        private void OnSpecialClicked()
+        {
+            if (Owner == null || Time.unscaledTime < clicksFrom) return;
+
+            if (Owner.SpecialUnlocked)
+            {
+                var special = Owner.CurrentSpecial;
+                if (special != null) ShowResult(Owner.TryBuySpecial(), special, Owner.Catalog.Currency);
+            }
+            else
+            {
+                var catalog = Owner.Catalog;
+                var key = catalog.SpecialUnlockCurrency;
+                switch (Owner.TryUnlockSpecial())
+                {
+                    case PurchaseResult.Bought:
+                        ShowStatus("Special offers unlocked!", GoodColor);
+                        break;
+                    case PurchaseResult.NotEnoughCurrency:
+                        int keys = inventory != null ? inventory.GetCount(key) : 0;
+                        ShowStatus($"You need {catalog.SpecialUnlockPrice - keys} more {(key != null ? key.DisplayName : "")}", BadColor);
+                        break;
+                    default:
+                        ShowStatus("Can't unlock that right now", BadColor);
+                        break;
+                }
+            }
+            Refresh();
         }
 
         private void OnBuyClicked(int index)
         {
-            if (Owner == null) return;
+            if (Owner == null || Time.unscaledTime < clicksFrom) return;
 
             var catalog = Owner.Catalog;
-            var entry = catalog.Entries[index];
-            var currency = catalog.Currency;
-            string currencyName = currency != null ? currency.DisplayName : "";
+            ShowResult(Owner.TryBuy(index), catalog.Entries[index], catalog.Currency);
+            Refresh();
+        }
 
-            switch (Owner.TryBuy(index))
+        private void ShowResult(PurchaseResult result, ShopEntry entry, ItemDefinition currency)
+        {
+            string currencyName = currency != null ? currency.DisplayName : "";
+            switch (result)
             {
                 case PurchaseResult.Bought:
                     ShowStatus($"Enjoy your {entry.item.DisplayName}!", GoodColor);
@@ -153,7 +249,6 @@ namespace Game.Shopping
                     ShowStatus("Can't buy that right now", BadColor);
                     break;
             }
-            Refresh();
         }
 
         private void ShowStatus(string message, Color color)

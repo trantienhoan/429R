@@ -500,14 +500,16 @@ namespace Game.Enemies
 
             if (reason == PopReason.InFace)
             {
-                if (!string.IsNullOrEmpty(playerEvent))
+                // A legendary shield in the way takes the pop; what it carries still drops.
+                bool blocked = Game.Weapons.LegendaryGear.TryBlock(at);
+                if (!blocked && !string.IsNullOrEmpty(playerEvent))
                 {
                     DamageVignette.HitFrom(at);
                     SendToPlayer(playerEvent);
                 }
                 var dropped = DropSpiders(head != null ? head.position : at, out bool limitFull);
                 // No room for what it carries: it hits harder instead.
-                if (limitFull && !string.IsNullOrEmpty(limitFullEvent)) SendToPlayer(limitFullEvent);
+                if (!blocked && limitFull && !string.IsNullOrEmpty(limitFullEvent)) SendToPlayer(limitFullEvent);
                 // The one inside is done for once what came out is dead (now, if nothing came out).
                 FlagWhenAllGone.Watch(dropped, insideDown, SpawnedStuff());
                 if (!string.IsNullOrEmpty(inFaceBool)) GameStages.SetBool(inFaceBool, true, this);

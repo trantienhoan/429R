@@ -13,6 +13,9 @@ namespace Game.PlayGround
     [DisallowMultipleComponent]
     public class BlackPumpkin : MonoBehaviour
     {
+        /// <summary>Raised with the mini boss a black pumpkin bursts into (the PlayGround round adds it to its wave).</summary>
+        public static event System.Action<GameObject> BossSpawned;
+
         [Tooltip("Mini bosses it can burst into; one at random.")]
         [SerializeField] private GameObject[] bosses = System.Array.Empty<GameObject>();
         [Tooltip("Seconds it wobbles after landing before it bursts.")]
@@ -100,7 +103,8 @@ namespace Game.PlayGround
             {
                 var spot = transform.position;
                 if (NavMesh.SamplePosition(spot, out var onMesh, 3f, NavMesh.AllAreas)) spot = onMesh.position;
-                Instantiate(prefab, spot, FacingPlayer(spot), SpawnedStuff());
+                var boss = Instantiate(prefab, spot, FacingPlayer(spot), SpawnedStuff());
+                BossSpawned?.Invoke(boss);
             }
             Destroy(gameObject);
         }

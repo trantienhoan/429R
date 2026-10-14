@@ -20,12 +20,19 @@ namespace Game.Shopping
 
         public void Set(ItemDefinition item, int cost, ItemDefinition currency, bool soldOut, bool canAfford, UnityAction onBuy)
         {
+            Show(item.Icon, Color.white, item.DisplayName, cost, currency, soldOut, canAfford, onBuy);
+        }
+
+        /// <summary>Any line: e.g. the locked special offer shows its item as a dark shape (iconTint black).</summary>
+        public void Show(Sprite picture, Color iconTint, string text, int cost, ItemDefinition currency, bool soldOut, bool canAfford, UnityAction onBuy)
+        {
             if (icon != null)
             {
-                icon.sprite = item.Icon;
-                icon.enabled = item.Icon != null;
+                icon.sprite = picture;
+                icon.color = iconTint;
+                icon.enabled = picture != null;
             }
-            if (label != null) label.text = item.DisplayName;
+            if (label != null) label.text = text;
 
             if (priceIcon != null)
             {
