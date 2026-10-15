@@ -549,7 +549,10 @@ namespace Game.EditorTools
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(guid));
                 if (prefab == null) continue;
 
-                Component enemy = prefab.GetComponent<EnemyHitDamage>();
+                var hits = prefab.GetComponent<EnemyHitDamage>();
+                // Breakable furniture takes hits like an enemy but gives no EXP.
+                if (hits != null && hits.IsFurniture) continue;
+                Component enemy = hits;
                 int exp = EnemyExp(prefab.name);
                 if (enemy == null)
                 {

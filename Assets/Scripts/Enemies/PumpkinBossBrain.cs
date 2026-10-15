@@ -211,6 +211,8 @@ namespace Game.Enemies
                 laughSpeaker.minDistance = speaker.minDistance;
                 laughSpeaker.maxDistance = speaker.maxDistance;
                 laughSpeaker.priority = speaker.priority;
+                laughSpeaker.dopplerLevel = speaker.dopplerLevel;
+                laughSpeaker.spread = speaker.spread;
             }
             foreach (var fsm in GetComponents<PlayMakerFSM>())
             {

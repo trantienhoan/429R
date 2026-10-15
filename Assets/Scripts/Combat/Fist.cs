@@ -191,13 +191,9 @@ namespace Game.Combat
         [Tooltip("Size of that effect, compared with its prefab.")]
         [Min(0.01f)]
         [SerializeField] private float goodPunchEffectSize = 0.5f;
-        [Tooltip("Rumble on a hit: x for a soft punch, y for a hard one.")]
-        [SerializeField] private Vector2 rumble = new(0.25f, 0.9f);
 
         // Where the fist is when the bones can't be found: a little in front of the controller.
         private static readonly Vector3 FallbackPoint = new(0f, -0.01f, 0.05f);
-        // Punches this fast (metres per second) or faster rumble the most.
-        private const float HardPunch = 8f;
         // Farther than this from the hand (stuck on a wall), the ball jumps back to it.
         private const float SnapDistance = 0.3f;
         private const float MaxSpeed = 25f;
@@ -311,10 +307,16 @@ namespace Game.Combat
         /// <summary>How fast the hand itself is moving, in the play area's space (walking and turning left out).</summary>
         public Vector3 HandVelocity => handVelocity;
 
-        /// <summary>A rumble in this hand, e.g. for a fist bump.</summary>
+        /// <summary>A rumble in this hand, e.g. for a fist bump (not damage: silent while Hit Buzz's Only Damage is on).</summary>
         public void Buzz(float strength, float seconds)
         {
-            if (rumbler != null) rumbler.SendHapticImpulse(strength, seconds);
+            HitBuzz.Other(rumbler, strength, seconds);
+        }
+
+        /// <summary>The hand (its interactor, which buzzes) behind this fist ball or flying fist, or null.</summary>
+        public static XRBaseInputInteractor HandOf(Component thing)
+        {
+            return thing != null && thing.TryGetComponent<Punch>(out var punch) && punch.owner != null ? punch.owner.rumbler : null;
         }
 
         // Power, with the Punch Power level-up bonus.
@@ -426,8 +428,8 @@ namespace Game.Combat
         }
 
         // Called by the ball (or the flying fist) when it hits something: what the punch does besides the damage
-        // enemies take from the hit itself, and a rumble as strong as the punch.
-        private void OnPunch(Collision collision, FlyingFist flyer)
+        // enemies take from the hit itself, and a buzz if it hurt something (Hit Buzz).
+        private void OnPunch(Collision collision, FlyingFist flyer, Rigidbody hitter)
         {
             bool flying = flyer != null;
             var move = flying ? flyer.Thrown : CurrentMove;
@@ -450,14 +452,16 @@ namespace Game.Combat
                 // Enemies walk by themselves and can't be pushed by physics: an uppercut knocks them back, hopping high,
                 // and on the head it knocks them out.
                 var enemy = collision.collider.GetComponentInParent<EnemyHitDamage>();
-                if (enemy != null)
+                // Furniture just takes the punch (and is pushed above); knock-outs are for enemies.
+                if (enemy != null && !enemy.IsFurniture)
                 {
                     var point = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
                     if (enemy.IsHead(point))
                     {
-                        enemy.KnockOut(punchSpeed * Power * headPower, 1.5f, uppercutPush * 1.5f, knockOutSeconds);
+                        // A knock-out that hurt: the strongest buzz.
+                        if (enemy.KnockOut(punchSpeed * Power * headPower, 1.5f, uppercutPush * 1.5f, knockOutSeconds))
+                            HitBuzz.Buzz(rumbler, 6f, true);
                         puff = 2f;
-                        Buzz(1f, 0.15f);
                     }
                     else
                     {
@@ -466,10 +470,9 @@ namespace Game.Combat
                 }
             }
             if (flying || move != Move.None || punchSpeed >= jabSpeed) ShowGoodPunch(collision, puff);
-            if (rumbler == null) return;
-            float hard = Mathf.InverseLerp(1f, HardPunch, flying ? collision.relativeVelocity.magnitude : punchSpeed);
-            if (hard <= 0f) return;
-            rumbler.SendHapticImpulse(Mathf.Lerp(rumble.x, rumble.y, hard), Mathf.Lerp(0.04f, 0.12f, hard));
+            // The hand buzzes only if the punch hurt something, as hard as it hurt (Hit Buzz): enemies and furniture with
+            // Enemy Hit Damage report it themselves; PlayMaker breakables are watched for a moment.
+            HitBuzz.Watch(collision, hitter);
         }
 
         // PlayMaker breakables measure a hit by its speed alone, set for swung weapons, so a punch only ever shook
@@ -478,6 +481,8 @@ namespace Game.Combat
         {
             if (pumpkinForce <= 1f) return;
             var hit = collision.rigidbody != null ? collision.rigidbody.gameObject : collision.gameObject;
+            // Enemy Hit Damage already counts the punch (by its speed and the fist's power): not twice.
+            if (hit.TryGetComponent<EnemyHitDamage>(out _)) return;
             foreach (var fsm in hit.GetComponents<PlayMakerFSM>())
             {
                 if (!fsm.enabled || fsm.FsmName != "Damage") continue;
@@ -541,7 +546,7 @@ namespace Game.Combat
             body.position = FistPoint();
             body.linearVelocity = Vector3.zero;
             ball.enabled = true;
-            if (formRumble > 0f && rumbler != null) rumbler.SendHapticImpulse(formRumble, 0.05f);
+            if (formRumble > 0f) HitBuzz.Other(rumbler, formRumble, 0.05f);
         }
 
         // The hand swells into a big fist while it's closed, and back after. Fist Size makes it a little bigger (up to
@@ -734,7 +739,7 @@ namespace Game.Combat
                 }
             }
 
-            if (rumbler != null) rumbler.SendHapticImpulse(move == Move.Jab ? 0.5f : 0.7f, TriplePunch ? 0.1f : 0.06f);
+            HitBuzz.Other(rumbler, move == Move.Jab ? 0.5f : 0.7f, TriplePunch ? 0.1f : 0.06f);
             if (jabSound != null) AudioSource.PlayClipAtPoint(jabSound, from);
         }
 
@@ -942,10 +947,12 @@ namespace Game.Combat
             public Fist owner;
             // On a flying fist: which one (empty on the fist's own ball).
             public FlyingFist flyer;
+            private Rigidbody body;
 
             private void OnCollisionEnter(Collision collision)
             {
-                if (owner != null) owner.OnPunch(collision, flyer);
+                if (body == null) TryGetComponent(out body);
+                if (owner != null) owner.OnPunch(collision, flyer, body);
             }
         }
 

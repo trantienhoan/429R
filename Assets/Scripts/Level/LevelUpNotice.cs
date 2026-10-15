@@ -12,8 +12,8 @@ namespace Game.Leveling
     /// Stats and the arrow on the menu's right. Every other level up only plays the Level Up Sound, which
     /// plays at all of them. A notice comes up a moment after the level up (Show Delay), once the level-up aura has
     /// burst, and pauses the game while it's up (Pause Game). It stays until a trigger is pulled (after a short reading
-    /// time) or its seconds are over. If the player looks away it glides back in front of them.
-    /// Tools > 429 Game > Player > Set Up Level System builds it.
+    /// time) or its seconds are over. If the player looks away it glides back in front of them. While the pause menu is
+    /// open the notice hides and waits. Tools > 429 Game > Player > Set Up Level System builds it.
     /// </summary>
     public class LevelUpNotice : MonoBehaviour
     {
@@ -99,6 +99,8 @@ namespace Game.Leveling
 
         private float shownAt;
         private float stays;
+        // After the pause menu closes, the trigger that closed it doesn't close the notice too.
+        private float buttonFrom;
         private int soundFrame = -1;
         private AudioSource sound;
         // A notice waiting for Show Delay: the level, and which notice.
@@ -249,6 +251,9 @@ namespace Game.Leveling
             }
         }
 
+        /// <summary>Whether a notice is up (or still fading out).</summary>
+        public bool IsShowing => showing;
+
         /// <summary>Fades the notice out.</summary>
         public void Close()
         {
@@ -281,11 +286,22 @@ namespace Game.Leveling
                 ShowNextPunch();
             if (!showing) return;
 
+            // The pause menu sits in front: the notice hides and its clock stops (and the trigger that picks a menu
+            // button doesn't close it too) until the menu is closed.
+            if (PauseMenu.IsPaused)
+            {
+                shownAt += Time.unscaledDeltaTime;
+                buttonFrom = Time.unscaledTime + 0.3f;
+                panel.alpha = 0f;
+                return;
+            }
+
             // Unscaled time: the notice works the same if something pauses the game underneath it.
             float shown = Time.unscaledTime - shownAt;
             bool ready = shown >= readingTime;
             if (continueText != null) continueText.enabled = ready && !closing;
-            if (!closing && (shown >= stays || (ready && continueButton.action != null && continueButton.action.WasPressedThisFrame())))
+            bool pressed = Time.unscaledTime >= buttonFrom && continueButton.action != null && continueButton.action.WasPressedThisFrame();
+            if (!closing && (shown >= stays || (ready && pressed)))
                 closing = true;
 
             float step = fadeTime > 0f ? Time.unscaledDeltaTime / fadeTime : 1f;

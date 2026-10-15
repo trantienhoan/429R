@@ -87,7 +87,7 @@ namespace Game.Inventory
                 foreach (var interactor in grab.interactorsSelecting)
                 {
                     if (interactor is XRBaseInputInteractor inputInteractor)
-                        inputInteractor.SendHapticImpulse(hapticAmplitude, hapticDuration);
+                        Game.Combat.HitBuzz.Other(inputInteractor, hapticAmplitude, hapticDuration);
                 }
                 if (grab.interactionManager != null)
                     grab.interactionManager.CancelInteractableSelection((IXRSelectInteractable)grab);

@@ -481,7 +481,7 @@ namespace Game.Shopping
             if (buzzer == null) yield break;
             for (int i = 0; i < legendaryBuzzes; i++)
             {
-                buzzer.SendHapticImpulse(buzzStrength, buzzTiming.x);
+                Game.Combat.HitBuzz.Other(buzzer, buzzStrength, buzzTiming.x);
                 yield return new WaitForSeconds(buzzTiming.x + buzzTiming.y);
             }
         }

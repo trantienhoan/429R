@@ -48,6 +48,9 @@ namespace Game.Combat
             return Fist.IsFistBall(weapon) ? weapon.damage : weapon.damage * Game.Leveling.PlayerLevel.WeaponDamageScale;
         }
 
+        /// <summary>Whether whatever made this collision is a weapon, a fist or a throwable (has a Weapon Power).</summary>
+        public static bool Has(Collision collision) => Find(collision) != null;
+
         private static WeaponPower Find(Collision collision)
         {
             WeaponPower weapon = null;

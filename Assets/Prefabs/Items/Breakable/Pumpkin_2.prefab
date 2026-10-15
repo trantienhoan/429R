@@ -5784,6 +5784,7 @@ MonoBehaviour:
   tilt: 16
   wobblesPerSecond: 4.5
   settleTime: 0.9
+  softHitPause: 0.75
   healthFsm: Health
   healthVariable: health
 --- !u!1 &8690403555129543112
@@ -9277,10 +9278,10 @@ AudioSource:
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
-  Priority: 128
-  DopplerLevel: 1
-  MinDistance: 1
-  MaxDistance: 500
+  Priority: 100
+  DopplerLevel: 0
+  MinDistance: 3
+  MaxDistance: 25
   Pan2D: 0
   rolloffMode: 0
   BypassEffects: 0
@@ -9315,7 +9316,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0
+      value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0

@@ -369,7 +369,11 @@ namespace Game.Enemies
             if (!byPlayer && !byItem && !byBullet) return;
 
             var hitPoint = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
-            TakeHit(collision.relativeVelocity.magnitude, hitPoint);
+            float speed = collision.relativeVelocity.magnitude;
+            bool good = popSpeed > 0f && speed >= popSpeed && speed >= MinHitSpeed;
+            TakeHit(speed, hitPoint);
+            // A good hit from something held buzzes the hand: a pop the most.
+            if (good) HitBuzz.Dealt(collision, mood == Mood.Popped ? 6f : 3f);
         }
 
         /// <summary>

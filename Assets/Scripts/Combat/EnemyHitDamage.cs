@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Game.Enemies;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using FsmFloat = HutongGames.PlayMaker.FsmFloat;
 
 namespace Game.Combat
@@ -69,6 +70,25 @@ namespace Game.Combat
         [Tooltip("The enemy's old collision-damage FSM, switched off so hits aren't counted twice. Empty = leave every FSM on.")]
         [SerializeField] private string oldDamageFsm = "Damage";
 
+        [Header("Furniture")]
+        [Tooltip("A piece of furniture (or another breakable thing), not an enemy: only the player's hits count in full " +
+                 "(a fist, or a thing they hold or just threw); falls, tumbles and things lying around that slide or drop " +
+                 "into it count only Bump Share as hard. A launched player can land on it, the level-up burst pushes it like " +
+                 "any loose thing, and it never gives EXP. Tools > 429 Game > Rooms > Set Up Breakable Furniture sets it.")]
+        [SerializeField] private bool furniture;
+        [Tooltip("Furniture only: how hard a bump from something the player isn't using counts (0.35 = a fall or a " +
+                 "tumble hurts a little, only when it's hard).")]
+        [Range(0f, 1f)]
+        [SerializeField] private float bumpShare = 0.35f;
+        [Tooltip("Furniture the player picks up and uses as a weapon (a chair): how hard its own knocks count while it's " +
+                 "held or flying from a throw, so it lasts as a weapon (0.15 = only the hardest throws wear it down).")]
+        [Range(0f, 1f)]
+        [SerializeField] private float wieldedShare = 0.15f;
+        [Tooltip("Furniture only: for this many seconds after it appears nothing hurts it, while the room is set up " +
+                 "(it lands, and the things spawned on it drop into place).")]
+        [Min(0f)]
+        [SerializeField] private float settleSeconds = 2f;
+
         private readonly List<PlayMakerFSM> fsms = new();
         private FsmFloat health;
         private Knockback knockback;
@@ -83,6 +103,9 @@ namespace Game.Combat
         private float scaledStun;
         private Transform head;
         private bool headSearched;
+        private float settledAt;
+        // Furniture the player can pick up (chairs, boxes).
+        private XRGrabInteractable grab;
 
         // A hit this close to the head counts as on it: this share of the enemy's size, at least Min Head Reach metres.
         private const float HeadShare = 0.3f;
@@ -101,6 +124,9 @@ namespace Game.Combat
 
         /// <summary>True once its health has run out (its body may still be playing the death).</summary>
         public bool IsDead => dead || (health != null && health.Value <= 0f);
+
+        /// <summary>A piece of furniture rather than an enemy (see Furniture in the Inspector).</summary>
+        public bool IsFurniture => furniture;
 
         /// <summary>How far a big hit knocks it back, in metres (e.g. less for a big spider).</summary>
         public float KnockBackDistance
@@ -123,6 +149,15 @@ namespace Game.Combat
         {
             TryGetComponent(out brain);
         }
+
+        private void OnEnable()
+        {
+            settledAt = furniture ? Time.time + settleSeconds : 0f;
+            if (furniture && grab == null) TryGetComponent(out grab);
+        }
+
+        /// <summary>Furniture the player is holding, or threw a moment ago: it's being used as a weapon.</summary>
+        public bool InPlayersHands => HeldThings.InUse(grab);
 
         // In Start, so every PlayMakerFSM has set itself up in Awake first.
         private void Start()
@@ -156,9 +191,17 @@ namespace Game.Combat
         // The enemy's Rigidbody gets the collisions of all its colliders, so any part of it can be hit.
         private void OnCollisionEnter(Collision collision)
         {
-            if (health == null || dead || Time.time < nextHit) return;
+            if (health == null || dead || Time.time < nextHit || Time.time < settledAt) return;
 
             float power = collision.relativeVelocity.magnitude * WeaponPower.Of(collision) / toughness;
+            // Furniture takes its knocks from the player: a fist, or a thing they hold or just threw. Tumbling over,
+            // landing, or a thing lying around falling or sliding into it hurts it only a little, and a chair the player
+            // swings or throws wears down slowly.
+            if (furniture)
+            {
+                if (InPlayersHands) power *= wieldedShare;
+                else if (!HeldThings.ByPlayer(collision)) power *= bumpShare;
+            }
             var hit = (settings != null ? settings : HitSettings.Defaults).Evaluate(power, WeaponPower.DamageOf(collision));
             LastHit = hit;
 
@@ -175,6 +218,8 @@ namespace Game.Combat
 
             health.Value -= hit.Damage;
             nextHit = Time.time + hitCooldown;
+            // The hand behind it (a fist, or a hand holding what hit) buzzes as hard as it hurt.
+            HitBuzz.Dealt(collision, hit.Damage);
             // Its damage number (Damage Numbers watches the health) shows big.
             if (hit.IsBig) DamageNumbers.NoteBigHit(gameObject);
             // The killing blow still plays the hit reaction (sound and sparks); the Health FSM's death state switches
@@ -230,14 +275,16 @@ namespace Game.Combat
         /// <summary>
         /// A knock-out blow, e.g. a fist's uppercut to the head: an extra hit of this power on top of the one that just
         /// landed (Toughness still counts), then it's knocked back this many times as far and hopping this many times as
-        /// high, and lies stunned for this many seconds (enemies with Knock Back off only take the damage).
+        /// high, and lies stunned for this many seconds (enemies with Knock Back off only take the damage). True if the
+        /// blow did damage.
         /// </summary>
-        public void KnockOut(float power, float distanceScale, float hopScale, float stunSeconds)
+        public bool KnockOut(float power, float distanceScale, float hopScale, float stunSeconds)
         {
-            if (health == null || dead) return;
+            if (health == null || dead || furniture) return false;
 
             var hit = (settings != null ? settings : HitSettings.Defaults).Evaluate(power / toughness);
-            if (hit.Damage > 0f)
+            bool hurt = hit.Damage > 0f;
+            if (hurt)
             {
                 health.Value -= hit.Damage;
                 // A knock-out blow's damage number shows big.
@@ -251,12 +298,13 @@ namespace Game.Combat
                 AnyHit?.Invoke(this, hit);
             }
 
-            if (!knockBack) return;
+            if (!knockBack) return hurt;
             scaledUntil = Time.time + 0.1f;
             scaledDistance = distanceScale;
             scaledHop = hopScale;
             scaledStun = Mathf.Max(knockBackStun, stunSeconds);
             KnockBackFromPlayer();
+            return hurt;
         }
 
         /// <summary>

@@ -103,7 +103,7 @@ namespace Game.Inventory
         {
             if (buzz <= 0f || Time.time < nextBuzz) return;
             nextBuzz = Time.time + BuzzEvery;
-            if (grab.firstInteractorSelecting is XRBaseInputInteractor hand) hand.SendHapticImpulse(buzz, 0.1f);
+            if (grab.firstInteractorSelecting is XRBaseInputInteractor hand) Game.Combat.HitBuzz.Other(hand, buzz, 0.1f);
         }
 
         private void Eat()

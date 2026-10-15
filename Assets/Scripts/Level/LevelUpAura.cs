@@ -123,7 +123,8 @@ namespace Game.Leveling
 
             // Enemies walk by themselves: they're knocked back, away from the player.
             var enemy = hit.GetComponentInParent<EnemyHitDamage>();
-            if (enemy != null)
+            // Furniture with a health bar is still a loose thing: it's pushed below like the rest.
+            if (enemy != null && !enemy.IsFurniture)
             {
                 if (pushed.Add(enemy)) enemy.KnockBack(knock, 1f);
                 return;

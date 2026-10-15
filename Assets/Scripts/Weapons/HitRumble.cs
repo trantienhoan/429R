@@ -1,65 +1,61 @@
+using Unity.XR.CoreUtils;
 using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
-using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 namespace Game.Weapons
 {
     /// <summary>
-    /// Buzzes the controller holding this weapon when it hits something: harder hits buzz stronger and longer.
-    /// Held in two hands, both buzz. Thrown weapons (nobody holding them) stay quiet. Goes on the weapon's root,
-    /// next to its XR Grab Interactable; Tools > 429 Game > Weapons > Add Hit Rumble To Weapons adds it.
+    /// Buzzes the controller holding this weapon (or anything held) when it hurts something: the more damage, the stronger
+    /// the buzz (Hit Buzz). Enemies and furniture with Enemy Hit Damage report their hits by themselves; this tells Hit
+    /// Buzz to watch the PlayMaker breakables it hits (boxes, books, pumpkins...). Thrown things (nobody holding them),
+    /// the player's own body and fists, and the moment it's picked up (a far grab flies it in through things) don't count.
+    /// Goes on the weapon's root, next to its XR Grab Interactable; Tools > 429 Game > Weapons > Add Hit Rumble To Weapons
+    /// adds it, and Hit Rumble On Grab (on the XR Origin) adds it to anything else the moment it's picked up.
     /// </summary>
     [DisallowMultipleComponent]
     public class HitRumble : MonoBehaviour
     {
-        [Tooltip("Hits slower than this, in metres per second, don't buzz, so resting or brushing against things stays quiet.")]
-        [Min(0f)]
-        [SerializeField] private float minHitSpeed = 1f;
-        [Tooltip("Hits this fast or faster buzz at full strength.")]
-        [Min(0.1f)]
-        [SerializeField] private float fullHitSpeed = 12f;
-        [Tooltip("Strength of the softest buzz (0-1).")]
-        [Range(0f, 1f)]
-        [SerializeField] private float minStrength = 0.2f;
-        [Tooltip("Strength of the hardest buzz (0-1).")]
-        [Range(0f, 1f)]
-        [SerializeField] private float maxStrength = 1f;
-        [Tooltip("How long a soft buzz lasts, in seconds. The hardest hits last twice as long.")]
-        [Min(0.01f)]
-        [SerializeField] private float duration = 0.06f;
-        [Tooltip("Shortest time between two buzzes, so scraping along a wall doesn't buzz nonstop.")]
-        [Min(0f)]
-        [SerializeField] private float cooldown = 0.08f;
-        [Tooltip("Hits on objects with this tag don't buzz, e.g. your own body and hands. Empty = everything buzzes.")]
+        [Tooltip("Hits on objects with this tag never count, e.g. your own body and hands. Empty = everything counts.")]
         [SerializeField] private string ignoreTag = "Player";
+        [Tooltip("Seconds after it's picked up before its hits count (a far grab flies it in through things).")]
+        [Min(0f)]
+        [SerializeField] private float quietAfterGrab = 0.3f;
 
         private XRGrabInteractable grab;
-        private float nextRumble;
+        private Rigidbody body;
+        private float countFrom;
 
         private void Awake()
         {
             grab = GetComponent<XRGrabInteractable>();
+            body = GetComponent<Rigidbody>();
         }
+
+        private void OnEnable()
+        {
+            if (grab != null) grab.selectEntered.AddListener(OnGrabbed);
+        }
+
+        private void OnDisable()
+        {
+            if (grab != null) grab.selectEntered.RemoveListener(OnGrabbed);
+        }
+
+        private void OnGrabbed(SelectEnterEventArgs args) => Grabbed();
+
+        /// <summary>It was just picked up: its hits don't count for Quiet After Grab.</summary>
+        public void Grabbed() => countFrom = Mathf.Max(countFrom, Time.time + quietAfterGrab);
 
         // Unity sends collisions of every collider under this Rigidbody here, so child colliders count too.
         private void OnCollisionEnter(Collision collision)
         {
-            if (grab == null || !grab.isSelected || Time.time < nextRumble) return;
+            if (grab == null || body == null || !grab.isSelected || Time.time < countFrom) return;
             if (!string.IsNullOrEmpty(ignoreTag) && (collision.collider.CompareTag(ignoreTag) || collision.gameObject.CompareTag(ignoreTag))) return;
-
-            float speed = collision.relativeVelocity.magnitude;
-            if (speed < minHitSpeed) return;
-
-            float hardness = Mathf.InverseLerp(minHitSpeed, fullHitSpeed, speed);
-            float strength = Mathf.Lerp(minStrength, maxStrength, hardness);
-            float length = duration * (1f + hardness);
-
-            foreach (var interactor in grab.interactorsSelecting)
-            {
-                // Hands and controllers are input interactors; sockets and the like have nothing to buzz.
-                if (interactor is XRBaseInputInteractor hand) hand.SendHapticImpulse(strength, length);
-            }
-            nextRumble = Time.time + cooldown;
+            // The player's own body, hands and fists.
+            if (collision.collider.GetComponentInParent<XROrigin>() != null) return;
+            if (collision.rigidbody != null && Game.Combat.Fist.IsFistBall(collision.rigidbody)) return;
+            Game.Combat.HitBuzz.Watch(collision, body);
         }
     }
 }

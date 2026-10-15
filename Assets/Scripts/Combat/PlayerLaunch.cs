@@ -147,7 +147,9 @@ namespace Game.Combat
             var rb = collider.attachedRigidbody;
             if (rb == null) return true;
             if (collider.CompareTag("Enemy") || collider.CompareTag("Monster") || rb.CompareTag("Enemy") || rb.CompareTag("Monster")) return false;
-            if (rb.GetComponent<Game.Enemies.PumpkinBossBrain>() != null || rb.GetComponent<EnemyHitDamage>() != null) return false;
+            if (rb.GetComponent<Game.Enemies.PumpkinBossBrain>() != null) return false;
+            // An enemy's body isn't floor; furniture that takes hits (sofas, tables) is.
+            if (rb.TryGetComponent<EnemyHitDamage>(out var hits) && !hits.IsFurniture) return false;
             if (rb.isKinematic) return true;
             var size = collider.bounds.size;
             return Mathf.Max(size.x, size.z) > LooseMaxWidth;

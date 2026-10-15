@@ -315,7 +315,7 @@ namespace Game.Weapons
             exploded = true;
 
             var hand = inHand && grab.firstInteractorSelecting is XRBaseInputInteractor holder ? holder : thrower;
-            if (hand != null && rumbleStrength > 0f) hand.SendHapticImpulse(rumbleStrength, rumbleDuration);
+            if (rumbleStrength > 0f) Game.Combat.HitBuzz.Other(hand, rumbleStrength, rumbleDuration);
             Blast.Explode(point, reach, hurt, force, body, effects, sound, volume, eventForPlayer, inHand, effectScale);
 
             // Breaking the usual way lets its own Health FSM drop the pieces and remove it; otherwise it just vanishes.
@@ -326,7 +326,7 @@ namespace Game.Weapons
         // The hand holding it.
         private void Buzz(float strength, float duration)
         {
-            if (grab.firstInteractorSelecting is XRBaseInputInteractor hand) hand.SendHapticImpulse(strength, duration);
+            if (grab.firstInteractorSelecting is XRBaseInputInteractor hand) Game.Combat.HitBuzz.Other(hand, strength, duration);
         }
     }
 }

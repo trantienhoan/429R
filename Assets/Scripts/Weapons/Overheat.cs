@@ -210,7 +210,7 @@ namespace Game.Weapons
         {
             if (strength <= 0f) return;
             var hand = grab.isSelected && grab.firstInteractorSelecting is XRBaseInputInteractor holder ? holder : lastHand;
-            if (hand != null) hand.SendHapticImpulse(strength, duration);
+            Game.Combat.HitBuzz.Other(hand, strength, duration);
         }
 
     }

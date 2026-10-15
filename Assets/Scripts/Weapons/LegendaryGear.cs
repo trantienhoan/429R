@@ -337,7 +337,7 @@ namespace Game.Weapons
             }
             foreach (var interactor in grab.interactorsSelecting)
             {
-                if (interactor is XRBaseInputInteractor hand) hand.SendHapticImpulse(0.8f, 0.15f);
+                if (interactor is XRBaseInputInteractor hand) Game.Combat.HitBuzz.Other(hand, 0.8f, 0.15f);
             }
         }
     }

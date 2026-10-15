@@ -445,6 +445,8 @@ namespace Game.PlayGround
                 {
                     LoseStamina(hit.Damage * staminaPerDamage);
                     nextHurt = Time.time + HurtCooldown;
+                    // The hand holding what hit it buzzes as hard as it hurt.
+                    HitBuzz.Dealt(collision, hit.Damage);
                 }
             }
 

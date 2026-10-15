@@ -25,7 +25,7 @@ namespace Game.EditorTools
         private const string BackArrowSprite = "Assets/Images/icon_back_arrow.png";
         private const string QuitMessage =
             "Re-Dream: start over from the very beginning. Your candies, items and level are kept.\n\n" +
-            "Get a Rest: close the game. Next time you play, you go on from your last checkpoint.";
+            "Get a Rest: close the game. Next time you play, you start from the beginning.";
 
         /// <summary>
         /// Creates the pause menu, or adds what an existing one is missing (the Arm swing, Height, Comfort vignette,

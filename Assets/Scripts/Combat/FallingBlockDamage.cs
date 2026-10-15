@@ -10,7 +10,8 @@ namespace Game.Combat
     /// down. Touching, pushing or leaning on it does nothing: it only counts while the block is falling at Light Hit
     /// Speed or faster when it reaches the player's body (a standing cylinder from their feet to their head). Faster
     /// falls hit harder. Hits from all blocks share one cooldown, so a whole tower landing at once doesn't stack up.
-    /// A block the player is holding never counts. Goes on the block, next to its Rigidbody.
+    /// A block the player is holding never counts, nor one that has only just appeared (Grace After Spawn). Goes on the
+    /// block (or a heavy piece of furniture), next to its Rigidbody.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
@@ -34,6 +35,10 @@ namespace Game.Combat
         [Tooltip("After any block hurts the player, no block can hurt them again for this many seconds.")]
         [Min(0f)]
         [SerializeField] private float sharedCooldown = 1f;
+        [Tooltip("For this many seconds after it appears it never hurts: furniture spawned a little above the floor drops " +
+                 "into place first.")]
+        [Min(0f)]
+        [SerializeField] private float graceAfterSpawn = 1f;
 
         private static float nextHitAt;
 
@@ -43,6 +48,7 @@ namespace Game.Combat
         private XRBaseInteractable grab;
         private XROrigin player;
         private float lastFall;
+        private float harmlessUntil;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics() => nextHitAt = 0f;
@@ -54,6 +60,11 @@ namespace Game.Combat
             TryGetComponent(out grab);
         }
 
+        private void OnEnable()
+        {
+            harmlessUntil = Time.time + graceAfterSpawn;
+        }
+
         private void FixedUpdate()
         {
             if (body.isKinematic || body.IsSleeping()) { lastFall = 0f; return; }
@@ -61,7 +72,7 @@ namespace Game.Combat
             float falling = -body.linearVelocity.y;
             float fall = Mathf.Max(falling, lastFall);
             lastFall = falling;
-            if (fall < lightHitSpeed || Time.time < nextHitAt) return;
+            if (fall < lightHitSpeed || Time.time < nextHitAt || Time.time < harmlessUntil) return;
             if (grab != null && grab.enabled && grab.isSelected) return;
             if (!FindPlayer() || !TouchesPlayer()) return;
             nextHitAt = Time.time + sharedCooldown;

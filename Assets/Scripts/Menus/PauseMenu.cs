@@ -92,6 +92,9 @@ namespace Game.Menus
 
         // Things that stopped the game without this menu (Hold), e.g. the Level Up notice.
         private static readonly System.Collections.Generic.HashSet<object> holds = new();
+        // Hands that may use (activate) what they hold, switched off during a hold so the trigger that closes a notice
+        // doesn't also fire a gun the player is holding.
+        private static readonly System.Collections.Generic.List<UnityEngine.XR.Interaction.Toolkit.Interactors.XRBaseInputInteractor> noActivate = new();
         private static float timeScaleBeforeHold = 1f;
 
         public static bool IsPaused { get; private set; }
@@ -108,6 +111,7 @@ namespace Game.Menus
             IsPaused = false;
             PauseChanged = null;
             holds.Clear();
+            noActivate.Clear();
             timeScaleBeforeHold = 1f;
         }
 
@@ -118,7 +122,9 @@ namespace Game.Menus
         /// </summary>
         public static void Hold(object who)
         {
-            if (who == null || !holds.Add(who) || holds.Count > 1 || IsPaused) return;
+            if (who == null || !holds.Add(who) || holds.Count > 1) return;
+            StopActivating(true);
+            if (IsPaused) return;
             timeScaleBeforeHold = Time.timeScale > 0f ? Time.timeScale : 1f;
             Time.timeScale = 0f;
             AudioListener.pause = true;
@@ -127,9 +133,49 @@ namespace Game.Menus
         /// <summary>Lets the game go on again after Hold (once nothing else holds it and the pause menu is closed).</summary>
         public static void Release(object who)
         {
-            if (who == null || !holds.Remove(who) || holds.Count > 0 || IsPaused) return;
+            if (who == null || !holds.Remove(who) || holds.Count > 0) return;
+            StopActivating(false);
+            if (IsPaused) return;
             Time.timeScale = timeScaleBeforeHold;
             AudioListener.pause = false;
+        }
+
+        // While held, the hands can't use (activate) what they hold; afterwards the ones switched off get it back.
+        private static void StopActivating(bool stop)
+        {
+            if (stop)
+            {
+                noActivate.Clear();
+                foreach (var hand in FindObjectsByType<UnityEngine.XR.Interaction.Toolkit.Interactors.XRBaseInputInteractor>(FindObjectsSortMode.None))
+                {
+                    if (!hand.allowActivate) continue;
+                    // Its trigger is held on a weapon: let go of it now, or the weapon would stay fired (letting go of
+                    // the trigger during the hold isn't seen).
+                    if (hand.logicalActivateState.active) LetGoOfTrigger(hand);
+                    hand.allowActivate = false;
+                    noActivate.Add(hand);
+                }
+                return;
+            }
+            foreach (var hand in noActivate)
+            {
+                if (hand != null) hand.allowActivate = true;
+            }
+            noActivate.Clear();
+        }
+
+        private static void LetGoOfTrigger(UnityEngine.XR.Interaction.Toolkit.Interactors.XRBaseInputInteractor hand)
+        {
+            if (hand is not UnityEngine.XR.Interaction.Toolkit.Interactors.IXRActivateInteractor activator) return;
+            foreach (var held in hand.interactablesSelected)
+            {
+                if (held is not UnityEngine.XR.Interaction.Toolkit.Interactables.IXRActivateInteractable weapon) continue;
+                weapon.OnDeactivated(new UnityEngine.XR.Interaction.Toolkit.DeactivateEventArgs
+                {
+                    interactorObject = activator,
+                    interactableObject = weapon,
+                });
+            }
         }
 
         private static InputAction CreateDefaultButton()

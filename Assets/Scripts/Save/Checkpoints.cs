@@ -11,8 +11,9 @@ namespace Game.Saving
     /// lucky coin flipped when the player goes down (Revive Coins): a clover gets them up and uses one up, all skulls
     /// and the run is over. A run starts at the very
     /// start and ends when the player dies with no revive left (back to the start, a new run), beats the game, or picks
-    /// "Re-Dream" in the pause menu's Quit box. "Get a Rest" keeps the run and the player's health: the game goes on from the
-    /// checkpoint next time. The Save Manager keeps it all. GAMESTAGES uses the PlayMaker actions "Set Checkpoint",
+    /// "Re-Dream" in the pause menu's Quit box. Every time the game is started it begins at the very start (the walk to the
+    /// Fairy, then StartGamePumpkin): a checkpoint only counts while the game is running. The Save Manager keeps the
+    /// extra revives earned for good. GAMESTAGES uses the PlayMaker actions "Set Checkpoint",
     /// "Go To Checkpoint", "Start New Run" and "Add Extra Revive" (Save category); PlayerDeath uses "Try Revive".
     /// </summary>
     public static class Checkpoints
@@ -200,9 +201,10 @@ namespace Game.Saving
         public static void LoadSaveData(SavedCheckpoint saved)
         {
             ExtraRevives = saved != null ? Mathf.Max(0, saved.extraRevives) : 0;
-            Current = saved != null && saved.checkpoint != null ? saved.checkpoint : "";
-            RevivesLeft = saved != null && saved.revivesLeft >= 0 ? Mathf.Min(saved.revivesLeft, RevivesPerRun) : RevivesPerRun;
-            RestHealth = saved != null && saved.restHealth > 0f ? saved.restHealth : -1f;
+            // Starting the game always starts a new run at the very beginning: a saved checkpoint isn't gone back to.
+            Current = "";
+            RevivesLeft = RevivesPerRun;
+            RestHealth = -1f;
             IsLoaded = true;
         }
 
