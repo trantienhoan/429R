@@ -11,7 +11,8 @@ namespace Game.Combat
     /// with little green sparkles flying up around it, when candy has pushed health above it. Health has no cap, so the number tells the rest. Each change pops a
     /// "-8" / "+5" next to the number, and a heal makes the heart pop. The HUD shows for a few seconds after any change, then fades, and stays up
     /// while health is low. Once the player has died and got back up this run (a revive), the heart is cracked
-    /// (until a new run). It only reads the FSM, so damage and heals still all happen there.
+    /// (until a new run). The player can hide it all in the pause menu (Health: hidden), e.g. to record video. It only
+    /// reads the FSM, so damage and heals still all happen there.
     /// Goes on the HUD canvas under the Main Camera. Tools > 429 Game > Player > Set Up Health HUD sets it up.
     /// </summary>
     [DisallowMultipleComponent]
@@ -96,7 +97,33 @@ namespace Game.Combat
         private bool cracked;
         private ParticleSystemRenderer sparkleRenderer;
         private MaterialPropertyBlock sparkleBlock;
+        private bool wasShown = true;
         private static readonly int ColorId = Shader.PropertyToID("_Color");
+
+        // Where the player's choice is kept (on for a new player).
+        private const string ShownKey = "429 Game.HealthHUD";
+        private static bool? playerChoice;
+
+        /// <summary>
+        /// The player's choice (pause menu): whether the health shows at all (off e.g. to record video; the health still
+        /// works the same). Setting it saves it.
+        /// </summary>
+        public static bool Shown
+        {
+            get => playerChoice ??= PlayerPrefs.GetInt(ShownKey, 1) != 0;
+            set
+            {
+                if (value == Shown) return;
+                playerChoice = value;
+                PlayerPrefs.SetInt(ShownKey, value ? 1 : 0);
+                PlayerPrefs.Save();
+            }
+        }
+
+        public static string Label() => Shown ? "Health: shown" : "Health: hidden";
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => playerChoice = null;
 
         private void Awake()
         {
@@ -174,6 +201,12 @@ namespace Game.Combat
                 cracked = crackedNow;
                 changedAt = Time.unscaledTime;
             }
+            // Switched back on in the pause menu: shown for a moment, so the player sees it's back.
+            if (Shown != wasShown)
+            {
+                wasShown = Shown;
+                if (wasShown) changedAt = Time.unscaledTime;
+            }
             Refresh(false);
         }
 
@@ -245,7 +278,7 @@ namespace Game.Combat
             }
 
             float shown = time - changedAt;
-            group.alpha = alwaysShow || low ? 1f : 1f - Mathf.Clamp01((shown - showSeconds) / fadeSeconds);
+            group.alpha = !Shown ? 0f : alwaysShow || low ? 1f : 1f - Mathf.Clamp01((shown - showSeconds) / fadeSeconds);
             Sparkle(bonus && group.alpha > 0.01f, group.alpha);
         }
 

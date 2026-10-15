@@ -75,6 +75,34 @@ namespace Game.Steam
 #endif
         }
 
+        /// <summary>
+        /// For testing: takes back every achievement and sets every stat to 0 for the Steam account playing right now
+        /// (only this game's, and only that account's). Returns false without Steam.
+        /// </summary>
+        public static bool ResetAll()
+        {
+#if STEAM_BUILD
+            if (!SteamBootstrap.Initialized) return false;
+            bool done = SteamUserStats.ResetAllStats(true);
+            SteamUserStats.StoreStats();
+            Debug.Log(done ? "[Steam] All achievements taken back and all stats set to 0 for this account." : "[Steam] Couldn't reset the stats and achievements.");
+            return done;
+#else
+            return false;
+#endif
+        }
+
+        /// <summary>An integer stat's value now (0 without Steam, or if there's no stat with that API name).</summary>
+        public static int GetStat(string apiName)
+        {
+#if STEAM_BUILD
+            if (!SteamBootstrap.Initialized || string.IsNullOrEmpty(apiName)) return 0;
+            return SteamUserStats.GetStat(apiName, out int value) ? value : 0;
+#else
+            return 0;
+#endif
+        }
+
 #if STEAM_BUILD
         // Steam limits how often stats may be uploaded, so changes are gathered and sent at most this often.
         private const float StoreInterval = 5f;

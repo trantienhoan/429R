@@ -15,15 +15,19 @@ namespace Game.Combat
     /// spider, and mini bosses barely feel it), loose things get pushed, and the controller rumbles. While it's a fist
     /// the hand swells to Fist Scale (half as big again) with a little buzz, so the player sees it's ready and punches
     /// land easier; the ball grows with it.
-    /// Three punches thrown well do more, and fly: an echo of the fist, as big as the fist is now, goes on the way the
-    /// punch went (Jab Reach) and hits the first thing in its way. A jab is a fast, straight punch out where the player
-    /// is looking, and flies straight ahead. A swing (a hook: the fist sweeps sideways) hits harder (Swing Power) and
-    /// flies on sideways, level, the way the fist swept (a left hook sweeping to the right flies to the right). An
-    /// uppercut (the fist drives upwards) flies up, sends things flying up and away and knocks enemies back (Uppercut
-    /// Push); on an enemy's head it's a knock-out (Head Power, Knock Out Seconds). They count the same when the fist
-    /// itself lands. Which one a punch is goes by where the hand went, from the player's point of view, measured in the
-    /// play area's own space, so walking and turning don't count as punching. Slow pushes and hammer fists are just
-    /// punches.
+    /// Three punches thrown well do more, and fly: an echo of the fist, bigger than the fist (Fly Size), goes on the way
+    /// the punch went (Jab Reach) and hits the first thing in its way. A jab is a fast, straight punch out where the
+    /// player is looking, and flies straight ahead. A swing (a hook: the fist sweeps sideways) hits harder (Swing Power)
+    /// and flies on sideways, level, the way the fist swept (a left hook sweeping to the right flies to the right). An
+    /// uppercut (the fist drives upwards) hits harder (Uppercut Power), flies up, sends things flying up and away and
+    /// knocks enemies back (Uppercut Push); on an enemy's head it's a knock-out (Head Power, Knock Out Seconds). A swing
+    /// and an uppercut fly bigger than a jab (Big Move Size). They count the same when the fist itself lands. Which one
+    /// a punch is goes by where the hand went, from the player's point of view, measured in the play area's own space, so
+    /// walking and turning don't count as punching. Slow pushes and hammer fists are just punches.
+    /// The Fist Size level-up stat unlocks them (Jab Unlocked, Swing Unlocked, Uppercut Unlocked; until then a punch
+    /// doesn't fly) and makes flying punches bigger and fly farther; the hand itself grows only a little. At full Fist
+    /// Size (Triple Punch) a jab throws two more fists, one each side, and a swing or an uppercut two more in a row
+    /// along the punch, each starting farther out and reaching farther.
     /// A fist doesn't pull things from a distance: with the trigger squeezed too, the hand only grabs what's within its
     /// reach, so making a fist while pointing at something doesn't yank it into the hand instead of punching it.
     /// Pointing (trigger let go) and squeezing the grip still pulls things from afar.
@@ -69,9 +73,14 @@ namespace Game.Combat
 
         [Header("Big Fist")]
         [Tooltip("How big the hand grows while it's a fist (2 = twice its size), so it's easy to see and punches land " +
-                 "easier. The fist ball grows with it. 1 = no change. The Fist Size level-up stat adds to it.")]
+                 "easier. The fist ball grows with it. 1 = no change. The Fist Size level-up stat adds a little to it " +
+                 "(Hand Size Per Point on Player Level); it mostly makes the flying punches bigger.")]
         [Min(1f)]
         [SerializeField] private float fistScale = 1.5f;
+        [Tooltip("The most Fist Size adds to the hand (on top of Fist Scale), however many points, so the hand never " +
+                 "blocks the view.")]
+        [Min(0f)]
+        [SerializeField] private float maxHandGrowth = 0.4f;
         [Tooltip("How long, in seconds, the hand takes to grow into a big fist, and to shrink back.")]
         [Min(0f)]
         [SerializeField] private float growSeconds = 0.08f;
@@ -113,6 +122,30 @@ namespace Game.Combat
         [Tooltip("Optional sound when a punch flies, e.g. a whoosh.")]
         [SerializeField] private AudioClip jabSound;
 
+        [Header("Flying Punches (grow with the Fist Size level-up stat)")]
+        [Tooltip("How big a flying jab is compared with the fist (at Fist Scale), before Fist Size: 1.3 = a third bigger. " +
+                 "Each Fist Size point makes it bigger still (Punch Size Per Point on Player Level).")]
+        [Min(0.5f)]
+        [SerializeField] private float flySize = 1.3f;
+        [Tooltip("The biggest a flying jab gets compared with the fist (at Fist Scale), however much Fist Size (Bonus Fist " +
+                 "Size goes far past full), so it never fills the view. Swings and uppercuts are Big Move Size times this.")]
+        [Min(0.5f)]
+        [SerializeField] private float maxFlySize = 4f;
+        [Tooltip("A flying swing and a flying uppercut are this many times as big as a flying jab.")]
+        [Min(1f)]
+        [SerializeField] private float bigMoveSize = 1.35f;
+        [Tooltip("At full Fist Size, flying punches go this many times as far as when the Jab is unlocked (Jab Reach x " +
+                 "this); in between, step by step.")]
+        [Min(1f)]
+        [SerializeField] private float maxReachScale = 2.5f;
+        [Tooltip("Triple Punch (full Fist Size): the two extra jab fists fly out this many degrees to each side.")]
+        [Range(0f, 45f)]
+        [SerializeField] private float tripleJabSpread = 10f;
+        [Tooltip("Triple Punch: a swing's or an uppercut's 2nd fist reaches this share farther than the 1st, the 3rd " +
+                 "twice that (0.5 = 1.5x and 2x as far). Each also starts a fist's width farther out than the one before.")]
+        [Min(0f)]
+        [SerializeField] private float tripleReach = 0.5f;
+
         [Header("Swing")]
         [Tooltip("A fast sideways sweep of the fist (a hook) hits harder, and flies on sideways, level, the way the fist " +
                  "swept. Untick to turn it off.")]
@@ -131,6 +164,9 @@ namespace Game.Combat
         [Tooltip("How fast the fist must rise at its fastest, in metres per second, to count as an uppercut.")]
         [Min(0.5f)]
         [SerializeField] private float uppercutSpeed = 2.8f;
+        [Tooltip("How much harder an uppercut hits than a plain punch of the same speed, when the fist lands and when it flies.")]
+        [Min(1f)]
+        [SerializeField] private float uppercutPower = 1.6f;
         [Tooltip("How much harder an uppercut sends things flying than a plain punch (Punch Push x this), and how much " +
                  "higher a knocked-back enemy hops.")]
         [Min(1f)]
@@ -180,6 +216,8 @@ namespace Game.Combat
         private const float LongMoveSeconds = 0.7f;
         // Shortest time between two flying punches from one hand.
         private const float FlyCooldown = 0.25f;
+        // Most flying fists one hand has out at once (a Triple Punch is 3); past it, the oldest is thrown again.
+        private const int MaxFlyers = 9;
         // How fast the flying fist flies, in metres per second; its damage is worked out from the punch's own speed.
         private const float FlySpeed = 8f;
         // Punches slower than this (metres per second) don't send things flying, and nothing leaves faster than Max.
@@ -209,7 +247,9 @@ namespace Game.Combat
         // The hand's size now: 1 = normal, Fist Scale = a big fist.
         private float grown = 1f;
         private SkinnedMeshRenderer handSkin;
-        private FlyingFist flyer;
+        // Flying fists, made when first needed and used again once they've stopped.
+        private readonly List<FlyingFist> flyers = new();
+        private int reuseFlyer;
         private readonly List<Collider> playerParts = new();
         // The punch being thrown, in the play area's space (the controller's parent).
         private bool hasLastHand;
@@ -230,6 +270,31 @@ namespace Game.Combat
         private float nextPuff;
 
         private enum Move { None, Jab, Swing, Uppercut }
+
+        /// <summary>
+        /// The flying punches the Fist Size level-up stat has unlocked (Player Level sets them from the points spent).
+        /// Locked, a punch doesn't fly: a fast straight one, a sideways sweep or an upward drive is just a punch. Locked
+        /// again each time the game starts, until the save is read.
+        /// </summary>
+        public static bool JabUnlocked { get; set; }
+        public static bool SwingUnlocked { get; set; }
+        public static bool UppercutUnlocked { get; set; }
+        /// <summary>Full Fist Size: every flying punch throws three fists.</summary>
+        public static bool TriplePunch { get; set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetUnlocks()
+        {
+            JabUnlocked = false;
+            SwingUnlocked = false;
+            UppercutUnlocked = false;
+            TriplePunch = false;
+        }
+
+        // Each move is thrown only when it's switched on here and unlocked.
+        private bool CanJab => flyingJab && JabUnlocked;
+        private bool CanSwing => swing && SwingUnlocked;
+        private bool CanUppercut => uppercut && UppercutUnlocked;
 
         // The punch the hand is throwing right now (or has just thrown), for when the fist itself lands.
         private Move CurrentMove => stroking || Time.time < strokeMoveUntil ? strokeMove : Move.None;
@@ -300,7 +365,10 @@ namespace Game.Combat
             }
             Open();
             if (body != null) body.gameObject.SetActive(false);
-            if (flyer != null) flyer.gameObject.SetActive(false);
+            foreach (var flyer in flyers)
+            {
+                if (flyer != null) flyer.gameObject.SetActive(false);
+            }
             grown = 1f;
             SetHandSize(1f);
             stroking = false;
@@ -311,7 +379,10 @@ namespace Game.Combat
         private void OnDestroy()
         {
             if (body != null) Destroy(body.gameObject);
-            if (flyer != null) Destroy(flyer.gameObject);
+            foreach (var flyer in flyers)
+            {
+                if (flyer != null) Destroy(flyer.gameObject);
+            }
         }
 
         private void Update()
@@ -340,8 +411,8 @@ namespace Game.Combat
                 // to how fast the ball goes, but not to the punch.
                 float ballSpeed = body.linearVelocity.magnitude;
                 weapon.Power = ballSpeed > 0.01f ? Power * Mathf.Clamp01(handVelocity.magnitude / ballSpeed) : Power;
-                // A swing lands harder.
-                if (CurrentMove == Move.Swing) weapon.Power *= swingPower;
+                // A swing and an uppercut land harder.
+                weapon.Power *= MovePower(CurrentMove);
             }
             var target = FistPoint();
             var gap = target - body.position;
@@ -356,9 +427,9 @@ namespace Game.Combat
 
         // Called by the ball (or the flying fist) when it hits something: what the punch does besides the damage
         // enemies take from the hit itself, and a rumble as strong as the punch.
-        private void OnPunch(Collision collision, bool flying)
+        private void OnPunch(Collision collision, FlyingFist flyer)
         {
-            flying = flying && flyer != null;
+            bool flying = flyer != null;
             var move = flying ? flyer.Thrown : CurrentMove;
             // The fist counts only as fast as the hand itself moves (in the play area), so walking into things with a
             // fist held out isn't a punch.
@@ -368,11 +439,11 @@ namespace Game.Combat
                 if (punchSpeed < MinPunchSpeed) return;
                 // The fist itself landed: that punch already hit, so it doesn't fly on too.
                 lastBallHit = Time.time;
-                // A swing lands harder (a flying one already has this in its speed).
-                if (move == Move.Swing) punchSpeed *= swingPower;
+                // A swing and an uppercut land harder (a flying one already has this in its speed).
+                punchSpeed *= MovePower(move);
             }
             HelpPlayMaker(collision, punchSpeed);
-            Push(collision, punchSpeed, flying, move);
+            Push(collision, punchSpeed, flyer, move);
             float puff = 1f;
             if (move == Move.Uppercut)
             {
@@ -422,7 +493,7 @@ namespace Game.Combat
         // Sends a loose thing off the way the punch was going, as a throw would: the fist's ball alone is light and
         // only nudges heavy things. An uppercut sends it harder, up and away. The heavier the thing, the less it gives
         // way (Push Weight). Things held in a hand, and things that don't move by physics, are left alone.
-        private void Push(Collision collision, float punchSpeed, bool flying, Move move)
+        private void Push(Collision collision, float punchSpeed, FlyingFist flyer, Move move)
         {
             var thing = collision.rigidbody;
             if (punchPush <= 0f || thing == null || thing.isKinematic || punchSpeed < MinPushSpeed) return;
@@ -431,7 +502,7 @@ namespace Game.Combat
             if (thing.TryGetComponent(out XRGrabInteractable grab) && grab.isSelected) return;
 
             Vector3 direction;
-            if (flying) direction = flyer.Direction;
+            if (flyer != null) direction = flyer.Direction;
             else if (handVelocity.sqrMagnitude > 0.25f)
                 direction = (transform.parent != null ? transform.parent.TransformDirection(handVelocity) : handVelocity).normalized;
             else if (collision.contactCount > 0) direction = -collision.GetContact(0).normal;
@@ -473,11 +544,11 @@ namespace Game.Combat
             if (formRumble > 0f && rumbler != null) rumbler.SendHapticImpulse(formRumble, 0.05f);
         }
 
-        // The hand swells into a big fist while it's closed, and back after.
+        // The hand swells into a big fist while it's closed, and back after. Fist Size makes it a little bigger (up to
+        // Max Hand Growth); the flying punches grow much more.
         private void Grow()
         {
-            // Bigger with the Fist Size level-up stat.
-            float target = closed ? fistScale + Game.Leveling.PlayerLevel.FistSizeBonus : 1f;
+            float target = closed ? fistScale + Mathf.Min(Game.Leveling.PlayerLevel.FistSizeBonus, maxHandGrowth) : 1f;
             if (handModel == null || grown == target) return;
             float rate = growSeconds > 0f ? Mathf.Max(fistScale - 1f, 1f) / growSeconds : float.MaxValue;
             grown = Mathf.MoveTowards(grown, target, rate * Time.deltaTime);
@@ -522,7 +593,7 @@ namespace Game.Combat
             // Smoothed a little: tracking jitters from frame to frame.
             handVelocity = Vector3.Lerp(handVelocity, step / dt, 0.6f);
             float speed = handVelocity.magnitude;
-            if (eyes == null || (!flyingJab && !swing && !uppercut))
+            if (eyes == null || (!CanJab && !CanSwing && !CanUppercut))
             {
                 stroking = false;
                 strokeMove = Move.None;
@@ -579,7 +650,7 @@ namespace Game.Combat
             // How far off its line the punch may be at most, as a share of what its kind allows.
             float off = 1f;
             float needed = 0f;
-            if (flyingJab && strokePeak >= jabSpeed && took <= jabSeconds && straightness >= jabStraightness)
+            if (CanJab && strokePeak >= jabSpeed && took <= jabSeconds && straightness >= jabStraightness)
             {
                 float jabOff = Vector3.Angle(direction, InPlayAreaDirection(eyes.forward)) / jabAim;
                 if (jabOff <= off)
@@ -589,7 +660,7 @@ namespace Game.Combat
                     needed = jabSpeed;
                 }
             }
-            if (uppercut && strokePeak >= uppercutSpeed && took <= LongMoveSeconds)
+            if (CanUppercut && strokePeak >= uppercutSpeed && took <= LongMoveSeconds)
             {
                 float upOff = Vector3.Angle(direction, Vector3.up) / UppercutAngle;
                 if (upOff < off)
@@ -599,7 +670,7 @@ namespace Game.Combat
                     needed = uppercutSpeed;
                 }
             }
-            if (swing && strokePeak >= swingSpeed && took <= LongMoveSeconds)
+            if (CanSwing && strokePeak >= swingSpeed && took <= LongMoveSeconds)
             {
                 var side = InPlayAreaDirection(eyes.right);
                 float sideOff = Mathf.Min(Vector3.Angle(direction, side), Vector3.Angle(direction, -side)) / SwingAngle;
@@ -620,7 +691,8 @@ namespace Game.Combat
         }
 
         // A good punch that hit nothing flies on from the knuckles, the way the fist went: a jab straight ahead, a swing
-        // sideways (level, the way it swept), an uppercut up. The better it was, the farther.
+        // sideways (level, the way it swept), an uppercut up. The better it was, the farther; the more Fist Size, the
+        // farther and bigger. At full Fist Size it throws three.
         private void TryFly(Move move, float quality)
         {
             if (!closed || Time.time < nextFly || lastBallHit >= strokeStartTime) return;
@@ -629,15 +701,76 @@ namespace Game.Combat
             // A swing sweeps across, not into the floor or the sky.
             if (move == Move.Swing) direction.y = 0f;
             if (direction.sqrMagnitude < 0.0001f) return;
+            direction.Normalize();
             nextFly = Time.time + FlyCooldown;
 
-            float reach = Mathf.Lerp(jabReach.x, jabReach.y, quality);
-            var from = FistPoint();
-            // It hits as hard as the fist would at the punch's speed (x Jab Power; a swing harder still).
-            if (flyer == null) flyer = MakeFlyer();
-            flyer.Launch(from, direction.normalized, reach, strokePeak * jabPower * (move == Move.Swing ? swingPower : 1f), move);
-            if (rumbler != null) rumbler.SendHapticImpulse(move == Move.Jab ? 0.5f : 0.7f, 0.06f);
+            float reach = Mathf.Lerp(jabReach.x, jabReach.y, quality) * Mathf.Lerp(1f, maxReachScale, Game.Leveling.PlayerLevel.PunchReachGrowth);
+            // Sized from the fist at Fist Scale, so it grows with Fist Size apart from the hand's own little growth.
+            float flyRadius = radius * fistScale * FlySize(move);
+            // It hits as hard as the fist would at the punch's speed (x Jab Power; a swing and an uppercut harder still).
+            float hitSpeed = strokePeak * jabPower * MovePower(move);
+            // Its back at the knuckles, so a big one starts out in front of the hand, not around the player's face.
+            var from = FistPoint() + direction * Mathf.Max(0f, flyRadius - radius * grown);
+            Throw(from, direction, reach, hitSpeed, move, flyRadius);
+
+            if (TriplePunch)
+            {
+                // A fist's width apart, so they don't overlap.
+                float gap = flyRadius * 2.2f;
+                if (move == Move.Jab)
+                {
+                    // One more on each side, fanning out a little.
+                    var side = Vector3.Cross(Vector3.up, direction);
+                    if (side.sqrMagnitude < 0.01f) side = transform.right;
+                    side.Normalize();
+                    for (int s = -1; s <= 1; s += 2)
+                        Throw(from + side * (s * gap), Quaternion.AngleAxis(s * tripleJabSpread, Vector3.up) * direction, reach, hitSpeed, move, flyRadius);
+                }
+                else
+                {
+                    // Two more in a row along the punch, each starting farther out and reaching farther.
+                    for (int k = 1; k <= 2; k++)
+                        Throw(from + direction * (k * gap), direction, reach * (1f + k * tripleReach), hitSpeed, move, flyRadius);
+                }
+            }
+
+            if (rumbler != null) rumbler.SendHapticImpulse(move == Move.Jab ? 0.5f : 0.7f, TriplePunch ? 0.1f : 0.06f);
             if (jabSound != null) AudioSource.PlayClipAtPoint(jabSound, from);
+        }
+
+        // How much harder a move hits than a plain punch: a swing and an uppercut more.
+        private float MovePower(Move move)
+        {
+            return move == Move.Swing ? swingPower : move == Move.Uppercut ? uppercutPower : 1f;
+        }
+
+        // How big a flying punch is, compared with the fist at Fist Scale: Fly Size, bigger with each Fist Size point (up
+        // to Max Fly Size); a swing and an uppercut bigger than a jab.
+        private float FlySize(Move move)
+        {
+            float size = Mathf.Min(flySize * (1f + Game.Leveling.PlayerLevel.PunchSizeBonus), maxFlySize);
+            return move == Move.Jab ? size : size * bigMoveSize;
+        }
+
+        // Sends a flying fist: one that has stopped, or a new one (or, with too many out, the oldest again).
+        private void Throw(Vector3 from, Vector3 direction, float reach, float hitSpeed, Move move, float flyRadius)
+        {
+            FlyingFist flyer = null;
+            foreach (var free in flyers)
+            {
+                if (free != null && !free.gameObject.activeSelf)
+                {
+                    flyer = free;
+                    break;
+                }
+            }
+            if (flyer == null)
+            {
+                flyers.RemoveAll(gone => gone == null);
+                if (flyers.Count < MaxFlyers) flyers.Add(flyer = MakeFlyer());
+                else flyer = flyers[reuseFlyer++ % flyers.Count];
+            }
+            flyer.Launch(from, direction, reach, hitSpeed, move, flyRadius);
         }
 
         private Vector3 InPlayArea(Vector3 point)
@@ -668,10 +801,10 @@ namespace Game.Combat
             go.AddComponent<WeaponPower>();
             var punch = go.AddComponent<Punch>();
             punch.owner = this;
-            punch.flying = true;
 
             var flying = go.AddComponent<FlyingFist>();
             flying.owner = this;
+            punch.flyer = flying;
             if (handSkin != null)
             {
                 // Echo: sized around the knuckles (the ball's middle); Echo Mesh: the copy of the hand inside it.
@@ -707,7 +840,10 @@ namespace Game.Combat
             foreach (var other in fists)
             {
                 Ignore(collider, other.ball);
-                Ignore(collider, other.flyer != null ? other.flyer.Ball : null);
+                foreach (var flyer in other.flyers)
+                {
+                    if (flyer != null) Ignore(collider, flyer.Ball);
+                }
             }
         }
 
@@ -804,18 +940,19 @@ namespace Game.Combat
         private class Punch : MonoBehaviour
         {
             public Fist owner;
-            public bool flying;
+            // On a flying fist: which one (empty on the fist's own ball).
+            public FlyingFist flyer;
 
             private void OnCollisionEnter(Collision collision)
             {
-                if (owner != null) owner.OnPunch(collision, flying);
+                if (owner != null) owner.OnPunch(collision, flyer);
             }
         }
 
         /// <summary>
-        /// A flying punch: the punch carried on ahead of the fist, seen as a still copy of the fist as big as it is now
-        /// (its echo). It flies straight, hits the first thing in its way (enemies take damage as from the fist, ghost balloons get pushed,
-        /// loose things get knocked), then quickly shrinks away where it stopped.
+        /// A flying punch: the punch carried on ahead of the fist, seen as a still copy of the fist, bigger (its echo).
+        /// It flies straight, hits the first thing in its way (enemies take damage as from the fist, ghost balloons get
+        /// pushed, loose things get knocked), then quickly shrinks away where it stopped.
         /// </summary>
         private class FlyingFist : MonoBehaviour
         {
@@ -837,6 +974,8 @@ namespace Game.Combat
             private Move move;
             private bool done;
             private float fade;
+            // How big its echo is, compared with the hand when it was thrown.
+            private float size = 1f;
 
             public float HitSpeed => hitSpeed;
             public Move Thrown => move;
@@ -850,27 +989,34 @@ namespace Game.Combat
                 weapon = GetComponent<WeaponPower>();
             }
 
-            /// <summary>Flies from the knuckles towards a direction for this many metres, hitting like a punch this fast.</summary>
-            public void Launch(Vector3 from, Vector3 towards, float distance, float punchSpeed, Move thrown)
+            /// <summary>
+            /// Flies from a point (its middle, where the knuckles are) towards a direction for this many metres, hitting like
+            /// a punch this fast, with a ball this big (its radius, in metres).
+            /// </summary>
+            public void Launch(Vector3 from, Vector3 towards, float distance, float punchSpeed, Move thrown, float flyRadius)
             {
                 move = thrown;
+                // The echo is the hand as it is now, sized up to the ball.
+                size = Mathf.Max(flyRadius, 0.001f) / Mathf.Max(owner.radius * owner.grown, 0.001f);
                 gameObject.SetActive(false);
                 transform.SetPositionAndRotation(from, Quaternion.identity);
                 if (echo != null && owner.handSkin != null)
                 {
-                    // A still copy of the hand as it is now, right where the hand is (baked in world size).
+                    // A still copy of the hand as it is now (baked in world size), placed as the hand is around the
+                    // knuckles, then sized up around them.
                     var skin = owner.handSkin.transform;
                     owner.handSkin.BakeMesh(echoMesh);
                     echo.localScale = Vector3.one;
-                    echoShape.SetPositionAndRotation(skin.position, skin.rotation);
+                    echoShape.SetPositionAndRotation(skin.position + (from - owner.FistPoint()), skin.rotation);
                     echoShape.localScale = Vector3.one;
+                    echo.localScale = Vector3.one * size;
                 }
                 gameObject.SetActive(true);
                 // Switched off, a collider may forget what it ignores.
                 owner.IgnorePlayer(Ball);
 
-                // As big as the fist ball, and as hard as the fist at the punch's speed, however fast it flies.
-                Ball.radius = owner.radius * owner.grown;
+                // As hard as the fist at the punch's speed, however fast it flies.
+                Ball.radius = Mathf.Max(flyRadius, 0.001f);
                 Ball.enabled = true;
                 weapon.Power = owner.Power * punchSpeed / FlySpeed;
                 hitSpeed = punchSpeed;
@@ -890,7 +1036,7 @@ namespace Game.Combat
                     // Stopped: it hits nothing more, and the echo shrinks away where it is.
                     if (Ball.enabled) Ball.enabled = false;
                     fade += Time.fixedDeltaTime / FadeSeconds;
-                    if (echo != null) echo.localScale = Vector3.one * Mathf.Max(0f, 1f - fade);
+                    if (echo != null) echo.localScale = Vector3.one * (size * Mathf.Max(0f, 1f - fade));
                     if (fade >= 1f) gameObject.SetActive(false);
                     return;
                 }

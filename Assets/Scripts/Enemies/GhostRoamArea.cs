@@ -73,6 +73,19 @@ namespace Game.Enemies
             return Mathf.Abs(local.x - center.x) <= half.x && Mathf.Abs(local.z - center.z) <= half.z;
         }
 
+        /// <summary>
+        /// Fits the box's floor plan over a world-space rectangle (its height stays as it is), e.g. after the PlayGround
+        /// has grown: World Size's x and y are its width along the world X and Z axes.
+        /// </summary>
+        public void FitFlat(Vector3 worldCenter, Vector2 worldSize)
+        {
+            var local = transform.InverseTransformPoint(worldCenter);
+            var scale = transform.lossyScale;
+            center = new Vector3(local.x, center.y, local.z);
+            size = new Vector3(worldSize.x / Mathf.Max(0.0001f, Mathf.Abs(scale.x)), size.y,
+                worldSize.y / Mathf.Max(0.0001f, Mathf.Abs(scale.z)));
+        }
+
         // The spot in it nearest to 'point' ('point' itself when it's inside).
         private Vector3 ClosestPoint(Vector3 point)
         {

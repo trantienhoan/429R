@@ -66,6 +66,10 @@ namespace Game.PlayGround
         private float treeHeight = 4f;
         private float treeRadius = 1.5f;
 
+        /// <summary>Whether it grows back into its tree when nobody's watching (off: it stays a bush, e.g. one the
+        /// PlayGround Field put down).</summary>
+        public bool GrowsBack { get; set; } = true;
+
         private void Awake()
         {
             jiggle = GetComponent<DamageJiggle>();
@@ -74,6 +78,7 @@ namespace Game.PlayGround
 
         private void Update()
         {
+            if (!GrowsBack) return;
             leftAlone += Time.deltaTime;
             if (leftAlone < minSeconds || Time.time < nextCheck) return;
             nextCheck = Time.time + CheckEvery;

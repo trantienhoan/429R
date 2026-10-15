@@ -19,7 +19,8 @@ namespace Game.Combat
     /// uses up one coin for the rest of the run. All skulls and they stay down: the game over goes on, and the run is
     /// over. PlayerDeath's Try Revive starts it and waits for the coins; Player Revive then gets the player up with the
     /// health the clovers won. Goes on the XR Origin, next to Player Revive; Tools > 429 Game > Player > Set Up Revive
-    /// adds it. Put your own coin in Coin Prefab and pick which side of it is the clover.
+    /// adds it. Put your own coin in Coin Prefab and pick which side of it is the clover. Toss flips the same coins for
+    /// other things (the Toss Coin action, e.g. the bedroom's shortcut door).
     /// </summary>
     [DisallowMultipleComponent]
     public class ReviveCoins : MonoBehaviour
@@ -130,6 +131,8 @@ namespace Game.Combat
         [SerializeField] private Color coinLight = new(1f, 0.93f, 0.78f, 1f);
         [Min(0f)]
         [SerializeField] private float coinLightIntensity = 0.35f;
+        [Tooltip("Write the result above the coins (\"+150% health\", \"Out of luck...\"). Off: the coins' faces say it.")]
+        [SerializeField] private bool showResultText;
         [Tooltip("The result's font. Empty: TextMeshPro's default font.")]
         [SerializeField] private TMP_FontAsset font;
 
@@ -176,6 +179,8 @@ namespace Game.Combat
         private bool held;
         private Coroutine running;
         private float showTime;
+        // Flipping to get the player up (after the death fall, darkening after), not a Toss for something else.
+        private bool forRevive;
 
         public static ReviveCoins Instance { get; private set; }
 
@@ -222,7 +227,23 @@ namespace Game.Combat
             if (IsFlipping || !isActiveAndEnabled) return;
             IsFlipping = true;
             Clovers = 0;
+            forRevive = true;
             running = StartCoroutine(Flipping(Mathf.Max(1, CoinsNow)));
+        }
+
+        /// <summary>
+        /// Tosses coins for something other than getting up, e.g. the bedroom's shortcut door: the same show (the game
+        /// stops meanwhile), without the death fall first or the darkening after. Once Is Flipping is false again, Clovers
+        /// says how many landed on the clover. False (nothing tossed) if coins are already being flipped.
+        /// </summary>
+        public bool Toss(int count = 1)
+        {
+            if (IsFlipping || !isActiveAndEnabled) return false;
+            IsFlipping = true;
+            Clovers = 0;
+            forRevive = false;
+            running = StartCoroutine(Flipping(Mathf.Clamp(count, 1, maxCoins)));
+            return true;
         }
 
         /// <summary>Stops the coins at once (the game goes on, nobody gets up).</summary>
@@ -237,12 +258,15 @@ namespace Game.Combat
         private IEnumerator Flipping(int count)
         {
             // The fall goes on for a moment first.
-            for (float t = 0f; t < fallFirst; t += Time.unscaledDeltaTime) yield return null;
+            if (forRevive)
+            {
+                for (float t = 0f; t < fallFirst; t += Time.unscaledDeltaTime) yield return null;
+            }
 
             // Then the game stops (time and sound), and the view stays as it is.
             PauseMenu.Hold(this);
             held = true;
-            fade = HeadsetFade.Find();
+            fade = forRevive ? HeadsetFade.Find() : null;
             if (fade != null) fade.FadeTo(fade.Alpha, 0f);
 
             var eyes = Camera.main != null ? Camera.main.transform : null;
@@ -721,9 +745,12 @@ namespace Game.Combat
             if (coin.glow != null) coin.glow.intensity = 0.045f * amount;
         }
 
-        // "+150% health", a line about the coins, or "Out of luck..." above the coins.
+        // The win sound for any clover; with Show Result Text, "+150% health" and the coins left, or "Out of luck...",
+        // above the coins.
         private void ShowResult(int count)
         {
+            if (Clovers > 0 && winSound != null && coins.Count > 0) Play(coins[0].sound, winSound, 1f);
+            if (!showResultText) return;
             if (text == null) text = MakeText();
             if (text == null) return;
             if (Clovers > 0)
@@ -734,7 +761,6 @@ namespace Game.Combat
                 string coinsLeft = left == 0 ? "no coins left" : left == 1 ? "1 coin left" : $"{left} coins left";
                 text.text = $"+{percent}% health\n<size=55%><color=#FFE9A8>{coinsLeft}</color></size>";
                 text.color = cloverColor;
-                if (winSound != null && coins.Count > 0) Play(coins[0].sound, winSound, 1f);
             }
             else
             {

@@ -7562,6 +7562,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 8698066293588456729}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 259d9baf32e3fc741ba3ea266f0649d2,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2980824554639590822}
     - targetCorrespondingSourceObject: {fileID: 2631335315969301831, guid: 259d9baf32e3fc741ba3ea266f0649d2,
         type: 3}
       insertIndex: -1
@@ -8761,6 +8765,144 @@ MonoBehaviour:
     handleAnimatorIK: 0
   fsmTemplate: {fileID: 0}
   eventHandlerComponentsAdded: 0
+--- !u!114 &2980824554639590822
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6471803584439954633}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa6cbc410c9819c428cf7060c2bde889, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.PlayGround.PlayGroundField
+  kinds:
+  - label: Trees
+    prefabs:
+    - {fileID: 7266108928728872884, guid: 6930c9e3cb12b2e4c930d315703136a9, type: 3}
+    - {fileID: 7266108928728872884, guid: 1bde06ca7f712cc4b8fbb31705f8a413, type: 3}
+    - {fileID: 7266108928728872884, guid: b3ae69d94a35baa409f6fc4f2797aa02, type: 3}
+    count: 2
+    morePerSeed: 1
+    scale: {x: 0.9, y: 1.1}
+    gap: 0.8
+    blocksPaths: 1
+    hatCover: 1
+  - label: Bushes
+    prefabs:
+    - {fileID: 2608804161131358779, guid: 4cbe9be21b79fcd439902f026a3832b6, type: 3}
+    - {fileID: 6046891650313642588, guid: 59f34b7b60ec11842b91c173bbc4ac37, type: 3}
+    - {fileID: 6046891650313642588, guid: df292582a01ca7841a5588afdcc12720, type: 3}
+    count: 2
+    morePerSeed: 1
+    scale: {x: 0.9, y: 1.15}
+    gap: 0.4
+    blocksPaths: 0
+    hatCover: 1
+  - label: Tall grass
+    prefabs:
+    - {fileID: 3437725000060447343, guid: 46826b40107007c4a9f07e473c0c985e, type: 3}
+    - {fileID: 894522163017839061, guid: 51dab8b8ba0ad0148b853fd2530fcbcb, type: 3}
+    - {fileID: 1476138693978506174, guid: 4a9532dfd6853904897f5923c1532714, type: 3}
+    count: 4
+    morePerSeed: 1
+    scale: {x: 0.95, y: 1.15}
+    gap: 0.3
+    blocksPaths: 0
+    hatCover: 1
+  - label: Giant skull
+    prefabs:
+    - {fileID: 5279559072438028526, guid: f8cc9eec917a8a148937742d05dfd25e, type: 3}
+    count: 1
+    morePerSeed: 0
+    scale: {x: 1, y: 1}
+    gap: 0.8
+    blocksPaths: 1
+    hatCover: 1
+  - label: Concrete
+    prefabs:
+    - {fileID: 4926267381684054980, guid: 3c9e9be789e684e43bb04f5f6ba70b9f, type: 3}
+    - {fileID: 5019187381480544623, guid: 76f9432e01ea7e749be95d6125a69c6b, type: 3}
+    count: 2
+    morePerSeed: 1
+    scale: {x: 0.85, y: 1.15}
+    gap: 0.5
+    blocksPaths: 1
+    hatCover: 1
+  - label: Barrels
+    prefabs:
+    - {fileID: 4614273193627684759, guid: 84ef1934866d4e94ba25509dca5a2de0, type: 3}
+    count: 3
+    morePerSeed: 1
+    scale: {x: 1, y: 1}
+    gap: 0.3
+    blocksPaths: 0
+    hatCover: 0
+  - label: Pipes
+    prefabs:
+    - {fileID: 595143864657540508, guid: ac08e80014233cd40ab5d1b4d3b0618d, type: 3}
+    count: 1
+    morePerSeed: 0
+    scale: {x: 1, y: 1}
+    gap: 0.6
+    blocksPaths: 1
+    hatCover: 1
+  - label: Bench or table
+    prefabs:
+    - {fileID: 8995242811874646293, guid: c8bd0aa1827bc2a4ea612f397fac673b, type: 3}
+    - {fileID: 8995242811874646293, guid: 518cc2652b2ab3b43a6924103bad0af9, type: 3}
+    count: 1
+    morePerSeed: 0
+    scale: {x: 1, y: 1}
+    gap: 0.5
+    blocksPaths: 0
+    hatCover: 1
+  cleanNames:
+  - Big_Tree
+  - bushes_
+  - Giant_Skull
+  - Skull_Mini
+  - Cement_Pipe
+  - Wood_Barrel
+  - Wood_Box
+  - Table_2_small
+  - PG_Bench
+  - PG_pumpkin_music_player
+  - Paper_Box
+  - Treasure_Chest
+  - Ghost_Balloon
+  - Dropped_
+  - _Drop
+  - PG_Grass
+  - PG_Concrete
+  - Random_Breakable_Box
+  - beehive
+  cleanMargin: 1.5
+  fence:
+  - {fileID: 7806833839036906898}
+  - {fileID: 2339734814101287473}
+  - {fileID: 6398688753732788507}
+  - {fileID: 4344582970732406009}
+  - {fileID: 8021035941087038064}
+  - {fileID: 7633207592348665821}
+  fenceInset: 1.2
+  roamArea: {fileID: 6388681313938876885}
+  teleportFloor: {fileID: 6812990409345293995}
+  growSeconds: 4.5
+  firstFitAfter: 5.5
+  bushesStayBushes: 1
+  keepFromCauldron: 3
+  keepFromMiddle: 2.2
+  keepFromPlayer: 2.5
+  puff: {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac, type: 3}
+  puffScale: 0.6
+  popSound: {fileID: 8300000, guid: 2a7bd8da8a39cdb40ba90aefa1fff9c8, type: 3}
+  growSound: {fileID: 8300000, guid: 97d2e1dfb0c1d454cb1ef3d2f8ce2511, type: 3}
+  volume: 0.7
+  popSeconds: 0.35
+  growInSeconds: 0.6
+  growInterval: 0.06
 --- !u!1 &7533258437481614976 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4439032323184779032, guid: 259d9baf32e3fc741ba3ea266f0649d2,
@@ -8851,6 +8993,12 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0.04, y: 1.79, z: 0}
+--- !u!4 &7633207592348665821 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -4827991708028873147, guid: 259d9baf32e3fc741ba3ea266f0649d2,
+    type: 3}
+  m_PrefabInstance: {fileID: 6129714394162631064}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &7806833839036906898 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4127105682214398986, guid: 259d9baf32e3fc741ba3ea266f0649d2,

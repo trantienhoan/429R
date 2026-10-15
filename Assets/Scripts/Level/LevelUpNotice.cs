@@ -38,6 +38,22 @@ namespace Game.Leveling
         [SerializeField] private string bonusText =
             "Level {level}! Bonus Stats unlocked.\n\nOpen the Level Up menu (bump your fists twice) and press the arrow on its right.";
 
+        [Header("New punches (Fist Size unlocks them; shown once the Level Up menu is closed)")]
+        [SerializeField] private string punchTitle = "NEW PUNCH!";
+        [Tooltip("The title when Swing and Uppercut are unlocked together.")]
+        [SerializeField] private string punchesTitle = "NEW PUNCHES!";
+        [TextArea(2, 6)]
+        [SerializeField] private string jabText = "JAB\n\nPunch straight, fast.";
+        [TextArea(2, 6)]
+        [SerializeField] private string swingText = "SWING\n\nSweep your fist sideways, fast.";
+        [TextArea(2, 6)]
+        [SerializeField] private string uppercutText = "UPPERCUT\n\nDrive your fist up, fast.";
+        [Tooltip("Shown instead of the two above when Swing and Uppercut are unlocked by the same point.")]
+        [TextArea(2, 6)]
+        [SerializeField] private string swingUppercutText = "SWING + UPPERCUT\n\nSweep sideways or drive up, fast.";
+        [TextArea(2, 6)]
+        [SerializeField] private string tripleText = "TRIPLE PUNCH\n\nEvery flying punch throws 3.";
+
         [Header("When")]
         [Tooltip("Reaching one of these levels shows the notice that teaches how to open the Level Up menu (Teach Text).")]
         [SerializeField] private int[] teachLevels = { 1 };
@@ -91,6 +107,8 @@ namespace Game.Leveling
         private float pendingAt;
         private bool holding;
         private bool showing;
+        // New punches waiting to be told about ("Jab", "Swing", "Uppercut", "Triple"), in order.
+        private readonly System.Collections.Generic.List<string> punches = new();
         private bool closing;
         private bool gliding;
 
@@ -118,14 +136,18 @@ namespace Game.Leveling
         {
             continueButton.action?.Enable();
             PlayerLevel.LeveledUp += OnLeveledUp;
+            PlayerLevel.PunchUnlocked += OnPunchUnlocked;
             LevelUpMenu.Opened += Close;
         }
+
+        private void OnPunchUnlocked(string punch) => punches.Add(punch);
 
         private void OnDisable()
         {
             // Only switch off our own button; a referenced action may be used elsewhere.
             if (continueButton.reference == null) continueButton.action?.Disable();
             PlayerLevel.LeveledUp -= OnLeveledUp;
+            PlayerLevel.PunchUnlocked -= OnPunchUnlocked;
             LevelUpMenu.Opened -= Close;
             // Never leave the game paused (e.g. the scene closing while a notice is up).
             Unpause();
@@ -173,13 +195,45 @@ namespace Game.Leveling
             // Several levels gained at once: the notice names the one the player is at now (the bonus one names the
             // level that unlocked the Bonus Stats).
             if (PlayerLevel.Instance != null && kind != Kind.Bonus) level = Mathf.Max(level, PlayerLevel.Instance.Level);
-            if (title != null) title.text = Fill(titleText, level, points);
             string text = kind == Kind.Bonus ? bonusText : kind == Kind.Teach ? teachText : shortText;
-            if (body != null) body.text = Fill(text, level, points);
+            ShowText(Fill(titleText, level, points), Fill(text, level, points), kind == Kind.Remind ? shortSeconds : teachSeconds);
+        }
+
+        /// <summary>
+        /// Fades in the notice that teaches a punch Fist Size has just unlocked ("Jab", "Swing", "Uppercut" or "Triple").
+        /// </summary>
+        public void ShowPunch(string punch)
+        {
+            string text = punch switch
+            {
+                "Jab" => jabText,
+                "Swing" => swingText,
+                "Uppercut" => uppercutText,
+                _ => tripleText,
+            };
+            ShowText(punchTitle, text, teachSeconds);
+        }
+
+        // The next new punch; Swing and Uppercut unlocked by the same point get one notice together.
+        private void ShowNextPunch()
+        {
+            string punch = punches[0];
+            punches.RemoveAt(0);
+            if ((punch == "Swing" && punches.Remove("Uppercut")) || (punch == "Uppercut" && punches.Remove("Swing")))
+                ShowText(punchesTitle, swingUppercutText, teachSeconds);
+            else
+                ShowPunch(punch);
+        }
+
+        private void ShowText(string heading, string message, float seconds)
+        {
+            if (panel == null) return;
+            if (title != null) title.text = heading;
+            if (body != null) body.text = message;
             if (continueText != null) continueText.enabled = false;
 
             shownAt = Time.unscaledTime;
-            stays = kind == Kind.Remind ? shortSeconds : teachSeconds;
+            stays = seconds;
             showing = true;
             closing = false;
             gliding = false;
@@ -221,6 +275,10 @@ namespace Game.Leveling
                 Show(pendingLevel, pendingKind);
                 pendingLevel = -1;
             }
+            // A new punch is told about once the Level Up menu (where its point was spent) is closed.
+            if (!showing && pendingLevel < 0 && punches.Count > 0 && !PauseMenu.IsPaused &&
+                (LevelUpMenu.Instance == null || !LevelUpMenu.Instance.IsOpen))
+                ShowNextPunch();
             if (!showing) return;
 
             // Unscaled time: the notice works the same if something pauses the game underneath it.

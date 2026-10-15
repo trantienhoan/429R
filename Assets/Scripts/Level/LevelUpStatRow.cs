@@ -5,7 +5,10 @@ using UnityEngine.UI;
 
 namespace Game.Leveling
 {
-    /// <summary>One stat's line on the Level Up menu: its name, what it gives now, its points, and the + button.</summary>
+    /// <summary>
+    /// One stat's line on the Level Up menu: its name, what it gives now (only when the menu's Show Effects is on), its
+    /// points, and the + button.
+    /// </summary>
     public class LevelUpStatRow : MonoBehaviour
     {
         [SerializeField] private TMP_Text label;
@@ -28,7 +31,12 @@ namespace Game.Leveling
         public void Set(string statName, string gives, int have, int most, bool canRaise, Action plus)
         {
             if (label != null) label.text = statName;
-            if (effect != null) effect.text = gives;
+            if (effect != null)
+            {
+                // No effect: the line is off and the name sits in the middle of the row.
+                effect.text = gives;
+                effect.gameObject.SetActive(!string.IsNullOrEmpty(gives));
+            }
             if (points != null) points.text = have >= most ? "MAX" : $"{have} / {most}";
             if (plusButton != null) plusButton.interactable = canRaise;
             onPlus = plus;

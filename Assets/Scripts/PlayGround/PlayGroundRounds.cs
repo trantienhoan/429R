@@ -90,17 +90,25 @@ namespace Game.PlayGround
         [SerializeField] private string[] seedBools = { "Pumpkin_09", "Pumpkin_10" };
         [Tooltip("The inventory item a chest's seed gives; taking one ends the round.")]
         [SerializeField] private string seedItem = "Yellow_Seed";
+        [Tooltip("If the seed isn't taken this many seconds after the pumpkin is caught (it rolled out of reach, or the " +
+                 "chest can't be got at), the round goes on anyway. A seed left alone gives its gear by itself after 300 s, " +
+                 "but no Yellow Seed, so without this the PlayGround would stop there.")]
+        [Min(1f)]
+        [SerializeField] private float seedWaitSeconds = 320f;
 
         /// <summary>The round's wave started (round index from 0).</summary>
         public static event Action<PlayGroundRounds, int> WaveStarted;
         /// <summary>The round's pumpkin was caught and its wave ended.</summary>
         public static event Action<PlayGroundRounds, int> RoundWon;
+        /// <summary>The round's seed was taken from its chest (round index from 0): the PlayGround moves on.</summary>
+        public static event Action<PlayGroundRounds, int> SeedTaken;
 
         private Cauldron cauldron;
         private readonly HashSet<LaughingPumpkin> pumpkins = new();
         private Coroutine spawning;
         private int waveRound = -1;
         private int seedRound = -1;
+        private float seedSince;
         private bool subscribedInventory;
 
         public int ActiveWave => waveRound;
@@ -142,6 +150,8 @@ namespace Game.PlayGround
                 PlayerInventory.Instance.Changed += OnInventory;
                 subscribedInventory = true;
             }
+            // The seed was never taken: the PlayGround mustn't stop here.
+            if (seedRound >= 0 && Time.time - seedSince > seedWaitSeconds) FinishRound(seedRound);
         }
 
         // ------------------------------------------------------------------ cauldron
@@ -200,6 +210,7 @@ namespace Game.PlayGround
             if (wave != null && wave.chest != null)
             {
                 seedRound = round;
+                seedSince = Time.time;
                 StartCoroutine(DropChestLater(wave.chest, swept ? chestAfterShield : 0f));
             }
             else
@@ -245,6 +256,7 @@ namespace Game.PlayGround
                 if (round < seedBools.Length && !string.IsNullOrEmpty(seedBools[round])) SetManagerBool(seedBools[round], true);
             }
             cauldron.Continue();
+            if (round >= 0) SeedTaken?.Invoke(this, round);
         }
 
         private void DropChest(GameObject chest)

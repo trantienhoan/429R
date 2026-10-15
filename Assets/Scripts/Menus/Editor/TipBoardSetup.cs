@@ -77,7 +77,7 @@ namespace Game.EditorTools
                 title.color = TitleColor;
                 SetupUtility.TopBand(title.rectTransform, 22f, 52f, 40f, 40f);
 
-                var text = SetupUtility.CreateText("Tip", rect, "You should be this High", 74f, TextAlignmentOptions.Center, FontStyles.Bold, font);
+                var text = SetupUtility.CreateText("Tip", rect, "High Recommended", 74f, TextAlignmentOptions.Center, FontStyles.Bold, font);
                 text.textWrappingMode = TextWrappingModes.Normal;
                 SetupUtility.Stretch(text.rectTransform, new Vector2(40f, 30f), new Vector2(-40f, -80f));
                 SetupUtility.ShrinkToFit(text, 32f);

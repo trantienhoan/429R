@@ -93,6 +93,8 @@ namespace Game.Combat
 
         /// <summary>Raised for a hit too weak to hurt (but more than a touch), at most every Flinch Interval: the enemy.</summary>
         public static event Action<EnemyHitDamage> WeakHit;
+        /// <summary>An enemy's health has run out (once each), however that happened.</summary>
+        public static event Action<EnemyHitDamage> Died;
 
         /// <summary>The most recent hit on this enemy, whether it hurt or not.</summary>
         public HitResult LastHit { get; private set; }
@@ -112,6 +114,7 @@ namespace Game.Combat
         {
             AnyHit = null;
             WeakHit = null;
+            Died = null;
         }
 
         // Its Spider Brain, if it has one: with a Stun Guard the brain decides whether a knock-back may stop it. In
@@ -193,6 +196,7 @@ namespace Game.Combat
             if (dead) return;
             dead = true;
             if (exp > 0) Game.Leveling.PlayerLevel.AddExp(exp);
+            Died?.Invoke(this);
         }
 
         // Every frame once dead, in case an FSM that's still running sets the agent walking again.

@@ -30,13 +30,16 @@ namespace Game.Menus
 
         [Tooltip("Shown the first time, each time the game is launched.")]
         [TextArea(1, 3)]
-        [SerializeField] private string firstTip = "You should be this High";
+        [SerializeField] private string firstTip = "High Recommended";
         [Tooltip("Shown under the First Tip, smaller: how to fix the height (the pause menu's Height option). Empty: none.")]
         [TextArea(1, 3)]
         [SerializeField] private string firstTipHint = "Not this high? You can change your height in the menu.";
         [Tooltip("How big the hint's letters are, as a share of the tip's.")]
         [Range(0.3f, 1f)]
         [SerializeField] private float hintSize = 0.55f;
+        [Tooltip("Extra space between the First Tip and its hint, in lines of the tip's size (0 = none, 1 = a whole empty line).")]
+        [Range(0f, 2f)]
+        [SerializeField] private float hintGap = 0.6f;
         [Tooltip("One is picked at random every time after the first.")]
         [TextArea(1, 3)]
         [SerializeField] private string[] tips =
@@ -44,12 +47,11 @@ namespace Game.Menus
             "Eat as much candies as you want, this is a game",
             "Nothing to throw? Make a fist and start punching",
             "Clean your room and watch out for the bug bite",
-            "Do Not Run\nDo Not Fear\nDo Not Give Up",
-            "Remember to drink more water",
+            "DONT RUN\nDONT FEAR\nDONT GIVE UP",
+            "Drink Water",
             "Bump your fists together twice to spend your level-up points",
-            "Shake a bottle before you throw it. Not too long!",
+            "Shake a bottle before you throw it. Careful though!",
             "Hold B to open the Candy Shop",
-            "An uppercut to the head knocks them out",
         };
 
         // Once per launch: the game can start over in the same scene (after dying, or after the boss).
@@ -97,8 +99,10 @@ namespace Game.Menus
             {
                 firstShown = true;
                 if (string.IsNullOrEmpty(firstTipHint)) return firstTip;
-                // The tip kept on one line, the hint on its own lines under it in smaller letters.
-                return $"<nobr>{firstTip}</nobr>\n<size={Mathf.RoundToInt(hintSize * 100f)}%>{firstTipHint}</size>";
+                // The tip kept on one line, then a gap (a line holding only a space, Hint Gap tall), then the hint on its
+                // own lines under it in smaller letters.
+                string gap = hintGap > 0.01f ? $"\n<size={Mathf.RoundToInt(hintGap * 100f)}%> </size>" : "";
+                return $"<nobr>{firstTip}</nobr>{gap}\n<size={Mathf.RoundToInt(hintSize * 100f)}%>{firstTipHint}</size>";
             }
 
             int pick = Random.Range(0, tips.Length);

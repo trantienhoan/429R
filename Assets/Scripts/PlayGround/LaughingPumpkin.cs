@@ -617,6 +617,13 @@ namespace Game.PlayGround
                 var leaves = Solid(bush.GetComponentsInChildren<Collider>());
                 AddBush(leaves, width);
             }
+            // Tall grass (hideouts): it walks right in; inside, it can't be seen.
+            foreach (var hideout in Hideout.All)
+            {
+                if (hideout == null || !hideout.Covering || hideout.Width < width * 1.3f || hideout.Height < width * 0.9f) continue;
+                if (!NavMesh.SamplePosition(hideout.Spot, out var floor, 0.8f, NavMesh.AllAreas)) continue;
+                hideSpots.Add((floor.position, null, 8f));
+            }
             foreach (var tree in FindObjectsByType<GhostTree>(FindObjectsSortMode.None))
             {
                 var trunk = Solid(tree.GetComponents<Collider>());
@@ -666,6 +673,8 @@ namespace Game.PlayGround
         // Is 'spot' out of the player's line of sight (something solid in between)?
         private bool Hidden(Vector3 eye, Vector3 spot)
         {
+            // In tall grass nothing solid stands in the way, but it can't be seen there.
+            if (Hideout.Covers(spot)) return true;
             var aim = spot + Vector3.up * 0.4f;
             var line = aim - eye;
             float length = line.magnitude;

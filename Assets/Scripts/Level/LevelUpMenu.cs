@@ -29,6 +29,8 @@ namespace Game.Leveling
         [SerializeField] private RectTransform expFill;
         [SerializeField] private LevelUpStatRow rowTemplate;
         [SerializeField] private Transform rowParent;
+        [Tooltip("Shows what each stat gives under its name (e.g. \"+30 health\"). Off: just the names, kept simple.")]
+        [SerializeField] private bool showEffects;
         [Tooltip("The headset camera. Left empty, Camera.main is used.")]
         [SerializeField] private Transform head;
 
@@ -247,7 +249,7 @@ namespace Game.Leveling
                 list[i].gameObject.SetActive(i < stats.Length);
                 if (i >= stats.Length) continue;
                 var stat = stats[i];
-                list[i].Set(PlayerLevel.Name(stat), level.Describe(stat), level.Points(stat), level.MaxPoints(stat),
+                list[i].Set(PlayerLevel.Name(stat), showEffects ? level.Describe(stat) : "", level.Points(stat), level.MaxPoints(stat),
                     level.CanRaise(stat), () => OnPlus(stat));
                 list[i].Highlight(gold);
             }
