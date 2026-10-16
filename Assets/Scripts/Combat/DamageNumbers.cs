@@ -13,7 +13,7 @@ namespace Game.Combat
     /// never hidden inside what was hit. The player's own health (PlayerHealth, the XR rig) and objects with nothing to
     /// see (e.g. a game-logic FSM holding a counter called health) never show numbers.
     /// It makes itself when a scene starts (default look); put one in the scene to change the look. The player switches
-    /// the numbers on or off in the pause menu (Enabled; kept between sessions in PlayerPrefs, on for a new player).
+    /// the numbers on or off in the pause menu (Enabled; kept between sessions in PlayerPrefs, off for a new player).
     /// </summary>
     [DisallowMultipleComponent]
     public class DamageNumbers : MonoBehaviour
@@ -81,14 +81,14 @@ namespace Game.Combat
         private Camera eyes;
         private float nextScan;
 
-        // Where the player's choice is kept (on for a new player).
+        // Where the player's choice is kept (off for a new player).
         private const string EnabledKey = "429 Game.DamageNumbers";
         private static bool? enabled;
 
         /// <summary>The player's choice (pause menu): whether numbers show. Setting it saves it; off hides any showing.</summary>
         public static bool Enabled
         {
-            get => enabled ??= PlayerPrefs.GetInt(EnabledKey, 1) != 0;
+            get => enabled ??= PlayerPrefs.GetInt(EnabledKey, 0) != 0;
             set
             {
                 if (value == Enabled) return;
@@ -100,6 +100,9 @@ namespace Game.Combat
         }
 
         public static string Label() => Enabled ? "Damage numbers: on" : "Damage numbers: off";
+
+        /// <summary>The settings were wiped (reset to a new install): the choice is read again, off for a new player.</summary>
+        public static void ForgetChoice() => enabled = null;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()

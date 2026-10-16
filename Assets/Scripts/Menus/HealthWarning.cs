@@ -41,6 +41,9 @@ namespace Game.Menus
             shownThisLaunch = false;
         }
 
+        /// <summary>The notice shows again (the game was reset to a new install).</summary>
+        public static void ForgetShown() => shownThisLaunch = false;
+
         private static InputAction CreateDefaultButton()
         {
             var action = new InputAction("Continue", InputActionType.Button);

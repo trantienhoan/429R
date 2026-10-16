@@ -7,8 +7,9 @@ namespace Game.Enemies
     /// <summary>
     /// The pumpkin full of bugs the Pumpkin boss throws. It flies in an arc and bursts where it lands, letting out a
     /// few small bugs (within the game's enemy limit) and breaking like the other pumpkins. Hitting the player square
-    /// on hurts them too. The boss throws it with <see cref="Launch"/>; it goes on the Bug_Pumpkin prefab's root, next to
-    /// its Rigidbody and collider.
+    /// on hurts them and slows them down for a while (Slow Share, Slow Seconds). The boss throws it with
+    /// <see cref="Launch"/> and hears from <see cref="Done"/> whether it hit; it goes on the Bug_Pumpkin prefab's root,
+    /// next to its Rigidbody and collider.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
@@ -25,6 +26,13 @@ namespace Game.Enemies
         [Min(0.05f)] [SerializeField] private float hitRadius = 0.45f;
         [Tooltip("It bursts by itself after this many seconds, landed or not.")]
         [Min(0.5f)] [SerializeField] private float lifeSeconds = 6f;
+        [Tooltip("A hit slows the player's walking to this share of their speed (0.5 = half) ...")]
+        [Range(0.05f, 1f)] [SerializeField] private float slowShare = 0.5f;
+        [Tooltip("... for this many seconds. 0 = no slow.")]
+        [Min(0f)] [SerializeField] private float slowSeconds = 3f;
+
+        /// <summary>It has burst: true if it hit the player (a shield block doesn't count).</summary>
+        public event System.Action<bool> Done;
 
         private Rigidbody body;
         private GameObject thrower;
@@ -33,11 +41,15 @@ namespace Game.Enemies
         private bool burst;
         private XROrigin player;
 
-        public void Launch(Vector3 velocity, GameObject from, GameObject[] bugPrefabs)
+        /// <summary>
+        /// Throws it. <paramref name="bugsInside"/>: how many bugs come out where it bursts; below 0, the prefab's Bug Count.
+        /// </summary>
+        public void Launch(Vector3 velocity, GameObject from, GameObject[] bugPrefabs, int bugsInside = -1)
         {
             body = GetComponent<Rigidbody>();
             thrower = from;
             bugs = bugPrefabs ?? System.Array.Empty<GameObject>();
+            if (bugsInside >= 0) bugCount = bugsInside;
             bornAt = Time.time;
             body.isKinematic = false;
             body.linearVelocity = velocity;
@@ -78,7 +90,8 @@ namespace Game.Enemies
             {
                 if (fsm.FsmName == "PlayerHealth") fsm.SendEvent(playerHitEvent);
             }
-            Burst(p);
+            Game.Locomotion.PlayerSlow.Apply(slowShare, slowSeconds);
+            Burst(p, true);
         }
 
         private static readonly System.Collections.Generic.List<PlayMakerFSM> fsms = new();
@@ -89,10 +102,11 @@ namespace Game.Enemies
             Burst(collision.contactCount > 0 ? collision.GetContact(0).point : transform.position);
         }
 
-        private void Burst(Vector3 at)
+        private void Burst(Vector3 at, bool hitPlayer = false)
         {
             if (burst) return;
             burst = true;
+            Done?.Invoke(hitPlayer);
             if (burstInto != null) Instantiate(burstInto, at, transform.rotation, transform.parent);
             if (smoke != null) Instantiate(smoke, at, Quaternion.identity, transform.parent);
             for (int i = 0; i < bugCount && bugs.Length > 0; i++)

@@ -85,6 +85,9 @@ namespace Game.Weapons
         [Header("Effects")]
         [Tooltip("Particle effects that appear where it explodes.")]
         [SerializeField] private GameObject[] effects = Array.Empty<GameObject>();
+        [Tooltip("Size of the effects for a plain throw (a charged bottle sizes them to its blast), e.g. 0.8 for a smaller bang.")]
+        [Min(0.05f)]
+        [SerializeField] private float effectSize = 1f;
         [SerializeField] private AudioClip sound;
         [Range(0f, 1f)]
         [SerializeField] private float volume = 1f;
@@ -132,6 +135,14 @@ namespace Game.Weapons
 
         /// <summary>Seconds it has been shaken (Shake To Charge).</summary>
         public float Shaken => shaken;
+
+        /// <summary>
+        /// How far the shaking has got (Shake To Charge): 0 not shaken, 1 the moment it goes off in the hand. 0 for a
+        /// plain grenade.
+        /// </summary>
+        public float ChargeProgress => shakeToCharge && charge != null && charge.Length > 0
+            ? Mathf.Clamp01(shaken / Mathf.Max(charge[charge.Length - 1].x, 0.01f))
+            : 0f;
 
         private bool Charged => shakeToCharge && charge != null && charge.Length > 0 && shaken >= charge[0].x;
 
@@ -222,7 +233,7 @@ namespace Game.Weapons
             inFlight = false;
             var point = collision.contactCount > 0 ? collision.GetContact(0).point : body.position;
             if (Charged) ExplodeCharged(point, false);
-            else if (throwSpeed >= minThrowSpeed) Explode(point, radius, damage, push, playerEvent, false, shakeToCharge ? EffectScale(radius) : 1f);
+            else if (throwSpeed >= minThrowSpeed) Explode(point, radius, damage, push, playerEvent, false, shakeToCharge ? EffectScale(radius) : effectSize);
         }
 
         // Measures how hard the hand holding it shakes: the change in its speed, smoothed. Shaking hard enough adds to

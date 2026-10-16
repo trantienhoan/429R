@@ -65,6 +65,13 @@ namespace Game.Menus
             lastTip = -1;
         }
 
+        /// <summary>The first tip shows again (the game was reset to a new install).</summary>
+        public static void ForgetShown()
+        {
+            firstShown = false;
+            lastTip = -1;
+        }
+
         private void Start()
         {
             // Left where it is, so a knight knocked about doesn't swing it around; next to the knight, so it's cleared

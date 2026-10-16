@@ -55,6 +55,7 @@ namespace Game.EditorTools
             if (AddVignetteOption(menu, font)) notes.Add("added the Comfort vignette option");
             if (AddDamageNumbersOption(menu, font)) notes.Add("added the Damage numbers option");
             if (AddHealthOption(menu, font)) notes.Add("added the Health (show/hide) option");
+            if (AddVolumeOption(menu, font)) notes.Add("added the Volume - / + option");
             if (AddResetProgress(menu, font)) notes.Add("added Reset Progress (hold the title for 7 s)");
             if (AddQuitChoice(menu, font)) notes.Add("Quit now asks: Re-Dream or Get a Rest");
             if (TidyQuitChoice(menu)) notes.Add("the Quit box now has Re-Dream and Get a Rest, and Back is an arrow in its top left");
@@ -253,6 +254,54 @@ namespace Game.EditorTools
             return true;
         }
 
+        // Adds the Volume row (-, "Volume: 100%", +, like the Height row) under the other options, the same way as the
+        // Comfort vignette row; each press ticks (Kenney's select_001) at the new volume.
+        private static bool AddVolumeOption(PauseMenu menu, TMP_FontAsset font)
+        {
+            var serialized = new SerializedObject(menu);
+            if (serialized.FindProperty("volumeUpButton").objectReferenceValue != null) return false;
+            if (serialized.FindProperty("panel").objectReferenceValue is not GameObject panelObject ||
+                panelObject.transform is not RectTransform panel) return false;
+            var options = panel.Find("Options") as RectTransform;
+            if (options == null)
+            {
+                Debug.LogWarning("[Pause Menu Setup] The Pause Menu panel has no Options group, so the Volume option wasn't added.", menu);
+                return false;
+            }
+
+            const float grow = OptionRowHeight + OptionSpacing;
+            Undo.RecordObject(panel, "Add Volume Option");
+            panel.sizeDelta = new Vector2(panel.sizeDelta.x, panel.sizeDelta.y + grow);
+            Undo.RecordObject(options, "Add Volume Option");
+            options.offsetMin = new Vector2(options.offsetMin.x, options.offsetMin.y - grow);
+
+            var volumeRow = SetupUtility.CreateRect("Volume", options);
+            Undo.RegisterCreatedObjectUndo(volumeRow.gameObject, "Add Volume Option");
+            var row = volumeRow.gameObject.AddComponent<HorizontalLayoutGroup>();
+            row.spacing = OptionSpacing;
+            row.childAlignment = TextAnchor.MiddleCenter;
+            row.childControlWidth = true;
+            row.childControlHeight = true;
+            row.childForceExpandWidth = false;
+            row.childForceExpandHeight = true;
+
+            var down = SetupUtility.CreateButton("Quieter", volumeRow, "-", 32f, font, OptionColor);
+            SetupUtility.SetLayout(down.gameObject, preferredWidth: 64f);
+            var label = SetupUtility.CreateText("Volume Label", volumeRow, "Volume: 100%", 24f, TextAlignmentOptions.Center, FontStyles.Bold, font);
+            SetupUtility.SetLayout(label.gameObject, flexibleWidth: 1f);
+            var up = SetupUtility.CreateButton("Louder", volumeRow, "+", 32f, font, OptionColor);
+            SetupUtility.SetLayout(up.gameObject, preferredWidth: 64f);
+
+            SetupUtility.SetReference(menu, "volumeDownButton", down);
+            SetupUtility.SetReference(menu, "volumeUpButton", up);
+            SetupUtility.SetReference(menu, "volumeText", label);
+            var tick = AssetDatabase.LoadAssetAtPath<AudioClip>(VolumeTickPath);
+            if (tick != null) SetupUtility.SetReference(menu, "volumeTick", tick);
+            return true;
+        }
+
+        private const string VolumeTickPath = "Assets/Audio/Kenney Audio/kenney_interface-sounds/Audio/select_001.ogg";
+
         // Hidden on purpose, so nobody resets by accident: holding the title for 7 s (it slowly turns red) opens a box
         // over the whole menu that asks whether to reset all progress and start over. Cancel is on the left.
         private static bool AddResetProgress(PauseMenu menu, TMP_FontAsset font)
@@ -301,6 +350,7 @@ namespace Game.EditorTools
             row.childForceExpandHeight = true;
             var cancel = SetupUtility.CreateButton("Cancel", buttons, "Cancel", 26f, font, OptionColor);
             var confirm = SetupUtility.CreateButton("Reset", buttons, "Reset & restart", 24f, font, new Color(0.7f, 0.16f, 0.2f, 1f));
+            FitButtonLabels(buttons);
             box.gameObject.SetActive(false);
 
             SetupUtility.SetReference(menu, "resetHold", hold);
@@ -332,6 +382,48 @@ namespace Game.EditorTools
 
         [MenuItem("Tools/429 Game/Menu/Update Quit Choice", true)]
         private static bool CanUpdateQuitChoice() => !EditorApplication.isPlaying;
+
+        /// <summary>
+        /// Fits the Reset Progress box's button labels made before inside their buttons ("Reset & restart" ran past its
+        /// edges): they shrink to fit, with a little room at the sides. Running it again changes nothing.
+        /// </summary>
+        [MenuItem("Tools/429 Game/Menu/Fit Reset Buttons")]
+        public static void FitResetButtons()
+        {
+            var menu = Object.FindAnyObjectByType<PauseMenu>(FindObjectsInactive.Include);
+            var serialized = menu != null ? new SerializedObject(menu) : null;
+            if (serialized?.FindProperty("resetConfirmButton").objectReferenceValue is not Button confirm ||
+                confirm.transform.parent is not RectTransform buttons)
+            {
+                Debug.LogError("[Pause Menu Setup] No Reset Progress box in the open scene: run Set Up Pause Menu.");
+                return;
+            }
+            bool changed = FitButtonLabels(buttons);
+            if (changed) EditorSceneManager.MarkSceneDirty(menu.gameObject.scene);
+            Debug.Log(changed
+                ? "[Pause Menu Setup] The Reset Progress buttons' labels now fit. Save the scene."
+                : "[Pause Menu Setup] The Reset Progress buttons' labels already fit.", menu);
+        }
+
+        [MenuItem("Tools/429 Game/Menu/Fit Reset Buttons", true)]
+        private static bool CanFitResetButtons() => !EditorApplication.isPlaying;
+
+        // Each button label in the row shrinks to fit its button (down to 14), kept on one line, 8 from the sides.
+        private static bool FitButtonLabels(RectTransform buttons)
+        {
+            bool changed = false;
+            var room = new Vector4(8f, 0f, 8f, 0f);
+            foreach (var text in buttons.GetComponentsInChildren<TMP_Text>(true))
+            {
+                if (text.enableAutoSizing && text.margin == room) continue;
+                Undo.RecordObject(text, "Fit Reset Buttons");
+                if (!text.enableAutoSizing) SetupUtility.ShrinkToFit(text, 14f);
+                text.textWrappingMode = TextWrappingModes.NoWrap;
+                text.margin = room;
+                changed = true;
+            }
+            return changed;
+        }
 
         // Renames To the Start to Re-Dream (button and message), and moves Back out of the button row to the top left
         // corner as an arrow.

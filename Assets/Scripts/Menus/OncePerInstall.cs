@@ -26,6 +26,16 @@ namespace Game.Menus
 
         private static void OnQuitting() => quitting = true;
 
+        /// <summary>
+        /// The game is being reset to a new install: signs showing now aren't remembered as seen when the scene goes, so
+        /// they show again.
+        /// </summary>
+        public static void ForgetShowing()
+        {
+            foreach (var signs in FindObjectsByType<OncePerInstall>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                signs.showing = false;
+        }
+
         private void OnEnable()
         {
             showing = !ShowOnce.WasShown(key);

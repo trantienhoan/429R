@@ -26,6 +26,10 @@ to match the brain's timing fields.
   user's armature may be in NLA tweak mode.
 - Mirrored versions: generate by travel direction rather than by name-mirroring when the bone names don't follow
   `.L/.R` cleanly (the cockroach's `M2_IK.L.001`); the spider flip rule is loc(-x, y, z), quat(w, x, -y, -z).
+- That flip rule only holds when the rest pose is symmetric. A one-sided chain (the pumpkin boss's curled stem,
+  Stem.01-09) needs the general form, which `boss/throw_mirror.py` uses for every bone:
+  q' = C q C⁻¹ and t' = C t, with C = Bp⁻¹ · diag(-1,1,1) · Bb (B = the bone's `matrix_local` 3x3, p = its partner).
+  Verify by comparing the mirrored armature-space heads/tails per frame (symmetric bones should be within mm).
 
 ## NLA and export
 
@@ -34,6 +38,14 @@ to match the brain's timing fields.
 - After the user re-exports the FBX: set the new clip's range and loop flag in the importer, add the Animator
   state (speed per the timing above), set the brain's animation-name field on the base prefab (variants inherit),
   and re-read everything.
+- **Exporting the FBX yourself:** first prove the settings. Export a COPY of the saved .blend headless
+  (`boss/export_fbx.py`), import it next to the real FBX with the same importer settings (a `Preset` of the real
+  importer), and compare in Unity: node transforms, mesh, bind poses, every clip's curves (`fbx_compare` pattern in
+  past-jobs.md). The pumpkin boss needed **Apply Transform on** (`bake_space_transform=True`): without it the mesh
+  node came in rotated 270/×100 with different bind poses, though skinning looked the same. Its other settings:
+  Armature + Mesh only, no leaf bones, NLA strips on, all actions off.
+- The live session can hold the user's unsaved edits in OTHER clips; a live export ships them too. Compare the
+  live actions with the saved file (`boss/dump_actions.py`) and tell the user which clips change.
 
 ## Previews
 
@@ -44,9 +56,9 @@ actions on a temporary copy of the armature and mesh, then delete the copy.
 
 Start from `chopper/chop_rig.py` + `anim_axe_common.py` (see past-jobs.md). Lessons:
 
-- **Build clips from scratch by script when the brief changes the character** (Chopper's old clips were bouncy hops,
-  the brief was "heavy but agile"). Bake into NEW actions, keep the user's actions and strips untouched, back them up
-  (`bpy.data.libraries.write`) and append strips to their track.
+- **The user rejected these script-built clips ("all look terrible").** Don't offer from-scratch character
+  animation; retime, clean or mirror the user's own keys instead. If new actions are ever made: keep the user's
+  actions and strips untouched, back them up (`bpy.data.libraries.write`) and append strips to their track.
 - **Measure the proportions first.** Chopper's hand (wrist to fist centre 0.38 m) is longer than his forearm
   (0.28 m), his head is wider than his shoulders and the axe is 1.76 m long. Many "obvious" poses were unreachable:
   no hands-over-head, no fist high on the shoulder, no fist tucked on the hip. Check reach (the IK notes "short by")

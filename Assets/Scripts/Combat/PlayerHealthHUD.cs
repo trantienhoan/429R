@@ -11,7 +11,8 @@ namespace Game.Combat
     /// with little green sparkles flying up around it, when candy has pushed health above it. Health has no cap, so the number tells the rest. Each change pops a
     /// "-8" / "+5" next to the number, and a heal makes the heart pop. The HUD shows for a few seconds after any change, then fades, and stays up
     /// while health is low. Once the player has died and got back up this run (a revive), the heart is cracked
-    /// (until a new run). The player can hide it all in the pause menu (Health: hidden), e.g. to record video. It only
+    /// (until a new run). The player can hide it all in the pause menu (Health: hidden), e.g. to record video: the
+    /// hit and heal flashes on it (particles the PlayerHealth FSM switches on) are hidden too. It only
     /// reads the FSM, so damage and heals still all happen there.
     /// Goes on the HUD canvas under the Main Camera. Tools > 429 Game > Player > Set Up Health HUD sets it up.
     /// </summary>
@@ -98,6 +99,10 @@ namespace Game.Combat
         private ParticleSystemRenderer sparkleRenderer;
         private MaterialPropertyBlock sparkleBlock;
         private bool wasShown = true;
+        // Every particle effect on the HUD (the hit and heal flashes the PlayerHealth FSM switches on, the sparkles): a
+        // canvas group doesn't reach particles, so they're switched off themselves while the health is hidden.
+        private ParticleSystemRenderer[] effects = System.Array.Empty<ParticleSystemRenderer>();
+        private bool effectsShown = true;
         private static readonly int ColorId = Shader.PropertyToID("_Color");
 
         // Where the player's choice is kept (on for a new player).
@@ -122,6 +127,9 @@ namespace Game.Combat
 
         public static string Label() => Shown ? "Health: shown" : "Health: hidden";
 
+        /// <summary>The settings were wiped (reset to a new install): the choice is read again, shown for a new player.</summary>
+        public static void ForgetChoice() => playerChoice = null;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics() => playerChoice = null;
 
@@ -129,6 +137,7 @@ namespace Game.Combat
         {
             group = GetComponent<CanvasGroup>();
             if (change != null) changeHome = change.rectTransform.anchoredPosition;
+            effects = GetComponentsInChildren<ParticleSystemRenderer>(true);
             Place();
         }
 
@@ -280,6 +289,12 @@ namespace Game.Combat
             float shown = time - changedAt;
             group.alpha = !Shown ? 0f : alwaysShow || low ? 1f : 1f - Mathf.Clamp01((shown - showSeconds) / fadeSeconds);
             Sparkle(bonus && group.alpha > 0.01f, group.alpha);
+            if (effectsShown != Shown)
+            {
+                effectsShown = Shown;
+                foreach (var effect in effects)
+                    if (effect != null) effect.enabled = effectsShown;
+            }
         }
 
         // Bonus sparkles: emit while health is above the start and the HUD shows; they fade with the HUD (a CanvasGroup

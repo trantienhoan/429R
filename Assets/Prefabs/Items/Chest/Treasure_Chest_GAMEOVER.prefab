@@ -25206,6 +25206,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1953936056465914330}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: cf3f3f379d46ae844aedb99fa2b7073c,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 851369246343694509}
     - targetCorrespondingSourceObject: {fileID: -6759170251157166916, guid: cf3f3f379d46ae844aedb99fa2b7073c,
         type: 3}
       insertIndex: -1
@@ -25721,6 +25725,7 @@ MonoBehaviour:
         colorIndex: 0
       actionData:
         actionNames:
+        - HutongGames.PlayMaker.Actions.JiggleObject
         - HutongGames.PlayMaker.Actions.ActivateGameObject
         - HutongGames.PlayMaker.Actions.AudioPlay
         - HutongGames.PlayMaker.Actions.SetAnimatorTrigger
@@ -25730,13 +25735,28 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 01010101
-        actionIsOpen: 01010101
-        actionStartIndex: 00000000050000000a0000000c000000
-        actionHashCodes: b2cf100081294e049bd6f80148c01101
+        - 
+        actionEnabled: 0101010101
+        actionIsOpen: 0101010101
+        actionStartIndex: 0000000003000000080000000d0000000f000000
+        actionHashCodes: b8ffb200b2cf100081294e049bd6f80148c01101
         unityObjectParams: []
-        fsmGameObjectParams: []
+        fsmGameObjectParams:
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 0}
         fsmOwnerDefaultParams:
+        - ownerOption: 0
+          gameObject:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 0}
         - ownerOption: 1
           gameObject:
             useVariable: 0
@@ -25797,6 +25817,12 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
+          value: 1
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
           value: 0.8
         fsmIntParams: []
         fsmBoolParams:
@@ -25831,8 +25857,11 @@ MonoBehaviour:
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1400000011000000110000000100000001000000140000000f00000018000000110000001700000014000000120000000f0000001700000001000000
+        paramDataType: 140000000f000000130000001400000011000000110000000100000001000000140000000f00000018000000110000001700000014000000120000000f0000001700000001000000
         paramName:
+        - gameObject
+        - strength
+        - awayFrom
         - gameObject
         - activate
         - recursive
@@ -25848,8 +25877,8 @@ MonoBehaviour:
         - time
         - finishEvent
         - realTime
-        paramDataPos: 000000000000000001000000000000000100000001000000000000000000000002000000000000000200000000000000010000000100000002000000
-        paramByteDataSize: 000000000000000000000000010000000100000000000000000000000000000000000000000000000000000000000000000000000000000001000000
+        paramDataPos: 000000000000000000000000010000000000000001000000000000000100000002000000010000000000000002000000000000000300000000000000020000000100000002000000
+        paramByteDataSize: 000000000000000000000000000000000000000000000000010000000100000000000000000000000000000000000000000000000000000000000000000000000000000001000000
     - name: Break
       description: 
       colorIndex: 6
@@ -26013,7 +26042,7 @@ MonoBehaviour:
     manualUpdate: 0
     outVariableIndices: 
     keepDelayedEventsOnStateExit: 0
-    preprocessed: 0
+    preprocessed: 1
     ExposedEvents: []
     OutputEvents: []
     RestartOnEnable: 1
@@ -26033,7 +26062,7 @@ MonoBehaviour:
     handleTriggerEnter: 0
     handleTriggerExit: 0
     handleTriggerStay: 0
-    handleCollisionEnter: 0
+    handleCollisionEnter: 1
     handleCollisionExit: 0
     handleCollisionStay: 0
     handleParticleCollision: 0
@@ -26042,7 +26071,7 @@ MonoBehaviour:
     handleJointBreak2D: 0
     handleOnGUI: 0
     handleFixedUpdate: 0
-    handleLateUpdate: 0
+    handleLateUpdate: 1
     handleApplicationEvents: 0
     handleUiEvents: 0
     handleLegacyNetworking: 0
@@ -26147,6 +26176,27 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &851369246343694509
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1466195575395978692}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db50a45c0d14e3242b21e6fa1d84be5c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.VFX.Jiggle
+  jiggleWhenHurt: 0
+  hurtStrength: 1
+  squash: 0.15
+  tilt: 8
+  wobblesPerSecond: 5
+  settleTime: 0.7
+  softHitPause: 0.75
+  healthFsm: Health
+  healthVariable: health
 --- !u!1 &1795838460629470899 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -9190288441693503962, guid: cf3f3f379d46ae844aedb99fa2b7073c,

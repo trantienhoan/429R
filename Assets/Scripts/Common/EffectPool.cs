@@ -43,16 +43,19 @@ namespace Game
             runner = null;
         }
 
-        /// <summary>Gets an effect ready (once per effect), so its first use doesn't stutter.</summary>
-        public static void Warm(GameObject prefab)
+        /// <summary>Gets an effect ready (once per effect), so its first use doesn't stutter. Copies: how many to have
+        /// ready, for an effect that often plays several times within a few seconds.</summary>
+        public static void Warm(GameObject prefab, int copies = 1)
         {
             if (prefab == null || !EnsureRunner()) return;
-            if (pools.TryGetValue(prefab, out var list) && list.Count > 0) return;
-
-            var copy = Make(prefab);
-            copy.warmFramesLeft = WarmFrames;
-            copy.freeAt = float.MaxValue;
-            warming.Add(copy);
+            pools.TryGetValue(prefab, out var list);
+            for (int have = list?.Count ?? 0; have < copies; have++)
+            {
+                var copy = Make(prefab);
+                copy.warmFramesLeft = WarmFrames;
+                copy.freeAt = float.MaxValue;
+                warming.Add(copy);
+            }
         }
 
         /// <summary>Plays the effect at a point, this many times its prefab's size. Returns the copy playing it.</summary>

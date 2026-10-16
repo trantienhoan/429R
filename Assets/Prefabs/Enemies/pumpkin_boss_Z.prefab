@@ -1059,6 +1059,7 @@ GameObject:
   - component: {fileID: 7371407994281936817}
   - component: {fileID: 3194273421066974357}
   - component: {fileID: 6594181360504947045}
+  - component: {fileID: 7085716964971832184}
   m_Layer: 0
   m_Name: pumpkin_boss_Z
   m_TagString: Monster
@@ -7522,6 +7523,8 @@ MonoBehaviour:
   oldDamageFsm: Damage
   furniture: 0
   bumpShare: 0.35
+  wieldedShare: 0.15
+  settleSeconds: 2
 --- !u!114 &6594181360504947045
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7567,9 +7570,19 @@ MonoBehaviour:
   jumpSlamLaunch: {x: 3.6, y: 3}
   cycloneLaunch: {x: 4.5, y: 7}
   cycloneSeconds: 3
-  cycloneChance: 0.2
-  cycloneCooldown: 15
+  cycloneCooldown: 8
   cycloneDizzySeconds: 3
+  tooClose: 1.1
+  farSeconds: 2
+  throwCombo: {x: 1, y: 5}
+  bugsPerThrownPumpkin: 1
+  throwGap: 0.3
+  leftThrowState: throw_L
+  punchesBeforeThrow: 2
+  missesBeforeBodySlam: 3
+  punchAim: 1
+  chaseSeconds: 4
+  vomitAfterDodge: 0.5
   bugs:
   - {fileID: 9003613759866821804, guid: e99e0ff83f2a2134db4a1ec3a6357312, type: 3}
   - {fileID: 8879391879696220359, guid: 05da503bb47783844a68712d2fd9719c, type: 3}
@@ -7577,14 +7590,16 @@ MonoBehaviour:
   - {fileID: 9003613759866821804, guid: e99e0ff83f2a2134db4a1ec3a6357312, type: 3}
   vomitBugs: 6
   trueFormVomitBugs: 6
+  vomitBugDelay: 0.5
   bugPumpkin: {fileID: 6784379894803683129, guid: 7b1f4d869bf23bc4fb180d75293f57ab,
     type: 3}
   pumpkinDrop: {fileID: 8690403555129543112, guid: 8b906c80238400c44be1890e333c3aaa,
     type: 3}
   maxDropsAround: 10
+  fx: {fileID: 7085716964971832184}
+  smoke: {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac, type: 3}
   burstInto: {fileID: 8267452086300733742, guid: 4ffa58a190b9aa34b91f567576459ae0,
     type: 3}
-  smoke: {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac, type: 3}
   gameStagesBool: BOSS
   gameStagesEvent: Win
   roomVariables:
@@ -7599,6 +7614,47 @@ MonoBehaviour:
   attackSound: {fileID: 8300000, guid: 7655546cf456af942b5c94d157a4d512, type: 3}
   hurtSound: {fileID: 8300000, guid: a4661761129bc014490b3df27a00e952, type: 3}
   roarSound: {fileID: 8300000, guid: 95867a459646868489c87aa8003feba0, type: 3}
+--- !u!114 &7085716964971832184
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6005781002966082120}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 675a476f92c7cd14585698c3455c3c94, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Enemies.PumpkinBossFx
+  groundBlast: {fileID: 770548201114248357, guid: b2b1434d9aaa2b740b78bd68299c5981,
+    type: 3}
+  hitBlast: {fileID: 595090802493383917, guid: 7336d36edf94f514bac5646bc9148ccf, type: 3}
+  scrapeDust: {fileID: 8842881744654391097, guid: c5ec6bbc70bbe6644ac7b233e8ca7f7e,
+    type: 3}
+  groundSizes:
+  - 0.45
+  - 0.7
+  - 1
+  - 1.35
+  hitSize: 1
+  sizeFor: 1.7
+  hitInFront: 0.45
+  ringScreenSize: 4
+  vomitStream: {fileID: 4469174711692757518, guid: e90ddf3f48d919d4bbf7115470b4e067,
+    type: 3}
+  vomitCloud: {fileID: 437996879613533683, guid: 0187cd77f7abdf04aaa5a315145468f2,
+    type: 3}
+  streamRate: 16
+  streamPerRetch: 5
+  cloudFrom: 0.9
+  cloudUntil: 1.9
+  cloudBurst: 8
+  cloudRate: 12
+  cloudAhead: 2.5
+  bigBoom: {fileID: 8300000, guid: f9f511c95046c504ca9af2e8a1c1b00c, type: 3}
+  mediumBoom: {fileID: 8300000, guid: 1a0c2545cfeb3f54fa57d6c988cc902d, type: 3}
+  vomitSound: {fileID: 8300000, guid: 586eef9b8d39dc5469c76bf13be5d8eb, type: 3}
+  volume: 1
 --- !u!1 &6124722223959717806
 GameObject:
   m_ObjectHideFlags: 0

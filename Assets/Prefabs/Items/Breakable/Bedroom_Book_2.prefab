@@ -5374,6 +5374,7 @@ GameObject:
   - component: {fileID: -1556007066962999540}
   - component: {fileID: 4651838797559263791}
   - component: {fileID: 5124076041064712833}
+  - component: {fileID: 3049632574757996224}
   m_Layer: 0
   m_Name: Bedroom_Book_2
   m_TagString: Weapon
@@ -7074,3 +7075,44 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.WeaponPower
   power: 1
   damage: 0.4
+--- !u!114 &3049632574757996224
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8350737783577158643}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4cf0eec19a3a1f54598029d90d97570c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Weapons.Grenade
+  minThrowSpeed: 8
+  radius: 0.120000005
+  damage: 2.4
+  push: 3.2
+  playerEvent: Damage
+  breakApart: 1
+  shakeToCharge: 0
+  charge:
+  - {x: 1, y: 0.5}
+  - {x: 2, y: 1}
+  - {x: 2.5, y: 1.25}
+  - {x: 3, y: 1.5}
+  chargeDamage: {x: 3, y: 8}
+  chargePush: {x: 4, y: 10}
+  shakeStrength: 20
+  inHandEvent: DamageHeavy
+  shakeSound: {fileID: 0}
+  shakeVolume: 0.8
+  warningSound: {fileID: 0}
+  warnBefore: 0.7
+  effects:
+  - {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
+  - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}
+  - {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac, type: 3}
+  effectSize: 0.8
+  sound: {fileID: 8300000, guid: 0c38739de2059ac40ab5b60a42fd1c5f, type: 3}
+  volume: 0.8
+  rumbleStrength: 0.8
+  rumbleDuration: 0.3

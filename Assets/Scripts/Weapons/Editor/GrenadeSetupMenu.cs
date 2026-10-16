@@ -93,6 +93,221 @@ namespace Game.EditorTools
                       (preloaded > 0 ? $" {preloaded} explosion sound(s) now load with the scene." : ""));
         }
 
+        private const string GlowMaterialPath = "Assets/Data/Effects/Bottle Glow.mat";
+        private const string GlowTexturePath = "Assets/Lana Studio/Hyper Casual FX/Textures/Circle01.png";
+
+        /// <summary>
+        /// Gives each shake-to-charge bottle its glow (Charge Glow): a "Charge Glow" particle system in the middle of the
+        /// bottle, in the bottle's own colour (worked out from its texture under its mesh, made brighter), invisible
+        /// until it's shaken and growing as it charges. Running it again recolours and rebuilds the glow.
+        /// </summary>
+        [MenuItem("Tools/429 Game/Weapons/Add Bottle Glow")]
+        public static void AddBottleGlow()
+        {
+            var material = GlowMaterial();
+            var made = new List<string>();
+            foreach (var path in Bottles)
+            {
+                if (AssetDatabase.LoadAssetAtPath<GameObject>(path) == null) continue;
+                var root = PrefabUtility.LoadPrefabContents(path);
+                try
+                {
+                    if (root.GetComponent<Grenade>() == null)
+                    {
+                        Debug.LogWarning($"[Grenade] '{path}' isn't a grenade; no glow.");
+                        continue;
+                    }
+                    var body = BottleBody(root);
+                    var color = BottleColor(body);
+                    var glow = MakeGlow(root, body, material);
+                    var charge = root.GetComponent<ChargeGlow>();
+                    if (charge == null) charge = root.AddComponent<ChargeGlow>();
+                    var serialized = new SerializedObject(charge);
+                    serialized.FindProperty("glow").objectReferenceValue = glow;
+                    serialized.FindProperty("color").colorValue = color;
+                    serialized.ApplyModifiedPropertiesWithoutUndo();
+                    PrefabUtility.SaveAsPrefabAsset(root, path);
+                    made.Add($"{root.name} #{ColorUtility.ToHtmlStringRGB(color)}");
+                }
+                finally
+                {
+                    PrefabUtility.UnloadPrefabContents(root);
+                }
+            }
+            Debug.Log($"[Grenade] Glow added: {string.Join(", ", made)}.");
+        }
+
+        // A soft round glow that adds light (the FX pack's own additive shader, which these effects already use).
+        private static Material GlowMaterial()
+        {
+            var material = AssetDatabase.LoadAssetAtPath<Material>(GlowMaterialPath);
+            if (material != null) return material;
+            material = new Material(Shader.Find("Mobile/Particles/Additive")) { mainTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(GlowTexturePath) };
+            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(GlowMaterialPath));
+            AssetDatabase.CreateAsset(material, GlowMaterialPath);
+            return material;
+        }
+
+        // The bottle's own look (not its smoke puffs).
+        private static MeshRenderer BottleBody(GameObject root)
+        {
+            foreach (var renderer in root.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                if (renderer.GetComponent<MeshFilter>() != null && renderer.GetComponent<ParticleSystem>() == null) return renderer;
+            }
+            return null;
+        }
+
+        // The bottle's colour: its texture under its mesh, averaged by area, then brightened for a glow (same hue, more
+        // saturated, full brightness; a nearly grey bottle glows white).
+        private static Color BottleColor(MeshRenderer body)
+        {
+            if (body == null) return Color.white;
+            var mesh = body.GetComponent<MeshFilter>().sharedMesh;
+            var material = body.sharedMaterial;
+            var texture = material.HasProperty("_BaseMap") ? material.GetTexture("_BaseMap") : material.mainTexture;
+            var tint = material.HasProperty("_BaseColor") ? material.GetColor("_BaseColor") : Color.white;
+            if (mesh == null || texture == null) return tint;
+
+            // A readable copy of the texture.
+            var target = RenderTexture.GetTemporary(texture.width, texture.height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+            Graphics.Blit(texture, target);
+            var previous = RenderTexture.active;
+            RenderTexture.active = target;
+            var pixels = new Texture2D(texture.width, texture.height, TextureFormat.RGBA32, false);
+            pixels.ReadPixels(new Rect(0, 0, texture.width, texture.height), 0, 0);
+            pixels.Apply();
+            RenderTexture.active = previous;
+            RenderTexture.ReleaseTemporary(target);
+
+            var uv = mesh.uv;
+            var points = mesh.vertices;
+            var triangles = mesh.triangles;
+            var sum = Vector3.zero;
+            float weight = 0f;
+            var spots = new[] { new Vector3(1f / 3f, 1f / 3f, 1f / 3f), new Vector3(0.6f, 0.2f, 0.2f), new Vector3(0.2f, 0.6f, 0.2f), new Vector3(0.2f, 0.2f, 0.6f) };
+            for (int i = 0; i + 2 < triangles.Length; i += 3)
+            {
+                float area = Vector3.Cross(points[triangles[i + 1]] - points[triangles[i]], points[triangles[i + 2]] - points[triangles[i]]).magnitude * 0.5f;
+                foreach (var spot in spots)
+                {
+                    var at = uv[triangles[i]] * spot.x + uv[triangles[i + 1]] * spot.y + uv[triangles[i + 2]] * spot.z;
+                    var c = pixels.GetPixelBilinear(at.x, at.y) * tint;
+                    sum += new Vector3(c.r, c.g, c.b) * area;
+                    weight += area;
+                }
+            }
+            Object.DestroyImmediate(pixels);
+            if (weight <= 0f) return tint;
+            sum /= weight;
+            Color.RGBToHSV(new Color(sum.x, sum.y, sum.z), out float hue, out float saturation, out _);
+            float glowSaturation = saturation < 0.08f ? 0f : Mathf.Clamp01(Mathf.Max(saturation * 1.35f, 0.45f));
+            return Color.HSVToRGB(hue, glowSaturation, 1f);
+        }
+
+        // The glow: a few soft round sprites round the middle of the bottle, following it, none until it's shaken
+        // (Charge Glow sets their size, colour and number from the charge). Never more than a third of the view wide, so a
+        // bottle held up to the face doesn't fill the headset.
+        private static ParticleSystem MakeGlow(GameObject root, MeshRenderer body, Material material)
+        {
+            var old = root.transform.Find("Charge Glow");
+            if (old != null) Object.DestroyImmediate(old.gameObject);
+            var go = new GameObject("Charge Glow");
+            go.transform.SetParent(root.transform, false);
+            var bounds = body != null ? body.bounds : new Bounds(root.transform.position, Vector3.one * 0.2f);
+            go.transform.position = bounds.center;
+
+            var glow = go.AddComponent<ParticleSystem>();
+            glow.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main = glow.main;
+            main.loop = true;
+            main.duration = 1f;
+            main.playOnAwake = true;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.45f, 0.7f);
+            main.startSpeed = 0f;
+            main.startSize = 0.12f;
+            main.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
+            main.startColor = new Color(1f, 1f, 1f, 0f);
+            main.simulationSpace = ParticleSystemSimulationSpace.Local;
+            main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+            main.maxParticles = 40;
+            var emission = glow.emission;
+            emission.rateOverTime = 0f;
+            var shape = glow.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = Mathf.Max(0.01f, Mathf.Min(bounds.extents.x, bounds.extents.z) * 0.3f);
+            var fade = glow.colorOverLifetime;
+            fade.enabled = true;
+            var gradient = new Gradient();
+            gradient.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.3f), new GradientAlphaKey(0f, 1f) });
+            fade.color = gradient;
+            var grow = glow.sizeOverLifetime;
+            grow.enabled = true;
+            grow.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 0.75f, 1f, 1.15f));
+            var renderer = go.GetComponent<ParticleSystemRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+            renderer.maxParticleSize = 0.33f;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            return glow;
+        }
+
+        /// <summary>
+        /// Makes the books (Bedroom_Book_*) small grenades: thrown hard at something (8 m/s, like a flip-flop) they blow
+        /// up at 80% of a flip-flop (0.12 m reach, 2.4 damage, 3.2 push, effects and sound at 0.8) and break into their
+        /// pages. Running it again sets them to these numbers again.
+        /// </summary>
+        [MenuItem("Tools/429 Game/Weapons/Make Books Explode")]
+        public static void MakeBooksExplode()
+        {
+            const float power = 0.8f;
+            var effects = new List<GameObject>();
+            foreach (var path in Effects)
+            {
+                var effect = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (effect != null) effects.Add(effect);
+            }
+            var sound = AssetDatabase.LoadAssetAtPath<AudioClip>(Sound);
+            var made = new List<string>();
+            foreach (var guid in AssetDatabase.FindAssets("Bedroom_Book_ t:Prefab", new[] { "Assets/Prefabs/Items/Breakable" }))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                if (!System.IO.Path.GetFileName(path).StartsWith("Bedroom_Book_")) continue;
+                var root = PrefabUtility.LoadPrefabContents(path);
+                try
+                {
+                    if (root.GetComponent<XRGrabInteractable>() == null) continue;
+                    var grenade = root.GetComponent<Grenade>();
+                    if (grenade == null) grenade = root.AddComponent<Grenade>();
+                    var serialized = new SerializedObject(grenade);
+                    serialized.FindProperty("minThrowSpeed").floatValue = 8f;
+                    serialized.FindProperty("radius").floatValue = 0.15f * power;
+                    serialized.FindProperty("damage").floatValue = 3f * power;
+                    serialized.FindProperty("push").floatValue = 4f * power;
+                    serialized.FindProperty("playerEvent").stringValue = "Damage";
+                    serialized.FindProperty("breakApart").boolValue = true;
+                    serialized.FindProperty("shakeToCharge").boolValue = false;
+                    var list = serialized.FindProperty("effects");
+                    list.arraySize = effects.Count;
+                    for (int i = 0; i < effects.Count; i++) list.GetArrayElementAtIndex(i).objectReferenceValue = effects[i];
+                    serialized.FindProperty("effectSize").floatValue = power;
+                    serialized.FindProperty("sound").objectReferenceValue = sound;
+                    serialized.FindProperty("volume").floatValue = power;
+                    serialized.FindProperty("rumbleStrength").floatValue = power;
+                    serialized.ApplyModifiedPropertiesWithoutUndo();
+                    PrefabUtility.SaveAsPrefabAsset(root, path);
+                    made.Add(root.name);
+                }
+                finally
+                {
+                    PrefabUtility.UnloadPrefabContents(root);
+                }
+            }
+            Debug.Log($"[Grenade] {made.Count} book(s) now explode when thrown: {string.Join(", ", made)}.");
+        }
+
         /// <summary>
         /// Has these sounds loaded with the scene (Preload Audio Data), so the first time one plays the game doesn't
         /// stop to load it. Returns how many changed.

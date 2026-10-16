@@ -25,7 +25,8 @@ namespace Game.PlayGround
     ///   (Regen per second) only after staying still for Rest Before Regen seconds, and only runs again once it's
     ///   Rested Share full.
     /// - Cornering it within Catch Range for a while breaks it. Holding it (close range only, see Near Grab Only) for a
-    ///   while makes it go off in the hand: a small explosion that costs the player some health.
+    ///   while makes it go off in the hand: an explosion that costs the player a lot of health.
+    /// - Every break is a small explosion, just big enough to reach the hand holding it: only a player holding it is hurt.
     /// - Hitting it or throwing things at it never breaks it: it hops away, and the hit's damage (worked out as for an
     ///   enemy, see Hit Settings) comes off its stamina instead, so beating on it tires it out. Blasts too.
     /// With Can Run off it's the big tanky one: it stays put, laughs, takes damage from hits (Enemy Hit Damage lowers its
@@ -99,19 +100,20 @@ namespace Game.PlayGround
         [Min(0f)]
         [SerializeField] private float staminaPerDamage = 6f;
 
-        [Header("Breaking in a hand")]
-        [Tooltip("Held too long it goes off in the player's hand: a small explosion that hurts them (Hand Blast Event to " +
-                 "their Damage FSM, e.g. Damage = a bug bite) and anything close by.")]
+        [Header("Exploding")]
+        [Tooltip("It explodes whenever it breaks (caught, cornered, tired out, its health gone, or held too long). Only a " +
+                 "player holding it is hurt (Hand Blast Event to their Damage FSM); things close by are hurt and pushed.")]
         [SerializeField] private GameObject[] handBlastEffects = Array.Empty<GameObject>();
         [SerializeField] private AudioClip handBlastSound;
         [Tooltip("Size of the effects (the bottle grenade's are 1).")]
         [Min(0.05f)] [SerializeField] private float handBlastEffectScale = 0.5f;
-        [Min(0.1f)] [SerializeField] private float handBlastRadius = 1f;
+        [Tooltip("Metres: just big enough to reach the hand holding it.")]
+        [Min(0.1f)] [SerializeField] private float handBlastRadius = 0.6f;
         [Tooltip("Health it takes from things in reach (bugs, breakables), like a grenade's damage.")]
         [Min(0f)] [SerializeField] private float handBlastDamage = 2f;
         [Min(0f)] [SerializeField] private float handBlastPush = 3f;
-        [Tooltip("Sent to the player's Damage FSM: Damage (a bite) or DamageHeavy.")]
-        [SerializeField] private string handBlastEvent = "Damage";
+        [Tooltip("Sent to the player's Damage FSM when it explodes in their hand: DamageHeavy (40-50 health) or Damage (a bite).")]
+        [SerializeField] private string handBlastEvent = "DamageHeavy";
 
         [Header("Candy (the big one)")]
         [Tooltip("Throws out one candy for every this much health it loses. 0 = none.")]
@@ -122,6 +124,11 @@ namespace Game.PlayGround
         [Tooltip("How fast a thrown-out candy flies up, in metres per second.")]
         [Min(0f)]
         [SerializeField] private float candyLaunchSpeed = 3.5f;
+
+        [Header("Reward")]
+        [Tooltip("EXP the player gets when it breaks: caught, cornered, tired out, its health gone, or going off in their hand.")]
+        [Min(0)]
+        [SerializeField] private int exp = 5;
 
         [Header("Sounds")]
         [SerializeField] private AudioClip[] laughs = Array.Empty<AudioClip>();
@@ -221,8 +228,8 @@ namespace Game.PlayGround
             if (!canRun) mood = Mood.Watching;
             nextLaugh = Time.time + Random.Range(0.2f, 0.8f);
             faceDirection = transform.forward;
-            // So the first in-hand blast doesn't stutter.
-            if (grab != null) Blast.Warm(handBlastEffects);
+            // So the first blast doesn't stutter.
+            Blast.Warm(handBlastEffects);
         }
 
         private void Update()
@@ -335,45 +342,54 @@ namespace Game.PlayGround
             return cornered >= cornerSeconds;
         }
 
-        /// <summary>Breaks it: its Health FSM plays the crack and the drop.</summary>
+        /// <summary>Breaks it: it explodes, and its Health FSM plays the crack and the drop.</summary>
         public void Break()
         {
             if (mood == Mood.Broken) return;
-            if (grab != null && grab.isSelected && grab.interactionManager != null)
-                grab.interactionManager.CancelInteractableSelection((UnityEngine.XR.Interaction.Toolkit.Interactables.IXRSelectInteractable)grab);
-            if (grab != null) grab.enabled = false;
+            bool inHand = LetGo();
             if (health != null) health.Value = 0f;
-            Broke();
+            Broke(inHand);
         }
 
         /// <summary>
-        /// Held too long: it goes off in the player's hand. A small explosion hurts them and anything close, and the
+        /// Held too long: it goes off in the player's hand. The explosion hurts them a lot and anything close, and the
         /// pumpkin is gone (that still counts as caught).
         /// </summary>
         public void ExplodeInHand()
         {
             if (mood == Mood.Broken) return;
-            var center = ownColliders.Length > 0 && ownColliders[0] != null ? ownColliders[0].bounds.center : body.position;
-            if (grab != null && grab.isSelected && grab.interactionManager != null)
-                grab.interactionManager.CancelInteractableSelection((IXRSelectInteractable)grab);
-            if (grab != null) grab.enabled = false;
-            Blast.Explode(center, handBlastRadius, handBlastDamage, handBlastPush, body, handBlastEffects, handBlastSound,
-                1f, handBlastEvent, held: true, effectScale: handBlastEffectScale);
+            LetGo();
+            Broke(true);
 
             // Gone in the blast: no crack, no leftovers.
             foreach (var shown in GetComponentsInChildren<Renderer>()) shown.enabled = false;
             foreach (var part in ownColliders) if (part != null) part.enabled = false;
             foreach (var fsm in GetComponents<PlayMakerFSM>()) fsm.enabled = false;
             if (TryGetComponent<Game.Inventory.CandyTrail>(out var trail)) trail.enabled = false;
-            Broke();
             Destroy(gameObject, 0.1f);
         }
 
-        private void Broke()
+        // Out of the player's hand for good (no grabbing it again); returns whether a hand was holding it.
+        private bool LetGo()
         {
+            bool inHand = mood == Mood.Held || (grab != null && grab.isSelected);
+            if (grab != null && grab.isSelected && grab.interactionManager != null)
+                grab.interactionManager.CancelInteractableSelection((IXRSelectInteractable)grab);
+            if (grab != null) grab.enabled = false;
+            return inHand;
+        }
+
+        // It breaks, exploding: only a player holding it ('inHand') is hurt; things close by are hurt and pushed.
+        private void Broke(bool inHand)
+        {
+            if (mood == Mood.Broken) return;
+            var center = ownColliders.Length > 0 && ownColliders[0] != null && ownColliders[0].enabled ? ownColliders[0].bounds.center : body.position;
             mood = Mood.Broken;
             hasTarget = false;
             if (!body.isKinematic) body.linearVelocity = new Vector3(0f, Mathf.Min(0f, body.linearVelocity.y), 0f);
+            Blast.Explode(center, handBlastRadius, handBlastDamage, handBlastPush, body, handBlastEffects, handBlastSound,
+                1f, inHand ? handBlastEvent : null, held: inHand, effectScale: handBlastEffectScale);
+            if (exp > 0) Game.Leveling.PlayerLevel.AddExp(exp);
             onCaught.Invoke();
             Caught?.Invoke(this);
         }
@@ -401,7 +417,7 @@ namespace Game.PlayGround
                 }
             }
             lastHealth = now;
-            if (now <= 0f) Broke();
+            if (now <= 0f) Broke(LetGo());
         }
 
         // ------------------------------------------------------------------ grabbing

@@ -52,6 +52,9 @@ namespace HutongGames.PlayMaker.Actions
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics() => shown.Clear();
 
+        /// <summary>Every notice may show again (the game was reset to a new install).</summary>
+        public static void ForgetShown() => shown.Clear();
+
         public override void Reset()
         {
             titles = new FsmString[0];

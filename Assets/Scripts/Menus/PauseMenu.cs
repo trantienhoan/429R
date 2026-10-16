@@ -13,10 +13,11 @@ namespace Game.Menus
 {
     /// <summary>
     /// Pause menu. The menu button on the left controller (or A on the right, or Esc) stops the game
-    /// and shows Resume, Quit, a random tip and five options in front of you: how arm swinging works, the player's
+    /// and shows Resume, Quit, a random tip and six options in front of you: how arm swinging works, the player's
     /// height (to play seated, or stand taller or shorter), how strong the comfort vignette is, whether damage
-    /// numbers show over hit enemies and whether the player's health shows. Holding the title
-    /// for a while (7 s) asks whether to reset all saved progress and start the game over. Quit asks how: Re-Dream
+    /// numbers show over hit enemies, whether the player's health shows and the game's volume. Holding the title
+    /// for a while (7 s) asks whether to reset all saved progress and start the game over like a new install (tutorials
+    /// and options back to the start too). Quit asks how: Re-Dream
     /// (start a new run from the very beginning, keeping candies and items) or Get a Rest (close the game; next time it
     /// continues from the last checkpoint).
     /// </summary>
@@ -45,6 +46,12 @@ namespace Game.Menus
         [Tooltip("Each press shows or hides the player's health (the heart and number), e.g. to record video.")]
         [SerializeField] private Button healthButton;
         [SerializeField] private TMP_Text healthText;
+        [Tooltip("Lower and raise the whole game's volume, 10% a press.")]
+        [SerializeField] private Button volumeDownButton;
+        [SerializeField] private Button volumeUpButton;
+        [SerializeField] private TMP_Text volumeText;
+        [Tooltip("Played at the new volume on each press, so it can be heard while the game's sound is paused.")]
+        [SerializeField] private AudioClip volumeTick;
         [Tooltip("Left empty, the one in the scene is used.")]
         [SerializeField] private ArmSwingMoveProvider armSwing;
         [Tooltip("Left empty, the one on the XR Origin is used.")]
@@ -89,6 +96,7 @@ namespace Game.Menus
 
         private float timeScaleBeforePause = 1f;
         private int lastTip = -1;
+        private AudioSource tickVoice;
 
         // Things that stopped the game without this menu (Hold), e.g. the Level Up notice.
         private static readonly System.Collections.Generic.HashSet<object> holds = new();
@@ -201,6 +209,8 @@ namespace Game.Menus
             if (vignetteButton != null) vignetteButton.onClick.AddListener(NextVignetteLevel);
             if (damageNumbersButton != null) damageNumbersButton.onClick.AddListener(ToggleDamageNumbers);
             if (healthButton != null) healthButton.onClick.AddListener(ToggleHealth);
+            if (volumeDownButton != null) volumeDownButton.onClick.AddListener(() => ChangeVolume(-1));
+            if (volumeUpButton != null) volumeUpButton.onClick.AddListener(() => ChangeVolume(1));
             if (resetHold != null) resetHold.Held += AskResetProgress;
             if (resetConfirmButton != null) resetConfirmButton.onClick.AddListener(ResetProgressAndRestart);
             if (resetCancelButton != null) resetCancelButton.onClick.AddListener(HideResetConfirm);
@@ -291,8 +301,9 @@ namespace Game.Menus
             if (resetConfirmPanel != null) resetConfirmPanel.SetActive(false);
         }
 
-        // Wipes the save (and, through the emptied file, the cloud save), then starts the whole game over from a fresh
-        // scene, so everything progress opened (e.g. paths opened with seeds) is closed again.
+        // Wipes the save (and, through the emptied file, the cloud save) and everything else, like a new install, then
+        // starts the whole game over from a fresh scene, so everything progress opened (e.g. paths opened with seeds) is
+        // closed again.
         private void ResetProgressAndRestart()
         {
             HideResetConfirm();
@@ -302,8 +313,26 @@ namespace Game.Menus
                 SaveManager.DeleteSaveFiles();
                 Unlocks.Reset();
             }
+            LikeANewInstall();
             Resume();
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        }
+
+        // What a new install starts without, besides the save: every tutorial, notice and the walk signs show again, so
+        // do the health warning and the first tip board, and the options (arm swing, height, comfort vignette, damage
+        // numbers, health, volume, turning) go back to their defaults.
+        private static void LikeANewInstall()
+        {
+            OncePerInstall.ForgetShowing();
+            ShowOnce.ForgetAll();
+            PlayerPrefs.DeleteAll();
+            PlayerPrefs.Save();
+            DamageNumbers.ForgetChoice();
+            PlayerHealthHUD.ForgetChoice();
+            GameVolume.ForgetChoice();
+            HutongGames.PlayMaker.Actions.ShowNotice.ForgetShown();
+            TipBoard.ForgetShown();
+            HealthWarning.ForgetShown();
         }
 
         // Quit asks how; with no question set up, it just closes the game.
@@ -400,6 +429,24 @@ namespace Game.Menus
             ShowOptions();
         }
 
+        private void ChangeVolume(int steps)
+        {
+            GameVolume.Level += steps * GameVolume.Step;
+            // The game's sound is paused while the menu is open: this one plays anyway, at the new volume.
+            if (volumeTick != null)
+            {
+                if (tickVoice == null)
+                {
+                    tickVoice = gameObject.AddComponent<AudioSource>();
+                    tickVoice.playOnAwake = false;
+                    tickVoice.spatialBlend = 0f;
+                    tickVoice.ignoreListenerPause = true;
+                }
+                tickVoice.PlayOneShot(volumeTick);
+            }
+            ShowOptions();
+        }
+
         private void ShowOptions()
         {
             FindOptions();
@@ -413,6 +460,10 @@ namespace Game.Menus
             if (vignetteText != null) vignetteText.text = ComfortVignetteLevel.Label(ComfortVignetteLevel.Current);
             if (damageNumbersText != null) damageNumbersText.text = DamageNumbers.Label();
             if (healthText != null) healthText.text = PlayerHealthHUD.Label();
+
+            if (volumeDownButton != null) volumeDownButton.interactable = GameVolume.Level > 0.001f;
+            if (volumeUpButton != null) volumeUpButton.interactable = GameVolume.Level < 0.999f;
+            if (volumeText != null) volumeText.text = GameVolume.Label();
         }
 
         private void FindOptions()
