@@ -13,6 +13,8 @@ namespace Game.Locomotion
     public class HeadsetFade : MonoBehaviour
     {
         private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
+        // Drawn after the health HUD (3998-3999), and before "UI Over Fade" (4001) and the save notices (4002).
+        private const int FadeQueue = (int)UnityEngine.Rendering.RenderQueue.Overlay;
 
         [Tooltip("The colour the view fades to.")]
         [SerializeField] private Color color = Color.black;
@@ -99,6 +101,11 @@ namespace Game.Locomotion
             // Not drawn at all while the view is clear.
             sphere.enabled = alpha > 0.001f;
             if (!sphere.enabled) return;
+
+            // URP puts its materials back to queue 3000 + Queue Offset whenever the Editor loads or shows one (and a build
+            // keeps that), so the fade uses its own copy at the fade's queue.
+            var material = sphere.sharedMaterial;
+            if (material != null && material.renderQueue != FadeQueue) sphere.material.renderQueue = FadeQueue;
 
             var faded = color;
             faded.a *= alpha;

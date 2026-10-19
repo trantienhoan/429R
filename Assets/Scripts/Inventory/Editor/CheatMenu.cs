@@ -55,14 +55,18 @@ namespace Game.EditorTools
 
         private static void GiveInSaveFiles(List<ItemDefinition> items)
         {
-            // Every player's save (Local and each Steam ID); with none yet, a new Local one.
+            // Every save slot of every player (Local and each Steam ID); with none yet, a new slot 1 in Local.
+            // The old save.json is left alone: the game never reads it now.
             var paths = new List<string>();
             if (Directory.Exists(SaveManager.SavesRoot))
             {
                 foreach (var folder in Directory.GetDirectories(SaveManager.SavesRoot))
                 {
-                    string path = Path.Combine(folder, "save.json");
-                    if (File.Exists(path)) paths.Add(path);
+                    for (int slot = 1; slot <= SaveManager.SlotCount; slot++)
+                    {
+                        string path = Path.Combine(folder, $"slot{slot}.json");
+                        if (File.Exists(path)) paths.Add(path);
+                    }
                 }
             }
             if (paths.Count == 0) paths.Add(SaveManager.SavePath);

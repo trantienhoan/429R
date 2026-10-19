@@ -247,6 +247,7 @@ RectTransform:
   - {fileID: 1757925560468720629}
   - {fileID: 8421369726139482527}
   - {fileID: 7268138234269276455}
+  - {fileID: 4312188582559019910}
   m_Father: {fileID: 5418377842764808673}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -513,6 +514,100 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!1 &6673583569667810029
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4312188582559019910}
+  - component: {fileID: 999986555998099618}
+  - component: {fileID: 9113145876487133550}
+  - component: {fileID: 3093704934391573000}
+  m_Layer: 2
+  m_Name: Hit Box
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4312188582559019910
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6673583569667810029}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4238327045396751120}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &999986555998099618
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6673583569667810029}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1000, y: 460, z: 80}
+  m_Center: {x: 0, y: 0, z: 35}
+--- !u!54 &9113145876487133550
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6673583569667810029}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 3
+--- !u!114 &3093704934391573000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6673583569667810029}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5916086b4a197da42aeb669524d62e08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Menus.TipBoardHitBox
 --- !u!1001 &5529092741417756170
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1594,6 +1689,74 @@ MonoBehaviour:
   - Bump your fists together twice to spend your level-up points
   - Shake a bottle before you throw it. Careful though!
   - Hold B to open the Candy Shop
+  - Touch me for a hint
+  - Fist Size unlocks flying punches
+  - Hold Y to open your bag
+  - Press A to pause
+  - Lollipop? Hold it at your mouth
+  - Squeeze the trigger on a hammer
+  - Two hands on a broom hit harder
+  - 'Smoke a boong: 60 s power-up'
+  - 'Elon Boong: exploding punches'
+  - 'Bone Boong: tough as bone'
+  - 'Green Boong: grow taller'
+  - 'Bus Boong: move faster'
+  - Candle out? Shake it
+  - The game saves at checkpoints
+  - Mind the edge
+  - Revive coins can save you
+  - Hit the magic hat for a recipe
+  - Stone dice block the path
+  - Hit a chest to open it
+  - Swing your arms to run
+  - 'Skull Gun: Don''t do it too fast'
+  - Explosions hurt you too
+  - Weapons wear out
+  - Don't hug the Pumpkin Boss
+  hints:
+  - Candy heals. Its wrap pays the Candy Shop.
+  - Squeeze grip and trigger with an empty hand.
+  - Smash the bugs before they bite.
+  - Okay, dodging is allowed.
+  - For real. Take a break now and then.
+  - Beat bugs to earn points.
+  - Shake too long and it blows up in your hand.
+  - Pay with candy wraps. It restocks often.
+  - Hit me hard for the next tip.
+  - '1 point: jab. 3: swing and uppercut. 10: triple!'
+  - Hold a thing to your chest to put it in.
+  - Height, volume and more are in there.
+  - Keep it there for 3 seconds.
+  - Its head grows and hits harder.
+  - Pillow and sword too. They wear out faster.
+  - Hold it upright at your mouth, lit candle on the bowl.
+  - Punches reach further and blow up on hit.
+  - +7 Toughness for 60 seconds.
+  - Flying punches go 5 m further too.
+  - +7 Move Speed for 60 seconds.
+  - 3 quick shakes light it again.
+  - Pick your save slot to go on from there.
+  - Falling off costs health.
+  - 'Clover: get back up. All skulls: game over.'
+  - Cook it in the cauldron for a laughing pumpkin.
+  - Hit one to see its price. Pay with seeds.
+  - Touch the seed inside to take it.
+  - Hold X and jog with your arms.
+  - Too many quick shots and it blows up.
+  - Throw them far, not at your feet.
+  - Weapon Efficiency makes them last longer.
+  - Too close and he spins. Dodge his pumpkins.
+  strongHit: 2.5
+  hitCooldown: 0.5
+  hintFadeSeconds: 0.3
+  touchDistance: 0.08
+  knockDistance: 0.04
+  knockDegrees: 7
+  knockSounds:
+  - {fileID: 8300000, guid: be9beca93dc0f514c8220a12fd387f63, type: 3}
+  - {fileID: 8300000, guid: 1ab0a3a1ae573ae4a83eec9c81323797, type: 3}
+  knockVolume: 0.8
+  menuVersion: 1
 --- !u!4 &5418377842764808673 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 9d3ae1cff0e05d746bcf376fe0b372ec,

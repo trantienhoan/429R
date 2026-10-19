@@ -5,9 +5,10 @@ using UnityEngine.InputSystem;
 namespace Game.Menus
 {
     /// <summary>
-    /// Health and safety notice shown in front of the player when the game starts, once per launch. After a few
-    /// seconds of reading time a trigger (or Enter/Space) closes it, and it fades away. If the player looks away it
-    /// glides back in front of them. Tools > 429 Game > Menu > Set Up Health Warning builds it.
+    /// Health and safety notice shown in front of the player when the game starts, once per launch, before anything
+    /// else: the start menu (Save Slot Menu) waits until it has been closed. After a few seconds of reading time a
+    /// trigger (or Enter/Space) closes it, and it fades away. If the player looks away it glides back in front of them.
+    /// Tools > 429 Game > Menu > Set Up Health Warning builds it.
     /// </summary>
     public class HealthWarning : MonoBehaviour
     {
@@ -35,10 +36,30 @@ namespace Game.Menus
         private bool closing;
         private bool gliding;
 
+        // The scene's notice, so others can wait for it (IsShowing).
+        private static HealthWarning current;
+
+        /// <summary>
+        /// Whether the notice is up, or about to show as the game starts (it switches itself off once closed, or straight
+        /// away when it was already shown this launch). The start menu waits for it.
+        /// </summary>
+        public static bool IsShowing => current != null && current.isActiveAndEnabled && current.panel != null;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
         {
             shownThisLaunch = false;
+            current = null;
+        }
+
+        private void Awake()
+        {
+            current = this;
+        }
+
+        private void OnDestroy()
+        {
+            if (current == this) current = null;
         }
 
         /// <summary>The notice shows again (the game was reset to a new install).</summary>

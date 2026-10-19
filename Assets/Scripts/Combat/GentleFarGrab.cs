@@ -86,9 +86,10 @@ namespace Game.Combat
 
         private void OnLetGo(SelectExitEventArgs args)
         {
+            // Only the pull of the hand that let go: with two hands on a weapon, the other hand's pull goes on.
             for (int i = pulls.Count - 1; i >= 0; i--)
             {
-                if (pulls[i].grab == (Object)args.interactableObject) End(i, false);
+                if (pulls[i].grab == (Object)args.interactableObject && pulls[i].hand == (Object)args.interactorObject) End(i, false);
             }
         }
 

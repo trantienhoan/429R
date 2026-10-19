@@ -7,7 +7,8 @@ namespace HutongGames.PlayMaker.Actions
     [Tooltip("The player just died. With Revive Coins on the XR Origin: the revives left this run are lucky coins; " +
              "it flips them and waits. A clover sends Revive (one coin used up, the health the clovers won); all skulls, " +
              "or no coin left, sends Game Over. Without Revive Coins: with a revive left it uses one up and sends " +
-             "Revive; otherwise Game Over, and the game over goes on as before.")]
+             "Revive; otherwise Game Over, and the game over goes on as before. A Game Over with no revive left ends " +
+             "the run in the save at once (a new run from the start).")]
     public class TryRevive : FsmStateAction
     {
         [RequiredField]
@@ -34,20 +35,33 @@ namespace HutongGames.PlayMaker.Actions
                 if (coins.CoinsNow > 0)
                 {
                     coins.Flip();
+                    // Nothing hurts the player while they're down: a hit used to start the death over, throwing the
+                    // coins away.
+                    PlayerRevive.Instance.GoDown();
                     // A coin is spent as they're thrown, before anyone can see how they land (quitting during the show
-                    // can't dodge the cost).
+                    // can't dodge the cost), and until they land the save says the run is over (quitting can't keep
+                    // the checkpoint either).
                     Checkpoints.UseRevive();
+                    Checkpoints.StartDying();
                     flipping = true;
                     return;
                 }
                 Finish();
-                Fsm.Event(gameOver);
+                GameOver();
                 return;
             }
 
             Finish();
             if (PlayerRevive.Instance != null && Checkpoints.UseRevive()) Fsm.Event(revive);
-            else Fsm.Event(gameOver);
+            else GameOver();
+        }
+
+        // The game is over. With no revive left the run is over too, saved at once as a new run, so quitting during the
+        // game over can't keep the checkpoint either.
+        private void GameOver()
+        {
+            if (Checkpoints.RevivesLeft <= 0) Checkpoints.EndRun();
+            Fsm.Event(gameOver);
         }
 
         // Waits for the coins (they run in real time while the game is stopped).
@@ -61,6 +75,7 @@ namespace HutongGames.PlayMaker.Actions
             Finish();
             if (coins != null && coins.Clovers > 0 && PlayerRevive.Instance != null)
             {
+                Checkpoints.StopDying();
                 PlayerRevive.Instance.SetCoinResult(coins.HealthShare);
                 Fsm.Event(revive);
             }
@@ -68,14 +83,16 @@ namespace HutongGames.PlayMaker.Actions
             {
                 // Out of luck: the run's revives are gone, so the game over starts a new run.
                 Checkpoints.UseAllRevives();
-                Fsm.Event(gameOver);
+                GameOver();
             }
         }
 
         public override void OnExit()
         {
-            // Left some other way while the coins were up: put them away.
+            // Left some other way while the coins were up: put them away (the save keeps the run again).
             if (flipping && ReviveCoins.Instance != null) ReviveCoins.Instance.Cancel();
+            if (flipping) Checkpoints.StopDying();
+            if (flipping && PlayerRevive.Instance != null) PlayerRevive.Instance.CancelDown();
             flipping = false;
         }
     }

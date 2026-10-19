@@ -11,8 +11,9 @@ namespace Game.Locomotion
     /// nothing jumps, then plays a fall: the head drops to the floor and tips onto its side, and the hands fall with it,
     /// while the headset view fades to black. The headset keeps tracking the whole time, so looking around still works.
     /// When the Restart state takes the camera back out, everything goes back to normal and the view fades back in.
-    /// A revive (Player Revive) first stops the fall part way (Stop Part Way: the fall and the fade hold there), then
-    /// calls Rise: the fall plays backwards, the view fades back in, and the camera goes back to the rig.
+    /// A revive (Player Revive) first stops the fall part way (Stop Part Way, or Stop Here after the lucky coins: the
+    /// fall and the fade hold there), then calls Rise: the fall plays backwards, the view fades back in, and the camera
+    /// goes back to the rig.
     /// Tools > 429 Game > Player > Set Up Death Fall adds it.
     /// </summary>
     [DisallowMultipleComponent]
@@ -78,6 +79,18 @@ namespace Game.Locomotion
         public void StopPartWay(float share)
         {
             stopAt = Mathf.Clamp01(share);
+        }
+
+        /// <summary>How far through the fall the view is: 0 = still standing (or not down), 1 = lying.</summary>
+        public float Progress => fallen ? Mathf.Clamp01(elapsed / fallTime) : 0f;
+
+        /// <summary>
+        /// This death's fall stops right where it is now and holds there, the fade too, until Rise (e.g. the lucky coins
+        /// came up clover while the fall was stopped for them). Not down yet: it holds as soon as it starts.
+        /// </summary>
+        public void StopHere()
+        {
+            stopAt = Progress;
         }
 
         /// <summary>

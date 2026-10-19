@@ -18,7 +18,8 @@ namespace Game.EditorTools
         /// Puts Player Revive on the XR Origin and makes its PlayerDeath FSM start with a choice: "Revive?" (Try Revive)
         /// uses up one of the run's revives and goes to "Not Yet" (Revive Player: "Not yet", the fall backwards, full
         /// health, the wake-up aura), then "Revived" switches PlayerDeath off again; with no revive left it goes on to
-        /// "Dying..." as before (the game over). Running it again changes nothing.
+        /// "Dying..." as before (the game over). Also makes a hit while the player is down leave PlayerDeath running
+        /// (PlayerHealth's DEAD doesn't switch it off on the way out). Running it again changes nothing.
         /// </summary>
         [MenuItem("Tools/429 Game/Player/Set Up Revive")]
         public static void SetUp()
@@ -81,9 +82,34 @@ namespace Game.EditorTools
                 fsmNote = $"PlayerDeath now starts with Revive? (a revive left: Not Yet, Revived; none: {dying})";
             }
 
+            string healthNote = KeepDeathRunning(origin);
+
             EditorSceneManager.MarkSceneDirty(origin.gameObject.scene);
             Selection.activeGameObject = origin.gameObject;
-            Debug.Log($"[Revive] {reviveNote}; {fsmNote}. Save the scene.", origin);
+            Debug.Log($"[Revive] {reviveNote}; {fsmNote}; {healthNote}. Save the scene.", origin);
+        }
+
+        // A hit while the player is down (the boss, a bug pumpkin, anything sending straight to PlayerHealth) takes
+        // PlayerHealth out of DEAD and back in. DEAD's Enable FSM switched PlayerDeath off on the way out, so it started
+        // over: the coin toss was thrown away with its coin already spent, and with no coin left that was a game over at
+        // once. PlayerDeath now runs on (it switches itself off when it's done, in Revived and DEAD).
+        private static string KeepDeathRunning(XROrigin origin)
+        {
+            var health = origin.GetComponents<PlayMakerFSM>().FirstOrDefault(f => f.FsmName == "PlayerHealth");
+            if (health == null) return "WARNING: no PlayerHealth FSM on the XR Origin";
+            var f = health.Fsm;
+            if (!f.Initialized) f.Init(health);
+            foreach (var s in f.States) s.LoadActions();
+            var dead = f.States.FirstOrDefault(s => s.Name == "DEAD");
+            var enable = dead?.Actions.OfType<EnableFSM>().FirstOrDefault(a => a.enable.Value && a.fsmName.Value == "PlayerDeath");
+            if (enable == null) return "WARNING: PlayerHealth has no DEAD state switching PlayerDeath on";
+            if (dead.ActionData.ActionCount != dead.Actions.Length) return "WARNING: PlayerHealth's DEAD didn't load all its actions, left alone";
+            if (!enable.resetOnExit.Value) return "PlayerHealth's DEAD already leaves PlayerDeath running";
+            Undo.RecordObject(health, "Set Up Revive");
+            enable.resetOnExit = false;
+            dead.SaveActions();
+            EditorUtility.SetDirty(health);
+            return "PlayerHealth's DEAD no longer switches PlayerDeath off when a hit comes in while the player is down";
         }
 
         [MenuItem("Tools/429 Game/Player/Set Up Revive", true)]

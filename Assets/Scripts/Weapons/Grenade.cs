@@ -330,7 +330,13 @@ namespace Game.Weapons
             Blast.Explode(point, reach, hurt, force, body, effects, sound, volume, eventForPlayer, inHand, effectScale);
 
             // Breaking the usual way lets its own Health FSM drop the pieces and remove it; otherwise it just vanishes.
-            if (breakApart && Blast.HasHealth(gameObject, out var ownHealth, out _) && ownHealth != null) ownHealth.Value = 0f;
+            // Weapon Wear is switched off first: it gives back part of a small loss (Weapon Efficiency), so a worn weapon
+            // would never reach 0 and stay whole.
+            if (breakApart && Blast.HasHealth(gameObject, out var ownHealth, out _) && ownHealth != null)
+            {
+                if (TryGetComponent(out Game.Leveling.WeaponWear wear)) wear.enabled = false;
+                ownHealth.Value = 0f;
+            }
             else Destroy(gameObject);
         }
 

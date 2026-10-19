@@ -1,5 +1,67 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1208618275689516032
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4770058516794692706}
+  m_Layer: 0
+  m_Name: Burn
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4770058516794692706
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1208618275689516032}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.000000059604645, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.30996868, y: 0.18615317, z: 0.000000022191188}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4345931859835315234}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1529723334712344364
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3890829233641303608}
+  m_Layer: 0
+  m_Name: Inhale
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3890829233641303608
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1529723334712344364}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.000000059604645, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.27, y: 0.269, z: 0.000000032067298}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4345931859835315234}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3226141515471941880
 GameObject:
   m_ObjectHideFlags: 0
@@ -21092,7 +21154,9 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
-  m_Children: []
+  m_Children:
+  - {fileID: 3890829233641303608}
+  - {fileID: 4770058516794692706}
   m_Father: {fileID: 7942656766987080674}
   m_LocalEulerAnglesHint: {x: -90, y: 0, z: 0}
 --- !u!33 &8629583047959754364
@@ -21170,6 +21234,7 @@ GameObject:
   - component: {fileID: 7222422428585285325}
   - component: {fileID: 613111296251371852}
   - component: {fileID: 2211358613874622767}
+  - component: {fileID: 5434600782949635922}
   m_Layer: 0
   m_Name: Elon_Boong
   m_TagString: Weapon
@@ -23047,13 +23112,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 982a9014cc7640d408db134d5e3bdf8f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Weapons.HitRumble
-  minHitSpeed: 1
-  fullHitSpeed: 12
-  minStrength: 0.2
-  maxStrength: 1
-  duration: 0.06
-  cooldown: 0.08
   ignoreTag: Player
+  quietAfterGrab: 0.3
 --- !u!114 &2211358613874622767
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -23068,3 +23128,48 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.WeaponPower
   power: 1.3
   damage: 1
+--- !u!114 &5434600782949635922
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8652957619629149998}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 321003ad1535f0845824209ab81e5a6d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Weapons.BoongSmoke
+  buff: 0
+  buffSeconds: 60
+  inhale: {fileID: 3890829233641303608}
+  inhaleRadius: 0.055
+  burn: {fileID: 4770058516794692706}
+  burnRadius: 0.04
+  upAxis: {x: 0.33124453, y: 0.9435449, z: 0}
+  maxTilt: 75
+  fireSeconds: 2.5
+  animator: {fileID: 0}
+  fireState: Fire
+  flame: {fileID: 6094535971947177266}
+  shakePart: {fileID: 4345931859835315234}
+  shake: 0.005
+  swellPart: {fileID: 4345931859835315234}
+  swell: 0.25
+  throb: 0.05
+  smoke: {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac, type: 3}
+  smokeSize: {x: 0.008, y: 0.018}
+  igniteSound: {fileID: 8300000, guid: 97d2e1dfb0c1d454cb1ef3d2f8ce2511, type: 3}
+  bubbleSound: {fileID: 8300000, guid: 898328a8c2e9ea548808f6e92363476c, type: 3}
+  bubbleVolume: 0.9
+  radius: 1
+  damage: 3
+  push: 3
+  breakApart: 0
+  effects:
+  - {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
+  - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}
+  - {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac, type: 3}
+  effectSize: 0.6
+  sound: {fileID: 8300000, guid: 0c38739de2059ac40ab5b60a42fd1c5f, type: 3}
+  volume: 0.9

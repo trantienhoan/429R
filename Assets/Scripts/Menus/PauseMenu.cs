@@ -16,10 +16,12 @@ namespace Game.Menus
     /// and shows Resume, Quit, a random tip and six options in front of you: how arm swinging works, the player's
     /// height (to play seated, or stand taller or shorter), how strong the comfort vignette is, whether damage
     /// numbers show over hit enemies, whether the player's health shows and the game's volume. Holding the title
-    /// for a while (7 s) asks whether to reset all saved progress and start the game over like a new install (tutorials
-    /// and options back to the start too). Quit asks how: Re-Dream
-    /// (start a new run from the very beginning, keeping candies and items) or Get a Rest (close the game; next time it
-    /// continues from the last checkpoint).
+    /// for a while (7 s) asks whether to reset the progress in the save slot being played (the other slots are kept) and
+    /// start the game over like a new install (tutorials and options back to the start too, and the start menu asks for a
+    /// slot again). Quit asks how: Re-Dream (start a new run from the very beginning in the same slot, keeping candies,
+    /// items and level) or Get a Rest (save and close the game; next time, picking the slot goes on from its last
+    /// checkpoint with the health the player has now). While something blocks it (BlockOpening, e.g. the loading screen)
+    /// the menu button does nothing.
     /// </summary>
     public class PauseMenu : MonoBehaviour
     {
@@ -104,11 +106,16 @@ namespace Game.Menus
         // doesn't also fire a gun the player is holding.
         private static readonly System.Collections.Generic.List<UnityEngine.XR.Interaction.Toolkit.Interactors.XRBaseInputInteractor> noActivate = new();
         private static float timeScaleBeforeHold = 1f;
+        // Things that keep the menu button from opening the menu (BlockOpening), e.g. the loading screen.
+        private static readonly System.Collections.Generic.HashSet<object> blocks = new();
 
         public static bool IsPaused { get; private set; }
 
         /// <summary>Whether something has stopped the game without the pause menu (see Hold).</summary>
         public static bool IsHeld => holds.Count > 0;
+
+        /// <summary>Whether the menu button is switched off for now (see BlockOpening).</summary>
+        public static bool IsOpeningBlocked => blocks.Count > 0;
 
         /// <summary>Raised when the game pauses or resumes; read IsPaused for which.</summary>
         public static event Action PauseChanged;
@@ -120,7 +127,23 @@ namespace Game.Menus
             PauseChanged = null;
             holds.Clear();
             noActivate.Clear();
+            blocks.Clear();
             timeScaleBeforeHold = 1f;
+        }
+
+        /// <summary>
+        /// The menu button doesn't open the menu until the same thing calls AllowOpening, e.g. while the loading screen
+        /// is up (the menu would open hidden behind the black). Losing focus still pauses.
+        /// </summary>
+        public static void BlockOpening(object who)
+        {
+            if (who != null) blocks.Add(who);
+        }
+
+        /// <summary>The menu button works again (once nothing else blocks it).</summary>
+        public static void AllowOpening(object who)
+        {
+            if (who != null) blocks.Remove(who);
         }
 
         /// <summary>
@@ -233,6 +256,7 @@ namespace Game.Menus
         private void Update()
         {
             if (menuButton.action == null || !menuButton.action.WasPressedThisFrame()) return;
+            if (!IsPaused && IsOpeningBlocked) return;
 
             if (IsPaused) Resume();
             else Pause();
@@ -301,9 +325,9 @@ namespace Game.Menus
             if (resetConfirmPanel != null) resetConfirmPanel.SetActive(false);
         }
 
-        // Wipes the save (and, through the emptied file, the cloud save) and everything else, like a new install, then
-        // starts the whole game over from a fresh scene, so everything progress opened (e.g. paths opened with seeds) is
-        // closed again.
+        // Empties the save slot being played (deleted while the game runs, so the cloud copy goes too; the other slots are
+        // kept) and everything else, like a new install, then starts the whole game over from a fresh scene, so everything
+        // progress opened (e.g. paths opened with seeds) is closed again. The start menu then asks for a slot again.
         private void ResetProgressAndRestart()
         {
             HideResetConfirm();
@@ -311,6 +335,7 @@ namespace Game.Menus
             else
             {
                 SaveManager.DeleteSaveFiles();
+                SaveManager.ForgetSlot();
                 Unlocks.Reset();
             }
             LikeANewInstall();
@@ -349,7 +374,8 @@ namespace Game.Menus
 
         /// <summary>
         /// Starts a new run from the very beginning: no checkpoint, all revives. What the player has (candies, items,
-        /// level) is kept; the scene loads again so everything is as at the start.
+        /// level) is kept; the scene loads again so everything is as at the start, straight back into the same save slot
+        /// (no start menu).
         /// </summary>
         public void ToTheStart()
         {
@@ -360,7 +386,10 @@ namespace Game.Menus
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
 
-        /// <summary>Closes the game, saved: next time it continues from the last checkpoint, with the health they have now.</summary>
+        /// <summary>
+        /// Closes the game, saved: next time, picking this save slot goes on from its last checkpoint, with the health the
+        /// player has now.
+        /// </summary>
         public void GetARest()
         {
             HideQuitChoice();

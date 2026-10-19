@@ -25,7 +25,14 @@ namespace Game.EditorTools
         private const string BackArrowSprite = "Assets/Images/icon_back_arrow.png";
         private const string QuitMessage =
             "Re-Dream: start over from the very beginning. Your candies, items and level are kept.\n\n" +
-            "Get a Rest: close the game. Next time you play, you start from the beginning.";
+            "Get a Rest: close the game. Next time you play, you go on from your last checkpoint.";
+        private const string ResetMessage =
+            "This empties the save slot you are playing: candies, items, opened paths and level (the cloud copy too). " +
+            "Your other slots are kept.\n\nThis can't be undone.";
+        // The Reset Progress text from before there were save slots: replaced, unless it was edited by hand.
+        private const string OldResetMessage =
+            "This deletes all your saved progress: your candies, everything you bought and every path you opened, " +
+            "including your cloud save. Then the game starts over from the beginning.\n\nThis can't be undone.";
 
         /// <summary>
         /// Creates the pause menu, or adds what an existing one is missing (the Arm swing, Height, Comfort vignette,
@@ -59,6 +66,7 @@ namespace Game.EditorTools
             if (AddResetProgress(menu, font)) notes.Add("added Reset Progress (hold the title for 7 s)");
             if (AddQuitChoice(menu, font)) notes.Add("Quit now asks: Re-Dream or Get a Rest");
             if (TidyQuitChoice(menu)) notes.Add("the Quit box now has Re-Dream and Get a Rest, and Back is an arrow in its top left");
+            if (UpdateSaveSlotTexts(menu)) notes.Add("the Quit and Reset Progress texts now talk about checkpoints and save slots");
 
             var origin = Object.FindAnyObjectByType<XROrigin>(FindObjectsInactive.Include);
             if (origin != null)
@@ -331,10 +339,7 @@ namespace Game.EditorTools
 
             var heading = SetupUtility.CreateText("Heading", box, "Reset progress?", 34f, TextAlignmentOptions.Center, FontStyles.Bold, font);
             SetupUtility.TopBand(heading.rectTransform, 24f, 50f, 20f, 20f);
-            var message = SetupUtility.CreateText("Message", box,
-                "This deletes all your saved progress: your candies, everything you bought and every path you opened, " +
-                "including your cloud save. Then the game starts over from the beginning.\n\nThis can't be undone.",
-                23f, TextAlignmentOptions.Center, FontStyles.Normal, font);
+            var message = SetupUtility.CreateText("Message", box, ResetMessage, 23f, TextAlignmentOptions.Center, FontStyles.Normal, font);
             message.textWrappingMode = TextWrappingModes.Normal;
             SetupUtility.TopBand(message.rectTransform, 86f, 250f, 26f, 26f);
             SetupUtility.ShrinkToFit(message, 16f);
@@ -422,6 +427,30 @@ namespace Game.EditorTools
                 text.margin = room;
                 changed = true;
             }
+            return changed;
+        }
+
+        /// <summary>
+        /// Save slots: the Quit box says Get a Rest goes on from the last checkpoint, and the Reset Progress box says only
+        /// the slot being played is emptied (its old default text is replaced; a text edited by hand is kept). Set Up Save
+        /// Slot Menu calls it too. Running it again changes nothing.
+        /// </summary>
+        internal static bool UpdateSaveSlotTexts(PauseMenu menu)
+        {
+            bool changed = TidyQuitChoice(menu);
+            var serialized = new SerializedObject(menu);
+            if (serialized.FindProperty("resetConfirmPanel").objectReferenceValue is GameObject resetBox)
+            {
+                var message = resetBox.transform.Find("Message") != null ? resetBox.transform.Find("Message").GetComponent<TMP_Text>() : null;
+                if (message != null && message.text == OldResetMessage)
+                {
+                    Undo.RecordObject(message, "Update Reset Progress Text");
+                    message.text = ResetMessage;
+                    EditorUtility.SetDirty(message);
+                    changed = true;
+                }
+            }
+            if (changed) EditorSceneManager.MarkSceneDirty(menu.gameObject.scene);
             return changed;
         }
 

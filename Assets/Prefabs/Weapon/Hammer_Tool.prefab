@@ -6778,7 +6778,7 @@ MonoBehaviour:
   m_ParentInteractableObject: {fileID: 0}
   m_AttachTransform: {fileID: 9063157265675953}
   m_SecondaryAttachTransform: {fileID: 0}
-  m_UseDynamicAttach: 1
+  m_UseDynamicAttach: 0
   m_MatchAttachPosition: 1
   m_MatchAttachRotation: 1
   m_SnapToColliderVolume: 1
@@ -6940,13 +6940,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 982a9014cc7640d408db134d5e3bdf8f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Weapons.HitRumble
-  minHitSpeed: 1
-  fullHitSpeed: 12
-  minStrength: 0.2
-  maxStrength: 1
-  duration: 0.06
-  cooldown: 0.08
   ignoreTag: Player
+  quietAfterGrab: 0.3
 --- !u!114 &4084030493251924205
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -12,8 +12,10 @@ namespace Game.Combat
     /// "-8" / "+5" next to the number, and a heal makes the heart pop. The HUD shows for a few seconds after any change, then fades, and stays up
     /// while health is low. Once the player has died and got back up this run (a revive), the heart is cracked
     /// (until a new run). The player can hide it all in the pause menu (Health: hidden), e.g. to record video: the
-    /// hit and heal flashes on it (particles the PlayerHealth FSM switches on) are hidden too. It only
-    /// reads the FSM, so damage and heals still all happen there.
+    /// hit and heal flashes on it (particles the PlayerHealth FSM switches on) are hidden too. While a smoked boong's buff
+    /// is on (Player Buffs) the heart smokes white and stays in view, with a countdown under it for each
+    /// buff (its colour, no name), blinking red over the last 10 seconds. It only reads the FSM, so damage and heals still
+    /// all happen there.
     /// Goes on the HUD canvas under the Main Camera. Tools > 429 Game > Player > Set Up Health HUD sets it up.
     /// </summary>
     [DisallowMultipleComponent]
@@ -38,6 +40,9 @@ namespace Game.Combat
         [SerializeField] private ParticleSystem bonusSparkles;
         [Tooltip("The crack over the heart, shown once the player has died this run (optional).")]
         [SerializeField] private Image crack;
+        [Tooltip("White smoke round the heart while a boong buff is on (optional). It fades with the HUD. " +
+                 "Tools > 429 Game > Player > Add Buff Smoke To Health HUD makes it.")]
+        [SerializeField] private ParticleSystem buffSmoke;
 
         [Header("Colours")]
         [SerializeField] private Color healthColor = new(0.93f, 0.16f, 0.2f);
@@ -104,6 +109,21 @@ namespace Game.Combat
         private ParticleSystemRenderer[] effects = System.Array.Empty<ParticleSystemRenderer>();
         private bool effectsShown = true;
         private static readonly int ColorId = Shader.PropertyToID("_Color");
+
+        // Boong buffs: the countdowns under the heart (made when the first buff starts) and the smoke.
+        private const float TimerHeight = 46f;
+        private const float TimerWidth = 150f;
+        private const float TimerGap = 6f;
+        private const float TimerWarnSeconds = 10f;
+        private static readonly Color TimerWarnColor = new(1f, 0.35f, 0.3f);
+        private RectTransform timers;
+        private RectTransform timerPlate;
+        private TMP_Text[] timerTexts;
+        private int[] timerSeconds;
+        private int timerMask = -1;
+        private bool wasBuffed;
+        private ParticleSystemRenderer smokeRenderer;
+        private MaterialPropertyBlock smokeBlock;
 
         // Where the player's choice is kept (on for a new player).
         private const string ShownKey = "429 Game.HealthHUD";
@@ -286,9 +306,16 @@ namespace Game.Combat
                 }
             }
 
+            // A boong buff keeps the HUD up (its countdown is under the heart); when the last one ends, it fades as usual.
+            bool buffed = Game.Leveling.PlayerBuffs.AnyActive;
+            if (wasBuffed && !buffed) changedAt = time;
+            wasBuffed = buffed;
+
             float shown = time - changedAt;
-            group.alpha = !Shown ? 0f : alwaysShow || low ? 1f : 1f - Mathf.Clamp01((shown - showSeconds) / fadeSeconds);
+            group.alpha = !Shown ? 0f : alwaysShow || low || buffed ? 1f : 1f - Mathf.Clamp01((shown - showSeconds) / fadeSeconds);
             Sparkle(bonus && group.alpha > 0.01f, group.alpha);
+            Smoke(buffed && group.alpha > 0.01f, group.alpha);
+            UpdateTimers(buffed);
             if (effectsShown != Shown)
             {
                 effectsShown = Shown;
@@ -312,6 +339,121 @@ namespace Game.Combat
             if (sparkleRenderer == null) return;
             sparkleBlock.SetColor(ColorId, new Color(1f, 1f, 1f, alpha));
             sparkleRenderer.SetPropertyBlock(sparkleBlock);
+        }
+
+        // Buff smoke: white puffs round the heart while a boong buff is on, fading with the HUD like the sparkles.
+        private void Smoke(bool on, float alpha)
+        {
+            if (buffSmoke == null) return;
+            if (on && !buffSmoke.isEmitting) buffSmoke.Play(true);
+            else if (!on && buffSmoke.isEmitting) buffSmoke.Stop(true, alpha > 0.01f ? ParticleSystemStopBehavior.StopEmitting : ParticleSystemStopBehavior.StopEmittingAndClear);
+            if (!on && !buffSmoke.IsAlive(true)) return;
+            if (smokeRenderer == null)
+            {
+                smokeRenderer = buffSmoke.GetComponent<ParticleSystemRenderer>();
+                smokeBlock = new MaterialPropertyBlock();
+            }
+            if (smokeRenderer == null) return;
+            smokeBlock.SetColor(ColorId, new Color(1f, 1f, 1f, alpha));
+            smokeRenderer.SetPropertyBlock(smokeBlock);
+        }
+
+        // The countdowns under the heart: one per buff that's on, in its colour, "0:57", blinking red near the end.
+        private void UpdateTimers(bool buffed)
+        {
+            if (!buffed)
+            {
+                if (timers != null && timers.gameObject.activeSelf) timers.gameObject.SetActive(false);
+                timerMask = -1;
+                return;
+            }
+            if (!BuildTimers()) return;
+            if (!timers.gameObject.activeSelf) timers.gameObject.SetActive(true);
+
+            int mask = 0;
+            for (int i = 0; i < Game.Leveling.PlayerBuffs.Count; i++)
+            {
+                if (Game.Leveling.PlayerBuffs.IsActive((Game.Leveling.Buff)i)) mask |= 1 << i;
+            }
+            if (mask != timerMask) LayOutTimers(mask);
+
+            bool blinkOn = Mathf.Repeat(Time.time * 2f, 1f) < 0.6f;
+            for (int i = 0; i < timerTexts.Length; i++)
+            {
+                if ((mask & (1 << i)) == 0) continue;
+                var buff = (Game.Leveling.Buff)i;
+                float left = Game.Leveling.PlayerBuffs.SecondsLeft(buff);
+                int seconds = Mathf.CeilToInt(left);
+                if (seconds != timerSeconds[i])
+                {
+                    timerSeconds[i] = seconds;
+                    timerTexts[i].SetText("{0}:{1:00}", seconds / 60, seconds % 60);
+                }
+                timerTexts[i].color = left <= TimerWarnSeconds && blinkOn ? TimerWarnColor : Game.Leveling.PlayerBuffs.ColorOf(buff);
+            }
+        }
+
+        // One row per buff that's on, top down under the heart; the plate behind them as tall as they need.
+        private void LayOutTimers(int mask)
+        {
+            timerMask = mask;
+            int shown = 0;
+            for (int i = 0; i < timerTexts.Length; i++)
+            {
+                bool on = (mask & (1 << i)) != 0;
+                if (timerTexts[i].gameObject.activeSelf != on) timerTexts[i].gameObject.SetActive(on);
+                if (!on) continue;
+                timerTexts[i].rectTransform.anchoredPosition = new Vector2(0f, -TimerGap - TimerHeight * (shown + 0.5f));
+                timerSeconds[i] = -1;
+                shown++;
+            }
+            if (timerPlate != null) timerPlate.sizeDelta = new Vector2(TimerWidth, shown * TimerHeight + TimerGap * 2f);
+        }
+
+        // Made from the HUD's own parts (the number's font and overlay material, the plate's look), under the heart.
+        private bool BuildTimers()
+        {
+            if (timers != null) return true;
+            if (number == null) return false;
+            var anchor = heart != null ? heart : (RectTransform)transform;
+            var go = new GameObject("Buff Timers", typeof(RectTransform));
+            go.layer = gameObject.layer;
+            timers = (RectTransform)go.transform;
+            timers.SetParent(transform, false);
+            timers.anchorMin = timers.anchorMax = new Vector2(0.5f, 0.5f);
+            timers.pivot = new Vector2(0.5f, 1f);
+            timers.sizeDelta = new Vector2(TimerWidth, 0f);
+            float bottom = anchor.anchoredPosition.y - anchor.rect.height * anchor.pivot.y;
+            timers.anchoredPosition = new Vector2(anchor.anchoredPosition.x, bottom - 8f);
+
+            var plate = transform.Find("Plate");
+            if (plate != null)
+            {
+                timerPlate = (RectTransform)Instantiate(plate, timers, false);
+                timerPlate.name = "Plate";
+                timerPlate.anchorMin = timerPlate.anchorMax = new Vector2(0.5f, 1f);
+                timerPlate.pivot = new Vector2(0.5f, 1f);
+                timerPlate.anchoredPosition = Vector2.zero;
+            }
+
+            timerTexts = new TMP_Text[Game.Leveling.PlayerBuffs.Count];
+            timerSeconds = new int[timerTexts.Length];
+            for (int i = 0; i < timerTexts.Length; i++)
+            {
+                var text = Instantiate(number, timers, false);
+                text.name = ((Game.Leveling.Buff)i).ToString();
+                text.enableAutoSizing = false;
+                text.fontSize = 40f;
+                text.alignment = TextAlignmentOptions.Center;
+                text.textWrappingMode = TextWrappingModes.NoWrap;
+                var rect = text.rectTransform;
+                rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
+                rect.pivot = new Vector2(0.5f, 0.5f);
+                rect.sizeDelta = new Vector2(TimerWidth, TimerHeight);
+                text.gameObject.SetActive(false);
+                timerTexts[i] = text;
+            }
+            return true;
         }
 
         /// <summary>Moves the canvas to the Distance and Angles in front of the eyes (the setup menu calls it too).</summary>

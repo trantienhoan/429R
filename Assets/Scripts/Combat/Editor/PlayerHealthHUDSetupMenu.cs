@@ -359,6 +359,129 @@ namespace Game.EditorTools
             return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
         }
 
+        private const string SmokeTexture = "Assets/Lana Studio/Hyper Casual FX/Textures/Dust01.png";
+        private const string SmokeMaterialPath = MaterialFolder + "/HUD Smoke.mat";
+        private const string SmokeShader = "429/Particles Overlay";
+
+        /// <summary>
+        /// Adds the smoke round the heart that shows while a smoked boong's buff is on (the health HUD plays it
+        /// and fades it with itself): a "Buff Smoke" particle system under the heart, white cartoon puffs
+        /// (Lana's Dust01 sheet) on a see-through overlay material, Assets/Data/UI/HUD Smoke.mat. Safe to run again.
+        /// </summary>
+        [MenuItem("Tools/429 Game/Player/Add Buff Smoke To Health HUD")]
+        public static void AddBuffSmoke()
+        {
+            var hud = Object.FindAnyObjectByType<PlayerHealthHUD>(FindObjectsInactive.Include);
+            var heart = hud != null ? new SerializedObject(hud).FindProperty("heart").objectReferenceValue as RectTransform : null;
+            var shader = Shader.Find(SmokeShader);
+            var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(SmokeTexture);
+            if (hud == null || heart == null || shader == null || texture == null)
+            {
+                Debug.LogError($"[Health HUD] Needs the Health HUD (Set Up Health HUD) with its heart, the shader '{SmokeShader}' " +
+                               $"and {SmokeTexture}. Nothing changed.");
+                return;
+            }
+
+            SetupUtility.EnsureFolder(MaterialFolder);
+            var material = GetOrCreateMaterial(SmokeMaterialPath, () => new Material(shader) { name = "HUD Smoke" });
+            material.shader = shader;
+            material.mainTexture = texture;
+            material.renderQueue = 3999;     // over the heart like the sparkles, under the headset fade (4000)
+            EditorUtility.SetDirty(material);
+            AssetDatabase.SaveAssets();
+
+            var smoke = CreateSmoke(heart, material);
+            SetupUtility.SetReference(hud, "buffSmoke", smoke);
+            EditorSceneManager.MarkSceneDirty(hud.gameObject.scene);
+            Debug.Log("[Health HUD] The heart now smokes while a boong buff is on ('Buff Smoke' under the heart). Save the scene.", smoke);
+        }
+
+        // Cartoon smoke puffs rising from the lower half of the heart and drifting up over it, growing as they go. Sizes
+        // and speeds are in canvas units (like the sparkles), in local space so they follow the head.
+        private static ParticleSystem CreateSmoke(RectTransform heart, Material material)
+        {
+            var child = heart.Find("Buff Smoke");
+            ParticleSystem ps = child != null ? child.GetComponent<ParticleSystem>() : null;
+            if (ps == null)
+            {
+                var go = new GameObject("Buff Smoke", typeof(ParticleSystem));
+                Undo.RegisterCreatedObjectUndo(go, "Create Buff Smoke");
+                go.layer = heart.gameObject.layer;
+                go.transform.SetParent(heart, false);
+                ps = go.GetComponent<ParticleSystem>();
+            }
+            ps.transform.localPosition = new Vector3(0f, -25f, 0f);
+            ps.transform.localRotation = Quaternion.identity;
+            ps.transform.localScale = Vector3.one;
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+            var main = ps.main;
+            main.duration = 1f;
+            main.loop = true;
+            main.playOnAwake = false;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(1.2f, 1.9f);
+            main.startSpeed = 0f;
+            main.startSize = new ParticleSystem.MinMaxCurve(40f, 65f);
+            main.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
+            main.startColor = new ParticleSystem.MinMaxGradient(new Color(0.9f, 0.9f, 0.9f), Color.white);
+            main.gravityModifier = 0f;
+            main.simulationSpace = ParticleSystemSimulationSpace.Local;
+            main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+            main.maxParticles = 30;
+
+            var emission = ps.emission;
+            emission.enabled = true;
+            emission.rateOverTime = 10f;
+
+            var shape = ps.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Box;
+            shape.scale = new Vector3(110f, 40f, 10f);
+            shape.position = Vector3.zero;
+            shape.rotation = Vector3.zero;
+
+            var velocity = ps.velocityOverLifetime;
+            velocity.enabled = true;
+            velocity.space = ParticleSystemSimulationSpace.Local;
+            velocity.x = new ParticleSystem.MinMaxCurve(-15f, 15f);
+            velocity.y = new ParticleSystem.MinMaxCurve(30f, 60f);
+            velocity.z = new ParticleSystem.MinMaxCurve(0f, 0f);
+
+            var size = ps.sizeOverLifetime;
+            size.enabled = true;
+            size.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0f, 0.4f), new Keyframe(0.3f, 1f), new Keyframe(1f, 1.25f)));
+
+            var colour = ps.colorOverLifetime;
+            colour.enabled = true;
+            var fade = new Gradient();
+            fade.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                         new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(0.5f, 0.2f), new GradientAlphaKey(0.3f, 0.6f), new GradientAlphaKey(0f, 1f) });
+            colour.color = new ParticleSystem.MinMaxGradient(fade);
+
+            var spin = ps.rotationOverLifetime;
+            spin.enabled = true;
+            spin.z = new ParticleSystem.MinMaxCurve(-Mathf.PI / 4f, Mathf.PI / 4f);
+
+            // Dust01 is a 2 x 2 sheet of puffs: each particle is one of them, picked at random.
+            var sheet = ps.textureSheetAnimation;
+            sheet.enabled = true;
+            sheet.mode = ParticleSystemAnimationMode.Grid;
+            sheet.numTilesX = 2;
+            sheet.numTilesY = 2;
+            sheet.animation = ParticleSystemAnimationType.WholeSheet;
+            sheet.frameOverTime = new ParticleSystem.MinMaxCurve(0f);
+            sheet.startFrame = new ParticleSystem.MinMaxCurve(0f, 3.999f);
+
+            var renderer = ps.GetComponent<ParticleSystemRenderer>();
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            renderer.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
+            renderer.reflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.Off;
+            return ps;
+        }
+
         // Little green sparkles rising around the heart while health is above the start. Sizes and speeds are in canvas
         // units (the canvas is scaled to metres), so they stay the same size whatever distance the HUD is placed at.
         // They follow the head (local space). The HUD plays and stops them and fades them with itself.

@@ -4,8 +4,8 @@ using UnityEngine;
 namespace HutongGames.PlayMaker.Actions
 {
     [ActionCategory("Save")]
-    [Tooltip("The player reached a checkpoint, e.g. \"CP Bedroom\": quitting with Get a Rest and coming back goes on " +
-             "from here. Saved shortly after.")]
+    [Tooltip("The player reached a checkpoint, e.g. \"CP Bedroom\": the game saves at once (a small \"Saved\" sign shows), " +
+             "and starting this save slot again (e.g. after Get a Rest) goes on from here.")]
     public class SetCheckpoint : FsmStateAction
     {
         [RequiredField]
@@ -27,9 +27,10 @@ namespace HutongGames.PlayMaker.Actions
 
     [ActionCategory("Save")]
     [Tooltip("Picks where the game goes on from: sends the checkpoint's name as an event (e.g. \"CP Bedroom\"), or Start " +
-             "Over when there is none. Not after dying (the game starting, e.g. after Get a Rest): it goes to the saved " +
-             "checkpoint. After Dying (the game is over: Try Revive had no revive left): it starts a new run and goes to " +
-             "Start Over. Going to a checkpoint puts the player at Player Spot first. Waits for the save to be read first.")]
+             "Over when there is none. Not after dying (the game starting): it goes to the save slot's last checkpoint. " +
+             "After Dying (the game is over: Try Revive had no revive left): it starts a new run and goes to Start Over. " +
+             "Going to a checkpoint puts the player at Player Spot first. Waits until the player has picked a save slot " +
+             "and it has been read (the start menu), so this is also where the game waits at the start.")]
     public class GoToCheckpoint : FsmStateAction
     {
         [Tooltip("Ticked: the game is over (the player died). Unticked: the game is starting (goes on where they quit).")]
@@ -65,10 +66,12 @@ namespace HutongGames.PlayMaker.Actions
 
         private void TryGo()
         {
-            // The save is read in the Save Manager's Start; with no Save Manager there's no checkpoint to wait for.
+            // The save is read once a save slot is picked (Save Slot Menu); with no Save Manager there's no checkpoint
+            // to wait for.
             if (!Checkpoints.IsLoaded && SaveManager.Instance != null) return;
 
-            string target = afterDying.Value ? Checkpoints.Die() : Checkpoints.Current;
+            // Resume also tells the loading screen the game has gone on (the player is placed below, in this same call).
+            string target = afterDying.Value ? Checkpoints.Die() : Checkpoints.Resume();
             Finish();
             if (string.IsNullOrEmpty(target))
             {

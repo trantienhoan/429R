@@ -45,6 +45,7 @@ namespace Game.Leveling
     /// panel): Fist Size at Bonus Multiplier (10) times a normal point, Power (throws as Bonus Multiplier times a normal
     /// Throw Power point, and punches hit and push harder) and Extra Revive (one more revive every run, see Checkpoints:
     /// one more lucky coin to flip when the player goes down, see Revive Coins; and a higher health cap).
+    /// A smoked boong adds Toughness or Move Speed points for a while (Player Buffs); those are never saved.
     /// The level, the EXP and the points are kept in the save (Save Manager). Keep one in the scene;
     /// Tools > 429 Game > Player > Set Up Level System makes it, with its menu and its notice.
     /// </summary>
@@ -300,13 +301,24 @@ namespace Game.Leveling
         // A stat's points with its bonus stat's on top, each bonus point worth Bonus Multiplier normal ones.
         private float WithBonus(Stat stat, Stat bonus) => Worth(stat) + bonusMultiplier * Points(bonus);
 
-        // A stat's points as they count: a full Big Last Point stat's last point counts as Last Point Worth.
+        // A stat's points as they count: a full Big Last Point stat's last point counts as Last Point Worth. A boong's
+        // points for now (Player Buffs: Toughness, Move Speed) come on top, never as that last point, and aren't saved.
         private int Worth(Stat stat)
         {
             int p = Points(stat);
             if (p > 0 && p >= MaxPoints(stat) && bigLastPoint != null && Array.IndexOf(bigLastPoint, stat) >= 0)
                 p += lastPointWorth - 1;
-            return p;
+            return p + PlayerBuffs.ExtraPoints(stat);
+        }
+
+        /// <summary>
+        /// A boong buff that adds points (Player Buffs: Bone Boong's Toughness, Bus Boong's Move Speed) started or ended:
+        /// the walking speed is set again. Toughness needs nothing: it's read when needed. The points spent and the save
+        /// don't change.
+        /// </summary>
+        public static void BuffsChanged()
+        {
+            if (Instance != null) Instance.ApplySpeed();
         }
 
         /// <summary>The stat's name on the Level Up menu.</summary>

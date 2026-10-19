@@ -369,8 +369,9 @@ namespace Game.Combat
         private void Finish()
         {
             CleanUp();
-            // The view goes on darkening as the fall goes on: all the way for a game over, part way for a revive.
-            if (fade != null) fade.FadeOut(2f);
+            // All skulls: the view goes on darkening as the fall goes on to the game over. A clover: it stays as it is,
+            // and the player gets up from right here (Player Revive).
+            if (fade != null && Clovers == 0) fade.FadeOut(2f);
             IsFlipping = false;
             running = null;
         }

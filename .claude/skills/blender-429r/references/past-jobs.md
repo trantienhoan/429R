@@ -33,6 +33,12 @@ Start from the closest script. Each has a header comment saying what it does and
 | `roach_wingfix.py` | Wings that poked out of their lids pulled in. |
 | `webball_remodel.py` | Web ball re-modelled keeping its UVs in the same atlas patch. |
 
+## New models from a concept image
+
+| Script | What it did |
+|---|---|
+| `green_house/build_house.py` | 2026-10-19: Green_Roofed_House base model (K:/WORK_2026/08_04/Green_Roofed_House.blend, town game, not the VR game) from the user's concept, at Depot_v2's scale (concept base slab 560 px = Depot slab 12.3 m: 0.022 m/px across, 0.0228 up; concept looks down ~15 deg). 10 low-poly parts (551 faces; Depot_v2 has 467) parented to the walls object, in collection Green_Roofed_House, flat GRH_* materials sampled from the concept, sharp edges by angle (no modifier), no UVs yet. Main gable roof = thick band along an offset polyline (green + recessed white trim layer); annex = superellipse quarter (exponent 2.2) roof coming down to the ground. Rerunning replaces only Green_Roofed_House* objects. Helpers: `grid.py` (measuring grid on a concept), `sample_colors.py`, `inspect_green.py`/`inspect_ref.py` (read-only). Scale check: link Depot_v2 with `libraries.load(link=True)`, show it through a collection-instance empty, then remove the library. Opened the file in the live Blender (Depot_v2 was clean) and left it for the user to save. |
+
 ## Animation (see animation.md)
 
 Spider: `spider_appear/run/attack/attack2/death/walkback/alert/hit/idle/dodge/dodge_back/dodge_side/shoot_web.py`.

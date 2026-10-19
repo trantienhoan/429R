@@ -8,6 +8,7 @@ namespace Game.Locomotion
     /// Raises or lowers the player's view and hands by Offset, on top of the height the headset measures: for playing
     /// seated, or for anyone who wants to stand taller or shorter. With the XR Origin tracking from the floor, 0 means
     /// the game's floor is the real floor. The pause menu's Height buttons change it, and it's remembered on this device.
+    /// Bonus adds to it for a while without being remembered (the Green Boong buff makes the player 0.5 m taller).
     /// Goes on the XR Origin; Tools > 429 Game > Menu > Set Up Pause Menu adds it.
     /// </summary>
     [DisallowMultipleComponent]
@@ -42,6 +43,18 @@ namespace Game.Locomotion
                 PlayerPrefs.Save();
                 Apply();
             }
+        }
+
+        /// <summary>
+        /// Metres added on top of Offset while the game runs, never remembered: e.g. the Green Boong buff (Player Buffs)
+        /// eases it up to 0.5 and back. 0 = none.
+        /// </summary>
+        public static float Bonus { get; set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            Bonus = 0f;
         }
 
         /// <summary>Raises the player by this many Height steps (negative lowers them).</summary>
@@ -86,7 +99,7 @@ namespace Game.Locomotion
 
             var offsetTransform = origin.CameraFloorOffsetObject.transform;
             var position = offsetTransform.localPosition;
-            float height = baseHeight + offset;
+            float height = baseHeight + offset + Bonus;
             if (Mathf.Approximately(position.y, height)) return;
 
             position.y = height;

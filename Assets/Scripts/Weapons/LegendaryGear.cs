@@ -72,7 +72,9 @@ namespace Game.Weapons
         private XRGrabInteractable grab;
         private Vector3 baseScale;
         private float size = 1f;
-        private bool triggered;
+        // The hands pressing its trigger (a two-handed sword can have both): it stays big while any of them does.
+        private readonly HashSet<IXRInteractor> triggerHands = new();
+        private bool triggered => triggerHands.Count > 0;
         private bool started;
         private float endsAt;
         private RectTransform label;
@@ -150,18 +152,19 @@ namespace Game.Weapons
 
         private void OnLetGo(SelectExitEventArgs args)
         {
-            if (!grab.isSelected) triggered = false;
+            triggerHands.Remove(args.interactorObject);
+            if (!grab.isSelected) triggerHands.Clear();
         }
 
         private void OnTriggerPressed(ActivateEventArgs args)
         {
             if (!triggered && growSound != null) AudioSource.PlayClipAtPoint(growSound, transform.position);
-            triggered = true;
+            triggerHands.Add(args.interactorObject);
         }
 
         private void OnTriggerReleased(DeactivateEventArgs args)
         {
-            triggered = false;
+            triggerHands.Remove(args.interactorObject);
         }
 
         private void Update()

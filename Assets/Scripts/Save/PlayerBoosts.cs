@@ -9,8 +9,8 @@ namespace Game.Saving
     /// reset or lost) and the extra cap from the Max Health level-up stat (kept in the save with the level, see Player
     /// Level, which tells this how much it is). It works on the PlayerHealth FSM's floats: the cap is
     /// DefautPlayerHealth (the health the player starts and restarts with) and the health is PlayerHealth. When the save
-    /// is read the bonuses are added to the cap (and to the health, so the player starts full); Reset Progress takes
-    /// them off again.
+    /// is read the bonuses are added to the cap (and to the health, so the player starts full), also into the fresh FSM of
+    /// a reloaded scene (Re-Dream); Reset Progress takes them off again.
     /// </summary>
     public static class PlayerBoosts
     {
@@ -30,12 +30,17 @@ namespace Game.Saving
         // How much of the bonuses the PlayerHealth FSM's cap holds right now, so they're never added twice.
         private static float applied;
 
+        // The PlayerHealth FSM that holds them. A reloaded scene (e.g. Re-Dream) has a new one, back at its start value,
+        // so the bonuses go into it in full, once.
+        private static PlayMakerFSM appliedTo;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
         {
             HealthCapBonus = 0f;
             LevelHealthBonus = 0f;
             applied = 0f;
+            appliedTo = null;
             Changed = null;
         }
 
@@ -115,9 +120,16 @@ namespace Game.Saving
         private static void Apply(bool heal)
         {
             float total = HealthCapBonus + LevelHealthBonus;
+            bool found = Find(out var health, out var cap, out var fsm);
+            // Not the FSM holding the bonuses (the scene reloaded): its cap has none of them yet.
+            if (found && fsm != appliedTo)
+            {
+                appliedTo = fsm;
+                applied = 0f;
+            }
             float change = total - applied;
             if (Mathf.Abs(change) < 0.001f) return;
-            if (!Find(out var health, out var cap))
+            if (!found)
             {
                 Debug.LogWarning($"[PlayerBoosts] No '{HealthFsm}' FSM with '{HealthVariable}' and '{CapVariable}' found, so the health cap bonus ({total}) isn't applied.");
                 return;
@@ -127,10 +139,12 @@ namespace Game.Saving
             applied = total;
         }
 
-        private static bool Find(out FsmFloat health, out FsmFloat cap)
+        private static bool Find(out FsmFloat health, out FsmFloat cap) => Find(out health, out cap, out _);
+
+        private static bool Find(out FsmFloat health, out FsmFloat cap, out PlayMakerFSM found)
         {
             health = cap = null;
-            PlayMakerFSM found = null;
+            found = null;
             var player = HutongGames.PlayMaker.FsmVariables.GlobalVariables.FindFsmGameObject("Player");
             if (player != null && player.Value != null)
             {

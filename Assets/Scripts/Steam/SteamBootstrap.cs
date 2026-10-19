@@ -7,7 +7,8 @@ namespace Game.Steam
 {
     /// <summary>
     /// Starts Steam before the first scene loads and points the save system at a folder named after the player's
-    /// Steam ID (Saves/&lt;Steam ID&gt;), which is the folder Steam Auto-Cloud syncs. Nothing to add to the scene.
+    /// Steam ID (Saves/&lt;Steam ID&gt;, holding their save slots slot1.json to slot3.json), which is the folder Steam
+    /// Auto-Cloud syncs. The first time, the Local folder's save slots are copied in. Nothing to add to the scene.
     /// Without Steam (e.g. in the Editor with Steam closed), the game still plays and saves in the Local folder.
     /// </summary>
     public class SteamBootstrap : MonoBehaviour

@@ -9,8 +9,8 @@ namespace Game.Combat
 {
     /// <summary>
     /// Getting back up after dying, while the run has a revive left (see Checkpoints): instead of the game over, the
-    /// death fall stops part way (most of the way) and holds there for a moment (1-2 s), the player hears "Not yet", and the
-    /// fall plays backwards as they get up, at
+    /// death fall stops part way (most of the way; after the lucky coins, right where it was while they flew) and holds
+    /// there for a moment (1-2 s), the player hears "Not yet", and the fall plays backwards as they get up, at
     /// full health (or the share the lucky coins won: Revive Coins), with a wake-up aura (the level-up aura's burst,
     /// pushing enemies and loose things away) and the heart
     /// on the health HUD cracked for the rest of the run. Nothing can hurt them while they're down, nor for a moment
@@ -125,18 +125,43 @@ namespace Game.Combat
             if (!IsReviving) StartCoroutine(Reviving());
         }
 
+        /// <summary>
+        /// The player just went down and the lucky coins are coming: nothing can hurt them meanwhile (a hit used to start
+        /// the death over and throw the coins away). Revive keeps it so until they're safely up; a game over's Dying...
+        /// keeps it off too.
+        /// </summary>
+        public void GoDown()
+        {
+            SetDamage(false);
+        }
+
+        /// <summary>The coins were called off and nobody gets up this way: hits count again.</summary>
+        public void CancelDown()
+        {
+            if (!IsReviving) SetDamage(true);
+        }
+
         private IEnumerator Reviving()
         {
             IsReviving = true;
             SetDamage(false);
+            bool coins = afterCoins;
 
             // The death fall stops part way; wait till it's there (it starts as the camera drops, a frame later), with a
-            // limit in case it never does.
+            // limit in case it never does. After the lucky coins it stops right where it was while they flew: a clover
+            // gets the player up from there, without falling any further first.
             var fall = FindAnyObjectByType<DeathCameraFall>();
-            if (fall != null) fall.StopPartWay(fallShare);
+            if (fall != null)
+            {
+                if (coins) fall.StopHere();
+                else fall.StopPartWay(fallShare);
+            }
             for (float waited = 0f; fall != null && !fall.IsHolding && waited < 3f; waited += Time.deltaTime) yield return null;
+            // Getting up from part of the fall takes part of the time (at least half), so it's as gentle as a full one.
+            float rise = riseSeconds;
+            if (coins && fall != null && fall.IsDown) rise *= Mathf.Clamp(fall.Progress / Mathf.Max(0.05f, fallShare), 0.5f, 1f);
 
-            var range = afterCoins ? holdAfterCoins : holdSeconds;
+            var range = coins ? holdAfterCoins : holdSeconds;
             float hold = Random.Range(Mathf.Min(range.x, range.y), Mathf.Max(range.x, range.y));
             if (voiceDelay < 0f)
             {
@@ -155,11 +180,11 @@ namespace Game.Combat
             PlayerBoosts.HealToShare(NextHealthShare);
             NextHealthShare = 1f;
             afterCoins = false;
-            if (fall != null && fall.IsDown) fall.Rise(riseSeconds);
+            if (fall != null && fall.IsDown) fall.Rise(rise);
             else BackOnRig();
             var aura = FindAnyObjectByType<LevelUpAura>();
             if (aura != null) aura.BurstShare(auraStrength);
-            yield return new WaitForSeconds(riseSeconds);
+            yield return new WaitForSeconds(rise);
 
             // In case the fall didn't put the camera back (e.g. no Death Camera Fall).
             BackOnRig();

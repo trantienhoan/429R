@@ -33,6 +33,12 @@ namespace Game.Combat
             set => damage = Mathf.Max(0f, value);
         }
 
+        /// <summary>
+        /// Extra damage multiplier set while the game runs (not saved), on top of Damage: e.g. 1.5 while a weapon is held in
+        /// two hands (TwoHandedGrip), or 2 for punches while the Elon Boong buff is on (PlayerBuffs). 1 = none.
+        /// </summary>
+        [System.NonSerialized] public float boost = 1f;
+
         /// <summary>The Power of whatever made this collision, or 1 if it has none.</summary>
         public static float Of(Collision collision)
         {
@@ -43,9 +49,20 @@ namespace Game.Combat
         /// <summary>The Damage of whatever made this collision (with Weapon Efficiency, but not for fists), or 1 if it has none.</summary>
         public static float DamageOf(Collision collision)
         {
-            var weapon = Find(collision);
+            return DamageOf(Find(collision));
+        }
+
+        /// <summary>The Damage of the weapon on this body, counted as for its hits (e.g. a fist ball's, with its boost), or 1 if it has none.</summary>
+        public static float DamageOf(Rigidbody body)
+        {
+            return DamageOf(body != null && body.TryGetComponent(out WeaponPower weapon) ? weapon : null);
+        }
+
+        private static float DamageOf(WeaponPower weapon)
+        {
             if (weapon == null) return 1f;
-            return Fist.IsFistBall(weapon) ? weapon.damage : weapon.damage * Game.Leveling.PlayerLevel.WeaponDamageScale;
+            float scale = Fist.IsFistBall(weapon) ? weapon.damage : weapon.damage * Game.Leveling.PlayerLevel.WeaponDamageScale;
+            return scale * weapon.boost;
         }
 
         /// <summary>Whether whatever made this collision is a weapon, a fist or a throwable (has a Weapon Power).</summary>

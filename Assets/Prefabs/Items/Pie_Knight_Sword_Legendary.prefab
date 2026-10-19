@@ -30,6 +30,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2890917255737552713, guid: ef8365187c46a5f4a89ca65f4ce66f18,
         type: 3}
+      propertyPath: m_SelectMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2890917255737552713, guid: ef8365187c46a5f4a89ca65f4ce66f18,
+        type: 3}
       propertyPath: m_Activated.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
       value: 0
       objectReference: {fileID: 0}
@@ -181,6 +186,14 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1893869941030044443}
+    - targetCorrespondingSourceObject: {fileID: 2637194590290240005, guid: ef8365187c46a5f4a89ca65f4ce66f18,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 9059434139185218258}
+    - targetCorrespondingSourceObject: {fileID: 2637194590290240005, guid: ef8365187c46a5f4a89ca65f4ce66f18,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2359753173079707768}
   m_SourcePrefab: {fileID: 100100000, guid: ef8365187c46a5f4a89ca65f4ce66f18, type: 3}
 --- !u!1 &1267125770971812513 stripped
 GameObject:
@@ -232,3 +245,42 @@ MonoBehaviour:
     type: 3}
   poofEffectSize: 0.4
   poofSound: {fileID: 8300000, guid: 2a7bd8da8a39cdb40ba90aefa1fff9c8, type: 3}
+--- !u!114 &9059434139185218258
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2754509034827852370}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0a1302d0d134fa8a2a5b3bf4aec3c20, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.XR.Interaction.Toolkit::UnityEngine.XR.Interaction.Toolkit.Transformers.XRGeneralGrabTransformer
+  m_PermittedDisplacementAxes: 7
+  m_ConstrainedAxisDisplacementMode: 1
+  m_TwoHandedRotationMode: 1
+  m_AllowOneHandedScaling: 1
+  m_AllowTwoHandedScaling: 0
+  m_OneHandedScaleSpeed: 0.5
+  m_ThresholdMoveRatioForScale: 0.05
+  m_ClampScaling: 1
+  m_MinimumScaleRatio: 0.25
+  m_MaximumScaleRatio: 2
+  m_ScaleMultiplier: 0.25
+--- !u!114 &2359753173079707768
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2754509034827852370}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f3dd71ba53fcc04b85d97eff33ea6c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Weapons.TwoHandedGrip
+  damageBoost: 1.5
+  wearBoost: 2
+  secondHandReach: 0.3
+  keepGripWhenOneLetsGo: 1

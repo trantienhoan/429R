@@ -31,6 +31,10 @@ namespace Game.Combat
     /// A fist doesn't pull things from a distance: with the trigger squeezed too, the hand only grabs what's within its
     /// reach, so making a fist while pointing at something doesn't yank it into the hand instead of punching it.
     /// Pointing (trigger let go) and squeezing the grip still pulls things from afar.
+    /// A smoked boong's buff (Player Buffs) makes punches stronger for a while: with the Elon Boong the ball reaches 0.5 m
+    /// past the knuckles, punches do double damage, and every punch that hits something explodes once more where it hit
+    /// (Elon Boong, never hurting the player); the Elon Boong (0.5 m) and the Green Boong (5 m) make every flying punch
+    /// fly farther.
     /// Goes on each controller (Left Controller, Right Controller), next to the hand model.
     /// </summary>
     [DisallowMultipleComponent]
@@ -192,11 +196,49 @@ namespace Game.Combat
         [Min(0.01f)]
         [SerializeField] private float goodPunchEffectSize = 0.5f;
 
+        [Header("Elon Boong (a smoked boong's buff, see Player Buffs)")]
+        [Tooltip("While the Elon Boong buff is on, every punch that hits something explodes once more where it hit, with " +
+                 "these effects (the bottles': Flash_round_yellow, Hit_Blast, Smoke_Blast). Empty: the Good Punch Effect. " +
+                 "Tools > 429 Game > Player > Set Up Boong Buffs fills them in.")]
+        [SerializeField] private GameObject[] boongBlastEffects = System.Array.Empty<GameObject>();
+        [Tooltip("Size of those effects, compared with their prefabs (made for a blast about 2 m across).")]
+        [Min(0.01f)]
+        [SerializeField] private float boongBlastEffectSize = 0.3f;
+        [SerializeField] private AudioClip boongBlastSound;
+        [Range(0f, 1f)]
+        [SerializeField] private float boongBlastVolume = 0.45f;
+        [Tooltip("How far that explosion reaches, in metres.")]
+        [Min(0.05f)]
+        [SerializeField] private float boongBlastRadius = 0.6f;
+        [Tooltip("Health everything in it loses, on top of the punch (which does double damage while the buff is on). It " +
+                 "never hurts the player.")]
+        [Min(0f)]
+        [SerializeField] private float boongBlastDamage = 1f;
+        [Tooltip("How fast it pushes loose things away, in metres per second.")]
+        [Min(0f)]
+        [SerializeField] private float boongBlastPush = 2f;
+        [Tooltip("Shortest time between two of these explosions from one hand, in seconds (a Triple Punch's three fists " +
+                 "landing together explode once).")]
+        [Min(0f)]
+        [SerializeField] private float boongBlastEvery = 0.2f;
+
         // Where the fist is when the bones can't be found: a little in front of the controller.
         private static readonly Vector3 FallbackPoint = new(0f, -0.01f, 0.05f);
-        // Farther than this from the hand (stuck on a wall), the ball jumps back to it.
+        // Farther than this from the hand (stuck on a wall), the ball jumps back to it. So it does when the point it
+        // follows jumps this far in one step (a snap turn, a teleport), instead of sweeping across.
         private const float SnapDistance = 0.3f;
         private const float MaxSpeed = 25f;
+        // The Elon Boong reach: the ball moves out from the knuckles (and catches up after being held back) only this
+        // much faster than the hand itself moves, in metres per second, so closing a fist or turning the hand next to
+        // something isn't a punch (below what PlayMaker breakables and the tip board count as a hit).
+        private const float ReachOutSpeed = 2f;
+        // The play area turning or moving more than this in one physics step is a snap turn or a teleport, not walking.
+        private const float RigJumpDegrees = 5f;
+        private const float RigJumpDistance = 0.1f;
+        // A pooled effect copy is busy this long after it starts, in seconds (Effect Pool's Lifetime).
+        private const float EffectBusySeconds = 3f;
+        // Most copies of each Elon Boong explosion effect made ready at load.
+        private const int MaxBoongBlastCopies = 15;
         // Things this close to the hand, in metres, are within its reach (the same as Gentle Far Grab's far distance).
         private const float Reach = 0.4f;
         // A punch starts when the hand moves this fast (metres per second)...
@@ -212,8 +254,9 @@ namespace Game.Combat
         private const float LongMoveSeconds = 0.7f;
         // Shortest time between two flying punches from one hand.
         private const float FlyCooldown = 0.25f;
-        // Most flying fists one hand has out at once (a Triple Punch is 3); past it, the oldest is thrown again.
-        private const int MaxFlyers = 9;
+        // Fewest flying fists one hand may have out at once (a Triple Punch is 3); punches that fly far allow more (Max
+        // Flyers). Past it, the one nearest the end of its flight is thrown again.
+        private const int MinFlyers = 9;
         // How fast the flying fist flies, in metres per second; its damage is worked out from the punch's own speed.
         private const float FlySpeed = 8f;
         // Punches slower than this (metres per second) don't send things flying, and nothing leaves faster than Max.
@@ -245,7 +288,6 @@ namespace Game.Combat
         private SkinnedMeshRenderer handSkin;
         // Flying fists, made when first needed and used again once they've stopped.
         private readonly List<FlyingFist> flyers = new();
-        private int reuseFlyer;
         private readonly List<Collider> playerParts = new();
         // The punch being thrown, in the play area's space (the controller's parent).
         private bool hasLastHand;
@@ -264,6 +306,18 @@ namespace Game.Combat
         private float lastBallHit = -1f;
         private float nextFly;
         private float nextPuff;
+        private float nextBoongBlast;
+        // The Elon Boong's explosion effects: Boong Blast Effects, or the Good Punch Effect when that's empty.
+        private GameObject[] boongEffects;
+        // The Elon Boong reach: how far out from the knuckles the ball is now (world space, moving out at Reach Out
+        // Speed), and the point it followed last physics step.
+        private Vector3 reachOut;
+        private Vector3 lastTarget;
+        // The play area (the controller's parent) at the last physics step, to tell a snap turn or teleport.
+        private bool hasArea;
+        private Matrix4x4 lastArea;
+        private Quaternion lastAreaTurn;
+        private Vector3 lastAreaPosition;
 
         private enum Move { None, Jab, Swing, Uppercut }
 
@@ -349,6 +403,22 @@ namespace Game.Combat
             MakeBall();
             // Ready at load, so the first good punch doesn't stutter.
             Game.EffectPool.Warm(goodPunchEffect);
+            // The Elon Boong's explosions too, with enough copies for a hand blasting as often as it may (Boong Blast
+            // Every) for as long as a copy stays busy, so the first Elon fight doesn't make them mid-punch. The other
+            // hand and the bottles share them, so nothing more is made for those.
+            boongEffects = HasAny(boongBlastEffects) ? boongBlastEffects : new[] { goodPunchEffect };
+            int copies = Mathf.Clamp(Mathf.CeilToInt(EffectBusySeconds / Mathf.Max(boongBlastEvery, 0.01f)), 1, MaxBoongBlastCopies);
+            foreach (var effect in boongEffects) Game.EffectPool.Warm(effect, copies);
+        }
+
+        private static bool HasAny(GameObject[] things)
+        {
+            if (things == null) return false;
+            foreach (var thing in things)
+            {
+                if (thing != null) return true;
+            }
+            return false;
         }
 
         private void OnEnable()
@@ -416,15 +486,66 @@ namespace Game.Combat
                 // A swing and an uppercut land harder.
                 weapon.Power *= MovePower(CurrentMove);
             }
-            var target = FistPoint();
+            // The Elon Boong buff: punches do double damage.
+            weapon.boost = Game.Leveling.PlayerBuffs.PunchDamage;
+            CarryOnRigJump();
+            // ...and the ball reaches out past the knuckles, along the hand (0 without the buff), but only at Reach Out
+            // Speed on top of the hand's own movement: closing a fist or turning the hand doesn't throw it out.
+            var hand = FistPoint();
+            if (closed)
+                reachOut = Vector3.MoveTowards(reachOut, transform.forward * Game.Leveling.PlayerBuffs.PunchReach, ReachOutSpeed * Time.fixedDeltaTime);
+            var target = hand + reachOut;
             var gap = target - body.position;
-            if (!closed || gap.sqrMagnitude > SnapDistance * SnapDistance)
+            var targetStep = target - lastTarget;
+            lastTarget = target;
+            float snap = SnapDistance + reachOut.magnitude;
+            if (!closed || gap.sqrMagnitude > snap * snap || targetStep.sqrMagnitude > SnapDistance * SnapDistance)
             {
-                body.position = target;
+                // Back to the hand, never straight out to the reach, so it can't jump through a wall: it goes out by
+                // physics from there, slowly again.
+                body.position = hand;
                 body.linearVelocity = Vector3.zero;
+                reachOut = Vector3.zero;
+                lastTarget = hand;
                 return;
             }
-            body.linearVelocity = Vector3.ClampMagnitude(gap / Time.fixedDeltaTime, MaxSpeed);
+            var velocity = Vector3.ClampMagnitude(gap / Time.fixedDeltaTime, MaxSpeed);
+            bool reaching = reachOut != Vector3.zero;
+            // Reaching out, the ball never moves faster than the point it follows plus Reach Out Speed, so after being
+            // held back (by a wall, by something it rests on) it doesn't shoot out to catch up.
+            if (reaching) velocity = Vector3.ClampMagnitude(velocity, targetStep.magnitude / Time.fixedDeltaTime + ReachOutSpeed);
+            body.linearVelocity = velocity;
+            // Reaching out (just closed, or the hand turning) the ball moves faster than the hand does: only the hand's
+            // own speed hits, measured against the speed it's about to move at.
+            if (reaching)
+            {
+                float newSpeed = body.linearVelocity.magnitude;
+                if (newSpeed > 0.01f)
+                    weapon.Power = Mathf.Min(weapon.Power, Power * Mathf.Clamp01(handVelocity.magnitude / newSpeed) * MovePower(CurrentMove));
+            }
+        }
+
+        // A snap turn or a teleport moves the whole play area at once (a hand near the face can jump less than Snap
+        // Distance): the ball jumps along with it, so it doesn't sweep through the air to catch up and hit whatever is
+        // on the way. Walking and smooth turning move the play area a little each step and are left to the physics.
+        private void CarryOnRigJump()
+        {
+            var area = transform.parent;
+            if (area == null) return;
+            var now = area.localToWorldMatrix;
+            var turn = area.rotation;
+            if (hasArea && (Quaternion.Angle(turn, lastAreaTurn) > RigJumpDegrees ||
+                            (area.position - lastAreaPosition).sqrMagnitude > RigJumpDistance * RigJumpDistance))
+            {
+                var carry = now * lastArea.inverse;
+                body.position = carry.MultiplyPoint3x4(body.position);
+                lastTarget = carry.MultiplyPoint3x4(lastTarget);
+                reachOut = carry.MultiplyVector(reachOut);
+            }
+            lastArea = now;
+            lastAreaTurn = turn;
+            lastAreaPosition = area.position;
+            hasArea = true;
         }
 
         // Called by the ball (or the flying fist) when it hits something: what the punch does besides the damage
@@ -459,7 +580,7 @@ namespace Game.Combat
                     if (enemy.IsHead(point))
                     {
                         // A knock-out that hurt: the strongest buzz.
-                        if (enemy.KnockOut(punchSpeed * Power * headPower, 1.5f, uppercutPush * 1.5f, knockOutSeconds))
+                        if (enemy.KnockOut(punchSpeed * Power * headPower, 1.5f, uppercutPush * 1.5f, knockOutSeconds, WeaponPower.DamageOf(hitter)))
                             HitBuzz.Buzz(rumbler, 6f, true);
                         puff = 2f;
                     }
@@ -469,7 +590,9 @@ namespace Game.Combat
                     }
                 }
             }
-            if (flying || move != Move.None || punchSpeed >= jabSpeed) ShowGoodPunch(collision, puff);
+            // The Elon Boong's explosion has its own smoke, so the good punch's puff isn't shown on top.
+            bool blasted = BoongBlast(collision, hitter);
+            if (!blasted && (flying || move != Move.None || punchSpeed >= jabSpeed)) ShowGoodPunch(collision, puff);
             // The hand buzzes only if the punch hurt something, as hard as it hurt (Hit Buzz): enemies and furniture with
             // Enemy Hit Damage report it themselves; PlayMaker breakables are watched for a moment.
             HitBuzz.Watch(collision, hitter);
@@ -490,7 +613,8 @@ namespace Game.Combat
                 if (force == null || System.Array.Find(fsm.FsmStates, state => state.Name == "Check force") == null) continue;
                 // Already hurt by this hit (or by one just before): not twice.
                 if (fsm.ActiveStateName != "Wait for Collision" && fsm.ActiveStateName != "shake" && fsm.ActiveStateName != "Check force") continue;
-                force.Value = punchSpeed * pumpkinForce * Game.Leveling.PlayerLevel.PunchPowerScale;
+                // The Elon Boong buff's double damage counts here too.
+                force.Value = punchSpeed * pumpkinForce * Game.Leveling.PlayerLevel.PunchPowerScale * Game.Leveling.PlayerBuffs.PunchDamage;
                 fsm.SetState("Check force");
             }
         }
@@ -527,6 +651,19 @@ namespace Game.Combat
             thing.AddForceAtPosition(direction * (wanted - has), Vector3.Lerp(at, thing.worldCenterOfMass, 0.7f), ForceMode.VelocityChange);
         }
 
+        // The Elon Boong buff: a punch (the fist's own or a flying one) that hits anything explodes once more where it hit,
+        // a small blast that hurts and pushes what's around it but never the player. Once per Boong Blast Every per hand,
+        // as a hit can be reported several times in one step. True if it went off.
+        private bool BoongBlast(Collision collision, Rigidbody hitter)
+        {
+            if (!Game.Leveling.PlayerBuffs.ExplodingPunches || Time.time < nextBoongBlast) return false;
+            nextBoongBlast = Time.time + boongBlastEvery;
+            var at = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
+            Game.Weapons.Blast.Explode(at, boongBlastRadius, boongBlastDamage, boongBlastPush, hitter, boongEffects,
+                boongBlastSound, boongBlastVolume, null, false, boongBlastEffectSize);
+            return true;
+        }
+
         // A puff where a good punch landed (bigger for a knock-out); the copy is destroyed after it has played.
         private void ShowGoodPunch(Collision collision, float scale)
         {
@@ -541,10 +678,15 @@ namespace Game.Combat
             closed = true;
             // Power and size are read each time, so they can be changed while playing.
             weapon.Power = Power;
+            weapon.boost = Game.Leveling.PlayerBuffs.PunchDamage;
             ball.radius = radius * grown;
-            // Starts right at the hand, so it doesn't sweep through whatever is between.
-            body.position = FistPoint();
+            // Starts right at the hand, so it doesn't sweep through whatever is between (with the Elon Boong it then
+            // reaches out slowly).
+            var hand = FistPoint();
+            body.position = hand;
             body.linearVelocity = Vector3.zero;
+            reachOut = Vector3.zero;
+            lastTarget = hand;
             ball.enabled = true;
             if (formRumble > 0f) HitBuzz.Other(rumbler, formRumble, 0.05f);
         }
@@ -757,7 +899,8 @@ namespace Game.Combat
             return move == Move.Jab ? size : size * bigMoveSize;
         }
 
-        // Sends a flying fist: one that has stopped, or a new one (or, with too many out, the oldest again).
+        // Sends a flying fist: one that has stopped, or a new one (or, with too many out, the one nearest the end of its
+        // flight again).
         private void Throw(Vector3 from, Vector3 direction, float reach, float hitSpeed, Move move, float flyRadius)
         {
             FlyingFist flyer = null;
@@ -772,10 +915,31 @@ namespace Game.Combat
             if (flyer == null)
             {
                 flyers.RemoveAll(gone => gone == null);
-                if (flyers.Count < MaxFlyers) flyers.Add(flyer = MakeFlyer());
-                else flyer = flyers[reuseFlyer++ % flyers.Count];
+                if (flyers.Count < MaxFlyers()) flyers.Add(flyer = MakeFlyer());
+                else
+                {
+                    foreach (var busy in flyers)
+                    {
+                        if (flyer == null || busy.LeftToFly < flyer.LeftToFly) flyer = busy;
+                    }
+                }
             }
-            flyer.Launch(from, direction, reach, hitSpeed, move, flyRadius);
+            // The Elon and Green Boong buffs: every fist flies farther by the same metres (not more for a Triple Punch's
+            // farther ones).
+            flyer.Launch(from, direction, reach + Game.Leveling.PlayerBuffs.FlyReach, hitSpeed, move, flyRadius);
+        }
+
+        // Most flying fists one hand may have out at once: as many as it can throw (a punch every Fly Cooldown, three
+        // with Triple Punch) while the first of them still flies its farthest (Fist Size and the buffs included) and
+        // shrinks away, so none is taken back mid-flight. They're only made when needed.
+        private int MaxFlyers()
+        {
+            float farthest = Mathf.Max(jabReach.x, jabReach.y) * Mathf.Lerp(1f, maxReachScale, Game.Leveling.PlayerLevel.PunchReachGrowth);
+            if (TriplePunch) farthest *= 1f + 2f * tripleReach;
+            farthest += Game.Leveling.PlayerBuffs.FlyReach;
+            // A physics step or two more, as it stops and fades step by step.
+            float seconds = farthest / FlySpeed + FlyingFist.FadeSeconds + 2f * Time.fixedDeltaTime;
+            return Mathf.Max(MinFlyers, (TriplePunch ? 3 : 1) * Mathf.CeilToInt(seconds / FlyCooldown));
         }
 
         private Vector3 InPlayArea(Vector3 point)
@@ -963,8 +1127,8 @@ namespace Game.Combat
         /// </summary>
         private class FlyingFist : MonoBehaviour
         {
-            // How long the echo takes to shrink away once it has stopped, in seconds.
-            private const float FadeSeconds = 0.12f;
+            /// <summary>How long the echo takes to shrink away once it has stopped, in seconds.</summary>
+            public const float FadeSeconds = 0.12f;
 
             public Fist owner;
             public Transform echo;
@@ -987,6 +1151,8 @@ namespace Game.Combat
             public float HitSpeed => hitSpeed;
             public Move Thrown => move;
             public Vector3 Direction => direction;
+            /// <summary>How far it still has to fly, in metres; below 0 once it has stopped (the more shrunk away, the lower).</summary>
+            public float LeftToFly => done ? -fade : reach - flown;
             public SphereCollider Ball => ball != null ? ball : ball = GetComponent<SphereCollider>();
 
             private void Awake()
@@ -1026,6 +1192,8 @@ namespace Game.Combat
                 Ball.radius = Mathf.Max(flyRadius, 0.001f);
                 Ball.enabled = true;
                 weapon.Power = owner.Power * punchSpeed / FlySpeed;
+                // The Elon Boong buff: double damage.
+                weapon.boost = Game.Leveling.PlayerBuffs.PunchDamage;
                 hitSpeed = punchSpeed;
                 direction = towards.normalized;
                 reach = Mathf.Max(distance, 0.01f);

@@ -28,7 +28,8 @@ Transform:
   m_LocalPosition: {x: -3.1763735e-24, y: 0.0016328476, z: -7.298739e-12}
   m_LocalScale: {x: 1, y: 1, z: 0.99999994}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1854646780338656797}
   m_Father: {fileID: 6852657430104659087}
   m_LocalEulerAnglesHint: {x: 2.7373083, y: -0.0000136759945, z: -0.0000006531137}
 --- !u!1 &2988229434982645089
@@ -61,6 +62,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 821773403209751026}
+  - {fileID: 4897034210007727222}
   m_Father: {fileID: 7833213749487660972}
   m_LocalEulerAnglesHint: {x: 3.008673, y: -0.000017326729, z: -0.00000090942996}
 --- !u!1 &3205803870197947175
@@ -10453,6 +10455,7 @@ GameObject:
   - component: {fileID: 3259413797538120129}
   - component: {fileID: 8932541414998510745}
   - component: {fileID: 5134683125254144010}
+  - component: {fileID: 6460556640500290498}
   m_Layer: 0
   m_Name: Hammer_Boong_Bone
   m_TagString: Weapon
@@ -12327,13 +12330,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 982a9014cc7640d408db134d5e3bdf8f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Weapons.HitRumble
-  minHitSpeed: 1
-  fullHitSpeed: 12
-  minStrength: 0.2
-  maxStrength: 1
-  duration: 0.06
-  cooldown: 0.08
   ignoreTag: Player
+  quietAfterGrab: 0.3
 --- !u!114 &5134683125254144010
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12348,6 +12346,51 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.WeaponPower
   power: 2
   damage: 1.6
+--- !u!114 &6460556640500290498
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4337052619155732277}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 321003ad1535f0845824209ab81e5a6d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Weapons.BoongSmoke
+  buff: 1
+  buffSeconds: 60
+  inhale: {fileID: 4897034210007727222}
+  inhaleRadius: 0.035
+  burn: {fileID: 1854646780338656797}
+  burnRadius: 0.05
+  upAxis: {x: 0, y: 0.9291642, z: 0.36966747}
+  maxTilt: 75
+  fireSeconds: 2.5
+  animator: {fileID: 9003683420464605276}
+  fireState: Fire
+  flame: {fileID: 4101935095896382039}
+  shakePart: {fileID: 6508962095202080113}
+  shake: 0.005
+  swellPart: {fileID: 0}
+  swell: 0.25
+  throb: 0.05
+  smoke: {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac, type: 3}
+  smokeSize: {x: 0.008, y: 0.018}
+  igniteSound: {fileID: 8300000, guid: 97d2e1dfb0c1d454cb1ef3d2f8ce2511, type: 3}
+  bubbleSound: {fileID: 8300000, guid: 898328a8c2e9ea548808f6e92363476c, type: 3}
+  bubbleVolume: 0.9
+  radius: 1
+  damage: 3
+  push: 3
+  breakApart: 1
+  effects:
+  - {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
+  - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}
+  - {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac, type: 3}
+  effectSize: 0.6
+  sound: {fileID: 8300000, guid: 0c38739de2059ac40ab5b60a42fd1c5f, type: 3}
+  volume: 0.9
 --- !u!1 &4599184892867418748
 GameObject:
   m_ObjectHideFlags: 0
@@ -12735,6 +12778,68 @@ Transform:
   m_Children: []
   m_Father: {fileID: 3675610110980597232}
   m_LocalEulerAnglesHint: {x: 15, y: 180, z: 0}
+--- !u!1 &5856700866854677810
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1854646780338656797}
+  m_Layer: 0
+  m_Name: Burn
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1854646780338656797
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5856700866854677810}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.16894852, y: 0.00000011749568, z: 0.00000002014018, w: 0.9856249}
+  m_LocalPosition: {x: 0.00018000002, y: 0.0017887149, z: 0.00011206379}
+  m_LocalScale: {x: 0.01, y: 0.010000001, z: 0.010000002}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 9152335203936688782}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &8445409999898942927
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4897034210007727222}
+  m_Layer: 0
+  m_Name: Inhale
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4897034210007727222
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8445409999898942927}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.6882998, y: 0.00000010953636, z: -0.0000001039304, w: 0.72542644}
+  m_LocalPosition: {x: 0.00008999983, y: 0.00029388358, z: -0.00055322354}
+  m_LocalScale: {x: 0.01, y: 0.01, z: 0.01}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 806551545995866534}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8725469567943663991
 GameObject:
   m_ObjectHideFlags: 0

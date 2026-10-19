@@ -13,8 +13,10 @@ namespace Game.EditorTools
     /// Living Room ("3 - LivingRoom"), the Living Room's second part ("Scale LR": grown to 1.5, walls up again for
     /// Pumpkin_7), the Rooftop whack ("Prepare_Whack_6") and the boss fight ("Damage The Lid": after the whack, where the
     /// tree of light grows). After dying, Recreate goes to "Checkpoint?", which sends the checkpoint's name (one revive a
-    /// run) or FINISHED (start over: Walk Tuttorial). As the game starts, Init - Stage1 goes to "Resume?", which continues
-    /// at the saved checkpoint. Each checkpoint has a "CP ..." state that rebuilds what Game Over cleared (the sky, the
+    /// run) or FINISHED (start over: Walk Tuttorial). As the game starts, Init - Stage1 goes to "Resume?", which waits
+    /// until the player has picked a save slot (the start menu) and continues at that slot's saved checkpoint (the
+    /// loading screen hides the move). Reaching a checkpoint saves at once. Each checkpoint has a "CP ..." state that
+    /// rebuilds what Game Over cleared (the sky, the
     /// room) and then joins the normal chain. Beating the game starts a new run ("clean all"). Running it again leaves
     /// what's already there, and only re-saves the states it changes.
     /// </summary>

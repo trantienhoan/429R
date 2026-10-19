@@ -161,6 +161,8 @@ namespace Game.Locomotion
                                  Game.Combat.PushWeight.IsImmovable(body))) return;
             if (thing.TryGetComponent<XRGrabInteractable>(out var grab) && grab.isSelected) return;
             if (thing.GetComponent<PumpkinBossBrain>() != null) return;
+            // The player's own fists (the punching balls and the flying ones, which are pooled and reused) never fall.
+            if (body != null && Game.Combat.Fist.IsFistBall(body)) return;
             // Only once it's over the edge, not just touching it.
             var center = agent != null || body == null ? thing.transform.position : body.worldCenterOfMass;
             if (!Contains(center)) return;

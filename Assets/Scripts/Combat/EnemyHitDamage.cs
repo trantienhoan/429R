@@ -275,14 +275,15 @@ namespace Game.Combat
         /// <summary>
         /// A knock-out blow, e.g. a fist's uppercut to the head: an extra hit of this power on top of the one that just
         /// landed (Toughness still counts), then it's knocked back this many times as far and hopping this many times as
-        /// high, and lies stunned for this many seconds (enemies with Knock Back off only take the damage). True if the
-        /// blow did damage.
+        /// high, and lies stunned for this many seconds (enemies with Knock Back off only take the damage). Damage Scale
+        /// multiplies its damage like a weapon's Damage (WeaponPower.DamageOf the punch, e.g. 2 under the Elon Boong).
+        /// True if the blow did damage.
         /// </summary>
-        public bool KnockOut(float power, float distanceScale, float hopScale, float stunSeconds)
+        public bool KnockOut(float power, float distanceScale, float hopScale, float stunSeconds, float damageScale = 1f)
         {
             if (health == null || dead || furniture) return false;
 
-            var hit = (settings != null ? settings : HitSettings.Defaults).Evaluate(power / toughness);
+            var hit = (settings != null ? settings : HitSettings.Defaults).Evaluate(power / toughness, damageScale);
             bool hurt = hit.Damage > 0f;
             if (hurt)
             {
