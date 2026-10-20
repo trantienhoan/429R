@@ -54,6 +54,11 @@ namespace Game.Leveling
         [TextArea(2, 6)]
         [SerializeField] private string tripleText = "TRIPLE PUNCH\n\nEvery flying punch throws 3.";
 
+        [Header("Exploding throws (the first Throw Power point; shown once the Level Up menu is closed)")]
+        [SerializeField] private string throwsTitle = "NEW POWER!";
+        [TextArea(2, 6)]
+        [SerializeField] private string throwsText = "EXPLODING THROWS\n\nThrow books, bottles and flip-flops hard: BOOM!";
+
         [Header("When")]
         [Tooltip("Reaching one of these levels shows the notice that teaches how to open the Level Up menu (Teach Text).")]
         [SerializeField] private int[] teachLevels = { 1 };
@@ -109,7 +114,8 @@ namespace Game.Leveling
         private float pendingAt;
         private bool holding;
         private bool showing;
-        // New punches waiting to be told about ("Jab", "Swing", "Uppercut", "Triple"), in order.
+        // New punches and powers waiting to be told about ("Jab", "Swing", "Uppercut", "Triple", "Throws"), in order.
+        private const string Throws = "Throws";
         private readonly System.Collections.Generic.List<string> punches = new();
         private bool closing;
         private bool gliding;
@@ -139,10 +145,13 @@ namespace Game.Leveling
             continueButton.action?.Enable();
             PlayerLevel.LeveledUp += OnLeveledUp;
             PlayerLevel.PunchUnlocked += OnPunchUnlocked;
+            PlayerLevel.ExplodingThrowsUnlocked += OnExplodingThrows;
             LevelUpMenu.Opened += Close;
         }
 
         private void OnPunchUnlocked(string punch) => punches.Add(punch);
+
+        private void OnExplodingThrows() => punches.Add(Throws);
 
         private void OnDisable()
         {
@@ -150,6 +159,7 @@ namespace Game.Leveling
             if (continueButton.reference == null) continueButton.action?.Disable();
             PlayerLevel.LeveledUp -= OnLeveledUp;
             PlayerLevel.PunchUnlocked -= OnPunchUnlocked;
+            PlayerLevel.ExplodingThrowsUnlocked -= OnExplodingThrows;
             LevelUpMenu.Opened -= Close;
             // Never leave the game paused (e.g. the scene closing while a notice is up).
             Unpause();
@@ -216,12 +226,14 @@ namespace Game.Leveling
             ShowText(punchTitle, text, teachSeconds);
         }
 
-        // The next new punch; Swing and Uppercut unlocked by the same point get one notice together.
+        // The next new punch (or exploding throws); Swing and Uppercut unlocked by the same point get one notice together.
         private void ShowNextPunch()
         {
             string punch = punches[0];
             punches.RemoveAt(0);
-            if ((punch == "Swing" && punches.Remove("Uppercut")) || (punch == "Uppercut" && punches.Remove("Swing")))
+            if (punch == Throws)
+                ShowText(throwsTitle, throwsText, teachSeconds);
+            else if ((punch == "Swing" && punches.Remove("Uppercut")) || (punch == "Uppercut" && punches.Remove("Swing")))
                 ShowText(punchesTitle, swingUppercutText, teachSeconds);
             else
                 ShowPunch(punch);

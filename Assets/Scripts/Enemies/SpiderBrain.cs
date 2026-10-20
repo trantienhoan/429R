@@ -1430,10 +1430,10 @@ namespace Game.Enemies
             SendToOwnFsms("Bite");
         }
 
-        // Shoves the player away from it. Small shoves (under a metre) don't shake the view.
+        // Shoves the player away from it. Small shoves (under a metre, after Toughness cuts it) don't shake the view.
         private void Push(float height, float distance)
         {
-            Game.Combat.PlayerLaunch.Launch(transform.position, height, distance, distance >= 1f);
+            Game.Combat.PlayerLaunch.Launch(transform.position, height, distance, distance * Game.Leveling.PlayerLevel.PushShare >= 1f);
         }
 
         // Bit a held weapon or a fist (or a shield covered the player): it flinches and backs off.

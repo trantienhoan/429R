@@ -26,6 +26,10 @@ namespace Game.Weapons
     /// it as a hard hit. Scripts that handle hits themselves (IHittable, e.g. the PlayGround's ghost tree, bush and balloons)
     /// are hit with the damage first, even when they also have a Health FSM (e.g. for the fairy's shield pop); the ghost
     /// tree passes it on to that FSM's health.
+    /// The player's Throw Power (a level-up stat) decides it all: at 0 it never explodes (nor charges), it's just a
+    /// weapon that hits and breaks; from 1 point it explodes as set here, and every point after that makes the blast
+    /// reach farther and do more damage (Player Level: Exploding throws). The extra reach never hurts the player or what
+    /// they hold: only the blast's own reach (or going off in the hand) does.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(XRGrabInteractable))]
@@ -214,7 +218,8 @@ namespace Game.Weapons
 
         private void Update()
         {
-            if (shakeToCharge && !exploded && grab.isSelected) WatchShaking();
+            // Without Throw Power it can't be charged either.
+            if (shakeToCharge && !exploded && grab.isSelected && Game.Leveling.PlayerLevel.ExplodingThrows) WatchShaking();
         }
 
         private void FixedUpdate()
@@ -231,9 +236,17 @@ namespace Game.Weapons
 
             if (Time.time - releasedAt <= ThrowWindow) throwSpeed = Mathf.Max(throwSpeed, collision.relativeVelocity.magnitude);
             inFlight = false;
+            // No Throw Power yet: it just hits (its Damage FSM breaks it as usual).
+            if (!Game.Leveling.PlayerLevel.ExplodingThrows) return;
             var point = collision.contactCount > 0 ? collision.GetContact(0).point : body.position;
             if (Charged) ExplodeCharged(point, false);
-            else if (throwSpeed >= minThrowSpeed) Explode(point, radius, damage, push, playerEvent, false, shakeToCharge ? EffectScale(radius) : effectSize);
+            else if (throwSpeed >= minThrowSpeed)
+            {
+                float reach = Game.Leveling.PlayerLevel.ThrowBlastRadius(radius);
+                // Its own effect size, and bigger as Throw Power makes the blast reach farther.
+                float size = shakeToCharge ? EffectScale(reach) : Mathf.Min(effectSize + EffectScale(reach) - EffectScale(radius), MaxEffectScale);
+                Explode(point, reach, Game.Leveling.PlayerLevel.ThrowBlastDamage(damage), push, playerEvent, false, size, radius);
+            }
         }
 
         // Measures how hard the hand holding it shakes: the change in its speed, smoothed. Shaking hard enough adds to
@@ -312,22 +325,28 @@ namespace Game.Weapons
                 break;
             }
             float strength = Mathf.InverseLerp(charge[0].x, charge[charge.Length - 1].x, shaken);
-            Explode(point, reach, Mathf.Lerp(chargeDamage.x, chargeDamage.y, strength), Mathf.Lerp(chargePush.x, chargePush.y, strength),
-                inHand ? inHandEvent : playerEvent, inHand, EffectScale(reach));
+            // Throw Power makes it bigger and harder, but only the charge's own reach can hurt the player.
+            float bigger = Game.Leveling.PlayerLevel.ThrowBlastRadius(reach);
+            Explode(point, bigger, Game.Leveling.PlayerLevel.ThrowBlastDamage(Mathf.Lerp(chargeDamage.x, chargeDamage.y, strength)),
+                Mathf.Lerp(chargePush.x, chargePush.y, strength), inHand ? inHandEvent : playerEvent, inHand, EffectScale(bigger), reach);
         }
+
+        private const float MaxEffectScale = 1.3f;
 
         private static float EffectScale(float reach)
         {
-            return Mathf.Clamp(reach / EffectReach, 0.3f, 1.3f);
+            return Mathf.Clamp(reach / EffectReach, 0.3f, MaxEffectScale);
         }
 
-        private void Explode(Vector3 point, float reach, float hurt, float force, string eventForPlayer, bool inHand, float effectScale)
+        // Player Reach: how far from the blast the player is hurt (its reach before Throw Power made it bigger).
+        private void Explode(Vector3 point, float reach, float hurt, float force, string eventForPlayer, bool inHand, float effectScale,
+            float playerReach)
         {
             exploded = true;
 
             var hand = inHand && grab.firstInteractorSelecting is XRBaseInputInteractor holder ? holder : thrower;
             if (rumbleStrength > 0f) Game.Combat.HitBuzz.Other(hand, rumbleStrength, rumbleDuration);
-            Blast.Explode(point, reach, hurt, force, body, effects, sound, volume, eventForPlayer, inHand, effectScale);
+            Blast.Explode(point, reach, hurt, force, body, effects, sound, volume, eventForPlayer, inHand, effectScale, playerReach);
 
             // Breaking the usual way lets its own Health FSM drop the pieces and remove it; otherwise it just vanishes.
             // Weapon Wear is switched off first: it gives back part of a small loss (Weapon Efficiency), so a worn weapon

@@ -36,10 +36,10 @@ In the tables below, **Now** is what the game shows today. **Funny idea** is onl
 | 4 | DONT RUN / DONT FEAR / DONT GIVE UP | Okay, dodging is allowed. | *(keep yours)* | Dodging is not running. Technically. |
 | 5 | Drink Water | For real. Take a break now and then. | *(keep yours)* | Not a game tip. A life tip. |
 | 6 | Bump your fists together twice to spend your level-up points | Beat bugs to earn points. | Fist bump yourself. Twice. | Bugs give points. Bumps spend them. |
-| 7 | Shake a bottle before you throw it. Careful though! | Shake too long and it blows up in your hand. | Shake well before throwing. | Not too long. You like your hand. |
+| 7 | Shake a bottle before you throw it. Careful though! | Needs 1 Throw Power. Too long: boom in your hand. | Shake well before throwing. | Not too long. You like your hand. |
 | 8 | Hold B to open the Candy Shop | Pay with candy wraps. It restocks often. | Hold B for retail therapy. | Wraps in, goodies out. Restocks fast. |
 | 9 | Touch me for a hint | Hit me hard for the next tip. | Poke me. I'm ticklish. | Smack me hard for a new tip. |
-| 10 | Fist Size unlocks flying punches | 1 point: jab. 3: swing and uppercut. 10: triple! | Big fists can fly. | Fist Size 1, 3, 10. Surprise! |
+| 10 | Fist Size unlocks flying punches | 1 point: jab. More points hit harder. 10: triple! | Big fists can fly. | Fist Size 1, 3, 10. Surprise! |
 | 11 | Hold Y to open your bag | Hold a thing to your chest to put it in. | Hold Y. Bag of holding. | Hug stuff to pack it. |
 | 12 | Press A to pause | Height, volume and more are in there. | Press A. Time stops. | Height, volume and boring stuff. |
 | 13 | Lollipop? Hold it at your mouth | Keep it there for 3 seconds. | Lollipops are not for chewing. | Hold it at your mouth. Count to 3. |

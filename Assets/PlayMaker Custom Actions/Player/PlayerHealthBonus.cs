@@ -7,7 +7,8 @@ namespace HutongGames.PlayMaker.Actions
              "Candy Min to Candy Max (whole numbers); above the starting health only Above Share of it counts, rounded " +
              "up, like candy itself. Works on the PlayerHealth FSM's PlayerHealth and DefautPlayerHealth floats. Put it " +
              "after a Send Event Health1 to the player, which plays the heal effects and already counts as one candy: " +
-             "a seed that heals like 7 candies has Extra Candies 6.")]
+             "a seed that heals like 7 candies has Extra Candies 6. Each candy heals more with the player's Max Health " +
+             "level-up stat, like eaten candy.")]
     public class PlayerHealthBonus : FsmStateAction
     {
         [Tooltip("Candies' worth of healing on top of the Health1 event.")]
@@ -61,7 +62,7 @@ namespace HutongGames.PlayMaker.Actions
             float share = Mathf.Clamp01(aboveShare.Value);
             for (int i = 0; i < extraCandies.Value; i++)
             {
-                float amount = RandomAmount.Roll(candyMin.Value, candyMax.Value, true);
+                float amount = CandyHeal.Scale(RandomAmount.Roll(candyMin.Value, candyMax.Value, true), true);
                 float full = Mathf.Clamp(cap.Value - health.Value, 0f, amount);       // up to the cap: in full
                 float over = Mathf.Ceil((amount - full) * share - 0.0001f);             // above it: the share, rounded up
                 health.Value += full + over;

@@ -48,11 +48,11 @@ namespace Game.EditorTools
             ("DONT RUN\nDONT FEAR\nDONT GIVE UP", "Okay, dodging is allowed."),
             ("Drink Water", "For real. Take a break now and then."),
             ("Bump your fists together twice to spend your level-up points", "Beat bugs to earn points."),
-            ("Shake a bottle before you throw it. Careful though!", "Shake too long and it blows up in your hand."),
+            ("Shake a bottle before you throw it. Careful though!", "Needs 1 Throw Power. Too long: boom in your hand."),
             ("Hold B to open the Candy Shop", "Pay with candy wraps. It restocks often."),
             // New ones.
             ("Touch me for a hint", "Hit me hard for the next tip."),
-            ("Fist Size unlocks flying punches", "1 point: jab. 3: swing and uppercut. 10: triple!"),
+            ("Fist Size unlocks flying punches", "1 point: jab. More points hit harder. 10: triple!"),
             ("Hold Y to open your bag", "Hold a thing to your chest to put it in."),
             ("Press A to pause", "Height, volume and more are in there."),
             ("Lollipop? Hold it at your mouth", "Keep it there for 3 seconds."),
@@ -75,6 +75,7 @@ namespace Game.EditorTools
             ("Explosions hurt you too", "Throw them far, not at your feet."),
             ("Weapons wear out", "Weapon Efficiency makes them last longer."),
             ("Don't hug the Pumpkin Boss", "Too close and he spins. Dodge his pumpkins."),
+            ("Throw Power makes throws explode", "Books, bottles, flip-flops. More points, bigger boom."),
         };
 
         /// <summary>

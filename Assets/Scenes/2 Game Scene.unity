@@ -20515,6 +20515,11 @@ MonoBehaviour:
 
 
     Every flying punch throws 3.'
+  throwsTitle: NEW POWER!
+  throwsText: 'EXPLODING THROWS
+
+
+    Throw books, bottles and flip-flops hard: BOOM!'
   teachLevels: 01000000
   remindLevels: 03000000
   bonusLevels: 0a000000
@@ -20571,6 +20576,60 @@ MonoBehaviour:
   panelOffset: {x: 0, y: 0.05, z: 1.3}
   followAngle: 35
   fadeTime: 0.4
+--- !u!1 &203669337
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 203669339}
+  - component: {fileID: 203669338}
+  m_Layer: 0
+  m_Name: PlayMakerGUI
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &203669338
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 203669337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -73581967, guid: e743331561ef77147ae48cda9bcb8209, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: PlayMaker.dll::PlayMakerGUI
+  previewOnGUI: 1
+  enableGUILayout: 0
+  drawStateLabels: 1
+  enableStateLabelsInBuilds: 0
+  GUITextureStateLabels: 0
+  GUITextStateLabels: 0
+  filterLabelsWithDistance: 0
+  maxLabelDistance: 10
+  controlMouseCursor: 1
+  labelScale: 1
+--- !u!4 &203669339
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 203669337}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &204009200
 GameObject:
   m_ObjectHideFlags: 0
@@ -45040,17 +45099,24 @@ MonoBehaviour:
   punchPowerPerPoint: 0.25
   reviveHealthPerPoint: 50
   healthPerPoint: 15
+  candyHealPerPoint: 0.05
   damageCutPerPoint: 0.04
-  pushCutPerPoint: 0.06
+  pushCutPerPoint: 0.08
   weaponDamagePerPoint: 0.05
   weaponWearCutPerPoint: 0.05
   punchSizePerPoint: 0.1
   handSizePerPoint: 0.02
+  punchDamagePerPoint: 0.1
   throwPerPoint: 0.06
+  blastRadiusPerPoint: 0.08
+  blastDamagePerPoint: 0.1
+  maxBlastRadius: 2
+  maxBlastDamage: 10
   speedPerPoint: 0.02
   bigLastPoint: 0000000001000000020000000400000005000000
   lastPointWorth: 7
   jabAtFistSize: 1
+  lockSwingAndUppercut: 1
   swingAtFistSize: 3
   uppercutAtFistSize: 3
   triplePunchAtFistSize: 10
@@ -199167,7 +199233,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 10
-  m_PresetInfoIsWorld: 0
+  m_PresetInfoIsWorld: 1
 --- !u!223 &1475992175
 Canvas:
   m_ObjectHideFlags: 0
@@ -289006,7 +289072,6 @@ MonoBehaviour:
         vector4Values: []
         objectReferences:
         - {fileID: 8300000, guid: 46c1958bfdb2de24890403e6c25c5b8d, type: 3}
-        - {fileID: 8300000, guid: c6f20a564b5d88449ba77e0a2a415da4, type: 3}
       enumVariables: []
       categories:
       - 
@@ -322740,8 +322805,8 @@ MonoBehaviour:
         - 
         actionEnabled: 0101010101010101
         actionIsOpen: 0100010100000001
-        actionStartIndex: 00000000050000000a00000012000000170000001c0000002000000025000000
-        actionHashCodes: b2cf1000b2cf1000f3865a030cdb04050cdb040552cb520381294e041bcdca04
+        actionStartIndex: 00000000050000000a00000013000000180000001d0000002100000026000000
+        actionHashCodes: b2cf1000b2cf1000a5c1ee010cdb04050cdb040552cb520381294e041bcdca04
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams:
@@ -322941,6 +323006,12 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
+          value: 1
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
           value: 0
         - useVariable: 0
           name: 
@@ -322963,7 +323034,7 @@ MonoBehaviour:
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 140000001100000011000000010000000100000014000000110000001100000001000000010000000f0000000f0000000f000000110000000f0000000f0000000f0000000f0000000f0000000f000000070000000f000000010000000f0000000f000000070000000f00000001000000140000000f0000001100000001000000140000000f0000001800000011000000170000000f0000000f0000000f00000017000000170000001700000001000000
+        paramDataType: 140000001100000011000000010000000100000014000000110000001100000001000000010000000f0000000f0000000f000000110000000f0000000f0000000f0000000f000000110000000f0000000f000000070000000f000000010000000f0000000f000000070000000f00000001000000140000000f0000001100000001000000140000000f0000001800000011000000170000000f0000000f0000000f00000017000000170000001700000001000000
         paramName:
         - gameObject
         - activate
@@ -322983,6 +323054,7 @@ MonoBehaviour:
         - reducedAbove
         - aboveShare
         - storeAmount
+        - candyHealBonus
         - float1
         - float2
         - operation
@@ -323009,8 +323081,8 @@ MonoBehaviour:
         - lessThan
         - greaterThan
         - everyFrame
-        paramDataPos: 00000000000000000100000000000000010000000100000002000000030000000200000003000000000000000100000002000000040000000300000004000000050000000600000007000000080000000400000009000000080000000a0000000b000000090000000c0000000d000000020000000d000000050000000e000000030000000e0000000000000006000000000000000f00000010000000110000000100000002000000030000000f000000
-        paramByteDataSize: 0000000000000000000000000100000001000000000000000000000000000000010000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000000000000001000000000000000000000004000000000000000100000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000
+        paramDataPos: 0000000000000000010000000000000001000000010000000200000003000000020000000300000000000000010000000200000004000000030000000400000005000000060000000500000007000000080000000400000009000000080000000a0000000b000000090000000c0000000d000000020000000d000000060000000e000000030000000e0000000000000007000000000000000f00000010000000110000000100000002000000030000000f000000
+        paramByteDataSize: 000000000000000000000000010000000100000000000000000000000000000001000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000000000000001000000000000000000000004000000000000000100000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000
     - name: Subtract Health Heavy
       description: 
       colorIndex: 6
@@ -331802,3 +331874,4 @@ SceneRoots:
   - {fileID: 1268137162}
   - {fileID: 756031250}
   - {fileID: 1755262486}
+  - {fileID: 203669339}

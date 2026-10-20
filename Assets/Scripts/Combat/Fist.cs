@@ -25,7 +25,8 @@ namespace Game.Combat
     /// a punch is goes by where the hand went, from the player's point of view, measured in the play area's own space, so
     /// walking and turning don't count as punching. Slow pushes and hammer fists are just punches.
     /// The Fist Size level-up stat unlocks them (Jab Unlocked, Swing Unlocked, Uppercut Unlocked; until then a punch
-    /// doesn't fly) and makes flying punches bigger and fly farther; the hand itself grows only a little. At full Fist
+    /// doesn't fly; for now only the Jab unlocks, Player Level's Lock Swing And Uppercut) and makes punches hit harder
+    /// and flying punches bigger and fly farther; the hand itself grows only a little. At full Fist
     /// Size (Triple Punch) a jab throws two more fists, one each side, and a swing or an uppercut two more in a row
     /// along the punch, each starting farther out and reaching farther.
     /// A fist doesn't pull things from a distance: with the trigger squeezed too, the hand only grabs what's within its
@@ -618,8 +619,9 @@ namespace Game.Combat
                 if (force == null || System.Array.Find(fsm.FsmStates, state => state.Name == "Check force") == null) continue;
                 // Already hurt by this hit (or by one just before): not twice.
                 if (fsm.ActiveStateName != "Wait for Collision" && fsm.ActiveStateName != "shake" && fsm.ActiveStateName != "Check force") continue;
-                // The Elon Boong buff's double damage counts here too.
-                force.Value = punchSpeed * pumpkinForce * Game.Leveling.PlayerLevel.PunchPowerScale * Game.Leveling.PlayerBuffs.PunchDamage;
+                // The Elon Boong buff's double damage and Fist Size's extra damage count here too.
+                force.Value = punchSpeed * pumpkinForce * Game.Leveling.PlayerLevel.PunchPowerScale * Game.Leveling.PlayerBuffs.PunchDamage *
+                              Game.Leveling.PlayerLevel.PunchDamageScale;
                 fsm.SetState("Check force");
             }
         }

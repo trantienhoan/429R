@@ -36,12 +36,14 @@ namespace Game.Leveling
     /// parts of a point that add up). Enough EXP is a level up (Exp To Next Level, one number per
     /// level; the last one is the highest level), and each level up gives Points Per Level points to put into the six
     /// stats in the Level Up menu:
-    /// Max Health raises the health cap; Toughness cuts the damage enemies do and how far big hits throw the player;
-    /// Weapon Efficiency makes weapons hit harder and wear out slower; Fist Size unlocks the flying punches (Jab at 1
-    /// point, Swing and Uppercut at 3, Triple Punch at 10) and makes them bigger and fly farther, the hand itself only a
-    /// little bigger; Throw Power makes
-    /// throws leave the hand faster; Move Speed makes walking faster. What one point gives is set below; the last point
-    /// that fills a stat up counts as Last Point Worth (7) points (all but Fist Size, whose last point is the Triple Punch).
+    /// Max Health raises the health cap and makes eating candy heal more; Toughness cuts the damage enemies do and how
+    /// far enemies push the player; Weapon Efficiency makes weapons hit harder and wear out slower; Fist Size unlocks the
+    /// flying Jab at 1 point (Swing and Uppercut are locked for later: Lock Swing And Uppercut), and every point makes
+    /// punches hit harder and flying punches bigger and fly farther (Triple Punch at 10), the hand itself only a little
+    /// bigger; Throw Power makes throws leave the hand faster, and from 1 point thrown books, bottles and flip-flops
+    /// explode (Grenade), more points making the blast reach farther and hurt more (at 0 they don't explode); Move Speed
+    /// makes walking faster. What one point gives is set below; the last point that fills a stat up counts as Last Point
+    /// Worth (7) points (all but Fist Size, whose last point is the Triple Punch).
     /// Reaching a Bonus Level (10, 20, 21) also gives a bonus point for the three bonus stats (the menu's Bonus Stats
     /// panel): Fist Size at Bonus Multiplier (10) times a normal point, Power (throws as Bonus Multiplier times a normal
     /// Throw Power point, and punches hit and push harder) and Extra Revive (one more revive every run, see Checkpoints:
@@ -105,12 +107,17 @@ namespace Game.Leveling
         [Tooltip("Max Health: the health cap goes up by this much (and the player is healed that much).")]
         [Min(0f)]
         [SerializeField] private float healthPerPoint = 10f;
+        [Tooltip("Max Health: eating candy (candies, lollipops, seeds) heals this share more (0.05 = 5% more a point; " +
+                 "a full stat counts as 16 points, +80%).")]
+        [Min(0f)]
+        [SerializeField] private float candyHealPerPoint = 0.05f;
         [Tooltip("Toughness: enemies' damage is cut by this share (0.04 = 4% less a point).")]
         [Range(0f, 0.09f)]
         [SerializeField] private float damageCutPerPoint = 0.04f;
-        [Tooltip("Toughness: big hits throw the player this share less far and high (0.06 = 6% less a point).")]
+        [Tooltip("Toughness: enemies push the player (bites, the boss's punches, touching a monster) this share less far " +
+                 "and high (0.08 = 8% less a point). Never less than a tenth.")]
         [Range(0f, 0.09f)]
-        [SerializeField] private float pushCutPerPoint = 0.06f;
+        [SerializeField] private float pushCutPerPoint = 0.08f;
         [Tooltip("Weapon Efficiency: weapons and their bullets hit this share harder (0.05 = 5% more a point). Fists don't " +
                  "count: they have Fist Size.")]
         [Min(0f)]
@@ -127,9 +134,31 @@ namespace Game.Leveling
                  "view (0.02: Fist Scale 1.25 becomes 1.27; the Fist's Max Hand Growth caps it).")]
         [Min(0f)]
         [SerializeField] private float handSizePerPoint = 0.02f;
+        [Tooltip("Fist Size: punches (the fist itself and flying punches) do this share more damage (0.1 = 10% more a " +
+                 "point: a best hit of 5 does 6 at 1 point, 10 at 10). Only normal Fist Size points count.")]
+        [Min(0f)]
+        [SerializeField] private float punchDamagePerPoint = 0.1f;
         [Tooltip("Throw Power: things leave the hand this share faster (0.06 = 6% more a point). Gentle drops aren't sped up.")]
         [Min(0f)]
         [SerializeField] private float throwPerPoint = 0.06f;
+
+        [Header("Exploding throws (Throw Power)")]
+        [Tooltip("At 0 Throw Power, thrown books, bottles and flip-flops (Grenade) don't explode: they just hit and break. " +
+                 "The 1st point makes them explode as they always did; each point after it makes the blast reach this many " +
+                 "metres farther (a full stat counts as 16 points: +1.2 m).")]
+        [Min(0f)]
+        [SerializeField] private float blastRadiusPerPoint = 0.08f;
+        [Tooltip("Throw Power: each point after the 1st makes the blast do this share more damage (0.1 = 10% more a " +
+                 "point: a full stat +150%).")]
+        [Min(0f)]
+        [SerializeField] private float blastDamagePerPoint = 0.1f;
+        [Tooltip("The farthest a thrown blast reaches with Throw Power, in metres (a blast that reaches farther by itself " +
+                 "keeps its own reach).")]
+        [Min(0.1f)]
+        [SerializeField] private float maxBlastRadius = 2f;
+        [Tooltip("The most damage a thrown blast does with Throw Power (a blast that does more by itself keeps its own).")]
+        [Min(0f)]
+        [SerializeField] private float maxBlastDamage = 10f;
         [Tooltip("Move Speed: walking is this share faster (0.04 = 4% more a point).")]
         [Min(0f)]
         [SerializeField] private float speedPerPoint = 0.04f;
@@ -149,6 +178,9 @@ namespace Game.Leveling
                  "Fist Size point counts as Bonus Multiplier points. 0 = unlocked from the start.")]
         [Min(0)]
         [SerializeField] private int jabAtFistSize = 1;
+        [Tooltip("Swing and Uppercut stay locked whatever the Fist Size (kept for later). Untick to unlock them at their " +
+                 "Fist Size below again.")]
+        [SerializeField] private bool lockSwingAndUppercut = true;
         [Tooltip("Fist Size points that unlock the Swing (a fast sideways hook of the fist).")]
         [Min(0)]
         [SerializeField] private int swingAtFistSize = 3;
@@ -198,6 +230,9 @@ namespace Game.Leveling
         /// </summary>
         public static event Action<string> PunchUnlocked;
 
+        /// <summary>The first Throw Power point was just spent: thrown things explode from now on (not when the save is read).</summary>
+        public static event Action ExplodingThrowsUnlocked;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
         {
@@ -205,6 +240,7 @@ namespace Game.Leveling
             Changed = null;
             LeveledUp = null;
             PunchUnlocked = null;
+            ExplodingThrowsUnlocked = null;
             lastRead = null;
         }
 
@@ -287,8 +323,11 @@ namespace Game.Leveling
         /// <summary>The share of an enemy's damage the player takes (Toughness): 1 = all of it.</summary>
         public static float DamageShare => Instance != null ? Instance.Cut(Stat.Toughness, Instance.damageCutPerPoint) : 1f;
 
-        /// <summary>The share of a big hit's throw the player takes (Toughness): 1 = all of it.</summary>
+        /// <summary>The share of an enemy's push the player takes (Toughness): 1 = all of it.</summary>
         public static float PushShare => Instance != null ? Instance.Cut(Stat.Toughness, Instance.pushCutPerPoint) : 1f;
+
+        /// <summary>How much more eating candy heals (Max Health): 1 = as always.</summary>
+        public static float CandyHealScale => Instance != null ? Instance.Gain(Stat.MaxHealth, Instance.candyHealPerPoint) : 1f;
 
         /// <summary>How much harder weapons hit (Weapon Efficiency): 1 = as always.</summary>
         public static float WeaponDamageScale => Instance != null ? Instance.Gain(Stat.WeaponEfficiency, Instance.weaponDamagePerPoint) : 1f;
@@ -310,8 +349,28 @@ namespace Game.Leveling
             ? Mathf.InverseLerp(Instance.jabAtFistSize, Instance.triplePunchAtFistSize, Instance.FistSizePoints)
             : 0f;
 
+        /// <summary>How much harder punches hit, the fist itself and flying punches (Fist Size): 1 = as always.</summary>
+        public static float PunchDamageScale => Instance != null ? 1f + Instance.Points(Stat.FistSize) * Instance.punchDamagePerPoint : 1f;
+
         /// <summary>How much faster throws leave the hand (Throw Power, and the Power bonus): 1 = as always.</summary>
         public static float ThrowScale => Instance != null ? 1f + Instance.WithBonus(Stat.ThrowPower, Stat.BonusPower) * Instance.throwPerPoint : 1f;
+
+        /// <summary>
+        /// Whether thrown books, bottles and flip-flops explode (Grenade): from the first Throw Power point. Without a Player
+        /// Level in the scene they always do.
+        /// </summary>
+        public static bool ExplodingThrows => Instance == null || Instance.Points(Stat.ThrowPower) >= 1;
+
+        /// <summary>A thrown blast's reach with Throw Power, from its own: farther with every point after the first.</summary>
+        public static float ThrowBlastRadius(float own) =>
+            Instance != null ? Mathf.Min(own + Instance.BlastSteps * Instance.blastRadiusPerPoint, Mathf.Max(own, Instance.maxBlastRadius)) : own;
+
+        /// <summary>A thrown blast's damage with Throw Power, from its own: more with every point after the first.</summary>
+        public static float ThrowBlastDamage(float own) =>
+            Instance != null ? Mathf.Min(own * (1f + Instance.BlastSteps * Instance.blastDamagePerPoint), Mathf.Max(own, Instance.maxBlastDamage)) : own;
+
+        // Throw Power points after the one that unlocks exploding throws (the last point counting as Last Point Worth).
+        private int BlastSteps => Mathf.Max(0, Worth(Stat.ThrowPower) - 1);
 
         /// <summary>How much faster the player walks (Move Speed): 1 = as always.</summary>
         public static float SpeedScale => Instance != null ? Instance.Gain(Stat.MoveSpeed, Instance.speedPerPoint) : 1f;
@@ -403,11 +462,11 @@ namespace Game.Leveling
             string each = IsBonus(stat) && p == 0 ? " a point" : "";
             switch (stat)
             {
-                case Stat.MaxHealth: return $"+{Worth(stat) * healthPerPoint:0} health";
-                case Stat.Toughness: return $"-{Percent(1f - DamageShare)} damage, -{Percent(1f - PushShare)} knockback";
+                case Stat.MaxHealth: return $"+{Worth(stat) * healthPerPoint:0} health, +{Percent(CandyHealScale - 1f)} candy heal";
+                case Stat.Toughness: return $"-{Percent(1f - DamageShare)} damage, -{Percent(1f - PushShare)} enemy push";
                 case Stat.WeaponEfficiency: return $"+{Percent(WeaponDamageScale - 1f)} damage, -{Percent(1f - WeaponWearShare)} wear";
-                case Stat.FistSize: return $"+{Percent(p * punchSizePerPoint)} punch size{PunchNote()}";
-                case Stat.ThrowPower: return $"+{Percent(Worth(stat) * throwPerPoint)} throw speed";
+                case Stat.FistSize: return $"+{Percent(p * punchSizePerPoint)} size, +{Percent(PunchDamageScale - 1f)} damage{PunchNote()}";
+                case Stat.ThrowPower: return ThrowNote();
                 case Stat.MoveSpeed: return $"+{Percent(SpeedScale - 1f)} walking speed";
                 case Stat.BonusFistSize: return $"+{Percent(shown * bonusMultiplier * punchSizePerPoint)} punch size{each}";
                 case Stat.BonusPower: return $"+{Percent(shown * bonusMultiplier * throwPerPoint)} throws, +{Percent(shown * punchPowerPerPoint)} punches{each}";
@@ -419,23 +478,34 @@ namespace Game.Leveling
 
         private static string Percent(float share) => Mathf.RoundToInt(share * 100f) + "%";
 
-        // The Fist Size row also says which punch comes next: ", Jab at 1", ", Swing + Uppercut at 3",
-        // ", Triple Punch at 10", and ", Triple Punch" once everything is unlocked.
+        // The Fist Size row also says which punch comes next: ", Jab at 1", ", Triple Punch at 10" (and ", Swing +
+        // Uppercut at 3" when they aren't locked), and ", Triple Punch" once everything is unlocked.
         private string PunchNote()
         {
             float size = FistSizePoints;
+            bool bigMoves = !lockSwingAndUppercut;
             int next = int.MaxValue;
-            foreach (int at in new[] { jabAtFistSize, swingAtFistSize, uppercutAtFistSize, triplePunchAtFistSize })
+            foreach (int at in new[] { jabAtFistSize, bigMoves ? swingAtFistSize : -1, bigMoves ? uppercutAtFistSize : -1, triplePunchAtFistSize })
             {
                 if (at > size && at < next) next = at;
             }
             if (next == int.MaxValue) return ", Triple Punch";
             var names = new List<string>();
             if (jabAtFistSize == next) names.Add("Jab");
-            if (swingAtFistSize == next) names.Add("Swing");
-            if (uppercutAtFistSize == next) names.Add("Uppercut");
+            if (bigMoves && swingAtFistSize == next) names.Add("Swing");
+            if (bigMoves && uppercutAtFistSize == next) names.Add("Uppercut");
             if (triplePunchAtFistSize == next) names.Add("Triple Punch");
             return $", {string.Join(" + ", names)} at {next}";
+        }
+
+        // The Throw Power row: "Throws explode at 1 point" at 0, then the throw speed and how much bigger the blasts are.
+        private string ThrowNote()
+        {
+            int p = Points(Stat.ThrowPower);
+            if (p == 0) return "Throws explode at 1 point";
+            string speed = $"+{Percent(Worth(Stat.ThrowPower) * throwPerPoint)} throw speed";
+            if (BlastSteps == 0) return speed + ", throws explode";
+            return $"{speed}, blasts +{Percent(BlastSteps * blastDamagePerPoint)} damage, +{BlastSteps * blastRadiusPerPoint:0.0} m";
         }
 
         // Fist Size points, a bonus point counting as Bonus Multiplier of them.
@@ -447,8 +517,9 @@ namespace Game.Leveling
         {
             float size = FistSizePoints;
             bool jab = size >= jabAtFistSize;
-            bool swing = size >= swingAtFistSize;
-            bool uppercut = size >= uppercutAtFistSize;
+            // Kept for later: locked, they never unlock (and are never announced).
+            bool swing = !lockSwingAndUppercut && size >= swingAtFistSize;
+            bool uppercut = !lockSwingAndUppercut && size >= uppercutAtFistSize;
             bool triple = size >= triplePunchAtFistSize;
             var unlocked = new List<string>();
             if (jab && !Fist.JabUnlocked) unlocked.Add("Jab");
@@ -533,6 +604,8 @@ namespace Game.Leveling
             points[(int)stat]++;
             Apply(true, true);
             Changed?.Invoke();
+            // The first Throw Power point: the player is told thrown things explode now.
+            if (stat == Stat.ThrowPower && points[(int)stat] == 1) ExplodingThrowsUnlocked?.Invoke();
             return true;
         }
 

@@ -60,7 +60,8 @@ namespace Game.EditorTools
         /// <summary>
         /// Sets up the level system in the open scene: the Player Level, the Level Up menu, notice and aura, Fist Bump on the
         /// XR Origin (two fists bumped twice opens the menu), the EXP each enemy prefab gives (where it's still 0), and
-        /// Player Toughness on the PlayerHealth FSM's damage. Running it again only adds what's missing.
+        /// Player Toughness on the PlayerHealth FSM's damage and Candy Heal Bonus on its candy heal. Running it again only
+        /// adds what's missing.
         /// </summary>
         [MenuItem("Tools/429 Game/Player/Set Up Level System")]
         public static void SetUpLevelSystem()
@@ -129,6 +130,8 @@ namespace Game.EditorTools
 
             int toughness = TickPlayerToughness();
             if (toughness > 0) notes.Add($"ticked Player Toughness on {toughness} damage action(s) of the PlayerHealth FSM");
+            int candy = TickCandyHealBonus();
+            if (candy > 0) notes.Add($"ticked Candy Heal Bonus on {candy} heal action(s) of the PlayerHealth FSM");
 
             int exp = SetEnemyExp();
             if (exp > 0) notes.Add($"set the EXP of {exp} enemy prefab(s) (small {SmallExp}, normal {NormalExp}, mini boss {MiniBossExp}, pumpkin_boss_Z {BossExp})");
@@ -142,10 +145,47 @@ namespace Game.EditorTools
         }
 
         [MenuItem("Tools/429 Game/Player/Set Up Level System", true)]
+        [MenuItem("Tools/429 Game/Player/Update Skill Points (Candy Heal, Enemy Push)", true)]
         private static bool CanSetUp()
         {
             // Changes made while playing are thrown away.
             return !EditorApplication.isPlaying;
+        }
+
+        // The C# default of Push Cut Per Point before Toughness was made to resist enemy pushes more.
+        private const float OldPushCut = 0.06f;
+        private const float NewPushCut = 0.08f;
+
+        /// <summary>
+        /// The scene side of the skill point rework (2026-10): Candy Heal Bonus is ticked on the PlayerHealth FSM's candy
+        /// heal (Health1's Float Add Random), so Max Health makes candy heal more, and Toughness resists enemy pushes more
+        /// (the Player Level's Push Cut Per Point 0.06 becomes 0.08; a value changed by hand is left alone). Running it
+        /// again changes nothing. Save the scene afterwards.
+        /// </summary>
+        [MenuItem("Tools/429 Game/Player/Update Skill Points (Candy Heal, Enemy Push)")]
+        public static void UpdateSkillPoints()
+        {
+            var notes = new List<string>();
+            int candy = TickCandyHealBonus();
+            notes.Add(candy > 0 ? $"ticked Candy Heal Bonus on {candy} heal action(s) of the PlayerHealth FSM" : "Candy Heal Bonus was already ticked (or there's no candy heal)");
+
+            var level = Object.FindAnyObjectByType<PlayerLevel>(FindObjectsInactive.Include);
+            if (level == null) notes.Add("WARNING: no Player Level in the scene");
+            else
+            {
+                var so = new SerializedObject(level);
+                var push = so.FindProperty("pushCutPerPoint");
+                if (Mathf.Abs(push.floatValue - OldPushCut) < 0.0001f)
+                {
+                    push.floatValue = NewPushCut;
+                    so.ApplyModifiedProperties();
+                    notes.Add($"Push Cut Per Point {OldPushCut} > {NewPushCut}");
+                }
+                else notes.Add($"Push Cut Per Point left at {push.floatValue}");
+            }
+
+            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+            Debug.Log("[Level Setup] Skill points updated: " + string.Join("; ", notes) + ". Save the scene.", level);
         }
 
         private static LevelUpMenu CreateMenu(Transform parent, TMP_FontAsset font)
@@ -627,6 +667,38 @@ namespace Game.EditorTools
                         if (damage.floatVariable == null || damage.floatVariable.Name != "PlayerHealth") continue;
                         if (damage.playerToughness != null && damage.playerToughness.Value) continue;
                         damage.playerToughness = true;
+                        changed = true;
+                        inFsm++;
+                    }
+                    if (changed) state.SaveActions();
+                }
+                if (inFsm == 0) continue;
+                EditorUtility.SetDirty(fsm);
+                ticked += inFsm;
+            }
+            return ticked;
+        }
+
+        // Eating candy (the PlayerHealth FSM's Float Add Random actions on PlayerHealth) heals more with Max Health.
+        private static int TickCandyHealBonus()
+        {
+            int ticked = 0;
+            foreach (var fsm in Object.FindObjectsByType<PlayMakerFSM>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (fsm.FsmName != "PlayerHealth") continue;
+                if (!fsm.Fsm.Initialized) fsm.Fsm.Init(fsm);
+
+                int inFsm = 0;
+                foreach (var state in fsm.FsmStates)
+                {
+                    state.LoadActions();
+                    bool changed = false;
+                    foreach (var action in state.Actions)
+                    {
+                        if (action is not FloatAddRandom heal) continue;
+                        if (heal.floatVariable == null || heal.floatVariable.Name != "PlayerHealth") continue;
+                        if (heal.candyHealBonus != null && heal.candyHealBonus.Value) continue;
+                        heal.candyHealBonus = true;
                         changed = true;
                         inFsm++;
                     }

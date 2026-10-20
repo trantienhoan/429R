@@ -3,7 +3,8 @@ using UnityEngine;
 namespace HutongGames.PlayMaker.Actions
 {
     [ActionCategory(ActionCategory.Math)]
-    [Tooltip("Adds a random amount between Min and Max to a Float Variable, e.g. a heal of 1 to 7.")]
+    [Tooltip("Adds a random amount between Min and Max to a Float Variable, e.g. a heal of 1 to 7. With Candy Heal " +
+             "Bonus ticked (eating candy), the amount grows with the player's Max Health level-up stat.")]
     public class FloatAddRandom : FsmStateAction
     {
         [RequiredField]
@@ -38,6 +39,10 @@ namespace HutongGames.PlayMaker.Actions
         [Tooltip("Optional: store the amount that was actually added.")]
         public FsmFloat storeAmount;
 
+        [Tooltip("Tick for eating candy (the player's heal): the amount grows with the player's Max Health (a level-up " +
+                 "stat, Candy Heal Per Point).")]
+        public FsmBool candyHealBonus;
+
         public override void Reset()
         {
             floatVariable = null;
@@ -48,11 +53,15 @@ namespace HutongGames.PlayMaker.Actions
             reducedAbove = new FsmFloat { UseVariable = true };
             aboveShare = 0.7f;
             storeAmount = null;
+            candyHealBonus = false;
         }
 
         public override void OnEnter()
         {
             float amount = RandomAmount.Roll(min.Value, max.Value, wholeNumbers.Value);
+            // Added after FSMs already used this action, so it can be missing (unticked) in them.
+            if (candyHealBonus != null && candyHealBonus.Value && amount > 0f)
+                amount = CandyHeal.Scale(amount, wholeNumbers.Value);
             float start = floatVariable.Value;
             if (reducedAbove != null && !reducedAbove.IsNone && amount > 0f)
             {
@@ -68,6 +77,18 @@ namespace HutongGames.PlayMaker.Actions
             floatVariable.Value = result;
             if (!storeAmount.IsNone) storeAmount.Value = result - start;
             Finish();
+        }
+    }
+
+    /// <summary>A candy's heal with the player's Max Health bonus, shared by Float Add Random and Player Health Bonus.</summary>
+    internal static class CandyHeal
+    {
+        public static float Scale(float amount, bool wholeNumbers)
+        {
+            amount *= Game.Leveling.PlayerLevel.CandyHealScale;
+            // Rounded up or down at random by how far it is to the next whole number, so even +5% counts: a 4 at +5%
+            // (4.2) heals 5 one time in five.
+            return wholeNumbers ? Mathf.Floor(amount + Random.value) : amount;
         }
     }
 

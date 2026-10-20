@@ -7,7 +7,7 @@ namespace Game.Combat
     /// damage is worked out, so a hammer (2) turns a normal swing into a big hit. Damage multiplies the damage that hit
     /// does: a fist's best hit does 5, a hammer's (1.6) 8, a thrown book's (0.4) 2. Anything without it counts as 1 and 1.
     /// Goes on the weapon's root (the object with the Rigidbody). The player's Weapon Efficiency (a level-up stat)
-    /// multiplies the Damage of everything but fists, which have Fist Size and Power instead.
+    /// multiplies the Damage of everything but fists, whose Damage grows with Fist Size instead (and Power makes them hit harder).
     /// Tools > 429 Game > Combat > Balance Damage sets both for every weapon and throwable.
     /// </summary>
     [DisallowMultipleComponent]
@@ -61,7 +61,8 @@ namespace Game.Combat
         private static float DamageOf(WeaponPower weapon)
         {
             if (weapon == null) return 1f;
-            float scale = Fist.IsFistBall(weapon) ? weapon.damage : weapon.damage * Game.Leveling.PlayerLevel.WeaponDamageScale;
+            // Fists (the hand and flying punches) grow with Fist Size, everything else with Weapon Efficiency.
+            float scale = weapon.damage * (Fist.IsFistBall(weapon) ? Game.Leveling.PlayerLevel.PunchDamageScale : Game.Leveling.PlayerLevel.WeaponDamageScale);
             return scale * weapon.boost;
         }
 
