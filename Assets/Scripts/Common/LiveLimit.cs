@@ -89,6 +89,8 @@ namespace Game
                     // Its FSM watches its health and breaks it (Pumpkin_On_Tree: Compare Health, every frame).
                     var health = fsm.FsmVariables.FindFsmFloat(healthVariable);
                     if (health == null) break;
+                    // Broken to make room, not by the player: no EXP for it (it still drops what it holds).
+                    Game.Leveling.PlayerLevel.NoRewardFor(gameObject);
                     health.Value = 0f;
                     return;
                 }

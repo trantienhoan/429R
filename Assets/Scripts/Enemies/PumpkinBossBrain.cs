@@ -20,9 +20,13 @@ namespace Game.Enemies
     /// - out of reach after a few punches (Punches Before Throw), or far away (further than it runs in Far Seconds,
     ///   after a clap): a combo of 1-5 pumpkins full of bugs, left hand then right. A hit slows the player down and it
     ///   chases them; dodging them all makes it vomit bugs to back it up, or clap for the player (Vomit After Dodge);
-    /// - true form: after a few punches miss in a row (Misses Before Body Slam), a jump with a body slam.
-    /// Hits never stop it. Its hits throw the player (Player Launch) and only hurt when they really land. Every health
-    /// it loses drops a pumpkin to throw back at it.
+    /// - true form: the jump with a body slam is its main move (see True Form): never more than a couple of punches in
+    ///   a row, and it leaps at a player a little out of its reach. For its upper-body moves (punches, the two-arm slam,
+    ///   the clap, the cyclone) it drops back into the floor to its upper body's depth first, so it doesn't hang in the
+    ///   air with its legs folded up; it climbs back out to run, throw, vomit or jump.
+    /// Hits never stop it. Its hits throw the player (Player Launch, Push Power) and only hurt when they really land.
+    /// Every health it loses drops a pumpkin to throw back at it. Eating candy (Candy Vacuum) its munching stops its
+    /// laugh for a moment: one mouth, one sound.
     /// When it dies it shrinks back into one big pumpkin head that bursts like the other pumpkins, and sets
     /// GAMESTAGES' BOSS flag.
     /// Hits on it come from Enemy Hit Damage, which lowers the "health" of its (switched off) Health FSM.
@@ -88,16 +92,22 @@ namespace Game.Enemies
         [SerializeField] private float dizzyCooldown = 20f;
 
         [Header("Hitting the player")]
-        [Tooltip("Sent to the player's PlayerHealth FSM when an upper-body hit lands (35-45) / a true-form hit (55-70).")]
+        [Tooltip("Sent to the player's PlayerHealth FSM when an upper-body hit or the true form's body slam lands " +
+                 "(70-90 damage) / any other true-form hit (110-140).")]
         [SerializeField] private string upperHitEvent = "PumpkinBossHit";
         [SerializeField] private string trueHitEvent = "PumpkinBossHitHeavy";
         [SerializeField] private string playerHealthFsm = "PlayerHealth";
-        [Tooltip("Throws: x = how high, y = how far, in metres.")]
+        [Tooltip("Throws: x = how high, y = how far, in metres (before Push Power).")]
         [SerializeField] private Vector2 slamLaunch = new(3.2f, 2.5f);
         [SerializeField] private Vector2 punchLaunch = new(1.0f, 3.0f);
         [SerializeField] private Vector2 jumpSlamLaunch = new(3.6f, 3.0f);
         [Tooltip("The cyclone pushes a player who came too close away: it throws them highest and furthest of all.")]
         [SerializeField] private Vector2 cycloneLaunch = new(4.5f, 7f);
+        [Tooltip("How much further its punches, slams and body slam throw the player: times the distances above (the " +
+                 "heights stay, so the arc is as high but flies further and faster). 1 (or 0) = as set above.")]
+        [Min(0f)] [SerializeField] private float pushPower = 1f;
+        [Tooltip("The same for its cyclone (its throw is already the furthest). 1 (or 0) = as set above.")]
+        [Min(0f)] [SerializeField] private float cyclonePushPower = 1f;
         [Tooltip("How long the whole cyclone lasts, in seconds: the length of its clip (wind-up, spin, hard stop).")]
         [SerializeField] private float cycloneSeconds = 3f;
         [Tooltip("After a cyclone it can't spin another for this many seconds (nor in the first half of that after it " +
@@ -125,7 +135,8 @@ namespace Game.Enemies
         [SerializeField] private string leftThrowState = "throw_L";
         [Tooltip("After this many punches, a player who got out of its reach gets pumpkins thrown at them.")]
         [Min(1)] [SerializeField] private int punchesBeforeThrow = 2;
-        [Tooltip("True form: after this many punches in a row miss, it jumps and body-slams, then punches again.")]
+        [Tooltip("True form: after this many punches in a row miss, it jumps and body-slams (once its body slam is ready, " +
+                 "see True Form).")]
         [Min(1)] [SerializeField] private int missesBeforeBodySlam = 3;
         [Tooltip("How much a punching arm tilts to point at the player's chest (0 = the clip as it is, 1 = straight at " +
                  "them). The punch clips were made for the upper body, so in the true form, standing on its legs, they " +
@@ -136,6 +147,18 @@ namespace Game.Enemies
         [Min(0f)] [SerializeField] private float chaseSeconds = 4f;
         [Tooltip("The player dodged every pumpkin: the chance it vomits bugs to back it up; otherwise it claps for them.")]
         [Range(0f, 1f)] [SerializeField] private float vomitAfterDodge = 0.5f;
+
+        [Header("True form: body slam")]
+        [Tooltip("After each move, the chance that its next one is the jump with a body slam (once it's ready and the " +
+                 "player is in range). 0 = only after Punches Before Body Slam or missed punches.")]
+        [Range(0f, 1f)] [SerializeField] private float bodySlamChance = 0.6f;
+        [Tooltip("Seconds from one body slam ending until it can do the next.")]
+        [Min(0f)] [SerializeField] private float bodySlamCooldown = 3f;
+        [Tooltip("It never throws more punches than this in a row: then it body-slams (once ready). 0 = no limit.")]
+        [Min(0)] [SerializeField] private int punchesBeforeBodySlam = 2;
+        [Tooltip("It leaps at a player up to this far away (times its size: 4.5 = about 9.5 m in its true form), also " +
+                 "to close the gap. 0 = any distance.")]
+        [Min(0f)] [SerializeField] private float bodySlamRange = 4.5f;
 
         [Header("Bugs")]
         [Tooltip("Small bugs it vomits and that come out of its thrown pumpkin; one at random each time.")]
@@ -248,8 +271,12 @@ namespace Game.Enemies
         private bool clapToThrow;
         // When its last move ended: chasing a player it can't reach for long, it throws.
         private float idleSince;
-        // Sinking into (or climbing out of) the ground fast, for the true form's cyclone.
+        // Sinking into (or climbing out of) the ground fast: the true form dropping to its upper body's depth and back.
         private bool quickBury;
+        // True form: when its next body slam may come, whether its next move should be one, punches since the last.
+        private float nextBodySlam;
+        private bool bodySlamNext;
+        private int punchesSinceBodySlam;
         // Moments of the move under way that already had their blast (Once); cleared when a move starts.
         private int marks;
         private const int MarkTakeOff = 1, MarkFistR = 2, MarkFistL = 4, MarkHardStop = 8, MarkEmerge = 16;
@@ -486,15 +513,35 @@ namespace Game.Enemies
             {
                 Stop();
                 Face(target, 240f);
-                PlayState(trueForm ? IdleTrue : Move);
+                PlayState(StandingIdle(trueForm));
                 if (comboHit || pumpkinsOut <= 0 || Time.time >= pumpkinsWaitUntil) AfterThrows();
                 return;
             }
             // The upper body's rubber-arm punch reaches far, so it stops well away and punches.
             float reach = Reach(trueForm);
             if (Time.time >= nextAct && ChooseAttack(trueForm, distance, reach)) return;
-            if (distance > reach * 0.85f)
+            // Sunk in the floor (true form), it only climbs out once the player is really out of its reach.
+            if (Sunk ? distance > reach : distance > reach * 0.85f)
             {
+                // It needs its legs to run: up out of the floor first, then off it goes.
+                if (trueForm && (Sunk || BuriedNow > 0.3f))
+                {
+                    // Between moves it stays down until it has picked its next one: a far player gets a clap, from the
+                    // floor, so climbing out first would only drop it straight back in (throws and body slams climb out
+                    // by themselves).
+                    if (Sunk && Time.time < nextAct)
+                    {
+                        Stop();
+                        Face(target, 240f);
+                        PlayState(StandingIdle(trueForm));
+                        return;
+                    }
+                    StandUp();
+                    Stop();
+                    Face(target, 240f);
+                    PlayState(IdleTrue);
+                    return;
+                }
                 agent.isStopped = false;
                 agent.stoppingDistance = reach * 0.6f;
                 agent.SetDestination(target);
@@ -504,9 +551,13 @@ namespace Game.Enemies
             {
                 Stop();
                 Face(target, 240f);
-                PlayState(trueForm ? IdleTrue : Move);
+                PlayState(StandingIdle(trueForm));
             }
         }
+
+        // Waiting between moves: the upper body (or the true form sunk to it) sways in "move", the true form on its legs
+        // stands in "idle_true".
+        private string StandingIdle(bool trueForm) => trueForm && !Sunk ? IdleTrue : Move;
 
         // What it does next; false: it just chases the player (or stands facing them, in reach).
         private bool ChooseAttack(bool trueForm, float distance, float reach)
@@ -517,10 +568,12 @@ namespace Game.Enemies
                 StartCyclone();
                 return true;
             }
-            // True form: its punches keep missing, so it jumps and body-slams, then punches again.
-            if (trueForm && spreeMisses >= missesBeforeBodySlam)
+            // True form: the body slam is its main move. Once it's ready and the player is in range: when the dice said
+            // so after its last move, after a couple of punches, or when its punches keep missing.
+            if (trueForm && BodySlamReady(distance) &&
+                (bodySlamNext || spreeMisses >= missesBeforeBodySlam ||
+                 (punchesBeforeBodySlam > 0 && punchesSinceBodySlam >= punchesBeforeBodySlam)))
             {
-                spreeMisses = 0;
                 StartJumpSlam();
                 return true;
             }
@@ -560,15 +613,24 @@ namespace Game.Enemies
 
         private float FormSpeed => phase == Phase.True ? trueSpeed : trueSpeed * upperSpeed;
 
+        // True form: its body slam has cooled down and the player is close enough to leap at.
+        private bool BodySlamReady(float distance)
+        {
+            return Time.time >= nextBodySlam && (bodySlamRange <= 0f || distance <= bodySlamRange * Size);
+        }
+
         // One of its three punches: left, right, or both arms (the slam, only when the player stands where it lands).
         private void StartPunch(float distance)
         {
             bool canSlam = distance >= SlamFrom * Size && distance <= SlamTo * Size;
             float r = Random.value * (canSlam ? 3f : 2f);
-            if (r < 1f) Begin(Act.PunchL, PunchLState, 1.6f);
-            else if (r < 2f) Begin(Act.PunchR, PunchRState, 1.6f);
-            else Begin(Act.Slam, Slam, 2.75f);
+            // Upper-body moves: the true form drops into the floor for them (the legs fold up as it goes down).
+            float fade = SinkDown(PumpkinBossFx.Blast.Small);
+            if (r < 1f) Begin(Act.PunchL, PunchLState, 1.6f, fade);
+            else if (r < 2f) Begin(Act.PunchR, PunchRState, 1.6f, fade);
+            else Begin(Act.Slam, Slam, 2.75f, fade);
             spreePunches++;
+            punchesSinceBodySlam++;
             PlaySound(attackSound);
         }
 
@@ -588,6 +650,8 @@ namespace Game.Enemies
 
         private void NextThrow()
         {
+            // Throwing takes its legs (true form): it climbs out of the floor first (the pumpkin leaves at 0.65 s).
+            StandUp();
             throwsLeft--;
             bool left = throwLeftNext;
             throwLeftNext = !left;
@@ -614,6 +678,8 @@ namespace Game.Enemies
             if (!comboHit)
             {
                 if (Random.value < vomitAfterDodge && CanVomit()) StartVomit(vomitBugs);
+                // The true form leaps at a player who dodged everything instead of clapping, when it can.
+                else if (phase == Phase.True && BodySlamReady(Flat(PlayerFloor() - transform.position))) StartJumpSlam();
                 else StartClap(false);
             }
             chaseUntil = Mathf.Max(Time.time, actUntil) + chaseSeconds;
@@ -621,7 +687,8 @@ namespace Game.Enemies
 
         private void StartClap(bool thenThrow)
         {
-            Begin(Act.Clap, Clap, 1.5f);
+            // An upper-body move: the true form drops into the floor for it.
+            Begin(Act.Clap, Clap, 1.5f, SinkDown(PumpkinBossFx.Blast.Small));
             clapToThrow = thenThrow;
         }
 
@@ -630,7 +697,8 @@ namespace Game.Enemies
             return animator != null && !string.IsNullOrEmpty(state) && animator.HasState(0, Animator.StringToHash(state));
         }
 
-        private void Begin(Act what, string state, float seconds)
+        // A move starts: its clip (blended in over Fade seconds) and how long it lasts.
+        private void Begin(Act what, string state, float seconds, float fade = 0.15f)
         {
             fistTracked.Clear();
             marks = 0;
@@ -640,7 +708,7 @@ namespace Game.Enemies
             actHit = false;
             actImpact = false;
             Stop();
-            PlayState(state, true);
+            PlayState(state, true, fade);
         }
 
         private void UpdateAct(bool trueForm)
@@ -764,18 +832,15 @@ namespace Game.Enemies
                 // It spun itself dizzy, still sunk into its upper-body form (it reels like one).
                 if (cycloneDizzySeconds > 0f) { StartDizzy(BeingHit, cycloneDizzySeconds); return; }
             }
-            // Sunk for its cyclone: back up on its legs, bursting out of the floor.
-            if (trueForm && (act == Act.Cyclone || act == Act.Dizzy) && targetBuried > 0f)
-            {
-                targetBuried = 0f;
-                GroundBlast(transform.position, PumpkinBossFx.Blast.Medium);
-            }
-            // A punch that didn't land counts towards the body slam; the body slam starts the count again.
+            // Sunk in the floor (true form, after a punch, clap or its cyclone), it stays down while it fights the player
+            // in its reach, and climbs out only when it needs its legs (to run, throw, vomit or jump).
+            // A punch that didn't land counts towards the body slam (Start Jump Slam starts the count again).
             if (act == Act.PunchL || act == Act.PunchR || act == Act.Slam) spreeMisses = actHit ? 0 : spreeMisses + 1;
-            if (act == Act.JumpSlam) spreeMisses = 0;
             // The last pumpkin is away: it watches them land (UpdateFighting), then decides.
             if (act == Act.Throw) { waitingForPumpkins = true; pumpkinsWaitUntil = Time.time + 2.5f; }
             if (act == Act.Dizzy) nextDizzy = Time.time + dizzyCooldown;
+            // True form: roll once per move whether the next one is a body slam (it waits for the cooldown and range).
+            if (trueForm && !bodySlamNext) bodySlamNext = Random.value < bodySlamChance;
             act = Act.None;
             idleSince = Time.time;
             nextAct = Time.time + (trueForm ? Random.Range(0.6f, 1.2f) : Random.Range(0.8f, 1.6f));
@@ -783,6 +848,12 @@ namespace Game.Enemies
 
         private void StartJumpSlam()
         {
+            // Out of the floor first if it's sunk (it takes off at 0.6 s; the take-off blast covers the climb).
+            StandUp(false);
+            spreeMisses = 0;
+            punchesSinceBodySlam = 0;
+            bodySlamNext = false;
+            nextBodySlam = Time.time + 2.2f + bodySlamCooldown;
             Begin(Act.JumpSlam, JumpSlamState, 2.2f);
             PlaySound(roarSound != null ? roarSound : attackSound);
             jumpFrom = transform.position;
@@ -815,7 +886,9 @@ namespace Game.Enemies
                 float radius = 1.7f * (model != null ? model.localScale.x : 1f);
                 var flat = PlayerFloor() - transform.position;
                 flat.y = 0f;
-                if (flat.magnitude <= radius && !PlayerFlying()) HitPlayer(jumpSlamLaunch, true);
+                // It body-slams a lot, so its body slam hurts like an upper-body hit (Upper Hit Event, 70-90), not a
+                // heavy one: a few in a row are no one-shot loop.
+                if (flat.magnitude <= radius && !PlayerFlying()) HitPlayer(jumpSlamLaunch, false);
                 // After the hit: the player's own hit shakes (sent by HitPlayer) would cut this big one short.
                 SendShake("ShakeBig");
             }
@@ -823,17 +896,11 @@ namespace Game.Enemies
 
         private void StartCyclone()
         {
-            Begin(Act.Cyclone, CycloneState, cycloneSeconds);
-            agent.speed = FormSpeed * 0.7f;
             // Standing on its legs its arms would spin over the player's head: it sinks back into its upper-body form
-            // for the spin (and the dizzy spell after it), then climbs out again.
-            if (phase == Phase.True)
-            {
-                targetBuried = buried.Length > 0 ? buried[buried.Length - 1] : 0f;
-                quickBury = true;
-                // It drops into the floor: the ground bursts round it.
-                GroundBlast(transform.position, PumpkinBossFx.Blast.Medium);
-            }
+            // for the spin (and the dizzy spell after it), the ground bursting round it, and stays down until it needs
+            // its legs again.
+            Begin(Act.Cyclone, CycloneState, cycloneSeconds, SinkDown(PumpkinBossFx.Blast.Medium));
+            agent.speed = FormSpeed * 0.7f;
             nextCyclone = Time.time + cycloneSeconds + cycloneCooldown;
             nextScrape = Time.time + CycloneSpinFrom;
             PlaySound(roarSound != null ? roarSound : attackSound);
@@ -841,6 +908,8 @@ namespace Game.Enemies
 
         private void StartVomit(int count)
         {
+            // It bends over on its legs to throw up (true form): out of the floor first.
+            StandUp();
             Begin(Act.Vomit, VomitState, 2.0f);
             bugsLeft = count;
             retchesDone = 0;
@@ -972,7 +1041,9 @@ namespace Game.Enemies
             {
                 if (fsm.FsmName == playerHealthFsm) fsm.SendEvent(heavy ? trueHitEvent : upperHitEvent);
             }
-            PlayerLaunch.Launch(transform.position, launch.x, launch.y);
+            // Push Power throws them further (as high: the same arc, faster); its cyclone has its own.
+            float push = act == Act.Cyclone ? cyclonePushPower : pushPower;
+            PlayerLaunch.Launch(transform.position, launch.x, launch.y * (push > 0f ? push : 1f));
         }
 
         // A sphere touching the player's body: a standing cylinder from their feet to their head.
@@ -1000,6 +1071,7 @@ namespace Game.Enemies
             waitingForPumpkins = false;
             spreePunches = 0;
             spreeMisses = 0;
+            punchesSinceBodySlam = 0;
             targetBuried = 0f;
             targetScale = trueScale;
             PlayState(TransformState, true);
@@ -1029,6 +1101,10 @@ namespace Game.Enemies
             agent.speed = trueSpeed;
             nextAct = Time.time + 0.4f;
             nextCyclone = Time.time + cycloneCooldown * 0.5f;
+            // It shows off its new legs: its first move after the opening vomit is a body slam (in range).
+            nextBodySlam = Time.time + 2f;
+            bodySlamNext = true;
+            punchesSinceBodySlam = 0;
             // Its true form opens by calling its bugs: a big vomit, right away (unless the game is already full).
             if (trueFormVomitBugs > 0 && CanVomit()) StartVomit(trueFormVomitBugs);
             else PlayState(Run);
@@ -1101,6 +1177,25 @@ namespace Game.Enemies
             nextLaugh = Time.time + clip.length + laughGap;
         }
 
+        /// <summary>
+        /// Its mouth is busy (munching candy: Candy Vacuum calls this): the laugh stops for this sound and comes back
+        /// Laugh Gap after it ends, so the two never play on top of each other. Still munching, a second candy adds no
+        /// second sound on top. False when it has no laugh speaker (then the caller plays the sound itself).
+        /// </summary>
+        public bool SayInsteadOfLaugh(AudioClip clip, float volume)
+        {
+            if (laughSpeaker == null || clip == null) return false;
+            // Dying: nothing over its last laugh.
+            if (phase == Phase.Dying) return true;
+            if (laughSpeaker.isPlaying && laughSpeaker.clip == clip) return true;
+            laughSpeaker.Stop();
+            laughSpeaker.clip = clip;
+            laughSpeaker.volume = volume;
+            laughSpeaker.Play();
+            nextLaugh = Time.time + clip.length + laughGap;
+            return true;
+        }
+
         // The walls of whichever room is standing fall away (its own fall-away clip), then the room is removed.
         private void BreakRooms()
         {
@@ -1159,11 +1254,43 @@ namespace Game.Enemies
             model.localPosition = p;
         }
 
-        private void PlayState(string state, bool restart = false)
+        // The upper body's depth in the floor (model units): the true form drops to it for its upper-body moves.
+        private float UpperDepth => buried.Length > 0 ? buried[buried.Length - 1] : 0f;
+
+        // How deep in the floor the model is right now (model units).
+        private float BuriedNow => model != null ? -model.localPosition.y / Mathf.Max(0.01f, model.localScale.x) : 0f;
+
+        // True form, dropped (or dropping) into the floor.
+        private bool Sunk => phase == Phase.True && targetBuried > 0f;
+
+        // True form: its upper-body clips (punches, the two-arm slam, the clap, the cyclone, reeling) fold its legs up
+        // into its body. Standing, it would hang in the air, so first it drops back into the floor to its upper body's
+        // depth, the ground bursting round it. Returns the blend for the move's clip: slower while it drops (so the legs
+        // fold up as it goes down), the usual one otherwise.
+        private float SinkDown(PumpkinBossFx.Blast blast)
+        {
+            if (phase != Phase.True || targetBuried >= UpperDepth) return 0.15f;
+            targetBuried = UpperDepth;
+            quickBury = true;
+            // (No second blast when it was only half way out.)
+            if (BuriedNow < UpperDepth * 0.5f) GroundBlast(transform.position, blast);
+            return 0.3f;
+        }
+
+        // Running, throwing, vomiting and jumping take its legs: it climbs back out of the floor (a puff of dust).
+        private void StandUp(bool dust = true)
+        {
+            if (phase != Phase.True || targetBuried <= 0f) return;
+            targetBuried = 0f;
+            quickBury = true;
+            if (dust && BuriedNow > UpperDepth * 0.5f) GroundBlast(transform.position, PumpkinBossFx.Blast.Small);
+        }
+
+        private void PlayState(string state, bool restart = false, float fade = 0.15f)
         {
             if (animator == null || (!restart && playing == state)) return;
             playing = state;
-            animator.CrossFadeInFixedTime(state, 0.15f, 0, 0f);
+            animator.CrossFadeInFixedTime(state, fade, 0, 0f);
             if (phase == Phase.Head && state == GetHit) actUntil = Time.time + 0.65f;
         }
 

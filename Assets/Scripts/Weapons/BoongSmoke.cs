@@ -13,7 +13,9 @@ namespace Game.Weapons
     /// (Elon, Bus), keeps its flame on, bubbles and puffs smoke for Fire Seconds, then explodes: a bang that hurts bugs
     /// close by (never the player), and the player gets the boong's bonus (Buff) for Buff Seconds. The boong is let go
     /// and breaks into its pieces through its Health FSM (Break Apart), or just vanishes. Once lit, it burns on even if
-    /// it's moved away or dropped; the trigger can't stop it. Inhale and Burn are child points (moving with the bone
+    /// it's moved away or dropped; the trigger can't stop it. Almost there, it hints without words: held the right way
+    /// up at the mouth with no fire, it bubbles dry now and then; the right way up with fire at the bowl but not at the
+    /// mouth, a tiny wisp of smoke rises. Inhale and Burn are child points (moving with the bone
     /// that carries that part) with a reach each, drawn as spheres in the Scene view: cyan the mouthpiece, orange the
     /// bowl (green while that part is right, in Play mode). They are only points, not colliders: nothing else touches
     /// them. Goes on the boong's root, next to its XR Grab Interactable; Tools > 429 Game > Weapons > Set Up Boong
@@ -82,6 +84,19 @@ namespace Game.Weapons
         [Range(0f, 1f)]
         [SerializeField] private float bubbleVolume = 0.9f;
 
+        [Header("Almost there")]
+        [Tooltip("Held the right way up at the mouth but with no flame at the bowl: a short, low, dry bubble this often, in " +
+                 "seconds (it needs fire). 0 = never.")]
+        [Min(0f)]
+        [SerializeField] private float dryPullEvery = 1.5f;
+        [Tooltip("Held the right way up with a flame at the bowl but not at the mouth: a tiny wisp of smoke from the bowl " +
+                 "this often, in seconds (it's catching: now to the mouth). 0 = never. Upside down, nothing gives a hint.")]
+        [Min(0f)]
+        [SerializeField] private float wispEvery = 0.6f;
+        [Tooltip("How loud the dry bubble is.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float cueVolume = 0.25f;
+
         [Header("Explosion")]
         [Tooltip("How far the blast reaches, in metres. It never hurts the player.")]
         [Min(0.1f)]
@@ -113,6 +128,10 @@ namespace Game.Weapons
         private const string ReleaseTrigger = "Release";
         private const float PuffEvery = 0.35f;
         private const float ThrobPerSecond = 7f;
+        // The dry bubble: this low, this long; the wisp: this share of the first puff's size.
+        private const float DryPullPitch = 0.55f;
+        private const float DryPullSeconds = 0.35f;
+        private const float WispShare = 0.5f;
 
         private static Transform mouth;
         private static SphereCollider mouthBall;
@@ -126,6 +145,10 @@ namespace Game.Weapons
         private bool exploded;
         private float burned;
         private float nextPuff;
+        // The 'almost there' hints: when the next may come, and when the dry bubble playing now stops (0 = none playing).
+        private float nextDryPull;
+        private float nextWisp;
+        private float dryPullUntil;
 
         // The fire animation, driven by hand (Animator speed 0) so the trigger can't change it.
         private bool driving;
@@ -201,11 +224,14 @@ namespace Game.Weapons
         private void OnDisable()
         {
             if (burning) PutOut();
+            StopDryPull();
+            nextDryPull = nextWisp = 0f;
         }
 
         private void Update()
         {
             SmoothModel();
+            if (dryPullUntil > 0f && Time.time >= dryPullUntil) StopDryPull();
             if (exploded) return;
             StopShaking();
             if (burning) Burn();
@@ -245,6 +271,54 @@ namespace Game.Weapons
             Lighter lighter = null;
             burnNow = burn != null && Lighter.TryFindFlame(burn.position, Reach(burn, burnRadius), out lighter);
             if (uprightNow && inhaleNow && burnNow) CatchFire(lighter);
+            else if (uprightNow && inhaleNow) DryPull();
+            else if (uprightNow && burnNow) Wisp();
+        }
+
+        // Almost there (at the mouth, no fire): a short, low, quiet bubble now and then, as if pulling on it dry.
+        private void DryPull()
+        {
+            if (dryPullEvery <= 0f || cueVolume <= 0f || bubbleSound == null || Time.time < nextDryPull) return;
+            nextDryPull = Time.time + dryPullEvery;
+            var source = Bubbles();
+            source.clip = bubbleSound;
+            source.volume = cueVolume;
+            source.pitch = DryPullPitch;
+            source.Play();
+            dryPullUntil = Time.time + DryPullSeconds;
+        }
+
+        // Almost there (fire at the bowl, not at the mouth yet): a tiny wisp of smoke from the bowl now and then.
+        private void Wisp()
+        {
+            if (wispEvery <= 0f || smoke == null || Time.time < nextWisp) return;
+            nextWisp = Time.time + wispEvery;
+            float prefabScale = Mathf.Max(smoke.transform.localScale.x, 0.0001f);
+            EffectPool.Play(smoke, burn.position, smokeSize.x * WispShare / prefabScale);
+        }
+
+        private void StopDryPull()
+        {
+            if (dryPullUntil <= 0f) return;
+            dryPullUntil = 0f;
+            // Lit meanwhile: the bubbling goes on.
+            if (bubbles != null && !burning) bubbles.Stop();
+        }
+
+        // The bubbling sound, made the first time it's needed.
+        private AudioSource Bubbles()
+        {
+            if (bubbles != null) return bubbles;
+            var go = new GameObject("Bubbles");
+            go.transform.SetParent(transform, false);
+            bubbles = go.AddComponent<AudioSource>();
+            bubbles.playOnAwake = false;
+            bubbles.loop = true;
+            // Heard from the boong, where it is.
+            bubbles.spatialBlend = 1f;
+            bubbles.minDistance = 0.5f;
+            bubbles.maxDistance = 15f;
+            return bubbles;
         }
 
         private void CatchFire(Lighter lighter)
@@ -263,20 +337,10 @@ namespace Game.Weapons
 
             var at = burn != null ? burn.position : transform.position;
             if (igniteSound != null) AudioSource.PlayClipAtPoint(igniteSound, at, bubbleVolume);
+            dryPullUntil = 0f;
             if (bubbleSound != null)
             {
-                if (bubbles == null)
-                {
-                    var go = new GameObject("Bubbles");
-                    go.transform.SetParent(transform, false);
-                    bubbles = go.AddComponent<AudioSource>();
-                    bubbles.playOnAwake = false;
-                    bubbles.loop = true;
-                    // Heard from the boong, where it is.
-                    bubbles.spatialBlend = 1f;
-                    bubbles.minDistance = 0.5f;
-                    bubbles.maxDistance = 15f;
-                }
+                Bubbles();
                 bubbles.clip = bubbleSound;
                 bubbles.volume = bubbleVolume;
                 bubbles.pitch = 0.85f;

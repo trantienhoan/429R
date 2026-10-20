@@ -56,6 +56,8 @@ namespace Game.Enemies
         private HutongGames.PlayMaker.FsmFloat health;
         private float maxHealth = float.MaxValue;
         private AudioSource voice;
+        // The pumpkin boss laughs non-stop: its munching goes through it, so the two never play at once.
+        private PumpkinBossBrain boss;
 
         private void Awake()
         {
@@ -65,6 +67,7 @@ namespace Game.Enemies
             }
             ownColliders = GetComponentsInChildren<Collider>(true);
             voice = GetComponent<AudioSource>();
+            boss = GetComponent<PumpkinBossBrain>();
         }
 
         private void Start()
@@ -168,6 +171,8 @@ namespace Game.Enemies
             Destroy(body.gameObject);
             if (health != null) health.Value = Mathf.Min(health.Value + healthPerCandy, Mathf.Max(maxHealth, health.Value));
             if (eatSound == null) return;
+            // One mouth: on the pumpkin boss the munching stops its laugh for a moment (and doesn't stack per candy).
+            if (boss != null && boss.SayInsteadOfLaugh(eatSound, eatVolume)) return;
             if (voice != null) voice.PlayOneShot(eatSound, eatVolume);
             else AudioSource.PlayClipAtPoint(eatSound, transform.position, eatVolume);
         }

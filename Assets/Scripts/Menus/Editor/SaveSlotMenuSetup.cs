@@ -140,13 +140,10 @@ namespace Game.EditorTools
             var mouse = rect.gameObject.AddComponent<GraphicRaycaster>();
             if (camera != null) rect.GetComponent<Canvas>().worldCamera = camera;
 
+            // No hint line under it (the user took it out): the title sits halfway between the top and Slot 1.
             var title = SetupUtility.CreateText("Title", rect, "Choose a Save", 50f, TextAlignmentOptions.Center, FontStyles.Bold, font);
             title.color = TitleColor;
-            SetupUtility.TopBand(title.rectTransform, 22f, 64f, 30f, 30f);
-
-            var hint = SetupUtility.CreateText("Hint", rect, "Hold a slot to start", 24f, TextAlignmentOptions.Center, FontStyles.Italic, font);
-            hint.color = DateColor;
-            SetupUtility.TopBand(hint.rectTransform, 86f, 32f, 30f, 30f);
+            SetupUtility.TopBand(title.rectTransform, 32f, 64f, 30f, 30f);
 
             var serialized = new SerializedObject(menu);
             var slots = serialized.FindProperty("slots");
@@ -345,6 +342,8 @@ namespace Game.EditorTools
             serialized.FindProperty("saved").objectReferenceValue = savedGroup;
             serialized.FindProperty("savedIcon").objectReferenceValue = savedSaveIcon;
             serialized.ApplyModifiedPropertiesWithoutUndo();
+            // To its corner of the view (Saved sign placement on the notice).
+            notice.PlaceSavedSign();
 
             // Hidden in the editor; the notice shows them.
             loading.gameObject.SetActive(false);

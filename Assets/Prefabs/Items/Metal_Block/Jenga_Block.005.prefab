@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: 3546920736780168784}
   - component: {fileID: 3289922312594895040}
   - component: {fileID: 6637437316918665176}
+  - component: {fileID: 2649731575546762367}
   m_Layer: 0
   m_Name: Jenga_Block.005
   m_TagString: Destroyer
@@ -397,7 +398,7 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 010101010101
+        actionEnabled: 010101000101
         actionIsOpen: 010101010101
         actionStartIndex: 0000000005000000090000000e0000001300000018000000
         actionHashCodes: 876045022a6e8a0087604502b2cf10005978870081294e04
@@ -1471,6 +1472,24 @@ MonoBehaviour:
   playerHealthFsm: PlayerHealth
   bodyRadius: 0.3
   sharedCooldown: 1
+  graceAfterSpawn: 1
+--- !u!114 &2649731575546762367
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 891425667784877490}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5c9cc9de59d9dc46ae05bace27c949b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.VFX.BigHitSmoke
+  smoke: {fileID: 5874997788430606806}
+  minDamage: 4
+  cooldown: 1.5
+  settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
+  toughness: 1
 --- !u!1 &5874997788430606806
 GameObject:
   m_ObjectHideFlags: 0
@@ -6391,7 +6410,7 @@ ParticleSystemRenderer:
   m_MeshDistribution: 0
   m_SortMode: 0
   m_MinParticleSize: 0
-  m_MaxParticleSize: 1
+  m_MaxParticleSize: 0.35
   m_CameraVelocityScale: 0
   m_VelocityScale: 0
   m_LengthScale: 2

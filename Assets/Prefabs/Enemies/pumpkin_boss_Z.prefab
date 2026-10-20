@@ -7507,7 +7507,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3fa9bbce902d9de4989faa4be958db6f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.EnemyHitDamage
-  settings: {fileID: 0}
+  settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
   toughness: 1.5
   hitCooldown: 0.3
   knockBack: 0
@@ -7515,7 +7515,11 @@ MonoBehaviour:
   knockBackTime: 0.45
   knockBackHop: 0.25
   knockBackStun: 0.3
+  strayToughness: 1
+  hitEffectSize: 1.5
+  hideHitEffect: 0
   exp: 50
+  expOrbs: 0
   healthFsm: Health
   healthVariable: health
   hitEvent: Damage
@@ -7569,6 +7573,8 @@ MonoBehaviour:
   punchLaunch: {x: 1, y: 3}
   jumpSlamLaunch: {x: 3.6, y: 3}
   cycloneLaunch: {x: 4.5, y: 7}
+  pushPower: 3
+  cyclonePushPower: 1.5
   cycloneSeconds: 3
   cycloneCooldown: 8
   cycloneDizzySeconds: 3
@@ -7579,10 +7585,14 @@ MonoBehaviour:
   throwGap: 0.3
   leftThrowState: throw_L
   punchesBeforeThrow: 2
-  missesBeforeBodySlam: 3
+  missesBeforeBodySlam: 2
   punchAim: 1
   chaseSeconds: 4
   vomitAfterDodge: 0.5
+  bodySlamChance: 0.6
+  bodySlamCooldown: 3
+  punchesBeforeBodySlam: 2
+  bodySlamRange: 4.5
   bugs:
   - {fileID: 9003613759866821804, guid: e99e0ff83f2a2134db4a1ec3a6357312, type: 3}
   - {fileID: 8879391879696220359, guid: 05da503bb47783844a68712d2fd9719c, type: 3}

@@ -1560,7 +1560,7 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 0.2
+      scalar: 0.10752409
       minScalar: 0.2
       maxCurve:
         serializedVersion: 2
@@ -6268,7 +6268,7 @@ ParticleSystemRenderer:
   m_MeshDistribution: 0
   m_SortMode: 0
   m_MinParticleSize: 0
-  m_MaxParticleSize: 1
+  m_MaxParticleSize: 0.35
   m_CameraVelocityScale: 0
   m_VelocityScale: 0
   m_LengthScale: 2
@@ -6561,6 +6561,8 @@ GameObject:
   - component: {fileID: 3815923710441675767}
   - component: {fileID: 7993342687433378555}
   - component: {fileID: 3171230669936968881}
+  - component: {fileID: 8874281762175164874}
+  - component: {fileID: 5189924640780034971}
   m_Layer: 0
   m_Name: Bedroom_Stuffs_Shelf
   m_TagString: Untagged
@@ -8066,7 +8068,11 @@ MonoBehaviour:
   knockBackTime: 0.45
   knockBackHop: 0.25
   knockBackStun: 0.3
+  strayToughness: 1
+  hitEffectSize: 1
+  hideHitEffect: 0
   exp: 0
+  expOrbs: 1
   healthFsm: Health
   healthVariable: health
   hitEvent: Damage
@@ -8153,6 +8159,50 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &8874281762175164874
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5657539467836953780}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5c9cc9de59d9dc46ae05bace27c949b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.VFX.BigHitSmoke
+  smoke: {fileID: 4953403777605900232}
+  minDamage: 4
+  cooldown: 1.5
+  settings: {fileID: 0}
+  toughness: 1
+--- !u!114 &5189924640780034971
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5657539467836953780}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34a1402de8ac49b4998731d2e8b03ae6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Rooms.BugHorde
+  chance: 0.12
+  count: {x: 2, y: 7}
+  bugs:
+  - {fileID: 9003613759866821804, guid: e99e0ff83f2a2134db4a1ec3a6357312, type: 3}
+  - {fileID: 8879391879696220359, guid: 05da503bb47783844a68712d2fd9719c, type: 3}
+  - {fileID: 396583835813438451, guid: cfee7d5c491885c48bea91abd92e5624, type: 3}
+  burstSeconds: 0.5
+  comeAtOnce: 1
+  keepFreeForWaves: 3
+  puff: {fileID: 8842881744654391097, guid: c5ec6bbc70bbe6644ac7b233e8ca7f7e, type: 3}
+  puffSize: 0.35
+  popSound: {fileID: 8300000, guid: e3a89633dcee00548ac5a40cc32b6586, type: 3}
+  popVolume: 0.5
+  healthFsm: 
+  healthVariable: health
 --- !u!1 &6221915967301930076
 GameObject:
   m_ObjectHideFlags: 0

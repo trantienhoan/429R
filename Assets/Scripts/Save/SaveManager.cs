@@ -19,8 +19,9 @@ namespace Game.Saving
     /// Nothing is read until a slot is picked: the Save Slot Menu asks as the game starts (ChooseSlot), and the slot is
     /// remembered until the game closes, so Re-Dream (which reloads the scene) goes straight back into it. Picking a slot
     /// with a save goes on from its last checkpoint. After that the game saves at once at every checkpoint (with the
-    /// small "Saved" sign), shortly after anything changes, when the game pauses and when it closes. Dying doesn't touch
-    /// the inventory, so candies are kept through a restart too. The save from before there were slots (save.json) is
+    /// small "Saved" sign), shortly after anything changes, when the game pauses and when it closes. Dying takes all the
+    /// Wraps (Candy: the PlayerDeath FSM's "Inventory Remove All", even when a lucky clover gets the player up); the other
+    /// items are kept through a restart. The save from before there were slots (save.json) is
     /// left on disk as a backup and never read or written again.
     /// </summary>
     [DisallowMultipleComponent]

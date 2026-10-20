@@ -238,7 +238,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3fa9bbce902d9de4989faa4be958db6f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.EnemyHitDamage
-  settings: {fileID: 0}
+  settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
   toughness: 1
   hitCooldown: 0.3
   knockBack: 0
@@ -246,9 +246,17 @@ MonoBehaviour:
   knockBackTime: 0.45
   knockBackHop: 0.25
   knockBackStun: 0.3
+  strayToughness: 1
+  hitEffectSize: 1
+  hideHitEffect: 0
   exp: 10
+  expOrbs: 0
   healthFsm: Health
   healthVariable: health
   hitEvent: Damage
   weakHitEvent: ShakeSmall
   oldDamageFsm: Damage
+  furniture: 0
+  bumpShare: 0.35
+  wieldedShare: 0.15
+  settleSeconds: 2

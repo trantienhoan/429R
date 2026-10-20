@@ -10,7 +10,8 @@ namespace Game.Combat
     /// as health drops below the starting health (the PlayerHealth FSM's DefautPlayerHealth, 120), and turns green,
     /// with little green sparkles flying up around it, when candy has pushed health above it. Health has no cap, so the number tells the rest. Each change pops a
     /// "-8" / "+5" next to the number, and a heal makes the heart pop. The HUD shows for a few seconds after any change, then fades, and stays up
-    /// while health is low. Once the player has died and got back up this run (a revive), the heart is cracked
+    /// while health is low; then the heart beats, and the player hears it beat too (Heartbeat), faster as health drops.
+    /// Once the player has died and got back up this run (a revive), the heart is cracked
     /// (until a new run). The player can hide it all in the pause menu (Health: hidden), e.g. to record video: the
     /// hit and heal flashes on it (particles the PlayerHealth FSM switches on) are hidden too. While a smoked boong's buff
     /// is on (Player Buffs) the heart smokes white and stays in view, with a countdown under it for each
@@ -60,11 +61,25 @@ namespace Game.Combat
         [SerializeField] private float lowShare = 0.25f;
         [Tooltip("Heartbeats per second at low health.")]
         [SerializeField] private float beatsPerSecond = 1.6f;
+        [Tooltip("Heartbeats per second near 0 health: the heart beats faster and faster as health drops, from Beats Per " +
+                 "Second. Less than Beats Per Second (e.g. 0) = always Beats Per Second.")]
+        [SerializeField] private float beatsPerSecondNearZero = 2.2f;
         [Tooltip("How much bigger the heart pops on a heal (0.2 = 20%), and for how long.")]
         [Min(0f)]
         [SerializeField] private float healPop = 0.2f;
         [Min(0.05f)]
         [SerializeField] private float healPopSeconds = 0.3f;
+
+        [Header("Heartbeat")]
+        [Tooltip("Heard at low health, in step with the beating heart: a thump at the big beat (lub) and a softer one at " +
+                 "the small beat (dub), so the player feels the danger without looking at the HUD. Empty = a soft thump " +
+                 "the game makes itself. Silent while the health is hidden (pause menu), the game is stopped, or health is 0.")]
+        [SerializeField] private AudioClip heartbeatSound;
+        [Tooltip("How loud the heartbeat is when health has just got low (x) and near 0 health (y). 0 and 0 = no heartbeat.")]
+        [SerializeField] private Vector2 heartbeatVolume = new(0.35f, 0.8f);
+        [Tooltip("How loud the softer second beat (dub) is, as a share of the first (lub).")]
+        [Range(0f, 1f)]
+        [SerializeField] private float dubShare = 0.6f;
 
         [Header("Showing")]
         [Tooltip("Never fade out.")]
@@ -85,8 +100,9 @@ namespace Game.Combat
         [Tooltip("Metres from the eyes. Closer than about half a metre is tiring to focus on in VR.")]
         [Range(0.3f, 2f)]
         [SerializeField] private float distance = 0.5f;
-        [Tooltip("Degrees right (+) / left (-) and up (+) / down (-) from straight ahead.")]
-        [SerializeField] private Vector2 angles = new(-20f, -10f);
+        [Tooltip("Degrees right (+) / left (-) and up (+) / down (-) from straight ahead. (-24, 16) = the top left corner " +
+                 "of the view; the Saved sign is in the top right.")]
+        [SerializeField] private Vector2 angles = new(-24f, 16f);
         [Tooltip("Canvas scale at 1 m. The canvas scales with the distance, so the HUD looks the same size.")]
         [SerializeField] private float scaleAtOneMetre = 0.0009f;
 
@@ -125,6 +141,15 @@ namespace Game.Combat
         private ParticleSystemRenderer smokeRenderer;
         private MaterialPropertyBlock smokeBlock;
 
+        // The heartbeat: counts heartbeats (one per whole number; the big beat at .0, the small one at .25), so the
+        // heart and the sound stay in step while the beat speeds up.
+        private const float DubAt = 0.25f;
+        private float beatClock;
+        private bool beating;
+        private AudioSource heartbeatSource;
+        private AudioClip heartbeatClip;
+        private static AudioClip madeHeartbeat;
+
         // Where the player's choice is kept (on for a new player).
         private const string ShownKey = "429 Game.HealthHUD";
         private static bool? playerChoice;
@@ -159,6 +184,16 @@ namespace Game.Combat
             if (change != null) changeHome = change.rectTransform.anchoredPosition;
             effects = GetComponentsInChildren<ParticleSystemRenderer>(true);
             Place();
+            if (heartbeatVolume.x > 0f || heartbeatVolume.y > 0f)
+            {
+                // Heard in both ears the same (it's the player's own heart), and never cut off by other sounds.
+                heartbeatSource = gameObject.AddComponent<AudioSource>();
+                heartbeatSource.playOnAwake = false;
+                heartbeatSource.loop = false;
+                heartbeatSource.spatialBlend = 0f;
+                heartbeatSource.priority = 0;
+                heartbeatClip = heartbeatSound != null ? heartbeatSound : MakeHeartbeat();
+            }
         }
 
         private void OnEnable()
@@ -271,13 +306,15 @@ namespace Game.Combat
                 heartFill.color = instant ? target : Color.Lerp(heartFill.color, target, 1f - Mathf.Exp(-Time.unscaledDeltaTime * 8f));
             }
             if (heartEmpty != null) heartEmpty.color = emptyColor;
+            bool beatingNow = low && hp > 0f;
+            if (!instant) Heartbeat(beatingNow, share);
             if (heart != null)
             {
                 float beat = 0f;
-                if (low && hp > 0f)
+                if (beatingNow)
                 {
                     // lub-dub: a big beat, a smaller one, then a rest
-                    float phase = Mathf.Repeat(time * beatsPerSecond, 1f);
+                    float phase = Mathf.Repeat(beatClock, 1f);
                     if (phase < 0.25f) beat = Mathf.Sin(phase * 4f * Mathf.PI);
                     else if (phase < 0.5f) beat = 0.6f * Mathf.Sin((phase - 0.25f) * 4f * Mathf.PI);
                 }
@@ -322,6 +359,74 @@ namespace Game.Combat
                 foreach (var effect in effects)
                     if (effect != null) effect.enabled = effectsShown;
             }
+        }
+
+        // Low health: moves the heartbeat on (faster the lower the health) and thumps at the big and the small beat.
+        // The first beat comes at once when health gets low.
+        private void Heartbeat(bool on, float share)
+        {
+            if (!on)
+            {
+                beating = false;
+                return;
+            }
+            // 0 just at the low mark, 1 at 0 health.
+            float danger = lowShare > 0f ? 1f - Mathf.Clamp01(share / lowShare) : 1f;
+            float rate = Mathf.Lerp(beatsPerSecond, Mathf.Max(beatsPerSecond, beatsPerSecondNearZero), danger);
+            if (!beating)
+            {
+                beating = true;
+                beatClock = -0.0001f;
+            }
+            float was = beatClock;
+            beatClock += Time.unscaledDeltaTime * Mathf.Max(0f, rate);
+            // Whole heartbeats only: keeps the number small without moving the beat.
+            if (beatClock > 1000f)
+            {
+                beatClock -= 1000f;
+                was -= 1000f;
+            }
+
+            if (Mathf.Floor(beatClock) > Mathf.Floor(was)) Thump(1f, danger);
+            if (Mathf.Floor(beatClock - DubAt) > Mathf.Floor(was - DubAt)) Thump(dubShare, danger);
+        }
+
+        private void Thump(float loudness, float danger)
+        {
+            // Not while the player has hidden the health, or the game is stopped (pause menu, a notice), so it can't
+            // pile up and play all at once afterwards.
+            if (heartbeatSource == null || heartbeatClip == null || !Shown || Time.timeScale <= 0f || AudioListener.pause) return;
+            float volume = Mathf.Lerp(heartbeatVolume.x, heartbeatVolume.y, danger) * loudness;
+            if (volume > 0.001f) heartbeatSource.PlayOneShot(heartbeatClip, volume);
+        }
+
+        // A soft, deep thump (about 0.16 s): a low tone falling in pitch with a quick start and a fast fade, plus a
+        // little of its overtones so small headset speakers can play it.
+        private static AudioClip MakeHeartbeat()
+        {
+            if (madeHeartbeat != null) return madeHeartbeat;
+            const int rate = 44100;
+            int count = Mathf.RoundToInt(0.16f * rate);
+            var samples = new float[count];
+            float angle = 0f;
+            float peak = 0f;
+            for (int i = 0; i < count; i++)
+            {
+                float t = (float)i / rate;
+                float envelope = (1f - Mathf.Exp(-t / 0.004f)) * Mathf.Exp(-t / 0.045f);
+                float pitch = Mathf.Lerp(95f, 48f, Mathf.Clamp01(t / 0.12f));
+                angle += 2f * Mathf.PI * pitch / rate;
+                float s = envelope * (Mathf.Sin(angle) + 0.3f * Mathf.Sin(2f * angle) + 0.12f * Mathf.Sin(3f * angle));
+                samples[i] = s;
+                peak = Mathf.Max(peak, Mathf.Abs(s));
+            }
+            if (peak > 0f)
+            {
+                for (int i = 0; i < count; i++) samples[i] *= 0.9f / peak;
+            }
+            madeHeartbeat = AudioClip.Create("Heartbeat", count, 1, rate, false);
+            madeHeartbeat.SetData(samples, 0);
+            return madeHeartbeat;
         }
 
         // Bonus sparkles: emit while health is above the start and the HUD shows; they fade with the HUD (a CanvasGroup
@@ -461,7 +566,9 @@ namespace Game.Combat
         {
             if (!place) return;
             var dir = Quaternion.Euler(-angles.y, angles.x, 0f) * Vector3.forward;
-            transform.localPosition = dir * distance;
+            // A canvas keeps its sideways and up/down place as its anchored position; set it there so the scene saves it.
+            if (transform is RectTransform rect) rect.anchoredPosition3D = dir * distance;
+            else transform.localPosition = dir * distance;
             transform.localRotation = Quaternion.LookRotation(dir, Vector3.up);
             transform.localScale = Vector3.one * (scaleAtOneMetre * distance);
         }

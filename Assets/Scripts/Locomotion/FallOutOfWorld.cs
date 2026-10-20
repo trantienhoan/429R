@@ -54,6 +54,7 @@ namespace Game.Locomotion
         private XRBodyTransformer mover;
         private TeleportationProvider teleport;
         private PlayMakerFSM health;
+        private Game.Combat.PlayerLaunch launch;
         private float nextLook;
         private float fellAt = -1f;
         private bool dropping;
@@ -136,6 +137,9 @@ namespace Game.Locomotion
         // Fades out; over an edge the view also drops (they can't move meanwhile). 'hurt': it costs health once back.
         private void Fall(bool drop, bool hurt)
         {
+            // Thrown over the edge (a boss hit, a bug's leap): the throw ends here, so it doesn't carry on after the
+            // put-back. Before the body is held, while it's still on.
+            StopLaunch();
             fellAt = 0f;
             dropping = drop;
             hurts = hurt;
@@ -162,6 +166,8 @@ namespace Game.Locomotion
             var spot = SpotBeforeFall();
             stood.Clear();
 
+            // A throw that started during the fade-out doesn't carry on from the spot either.
+            StopLaunch();
             // The head ends up over the spot, the feet on its floor (they keep facing the way they face).
             Hold(true);
             var head = HeadOnFloor(transform.position.y);
@@ -174,6 +180,13 @@ namespace Game.Locomotion
             if (fade != null) fade.FadeIn(fadeInSeconds);
             // Already dead: no second death.
             if (hurts && health != null && health.ActiveStateName != "DEAD") health.SendEvent(damageEvent);
+        }
+
+        // Ends a flight from Player Launch (on this object, once anything has thrown the player), if one is going.
+        private void StopLaunch()
+        {
+            if (launch == null) TryGetComponent(out launch);
+            if (launch != null) launch.Stop();
         }
 
         // The body and its mover off while the rig is moved by hand (the body would stop it at the floor, and walking or

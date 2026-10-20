@@ -122,6 +122,20 @@ namespace Game.Inventory
             return true;
         }
 
+        /// <summary>
+        /// Takes away every one of the item, e.g. all the Wraps when the player dies. Not counted as spent. Returns how
+        /// many there were.
+        /// </summary>
+        public int RemoveAll(ItemDefinition item)
+        {
+            int had = GetCount(item);
+            if (had <= 0) return 0;
+
+            counts.Remove(item);
+            OnChanged(item, -had, 0);
+            return had;
+        }
+
         /// <summary>How many of the item were ever added, e.g. every candy eaten.</summary>
         public int GetCollected(ItemDefinition item)
         {

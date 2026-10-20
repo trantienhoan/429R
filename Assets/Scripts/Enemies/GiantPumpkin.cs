@@ -146,14 +146,18 @@ namespace Game.Enemies
             return false;
         }
 
-        // Its health to 0: its Health FSM breaks it the usual way (pieces, candies).
+        // Its health to 0: its Health FSM breaks it the usual way (pieces, candies). No EXP: the giant broke it, not the
+        // player.
         private static void Break(GameObject thing)
         {
             foreach (var fsm in thing.GetComponents<PlayMakerFSM>())
             {
                 if (fsm.FsmName != "Health") continue;
                 var health = fsm.FsmVariables.FindFsmFloat("health");
-                if (health != null && health.Value > 0f) health.Value = 0f;
+                if (health == null || health.Value <= 0f) continue;
+                // (One the player already broke keeps its EXP.)
+                Game.Leveling.PlayerLevel.NoRewardFor(thing);
+                health.Value = 0f;
             }
         }
 

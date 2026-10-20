@@ -58,15 +58,16 @@ namespace Game
             }
         }
 
-        /// <summary>Plays the effect at a point, this many times its prefab's size. Returns the copy playing it.</summary>
-        public static GameObject Play(GameObject prefab, Vector3 point, float scale = 1f)
+        /// <summary>Plays the effect at a point, this many times its prefab's size. Returns the copy playing it. Seconds:
+        /// how long the effect lasts, after which its copy is hidden and handed out again (0 = the usual 3 s).</summary>
+        public static GameObject Play(GameObject prefab, Vector3 point, float scale = 1f, float seconds = 0f)
         {
             if (prefab == null || !EnsureRunner()) return null;
 
             var copy = Free(prefab) ?? Make(prefab);
             copy.warmFramesLeft = 0;
             warming.Remove(copy);
-            copy.freeAt = Time.time + Lifetime;
+            copy.freeAt = Time.time + (seconds > 0f ? seconds : Lifetime);
 
             var go = copy.instance;
             go.SetActive(false);

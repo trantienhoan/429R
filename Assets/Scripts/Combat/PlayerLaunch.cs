@@ -27,21 +27,28 @@ namespace Game.Combat
         private Vector3 velocity;
         private float flightStarted;
         private bool flying;
+        private bool shakeOnLand;
+        // The player's health (the PlayerHealth FSM on this object), looked up when first needed.
+        private HutongGames.PlayMaker.FsmFloat health;
 
         /// <summary>Whether the player is in the air from a launch right now.</summary>
         public bool Flying => flying;
 
         /// <summary>
         /// Throws the player: <paramref name="height"/> metres up and <paramref name="distance"/> metres along the floor,
-        /// away from <paramref name="from"/>. The player's Toughness (a level-up stat) cuts both. Returns false when
-        /// there's no player to throw.
+        /// away from <paramref name="from"/> (as seen from the player's head, where they really stand). The player's
+        /// Toughness (a level-up stat) cuts both. <paramref name="shake"/> off: no camera shake (small shoves). Returns
+        /// false when there's no player to throw, or they're down.
         /// </summary>
-        public static bool Launch(Vector3 from, float height, float distance)
+        public static bool Launch(Vector3 from, float height, float distance, bool shake = true)
         {
             var launcher = Find();
             if (launcher == null) return false;
+            // Down, dying or getting back up: nothing throws them, so they get up where they fell (bites still come while
+            // they're down, they just don't hurt). A flight already going just lands.
+            if (launcher.PlayerDown()) return false;
             float share = Game.Leveling.PlayerLevel.PushShare;
-            launcher.Begin(from, height * share, distance * share);
+            launcher.Begin(from, height * share, distance * share, shake);
             return true;
         }
 
@@ -65,10 +72,47 @@ namespace Game.Combat
             body = GetComponent<CharacterController>();
         }
 
-        private void Begin(Vector3 from, float height, float distance)
+        /// <summary>
+        /// Ends a flight at once, where the player is (no landing shake), e.g. they fell over a Fall Edge: the fall puts
+        /// them back itself, and the rest of the throw mustn't carry on from there.
+        /// </summary>
+        public void Stop()
+        {
+            if (!flying) return;
+            if (body != null && body.enabled) EndFlight(false);
+            // The body is off (something else is moving the rig): the flight just ends; what it passed through is made
+            // solid again when the next flight ends.
+            else { flying = false; velocity = Vector3.zero; }
+        }
+
+        // The player is down: health out, the death (or the lucky coins) under way, or getting back up from a revive.
+        private bool PlayerDown()
+        {
+            if (health == null)
+            {
+                foreach (var fsm in GetComponents<PlayMakerFSM>())
+                {
+                    if (fsm.FsmName == "PlayerHealth") health = fsm.FsmVariables.FindFsmFloat("PlayerHealth");
+                }
+            }
+            return Game.Saving.Checkpoints.IsDying ||
+                   (PlayerRevive.Instance != null && PlayerRevive.Instance.IsReviving) ||
+                   (health != null && health.Value <= 0f);
+        }
+
+        private void Begin(Vector3 from, float height, float distance, bool shake)
         {
             if (height <= 0f && distance <= 0f) return;
-            var away = transform.position - from;
+            // The body is off while something else moves the rig (a fall over a Fall Edge): no throw, not even later.
+            if (body == null || !body.enabled) return;
+            // A small shove (no shake, e.g. a bug's bite) while already flying is lost in the throw: the flight carries on
+            // as it was, so the view isn't jerked about in the air.
+            if (flying && !shake) return;
+            // Away from the hit as seen from the head: in room-scale the rig's middle can be a metre or two from where the
+            // player really stands.
+            var origin = GetComponent<XROrigin>();
+            var standing = origin != null && origin.Camera != null ? origin.Camera.transform.position : transform.position;
+            var away = standing - from;
             away.y = 0f;
             // Straight under the attacker: thrown backwards from where the player looks.
             if (away.sqrMagnitude < 0.0001f)
@@ -81,13 +125,21 @@ namespace Game.Combat
             float up = Mathf.Sqrt(2f * gravity * Mathf.Max(0.05f, height));
             float air = 2f * up / gravity;
             var launch = away * (distance / air) + Vector3.up * up;
-            // A second hit in the air throws again, never weaker than the flight already going.
+            // A second hit in the air throws again, never weaker than the flight already going: up, and along the floor
+            // (a weaker push keeps the throw's own speed and direction).
             if (flying && velocity.y > launch.y) launch.y = velocity.y;
+            if (flying && velocity.x * velocity.x + velocity.z * velocity.z > launch.x * launch.x + launch.z * launch.z)
+            {
+                launch.x = velocity.x;
+                launch.z = velocity.z;
+            }
             if (!flying) launchedFrom = transform.position;
+            // Lands with a shake if any throw of this flight shook.
+            shakeOnLand = shake || (flying && shakeOnLand);
             velocity = launch;
             flightStarted = Time.time;
             flying = true;
-            Shake(launchShake);
+            if (shake) Shake(launchShake);
         }
 
         private void Update()
@@ -170,7 +222,7 @@ namespace Game.Combat
                 if (c != null) Physics.IgnoreCollision(body, c, false);
             }
             passedThrough.Clear();
-            if (landed) Shake(landShake);
+            if (landed && shakeOnLand) Shake(landShake);
         }
 
         private static void Shake(string eventName)

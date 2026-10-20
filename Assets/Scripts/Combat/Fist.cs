@@ -108,7 +108,7 @@ namespace Game.Combat
         [SerializeField] private float topJabSpeed = 5f;
         [Tooltip("How far past the fist a flying punch goes (a jab, a swing, an uppercut), in metres: x for a " +
                  "just-good-enough one, y for a perfect one.")]
-        [SerializeField] private Vector2 jabReach = new(0.6f, 1.5f);
+        [SerializeField] private Vector2 jabReach = new(0.4f, 0.75f);
         [Tooltip("Longest the punch may take, in seconds, from starting to move to snapping to a stop. Slower pushes don't fly.")]
         [Min(0.05f)]
         [SerializeField] private float jabSeconds = 0.4f;
@@ -190,7 +190,8 @@ namespace Game.Combat
 
         [Header("Feel")]
         [Tooltip("Shown where a good punch lands: a flying punch, or the fist itself landing a swing, an uppercut or " +
-                 "anything at Jab Speed or faster (e.g. Smoke_Blast). It plays at the hit from copies kept ready (Effect Pool). Empty: none.")]
+                 "anything at Jab Speed or faster (e.g. Smoke_Blast). It plays at the hit from copies kept ready (Effect Pool). " +
+                 "Not on enemies, which show their own hit pop (Hit Settings). Empty: none.")]
         [SerializeField] private GameObject goodPunchEffect;
         [Tooltip("Size of that effect, compared with its prefab.")]
         [Min(0.01f)]
@@ -580,8 +581,12 @@ namespace Game.Combat
                     if (enemy.IsHead(point))
                     {
                         // A knock-out that hurt: the strongest buzz.
-                        if (enemy.KnockOut(punchSpeed * Power * headPower, 1.5f, uppercutPush * 1.5f, knockOutSeconds, WeaponPower.DamageOf(hitter)))
+                        if (enemy.KnockOut(punchSpeed * Power * headPower, 1.5f, uppercutPush * 1.5f, knockOutSeconds, WeaponPower.DamageOf(hitter), point))
+                        {
                             HitBuzz.Buzz(rumbler, 6f, true);
+                            // A knock-out that killed it: the kill thump just after.
+                            if (enemy.IsDead && enemy.CountsAsKill) HitBuzz.Killed(rumbler, 6f);
+                        }
                         puff = 2f;
                     }
                     else
@@ -664,10 +669,14 @@ namespace Game.Combat
             return true;
         }
 
-        // A puff where a good punch landed (bigger for a knock-out); the copy is destroyed after it has played.
+        // A puff where a good punch landed (bigger for a knock-out); the copy is destroyed after it has played. Not on
+        // enemies: they show their own small pop where a hit hurts them (Enemy Hit Damage), and nothing for one that didn't.
+        // Ones with Hide Hit Effect ticked (room doors, the start pumpkin) still get the puff.
         private void ShowGoodPunch(Collision collision, float scale)
         {
             if (goodPunchEffect == null || Time.time < nextPuff) return;
+            var enemy = collision.collider != null ? collision.collider.GetComponentInParent<EnemyHitDamage>() : null;
+            if (enemy != null && enemy.ShowsOwnHitPop) return;
             nextPuff = Time.time + 0.15f;
             var at = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
             Game.EffectPool.Play(goodPunchEffect, at, goodPunchEffectSize * scale);

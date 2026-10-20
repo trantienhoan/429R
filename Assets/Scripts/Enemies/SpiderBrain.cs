@@ -111,9 +111,17 @@ namespace Game.Enemies
             [Tooltip("How long the slow lasts, in seconds; it eases back to normal over the last half second. 0 = none.")]
             [Min(0f)]
             public float slowSeconds;
+            [Tooltip("How hard this attack shoves the player when it lands: multiplies its size's Launch Height and Launch " +
+                     "Distance (2 = twice as far). 0 or 1 = as the size says. A face leap shoves as it lets go of the face " +
+                     "(at Hit Until); swatted off before that, it doesn't shove.")]
+            [Min(0f)]
+            public float pushPower = 1f;
             [Tooltip("For fliers (Flies): Always, only while Flying, or only once Grounded (wings lost). A Flying attack " +
                      "is still used on the ground while no Grounded attack has its animation yet.")]
             public When usedWhen = When.Always;
+
+            /// <summary>Push Power as used: 0 (attacks saved before it existed) counts as 1.</summary>
+            public float PushPower => pushPower > 0f ? pushPower : 1f;
         }
 
         /// <summary>When a flier uses an attack.</summary>
@@ -192,8 +200,8 @@ namespace Game.Enemies
                      "below 1 it comes back sooner and attacks more often.")]
             [Range(0.1f, 2f)]
             public float rest = 1f;
-            [Tooltip("A bite that lands throws the player this high, in metres (0 = not at all). The Pumpkin boss's slam " +
-                     "throws about 3 m; boss bugs about a quarter of that.")]
+            [Tooltip("A bite that lands throws the player this high, in metres (0 = not at all), times the attack's Push " +
+                     "Power. The Pumpkin boss's slam throws about 3 m; boss bugs about a quarter of that.")]
             [Min(0f)]
             public float launchHeight;
             [Tooltip("...and this far away along the floor, in metres.")]
@@ -507,7 +515,8 @@ namespace Game.Enemies
         [Tooltip("...and grows to full size over this many seconds. 0 = full size at once.")]
         [Min(0f)]
         [SerializeField] private float growSeconds = 7f;
-        [Tooltip("Switched on when it's hurt, e.g. a puff of smoke (it switches itself off).")]
+        [Tooltip("Switched on when it's hurt, e.g. a puff of smoke (it switches itself off). Usually empty: Enemy Hit " +
+                 "Damage shows the small hit pop from the Hit Settings where a hit hurts it.")]
         [SerializeField] private GameObject hitEffect;
 
         [Header("When it dies")]
@@ -555,6 +564,14 @@ namespace Game.Enemies
         [Tooltip("The same sound isn't started again, by any enemy, within this many seconds.")]
         [Min(0f)]
         [SerializeField] private float sameSoundGap = 0.3f;
+        [Tooltip("Winding up to strike while the player looks away (beside or behind them), it hisses one of its Notice " +
+                 "Sounds, which always plays, so they can turn round and dodge. In view it winds up silently, as before. " +
+                 "Off: never.")]
+        [SerializeField] private bool warnWhenUnseen = true;
+        [Tooltip("How far from where the player is looking, in degrees, it counts as unseen (70 = beside or behind " +
+                 "them). 0 counts as 70.")]
+        [Range(0f, 180f)]
+        [SerializeField] private float unseenAngle = 70f;
 
         private const string PlayerVariable = "Player";
         private const string PlayerDamageFsm = "Damage";
@@ -564,6 +581,8 @@ namespace Game.Enemies
         private const float NoticeSeconds = 0.5f;
         private const float TurnSpeed = 540f;
         private const float LungeLead = 0.15f;
+        // An unseen bug further from the player than this (metres) doesn't hiss before it strikes.
+        private const float WarnRange = 6f;
 
         private static readonly List<SpiderBrain> spiders = new();
         private static readonly Collider[] touching = new Collider[32];
@@ -644,6 +663,8 @@ namespace Game.Enemies
         private AttackMove move;
         private float attackStart;
         private bool attackResolved;
+        // A face leap's shove (height, distance), given as it lets go of the face.
+        private Vector2 pendingPush;
         private float lungeLeft;
         private float lungeTotal;
         private float hitShownUntil;
@@ -696,7 +717,10 @@ namespace Game.Enemies
         private string AlertLook => Look(groundAlertAnimation, alertAnimation);
         private string HitLook => Look(groundHitAnimation, hitAnimation);
 
-        /// <summary>Raised with the same names as the events it sends its FSMs (Noticed, Attack, Bite, Blocked, ...).</summary>
+        /// <summary>
+        /// Raised with the same names as the events it sends its FSMs (Noticed, Attack, Bite, Blocked, ...), and with
+        /// "Warned" (not sent to its FSMs) when it hisses before striking a player who looks away.
+        /// </summary>
         public event Action<SpiderBrain, string> Signalled;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -1122,6 +1146,38 @@ namespace Game.Enemies
             Stop();
             Play(AlertLook);
             SendToOwnFsms("Prepare");
+            WarnIfUnseen();
+        }
+
+        // About to strike from beside or behind the player: it hisses, so they hear where it is and can turn in time.
+        private void WarnIfUnseen()
+        {
+            // A bug going for an object (the tree) never bites the player: no warning for them.
+            if (!warnWhenUnseen || GoesForObject || noticeSounds == null || noticeSounds.Length == 0) return;
+            var eyes = player.Camera.transform;
+            var toBug = transform.position - eyes.position;
+            toBug.y = 0f;
+            if (toBug.sqrMagnitude > WarnRange * WarnRange || toBug.sqrMagnitude < 0.0001f) return;
+            // Where the player looks, flat; looking straight down, the top of their view points that way.
+            var look = eyes.forward;
+            look.y = 0f;
+            if (look.sqrMagnitude < 0.01f)
+            {
+                look = eyes.up;
+                look.y = 0f;
+            }
+            if (Vector3.Angle(look, toBug) <= (unseenAngle > 0f ? unseenAngle : 70f)) return;
+
+            // A sound that isn't held back by Same Sound Gap (another bug may have just used one).
+            int first = Random.Range(0, noticeSounds.Length);
+            for (int i = 0; i < noticeSounds.Length; i++)
+            {
+                var clip = noticeSounds[(first + i) % noticeSounds.Length];
+                if (clip == null || (soundStarted.TryGetValue(clip, out float started) && Time.time - started < sameSoundGap)) continue;
+                PlayOne(clip, true);
+                Signalled?.Invoke(this, "Warned");
+                return;
+            }
         }
 
         // The wind-up: stands still and rears up at the player. Then it picks its attack.
@@ -1149,6 +1205,7 @@ namespace Game.Enemies
             Enter(State.Attack, move.duration);
             attackStart = Time.time;
             attackResolved = false;
+            pendingPush = Vector2.zero;
             // Just far enough to put its mouth where the player is now (a face leap stops just in front of the face).
             lungeTotal = lungeLeft = Mathf.Clamp(distance - move.reach * Size() - (move.leapToFace ? 0.1f : 0.05f), 0f, move.lunge);
             // A homing sting may go further, up to its whole budget, if the player backs off.
@@ -1192,6 +1249,12 @@ namespace Game.Enemies
                 }
             }
             if (move.leapToFace) Leap(t);
+            // A face leap kicks off the face as it lets go.
+            if (pendingPush != Vector2.zero && t >= move.hitUntil)
+            {
+                Push(pendingPush.x, pendingPush.y);
+                pendingPush = Vector2.zero;
+            }
 
             if (!attackResolved && t >= move.hitFrom && t <= move.hitUntil) TryBite();
             if (!attackResolved && t > move.hitUntil)
@@ -1357,9 +1420,20 @@ namespace Game.Enemies
             SendToPlayer(string.IsNullOrEmpty(kind.playerEvent) ? move.playerEvent : kind.playerEvent);
             if (move.slowSeconds > 0f) Game.Locomotion.PlayerSlow.Apply(move.slowPlayerTo, move.slowSeconds);
             if (move.landSound != null) PlayOne(move.landSound, true);
-            if (kind.launchHeight > 0f || kind.launchDistance > 0f)
-                Game.Combat.PlayerLaunch.Launch(transform.position, kind.launchHeight, kind.launchDistance);
+            // The size's push, times this attack's Push Power (a jump attack shoves harder).
+            float height = kind.launchHeight * move.PushPower, distance = kind.launchDistance * move.PushPower;
+            if (height > 0f || distance > 0f)
+            {
+                if (move.leapToFace) pendingPush = new Vector2(height, distance);
+                else Push(height, distance);
+            }
             SendToOwnFsms("Bite");
+        }
+
+        // Shoves the player away from it. Small shoves (under a metre) don't shake the view.
+        private void Push(float height, float distance)
+        {
+            Game.Combat.PlayerLaunch.Launch(transform.position, height, distance, distance >= 1f);
         }
 
         // Bit a held weapon or a fist (or a shield covered the player): it flinches and backs off.
@@ -1554,6 +1628,9 @@ namespace Game.Enemies
                     if (wing != null) wings.Add(wing);
                 }
             }
+            // Without a Hit Effect, the big hit pop where the wings break off.
+            if (hitEffect == null && TryGetComponent(out EnemyHitDamage hits))
+                hits.PlayHitEffect(wings.Count > 0 ? wings[0].position : transform.position + Vector3.up * 0.3f, true);
             SendToOwnFsms("WingsOff");
         }
 

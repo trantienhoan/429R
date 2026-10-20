@@ -32,7 +32,8 @@ namespace Game.Leveling
 
     /// <summary>
     /// The player's level. Killing enemies gives EXP (each enemy's Exp, on its Enemy Hit Damage or Ghost Balloon; FSMs
-    /// can give some with the "Add Player Exp" action). Enough EXP is a level up (Exp To Next Level, one number per
+    /// can give some with the "Add Player Exp" action; breakables with Exp When Broken, e.g. a tree pumpkin's 0.25, give
+    /// parts of a point that add up). Enough EXP is a level up (Exp To Next Level, one number per
     /// level; the last one is the highest level), and each level up gives Points Per Level points to put into the six
     /// stats in the Level Up menu:
     /// Max Health raises the health cap; Toughness cuts the damage enemies do and how far big hits throw the player;
@@ -69,6 +70,8 @@ namespace Game.Leveling
             public int exp;
             // Points in each stat, in the order of Stat.
             public List<int> points = new();
+            // Part of an EXP point gathered so far (e.g. 0.75 after three tree pumpkins at 0.25 each). Older saves: 0.
+            public float expPart;
         }
 
         [Header("Levels")]
@@ -157,11 +160,30 @@ namespace Game.Leveling
         [Min(1)]
         [SerializeField] private int triplePunchAtFistSize = 10;
 
+        [Header("Worn weapons")]
+        [Tooltip("A weapon the player has held cracks (Crack Sound) when its health first drops to this share of what it " +
+                 "had at the first grab (0.3 = 30%), and creaks (Creak Sounds) at every hard hit after that, higher and " +
+                 "higher until it breaks. So the player hears it's about to go. 0 = no warning.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float crackShare = 0.3f;
+        [SerializeField] private AudioClip crackSound;
+        [Range(0f, 1f)]
+        [SerializeField] private float crackVolume = 0.7f;
+        [Tooltip("One of these, picked at random, at each hard hit once it has cracked.")]
+        [SerializeField] private AudioClip[] creakSounds = Array.Empty<AudioClip>();
+        [Range(0f, 1f)]
+        [SerializeField] private float creakVolume = 0.4f;
+        [Tooltip("Things whose name has one of these words never crack or creak: they aren't real weapons, just things " +
+                 "that break (pumpkins, boxes). They still wear out as before.")]
+        [SerializeField] private string[] noCrackNames = { "Pumpkin", "Box" };
+
         private readonly int[] points = new int[StatCount];
         private readonly Dictionary<ContinuousMoveProvider, float> normalSpeeds = new();
         private readonly List<XRBaseInteractor> hands = new();
         private int level;
         private int exp;
+        // Part of an EXP point (0 to just under 1), from small rewards like a tree pumpkin's 0.25.
+        private float expPart;
 
         public static PlayerLevel Instance { get; private set; }
 
@@ -192,6 +214,9 @@ namespace Game.Leveling
 
         /// <summary>EXP gathered towards the next level.</summary>
         public int Exp => exp;
+
+        /// <summary>Part of an EXP point gathered on top of Exp (0 to just under 1), e.g. 0.5 after two tree pumpkins.</summary>
+        public float ExpPart => expPart;
 
         /// <summary>EXP the next level takes (0 at the highest level).</summary>
         public int ExpNeeded => IsMaxLevel ? 0 : Mathf.Max(1, expToNextLevel[level]);
@@ -293,6 +318,31 @@ namespace Game.Leveling
 
         /// <summary>How much harder punches hit, break and push (the Power bonus): 1 = as always.</summary>
         public static float PunchPowerScale => Instance != null ? Instance.Gain(Stat.BonusPower, Instance.punchPowerPerPoint) : 1f;
+
+        /// <summary>Worn weapons (Weapon Wear): the share of its health at which a weapon cracks (0 = never), and its sounds.</summary>
+        public static float CrackShare => Instance != null ? Instance.crackShare : 0f;
+        public static AudioClip CrackSound => Instance != null ? Instance.crackSound : null;
+        public static float CrackVolume => Instance != null ? Instance.crackVolume : 0f;
+        public static float CreakVolume => Instance != null ? Instance.creakVolume : 0f;
+
+        /// <summary>Whether a thing with this name never cracks or creaks (No Crack Names: pumpkins, boxes).</summary>
+        public static bool NoCracksFor(string thingName)
+        {
+            var words = Instance != null ? Instance.noCrackNames : null;
+            if (words == null || string.IsNullOrEmpty(thingName)) return false;
+            foreach (var word in words)
+            {
+                if (!string.IsNullOrEmpty(word) && thingName.IndexOf(word, StringComparison.OrdinalIgnoreCase) >= 0) return true;
+            }
+            return false;
+        }
+
+        /// <summary>A creak for a worn weapon's hard hit, picked at random (none if there are none).</summary>
+        public static AudioClip RandomCreak()
+        {
+            var clips = Instance != null ? Instance.creakSounds : null;
+            return clips != null && clips.Length > 0 ? clips[UnityEngine.Random.Range(0, clips.Length)] : null;
+        }
 
         private float Cut(Stat stat, float perPoint) => Mathf.Clamp(1f - Worth(stat) * perPoint, 0.1f, 1f);
 
@@ -419,6 +469,41 @@ namespace Game.Leveling
             if (Instance != null) Instance.GainExp(amount);
         }
 
+        /// <summary>
+        /// Gives the player EXP that can be part of a point, e.g. 0.25 for a tree pumpkin: the parts add up (and are
+        /// saved), and every whole point counts like AddExp(1).
+        /// </summary>
+        public static void AddExp(float amount)
+        {
+            if (Instance != null) Instance.GainExpPart(amount);
+        }
+
+        /// <summary>
+        /// The EXP this thing would give when it breaks or dies isn't given (nor its gold orbs): it went without the
+        /// player earning it, e.g. the giant's hands, a Fall Edge, Live Limit making room. Only what the player does
+        /// gives EXP.
+        /// </summary>
+        public static void NoRewardFor(GameObject thing)
+        {
+            if (thing == null) return;
+            foreach (var reward in thing.GetComponentsInChildren<ExpWhenBroken>(true)) reward.noReward = true;
+            foreach (var enemy in thing.GetComponentsInChildren<EnemyHitDamage>(true)) enemy.noReward = true;
+        }
+
+        private void GainExpPart(float amount)
+        {
+            if (amount <= 0f || IsMaxLevel) return;
+
+            expPart += amount;
+            // A hair of slack so e.g. ten 0.1s still make a whole point.
+            int whole = Mathf.FloorToInt(expPart + 0.0001f);
+            expPart = Mathf.Max(0f, expPart - whole);
+            if (expPart < 0.0001f) expPart = 0f;
+            if (whole > 0) GainExp(whole);
+            // Only a part: the save still has to keep it.
+            else Changed?.Invoke();
+        }
+
         private void GainExp(int amount)
         {
             if (amount <= 0 || IsMaxLevel) return;
@@ -431,7 +516,11 @@ namespace Game.Leveling
                 level++;
             }
             // Nothing more to gather at the top.
-            if (IsMaxLevel) exp = 0;
+            if (IsMaxLevel)
+            {
+                exp = 0;
+                expPart = 0f;
+            }
 
             Changed?.Invoke();
             for (int reached = before + 1; reached <= level; reached++) LeveledUp?.Invoke(reached);
@@ -449,7 +538,7 @@ namespace Game.Leveling
 
         public SavedLevel ToSaveData()
         {
-            return new SavedLevel { level = level, exp = exp, points = new List<int>(points) };
+            return new SavedLevel { level = level, exp = exp, points = new List<int>(points), expPart = expPart };
         }
 
         /// <summary>The saved level, from the Save Manager when the save is read (null with no save: level 0).</summary>
@@ -458,6 +547,7 @@ namespace Game.Leveling
             read = true;
             level = saved != null ? Mathf.Clamp(saved.level, 0, MaxLevel) : 0;
             exp = saved != null && !IsMaxLevel ? Mathf.Clamp(saved.exp, 0, ExpNeeded - 1) : 0;
+            expPart = saved != null && !IsMaxLevel ? Mathf.Clamp(saved.expPart, 0f, 0.999f) : 0f;
             int left = level * pointsPerLevel;
             int bonusLeft = BonusPoints;
             for (int i = 0; i < StatCount; i++)

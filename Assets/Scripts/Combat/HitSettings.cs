@@ -40,6 +40,26 @@ namespace Game.Combat
         [Tooltip("Damage of a big hit: x for the weakest, y for the hardest.")]
         [SerializeField] private Vector2 bigHitDamage = new(3f, 5f);
 
+        [Header("Hit effect (every enemy)")]
+        [Tooltip("The small pop shown where a hit hurts an enemy (Enemy_Hit_Pop). Empty: none. Tools > 429 Game > " +
+                 "Enemies > Build Enemy Hit FX makes it.")]
+        [SerializeField] private GameObject hitEffect;
+        [Tooltip("The bigger pop for a big hit or a knock-out (Enemy_Hit_Big). Empty: the normal pop.")]
+        [SerializeField] private GameObject bigHitEffect;
+        [Tooltip("Hits doing less damage than this show no pop. 1 = every hit that hurts.")]
+        [Min(0f)]
+        [SerializeField] private float effectMinDamage = 1f;
+        [Tooltip("Only the player's hits pop (a fist, a thing they hold or just threw, a shot). Off: also a chair " +
+                 "tipping over or a book falling onto an enemy.")]
+        [SerializeField] private bool effectOnlyPlayerHits = true;
+        [Tooltip("How big the pop is: x for a 1-damage hit, y for an 8-damage hit (in between, in proportion).")]
+        [SerializeField] private Vector2 effectSize = new(0.8f, 1.3f);
+
+        // A pop lasts under half a second, so its copy is free again soon (a swarm fight needs only a few copies).
+        private const float EffectSeconds = 0.6f;
+        // Moved this far towards the eyes, so the enemy's own body doesn't hide half of it.
+        private const float EffectTowardsEyes = 0.05f;
+
         private static HitSettings defaults;
 
         /// <summary>The numbers used when no settings asset is assigned.</summary>
@@ -83,6 +103,34 @@ namespace Game.Combat
 
             float big = Mathf.InverseLerp(bigHitPower, maxHitPower, power);
             return new HitResult(power, Whole(Mathf.Lerp(bigHitDamage.x, bigHitDamage.y, big)), true);
+        }
+
+        /// <summary>Whether this hit shows a pop: it hurt enough, and (with Effect Only Player Hits) the player made it.</summary>
+        public bool ShowsEffect(HitResult hit, bool byPlayer)
+        {
+            return hit.Damage > 0f && hit.Damage >= effectMinDamage && (byPlayer || !effectOnlyPlayerHits);
+        }
+
+        /// <summary>
+        /// Shows the hit pop at a point: the big one for a big hit, sized by the damage, times Size (the enemy's own
+        /// Hit Effect Size).
+        /// </summary>
+        public void PlayEffect(Vector3 at, HitResult hit, float size = 1f)
+        {
+            var effect = hit.IsBig && bigHitEffect != null ? bigHitEffect : hitEffect;
+            if (effect == null) return;
+
+            float scale = Mathf.Lerp(effectSize.x, effectSize.y, Mathf.InverseLerp(1f, 8f, hit.Damage)) * size;
+            var eyes = Camera.main;
+            if (eyes != null) at = Vector3.MoveTowards(at, eyes.transform.position, EffectTowardsEyes);
+            EffectPool.Play(effect, at, scale, EffectSeconds);
+        }
+
+        /// <summary>Gets the pops ready, so the first hit doesn't stutter (once; more calls do nothing).</summary>
+        public void WarmEffects()
+        {
+            EffectPool.Warm(hitEffect, 4);
+            EffectPool.Warm(bigHitEffect, 2);
         }
 
         // Rounds halves up (Mathf.Round rounds them to even, which would make 4.5 into 4).

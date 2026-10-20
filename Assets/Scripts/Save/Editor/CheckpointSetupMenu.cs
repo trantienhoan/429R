@@ -125,11 +125,12 @@ namespace Game.EditorTools
             cpBoss.Actions = new FsmStateAction[] { Activate(skydome), Activate(rooftop), Wait(2.1f) };
             cpBoss.Transitions = new[] { Go("FINISHED", "CP Boss Lid") };
             var cpBossLid = NewState(f, "CP Boss Lid", basePos, 520f, 300f);
-            var gateOn = New<SetFsmBool>();
-            gateOn.gameObject = Global("Rooftop_Base");
-            gateOn.fsmName = "Info";
-            gateOn.variableName = "Gate_On";
-            gateOn.setValue = true;
+            // The 4 stone pumpkin gates rise first (the rooftop's Info "Open Up", as at Prepare_Whack_6); they open later
+            // and let the Spider_Tree spiders in. Before the lid breaks, so Info isn't pulled out of Roof_Start.
+            var gateOn = New<SendEvent>();
+            gateOn.eventTarget = new FsmEventTarget { target = FsmEventTarget.EventTarget.GameObjectFSM, gameObject = Global("Rooftop_Base"), fsmName = "Info", excludeSelf = false, sendToChildren = false };
+            gateOn.sendEvent = FsmEvent.GetFsmEvent("OpenUp");
+            if (!f.Events.Contains(gateOn.sendEvent)) f.Events = f.Events.Append(gateOn.sendEvent).ToArray();
             var breakLid = New<SendEvent>();
             breakLid.eventTarget = new FsmEventTarget { target = FsmEventTarget.EventTarget.GameObjectFSM, gameObject = Global("Lid"), fsmName = "Info", excludeSelf = false, sendToChildren = false };
             breakLid.sendEvent = FsmEvent.GetFsmEvent("Damage");

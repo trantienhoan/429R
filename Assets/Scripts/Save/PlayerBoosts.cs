@@ -21,6 +21,12 @@ namespace Game.Saving
         /// <summary>Raised when a boost changes, so the save is written.</summary>
         public static event Action Changed;
 
+        /// <summary>
+        /// Raised when SetHealth sets the player's health (e.g. Get a Rest's health given back): not a hit, so the Hurt
+        /// Slow doesn't slow the player for it.
+        /// </summary>
+        public static event Action HealthSet;
+
         /// <summary>How much Boss Seeds have raised the health cap in total (saved).</summary>
         public static float HealthCapBonus { get; private set; }
 
@@ -42,6 +48,7 @@ namespace Game.Saving
             applied = 0f;
             appliedTo = null;
             Changed = null;
+            HealthSet = null;
         }
 
         /// <summary>Raises the cap for good (saved shortly after), and the health too if heal is on.</summary>
@@ -84,6 +91,7 @@ namespace Game.Saving
         {
             if (!Find(out var health, out _)) return false;
             health.Value = value;
+            HealthSet?.Invoke();
             return true;
         }
 

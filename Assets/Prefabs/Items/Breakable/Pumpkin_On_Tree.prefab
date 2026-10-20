@@ -5356,6 +5356,7 @@ GameObject:
   - component: {fileID: 4596500312514394995}
   - component: {fileID: 5446972659357586647}
   - component: {fileID: 4464856856857844396}
+  - component: {fileID: 6731259867927847557}
   m_Layer: 0
   m_Name: Pumpkin_On_Tree
   m_TagString: Weapon
@@ -7317,3 +7318,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.WeaponPower
   power: 1
   damage: 1.2
+--- !u!114 &6731259867927847557
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8690403555129543112}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 913d0c31995ea474aba10304db0d6f3e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Leveling.ExpWhenBroken
+  exp: 0.25
+  healthFsm: Health
+  healthVariable: health

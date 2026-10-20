@@ -13,7 +13,8 @@ namespace Game.Combat
     /// too weak does nothing (the enemy just flinches), a normal hit does 1-2 damage, a big hit 3-5 and knocks it back
     /// (the numbers are in the Hit Settings asset), times the weapon's Damage (a hammer more, a thrown book less). It lowers the "health" variable of the enemy's Health FSM, which
     /// already watches it, sends "Damage" (or "ShakeSmall" for weak hits) so the enemy's hit reactions play, and
-    /// switches off the enemy's old "Damage" FSM so hits aren't counted twice.
+    /// switches off the enemy's old "Damage" FSM so hits aren't counted twice. Where a hit of the player's hurts an enemy,
+    /// a small pop shows (set in the Hit Settings asset; a big hit gets the bigger one).
     /// Once the health runs out, however it happened, more hits are ignored and the enemy's NavMesh agent is held
     /// still: the death states switch off the FSM that walks the enemy, but not the agent, which would carry the body
     /// on along its last path.
@@ -52,11 +53,31 @@ namespace Game.Combat
         [Min(0f)]
         [SerializeField] private float knockBackStun = 0.3f;
 
+        [Header("Mini boss")]
+        [Tooltip("Enemies only: extra Toughness against knocks the player didn't make (a chair tipping over, a book " +
+                 "falling, something it shoved itself, a thing a blast threw). 1 = they count like any hit. 4 = they count " +
+                 "4 times weaker: one too weak to hurt doesn't even make it shake, and none knocks it back. The player's own " +
+                 "hits (a fist, a thing they hold or just threw, a shot) count as before. 0 counts as 1.")]
+        [Min(0f)]
+        [SerializeField] private float strayToughness = 1f;
+
+        [Header("Hit effect")]
+        [Tooltip("Enemies only: how big the pop is where a hit hurts it (the pops are set in the Hit Settings asset). " +
+                 "1 = normal, 1.5 = half as big again (a big enemy). 0 counts as 1.")]
+        [Min(0f)]
+        [SerializeField] private float hitEffectSize = 1f;
+        [Tooltip("Tick for an enemy that shows its hits in its own way, or for a thing that isn't an enemy (a room door, " +
+                 "the start pumpkin): no pop, and a good punch shows the fist's own puff as on any breakable.")]
+        [SerializeField] private bool hideHitEffect;
+
         [Header("Level")]
         [Tooltip("EXP the player gets when it dies: 1 for a small enemy, 2 for a normal one, 5 for a mini boss, 50 for " +
                  "pumpkin_boss_Z. 0 = none. Tools > 429 Game > Player > Set Up Level System fills it in where it's 0.")]
         [Min(0)]
         [SerializeField] private int exp;
+        [Tooltip("Little gold EXP orbs fly from it into the player's chest when it dies, one per EXP point (EXP Orbs on " +
+                 "'Player Level'). For the bugs; untick it for an enemy that isn't a bug (the pumpkin boss, the big pumpkin).")]
+        [SerializeField] private bool expOrbs = true;
 
         [Header("PlayMaker")]
         [Tooltip("The FSM holding the enemy's health. Left empty, the FSM whose name ends in \"Health\".")]
@@ -128,6 +149,33 @@ namespace Game.Combat
         /// <summary>A piece of furniture rather than an enemy (see Furniture in the Inspector).</summary>
         public bool IsFurniture => furniture;
 
+        /// <summary>
+        /// It shows its own pop where a hit hurts it (an enemy without Hide Hit Effect), so a fist shows no puff there.
+        /// Room doors and the start pumpkin have Hide Hit Effect ticked: they keep the fist's puff.
+        /// </summary>
+        public bool ShowsOwnHitPop => !furniture && !hideHitEffect;
+
+        /// <summary>
+        /// Its death is a kill the player should feel (the kill thump): an enemy that gives EXP. Room doors and the start
+        /// pumpkin give none, so breaking them doesn't thump.
+        /// </summary>
+        public bool CountsAsKill => !furniture && exp > 0;
+
+        /// <summary>The EXP the player gets when it dies.</summary>
+        public int Exp => exp;
+
+        /// <summary>
+        /// Set while the game runs (not saved): it dies without the player earning it (a Fall Edge), so no EXP and no
+        /// orbs. See PlayerLevel.NoRewardFor.
+        /// </summary>
+        [NonSerialized] public bool noReward;
+
+        /// <summary>Gold EXP orbs fly from it when it dies: an enemy (not furniture) that gives EXP, with EXP Orbs ticked.</summary>
+        public bool ShowsExpOrbs => expOrbs && !furniture && exp > 0 && !noReward;
+
+        /// <summary>The middle of its body (its solid colliders, or its renderers), e.g. where its EXP orbs start.</summary>
+        public Vector3 BodyCenter => TryGetBodyBounds(out var body) ? body.center : transform.position;
+
         /// <summary>How far a big hit knocks it back, in metres (e.g. less for a big spider).</summary>
         public float KnockBackDistance
         {
@@ -159,6 +207,8 @@ namespace Game.Combat
         /// <summary>Furniture the player is holding, or threw a moment ago: it's being used as a weapon.</summary>
         public bool InPlayersHands => HeldThings.InUse(grab);
 
+        private HitSettings Settings => settings != null ? settings : HitSettings.Defaults;
+
         // In Start, so every PlayMakerFSM has set itself up in Awake first.
         private void Start()
         {
@@ -175,6 +225,8 @@ namespace Game.Combat
                 Debug.LogWarning($"[Hit Damage] '{name}' has no Health FSM with a \"{healthVariable}\" variable, so hits can't hurt it.", this);
 
             TryGetComponent(out agent);
+            // The hit pops are made ready once, by the first enemy, so the first hit doesn't stutter.
+            if (!furniture && !hideHitEffect) Settings.WarmEffects();
         }
 
         // The Health FSM plays the death itself (it watches the health every frame); this only keeps the body still.
@@ -194,20 +246,30 @@ namespace Game.Combat
             if (health == null || dead || Time.time < nextHit || Time.time < settledAt) return;
 
             float power = collision.relativeVelocity.magnitude * WeaponPower.Of(collision) / toughness;
+            bool stray = false;
+            // The player's hit: a fist, a thing they hold or just threw, or a shot.
+            bool byPlayer = HeldThings.ByPlayer(collision);
             // Furniture takes its knocks from the player: a fist, or a thing they hold or just threw. Tumbling over,
             // landing, or a thing lying around falling or sliding into it hurts it only a little, and a chair the player
             // swings or throws wears down slowly.
             if (furniture)
             {
                 if (InPlayersHands) power *= wieldedShare;
-                else if (!HeldThings.ByPlayer(collision)) power *= bumpShare;
+                else if (!byPlayer) power *= bumpShare;
             }
-            var hit = (settings != null ? settings : HitSettings.Defaults).Evaluate(power, WeaponPower.DamageOf(collision));
+            // A mini boss shrugs off knocks the player didn't make (Stray Toughness): they hurt only when very hard, one
+            // too weak to hurt doesn't even make it shake, and none knocks it back.
+            else if (strayToughness > 1f && !byPlayer)
+            {
+                power /= strayToughness;
+                stray = true;
+            }
+            var hit = Settings.Evaluate(power, WeaponPower.DamageOf(collision));
             LastHit = hit;
 
             if (hit.Damage <= 0f)
             {
-                if (power >= MinFlinchPower && Time.time >= nextFlinch)
+                if (!stray && power >= MinFlinchPower && Time.time >= nextFlinch)
                 {
                     nextFlinch = Time.time + FlinchInterval;
                     Send(weakHitEvent);
@@ -216,31 +278,37 @@ namespace Game.Combat
                 return;
             }
 
+            bool wasAlive = health.Value > 0f;
             health.Value -= hit.Damage;
             nextHit = Time.time + hitCooldown;
             // The hand behind it (a fist, or a hand holding what hit) buzzes as hard as it hurt.
             HitBuzz.Dealt(collision, hit.Damage);
+            // The killing blow on an enemy: that hand gets one more, strong thump just after.
+            if (wasAlive && health.Value <= 0f && CountsAsKill) HitBuzz.Killed(collision, hit.Damage);
             // Its damage number (Damage Numbers watches the health) shows big.
             if (hit.IsBig) DamageNumbers.NoteBigHit(gameObject);
             // The killing blow still plays the hit reaction (sound and sparks); the Health FSM's death state switches
             // that FSM off later this frame.
             Send(hitEvent);
+            // A small pop where it hurt (enemies only; by default only the player's hits, see the Hit Settings).
+            if (!furniture)
+                ShowHitEffect(collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position, hit, byPlayer);
             if (health.Value <= 0f)
             {
                 Die();
                 HoldStill();
             }
             // A big killing blow still knocks the body back: Knockback moves the agent itself, which works while it's held.
-            if (hit.IsBig && knockBack) KnockBackFromPlayer();
+            if (hit.IsBig && knockBack && !stray) KnockBackFromPlayer();
             AnyHit?.Invoke(this, hit);
         }
 
-        // Its health has run out, however that happened: the player gets its EXP, once.
+        // Its health has run out, however that happened: the player gets its EXP, once (not when No Reward is set).
         private void Die()
         {
             if (dead) return;
             dead = true;
-            if (exp > 0) Game.Leveling.PlayerLevel.AddExp(exp);
+            if (exp > 0 && !noReward) Game.Leveling.PlayerLevel.AddExp(exp);
             Died?.Invoke(this);
         }
 
@@ -277,20 +345,22 @@ namespace Game.Combat
         /// landed (Toughness still counts), then it's knocked back this many times as far and hopping this many times as
         /// high, and lies stunned for this many seconds (enemies with Knock Back off only take the damage). Damage Scale
         /// multiplies its damage like a weapon's Damage (WeaponPower.DamageOf the punch, e.g. 2 under the Elon Boong).
-        /// True if the blow did damage.
+        /// At: where the blow landed, for the big hit pop (none if not given). True if the blow did damage.
         /// </summary>
-        public bool KnockOut(float power, float distanceScale, float hopScale, float stunSeconds, float damageScale = 1f)
+        public bool KnockOut(float power, float distanceScale, float hopScale, float stunSeconds, float damageScale = 1f,
+            Vector3? at = null)
         {
             if (health == null || dead || furniture) return false;
 
-            var hit = (settings != null ? settings : HitSettings.Defaults).Evaluate(power / toughness, damageScale);
+            var hit = Settings.Evaluate(power / toughness, damageScale);
             bool hurt = hit.Damage > 0f;
             if (hurt)
             {
                 health.Value -= hit.Damage;
-                // A knock-out blow's damage number shows big.
+                // A knock-out blow's damage number shows big, and so does its pop.
                 DamageNumbers.NoteBigHit(gameObject);
                 Send(hitEvent);
+                if (at.HasValue) ShowHitEffect(at.Value, new HitResult(hit.Power, hit.Damage, true), true);
                 if (health.Value <= 0f)
                 {
                     Die();
@@ -367,6 +437,21 @@ namespace Game.Combat
                 any = true;
             }
             return any;
+        }
+
+        /// <summary>
+        /// Shows the hit pop at a point, e.g. where a bee's wings come off: the big one if Big. Not on furniture, nor on
+        /// an enemy with Hide Hit Effect ticked.
+        /// </summary>
+        public void PlayHitEffect(Vector3 at, bool big)
+        {
+            ShowHitEffect(at, new HitResult(0f, big ? 5f : 1f, big), true);
+        }
+
+        private void ShowHitEffect(Vector3 at, HitResult hit, bool byPlayer)
+        {
+            if (furniture || hideHitEffect || !Settings.ShowsEffect(hit, byPlayer)) return;
+            Settings.PlayEffect(at, hit, hitEffectSize > 0f ? hitEffectSize : 1f);
         }
 
         private void KnockBackFromPlayer()

@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 6417984062819290291}
   - component: {fileID: 7167618073660230562}
   - component: {fileID: 312593175281187741}
+  - component: {fileID: 105513601181993068}
   m_Layer: 0
   m_Name: Bedroom_Bed_Stool
   m_TagString: Untagged
@@ -1554,6 +1555,9 @@ MonoBehaviour:
   knockBackTime: 0.45
   knockBackHop: 0.25
   knockBackStun: 0.3
+  strayToughness: 1
+  hitEffectSize: 1
+  hideHitEffect: 0
   exp: 0
   healthFsm: Health
   healthVariable: health
@@ -1641,6 +1645,23 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &105513601181993068
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2152922552671654526}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5c9cc9de59d9dc46ae05bace27c949b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.VFX.BigHitSmoke
+  smoke: {fileID: 3612108805939527140}
+  minDamage: 4
+  cooldown: 1.5
+  settings: {fileID: 0}
+  toughness: 1
 --- !u!1 &3612108805939527140
 GameObject:
   m_ObjectHideFlags: 0
@@ -6552,7 +6573,7 @@ ParticleSystemRenderer:
   m_MeshDistribution: 0
   m_SortMode: 0
   m_MinParticleSize: 0
-  m_MaxParticleSize: 1
+  m_MaxParticleSize: 0.35
   m_CameraVelocityScale: 0
   m_VelocityScale: 0
   m_LengthScale: 2

@@ -5,8 +5,9 @@ namespace Game.Combat
 {
     /// <summary>
     /// Notices the player bumping their two fists together: both hands are fists (Fist), the fists touch, and each
-    /// hand was moving towards the other (so a punch flying past the other fist doesn't count). Both controllers buzz
-    /// at a bump. Two bumps in a row (Double Bump Seconds) is the double bump that opens the Level Up menu.
+    /// hand was moving towards the other (so a punch flying past the other fist doesn't count). Each bump clanks like two
+    /// knight gauntlets and flashes a little star where the fists meet (Feedback), so the player notices it counted.
+    /// Two bumps in a row (Double Bump Seconds) is the double bump that opens the Level Up menu.
     /// Goes on the XR Origin; it finds the two Fists on the controllers by itself.
     /// </summary>
     [DisallowMultipleComponent]
@@ -25,6 +26,18 @@ namespace Game.Combat
         [Tooltip("How strong both controllers buzz at a bump (0 to 1). 0 = none.")]
         [Range(0f, 1f)]
         [SerializeField] private float rumble = 0.6f;
+
+        [Header("Feedback")]
+        [Tooltip("A little flash where the fists meet at each bump (e.g. Flash_star_ellow_purple). The second bump of a " +
+                 "double bump makes it twice as big. Empty = none.")]
+        [SerializeField] private GameObject bumpEffect;
+        [Tooltip("Size of the flash: this many times its prefab's own size. 0 = no flash.")]
+        [Min(0f)]
+        [SerializeField] private float bumpEffectSize = 0.15f;
+        [Tooltip("The clank of two knight gauntlets at each bump (e.g. metal_object_hit_1). Empty = silent.")]
+        [SerializeField] private AudioClip bumpSound;
+        [Range(0f, 1f)]
+        [SerializeField] private float bumpVolume = 0.6f;
 
         // The fists must come this much farther apart again, in metres, before the next bump counts.
         private const float PartGap = 0.05f;
@@ -53,7 +66,10 @@ namespace Game.Combat
             {
                 Debug.LogWarning($"[Fist Bump] '{name}' needs two Fists under it (Left Controller and Right Controller), found {fists.Length}.", this);
                 enabled = false;
+                return;
             }
+            // Ready at load, so the first bump doesn't stutter (two: a double bump plays it twice).
+            if (bumpEffectSize > 0f) EffectPool.Warm(bumpEffect, 2);
         }
 
         private void Update()
@@ -88,7 +104,10 @@ namespace Game.Combat
                 b.Buzz(rumble, 0.08f);
             }
             Bumped?.Invoke();
-            if (Time.unscaledTime - lastBump <= doubleBumpSeconds)
+            bool second = Time.unscaledTime - lastBump <= doubleBumpSeconds;
+            // A clank and a flash where the fists meet (no words): the player sees and hears that the bump counted.
+            Clank((a.Knuckles + b.Knuckles) * 0.5f, second ? 2f : 1f);
+            if (second)
             {
                 lastBump = -100f;
                 DoubleBumped?.Invoke();
@@ -97,6 +116,12 @@ namespace Game.Combat
             {
                 lastBump = Time.unscaledTime;
             }
+        }
+
+        private void Clank(Vector3 at, float size)
+        {
+            if (bumpEffect != null && bumpEffectSize > 0f) EffectPool.Play(bumpEffect, at, bumpEffectSize * size);
+            if (bumpSound != null && bumpVolume > 0f) AudioSource.PlayClipAtPoint(bumpSound, at, bumpVolume);
         }
     }
 }

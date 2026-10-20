@@ -48,6 +48,9 @@ namespace Game.EditorTools
         private static readonly Color AuraGold = new(1f, 0.82f, 0.32f, 0.85f);
         private static readonly Color AuraWhite = new(1f, 0.97f, 0.85f, 1f);
 
+        // The pluck each gold EXP orb makes as it reaches the player.
+        private const string OrbSoundPath = "Assets/Audio/Kenney Audio/kenney_interface-sounds/Audio/pluck_001.ogg";
+
         // EXP by the kind of enemy.
         private const int SmallExp = 1;
         private const int NormalExp = 2;
@@ -104,6 +107,7 @@ namespace Game.EditorTools
                 CreateAura(level.transform);
                 notes.Add($"created the Level Up aura (its look uses '{AuraMaterialPath}')");
             }
+            AddExpOrbs(level, notes);
 
             if (head != null)
             {
@@ -272,6 +276,101 @@ namespace Game.EditorTools
 
         [MenuItem("Tools/429 Game/Player/Add Bonus Stats Panel", true)]
         private static bool CanAddBonusStatsPanel() => !EditorApplication.isPlaying;
+
+        /// <summary>
+        /// Gold EXP orbs: adds EXP Orbs to 'Player Level' in the open scene (little orbs fly from a beaten bug into the
+        /// player's chest), with the Level Up Aura look and a pluck, and unticks EXP Orbs on the enemy prefabs that aren't
+        /// bugs (pumpkins without a Spider Brain: the pumpkin boss, the big pumpkin), only the first time (when it adds EXP
+        /// Orbs to the scene). Running it again only fills in what's missing; choices made in the Inspector are kept.
+        /// </summary>
+        [MenuItem("Tools/429 Game/Player/Add EXP Orbs")]
+        public static void AddExpOrbsMenu()
+        {
+            var level = Object.FindAnyObjectByType<PlayerLevel>(FindObjectsInactive.Include);
+            if (level == null)
+            {
+                Debug.LogError("[Level Setup] No 'Player Level' in the open scene: run Set Up Level System.");
+                return;
+            }
+            var notes = new List<string>();
+            AddExpOrbs(level, notes);
+            Selection.activeGameObject = level.gameObject;
+            Debug.Log("[Level Setup] EXP Orbs: " + (notes.Count > 0 ? string.Join("; ", notes) + ". Save the scene." : "everything was already set up."), level);
+        }
+
+        [MenuItem("Tools/429 Game/Player/Add EXP Orbs", true)]
+        private static bool CanAddExpOrbs() => !EditorApplication.isPlaying;
+
+        private static void AddExpOrbs(PlayerLevel level, List<string> notes)
+        {
+            int before = notes.Count;
+            // The first time (no EXP Orbs on 'Player Level' yet) it also unticks the pumpkins' orbs; after that a tick
+            // made in the Inspector is kept.
+            bool firstTime = !level.TryGetComponent<ExpOrbs>(out var orbs);
+            if (firstTime)
+            {
+                orbs = Undo.AddComponent<ExpOrbs>(level.gameObject);
+                notes.Add($"added EXP Orbs to '{level.name}'");
+            }
+            var serialized = new SerializedObject(orbs);
+            if (serialized.FindProperty("orbMaterial").objectReferenceValue == null)
+            {
+                SetupUtility.SetReference(orbs, "orbMaterial", AuraMaterial());
+                notes.Add($"EXP orbs use '{AuraMaterialPath}'");
+            }
+            var pluck = AssetDatabase.LoadAssetAtPath<AudioClip>(OrbSoundPath);
+            if (pluck != null && serialized.FindProperty("arriveSound").objectReferenceValue == null)
+            {
+                SetupUtility.SetReference(orbs, "arriveSound", pluck);
+                notes.Add($"EXP orbs pluck with '{pluck.name}'");
+            }
+            if (notes.Count > before) EditorSceneManager.MarkSceneDirty(level.gameObject.scene);
+
+            if (!firstTime) return;
+            int unticked = NoOrbsFromPumpkins(notes);
+            if (unticked > 0) notes.Add($"unticked EXP Orbs on {unticked} pumpkin enemy prefab(s)");
+        }
+
+        // The orbs are for the bugs: enemies named "pumpkin" that have no Spider Brain (the pumpkin boss, the big pumpkin)
+        // get EXP Orbs unticked, once (only when EXP Orbs is first added to the scene). A prefab variant that only has it
+        // from the prefab it's made from is left alone.
+        private static int NoOrbsFromPumpkins(List<string> notes)
+        {
+            var stage = PrefabStageUtility.GetCurrentPrefabStage();
+            int unticked = 0;
+            foreach (var guid in AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/Prefabs" }))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (prefab == null || prefab.name.IndexOf("pumpkin", System.StringComparison.OrdinalIgnoreCase) < 0) continue;
+                var hits = prefab.GetComponent<EnemyHitDamage>();
+                if (hits == null || hits.IsFurniture || !hits.ShowsExpOrbs || prefab.GetComponent<SpiderBrain>() != null) continue;
+                var property = new SerializedObject(hits).FindProperty("expOrbs");
+                bool inherited = PrefabUtility.GetPrefabAssetType(prefab) == PrefabAssetType.Variant && !property.prefabOverride &&
+                                 PrefabUtility.GetCorrespondingObjectFromSource(hits) != null;
+                if (inherited) continue;
+                if (stage != null && stage.assetPath == path)
+                {
+                    notes.Add($"WARNING: '{prefab.name}' is open in Prefab Mode, so its EXP Orbs was left on: untick it by hand (Enemy Hit Damage > EXP Orbs)");
+                    continue;
+                }
+
+                var root = PrefabUtility.LoadPrefabContents(path);
+                try
+                {
+                    var editable = new SerializedObject(root.GetComponent<EnemyHitDamage>());
+                    editable.FindProperty("expOrbs").boolValue = false;
+                    editable.ApplyModifiedPropertiesWithoutUndo();
+                    PrefabUtility.SaveAsPrefabAsset(root, path);
+                    unticked++;
+                }
+                finally
+                {
+                    PrefabUtility.UnloadPrefabContents(root);
+                }
+            }
+            return unticked;
+        }
 
         // The arrow and the panel are part of the menu's panel (its canvas), so pointing at them counts as pointing at
         // the menu: clicking them doesn't close it.

@@ -6,12 +6,13 @@ namespace HutongGames.PlayMaker.Actions
     public class AddPlayerExp : FsmStateAction
     {
         [RequiredField]
-        [Tooltip("How much EXP: 1 for a small enemy, 2 for a normal one, 5 for a mini boss, 50 for the boss.")]
-        public FsmInt amount;
+        [Tooltip("How much EXP: 1 for a small enemy, 2 for a normal one, 5 for a mini boss, 50 for the boss. Parts of a " +
+                 "point add up: 0.25 = a quarter, so four make 1 EXP.")]
+        public FsmFloat amount;
 
         public override void Reset()
         {
-            amount = 1;
+            amount = 1f;
         }
 
         public override void OnEnter()

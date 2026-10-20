@@ -13,6 +13,8 @@ namespace Game.Combat
     /// bottles, most pumpkins) the fist and Hit Rumble ask it to watch the thing they hit for a moment (Watch).
     /// Other buzzes (forming a fist, an overheating gun, the shop...) go through Other, which is silent while Only Damage
     /// is on.
+    /// A killing blow on an enemy gets one more, strong pulse just after its own buzz (Killed): a "tap - THUMP" that
+    /// tells the player "that one's done" without looking. It's still damage, so it fits the rule.
     /// </summary>
     public static class HitBuzz
     {
@@ -31,6 +33,10 @@ namespace Game.Combat
         private const float WatchSeconds = 0.25f;
         // A far grab still flying in is further from the hand than this (metres): it isn't in the hand yet.
         private const float InHandDistance = 0.3f;
+        // The kill thump: how strong and how long, and the quiet gap between the killing blow's own buzz and it.
+        private const float KillStrength = 1f;
+        private const float KillSeconds = 0.12f;
+        private const float KillGap = 0.06f;
 
         private static readonly Dictionary<XRBaseInputInteractor, float> nextBuzz = new();
         private static readonly List<XRBaseInputInteractor> hands = new();
@@ -43,6 +49,8 @@ namespace Game.Combat
             nextBuzz.Clear();
             hands.Clear();
             watcher = null;
+            LastKill = "";
+            Kills = 0;
         }
 
         /// <summary>A hit just did this much damage: the hand(s) behind it (a fist, or a hand holding what hit) buzz.</summary>
@@ -67,6 +75,31 @@ namespace Game.Combat
 
         /// <summary>The last damage buzz: which hand, how strong, for how much damage (for checking it works).</summary>
         public static string LastBuzz { get; private set; } = "";
+
+        /// <summary>
+        /// A hit just killed an enemy, for this much damage: after that hit's own buzz and a short gap, the hand(s) behind
+        /// it get one strong extra pulse. Thrown things don't (no hand is holding them).
+        /// </summary>
+        public static void Killed(Collision collision, float damage)
+        {
+            if (!HandsBehind(collision, hands)) return;
+            foreach (var hand in hands) Killed(hand, damage);
+        }
+
+        /// <summary>The killing blow came from this hand (e.g. a fist's knock-out), for this much damage: its kill thump.</summary>
+        public static void Killed(XRBaseInputInteractor hand, float damage)
+        {
+            if (hand == null) return;
+            // Waits for the killing blow's own buzz (as long as Buzz makes it for this damage) to end first.
+            float hard = Mathf.InverseLerp(1f, FullDamage, damage);
+            TheWatcher().Later(hand, Mathf.Lerp(WeakSeconds, FullSeconds, hard) + KillGap);
+        }
+
+        /// <summary>The last kill thump: which hand and when (for checking it works).</summary>
+        public static string LastKill { get; private set; } = "";
+
+        /// <summary>How many kill thumps there have been since the game started (for checking it works).</summary>
+        public static int Kills { get; private set; }
 
         /// <summary>A buzz that isn't for damage (e.g. a gun overheating): silent while Only Damage is on.</summary>
         public static void Other(XRBaseInputInteractor hand, float strength, float seconds)
@@ -95,13 +128,19 @@ namespace Game.Combat
             AddHands(hitter, hands);
             if (hands.Count == 0) return;
 
+            TheWatcher().Add(target, health, damageFsm, hands);
+        }
+
+        // The hidden helper that watches breakables and sends the kill thumps a moment later; made the first time.
+        private static Watcher TheWatcher()
+        {
             if (watcher == null)
             {
                 var go = new GameObject("Hit Buzz") { hideFlags = HideFlags.HideAndDontSave };
                 Object.DontDestroyOnLoad(go);
                 watcher = go.AddComponent<Watcher>();
             }
-            watcher.Add(target, health, damageFsm, hands);
+            return watcher;
         }
 
         // For Dealt: what made the hit is the collision's other body (the hurt one called this).
@@ -147,6 +186,18 @@ namespace Game.Combat
             }
 
             private readonly List<Watch> watches = new();
+            // Kill thumps still to come: which hand, and when.
+            private readonly List<(XRBaseInputInteractor hand, float at)> thumps = new();
+
+            // One thump per hand at a time: a swing that kills two enemies at once thumps once.
+            public void Later(XRBaseInputInteractor hand, float seconds)
+            {
+                foreach (var thump in thumps)
+                {
+                    if (thump.hand == hand) return;
+                }
+                thumps.Add((hand, Time.unscaledTime + seconds));
+            }
 
             public void Add(GameObject target, HutongGames.PlayMaker.FsmFloat health, PlayMakerFSM damageFsm, List<XRBaseInputInteractor> by)
             {
@@ -177,6 +228,19 @@ namespace Game.Combat
                     else if (w.damageFsm != null && w.damageFsm.ActiveStateName != w.state && InDamageState(w.damageFsm)) damage = 1f;
                     if (damage > 0f) Done(w, damage);
                     if (damage > 0f || Time.unscaledTime > w.until) watches.RemoveAt(i);
+                }
+
+                for (int i = thumps.Count - 1; i >= 0; i--)
+                {
+                    var (hand, at) = thumps[i];
+                    if (Time.unscaledTime < at) continue;
+                    thumps.RemoveAt(i);
+                    if (hand == null) continue;
+                    hand.SendHapticImpulse(KillStrength, KillSeconds);
+                    // A hit buzz right on top of it would cut it short: none until it has played out.
+                    nextBuzz[hand] = Time.unscaledTime + Mathf.Max(Cooldown, KillSeconds);
+                    Kills++;
+                    LastKill = $"{hand.transform.parent?.name} kill thump at {Time.unscaledTime:0.00}";
                 }
             }
 

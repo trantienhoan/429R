@@ -5,9 +5,10 @@ namespace Game.VFX
 {
     /// <summary>
     /// Tall grass with a shy streak. Left alone, its blades sway lightly, each in its own time, as if in a soft breeze.
-    /// When the player comes close (Shy Distance), the blades duck: they bend away from the player and down to a
-    /// crouch, shivering a little. Once the player has gone (past Brave Distance) for a moment, they rise again slowly,
-    /// stopping halfway for a peek. With a Hideout on it, it hides a laughing pumpkin only while it's standing (ducked,
+    /// When the player comes close (Shy Distance), the blades duck: they bend away from the player (Lean Degrees) and
+    /// down to a crouch, shivering a little, and with Sink they shrink down into the ground (whole clumps, e.g. the
+    /// PlayGround's PG_Grass_Hideout: Lean 0, Sink 1, so they never tip over and show their roots). Once the player has
+    /// gone (past Brave Distance) for a moment, they rise again slowly the same way, stopping halfway for a peek. With a Hideout on it, it hides a laughing pumpkin only while it's standing (ducked,
     /// whatever is inside can be seen). Goes on the clump's root; each blade is a child pivot at its foot.
     /// Tools > 429 Game > PlayGround > Make Tall Grass makes the Tall_Grass prefab.
     /// </summary>
@@ -51,6 +52,15 @@ namespace Game.VFX
         [Tooltip("How much it trembles while ducking, in degrees.")]
         [Range(0f, 10f)]
         [SerializeField] private float shiverDegrees = 2.5f;
+        [Tooltip("How far each clump sinks into the ground as it ducks (while it shrinks to Crouch): 1 = all the way under " +
+                 "the floor, 0.8 = the tips still peek out, 0 = it stays on top (the old way). Use it with Lean Degrees 0 " +
+                 "for whole clumps, so they never tip over and show their roots.")]
+        [Range(0f, 1.5f)]
+        [SerializeField] private float sink;
+        [Tooltip("Sunk all the way (Sink 1), the tips end up this far under the floor, in metres, so none poke through " +
+                 "while they still sway and shiver a little.")]
+        [Min(0f)]
+        [SerializeField] private float sinkMargin = 0.06f;
         [Tooltip("Played as it ducks (optional).")]
         [SerializeField] private AudioClip hideSound;
         [Range(0f, 1f)]
@@ -61,6 +71,9 @@ namespace Game.VFX
             public Transform pivot;
             public Quaternion rest;
             public Vector3 restScale;
+            public Vector3 restPos;
+            // Its top's height above its foot, in the clump's own units.
+            public float top;
             public float phase;
             public float speed;
             public float amount;
@@ -78,6 +91,8 @@ namespace Game.VFX
         private float down;
         private float peekLeft;
         private Vector3 away = Vector3.forward;
+        // The ground it stands on: the lowest point of all its blades, in the clump's own units.
+        private float floor;
 
         /// <summary>Ducking (or still down).</summary>
         public bool IsHiding => down > 0.5f;
@@ -91,22 +106,50 @@ namespace Game.VFX
                 for (int i = 0; i < blades.Length; i++) blades[i] = transform.GetChild(i);
             }
             list = new Blade[blades.Length];
+            floor = float.MaxValue;
             for (int i = 0; i < blades.Length; i++)
             {
                 var pivot = blades[i];
                 if (pivot == null) continue;
+                // Measured in the clump's own units, so it's right even while it's still growing in (scaled small).
+                Heights(pivot, out float lowest, out float highest);
+                floor = Mathf.Min(floor, lowest);
                 list[i] = new Blade
                 {
                     pivot = pivot,
                     rest = pivot.localRotation,
                     restScale = pivot.localScale,
+                    restPos = pivot.localPosition,
+                    top = Mathf.Max(0.05f, highest - pivot.localPosition.y),
                     phase = Random.Range(0f, Mathf.PI * 2f),
                     speed = Random.Range(0.8f, 1.25f),
                     amount = Random.Range(0.75f, 1.25f),
                     pace = Random.Range(0.8f, 1.3f),
                 };
             }
+            if (floor == float.MaxValue) floor = 0f;
             shown = GetComponentsInChildren<Renderer>();
+        }
+
+        // The lowest and highest point of a blade's meshes, in the clump's own units.
+        private void Heights(Transform pivot, out float lowest, out float highest)
+        {
+            lowest = float.MaxValue;
+            highest = float.MinValue;
+            foreach (var part in pivot.GetComponentsInChildren<Renderer>(true))
+            {
+                var mesh = part.TryGetComponent(out MeshFilter filter) ? filter.sharedMesh : null;
+                var box = mesh != null ? mesh.bounds : part.localBounds;
+                for (int corner = 0; corner < 8; corner++)
+                {
+                    var local = box.center + Vector3.Scale(box.extents,
+                        new Vector3((corner & 1) == 0 ? -1f : 1f, (corner & 2) == 0 ? -1f : 1f, (corner & 4) == 0 ? -1f : 1f));
+                    float y = transform.InverseTransformPoint(part.transform.TransformPoint(local)).y;
+                    lowest = Mathf.Min(lowest, y);
+                    highest = Mathf.Max(highest, y);
+                }
+            }
+            if (lowest == float.MaxValue) lowest = highest = pivot.localPosition.y;
         }
 
         private void Update()
@@ -139,6 +182,12 @@ namespace Game.VFX
                 b.pivot.localRotation = Quaternion.AngleAxis(sway + shiver, swayAxis) *
                                         Quaternion.AngleAxis(leanDegrees * d * b.amount, leanAxis) * b.rest;
                 b.pivot.localScale = new Vector3(b.restScale.x, b.restScale.y * Mathf.Lerp(1f, crouch, d), b.restScale.z);
+                // Into the ground as it shrinks: fully ducked, its top (at Crouch height) ends Sink Margin under the floor.
+                if (sink > 0f)
+                {
+                    float depth = Mathf.Max(0f, b.restPos.y + b.top * crouch - floor + sinkMargin);
+                    b.pivot.localPosition = b.restPos + Vector3.down * (d * sink * depth);
+                }
             }
 
             // Ducked, it hides nothing.

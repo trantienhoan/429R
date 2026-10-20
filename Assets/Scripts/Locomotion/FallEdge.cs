@@ -15,7 +15,8 @@ namespace Game.Locomotion
     ///   drops and blacks out, they're put back where they stood a moment before and it costs health (Fall Out Of World
     ///   on the XR Origin does that part).
     /// - Anything else that gets over it falls away and is gone: its health runs out first, so enemies and breakables
-    ///   die the usual way (EXP, counts), then it drops out of sight and is destroyed. Things whose name has a Keep
+    ///   die the usual way (counts, drops; but no EXP, the player didn't earn it), then it drops out of sight and is
+    ///   destroyed. Things whose name has a Keep
     ///   Names word (the seeds, the revive coin) come back next to the player instead, so nothing needed is lost.
     ///   Things in a hand, the level's own fixed parts (kinematic, frozen in place, the immovable stone blocks) and the
     ///   pumpkin boss never fall.
@@ -199,7 +200,8 @@ namespace Game.Locomotion
             thing.transform.position = spot;
         }
 
-        // Its health runs out (so it dies the usual way), then it drops through the floor and is destroyed.
+        // Its health runs out (so it dies the usual way, but gives no EXP: the player didn't earn it), then it drops
+        // through the floor and is destroyed.
         private void Lose(GameObject thing, NavMeshAgent agent)
         {
             falling.Add(thing);
@@ -218,6 +220,8 @@ namespace Game.Locomotion
             foreach (var part in thing.GetComponentsInChildren<Transform>())
             {
                 if (!Blast.HasHealth(part.gameObject, out var health, out _) || health == null) continue;
+                // Still alive: the edge takes it, not the player, so no EXP (one the player already broke keeps its EXP).
+                if (health.Value > 0f) Game.Leveling.PlayerLevel.NoRewardFor(thing);
                 health.Value = 0f;
                 return;
             }
