@@ -13,42 +13,45 @@ namespace Game.EditorTools
 {
     /// <summary>
     /// Tools > 429 Game > Bonus > Set Up Nesting Pumpkin Bonus: builds the nesting pumpkin bonus round and hooks it into
-    /// GAMESTAGES after the Bedroom and Playroom stages. Safe to run again: it only adds what's missing.
+    /// GAMESTAGES after each enemy stage (EnemyManager 0 to 3). Safe to run again: it only adds what's missing.
     /// - Nesting_Pumpkin_1 (Items/Breakable, the giant): a copy of StartGamePumpkin that doesn't turn into the boss, spawns
     ///   no extra pumpkins, shows no tutorial notice and doesn't throw the player; it jiggles at every hit, bursts into
-    ///   pieces and gives its EXP (gold orbs). Nesting_Pumpkin_2 ... _5: copies of it (prefab variants), each smaller.
-    ///   All have 120 health; the first four drop 5 candies and give 5 EXP, the last 10 candies and 30 EXP.
-    /// - Bonus_Chest_Pumpkin (BedRoom): a copy of Treasure_Chest_Pumpkin without the sword, facing the player (no spin).
-    /// - Bonus_Area (Bases, a copy of Boss_Area with the Sky Light and Chest_Pos): gets the Bonus Round.
-    /// - GAMESTAGES: Watch Bonus Round in "Enemy1 - Wait" and "Enemy 3 Stuffs"; new states "Bonus Round BR" (after BR_GO,
-    ///   before 3 - LivingRoom) and "Bonus Round LR" (after LR GO 4, before Rooftop_ON) with Play Bonus Round.
+    ///   pieces and gives its EXP (gold orbs). Nesting_Pumpkin_2: a copy of it (prefab variant) that pops out, used for
+    ///   the 5 pumpkins inside the giant. The Bonus Round sets each one's size (the giant is 1.5 times the start pumpkin,
+    ///   each next one 7% of that smaller), health (120, then tougher: +20% of it each), jiggle (less each), candies, EXP
+    ///   and laugh. (Nesting_Pumpkin_3 ... _5, Bonus_Area and Bonus_Chest_Pumpkin from the first versions aren't used.)
+    /// - Bonus_Round (Bases): the Bonus Round (30 s, +6 s per pumpkin, the Candy Helmet when the giant breaks).
+    /// - The bonus stages: --Bedroom--MiniGame-- (made by hand: Boss_Area and Treasure_Chest_PUMPKIN_EXTRA, whose opening
+    ///   makes the giant) and --Livingroom--MiniGame-- (a copy of it, made here). Tagged Untagged (EditorOnly isn't in
+    ///   builds).
+    /// - GAMESTAGES: Watch Bonus Round in each enemy-wave state ("Mini Enemy", "Enemy1 - Wait", "Enemy2 - Wait",
+    ///   "Enemy 3 Stuffs"), and a bonus state after each stage with Play Bonus Round, which switches the stage on only
+    ///   when the round was earned: "Bonus Round Mini" (EM0: BR_Mini_GO, then 2.5 - BR), "Bonus Round BR" (EM1: BR_GO,
+    ///   then 3 - LivingRoom), "Bonus Round LR2" (EM2: LR_GO, then Scale LR) and "Bonus Round LR" (EM3: LR GO 4, then
+    ///   Rooftop_ON). Each next state takes the field away (Destroy Object $BOSS_AREA, added where missing).
     /// </summary>
     public static class BonusRoundSetupMenu
     {
         private const string StartPumpkinPath = "Assets/Prefabs/Items/Breakable/StartGamePumpkin.prefab";
         private const string NestingPumpkinPath = "Assets/Prefabs/Items/Breakable/Nesting_Pumpkin_1.prefab";
         private const string SmallerPumpkinPath = "Assets/Prefabs/Items/Breakable/Nesting_Pumpkin_{0}.prefab";
-        private const string AreaPath = "Assets/Prefabs/Bases/Bonus_Area.prefab";
-        private const string ChestSourcePath = "Assets/Prefabs/BedRoom/Treasure_Chest_Pumpkin.prefab";
-        private const string ChestPath = "Assets/Prefabs/BedRoom/Bonus_Chest_Pumpkin.prefab";
+        private const string RoundPath = "Assets/Prefabs/Bases/Bonus_Round.prefab";
+        private const string BedroomStageName = "--Bedroom--MiniGame--";
+        private const string LivingroomStageName = "--Livingroom--MiniGame--";
 
-        // The five, giant first: size (scale), health, candies, EXP, laugh pitch, drops from the sky.
+        // The giant and the one every smaller pumpkin is made from: size (scale), health, candies, EXP, laugh pitch, drops
+        // from the sky. Only what they have on their own: the Bonus Round sets these for each pumpkin it takes.
         private static readonly (float size, float health, int candies, int exp, float pitch, bool fromSky)[] Pumpkins =
         {
-            (2f, 120f, 5, 5, 1f, true),
-            (1.44f, 120f, 5, 5, 1.12f, false),
-            (1.04f, 120f, 5, 5, 1.24f, false),
-            (0.75f, 120f, 5, 5, 1.36f, false),
-            (0.54f, 120f, 10, 30, 1.48f, false),
+            (2.282f, 120f, 3, 3, 1f, true),
+            (2.123f, 144f, 3, 3, 1.12f, false),
         };
+        private const string BonusSoundPath = "Assets/Audio/Kenney Audio/kenney_interface-sounds/Audio/confirmation_002.ogg";
+        private const string HelmetSoundPath = "Assets/Audio/Kenney Audio/kenney_digital-audio/Audio/powerUp2.ogg";
         private const string CandyPath = "Assets/Prefabs/Items/Breakable/Candy_{0}.prefab";
         private const string TickPath = "Assets/Audio/Kenney Audio/kenney_interface-sounds/Audio/tick_002.ogg";
-        private const string WinPath = "Assets/Audio/SFX/shop_buy_success.wav";
         private const string FontPath = "Assets/Fonts/roboto/Roboto-Bold SDF.asset";
         private const string PuffPath = "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Smoke_Blast.prefab";
-        private const float SkyLightHeight = 5f;
-        private const float SkyLightIntensity = 12f;
-        private const float SkyLightRange = 14f;
 
         [MenuItem("Tools/429 Game/Bonus/Set Up Nesting Pumpkin Bonus")]
         private static void SetUpMenu()
@@ -66,15 +69,14 @@ namespace Game.EditorTools
             var notes = new List<string>();
             // The prefabs it changes must not be open in Prefab Mode (others may be).
             var stage = UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
-            if (stage != null && (stage.assetPath.Contains("Nesting_Pumpkin") || stage.assetPath == AreaPath || stage.assetPath == ChestPath))
+            if (stage != null && (stage.assetPath.Contains("Nesting_Pumpkin") || stage.assetPath == RoundPath))
             {
                 notes.Add($"Close {stage.assetPath} in Prefab Mode first.");
                 return notes;
             }
             notes.Add(MakeNestingPumpkin());
             notes.Add(MakeSmallerPumpkins());
-            notes.Add(MakeChest());
-            notes.Add(SetUpArea());
+            notes.Add(MakeRound());
             notes.AddRange(HookGameStages());
             return notes;
         }
@@ -162,7 +164,7 @@ namespace Game.EditorTools
             return (made ? "Made Nesting_Pumpkin_1" : "Nesting_Pumpkin_1") + (changes.Count > 0 ? ": " + string.Join(", ", changes) : ": already set up");
         }
 
-        // Nesting_Pumpkin_2 ... _5: prefab variants of the giant, each with its own size, health, candies, EXP and laugh.
+        // Nesting_Pumpkin_2: a prefab variant of the giant, with its own size, health, candies, EXP and laugh.
         private static string MakeSmallerPumpkins()
         {
             var giant = AssetDatabase.LoadAssetAtPath<GameObject>(NestingPumpkinPath);
@@ -179,7 +181,7 @@ namespace Game.EditorTools
                 Object.DestroyImmediate(copy);
                 made.Add($"_{i + 1}");
             }
-            return made.Count > 0 ? "Made Nesting_Pumpkin" + string.Join(", ", made) : "Nesting_Pumpkin_2 ... _5 already there";
+            return made.Count > 0 ? "Made Nesting_Pumpkin" + string.Join(", ", made) : "Nesting_Pumpkin_2 already there";
         }
 
         // The table's values for pumpkin number 'index' (0 = the giant): its Nesting Pumpkin and its Enemy Hit Damage's EXP.
@@ -201,44 +203,6 @@ namespace Game.EditorTools
                 hs.ApplyModifiedPropertiesWithoutUndo();
             }
         }
-
-        // ---------- Bonus_Chest_Pumpkin ----------
-
-        private static string MakeChest()
-        {
-            bool made = false;
-            if (AssetDatabase.LoadAssetAtPath<GameObject>(ChestPath) == null)
-            {
-                var source = AssetDatabase.LoadAssetAtPath<GameObject>(ChestSourcePath);
-                if (source == null) return "MISSING " + ChestSourcePath;
-                var copy = (GameObject)PrefabUtility.InstantiatePrefab(source, UnityEngine.SceneManagement.SceneManager.GetActiveScene());
-                copy.name = "Bonus_Chest_Pumpkin";
-                PrefabUtility.SaveAsPrefabAsset(copy, ChestPath);
-                Object.DestroyImmediate(copy);
-                made = true;
-            }
-            var root = PrefabUtility.LoadPrefabContents(ChestPath);
-            var changes = new List<string>();
-            try
-            {
-                // No sword: the bonus round brings the giant pumpkin instead.
-                var sword = root.transform.Find("Treasure_Chest_Drop_Pos/Giant_Pumpkin_Pos");
-                var swordFsm = sword != null ? sword.GetComponent<PlayMakerFSM>() : null;
-                if (swordFsm != null && swordFsm.enabled) { swordFsm.enabled = false; changes.Add("no sword"); }
-                // It faces the player instead of spinning (Face The Player follows the headset; a Look At the $Player or
-                // $MainCam globals would face the middle of the play area).
-                foreach (var fsm in root.GetComponents<PlayMakerFSM>())
-                {
-                    if (fsm.FsmName != "Health") continue;
-                    if (DisableActions(fsm, "Tween Position", a => a is Rotate || a is LookAt)) changes.Add("no spin");
-                }
-                if (root.GetComponent<Game.VFX.FaceThePlayer>() == null) { root.AddComponent<Game.VFX.FaceThePlayer>(); changes.Add("faces the player"); }
-                PrefabUtility.SaveAsPrefabAsset(root, ChestPath);
-            }
-            finally { PrefabUtility.UnloadPrefabContents(root); }
-            return (made ? "Made Bonus_Chest_Pumpkin" : "Bonus_Chest_Pumpkin") + (changes.Count > 0 ? ": " + string.Join(", ", changes) : ": already set up");
-        }
-
 
         // A spot that creates something (a CreateObject), like the start pumpkin's extra pumpkins.
         private static bool SpawnsSomething(PlayMakerFSM fsm)
@@ -314,57 +278,41 @@ namespace Game.EditorTools
             return true;
         }
 
-        // ---------- Bonus_Area ----------
+        // ---------- Bonus_Round ----------
 
-        private static string SetUpArea()
+        private static string MakeRound()
         {
-            if (AssetDatabase.LoadAssetAtPath<GameObject>(AreaPath) == null) return "MISSING " + AreaPath + " (make it from Boss_Area first)";
-            var root = PrefabUtility.LoadPrefabContents(AreaPath);
+            bool made = false;
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(RoundPath) == null)
+            {
+                var temp = new GameObject("Bonus_Round");
+                temp.AddComponent<BonusRound>();
+                PrefabUtility.SaveAsPrefabAsset(temp, RoundPath);
+                Object.DestroyImmediate(temp);
+                made = true;
+            }
+            var root = PrefabUtility.LoadPrefabContents(RoundPath);
             var filled = new List<string>();
             try
             {
-                // The light over the stage (like the Bedroom's room light, lower and brighter: there are no walls here).
-                if (root.transform.Find("Sky Light") == null)
-                {
-                    var go = new GameObject("Sky Light");
-                    go.transform.SetParent(root.transform, false);
-                    go.transform.position = root.transform.position + Vector3.up * SkyLightHeight;
-                    var light = go.AddComponent<Light>();
-                    light.type = LightType.Point;
-                    light.color = Color.white;
-                    light.intensity = SkyLightIntensity;
-                    light.range = SkyLightRange;
-                    light.shadows = LightShadows.Soft;
-                    filled.Add("Sky Light");
-                }
-                if (root.transform.Find("Chest_Pos") == null)
-                {
-                    var spot = new GameObject("Chest_Pos");
-                    spot.transform.SetParent(root.transform, false);
-                    filled.Add("Chest_Pos");
-                }
                 var round = root.GetComponent<BonusRound>();
                 if (round == null) { round = root.AddComponent<BonusRound>(); filled.Add("Bonus Round added"); }
                 var so = new SerializedObject(round);
-                Fill(so, "chestPrefab", AssetDatabase.LoadAssetAtPath<GameObject>(ChestPath), filled);
-                Fill(so, "chestPoint", root.transform.Find("Chest_Pos"), filled);
-                var line = so.FindProperty("pumpkins");
-                if (line.arraySize == 0)
-                {
-                    for (int i = 0; i < Pumpkins.Length; i++)
-                    {
-                        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(string.Format(SmallerPumpkinPath, i + 1));
-                        var pumpkin = prefab != null ? prefab.GetComponent<NestingPumpkin>() : null;
-                        if (pumpkin == null) continue;
-                        line.arraySize++;
-                        line.GetArrayElementAtIndex(line.arraySize - 1).objectReferenceValue = pumpkin;
-                    }
-                    filled.Add($"{line.arraySize} pumpkins");
-                }
+                var giant = AssetDatabase.LoadAssetAtPath<GameObject>(NestingPumpkinPath);
+                var smaller = AssetDatabase.LoadAssetAtPath<GameObject>(string.Format(SmallerPumpkinPath, 2));
+                Fill(so, "giant", giant != null ? giant.GetComponent<NestingPumpkin>() : null, filled);
+                Fill(so, "smaller", smaller != null ? smaller.GetComponent<NestingPumpkin>() : null, filled);
+                Fill(so, "startPumpkin", AssetDatabase.LoadAssetAtPath<GameObject>(StartPumpkinPath), filled);
+                Fill(so, "bonusSound", AssetDatabase.LoadAssetAtPath<AudioClip>(BonusSoundPath), filled);
+                Fill(so, "helmetSound", AssetDatabase.LoadAssetAtPath<AudioClip>(HelmetSoundPath), filled);
                 Fill(so, "tickSound", AssetDatabase.LoadAssetAtPath<AudioClip>(TickPath), filled);
-                Fill(so, "winSound", AssetDatabase.LoadAssetAtPath<AudioClip>(WinPath), filled);
                 Fill(so, "font", AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontPath), filled);
                 Fill(so, "puffEffect", AssetDatabase.LoadAssetAtPath<GameObject>(PuffPath), filled);
+                // The first rounds' numbers (a 4x giant, 14 pumpkins, 60 health, +5 s): the new ones, once.
+                if (Changed(so, "giantTimes", 4f, 1.5f)) filled.Add("giant 1.5x the start pumpkin");
+                if (Changed(so, "count", 14, 6)) filled.Add("6 pumpkins");
+                if (Changed(so, "giantHealth", 60f, 120f)) filled.Add("giant health 120");
+                if (Changed(so, "bonusSeconds", 5f, 6f)) filled.Add("+6 s per pumpkin");
                 var list = so.FindProperty("candies");
                 if (list.arraySize == 0)
                 {
@@ -378,10 +326,27 @@ namespace Game.EditorTools
                     filled.Add($"{list.arraySize} candies");
                 }
                 so.ApplyModifiedPropertiesWithoutUndo();
-                PrefabUtility.SaveAsPrefabAsset(root, AreaPath);
+                PrefabUtility.SaveAsPrefabAsset(root, RoundPath);
             }
             finally { PrefabUtility.UnloadPrefabContents(root); }
-            return "Bonus_Area" + (filled.Count > 0 ? ": " + string.Join(", ", filled) : ": already set up");
+            return (made ? "Made Bonus_Round" : "Bonus_Round") + (filled.Count > 0 ? ": " + string.Join(", ", filled) : ": already set up");
+        }
+
+        // A number still at the old value gets the new one; one changed by hand is kept.
+        private static bool Changed(SerializedObject so, string field, float was, float now)
+        {
+            var p = so.FindProperty(field);
+            if (p == null || !Mathf.Approximately(p.floatValue, was)) return false;
+            p.floatValue = now;
+            return true;
+        }
+
+        private static bool Changed(SerializedObject so, string field, int was, int now)
+        {
+            var p = so.FindProperty(field);
+            if (p == null || p.intValue != was) return false;
+            p.intValue = now;
+            return true;
         }
 
         private static void Fill(SerializedObject so, string field, Object value, List<string> filled)
@@ -401,17 +366,56 @@ namespace Game.EditorTools
             if (gs == null) { yield return "No GAMESTAGES in the open scene: open 2 Game Scene and run it again."; yield break; }
             var f = gs.Fsm;
             if (!f.Initialized) f.Init(gs);
-            var area = AssetDatabase.LoadAssetAtPath<GameObject>(AreaPath);
+            var round = AssetDatabase.LoadAssetAtPath<GameObject>(RoundPath);
+            var bedroom = gs.transform.Find(BedroomStageName);
+            if (bedroom == null) { yield return $"No {BedroomStageName} under {gs.name}: make it first."; yield break; }
             Undo.RecordObject(gs, "Nesting Pumpkin Bonus");
 
+            yield return Watch(gs, "Mini Enemy");
             yield return Watch(gs, "Enemy1 - Wait");
+            yield return Watch(gs, "Enemy2 - Wait");
             yield return Watch(gs, "Enemy 3 Stuffs");
-            // The room stays: its floor (the walls are already down) is the stage's floor; Boss_Area's own is invisible.
-            yield return BonusState(gs, "Bonus Round BR", "BR_GO", "3 - LivingRoom", area);
-            yield return BonusState(gs, "Bonus Round LR", "LR GO 4", "Rooftop_ON", area);
+            yield return Untag(bedroom.gameObject);
+            var livingroom = gs.transform.Find(LivingroomStageName);
+            if (livingroom == null)
+            {
+                livingroom = CopyStage(bedroom.gameObject, LivingroomStageName).transform;
+                yield return $"Made {LivingroomStageName} (a copy of {BedroomStageName})";
+            }
+            yield return Untag(livingroom.gameObject);
+            yield return BonusState(gs, "Bonus Round Mini", "BR_Mini_GO", "2.5 - BR", round, bedroom.gameObject);
+            yield return BonusState(gs, "Bonus Round BR", "BR_GO", "3 - LivingRoom", round, bedroom.gameObject);
+            yield return BonusState(gs, "Bonus Round LR2", "LR_GO", "Scale LR", round, livingroom.gameObject);
+            yield return BonusState(gs, "Bonus Round LR", "LR GO 4", "Rooftop_ON", round, livingroom.gameObject);
+            foreach (var next in new[] { "2.5 - BR", "3 - LivingRoom", "Scale LR", "Rooftop_ON" })
+                yield return ClearField(gs, next);
             EditorUtility.SetDirty(gs);
             EditorSceneManager.MarkSceneDirty(gs.gameObject.scene);
             yield return "Save the scene to keep the GAMESTAGES changes.";
+        }
+
+        // EditorOnly objects are left out of builds.
+        private static string Untag(GameObject stage)
+        {
+            if (!stage.CompareTag("EditorOnly")) return $"{stage.name}: tag {stage.tag}";
+            Undo.RecordObject(stage, "Nesting Pumpkin Bonus");
+            stage.tag = "Untagged";
+            return $"{stage.name}: EditorOnly -> Untagged (it's in builds now)";
+        }
+
+        // A copy of a bonus stage next to it, its spots renamed (Bedroom_ -> Livingroom_). Its Create Objects make the
+        // same things at the same places; move its spots to change them.
+        private static GameObject CopyStage(GameObject source, string name)
+        {
+            var copy = Object.Instantiate(source, source.transform.parent);
+            copy.name = name;
+            copy.transform.SetSiblingIndex(source.transform.GetSiblingIndex() + 1);
+            foreach (var t in copy.GetComponentsInChildren<Transform>(true))
+            {
+                if (t != copy.transform) t.name = t.name.Replace("Bedroom_", "Livingroom_");
+            }
+            Undo.RegisterCreatedObjectUndo(copy, "Nesting Pumpkin Bonus");
+            return copy;
         }
 
         // Watch Bonus Round at the end of a stage's enemy-wave state.
@@ -429,31 +433,88 @@ namespace Game.EditorTools
             return $"'{stateName}': Watch Bonus Round added";
         }
 
-        // A new state between 'after' and 'next' that plays the bonus round (or goes straight on if it wasn't earned).
-        private static string BonusState(PlayMakerFSM gs, string name, string after, string next, GameObject area)
+        // The state between 'after' and 'next' that plays the bonus round in 'stage' (or goes straight on if it wasn't
+        // earned). The stage is switched on by Play Bonus Round, so an Activate Game Object of it there goes.
+        private static string BonusState(PlayMakerFSM gs, string name, string after, string next, GameObject round, GameObject stage)
         {
             var f = gs.Fsm;
             var from = f.GetState(after);
             if (from == null || f.GetState(next) == null) return $"GAMESTAGES has no '{after}' or '{next}'";
-            if (f.GetState(name) == null)
+            var changes = new List<string>();
+            var state = f.GetState(name);
+            if (state == null)
             {
                 var near = from.Position;
-                var state = new FsmState(f) { Name = name, Position = new Rect(near.x + 170f, near.y + 40f, near.width + 20f, near.height) };
-                var play = new PlayBonusRound();
-                play.Reset();
-                play.area = new FsmGameObject { Value = area };
-                state.Actions = new FsmStateAction[] { play };
+                state = new FsmState(f) { Name = name, Position = new Rect(near.x + 170f, near.y + 40f, near.width + 20f, near.height) };
+                var fresh = new PlayBonusRound();
+                fresh.Reset();
+                state.Actions = new FsmStateAction[] { fresh };
                 state.Transitions = new[] { new FsmTransition { FsmEvent = FsmEvent.Finished, ToState = next } };
                 f.States = f.States.Append(state).ToArray();
-                state.SaveActions();
+                changes.Add("made");
             }
+            else
+            {
+                state.LoadActions();
+                if (state.ActionData.ActionCount != state.Actions.Length) return $"'{name}' didn't load all its actions; left alone";
+            }
+            var play = state.Actions.OfType<PlayBonusRound>().FirstOrDefault();
+            if (play == null)
+            {
+                play = new PlayBonusRound();
+                play.Reset();
+                state.Actions = new FsmStateAction[] { play }.Concat(state.Actions).ToArray();
+                changes.Add("Play Bonus Round added");
+            }
+            if (play.round == null || play.round.Value != round) { play.round = new FsmGameObject { Value = round }; changes.Add("round Bonus_Round"); }
+            if (play.stage == null || play.stage.Value != stage) { play.stage = new FsmGameObject { Value = stage }; changes.Add("stage " + stage.name); }
+            int before = state.Actions.Length;
+            state.Actions = state.Actions.Where(a => !(a is ActivateGameObject activate && Switches(activate, stage))).ToArray();
+            if (state.Actions.Length < before) changes.Add($"its own Activate {stage.name} removed (Play Bonus Round does it when earned)");
+            if (changes.Count > 0) state.SaveActions();
+
             // 'after' goes to the bonus state instead of straight to 'next'.
-            int rerouted = 0;
             foreach (var t in from.Transitions)
             {
-                if (t.ToState == next) { t.ToState = name; rerouted++; }
+                if (t.ToState == next) { t.ToState = name; changes.Add($"after '{after}'"); }
             }
-            return rerouted > 0 ? $"'{name}' between '{after}' and '{next}'" : $"'{name}' already hooked in";
+            return $"'{name}': " + (changes.Count > 0 ? string.Join(", ", changes) : "already set up");
+        }
+
+        // The state after a bonus state takes the field away: a Destroy Object $BOSS_AREA (the one already in another
+        // state is copied, so it points at the same global) first thing, unless it has one.
+        private static string ClearField(PlayMakerFSM gs, string stateName)
+        {
+            var state = gs.Fsm.GetState(stateName);
+            if (state == null) return $"GAMESTAGES has no '{stateName}'";
+            DestroyObject model = null;
+            foreach (var other in gs.Fsm.States)
+            {
+                if (model != null) break;
+                other.LoadActions();
+                model = other.Actions.OfType<DestroyObject>().FirstOrDefault(IsFieldDestroy);
+            }
+            if (model == null) return $"'{stateName}': no Destroy Object $BOSS_AREA anywhere to copy; add it by hand";
+            state.LoadActions();
+            if (state.ActionData.ActionCount != state.Actions.Length) return $"'{stateName}' didn't load all its actions; left alone";
+            if (state.Actions.OfType<DestroyObject>().Any(IsFieldDestroy)) return $"'{stateName}' already destroys $BOSS_AREA";
+            var destroy = new DestroyObject();
+            destroy.Reset();
+            destroy.gameObject = model.gameObject;
+            state.Actions = new FsmStateAction[] { destroy }.Concat(state.Actions).ToArray();
+            state.SaveActions();
+            return $"'{stateName}': Destroy Object $BOSS_AREA added";
+        }
+
+        private static bool IsFieldDestroy(DestroyObject action) =>
+            action.gameObject != null && action.gameObject.UseVariable && action.gameObject.Name == "BOSS_AREA";
+
+        // An Activate Game Object that switches 'stage' on.
+        private static bool Switches(ActivateGameObject action, GameObject stage)
+        {
+            var target = action.gameObject;
+            return target != null && target.OwnerOption == OwnerDefaultOption.SpecifyGameObject &&
+                   target.GameObject != null && target.GameObject.Value == stage && action.activate != null && action.activate.Value;
         }
     }
 }

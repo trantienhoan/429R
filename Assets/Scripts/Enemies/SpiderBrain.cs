@@ -578,6 +578,14 @@ namespace Game.Enemies
         private const string SpawnedStuffVariable = "CurrentlySpawnedStuffs";
         private const float SensesEvery = 0.2f;
         private const float RepathEvery = 0.25f;
+        // Faster than this (m/s) it's surely moving...
+        private const float MovingSpeed = 0.5f;
+        // ...slower, it only counts as moving if it got this far (m) over the last Still Window seconds: one pressing
+        // against a wall or the others jitters about on the spot.
+        private const float StillDistance = 0.06f;
+        private const float StillWindow = 0.25f;
+        // Standing still this many seconds, its legs stop: no running on the spot (e.g. it can't get any closer).
+        private const float StillGrace = 0.2f;
         private const float NoticeSeconds = 0.5f;
         private const float TurnSpeed = 540f;
         private const float LungeLead = 0.15f;
@@ -646,6 +654,12 @@ namespace Game.Enemies
         private bool resumeTurning;
         private float burstUntil;
         private bool pausing;
+        // When it last stopped moving while it meant to walk or run (-1: it's moving).
+        private float stillSince = -1f;
+        // How far it got over the last Still Window (checked every Still Window seconds).
+        private Vector3 movedFrom;
+        private float movedCheckAt;
+        private float movedLately = 1f;
         private float orbitAngle;
         private float orbitDirection = 1f;
         private float nextOrbitFlip;
@@ -1067,8 +1081,7 @@ namespace Game.Enemies
 
         private void DoWander()
         {
-            Play(WalkLook);
-            SetLegs();
+            PlayMoving(WalkLook, false);
             if (Time.time >= stateUntil || (!agent.pathPending && agent.remainingDistance <= 0.2f))
                 Enter(State.Idle, Random.Range(1f, 3f));
         }
@@ -1475,15 +1488,15 @@ namespace Game.Enemies
         {
             if (runningAway)
             {
-                Play(RunLook);
+                PlayMoving(RunLook, false);
             }
             else
             {
                 Face(PlayerFloor());
                 // A blocked bite shows its recoil (the hit animation) before it walks back.
-                if (Time.time >= hitShownUntil) Play(HasAnimationQuiet(walkBackAnimation) ? walkBackAnimation : RunLook);
+                if (Time.time >= hitShownUntil) PlayMoving(HasAnimationQuiet(walkBackAnimation) ? walkBackAnimation : RunLook, true);
+                else SetLegs();
             }
-            SetLegs();
             if (Time.time < stateUntil) return;
             runningAway = false;
             if (IsFlying)
@@ -1523,8 +1536,7 @@ namespace Game.Enemies
 
         private void DoFlee()
         {
-            Play(RunLook);
-            SetLegs();
+            PlayMoving(RunLook, false);
             if (Time.time >= stateUntil || (!agent.pathPending && agent.remainingDistance <= 0.3f)) Enter(State.Chase, 0f);
         }
 
@@ -2247,7 +2259,33 @@ namespace Game.Enemies
                 nextRepath = Time.time + RepathEvery;
                 GoTo(point, RunSpeed * speedShare, true);
             }
-            Play(RunLook);
+            PlayMoving(RunLook, noticed);
+        }
+
+        // Its walk or run while it really moves. Standing still for a moment instead (it can't get any closer to the
+        // player, e.g. they stand where it can't go, or it's boxed in by the others) it shows its idle, facing the
+        // player if it has seen them, and runs again the moment it moves. A flier in the air keeps flying.
+        private void PlayMoving(string look, bool facePlayer)
+        {
+            if (Time.time >= movedCheckAt)
+            {
+                var step = transform.position - movedFrom;
+                step.y = 0f;
+                movedLately = step.magnitude;
+                movedFrom = transform.position;
+                movedCheckAt = Time.time + StillWindow;
+            }
+            bool moving = IsFlying || agent.velocity.sqrMagnitude >= MovingSpeed * MovingSpeed || movedLately >= StillDistance;
+            if (moving) stillSince = -1f;
+            else if (stillSince < 0f) stillSince = Time.time;
+            if (!moving && Time.time - stillSince >= StillGrace)
+            {
+                Play(IdleLook);
+                if (animator != null) animator.speed = 1f;
+                if (facePlayer && player != null) Face(PlayerFloor());
+                return;
+            }
+            Play(look);
             SetLegs();
         }
 
@@ -2279,6 +2317,7 @@ namespace Game.Enemies
         {
             state = next;
             stateUntil = Time.time + seconds;
+            stillSince = -1f;
         }
 
         private void Play(string animation, bool restart = false)

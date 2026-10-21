@@ -235,12 +235,23 @@ MonoBehaviour:
   chestPrefab: {fileID: 9045737507158066256, guid: 0f3afbc034e01894e867941bb530b6fe,
     type: 3}
   chestPoint: {fileID: 3260593924511840291}
-  pumpkins:
-  - {fileID: 7751877861004765832, guid: 11e48e2876d24c4438d02f7350b444db, type: 3}
-  - {fileID: 7943707614584160551, guid: d2351c656a2a8f04888d0146c0df7b1e, type: 3}
-  - {fileID: 7222693379110440704, guid: 8cfd93f73657b5a4daf2b864d9fafd12, type: 3}
-  - {fileID: 6481719377796749828, guid: 339854df0ef866347a18598829578c1e, type: 3}
-  - {fileID: 1097635662710650186, guid: 7d5d3ed9468384248aedd8e7b3e8a00c, type: 3}
+  playerDistance: 7
+  chestDistance: 1.6
+  fadeSeconds: 0.35
+  giant: {fileID: 7751877861004765832, guid: 11e48e2876d24c4438d02f7350b444db, type: 3}
+  smaller: {fileID: 7943707614584160551, guid: d2351c656a2a8f04888d0146c0df7b1e, type: 3}
+  startPumpkin: {fileID: 4871850987860103417, guid: 477e502e5e0f1ad4d84839fd93efc08d,
+    type: 3}
+  giantTimes: 4
+  count: 14
+  shrinkPerPumpkin: 0.07
+  giantHealth: 60
+  minHealth: 6
+  candiesEach: 3
+  lastCandies: 15
+  expEach: 3
+  lastExp: 25
+  lastPitch: 1.6
   nextPumpkinDelay: 0.8
   candies:
   - {fileID: 8690403555129543112, guid: cdc38a3b62c4ce74599d6cfed8d6c696, type: 3}
@@ -252,18 +263,25 @@ MonoBehaviour:
   - {fileID: 8690403555129543112, guid: ec76c087b6f2f7e449bd46ac0079ccba, type: 3}
   - {fileID: 8690403555129543112, guid: 423da62656a4eb74a94fb73d5dce640f, type: 3}
   candyLaunchSpeed: 2.2
-  seconds: 60
+  seconds: 30
+  bonusSeconds: 5
+  bonusSound: {fileID: 8300000, guid: 12b7f71d1b1e6ba46a065a94cab11e4a, type: 3}
   warnSeconds: 10
   tickSound: {fileID: 8300000, guid: 18b247bf43ebeb6459aa30fee226ba0d, type: 3}
   tickVolume: 0.6
+  helmetSeconds: 60
+  helmetSound: {fileID: 8300000, guid: 580b8b5019ed5124bb152631a92150a3, type: 3}
+  helmetText: CANDY HELMET!
   font: {fileID: 11400000, guid: d7a5e2d89139b2940a46b4a7c3289c9e, type: 2}
-  signHeight: 3.4
-  signScale: 0.006
+  signAbove: 0.9
+  signLowest: 2.6
+  signScale: 0.007
   waitingText: BONUS!
   wonText: WOW!
   timeUpText: TIME!
   winSound: {fileID: 8300000, guid: 2b8bf995953319743856b754dfe7b436, type: 3}
-  endSeconds: 6
+  endSeconds: 4
+  candyWaitSeconds: 8
   sinkSeconds: 2
   puffEffect: {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}

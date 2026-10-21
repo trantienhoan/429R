@@ -5,17 +5,20 @@ namespace HutongGames.PlayMaker.Actions
 {
     [ActionCategory("Bonus")]
     [Tooltip("Plays the nesting pumpkin bonus round if the player earned it in the stage before (see Watch Bonus Round), " +
-             "then finishes. Not earned: finishes at once. The bonus area comes in the middle (on the floor that's " +
-             "there) and goes again when the round is over.")]
+             "then finishes. Not earned: finishes at once, and the bonus stage doesn't come. Earned: switches the bonus " +
+             "stage on (e.g. --Bedroom--MiniGame--: the field and the pumpkin chest) and starts the round there; punching " +
+             "the chest open lets the giant out and the countdown starts. Finishes when the round is over and the " +
+             "candies are eaten (the next state takes the field away: Destroy Object $BOSS_AREA).")]
     public class PlayBonusRound : FsmStateAction
     {
         [RequiredField]
-        [Tooltip("The bonus area prefab (Bonus_Area).")]
-        public FsmGameObject area;
+        [Tooltip("The bonus round prefab (Bonus_Round).")]
+        public FsmGameObject round;
 
-        [Tooltip("Optional: taken away before the bonus area comes. Empty = nothing (the room's floor stays as the stage's " +
-                 "floor: the bonus area's own floor is invisible).")]
-        public FsmGameObject removeFirst;
+        [RequiredField]
+        [Tooltip("The bonus stage, switched on when the round was earned (e.g. --Bedroom--MiniGame--): its chest makes " +
+                 "the giant. The round goes where it is (its height is the floor's). Empty: no bonus, the state just goes on.")]
+        public FsmGameObject stage;
 
         [Tooltip("Plays it even if the player didn't earn it (for testing).")]
         public FsmBool always;
@@ -23,13 +26,12 @@ namespace HutongGames.PlayMaker.Actions
         [Tooltip("Sent when the round is over or wasn't earned. Empty: the state just finishes (FINISHED).")]
         public FsmEvent finishEvent;
 
-        private GameObject spawned;
-        private BonusRound round;
+        private BonusRound running;
 
         public override void Reset()
         {
-            area = null;
-            removeFirst = null;
+            round = null;
+            stage = null;
             always = false;
             finishEvent = null;
         }
@@ -38,29 +40,29 @@ namespace HutongGames.PlayMaker.Actions
         {
             bool earned = BonusRound.Earned || always.Value;
             BonusRound.ForgetStage();
-            if (!earned || area.Value == null)
+            // No stage, no chest to let the giant out: no round (it would wait for good).
+            if (!earned || round.Value == null || stage.Value == null)
             {
                 Done();
                 return;
             }
-            if (removeFirst.Value != null) Object.Destroy(removeFirst.Value);
+            stage.Value.SetActive(true);
+            var at = stage.Value.transform.position;
             var stuff = FsmVariables.GlobalVariables.FindFsmGameObject("CurrentlySpawnedStuffs");
             var parent = stuff != null && stuff.Value != null ? stuff.Value.transform : null;
-            spawned = Object.Instantiate(area.Value, Vector3.zero, Quaternion.identity, parent);
-            round = spawned.GetComponentInChildren<BonusRound>();
+            running = Object.Instantiate(round.Value, at, Quaternion.identity, parent).GetComponentInChildren<BonusRound>();
         }
 
         public override void OnUpdate()
         {
-            if (spawned == null || round == null || round.Finished) Done();
+            if (running == null || running.Finished) Done();
         }
 
         public override void OnExit()
         {
-            // Over, or left early (e.g. game over): the area goes.
-            if (spawned != null) Object.Destroy(spawned);
-            spawned = null;
-            round = null;
+            // Over, or left early (e.g. game over): the round goes (the field goes with the next state's clean-up).
+            if (running != null) Object.Destroy(running.gameObject);
+            running = null;
         }
 
         private void Done()

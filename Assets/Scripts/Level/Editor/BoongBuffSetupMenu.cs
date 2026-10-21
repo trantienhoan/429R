@@ -13,7 +13,8 @@ namespace Game.EditorTools
     /// they don't have one yet. Everything else about the boong buffs (Player Buffs; the health HUD shows them) is made when the game
     /// runs. The scene is left unsaved for you to save. Running it again changes nothing, and effects or a sound you
     /// picked yourself are kept.
-    /// Tools > 429 Game > Player > Give Boong Buff (Play Mode) gives a buff while playing, to try them out.
+    /// Tools > 429 Game > Player > Give Boong Buff (Play Mode) gives a buff while playing, to try them out (the bonus
+    /// round's Candy Helmet too).
     /// </summary>
     public static class BoongBuffSetupMenu
     {
@@ -99,7 +100,10 @@ namespace Game.EditorTools
         [MenuItem("Tools/429 Game/Player/Give Boong Buff (Play Mode)/Bus Boong")]
         private static void GiveBus() => PlayerBuffs.Give(Buff.BusBoong);
 
-        [MenuItem("Tools/429 Game/Player/Give Boong Buff (Play Mode)/All Four")]
+        [MenuItem("Tools/429 Game/Player/Give Boong Buff (Play Mode)/Candy Helmet")]
+        private static void GiveHelmet() => PlayerBuffs.Give(Buff.CandyHelmet);
+
+        [MenuItem("Tools/429 Game/Player/Give Boong Buff (Play Mode)/All")]
         private static void GiveAll()
         {
             for (int i = 0; i < PlayerBuffs.Count; i++) PlayerBuffs.Give((Buff)i);
@@ -112,7 +116,8 @@ namespace Game.EditorTools
         [MenuItem("Tools/429 Game/Player/Give Boong Buff (Play Mode)/Bone Boong", true)]
         [MenuItem("Tools/429 Game/Player/Give Boong Buff (Play Mode)/Green Boong", true)]
         [MenuItem("Tools/429 Game/Player/Give Boong Buff (Play Mode)/Bus Boong", true)]
-        [MenuItem("Tools/429 Game/Player/Give Boong Buff (Play Mode)/All Four", true)]
+        [MenuItem("Tools/429 Game/Player/Give Boong Buff (Play Mode)/Candy Helmet", true)]
+        [MenuItem("Tools/429 Game/Player/Give Boong Buff (Play Mode)/All", true)]
         [MenuItem("Tools/429 Game/Player/Give Boong Buff (Play Mode)/End All Buffs", true)]
         private static bool Playing() => EditorApplication.isPlaying;
     }

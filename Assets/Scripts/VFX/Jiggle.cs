@@ -61,6 +61,12 @@ namespace Game.VFX
         private float lastHealth;
         private bool lookedForHealth;
 
+        /// <summary>
+        /// How much it jiggles (set at runtime, e.g. the bonus round's smaller, tougher pumpkins): 1 = Squash and Tilt as
+        /// set, 0.5 = half as far.
+        /// </summary>
+        public float Amount { get; set; } = 1f;
+
         /// <summary>Jiggles away from the player. Strength 1 = a full jiggle (Squash and Tilt), 0.3 = a little one.</summary>
         public void Hit(float strength = 1f) => Hit(strength, null);
 
@@ -74,9 +80,11 @@ namespace Game.VFX
             if (!moving) TakeRest();
 
             float speed = 2f * Mathf.PI * wobblesPerSecond;
+            float squashBy = squash * Mathf.Max(0f, Amount);
+            float tiltBy = tilt * Mathf.Max(0f, Amount);
             // A push towards flat first; the spring makes it bounce back up taller.
-            float mostSquash = squash * speed * MostHits;
-            squashSpeed = Mathf.Clamp(squashSpeed - squash * strength * speed, -mostSquash, mostSquash);
+            float mostSquash = squashBy * speed * MostHits;
+            squashSpeed = Mathf.Clamp(squashSpeed - squashBy * strength * speed, -mostSquash, mostSquash);
 
             var source = from != null ? from.transform.position
                 : Camera.main != null ? Camera.main.transform.position
@@ -87,7 +95,7 @@ namespace Game.VFX
             away.y = 0f;
             // Turning around this axis tips its top away from the hit.
             var axis = Vector3.Cross(Vector3.up, away).normalized;
-            tiltSpeed = Vector3.ClampMagnitude(tiltSpeed + axis * (tilt * strength * speed * TiltSpeed), tilt * speed * TiltSpeed * MostHits);
+            tiltSpeed = Vector3.ClampMagnitude(tiltSpeed + axis * (tiltBy * strength * speed * TiltSpeed), tiltBy * speed * TiltSpeed * MostHits);
             moving = true;
         }
 

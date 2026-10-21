@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Game.Leveling
 {
-    /// <summary>The timed bonuses a smoked boong gives the player.</summary>
+    /// <summary>The timed bonuses a smoked boong (or the bonus round) gives the player.</summary>
     public enum Buff
     {
         /// <summary>Elon_Boong: punches reach 0.5 m further, hit twice as hard, and every punch that hits something explodes again.</summary>
@@ -15,6 +15,8 @@ namespace Game.Leveling
         GreenBoong,
         /// <summary>Bus_Boong: +7 Move Speed points.</summary>
         BusBoong,
+        /// <summary>The bonus round's invisible Candy Helmet: candies lying around fly into the player's mouth (Candy Helmet).</summary>
+        CandyHelmet,
     }
 
     /// <summary>
@@ -27,6 +29,8 @@ namespace Game.Leveling
     /// - Bone Boong: +7 Toughness points (less damage and knockback), on top of the level-up points.
     /// - Green Boong: the player stands 0.5 m taller (eased in and out over 1.5 s) and flying punches fly 5 m further.
     /// - Bus Boong: +7 Move Speed points (faster walking).
+    /// - Candy Helmet (the bonus round gives it when the giant pumpkin breaks): candies lying around fly into the
+    ///   player's mouth and are eaten (Game.Inventory.CandyHelmet does it).
     /// The extra points are never saved and never count as a stat's big last point; the Level Up menu keeps showing the
     /// player's own points. The health HUD shows them: while any is on the heart smokes white and stays in view, with a
     /// countdown under it for each (in the buff's colour, no names). With no buff on, everything is exactly as without this.
@@ -36,7 +40,7 @@ namespace Game.Leveling
         public const float DefaultSeconds = 60f;
 
         /// <summary>How many kinds of buff there are (the values of Buff).</summary>
-        public const int Count = 4;
+        public const int Count = 5;
 
         /// <summary>Elon Boong: how much further punches reach, in metres.</summary>
         public const float ElonReach = 0.5f;
@@ -163,6 +167,9 @@ namespace Game.Leveling
             }
         }
 
+        /// <summary>Candy Helmet: candies lying around fly into the player's mouth.</summary>
+        public static bool CandyHelmet => IsActive(Buff.CandyHelmet);
+
         /// <summary>The buff's colour on the health HUD: its countdown under the heart.</summary>
         public static Color ColorOf(Buff buff)
         {
@@ -171,6 +178,7 @@ namespace Game.Leveling
                 case Buff.ElonBoong: return new Color(1f, 0.62f, 0.25f);
                 case Buff.BoneBoong: return new Color(0.96f, 0.93f, 0.84f);
                 case Buff.GreenBoong: return new Color(0.45f, 1f, 0.45f);
+                case Buff.CandyHelmet: return new Color(1f, 0.45f, 0.8f);
                 default: return new Color(1f, 0.86f, 0.2f);
             }
         }
@@ -183,6 +191,7 @@ namespace Game.Leveling
                 case Buff.ElonBoong: return "Far exploding punches";
                 case Buff.BoneBoong: return $"+{BoneToughness} Toughness";
                 case Buff.GreenBoong: return "Taller, far flying punches";
+                case Buff.CandyHelmet: return "Candies fly into your mouth";
                 default: return $"+{BusSpeed} Move Speed";
             }
         }

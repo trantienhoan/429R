@@ -161,8 +161,12 @@ namespace Game.Combat
         /// </summary>
         public bool CountsAsKill => !furniture && exp > 0;
 
-        /// <summary>The EXP the player gets when it dies.</summary>
-        public int Exp => exp;
+        /// <summary>The EXP the player gets when it dies (set while the game runs, e.g. by the bonus round; not saved).</summary>
+        public int Exp
+        {
+            get => exp;
+            set => exp = Mathf.Max(0, value);
+        }
 
         /// <summary>
         /// Set while the game runs (not saved): it dies without the player earning it (a Fall Edge), so no EXP and no

@@ -37,17 +37,18 @@ namespace Game.Combat
         /// <summary>
         /// Throws the player: <paramref name="height"/> metres up and <paramref name="distance"/> metres along the floor,
         /// away from <paramref name="from"/> (as seen from the player's head, where they really stand). The player's
-        /// Toughness (a level-up stat) cuts both. <paramref name="shake"/> off: no camera shake (small shoves). Returns
-        /// false when there's no player to throw, or they're down.
+        /// Toughness (a level-up stat) cuts both, unless <paramref name="toughness"/> is off (a throw that must clear
+        /// something, like a bonus pumpkin growing over them). <paramref name="shake"/> off: no camera shake (small
+        /// shoves). Returns false when there's no player to throw, or they're down.
         /// </summary>
-        public static bool Launch(Vector3 from, float height, float distance, bool shake = true)
+        public static bool Launch(Vector3 from, float height, float distance, bool shake = true, bool toughness = true)
         {
             var launcher = Find();
             if (launcher == null) return false;
             // Down, dying or getting back up: nothing throws them, so they get up where they fell (bites still come while
             // they're down, they just don't hurt). A flight already going just lands.
             if (launcher.PlayerDown()) return false;
-            float share = Game.Leveling.PlayerLevel.PushShare;
+            float share = toughness ? Game.Leveling.PlayerLevel.PushShare : 1f;
             launcher.Begin(from, height * share, distance * share, shake);
             return true;
         }
