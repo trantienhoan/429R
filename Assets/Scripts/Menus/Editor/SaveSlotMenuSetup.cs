@@ -216,13 +216,13 @@ namespace Game.EditorTools
             SetupUtility.Stretch(title.rectTransform, new Vector2(24f, 0f), new Vector2(-(PanelWidth - 2f * SlotInset - 190f), 0f));
             SetupUtility.ShrinkToFit(title, 24f);
 
-            var info = SetupUtility.CreateText("Info", rect, "Empty", 30f, TextAlignmentOptions.BottomLeft, FontStyles.Bold, font);
-            SetupUtility.TopBand(info.rectTransform, 12f, 46f, 190f, 20f);
+            var info = SetupUtility.CreateText("Info", rect, "Empty", 30f, TextAlignmentOptions.MidlineLeft, FontStyles.Bold, font);
             SetupUtility.ShrinkToFit(info, 18f);
             var date = SetupUtility.CreateText("Date", rect, "", 22f, TextAlignmentOptions.TopLeft, FontStyles.Normal, font);
             date.color = DateColor;
             SetupUtility.TopBand(date.rectTransform, 62f, 34f, 190f, 20f);
             SetupUtility.ShrinkToFit(date, 14f);
+            OneLineSlotText(info, date);
 
             var hold = button.gameObject.AddComponent<PressAndHold>();
             var holdSettings = new SerializedObject(hold);
@@ -269,6 +269,56 @@ namespace Game.EditorTools
 
             box.gameObject.SetActive(false);
             return box.gameObject;
+        }
+
+        /// <summary>
+        /// Gives the start menu in the open scene one-line slot texts ("Lvl.3 - Yesterday 17:17", no room name): the
+        /// same as a freshly built menu. Safe to run again.
+        /// </summary>
+        [MenuItem("Tools/429 Game/Menu/Update Save Slot Menu Look")]
+        public static void UpdateMenuLook()
+        {
+            var menu = Object.FindAnyObjectByType<SaveSlotMenu>(FindObjectsInactive.Include);
+            if (menu == null)
+            {
+                EditorUtility.DisplayDialog("Update Save Slot Menu Look", "There's no Save Slot Menu in the open scene. " +
+                    "Run Tools > 429 Game > Menu > Set Up Save Slot Menu first.", "OK");
+                return;
+            }
+            var serialized = new SerializedObject(menu);
+            var slots = serialized.FindProperty("slots");
+            for (int i = 0; i < slots.arraySize; i++)
+            {
+                var slot = slots.GetArrayElementAtIndex(i);
+                var info = slot.FindPropertyRelative("info").objectReferenceValue as TMP_Text;
+                var date = slot.FindPropertyRelative("date").objectReferenceValue as TMP_Text;
+                if (info != null) OneLineSlotText(info, date);
+            }
+            serialized.FindProperty("savedLine").stringValue = "Lvl.{0} - {2}";
+            serialized.ApplyModifiedProperties();
+            EditorSceneManager.MarkSceneDirty(menu.gameObject.scene);
+            EditorUtility.DisplayDialog("Update Save Slot Menu Look", "Done: each slot shows \"Lvl.3 - Yesterday 17:17\" " +
+                "on one line.\n\nSave the scene to keep it.", "OK");
+        }
+
+        [MenuItem("Tools/429 Game/Menu/Update Save Slot Menu Look", true)]
+        private static bool CanUpdateMenuLook() => !EditorApplication.isPlaying;
+
+        // The slot's level and date on one line, in the middle of the slot's height (Saved Line has the date in it), and
+        // the separate date line switched off (kept, so the menu still finds it).
+        private static void OneLineSlotText(TMP_Text info, TMP_Text date)
+        {
+            Undo.RecordObject(info.rectTransform, "Slot Text");
+            Undo.RecordObject(info, "Slot Text");
+            SetupUtility.Stretch(info.rectTransform, new Vector2(190f, 0f), new Vector2(-20f, 0f));
+            info.alignment = TextAlignmentOptions.MidlineLeft;
+            info.textWrappingMode = TextWrappingModes.NoWrap;
+            EditorUtility.SetDirty(info);
+            if (date != null && date.gameObject.activeSelf)
+            {
+                Undo.RecordObject(date.gameObject, "Slot Text");
+                date.gameObject.SetActive(false);
+            }
         }
 
         // A button anchored to the bottom middle: x from the middle, y up from the bottom edge (to its centre).

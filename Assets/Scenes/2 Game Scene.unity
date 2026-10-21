@@ -66231,10 +66231,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1476331680}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 85, y: -12}
-  m_SizeDelta: {x: -210, y: 46}
+  m_AnchoredPosition: {x: 85, y: 0}
+  m_SizeDelta: {x: -210, y: 0}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &632789116
 CanvasRenderer:
@@ -66300,7 +66300,7 @@ MonoBehaviour:
   m_fontSizeMax: 30
   m_fontStyle: 1
   m_HorizontalAlignment: 1
-  m_VerticalAlignment: 1024
+  m_VerticalAlignment: 4096
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_characterHorizontalScale: 1
@@ -66309,7 +66309,7 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_TextWrappingMode: 1
+  m_TextWrappingMode: 0
   m_wordWrappingRatios: 0.4
   m_overflowMode: 1
   m_linkedTextComponent: {fileID: 0}
@@ -87605,7 +87605,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &780465996
 RectTransform:
   m_ObjectHideFlags: 0
@@ -92282,7 +92282,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &839502577
 RectTransform:
   m_ObjectHideFlags: 0
@@ -122821,7 +122821,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &997133494
 RectTransform:
   m_ObjectHideFlags: 0
@@ -146619,10 +146619,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1996749955}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 85, y: -12}
-  m_SizeDelta: {x: -210, y: 46}
+  m_AnchoredPosition: {x: 85, y: 0}
+  m_SizeDelta: {x: -210, y: 0}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &1217435147
 CanvasRenderer:
@@ -146688,7 +146688,7 @@ MonoBehaviour:
   m_fontSizeMax: 30
   m_fontStyle: 1
   m_HorizontalAlignment: 1
-  m_VerticalAlignment: 1024
+  m_VerticalAlignment: 4096
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_characterHorizontalScale: 1
@@ -146697,7 +146697,7 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_TextWrappingMode: 1
+  m_TextWrappingMode: 0
   m_wordWrappingRatios: 0.4
   m_overflowMode: 1
   m_linkedTextComponent: {fileID: 0}
@@ -239915,7 +239915,7 @@ MonoBehaviour:
   slotTitle: Slot {0}
   emptyLine: Empty
   damagedLine: Damaged
-  savedLine: Lv {0} - {1}
+  savedLine: Lvl.{0} - {2}
   confirmLine: Delete Slot {0}?
   startRoom: Start
   roomNames:
@@ -240212,10 +240212,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 503510473}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 85, y: -12}
-  m_SizeDelta: {x: -210, y: 46}
+  m_AnchoredPosition: {x: 85, y: 0}
+  m_SizeDelta: {x: -210, y: 0}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &1756926965
 CanvasRenderer:
@@ -240281,7 +240281,7 @@ MonoBehaviour:
   m_fontSizeMax: 30
   m_fontStyle: 1
   m_HorizontalAlignment: 1
-  m_VerticalAlignment: 1024
+  m_VerticalAlignment: 4096
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_characterHorizontalScale: 1
@@ -240290,7 +240290,7 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_TextWrappingMode: 1
+  m_TextWrappingMode: 0
   m_wordWrappingRatios: 0.4
   m_overflowMode: 1
   m_linkedTextComponent: {fileID: 0}
@@ -276079,6 +276079,7 @@ MonoBehaviour:
         - HutongGames.PlayMaker.Actions.AnimatorPlay
         - HutongGames.PlayMaker.Actions.SendEvent
         - HutongGames.PlayMaker.Actions.BoolTest
+        - HutongGames.PlayMaker.Actions.WatchBonusRound
         customNames:
         - 
         - 
@@ -276086,10 +276087,11 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 010101010101
-        actionIsOpen: 010101010101
-        actionStartIndex: 0000000005000000080000000d0000001200000016000000
-        actionHashCodes: b2cf1000f90ba701b2cf1000c34b41055e69bb04a4c8bf00
+        - 
+        actionEnabled: 01010101010101
+        actionIsOpen: 01010101010101
+        actionStartIndex: 0000000005000000080000000d00000012000000160000001a000000
+        actionHashCodes: b2cf1000f90ba701b2cf1000c34b41055e69bb04a4c8bf0000000000
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
@@ -283901,7 +283903,7 @@ MonoBehaviour:
           name: FINISHED
           isSystemEvent: 1
           isGlobal: 0
-        toState: 3 - LivingRoom
+        toState: Bonus Round BR
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -284184,7 +284186,7 @@ MonoBehaviour:
           name: FINISHED
           isSystemEvent: 1
           isGlobal: 0
-        toState: Rooftop_ON
+        toState: Bonus Round LR
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -284882,6 +284884,7 @@ MonoBehaviour:
         - HutongGames.PlayMaker.Actions.AnimatorPlay
         - HutongGames.PlayMaker.Actions.SendEvent
         - HutongGames.PlayMaker.Actions.BoolTest
+        - HutongGames.PlayMaker.Actions.WatchBonusRound
         customNames:
         - 
         - 
@@ -284889,10 +284892,11 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 010101010101
-        actionIsOpen: 000101010101
-        actionStartIndex: 0000000005000000080000000d0000001200000016000000
-        actionHashCodes: b2cf1000f90ba701b2cf1000c34b41055e69bb04a4c8bf00
+        - 
+        actionEnabled: 01010101010101
+        actionIsOpen: 00010101010101
+        actionStartIndex: 0000000005000000080000000d00000012000000160000001a000000
+        actionHashCodes: b2cf1000f90ba701b2cf1000c34b41055e69bb04a4c8bf0000000000
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
@@ -288745,6 +288749,180 @@ MonoBehaviour:
         - lateUpdate
         paramDataPos: 00000000000000000000000001000000020000000000000001000000
         paramByteDataSize: 00000000000000000000000000000000000000000100000001000000
+    - name: Bonus Round BR
+      description: 
+      colorIndex: 0
+      position:
+        serializedVersion: 2
+        x: 1015.85156
+        y: 834.53906
+        width: 120
+        height: 32
+      isBreakpoint: 0
+      isSequence: 0
+      hideUnused: 0
+      transitions:
+      - fsmEvent:
+          name: FINISHED
+          isSystemEvent: 1
+          isGlobal: 0
+        toState: 3 - LivingRoom
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
+      actionData:
+        actionNames:
+        - HutongGames.PlayMaker.Actions.PlayBonusRound
+        customNames:
+        - 
+        actionEnabled: 01
+        actionIsOpen: 01
+        actionStartIndex: 00000000
+        actionHashCodes: d5acbc01
+        unityObjectParams: []
+        fsmGameObjectParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 3536961824747975806, guid: c9695c8b378775c48852b4105bf65001,
+            type: 3}
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 0}
+        fsmOwnerDefaultParams: []
+        animationCurveParams: []
+        functionCallParams: []
+        fsmTemplateControlParams: []
+        fsmEventTargetParams: []
+        fsmPropertyParams: []
+        layoutOptionParams: []
+        fsmStringParams: []
+        fsmObjectParams: []
+        fsmVarParams: []
+        fsmArrayParams: []
+        fsmEnumParams: []
+        fsmFloatParams: []
+        fsmIntParams: []
+        fsmBoolParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        fsmVector2Params: []
+        fsmVector3Params: []
+        fsmColorParams: []
+        fsmRectParams: []
+        fsmQuaternionParams: []
+        stringParams:
+        - 
+        byteData: 
+        arrayParamSizes: 
+        arrayParamTypes: []
+        customTypeSizes: 
+        customTypeNames: []
+        paramDataType: 13000000130000001100000017000000
+        paramName:
+        - area
+        - removeFirst
+        - always
+        - finishEvent
+        paramDataPos: 00000000010000000000000000000000
+        paramByteDataSize: 00000000000000000000000000000000
+    - name: Bonus Round LR
+      description: 
+      colorIndex: 0
+      position:
+        serializedVersion: 2
+        x: 1411.2266
+        y: 800.0625
+        width: 120
+        height: 32
+      isBreakpoint: 0
+      isSequence: 0
+      hideUnused: 0
+      transitions:
+      - fsmEvent:
+          name: FINISHED
+          isSystemEvent: 1
+          isGlobal: 0
+        toState: Rooftop_ON
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
+      actionData:
+        actionNames:
+        - HutongGames.PlayMaker.Actions.PlayBonusRound
+        customNames:
+        - 
+        actionEnabled: 01
+        actionIsOpen: 01
+        actionStartIndex: 00000000
+        actionHashCodes: d5acbc01
+        unityObjectParams: []
+        fsmGameObjectParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 3536961824747975806, guid: c9695c8b378775c48852b4105bf65001,
+            type: 3}
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 0}
+        fsmOwnerDefaultParams: []
+        animationCurveParams: []
+        functionCallParams: []
+        fsmTemplateControlParams: []
+        fsmEventTargetParams: []
+        fsmPropertyParams: []
+        layoutOptionParams: []
+        fsmStringParams: []
+        fsmObjectParams: []
+        fsmVarParams: []
+        fsmArrayParams: []
+        fsmEnumParams: []
+        fsmFloatParams: []
+        fsmIntParams: []
+        fsmBoolParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        fsmVector2Params: []
+        fsmVector3Params: []
+        fsmColorParams: []
+        fsmRectParams: []
+        fsmQuaternionParams: []
+        stringParams:
+        - 
+        byteData: 
+        arrayParamSizes: 
+        arrayParamTypes: []
+        customTypeSizes: 
+        customTypeNames: []
+        paramDataType: 13000000130000001100000017000000
+        paramName:
+        - area
+        - removeFirst
+        - always
+        - finishEvent
+        paramDataPos: 00000000010000000000000000000000
+        paramByteDataSize: 00000000000000000000000000000000
     events:
     - name: next
       isSystemEvent: 0

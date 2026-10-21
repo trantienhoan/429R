@@ -11,7 +11,7 @@ namespace Game.Menus
 {
     /// <summary>
     /// The start menu: when the game starts (after the health warning) the player picks one of three save slots in front
-    /// of them. Each slot shows "Empty", or the level and room of its last checkpoint and when it was saved. Clicking a
+    /// of them. Each slot shows "Empty", or its level and when it was saved ("Lvl.3 - Yesterday 17:17"). Clicking a
     /// slot selects it; Start Game starts the selected slot (a new game if it's empty, else from its last checkpoint).
     /// Holding the trigger on a slot fills it red and starts it after 2 s (1 s with both triggers held). Delete Save
     /// (smaller) empties the selected slot after asking. Starting fades the view to black and shows the loading screen
@@ -72,8 +72,9 @@ namespace Game.Menus
         [SerializeField] private string emptyLine = "Empty";
         [Tooltip("A slot whose save can't be read (picking it starts a new game; a copy of the file is kept).")]
         [SerializeField] private string damagedLine = "Damaged";
-        [Tooltip("{0} = the level, {1} = the room.")]
-        [SerializeField] private string savedLine = "Lv {0} - {1}";
+        [Tooltip("{0} = the level, {1} = the room, {2} = when it was saved (e.g. \"Yesterday 17:17\"). With {2} in it the " +
+                 "date is on this line, so the date line under it stays empty.")]
+        [SerializeField] private string savedLine = "Lvl.{0} - {2}";
         [SerializeField] private string confirmLine = "Delete Slot {0}?";
         [Tooltip("The room shown for a save with no checkpoint yet.")]
         [SerializeField] private string startRoom = "Start";
@@ -274,13 +275,16 @@ namespace Game.Menus
                 if (slot == null) continue;
 
                 if (slot.title != null) slot.title.text = string.Format(slotTitle, i + 1);
+                string when = info.HasSave ? DateLine(info.SavedAt) : "";
+                // The date goes on the level line when Saved Line has {2}, else on its own line under it.
+                bool dateInLine = savedLine.Contains("{2}");
                 if (slot.info != null)
                 {
-                    slot.info.text = info.HasSave ? string.Format(savedLine, info.Level, RoomOf(info.Checkpoint))
+                    slot.info.text = info.HasSave ? string.Format(savedLine, info.Level, RoomOf(info.Checkpoint), when).Trim(' ', '-')
                         : info.Damaged ? damagedLine : emptyLine;
                     slot.info.color = info.HasSave ? infoColor : emptyColor;
                 }
-                if (slot.date != null) slot.date.text = info.HasSave ? DateLine(info.SavedAt) : "";
+                if (slot.date != null) slot.date.text = dateInLine ? "" : when;
             }
             ShowSelection();
         }
