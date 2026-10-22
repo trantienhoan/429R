@@ -20,7 +20,8 @@ namespace Game.PlayGround
     /// Everything else is left to its own FSMs: the Health FSM still laughs, watches the player, cracks, breaks and drops
     /// its loot; the Damage FSM still takes health on hard hits and knocks it away. It doesn't run while it grows in (Start
     /// Delay), while it's held, or once its health is gone. While it runs it can't tip over (its X/Z rotation is frozen
-    /// until it has landed and settled).
+    /// until it has landed and settled). With Turn Away After Run (Pumpkin_1, 2, 4, 6) it turns its back to the player
+    /// once a run is over and keeps it turned until it's hit or runs again.
     /// Tools > 429 Game > Items > Make Stage Pumpkins Run Away adds it with each pumpkin's stamina.
     /// </summary>
     [DisallowMultipleComponent]
@@ -61,6 +62,14 @@ namespace Game.PlayGround
         [Tooltip("Once at its hiding spot with the player at least this far, it stops running to save its breath.")]
         [Min(0.1f)]
         [SerializeField] private float calmRange = 7f;
+
+        [Header("After a run")]
+        [Tooltip("After running away it turns its back to the player and keeps it turned, sulking, until it's hit or " +
+                 "runs again (its Health FSM's Look At is overruled meanwhile). Off: it faces the player as before.")]
+        [SerializeField] private bool turnAwayAfterRun;
+        [Tooltip("How fast it turns its back, in degrees per second.")]
+        [Min(1f)]
+        [SerializeField] private float turnAwaySpeed = 240f;
 
         [Header("Hits")]
         [Tooltip("Something hitting it at least this much faster (metres per second) than it was moving itself takes " +
@@ -108,11 +117,16 @@ namespace Game.PlayGround
         private bool hasTarget;
         private Vector3 target;
         private readonly List<Vector3> corners = new();
+        // Turned away after a run (Turn Away After Run): the way it faces, eased round to its back to the player.
+        private bool turnedAway;
+        private float awayYaw;
+        private float lastHealth = float.MaxValue;
 
         public Mood Current => mood;
         public float StaminaLeft => staminaLeft;
         public float MaxStamina => stamina;
         public bool KeepingUpright => upright;
+        public bool TurnedAway => turnedAway;
 
         private void Awake()
         {
@@ -147,14 +161,19 @@ namespace Game.PlayGround
         private void Update()
         {
             if (mood == Mood.Done) return;
-            if (Health() <= 0f)
+            float healthNow = Health();
+            if (healthNow <= 0f)
             {
                 // Broken: its FSM plays the crack and the drop.
                 mood = Mood.Done;
                 hasTarget = false;
                 KeepUpright(false);
+                TurnBack();
                 return;
             }
+            // Hurt (its Damage FSM took health): it looks at the player again.
+            if (healthNow < lastHealth - 0.01f) TurnBack();
+            lastHealth = healthNow;
 
             if (grab != null && grab.isSelected)
             {
@@ -163,6 +182,7 @@ namespace Game.PlayGround
                     mood = Mood.Held;
                     hasTarget = false;
                     KeepUpright(false);
+                    TurnBack();
                 }
                 return;
             }
@@ -202,6 +222,7 @@ namespace Game.PlayGround
                         staminaLeft = 0f;
                         mood = Mood.Tired;
                         hasTarget = false;
+                        TurnAway();
                         break;
                     }
                     bool arrived = hasTarget && Flat(target - body.position).magnitude < 0.9f;
@@ -209,7 +230,7 @@ namespace Game.PlayGround
                     // Very far, far and out of sight, or at its hiding spot out of sight with the player not right on it:
                     // stop and hide there, saving its breath.
                     bool safe = distance > calmRange + 3f || (distance > calmRange && hidden) || (arrived && hidden && distance > fleeRange);
-                    if (safe || (arrived && distance > calmRange)) { mood = Mood.Watching; hasTarget = false; break; }
+                    if (safe || (arrived && distance > calmRange)) { mood = Mood.Watching; hasTarget = false; TurnAway(); break; }
                     if (!hasTarget || arrived || Time.time >= nextPick) PickHidingSpot(head);
                     break;
 
@@ -234,7 +255,36 @@ namespace Game.PlayGround
         {
             mood = Mood.Fleeing;
             KeepUpright(true);
+            TurnBack();
             PickHidingSpot(head);
+        }
+
+        // A run is over: it turns its back to the player (Turn Away After Run), from the way it faces now.
+        private void TurnAway()
+        {
+            if (!turnAwayAfterRun || turnedAway) return;
+            turnedAway = true;
+            awayYaw = transform.eulerAngles.y;
+        }
+
+        // Hit, running again, held or broken: its Health FSM's Look At turns it to the player again.
+        private void TurnBack() => turnedAway = false;
+
+        // After its FSMs' Look At (Update), so its back stays to the player: upright, eased round, following them.
+        private void LateUpdate()
+        {
+            if (!turnedAway) return;
+            var head = Camera.main != null ? Camera.main.transform : null;
+            if (head == null) return;
+            var away = Flat(transform.position - head.position);
+            if (away.sqrMagnitude > 0.0001f)
+            {
+                float wanted = Quaternion.LookRotation(away, Vector3.up).eulerAngles.y;
+                awayYaw = Mathf.MoveTowardsAngle(awayYaw, wanted, turnAwaySpeed * Time.deltaTime);
+            }
+            var turned = Quaternion.Euler(0f, awayYaw, 0f);
+            transform.rotation = turned;
+            if (!body.isKinematic) body.angularVelocity = Vector3.zero;
         }
 
         // Running, it can't tip over: X/Z rotation frozen (its Health FSM turns it to face the player). Off again it gets
@@ -279,6 +329,8 @@ namespace Game.PlayGround
             if (hit.Damage <= 0f) return;
             nextHurt = Time.time + HurtCooldown;
             LoseStamina(hit.Damage * staminaPerDamage);
+            // Hit: it looks at the player again.
+            TurnBack();
         }
 
         // Hurt: out of breath sooner. At 0 it's tired.

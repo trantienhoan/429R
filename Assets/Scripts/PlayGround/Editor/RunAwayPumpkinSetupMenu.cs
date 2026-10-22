@@ -10,7 +10,8 @@ namespace Game.PlayGround.Editor
     /// <summary>
     /// Tools > 429 Game > Items > Make Stage Pumpkins Run Away.
     /// The main game's breakable pumpkins run from the player like Pumpkin_9, for a short while each (Run Away Pumpkin):
-    /// Pumpkin_0 5 stamina, Pumpkin_1 9, Pumpkin_2 15, Pumpkin_4 17, Pumpkin_6 21 (10 used per second of running).
+    /// Pumpkin_0 50 stamina, Pumpkin_1 80, Pumpkin_2 150, Pumpkin_4 150, Pumpkin_6 21 (10 used per second of running);
+    /// Pumpkin_1, 2, 4 and 6 turn their back to the player after a run (Turn Away After Run).
     /// Their FSMs are not changed. Safe to run again (it sets the stamina again).
     /// Tools > 429 Game > Items > Give EXP For Tree Pumpkins: Pumpkin_On_Tree gives 0.25 EXP when it breaks (Exp When
     /// Broken).
@@ -21,9 +22,10 @@ namespace Game.PlayGround.Editor
         private const string HitSettingsPath = "Assets/Data/Combat/Hit Settings.asset";
         private const string TreePumpkinPath = Folder + "Pumpkin_On_Tree.prefab";
 
-        private static readonly (string name, float stamina)[] Runners =
+        // Name, stamina, and whether it turns its back to the player after a run (Turn Away After Run).
+        private static readonly (string name, float stamina, bool turnAway)[] Runners =
         {
-            ("Pumpkin_0", 5f), ("Pumpkin_1", 9f), ("Pumpkin_2", 15f), ("Pumpkin_4", 17f), ("Pumpkin_6", 21f),
+            ("Pumpkin_0", 50f, false), ("Pumpkin_1", 80f, true), ("Pumpkin_2", 150f, true), ("Pumpkin_4", 150f, true), ("Pumpkin_6", 21f, true),
         };
 
         [MenuItem("Tools/429 Game/Items/Make Stage Pumpkins Run Away")]
@@ -31,7 +33,7 @@ namespace Game.PlayGround.Editor
         {
             var hitSettings = AssetDatabase.LoadAssetAtPath<HitSettings>(HitSettingsPath);
             var log = new List<string>();
-            foreach (var (name, stamina) in Runners)
+            foreach (var (name, stamina, turnAway) in Runners)
             {
                 string path = Folder + name + ".prefab";
                 if (AssetDatabase.LoadAssetAtPath<GameObject>(path) == null) { log.Add(name + " missing"); continue; }
@@ -43,6 +45,7 @@ namespace Game.PlayGround.Editor
                     if (runner == null) runner = root.AddComponent<RunAwayPumpkin>();
                     var so = new SerializedObject(runner);
                     so.FindProperty("stamina").floatValue = stamina;
+                    so.FindProperty("turnAwayAfterRun").boolValue = turnAway;
                     if (hitSettings != null) so.FindProperty("hitSettings").objectReferenceValue = hitSettings;
                     so.ApplyModifiedPropertiesWithoutUndo();
                     PrefabUtility.SaveAsPrefabAsset(root, path);

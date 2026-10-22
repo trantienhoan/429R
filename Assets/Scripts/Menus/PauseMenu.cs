@@ -13,9 +13,10 @@ namespace Game.Menus
 {
     /// <summary>
     /// Pause menu. The menu button on the left controller (or A on the right, or Esc) stops the game
-    /// and shows Resume, Quit, a random tip and six options in front of you: how arm swinging works, the player's
+    /// and shows Resume, Quit, a random tip and seven options in front of you: how arm swinging works, the player's
     /// height (to play seated, or stand taller or shorter), how strong the comfort vignette is, whether damage
-    /// numbers show over hit enemies, whether the player's health shows and the game's volume. Holding the title
+    /// numbers show over hit enemies, whether the player's health shows, High Eye (the look while high on a boong) on
+    /// or off, and the game's volume. Holding the title
     /// for a while (7 s) asks whether to reset the progress in the save slot being played (the other slots are kept) and
     /// start the game over like a new install (tutorials and options back to the start too, and the start menu asks for a
     /// slot again). Quit asks how: Re-Dream (start a new run from the very beginning in the same slot, keeping candies,
@@ -48,6 +49,9 @@ namespace Game.Menus
         [Tooltip("Each press shows or hides the player's health (the heart and number), e.g. to record video.")]
         [SerializeField] private Button healthButton;
         [SerializeField] private TMP_Text healthText;
+        [Tooltip("Each press switches High Eye on or off: the gentle dreamy look while high on a boong.")]
+        [SerializeField] private Button highEyeButton;
+        [SerializeField] private TMP_Text highEyeText;
         [Tooltip("Lower and raise the whole game's volume, 10% a press.")]
         [SerializeField] private Button volumeDownButton;
         [SerializeField] private Button volumeUpButton;
@@ -232,6 +236,7 @@ namespace Game.Menus
             if (vignetteButton != null) vignetteButton.onClick.AddListener(NextVignetteLevel);
             if (damageNumbersButton != null) damageNumbersButton.onClick.AddListener(ToggleDamageNumbers);
             if (healthButton != null) healthButton.onClick.AddListener(ToggleHealth);
+            if (highEyeButton != null) highEyeButton.onClick.AddListener(ToggleHighEye);
             if (volumeDownButton != null) volumeDownButton.onClick.AddListener(() => ChangeVolume(-1));
             if (volumeUpButton != null) volumeUpButton.onClick.AddListener(() => ChangeVolume(1));
             if (resetHold != null) resetHold.Held += AskResetProgress;
@@ -345,7 +350,7 @@ namespace Game.Menus
 
         // What a new install starts without, besides the save: every tutorial, notice and the walk signs show again, so
         // do the health warning and the first tip board, and the options (arm swing, height, comfort vignette, damage
-        // numbers, health, volume, turning) go back to their defaults.
+        // numbers, health, High Eye, volume, turning) go back to their defaults.
         private static void LikeANewInstall()
         {
             OncePerInstall.ForgetShowing();
@@ -354,6 +359,7 @@ namespace Game.Menus
             PlayerPrefs.Save();
             DamageNumbers.ForgetChoice();
             PlayerHealthHUD.ForgetChoice();
+            Game.VFX.HighEye.ForgetChoice();
             GameVolume.ForgetChoice();
             HutongGames.PlayMaker.Actions.ShowNotice.ForgetShown();
             TipBoard.ForgetShown();
@@ -458,6 +464,12 @@ namespace Game.Menus
             ShowOptions();
         }
 
+        private void ToggleHighEye()
+        {
+            Game.VFX.HighEye.Enabled = !Game.VFX.HighEye.Enabled;
+            ShowOptions();
+        }
+
         private void ChangeVolume(int steps)
         {
             GameVolume.Level += steps * GameVolume.Step;
@@ -489,6 +501,7 @@ namespace Game.Menus
             if (vignetteText != null) vignetteText.text = ComfortVignetteLevel.Label(ComfortVignetteLevel.Current);
             if (damageNumbersText != null) damageNumbersText.text = DamageNumbers.Label();
             if (healthText != null) healthText.text = PlayerHealthHUD.Label();
+            if (highEyeText != null) highEyeText.text = Game.VFX.HighEye.Label();
 
             if (volumeDownButton != null) volumeDownButton.interactable = GameVolume.Level > 0.001f;
             if (volumeUpButton != null) volumeUpButton.interactable = GameVolume.Level < 0.999f;

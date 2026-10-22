@@ -29,6 +29,8 @@ namespace Game.Leveling
     /// - Bone Boong: +7 Toughness points (less damage and knockback), on top of the level-up points.
     /// - Green Boong: the player stands 0.5 m taller (eased in and out over 1.5 s) and flying punches fly 5 m further.
     /// - Bus Boong: +7 Move Speed points (faster walking).
+    /// - Any boong also makes the player high while it's on: they take 1.5x damage, candy heals them 1.5x and they walk
+    ///   30% slower (High; once, however many boongs are on).
     /// - Candy Helmet (the bonus round gives it when the giant pumpkin breaks): candies lying around fly into the
     ///   player's mouth and are eaten (Game.Inventory.CandyHelmet does it).
     /// The extra points are never saved and never count as a stat's big last point; the Level Up menu keeps showing the
@@ -59,6 +61,15 @@ namespace Game.Leveling
 
         /// <summary>Bus Boong: extra Move Speed points.</summary>
         public const int BusSpeed = 7;
+
+        /// <summary>High (any boong buff on): the damage the player takes is multiplied by this.</summary>
+        public const float HighDamageTaken = 1.5f;
+
+        /// <summary>High: candy heals are multiplied by this.</summary>
+        public const float HighHeal = 1.5f;
+
+        /// <summary>High: the walking speed is multiplied by this (0.7 = 30% slower).</summary>
+        public const float HighSpeed = 0.7f;
 
         // Seconds the eased bonuses take to come in and to go: the height (a snap is uncomfortable in VR) and the punch reach.
         private const float HeightEaseSeconds = 1.5f;
@@ -123,6 +134,22 @@ namespace Game.Leveling
                 return false;
             }
         }
+
+        /// <summary>
+        /// The player is high: a smoked boong's buff is on (Elon, Bone, Green or Bus; not the bonus round's Candy Helmet).
+        /// They take more damage, candy heals them more and they walk slower, once however many boongs are on.
+        /// </summary>
+        public static bool High =>
+            IsActive(Buff.ElonBoong) || IsActive(Buff.BoneBoong) || IsActive(Buff.GreenBoong) || IsActive(Buff.BusBoong);
+
+        /// <summary>The damage the player takes is multiplied by this: High Damage Taken while high, else 1.</summary>
+        public static float DamageTakenScale => High ? HighDamageTaken : 1f;
+
+        /// <summary>Candy heals are multiplied by this: High Heal while high, else 1.</summary>
+        public static float HealScale => High ? HighHeal : 1f;
+
+        /// <summary>The walking speed is multiplied by this: High Speed while high, else 1.</summary>
+        public static float SpeedScale => High ? HighSpeed : 1f;
 
         /// <summary>Ends every buff now (e.g. for testing); each one that was on raises Ended.</summary>
         public static void EndAll()
@@ -199,10 +226,11 @@ namespace Game.Leveling
         // Eased in and out, not at a steady rate.
         private static float Smooth(float t) => t <= 0f ? 0f : t >= 1f ? 1f : t * t * (3f - 2f * t);
 
-        // A buff that adds stat points started or ended: the walking speed is set again (Toughness is read when needed).
+        // A boong buff started or ended (Bus adds Move Speed points, and any boong makes the player high and slower): the
+        // walking speed is set again (Toughness and the damage and heal scales are read when needed).
         private static void PointsChanged(Buff buff)
         {
-            if (buff == Buff.BusBoong || buff == Buff.BoneBoong) PlayerLevel.BuffsChanged();
+            if (buff != Buff.CandyHelmet) PlayerLevel.BuffsChanged();
         }
 
         private static void ClearState()
@@ -258,7 +286,7 @@ namespace Game.Leveling
                 if (runner != this) return;
                 // The scene is closing (or this was removed): no buff carries on. The speed is set back if the scene
                 // stays (the Player Level is gone too when the scene closes).
-                bool speed = on[(int)Buff.BusBoong];
+                bool speed = High;
                 ClearState();
                 runner = null;
                 if (speed) PlayerLevel.BuffsChanged();

@@ -232,12 +232,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae61cf9da2c6e6047bbb8bf544057ded, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Bonus.BonusRound
-  chestPrefab: {fileID: 9045737507158066256, guid: 0f3afbc034e01894e867941bb530b6fe,
-    type: 3}
-  chestPoint: {fileID: 3260593924511840291}
-  playerDistance: 7
-  chestDistance: 1.6
-  fadeSeconds: 0.35
+  growSeconds: 1.2
+  launchHeight: 1.2
+  launchMargin: 1
   giant: {fileID: 7751877861004765832, guid: 11e48e2876d24c4438d02f7350b444db, type: 3}
   smaller: {fileID: 7943707614584160551, guid: d2351c656a2a8f04888d0146c0df7b1e, type: 3}
   startPumpkin: {fileID: 4871850987860103417, guid: 477e502e5e0f1ad4d84839fd93efc08d,
@@ -246,7 +243,8 @@ MonoBehaviour:
   count: 14
   shrinkPerPumpkin: 0.07
   giantHealth: 60
-  minHealth: 6
+  tougherPerPumpkin: 0.2
+  stifferPerPumpkin: 0.15
   candiesEach: 3
   lastCandies: 15
   expEach: 3
@@ -276,11 +274,6 @@ MonoBehaviour:
   signAbove: 0.9
   signLowest: 2.6
   signScale: 0.007
-  waitingText: BONUS!
-  wonText: WOW!
-  timeUpText: TIME!
-  winSound: {fileID: 8300000, guid: 2b8bf995953319743856b754dfe7b436, type: 3}
-  endSeconds: 4
   candyWaitSeconds: 8
   sinkSeconds: 2
   puffEffect: {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac,

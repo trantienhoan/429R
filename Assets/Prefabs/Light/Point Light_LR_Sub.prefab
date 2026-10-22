@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 6942852273277942525}
   - component: {fileID: 8388632569057092404}
   - component: {fileID: 3986629215650680443}
+  - component: {fileID: 3165650112293048770}
   m_Layer: 14
   m_Name: Point Light_LR_Sub
   m_TagString: Untagged
@@ -44,7 +45,7 @@ Light:
   m_Enabled: 1
   serializedVersion: 12
   m_Type: 2
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 0.93, b: 0.68, a: 1}
   m_Intensity: 1.5
   m_Range: 12
   m_SpotAngle: 30
@@ -128,3 +129,20 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!114 &3165650112293048770
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6654400073493317311}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e270b26e02fe9724db4092028f759375, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.VFX.LampFlicker
+  calmSeconds: {x: 3, y: 9}
+  dips: {x: 2, y: 6}
+  dipLevel: {x: 0.1, y: 0.55}
+  hum: 0.05
+  blackoutChance: 0.25

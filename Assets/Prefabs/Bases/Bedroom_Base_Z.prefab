@@ -214,6 +214,7 @@ MonoBehaviour:
   fallSeconds: 1.5
   blockEnemies: 1
   onlyWhileSmallerThan: 0
+  sizeOf: {fileID: 0}
 --- !u!1 &313254645803039033
 GameObject:
   m_ObjectHideFlags: 0
@@ -439,6 +440,7 @@ MonoBehaviour:
   fallSeconds: 1.5
   blockEnemies: 1
   onlyWhileSmallerThan: 0
+  sizeOf: {fileID: 0}
 --- !u!1 &1552200274066801328
 GameObject:
   m_ObjectHideFlags: 0
@@ -726,6 +728,7 @@ MonoBehaviour:
   fallSeconds: 1.5
   blockEnemies: 1
   onlyWhileSmallerThan: 0
+  sizeOf: {fileID: 0}
 --- !u!1 &1660236198777525543
 GameObject:
   m_ObjectHideFlags: 0
@@ -4428,6 +4431,7 @@ GameObject:
   - component: {fileID: 4315689661158778521}
   - component: {fileID: 1856129481798341364}
   - component: {fileID: 5594905687023394790}
+  - component: {fileID: 2259578997789069594}
   m_Layer: 14
   m_Name: Point Light
   m_TagString: Untagged
@@ -4460,7 +4464,7 @@ Light:
   m_Enabled: 1
   serializedVersion: 12
   m_Type: 2
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 0.93, b: 0.68, a: 1}
   m_Intensity: 3
   m_Range: 12
   m_SpotAngle: 30
@@ -4691,6 +4695,23 @@ MonoBehaviour:
     handleAnimatorIK: 0
   fsmTemplate: {fileID: 0}
   eventHandlerComponentsAdded: 0
+--- !u!114 &2259578997789069594
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3745179557586207085}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e270b26e02fe9724db4092028f759375, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.VFX.LampFlicker
+  calmSeconds: {x: 3, y: 9}
+  dips: {x: 2, y: 6}
+  dipLevel: {x: 0.1, y: 0.55}
+  hum: 0.05
+  blackoutChance: 0.25
 --- !u!1 &4077435789032006981
 GameObject:
   m_ObjectHideFlags: 0
@@ -6991,6 +7012,7 @@ MonoBehaviour:
   fallSeconds: 1.5
   blockEnemies: 1
   onlyWhileSmallerThan: 0
+  sizeOf: {fileID: 0}
 --- !u!1 &6943714095972901480
 GameObject:
   m_ObjectHideFlags: 0
@@ -7492,9 +7514,9 @@ SkinnedMeshRenderer:
   m_RendererPriority: 0
   m_Materials:
   - {fileID: 2100000, guid: 072a9a8077bf8f44c96a256054f8666f, type: 2}
-  - {fileID: 2100000, guid: ffa5253e177025a4a9ee22be7d171827, type: 2}
+  - {fileID: 2100000, guid: b67a7acd3be21dd43ae178abc120dbc9, type: 2}
   - {fileID: 2100000, guid: bdca70c5e3c67ff458cf549038906ce8, type: 2}
-  - {fileID: 2100000, guid: 41438cb697c137c42bcf1ddf68979cce, type: 2}
+  - {fileID: 2100000, guid: bf45e5978e6e70c49b65abbd443bbef5, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

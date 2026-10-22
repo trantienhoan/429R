@@ -45,6 +45,34 @@ namespace Game.EditorTools
         }
 
         /// <summary>
+        /// Pumpkin_3, 5 and 7 break the candy they sit on after landing (Crush Candy), their own trail included. Running it
+        /// again changes nothing.
+        /// </summary>
+        [MenuItem("Tools/429 Game/Items/Jumping Pumpkins Crush Candy")]
+        public static void CrushCandy()
+        {
+            var done = new List<string>();
+            foreach (var name in JumpingPumpkins)
+            {
+                string path = Folder + name + ".prefab";
+                if (AssetDatabase.LoadAssetAtPath<GameObject>(path) == null) { done.Add(name + " missing"); continue; }
+                var root = PrefabUtility.LoadPrefabContents(path);
+                try
+                {
+                    if (root.TryGetComponent<Game.Inventory.CrushCandy>(out _)) { done.Add(name + " (already)"); continue; }
+                    root.AddComponent<Game.Inventory.CrushCandy>();
+                    PrefabUtility.SaveAsPrefabAsset(root, path);
+                    done.Add(name);
+                }
+                finally
+                {
+                    PrefabUtility.UnloadPrefabContents(root);
+                }
+            }
+            Debug.Log("[Pumpkins] Crush candy: " + string.Join(", ", done) + ".");
+        }
+
+        /// <summary>
         /// StartGamePumpkin stops laughing while it says ouch. On pumpkin_Start: the Damage FSM's 'Deal 1 damage' first
         /// stops the sound playing (the laugh) before its ouch, and the Health FSM goes from Punch or Loop Punch (the
         /// laughing loop) to a new 'Hurt' state on Damage, which waits for the ouch to end (still facing the player and
@@ -93,6 +121,7 @@ namespace Game.EditorTools
         }
 
         [MenuItem("Tools/429 Game/Items/Pumpkins Face The Player After Jumping", true)]
+        [MenuItem("Tools/429 Game/Items/Jumping Pumpkins Crush Candy", true)]
         [MenuItem("Tools/429 Game/Items/Start Pumpkin Stops Laughing When Hurt", true)]
         private static bool NotPlaying() => !EditorApplication.isPlaying;
 

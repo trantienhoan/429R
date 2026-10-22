@@ -465,7 +465,8 @@ MonoBehaviour:
   - Coin
   fallSeconds: 1.5
   blockEnemies: 1
-  onlyWhileSmallerThan: 1.25
+  onlyWhileSmallerThan: 2
+  sizeOf: {fileID: 2359482676365689739}
 --- !u!1 &1767677141971804270
 GameObject:
   m_ObjectHideFlags: 0
@@ -538,6 +539,7 @@ MonoBehaviour:
   fallSeconds: 1.5
   blockEnemies: 1
   onlyWhileSmallerThan: 0
+  sizeOf: {fileID: 0}
 --- !u!1 &1772349861736526644
 GameObject:
   m_ObjectHideFlags: 0
@@ -610,6 +612,7 @@ MonoBehaviour:
   fallSeconds: 1.5
   blockEnemies: 1
   onlyWhileSmallerThan: 0
+  sizeOf: {fileID: 0}
 --- !u!1 &1798103052696571202
 GameObject:
   m_ObjectHideFlags: 0
@@ -6211,6 +6214,7 @@ MonoBehaviour:
   fallSeconds: 1.5
   blockEnemies: 1
   onlyWhileSmallerThan: 0
+  sizeOf: {fileID: 0}
 --- !u!1 &5617934149823703962
 GameObject:
   m_ObjectHideFlags: 0
@@ -6283,6 +6287,7 @@ MonoBehaviour:
   fallSeconds: 1.5
   blockEnemies: 1
   onlyWhileSmallerThan: 0
+  sizeOf: {fileID: 0}
 --- !u!1 &5921272889770181659
 GameObject:
   m_ObjectHideFlags: 0
@@ -6354,7 +6359,8 @@ MonoBehaviour:
   - Coin
   fallSeconds: 1.5
   blockEnemies: 1
-  onlyWhileSmallerThan: 1.25
+  onlyWhileSmallerThan: 2
+  sizeOf: {fileID: 2359482676365689739}
 --- !u!1 &6534687094501568906
 GameObject:
   m_ObjectHideFlags: 0
@@ -6426,7 +6432,8 @@ MonoBehaviour:
   - Coin
   fallSeconds: 1.5
   blockEnemies: 1
-  onlyWhileSmallerThan: 1.25
+  onlyWhileSmallerThan: 2
+  sizeOf: {fileID: 2359482676365689739}
 --- !u!1 &6575017525910048784
 GameObject:
   m_ObjectHideFlags: 0
@@ -6439,6 +6446,7 @@ GameObject:
   - component: {fileID: 9182568365109989419}
   - component: {fileID: 9063911539829504072}
   - component: {fileID: 6776172762635224518}
+  - component: {fileID: 6282891795811288939}
   m_Layer: 14
   m_Name: Point Light
   m_TagString: Untagged
@@ -6471,7 +6479,7 @@ Light:
   m_Enabled: 1
   serializedVersion: 12
   m_Type: 2
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 0.93, b: 0.68, a: 1}
   m_Intensity: 1.5
   m_Range: 12
   m_SpotAngle: 30
@@ -6702,6 +6710,23 @@ MonoBehaviour:
     handleAnimatorIK: 0
   fsmTemplate: {fileID: 0}
   eventHandlerComponentsAdded: 0
+--- !u!114 &6282891795811288939
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6575017525910048784}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e270b26e02fe9724db4092028f759375, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.VFX.LampFlicker
+  calmSeconds: {x: 3, y: 9}
+  dips: {x: 2, y: 6}
+  dipLevel: {x: 0.1, y: 0.55}
+  hum: 0.05
+  blackoutChance: 0.25
 --- !u!1 &6808009178516076108
 GameObject:
   m_ObjectHideFlags: 0
@@ -6989,7 +7014,7 @@ MeshRenderer:
   m_RendererPriority: 0
   m_Materials:
   - {fileID: 2100000, guid: 072a9a8077bf8f44c96a256054f8666f, type: 2}
-  - {fileID: 2100000, guid: be1c848f5bcc6ba4d91a2e80fa3cea97, type: 2}
+  - {fileID: 2100000, guid: 706ddb0a90f8b7d4197cc9b23166133e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -7683,7 +7708,8 @@ MonoBehaviour:
   - Coin
   fallSeconds: 1.5
   blockEnemies: 1
-  onlyWhileSmallerThan: 1.25
+  onlyWhileSmallerThan: 2
+  sizeOf: {fileID: 2359482676365689739}
 --- !u!1 &8570611860954473832
 GameObject:
   m_ObjectHideFlags: 0
@@ -9130,6 +9156,11 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 14
       objectReference: {fileID: 0}
+    - target: {fileID: 695217555254665553, guid: a61e66cc29399294d84b369cda8334c8,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 706ddb0a90f8b7d4197cc9b23166133e, type: 2}
     - target: {fileID: 1343503011451650180, guid: a61e66cc29399294d84b369cda8334c8,
         type: 3}
       propertyPath: m_Name
@@ -9488,7 +9519,7 @@ PrefabInstance:
         type: 3}
       propertyPath: 'm_Materials.Array.data[1]'
       value: 
-      objectReference: {fileID: 2100000, guid: be1c848f5bcc6ba4d91a2e80fa3cea97, type: 2}
+      objectReference: {fileID: 2100000, guid: 37032cf79d403c94bb4a0e891906bdd1, type: 2}
     - target: {fileID: 7947817941148155677, guid: e12c2ad3619d15645bcbadc59263ab38,
         type: 3}
       propertyPath: 'm_Materials.Array.data[2]'
@@ -9945,6 +9976,12 @@ BoxCollider:
 --- !u!4 &2100512928172944390 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -6582973461784925794, guid: e12c2ad3619d15645bcbadc59263ab38,
+    type: 3}
+  m_PrefabInstance: {fileID: 4143894272407586200}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2359482676365689739 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1818470309357307411, guid: e12c2ad3619d15645bcbadc59263ab38,
     type: 3}
   m_PrefabInstance: {fileID: 4143894272407586200}
   m_PrefabAsset: {fileID: 0}
@@ -10788,6 +10825,11 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 14
       objectReference: {fileID: 0}
+    - target: {fileID: 695217555254665553, guid: a61e66cc29399294d84b369cda8334c8,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 706ddb0a90f8b7d4197cc9b23166133e, type: 2}
     - target: {fileID: 1343503011451650180, guid: a61e66cc29399294d84b369cda8334c8,
         type: 3}
       propertyPath: m_Name
@@ -10872,6 +10914,11 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 14
       objectReference: {fileID: 0}
+    - target: {fileID: 695217555254665553, guid: a61e66cc29399294d84b369cda8334c8,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 706ddb0a90f8b7d4197cc9b23166133e, type: 2}
     - target: {fileID: 1343503011451650180, guid: a61e66cc29399294d84b369cda8334c8,
         type: 3}
       propertyPath: m_Name
@@ -10956,6 +11003,11 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 14
       objectReference: {fileID: 0}
+    - target: {fileID: 695217555254665553, guid: a61e66cc29399294d84b369cda8334c8,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 706ddb0a90f8b7d4197cc9b23166133e, type: 2}
     - target: {fileID: 1343503011451650180, guid: a61e66cc29399294d84b369cda8334c8,
         type: 3}
       propertyPath: m_Name

@@ -8,7 +8,8 @@ namespace Game.Combat
     /// <summary>
     /// The controllers buzz only when the player deals damage: a punch, or a weapon or thing held in the hand, that hurts
     /// something. The more damage, the stronger and longer the buzz (1 damage a light tap, 6 or more a full buzz). Thrown
-    /// things don't buzz (no hand is holding them), and nor do grabbing, touching or hits that do no damage.
+    /// things don't buzz (no hand is holding them), and nor do grabbing, touching or hits that do no damage. A Magic
+    /// Bow's arrow buzzes the hand holding the bow.
     /// Enemy Hit Damage tells it about every hit that hurts (Dealt); for PlayMaker breakables without it (boxes, books,
     /// bottles, most pumpkins) the fist and Hit Rumble ask it to watch the thing they hit for a moment (Watch).
     /// Other buzzes (forming a fist, an overheating gun, the shop...) go through Other, which is silent while Only Damage
@@ -159,6 +160,13 @@ namespace Game.Combat
             if (fistHand != null)
             {
                 into.Add(fistHand);
+                return;
+            }
+            // A Magic Bow's arrow: the hand holding the bow.
+            var bowHand = Game.Weapons.LightArrow.HandOf(source);
+            if (bowHand != null)
+            {
+                into.Add(bowHand);
                 return;
             }
             if (!source.TryGetComponent<XRGrabInteractable>(out var grab) || !grab.isSelected) return;

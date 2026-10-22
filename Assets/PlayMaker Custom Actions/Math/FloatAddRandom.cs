@@ -40,7 +40,7 @@ namespace HutongGames.PlayMaker.Actions
         public FsmFloat storeAmount;
 
         [Tooltip("Tick for eating candy (the player's heal): the amount grows with the player's Max Health (a level-up " +
-                 "stat, Candy Heal Per Point).")]
+                 "stat, Candy Heal Per Point), and is 1.5x while the player is high on a boong.")]
         public FsmBool candyHealBonus;
 
         public override void Reset()
@@ -80,12 +80,15 @@ namespace HutongGames.PlayMaker.Actions
         }
     }
 
-    /// <summary>A candy's heal with the player's Max Health bonus, shared by Float Add Random and Player Health Bonus.</summary>
+    /// <summary>
+    /// A candy's heal with the player's Max Health bonus (and 1.5x while high on a boong), shared by Float Add Random and
+    /// Player Health Bonus.
+    /// </summary>
     internal static class CandyHeal
     {
         public static float Scale(float amount, bool wholeNumbers)
         {
-            amount *= Game.Leveling.PlayerLevel.CandyHealScale;
+            amount *= Game.Leveling.PlayerLevel.CandyHealScale * Game.Leveling.PlayerBuffs.HealScale;
             // Rounded up or down at random by how far it is to the next whole number, so even +5% counts: a 4 at +5%
             // (4.2) heals 5 one time in five.
             return wholeNumbers ? Mathf.Floor(amount + Random.value) : amount;

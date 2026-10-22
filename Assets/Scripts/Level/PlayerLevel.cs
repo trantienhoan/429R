@@ -421,9 +421,9 @@ namespace Game.Leveling
         }
 
         /// <summary>
-        /// A boong buff that adds points (Player Buffs: Bone Boong's Toughness, Bus Boong's Move Speed) started or ended:
-        /// the walking speed is set again. Toughness needs nothing: it's read when needed. The points spent and the save
-        /// don't change.
+        /// A boong buff started or ended (Player Buffs: Bus Boong's Move Speed points, and being high on any boong makes
+        /// the player slower): the walking speed is set again. Toughness needs nothing: it's read when needed. The points
+        /// spent and the save don't change.
         /// </summary>
         public static void BuffsChanged()
         {
@@ -734,7 +734,8 @@ namespace Game.Leveling
                 if (pair.Key == null) continue;
                 if (slow == null) pair.Key.TryGetComponent(out slow);
                 if (slow == null) slow = pair.Key.GetComponentInParent<PlayerSlow>();
-                float speed = pair.Value * SpeedScale;
+                // The Move Speed stat, and 30% slower while high on a boong (Player Buffs).
+                float speed = pair.Value * SpeedScale * PlayerBuffs.SpeedScale;
                 // While the player is slowed (a web), the slow gives the new speed back when it ends.
                 if (slow != null && slow.IsSlowed) slow.SetNormalSpeed(pair.Key, speed);
                 else pair.Key.moveSpeed = speed;

@@ -21,8 +21,9 @@ namespace Game.Locomotion
     ///   Things in a hand, the level's own fixed parts (kinematic, frozen in place, the immovable stone blocks) and the
     ///   pumpkin boss never fall.
     /// - Enemies don't walk in: it cuts a hole in their NavMesh while it's there.
-    /// - Only While Smaller Than: it counts only while its base is small (the Living Room's round-1 ring, which is floor
-    ///   once round 2 grows the room to 1.5).
+    /// - Only While Smaller Than: it counts only while Size Of (or its base) is small: the Living Room's round-1 ring
+    ///   watches Livingroom_Floor, which round 2 (COME2) grows over it. The room is already 1.5 before that (and stays so
+    ///   through the bonus round), so the room's own size can't tell.
     /// Keep it clear of enemy spawn points.
     /// </summary>
     [DisallowMultipleComponent]
@@ -36,10 +37,13 @@ namespace Game.Locomotion
         [SerializeField] private float fallSeconds = 1.5f;
         [Tooltip("Enemies don't walk in (it cuts a hole in their NavMesh).")]
         [SerializeField] private bool blockEnemies = true;
-        [Tooltip("0 = always. Otherwise it only counts while its base is smaller than this (the base's scale), e.g. 1.25 " +
-                 "for the Living Room's round-1 ring: round 2 grows the room to 1.5 and has floor there.")]
+        [Tooltip("0 = always. Otherwise it only counts while Size Of is smaller than this (its scale), e.g. 2 for the " +
+                 "Living Room's round-1 ring: round 2's floor grows over it (1.5 x 1.6 = 2.4).")]
         [Min(0f)]
         [SerializeField] private float onlyWhileSmallerThan;
+        [Tooltip("Whose size Only While Smaller Than measures, e.g. the floor that grows (Livingroom_Floor). Empty: this " +
+                 "edge's own (its base's).")]
+        [SerializeField] private Transform sizeOf;
 
         private const float Every = 0.1f;
         private static readonly List<FallEdge> all = new();
@@ -80,7 +84,8 @@ namespace Game.Locomotion
         /// </summary>
         public float WorkingFor => Time.time - workingSince;
 
-        private bool Working => onlyWhileSmallerThan <= 0f || Mathf.Abs(transform.lossyScale.x) < onlyWhileSmallerThan;
+        private bool Working =>
+            onlyWhileSmallerThan <= 0f || Mathf.Abs((sizeOf != null ? sizeOf : transform).lossyScale.x) < onlyWhileSmallerThan;
 
         // Added in the editor: a see-through box (it blocks nothing); a new box reaches from under the floor to above
         // the head, a box already sized is kept.

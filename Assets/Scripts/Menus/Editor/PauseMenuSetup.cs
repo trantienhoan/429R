@@ -62,6 +62,7 @@ namespace Game.EditorTools
             if (AddVignetteOption(menu, font)) notes.Add("added the Comfort vignette option");
             if (AddDamageNumbersOption(menu, font)) notes.Add("added the Damage numbers option");
             if (AddHealthOption(menu, font)) notes.Add("added the Health (show/hide) option");
+            if (AddHighEyeOption(menu, font)) notes.Add("added the High Eye (on/off) option");
             if (AddVolumeOption(menu, font)) notes.Add("added the Volume - / + option");
             if (AddResetProgress(menu, font)) notes.Add("added Reset Progress (hold the title for 7 s)");
             if (AddQuitChoice(menu, font)) notes.Add("Quit now asks: Re-Dream or Get a Rest");
@@ -259,6 +260,39 @@ namespace Game.EditorTools
             Undo.RegisterCreatedObjectUndo(toggle.gameObject, "Add Health Option");
             SetupUtility.SetReference(menu, "healthButton", toggle);
             SetupUtility.SetReference(menu, "healthText", toggle.GetComponentInChildren<TMP_Text>(true));
+            return true;
+        }
+
+        /// <summary>
+        /// Adds the High Eye on/off row under the other options, the same way as the Comfort vignette row (also used by
+        /// Tools > 429 Game > Player > Add High Eye). False if it's there already or the menu has no Options group.
+        /// </summary>
+        internal static bool AddHighEyeOption(PauseMenu menu, TMP_FontAsset font)
+        {
+            var serialized = new SerializedObject(menu);
+            if (serialized.FindProperty("highEyeButton").objectReferenceValue != null) return false;
+            if (serialized.FindProperty("panel").objectReferenceValue is not GameObject panelObject ||
+                panelObject.transform is not RectTransform panel) return false;
+            var options = panel.Find("Options") as RectTransform;
+            if (options == null)
+            {
+                Debug.LogWarning("[Pause Menu Setup] The Pause Menu panel has no Options group, so the High Eye option wasn't added.", menu);
+                return false;
+            }
+
+            const float grow = OptionRowHeight + OptionSpacing;
+            Undo.RecordObject(panel, "Add High Eye Option");
+            panel.sizeDelta = new Vector2(panel.sizeDelta.x, panel.sizeDelta.y + grow);
+            Undo.RecordObject(options, "Add High Eye Option");
+            options.offsetMin = new Vector2(options.offsetMin.x, options.offsetMin.y - grow);
+
+            var toggle = SetupUtility.CreateButton("High Eye", options, "High Eye: on", 24f, font, OptionColor);
+            Undo.RegisterCreatedObjectUndo(toggle.gameObject, "Add High Eye Option");
+            // Under Health, above the Volume row.
+            var volumeRow = options.Find("Volume");
+            if (volumeRow != null) toggle.transform.SetSiblingIndex(volumeRow.GetSiblingIndex());
+            SetupUtility.SetReference(menu, "highEyeButton", toggle);
+            SetupUtility.SetReference(menu, "highEyeText", toggle.GetComponentInChildren<TMP_Text>(true));
             return true;
         }
 

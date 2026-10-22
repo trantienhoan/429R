@@ -25,8 +25,8 @@ namespace HutongGames.PlayMaker.Actions
         [Tooltip("Optional: store the amount that was rolled.")]
         public FsmFloat storeAmount;
 
-        [Tooltip("Tick for damage to the player: the amount is cut by the player's Toughness (a level-up stat), never " +
-                 "below 1.")]
+        [Tooltip("Tick for damage to the player: the amount is cut by the player's Toughness (a level-up stat), and is " +
+                 "1.5x while the player is high on a boong; never below 1.")]
         public FsmBool playerToughness;
 
         public override void Reset()
@@ -45,7 +45,7 @@ namespace HutongGames.PlayMaker.Actions
             // Added after FSMs already used this action, so it can be missing (unticked) in them.
             if (playerToughness != null && playerToughness.Value && amount > 0f)
             {
-                amount *= Game.Leveling.PlayerLevel.DamageShare;
+                amount *= Game.Leveling.PlayerLevel.DamageShare * Game.Leveling.PlayerBuffs.DamageTakenScale;
                 if (wholeNumbers.Value) amount = UnityEngine.Mathf.Round(amount);
                 amount = UnityEngine.Mathf.Max(amount, 1f);
             }
