@@ -51,11 +51,12 @@ MonoBehaviour:
   smaller: {fileID: 7943707614584160551, guid: d2351c656a2a8f04888d0146c0df7b1e, type: 3}
   startPumpkin: {fileID: 4871850987860103417, guid: 477e502e5e0f1ad4d84839fd93efc08d,
     type: 3}
-  giantTimes: 1.5
+  giantTimes: 1.3
   count: 6
-  shrinkPerPumpkin: 0.07
+  shrinkEach: 0.15
   giantHealth: 120
   tougherPerPumpkin: 0.2
+  giantJiggle: 1.6
   stifferPerPumpkin: 0.15
   candiesEach: 3
   lastCandies: 15
@@ -87,6 +88,16 @@ MonoBehaviour:
   signLowest: 2.6
   signScale: 0.007
   candyWaitSeconds: 20
-  sinkSeconds: 2
   puffEffect: {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
+  blastEffects:
+  - {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
+  - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}
+  - {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac, type: 3}
+  blastEffectSize: 1.2
+  blastSound: {fileID: 8300000, guid: 0c38739de2059ac40ab5b60a42fd1c5f, type: 3}
+  blastVolume: 1
+  blastReach: 6
+  blastHeight: 1.6
+  blastDistance: 4
+  blastPush: 7

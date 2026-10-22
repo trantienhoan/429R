@@ -13,7 +13,8 @@ namespace Game.Combat
     /// Revives from the level-up bonus and special chests; at most Max Coins are flipped at once). When the player goes
     /// down with a coin left, the fall goes on for a moment, then the game stops and their coins appear in a row in front
     /// of their eyes, all spinning in place (like Fear & Hunger's coin flip), slowing down until they stop one after
-    /// another on a four-leaf clover or a skull, half and half. (Physics Throw on: a little table instead, the coins
+    /// another on a four-leaf clover or a skull, half and half; the view behind them darkens (Dim Behind) while the coins
+    /// stay bright. (Physics Throw on: a little table instead, the coins
     /// thrown on it with real physics, see Coin Toss.) Every clover
     /// gives Health Per Clover of their health (50%: one clover gets them up at half health, four at 200%); getting up
     /// uses up one coin for the rest of the run. All skulls and they stay down: the game over goes on, and the run is
@@ -125,6 +126,9 @@ namespace Game.Combat
         [SerializeField] private float resultSeconds = 1.5f;
 
         [Header("Look")]
+        [Tooltip("How dark the view behind the coins gets while they flip (0 = not at all, 1 = black). The coins stay bright.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float dimBehind = 0.75f;
         [SerializeField] private Color cloverColor = new(0.35f, 1f, 0.4f, 1f);
         [SerializeField] private Color skullColor = new(1f, 0.22f, 0.18f, 1f);
         [Tooltip("A soft light in front of the coins, so they show in the dark.")]
@@ -150,6 +154,10 @@ namespace Game.Combat
 
         // Assets/Resources/Damage Number.mat: TextMeshPro drawn on top, with an outline (it ships with the build).
         private const string TextMaterial = "Damage Number";
+        // The show is drawn after the headset fade (the Overlay queue), so the coins stay bright as the view behind them
+        // darkens (Dim Behind).
+        private const int OverFadeQueue = (int)UnityEngine.Rendering.RenderQueue.Overlay + 1;
+        private const float DimSeconds = 0.35f;
         private const float AppearSeconds = 0.3f;
         private const float SettleSeconds = 0.4f;
         private const float GoneSeconds = 0.3f;
@@ -176,6 +184,10 @@ namespace Game.Combat
         private static Texture2D tableTexture;
         private TextMeshPro text;
         private HeadsetFade fade;
+        // How dark the view was before the show (the death fall's darkening, stopped where it was).
+        private float fadeBefore;
+        // The show's materials, copied to draw over the fade.
+        private readonly List<Material> overFade = new();
         private bool held;
         private Coroutine running;
         private float showTime;
@@ -233,7 +245,8 @@ namespace Game.Combat
 
         /// <summary>
         /// Tosses coins for something other than getting up, e.g. the bedroom's shortcut door: the same show (the game
-        /// stops meanwhile), without the death fall first or the darkening after. Once Is Flipping is false again, Clovers
+        /// stops meanwhile, the view dims behind the coins), without the death fall first or the darkening after. Once Is
+        /// Flipping is false again, Clovers
         /// says how many landed on the clover. False (nothing tossed) if coins are already being flipped.
         /// </summary>
         public bool Toss(int count = 1)
@@ -249,7 +262,12 @@ namespace Game.Combat
         /// <summary>Stops the coins at once (the game goes on, nobody gets up).</summary>
         public void Cancel()
         {
-            if (running != null) StopCoroutine(running);
+            if (running != null)
+            {
+                StopCoroutine(running);
+                // The view comes back.
+                if (fade != null) fade.FadeTo(fadeBefore, DimSeconds);
+            }
             running = null;
             CleanUp();
             IsFlipping = false;
@@ -266,8 +284,13 @@ namespace Game.Combat
             // Then the game stops (time and sound), and the view stays as it is.
             PauseMenu.Hold(this);
             held = true;
-            fade = forRevive ? HeadsetFade.Find() : null;
-            if (fade != null) fade.FadeTo(fade.Alpha, 0f);
+            // The death fall's darkening stops where it is, and the view behind the coins goes darker (Dim Behind).
+            fade = HeadsetFade.Find();
+            if (fade != null)
+            {
+                fadeBefore = fade.Alpha;
+                fade.FadeTo(Dimmed, DimSeconds);
+            }
 
             var eyes = Camera.main != null ? Camera.main.transform : null;
             if (eyes == null || coinPrefab == null)
@@ -297,11 +320,13 @@ namespace Game.Combat
             }
             if (thrown)
             {
+                DrawOverFade(show);
                 yield return Throwing();
             }
             else
             {
                 BuildShow(eyes, count);
+                DrawOverFade(show);
 
                 // They all spin, then stop one after another; wait till the last one has settled.
                 showTime = 0f;
@@ -340,7 +365,8 @@ namespace Game.Combat
                 yield return null;
             }
 
-            // Away they go.
+            // Away they go, and the view comes back (all skulls: it goes on darkening, see Finish).
+            if (fade != null && !(forRevive && Clovers == 0)) fade.FadeTo(fadeBefore, GoneSeconds);
             for (float t = 0f; t < GoneSeconds; t += Time.unscaledDeltaTime)
             {
                 if (PauseMenu.IsPaused)
@@ -358,22 +384,47 @@ namespace Game.Combat
         }
 
         // While the pause menu (or the headset's system menu) is open, the show stands still and is hidden.
+        // The menu isn't darkened either; the dark comes back with the show (not once it's gone).
         private IEnumerator WhilePaused()
         {
             if (!PauseMenu.IsPaused) yield break;
             if (show != null) show.gameObject.SetActive(false);
+            if (fade != null) fade.FadeTo(fadeBefore, 0f);
             while (PauseMenu.IsPaused) yield return null;
             if (show != null) show.gameObject.SetActive(true);
+            if (fade != null && show != null && show.localScale.x > 0.01f) fade.FadeTo(Dimmed, DimSeconds);
         }
 
         private void Finish()
         {
             CleanUp();
-            // All skulls: the view goes on darkening as the fall goes on to the game over. A clover: it stays as it is,
-            // and the player gets up from right here (Player Revive).
-            if (fade != null && Clovers == 0) fade.FadeOut(2f);
+            // All skulls: the view goes on darkening as the fall goes on to the game over. A clover (or a Toss): it's as
+            // it was before the show, and the player gets up from right here (Player Revive).
+            if (fade != null)
+            {
+                if (forRevive && Clovers == 0) fade.FadeOut(2f);
+                else fade.FadeTo(fadeBefore, GoneSeconds);
+            }
             IsFlipping = false;
             running = null;
+        }
+
+        // How dark the view is behind the coins.
+        private float Dimmed => Mathf.Max(fadeBefore, dimBehind);
+
+        // The show's renderers draw after the headset fade: their materials are copied (and destroyed with the show).
+        private void DrawOverFade(Transform root)
+        {
+            if (root == null) return;
+            foreach (var shape in root.GetComponentsInChildren<Renderer>(true))
+            {
+                foreach (var material in shape.materials)
+                {
+                    if (material == null) continue;
+                    material.renderQueue = OverFadeQueue;
+                    overFade.Add(material);
+                }
+            }
         }
 
         private void CleanUp()
@@ -392,6 +443,11 @@ namespace Game.Combat
             show = null;
             text = null;
             coins.Clear();
+            foreach (var material in overFade)
+            {
+                if (material != null) Destroy(material);
+            }
+            overFade.Clear();
             toss?.Dispose();
             toss = null;
         }
@@ -790,6 +846,10 @@ namespace Game.Combat
             tmp.textWrappingMode = TextWrappingModes.NoWrap;
             tmp.rectTransform.sizeDelta = new Vector2(12f, 3f);
             tmp.rectTransform.pivot = new Vector2(0.5f, 0f);
+            // Over the headset fade, like the coins.
+            var over = tmp.fontMaterial;
+            over.renderQueue = OverFadeQueue;
+            overFade.Add(over);
             return tmp;
         }
 

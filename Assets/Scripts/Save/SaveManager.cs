@@ -14,8 +14,8 @@ namespace Game.Saving
     /// Keeps the player's progress between sessions, in three save slots (Saves/&lt;Profile&gt;/slot1.json to slot3.json):
     /// what they carry (e.g. candies), how many of each item they ever collected and spent, what they bought, what they
     /// unlocked for good (e.g. paths opened with seeds), lasting boosts (e.g. the higher health cap from Boss Seeds, see
-    /// PlayerBoosts), their level, EXP and stat points (see Player Level), and the checkpoint they reached this run (see
-    /// Checkpoints). Keep one in the scene.
+    /// PlayerBoosts), their level, EXP and stat points (see Player Level), the checkpoint they reached this run (see
+    /// Checkpoints) and the bonus round's leaderboard (see BonusScores). Keep one in the scene.
     /// Nothing is read until a slot is picked: the Save Slot Menu asks as the game starts (ChooseSlot), and the slot is
     /// remembered until the game closes, so Re-Dream (which reloads the scene) goes straight back into it. Picking a slot
     /// with a save goes on from its last checkpoint. After that the game saves at once at every checkpoint (with the
@@ -44,6 +44,8 @@ namespace Game.Saving
             public PlayerLevel.SavedLevel level = new();
             // The checkpoint reached this run, the revives left and the health kept by Get a Rest (see Checkpoints).
             public Checkpoints.SavedCheckpoint checkpoint = new();
+            // The bonus round's leaderboard, best first (see BonusScores).
+            public List<BonusScores.Entry> bonusScores = new();
         }
 
         /// <summary>What the start menu shows about a save slot.</summary>
@@ -414,6 +416,7 @@ namespace Game.Saving
             PlayerBoosts.Reset();
             PlayerLevel.Load(null);
             Checkpoints.Reset();
+            BonusScores.Reset();
 
             int slot = CurrentSlot;
             if (slot > 0)
@@ -451,6 +454,7 @@ namespace Game.Saving
                 healthCapBonus = PlayerBoosts.HealthCapBonus,
                 level = PlayerLevel.Save(),
                 checkpoint = Checkpoints.ToSaveData(),
+                bonusScores = BonusScores.ToSaveData(),
             };
 
             string path = SlotPath(CurrentSlot);
@@ -506,6 +510,7 @@ namespace Game.Saving
             PlayerLevel.Changed += MarkChanged;
             Checkpoints.Changed += MarkChanged;
             Checkpoints.Reached += OnCheckpointReached;
+            BonusScores.Changed += MarkChanged;
             PauseMenu.PauseChanged += OnPauseChanged;
         }
 
@@ -551,6 +556,7 @@ namespace Game.Saving
             // Also with no save, so whatever waits for the unlocks knows they're read.
             Unlocks.LoadSaveData(data?.unlocks);
             PlayerBoosts.LoadSaveData(data != null ? data.healthCapBonus : 0f);
+            BonusScores.LoadSaveData(data?.bonusScores);
 
             // The health the player had when they picked Get a Rest, once the cap bonuses are in (they heal).
             float rested = Checkpoints.TakeRestHealth();

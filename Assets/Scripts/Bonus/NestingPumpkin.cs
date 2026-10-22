@@ -160,6 +160,17 @@ namespace Game.Bonus
             else DropFrom(dropHeight);
         }
 
+        /// <summary>
+        /// Its health runs out without a hit (time's up): its Health FSM bursts it into its pieces with the smoke, as when
+        /// it's broken. Call Stop Taking Hits first so it gives no EXP.
+        /// </summary>
+        public void Burst()
+        {
+            if (healthMachine == null) return;
+            var value = healthMachine.FsmVariables.FindFsmFloat(healthVariable);
+            if (value != null) value.Value = 0f;
+        }
+
         /// <summary>No more hits: it stays as it is, laughing (time's up).</summary>
         public void StopTakingHits()
         {

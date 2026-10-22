@@ -16,12 +16,13 @@ namespace Game.Bonus
     ///   grows out of the chest, throwing the player clear if they stand where it grows, and the countdown (Seconds)
     ///   starts at once;
     /// - every pumpkin broken bursts, drops its candies (its Enemy Hit Damage gives the EXP), adds Bonus Seconds to the
-    ///   countdown, and the next one inside it pops out where it was: smaller (Shrink Per Pumpkin of the giant's size less
-    ///   each time) but tougher (more health, less jiggle), down to the last one (Count);
+    ///   countdown, and the next one inside it pops out where it was: smaller (Shrink Each less than the one before)
+    ///   but tougher (more health, less jiggle; the giant jiggles most), down to the last one (Count);
     /// - breaking the giant gives the player the invisible Candy Helmet (a timed buff: candies lying around fly into
     ///   their mouth);
-    /// - when they're all broken or time's up (the one left sinks away) the player keeps what they got: the helmet eats
-    ///   every candy left, then the round is over (Finished) and Play Bonus Round goes on.
+    /// - when they're all broken or time's up (the one left blows up, throwing the player back) the player keeps what they got: the helmet eats
+    ///   every candy left, then the round is over (Finished) and Play Bonus Round goes on. The Bonus Board shows how many
+    ///   punches the pumpkins took and how many were perfect jabs, with the player's leaderboard (saved, Bonus Scores).
     /// A player earns it in a stage by killing every enemy before taking the Yellow Seed: the Watch Bonus Round action
     /// (in the stage's enemy-wave state) notes the seeds and the enemies; Play Bonus Round asks Earned.
     /// </summary>
@@ -47,20 +48,23 @@ namespace Game.Bonus
         [Tooltip("The start pumpkin (StartGamePumpkin): the giant is Giant Times its size.")]
         [SerializeField] private GameObject startPumpkin;
         [Min(0.1f)]
-        [SerializeField] private float giantTimes = 1.5f;
+        [SerializeField] private float giantTimes = 1.3f;
         [Tooltip("How many pumpkins there are: the giant and the ones inside it.")]
         [Min(1)]
         [SerializeField] private int count = 6;
-        [Tooltip("Each pumpkin is this share of the giant's size smaller than the one before (0.07 = 7%).")]
-        [Range(0.01f, 0.2f)]
-        [SerializeField] private float shrinkPerPumpkin = 0.07f;
+        [Tooltip("Each pumpkin is this much smaller than the one before (0.15 = 15%: 100%, 85%, 72%, 61% ...).")]
+        [Range(0.01f, 0.5f)]
+        [SerializeField] private float shrinkEach = 0.15f;
         [Tooltip("The giant's health. The smaller, the tougher: each one after it has Tougher Per Pumpkin of this more.")]
         [Min(1f)]
         [SerializeField] private float giantHealth = 120f;
         [Tooltip("Each pumpkin has this share of the giant's health more than the one before (0.2 = +20%: 120, 144, 168 ...).")]
         [Range(0f, 1f)]
         [SerializeField] private float tougherPerPumpkin = 0.2f;
-        [Tooltip("... and jiggles this share of the giant's jiggle less (0.15 = 100%, 85%, 70% ...).")]
+        [Tooltip("How much the giant jiggles when hit (1 = as its Jiggle is set; more = wobblier).")]
+        [Min(0f)]
+        [SerializeField] private float giantJiggle = 1.6f;
+        [Tooltip("... and each one after it jiggles this share of the giant's jiggle less (0.15 = 100%, 85%, 70% ...).")]
         [Range(0f, 0.3f)]
         [SerializeField] private float stifferPerPumpkin = 0.15f;
         [Tooltip("Candies each pumpkin drops (the last one: Last Candies).")]
@@ -124,11 +128,34 @@ namespace Game.Bonus
         [Tooltip("At the end the helmet eats every candy left before the stage goes on: for this many seconds at the most.")]
         [Min(0f)]
         [SerializeField] private float candyWaitSeconds = 20f;
-        [Tooltip("Seconds the pumpkin left at time's up takes to sink away.")]
-        [Min(0.1f)]
-        [SerializeField] private float sinkSeconds = 2f;
         [Tooltip("A puff where things appear and go, e.g. Smoke_Blast.")]
         [SerializeField] private GameObject puffEffect;
+        [Tooltip("Seconds the board shows when the round is over: the punches the pumpkins took, the perfect jabs and the " +
+                 "player's leaderboard (saved, see Bonus Scores). 0 = no board (the round still goes on the leaderboard).")]
+        [Min(0f)]
+        [SerializeField] private float boardSeconds = 12f;
+
+        [Header("Time's up: the pumpkin left blows up")]
+        [Tooltip("Particle effects where it blows up (the grenades': Flash_round_yellow, Hit_Blast, Smoke_Blast).")]
+        [SerializeField] private GameObject[] blastEffects = System.Array.Empty<GameObject>();
+        [Tooltip("Size of the blast effects per metre of the pumpkin's size.")]
+        [Min(0f)]
+        [SerializeField] private float blastEffectSize = 1.2f;
+        [SerializeField] private AudioClip blastSound;
+        [Range(0f, 1f)]
+        [SerializeField] private float blastVolume = 1f;
+        [Tooltip("A player this close to it (metres, from its side) is thrown...")]
+        [Min(0f)]
+        [SerializeField] private float blastReach = 6f;
+        [Tooltip("...this high (metres)...")]
+        [Min(0f)]
+        [SerializeField] private float blastHeight = 1.6f;
+        [Tooltip("...and this far away from it (metres). Their Toughness doesn't cut it.")]
+        [Min(0f)]
+        [SerializeField] private float blastDistance = 4f;
+        [Tooltip("How fast its pieces fly off, in metres per second.")]
+        [Min(0f)]
+        [SerializeField] private float blastPush = 7f;
 
         private static readonly Color SignColor = new(1f, 0.82f, 0.25f, 1f);
         private static readonly Color WarnColor = new(1f, 0.25f, 0.2f, 1f);
@@ -155,6 +182,8 @@ namespace Game.Bonus
         // How far from the pumpkins the candies left at the end are looked for, in metres.
         private const float CandyReach = 15f;
         private const float PopSeconds = 1.6f;
+        // The camera shake of a blast that doesn't throw the player (one that does shakes by itself).
+        private const string BlastShake = "ShakeBigger";
         private const float HelmetPopSeconds = 2.5f;
         // The longest a throw clear of a pumpkin goes through it, in seconds.
         private const float ThrowSeconds = 3f;
@@ -169,11 +198,17 @@ namespace Game.Bonus
         /// <summary>Pumpkins broken so far.</summary>
         public int Broken { get; private set; }
 
+        /// <summary>Punches the pumpkins took during the countdown (a punch's flying fists count once).</summary>
+        public int Punches { get; private set; }
+
+        /// <summary>... and how many of them were perfect jabs (see Fist's Perfect Jab).</summary>
+        public int PerfectJabs { get; private set; }
+
         /// <summary>Seconds left on the countdown.</summary>
         public float TimeLeft => timeLeft;
 
         /// <summary>How many pumpkins this round has.</summary>
-        public int PumpkinCount => Mathf.Clamp(count, 1, Mathf.FloorToInt((1f - SmallestShare) / shrinkPerPumpkin) + 1);
+        public int PumpkinCount => Mathf.Max(1, count);
 
         private RectTransform sign;
         private TMP_Text signText;
@@ -196,6 +231,9 @@ namespace Game.Bonus
         private float timeLeft;
         private int lastTick = -1;
         private float signY;
+        // Punches count while the countdown runs; the strokes already counted.
+        private bool counting;
+        private readonly HashSet<int> countedStrokes = new();
 
         // ---------- Earning it (the Watch Bonus Round and Play Bonus Round actions) ----------
 
@@ -255,7 +293,7 @@ namespace Game.Bonus
         // ---------- The pumpkins ----------
 
         /// <summary>Pumpkin number 'index' (0 = the giant): its share of the giant's size.</summary>
-        public float ShareOf(int index) => Mathf.Max(SmallestShare, 1f - shrinkPerPumpkin * index);
+        public float ShareOf(int index) => Mathf.Max(SmallestShare, Mathf.Pow(1f - shrinkEach, index));
 
         /// <summary>The giant's size (its scale): Giant Times the start pumpkin's.</summary>
         public float GiantSize
@@ -270,8 +308,8 @@ namespace Game.Bonus
         /// <summary>Pumpkin number 'index''s health: the smaller, the tougher (Tougher Per Pumpkin more each).</summary>
         public float HealthOf(int index) => Mathf.Round(giantHealth * (1f + tougherPerPumpkin * index));
 
-        /// <summary>How much pumpkin number 'index' jiggles when hit: the smaller, the stiffer (1 = the giant's).</summary>
-        public float JiggleOf(int index) => Mathf.Max(MinJiggle, 1f - stifferPerPumpkin * index);
+        /// <summary>How much pumpkin number 'index' jiggles when hit: the giant most, the smaller ones stiffer.</summary>
+        public float JiggleOf(int index) => Mathf.Max(MinJiggle, giantJiggle * (1f - stifferPerPumpkin * index));
 
         /// <summary>
         /// Called by a nesting pumpkin something else made (the bonus stage's chest), before its FSMs start: it becomes
@@ -309,6 +347,25 @@ namespace Game.Bonus
             StartCoroutine(Run());
         }
 
+        private void OnEnable()
+        {
+            Fist.Landed += OnPunchLanded;
+        }
+
+        private void OnDisable()
+        {
+            Fist.Landed -= OnPunchLanded;
+        }
+
+        // A punch on the pumpkin there now (the fist, or its flying fists: one punch counts once).
+        private void OnPunchLanded(Fist.PunchLanded punch)
+        {
+            if (!counting || current == null || punch.Hit == null || punch.Hit.GetComponentInParent<NestingPumpkin>() != current) return;
+            if (punch.Stroke != 0 && !countedStrokes.Add(punch.Stroke)) return;
+            Punches++;
+            if (punch.Perfect) PerfectJabs++;
+        }
+
         private void OnDestroy()
         {
             if (Running == this) Running = null;
@@ -324,6 +381,7 @@ namespace Game.Bonus
             timeLeft = seconds;
             sign.gameObject.SetActive(true);
             ShowTime();
+            counting = true;
 
             bool won = false;
             // The one there gets broken, bursts (its own Health FSM), then the next pops out where it was.
@@ -375,21 +433,33 @@ namespace Game.Bonus
                 yield return null;
             }
 
-            // No end sign: the countdown just goes. Time's up: the one left sinks away (meanwhile the helmet eats).
+            // No end sign: the countdown just goes. Time's up: the one left blows up (meanwhile the helmet eats).
+            counting = false;
             if (sign != null) sign.gameObject.SetActive(false);
-            NestingPumpkin sinking = null;
+            bool blowing = false;
             if (!won)
             {
                 timeLeft = 0f;
                 if (current != null && !current.IsBroken)
                 {
-                    sinking = current;
-                    StartCoroutine(SinkAway(current));
+                    blowing = true;
+                    StartCoroutine(BlowUp(current, () => blowing = false));
                 }
             }
             yield return EatTheCandies();
-            while (sinking != null) yield return null;
+            while (blowing) yield return null;
+            ShowBoard();
             Finished = true;
+        }
+
+        // The round goes on the player's leaderboard (saved), and the board shows it: it stays a while by itself, as the
+        // stages go on.
+        private void ShowBoard()
+        {
+            int place = Game.Saving.BonusScores.Add(Broken, PumpkinCount, Punches, PerfectJabs);
+            if (boardSeconds <= 0f) return;
+            var board = BonusBoard.Show(Punches, PerfectJabs, place, boardSeconds, font);
+            if (bonusSound != null) AudioSource.PlayClipAtPoint(bonusSound, board.transform.position);
         }
 
         // The player keeps every candy they got: the ones still coming out of the last pumpkins, then the helmet eats
@@ -587,22 +657,65 @@ namespace Game.Bonus
             }
         }
 
-        // Time's up: it stops taking hits, keeps laughing and sinks into the ground.
-        private IEnumerator SinkAway(NestingPumpkin pumpkin)
+        // Time's up: it blows up. Its own Health FSM bursts it (pieces and smoke) with no EXP or candies (it stops
+        // taking hits first), with a bang, a flash and a shake; its pieces fly off, and a player near it is thrown back
+        // a few metres (their Toughness doesn't cut it). 'done' is called once it's gone.
+        private IEnumerator BlowUp(NestingPumpkin pumpkin, System.Action done)
         {
+            var middle = pumpkin.Body != null ? pumpkin.Body.position : pumpkin.transform.position;
+            float size = pumpkin.transform.localScale.x;
+            float radius = RadiusPerSize * size;
             pumpkin.StopTakingHits();
-            var start = pumpkin.transform.position;
-            var depth = Vector3.down * (2.5f * pumpkin.transform.lossyScale.y);
-            for (float t = 0f; t < sinkSeconds && pumpkin != null; t += Time.deltaTime)
+            pumpkin.Burst();
+            foreach (var effect in blastEffects)
             {
-                float k = t / sinkSeconds;
-                pumpkin.transform.position = start + depth * (k * k);
-                yield return null;
+                if (effect != null) EffectPool.Play(effect, middle, Mathf.Max(0.5f, size * blastEffectSize));
             }
+            if (blastSound != null) AudioSource.PlayClipAtPoint(blastSound, middle, blastVolume);
+            var eyes = Head();
+            bool thrown = false;
+            if (eyes != null && Flat(eyes.position - middle).magnitude <= radius + blastReach)
+                thrown = PlayerLaunch.Launch(middle, blastHeight, blastDistance, true, false);
+            if (!thrown) ShakeView(BlastShake);
+            // Its FSM bursts it within a moment (from its laugh it can take up to its Wait); then the pieces fly.
+            for (float t = 0f; t < BurstWait && pumpkin != null; t += Time.deltaTime) yield return null;
             if (pumpkin != null)
             {
-                Puff(start, 1.5f);
+                Puff(middle, BiggestPuff);
                 Destroy(pumpkin.gameObject);
+            }
+            yield return null;
+            PushPieces(middle, radius + blastReach);
+            done?.Invoke();
+        }
+
+        // The burst pieces near the blast fly away from it (not the candies: a hard knock breaks them).
+        private void PushPieces(Vector3 middle, float reach)
+        {
+            var stuff = SpawnedStuff();
+            if (stuff == null || blastPush <= 0f) return;
+            foreach (Transform child in stuff)
+            {
+                if (!child.name.StartsWith(PiecesName)) continue;
+                foreach (var body in child.GetComponentsInChildren<Rigidbody>())
+                {
+                    if (body.isKinematic) continue;
+                    var away = body.worldCenterOfMass - middle;
+                    if (away.sqrMagnitude > reach * reach) continue;
+                    away.y = Mathf.Max(away.y, 0f) + 0.6f * away.magnitude;
+                    body.AddForce(away.normalized * blastPush, ForceMode.VelocityChange);
+                }
+            }
+        }
+
+        // A camera shake event sent to the main camera's Info FSM (ShakeSmall, ShakeMed, ShakeBigger).
+        private static void ShakeView(string eventName)
+        {
+            var cam = HutongGames.PlayMaker.FsmVariables.GlobalVariables.FindFsmGameObject("MainCam");
+            if (cam == null || cam.Value == null) return;
+            foreach (var fsm in cam.Value.GetComponents<PlayMakerFSM>())
+            {
+                if (fsm.FsmName == "Info") fsm.SendEvent(eventName);
             }
         }
 

@@ -120,6 +120,10 @@ namespace Game.Combat
         [Tooltip("How far from where the player is looking the punch may go, in degrees.")]
         [Range(10f, 90f)]
         [SerializeField] private float jabAim = 60f;
+        [Tooltip("A jab this good or better counts as a perfect jab (the bonus round's board counts them): 0 = just good " +
+                 "enough, 1 = at Top Jab Speed, dead straight, right where the player looks. Counted whether or not jabs fly yet.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float perfectJab = 0.8f;
         [Tooltip("How hard a flying punch hits (a jab, a swing, an uppercut), compared with the fist itself hitting at " +
                  "the punch's top speed. 1 = the same.")]
         [Min(0f)]
@@ -305,6 +309,12 @@ namespace Game.Combat
         private float strokeStartTime;
         private float strokePath;
         private float strokePeak;
+        // How good the stroke is: as its move, and as a jab (whether or not jabs fly yet; -1: it isn't one).
+        private float strokeQuality;
+        private float strokeJab = -1f;
+        // Which stroke it is (both hands count up together), so the flying fists of one punch count as one.
+        private int strokeId;
+        private static int strokeCount;
         private float lastBallHit = -1f;
         private float nextFly;
         private float nextPuff;
@@ -334,6 +344,23 @@ namespace Game.Combat
         /// <summary>Full Fist Size: every flying punch throws three fists.</summary>
         public static bool TriplePunch { get; set; }
 
+        /// <summary>A punch that landed (the fist itself, or a flying one), for whoever counts punches.</summary>
+        public struct PunchLanded
+        {
+            /// <summary>What it hit.</summary>
+            public Collider Hit;
+            /// <summary>
+            /// The stroke it came from: one punch can throw three flying fists, or bounce the fist twice. 0 = no stroke
+            /// (the fist just bumped into it fast enough).
+            /// </summary>
+            public int Stroke;
+            /// <summary>A jab at least Perfect Jab good.</summary>
+            public bool Perfect;
+        }
+
+        /// <summary>Raised for every punch that lands, e.g. for the bonus round's board.</summary>
+        public static event System.Action<PunchLanded> Landed;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetUnlocks()
         {
@@ -341,6 +368,7 @@ namespace Game.Combat
             SwingUnlocked = false;
             UppercutUnlocked = false;
             TriplePunch = false;
+            Landed = null;
         }
 
         // Each move is thrown only when it's switched on here and unlocked.
@@ -567,6 +595,13 @@ namespace Game.Combat
                 // A swing and an uppercut land harder (a flying one already has this in its speed).
                 punchSpeed *= MovePower(move);
             }
+            bool stroke = flying || stroking || Time.time < strokeMoveUntil;
+            Landed?.Invoke(new PunchLanded
+            {
+                Hit = collision.collider,
+                Stroke = flying ? flyer.Stroke : stroke ? strokeId : 0,
+                Perfect = flying ? flyer.Perfect : stroke && strokeJab >= perfectJab,
+            });
             HelpPlayMaker(collision, punchSpeed);
             Push(collision, punchSpeed, flyer, move);
             float puff = 1f;
@@ -751,7 +786,8 @@ namespace Game.Combat
             // Smoothed a little: tracking jitters from frame to frame.
             handVelocity = Vector3.Lerp(handVelocity, step / dt, 0.6f);
             float speed = handVelocity.magnitude;
-            if (eyes == null || (!CanJab && !CanSwing && !CanUppercut))
+            // Watched also with no punch unlocked to fly: a perfect jab counts anyway (see Landed).
+            if (eyes == null)
             {
                 stroking = false;
                 strokeMove = Move.None;
@@ -769,6 +805,8 @@ namespace Game.Combat
                 stroking = true;
                 followingThrough = false;
                 strokeMove = Move.None;
+                strokeJab = -1f;
+                strokeId = ++strokeCount;
                 strokeStart = hand - step;
                 strokeStartTime = Time.time - dt;
                 strokePath = step.magnitude;
@@ -780,7 +818,7 @@ namespace Game.Combat
             strokePeak = Mathf.Max(strokePeak, speed);
             var travel = hand - strokeStart;
             float took = Time.time - strokeStartTime;
-            strokeMove = WhichMove(travel, took, eyes.transform, out float quality);
+            strokeMove = WhichMove(travel, took, eyes.transform, out strokeQuality);
             bool snapped = speed <= strokePeak * SnapShare || Vector3.Dot(handVelocity, travel) <= 0f;
             // Too long for a punch: a push, or the hand just moving about.
             if (!snapped && took <= Mathf.Max(jabSeconds, LongMoveSeconds)) return;
@@ -790,7 +828,7 @@ namespace Game.Combat
             lastStrokeDirection = travel.sqrMagnitude > 0.000001f ? travel.normalized : Vector3.zero;
             // The fist landing just after still counts as that punch.
             strokeMoveUntil = Time.time + 0.1f;
-            if (snapped && strokeMove != Move.None) TryFly(strokeMove, quality);
+            if (snapped && strokeMove != Move.None) TryFly(strokeMove, strokeQuality);
         }
 
         // Which punch a stroke is, by where the hand went from the player's point of view (ahead where they look: a jab;
@@ -808,10 +846,12 @@ namespace Game.Combat
             // How far off its line the punch may be at most, as a share of what its kind allows.
             float off = 1f;
             float needed = 0f;
-            if (CanJab && strokePeak >= jabSpeed && took <= jabSeconds && straightness >= jabStraightness)
+            strokeJab = -1f;
+            if (strokePeak >= jabSpeed && took <= jabSeconds && straightness >= jabStraightness)
             {
                 float jabOff = Vector3.Angle(direction, InPlayAreaDirection(eyes.forward)) / jabAim;
-                if (jabOff <= off)
+                if (jabOff <= 1f) strokeJab = Grade(jabSpeed, jabOff) * StraightGrade(straightness);
+                if (CanJab && jabOff <= off)
                 {
                     move = Move.Jab;
                     off = jabOff;
@@ -841,12 +881,21 @@ namespace Game.Combat
             }
             if (move == Move.None) return move;
 
-            // As much faster than needed as Top Jab Speed is than Jab Speed is the best.
-            float top = needed * Mathf.Max(topJabSpeed, jabSpeed + 0.1f) / jabSpeed;
-            quality = Mathf.InverseLerp(needed, top, strokePeak) * Mathf.Lerp(0.6f, 1f, 1f - off);
-            if (move == Move.Jab) quality *= Mathf.Lerp(0.6f, 1f, Mathf.InverseLerp(jabStraightness, 1f, straightness));
+            quality = Grade(needed, off);
+            if (move == Move.Jab) quality *= StraightGrade(straightness);
             return move;
         }
+
+        // How good a stroke is for a move that needs this speed, this far off its line (as a share of what it allows):
+        // as much faster than needed as Top Jab Speed is than Jab Speed is the best.
+        private float Grade(float needed, float off)
+        {
+            float top = needed * Mathf.Max(topJabSpeed, jabSpeed + 0.1f) / jabSpeed;
+            return Mathf.InverseLerp(needed, top, strokePeak) * Mathf.Lerp(0.6f, 1f, 1f - off);
+        }
+
+        // A jab's straightness counts too.
+        private float StraightGrade(float straightness) => Mathf.Lerp(0.6f, 1f, Mathf.InverseLerp(jabStraightness, 1f, straightness));
 
         // A good punch that hit nothing flies on from the knuckles, the way the fist went: a jab straight ahead, a swing
         // sideways (level, the way it swept), an uppercut up. The better it was, the farther; the more Fist Size, the
@@ -938,6 +987,8 @@ namespace Game.Combat
             // The Elon and Green Boong buffs: every fist flies farther by the same metres (not more for a Triple Punch's
             // farther ones).
             flyer.Launch(from, direction, reach + Game.Leveling.PlayerBuffs.FlyReach, hitSpeed, move, flyRadius);
+            flyer.Stroke = strokeId;
+            flyer.Perfect = strokeJab >= perfectJab;
         }
 
         // Most flying fists one hand may have out at once: as many as it can throw (a punch every Fly Cooldown, three
@@ -1161,6 +1212,9 @@ namespace Game.Combat
 
             public float HitSpeed => hitSpeed;
             public Move Thrown => move;
+            /// <summary>The stroke that threw it, and whether that was a perfect jab (see Landed).</summary>
+            public int Stroke;
+            public bool Perfect;
             public Vector3 Direction => direction;
             /// <summary>How far it still has to fly, in metres; below 0 once it has stopped (the more shrunk away, the lower).</summary>
             public float LeftToFly => done ? -fade : reach - flown;

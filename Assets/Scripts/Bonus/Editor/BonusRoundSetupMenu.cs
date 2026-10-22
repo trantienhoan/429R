@@ -22,13 +22,14 @@ namespace Game.EditorTools
     ///   and laugh. (Nesting_Pumpkin_3 ... _5, Bonus_Area and Bonus_Chest_Pumpkin from the first versions aren't used.)
     /// - Bonus_Round (Bases): the Bonus Round (30 s, +6 s per pumpkin, the Candy Helmet when the giant breaks).
     /// - The bonus stages: --Bedroom--MiniGame-- (made by hand: Boss_Area and Treasure_Chest_PUMPKIN_EXTRA, whose opening
-    ///   makes the giant) and --Livingroom--MiniGame-- (a copy of it, made here). Tagged Untagged (EditorOnly isn't in
-    ///   builds).
-    /// - GAMESTAGES: Watch Bonus Round in each enemy-wave state ("Mini Enemy", "Enemy1 - Wait", "Enemy2 - Wait",
-    ///   "Enemy 3 Stuffs"), and a bonus state after each stage with Play Bonus Round, which switches the stage on only
-    ///   when the round was earned: "Bonus Round Mini" (EM0: BR_Mini_GO, then 2.5 - BR), "Bonus Round BR" (EM1: BR_GO,
-    ///   then 3 - LivingRoom), "Bonus Round LR2" (EM2: LR_GO, then Scale LR) and "Bonus Round LR" (EM3: LR GO 4, then
-    ///   Rooftop_ON). Each next state takes the field away (Destroy Object $BOSS_AREA, added where missing).
+    ///   makes the giant) and --Playroom--MiniGame-- (a copy of it, made here). Tagged Untagged (EditorOnly isn't in builds).
+    /// - GAMESTAGES (rooms: Storage room = EnemyManager 0, Bedroom = 1, Livingroom = 2, Playroom = 3): the bonus is only
+    ///   for the Bedroom and the Playroom. Watch Bonus Round in "Enemy1 - Wait" and "Enemy 3 Stuffs"; "Bonus Round BR"
+    ///   (BR_GO, then 3 - LivingRoom) and "Bonus Round PR" (LR GO 4, then Rooftop_ON) with Play Bonus Round, which switches
+    ///   the stage on only when the round was earned. Each bonus state first sets the next room's checkpoint (CP LivingRoom,
+    ///   CP Rooftop), so the room just cleared isn't played again from a checkpoint; the next state takes the field away
+    ///   (Destroy Object $BOSS_AREA). Leftovers of the 2026-10-22 version that had a bonus after every room (Bonus Round
+    ///   Mini, Bonus Round LR2 and their watches) are taken out.
     /// </summary>
     public static class BonusRoundSetupMenu
     {
@@ -37,7 +38,16 @@ namespace Game.EditorTools
         private const string SmallerPumpkinPath = "Assets/Prefabs/Items/Breakable/Nesting_Pumpkin_{0}.prefab";
         private const string RoundPath = "Assets/Prefabs/Bases/Bonus_Round.prefab";
         private const string BedroomStageName = "--Bedroom--MiniGame--";
-        private const string LivingroomStageName = "--Livingroom--MiniGame--";
+        private const string PlayroomStageName = "--Playroom--MiniGame--";
+        // Its name in the first version (the Playroom is the Livingroom base's second room).
+        private const string OldPlayroomStageName = "--Livingroom--MiniGame--";
+        private const string BlastSoundPath = "Assets/Audio/SFX/explosion-312361.wav";
+        private static readonly string[] BlastEffectPaths =
+        {
+            "Assets/Lana Studio/Hyper Casual FX/Prefabs/Flash/Flash_round_yellow.prefab",
+            "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Hit_Blast.prefab",
+            "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Smoke_Blast.prefab",
+        };
 
         // The giant and the one every smaller pumpkin is made from: size (scale), health, candies, EXP, laugh pitch, drops
         // from the sky. Only what they have on their own: the Bonus Round sets these for each pumpkin it takes.
@@ -309,7 +319,20 @@ namespace Game.EditorTools
                 Fill(so, "font", AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontPath), filled);
                 Fill(so, "puffEffect", AssetDatabase.LoadAssetAtPath<GameObject>(PuffPath), filled);
                 // The first rounds' numbers (a 4x giant, 14 pumpkins, 60 health, +5 s): the new ones, once.
-                if (Changed(so, "giantTimes", 4f, 1.5f)) filled.Add("giant 1.5x the start pumpkin");
+                if (Changed(so, "giantTimes", 4f, 1.3f) || Changed(so, "giantTimes", 1.5f, 1.3f)) filled.Add("giant 1.3x the start pumpkin");
+                Fill(so, "blastSound", AssetDatabase.LoadAssetAtPath<AudioClip>(BlastSoundPath), filled);
+                var blasts = so.FindProperty("blastEffects");
+                if (blasts != null && blasts.arraySize == 0)
+                {
+                    foreach (var path in BlastEffectPaths)
+                    {
+                        var fx = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                        if (fx == null) continue;
+                        blasts.arraySize++;
+                        blasts.GetArrayElementAtIndex(blasts.arraySize - 1).objectReferenceValue = fx;
+                    }
+                    filled.Add($"{blasts.arraySize} blast effects");
+                }
                 if (Changed(so, "count", 14, 6)) filled.Add("6 pumpkins");
                 if (Changed(so, "giantHealth", 60f, 120f)) filled.Add("giant health 120");
                 if (Changed(so, "bonusSeconds", 5f, 6f)) filled.Add("+6 s per pumpkin");
@@ -371,23 +394,39 @@ namespace Game.EditorTools
             if (bedroom == null) { yield return $"No {BedroomStageName} under {gs.name}: make it first."; yield break; }
             Undo.RecordObject(gs, "Nesting Pumpkin Bonus");
 
-            yield return Watch(gs, "Mini Enemy");
+            // Only the Bedroom (EnemyManager 1) and the Playroom (EnemyManager 3) have a bonus.
             yield return Watch(gs, "Enemy1 - Wait");
-            yield return Watch(gs, "Enemy2 - Wait");
             yield return Watch(gs, "Enemy 3 Stuffs");
+            yield return Unwatch(gs, "Mini Enemy");
+            yield return Unwatch(gs, "Enemy2 - Wait");
+            yield return RemoveBonusState(gs, "Bonus Round Mini");
+            yield return RemoveBonusState(gs, "Bonus Round LR2");
+            foreach (var next in new[] { "2.5 - BR", "Scale LR" })
+                yield return UnclearField(gs, next);
             yield return Untag(bedroom.gameObject);
-            var livingroom = gs.transform.Find(LivingroomStageName);
-            if (livingroom == null)
+            var playroom = gs.transform.Find(PlayroomStageName);
+            var old = gs.transform.Find(OldPlayroomStageName);
+            if (playroom == null && old != null)
             {
-                livingroom = CopyStage(bedroom.gameObject, LivingroomStageName).transform;
-                yield return $"Made {LivingroomStageName} (a copy of {BedroomStageName})";
+                Undo.RecordObject(old.gameObject, "Nesting Pumpkin Bonus");
+                old.name = PlayroomStageName;
+                foreach (var t in old.GetComponentsInChildren<Transform>(true))
+                {
+                    if (t != old) { Undo.RecordObject(t.gameObject, "Nesting Pumpkin Bonus"); t.name = t.name.Replace("Livingroom_", "Playroom_"); }
+                }
+                playroom = old;
+                yield return $"{OldPlayroomStageName} renamed {PlayroomStageName} (it's the Playroom's)";
             }
-            yield return Untag(livingroom.gameObject);
-            yield return BonusState(gs, "Bonus Round Mini", "BR_Mini_GO", "2.5 - BR", round, bedroom.gameObject);
-            yield return BonusState(gs, "Bonus Round BR", "BR_GO", "3 - LivingRoom", round, bedroom.gameObject);
-            yield return BonusState(gs, "Bonus Round LR2", "LR_GO", "Scale LR", round, livingroom.gameObject);
-            yield return BonusState(gs, "Bonus Round LR", "LR GO 4", "Rooftop_ON", round, livingroom.gameObject);
-            foreach (var next in new[] { "2.5 - BR", "3 - LivingRoom", "Scale LR", "Rooftop_ON" })
+            if (playroom == null)
+            {
+                playroom = CopyStage(bedroom.gameObject, PlayroomStageName).transform;
+                yield return $"Made {PlayroomStageName} (a copy of {BedroomStageName})";
+            }
+            yield return Untag(playroom.gameObject);
+            yield return RenameState(gs, "Bonus Round LR", "Bonus Round PR");
+            yield return BonusState(gs, "Bonus Round BR", "BR_GO", "3 - LivingRoom", round, bedroom.gameObject, "CP LivingRoom");
+            yield return BonusState(gs, "Bonus Round PR", "LR GO 4", "Rooftop_ON", round, playroom.gameObject, "CP Rooftop");
+            foreach (var next in new[] { "3 - LivingRoom", "Rooftop_ON" })
                 yield return ClearField(gs, next);
             EditorUtility.SetDirty(gs);
             EditorSceneManager.MarkSceneDirty(gs.gameObject.scene);
@@ -403,7 +442,7 @@ namespace Game.EditorTools
             return $"{stage.name}: EditorOnly -> Untagged (it's in builds now)";
         }
 
-        // A copy of a bonus stage next to it, its spots renamed (Bedroom_ -> Livingroom_). Its Create Objects make the
+        // A copy of a bonus stage next to it, its spots renamed (Bedroom_ -> Playroom_). Its Create Objects make the
         // same things at the same places; move its spots to change them.
         private static GameObject CopyStage(GameObject source, string name)
         {
@@ -412,7 +451,7 @@ namespace Game.EditorTools
             copy.transform.SetSiblingIndex(source.transform.GetSiblingIndex() + 1);
             foreach (var t in copy.GetComponentsInChildren<Transform>(true))
             {
-                if (t != copy.transform) t.name = t.name.Replace("Bedroom_", "Livingroom_");
+                if (t != copy.transform) t.name = t.name.Replace("Bedroom_", "Playroom_");
             }
             Undo.RegisterCreatedObjectUndo(copy, "Nesting Pumpkin Bonus");
             return copy;
@@ -435,7 +474,7 @@ namespace Game.EditorTools
 
         // The state between 'after' and 'next' that plays the bonus round in 'stage' (or goes straight on if it wasn't
         // earned). The stage is switched on by Play Bonus Round, so an Activate Game Object of it there goes.
-        private static string BonusState(PlayMakerFSM gs, string name, string after, string next, GameObject round, GameObject stage)
+        private static string BonusState(PlayMakerFSM gs, string name, string after, string next, GameObject round, GameObject stage, string checkpoint)
         {
             var f = gs.Fsm;
             var from = f.GetState(after);
@@ -468,6 +507,15 @@ namespace Game.EditorTools
             }
             if (play.round == null || play.round.Value != round) { play.round = new FsmGameObject { Value = round }; changes.Add("round Bonus_Round"); }
             if (play.stage == null || play.stage.Value != stage) { play.stage = new FsmGameObject { Value = stage }; changes.Add("stage " + stage.name); }
+            // The room is cleared: a checkpoint from here on is the next room's, so it isn't played again (nor the bonus earned twice).
+            if (!state.Actions.OfType<SetCheckpoint>().Any(c => c.checkpoint != null && c.checkpoint.Value == checkpoint))
+            {
+                var cp = new SetCheckpoint();
+                cp.Reset();
+                cp.checkpoint = checkpoint;
+                state.Actions = new FsmStateAction[] { cp }.Concat(state.Actions).ToArray();
+                changes.Add("checkpoint " + checkpoint);
+            }
             int before = state.Actions.Length;
             state.Actions = state.Actions.Where(a => !(a is ActivateGameObject activate && Switches(activate, stage))).ToArray();
             if (state.Actions.Length < before) changes.Add($"its own Activate {stage.name} removed (Play Bonus Round does it when earned)");
@@ -479,6 +527,71 @@ namespace Game.EditorTools
                 if (t.ToState == next) { t.ToState = name; changes.Add($"after '{after}'"); }
             }
             return $"'{name}': " + (changes.Count > 0 ? string.Join(", ", changes) : "already set up");
+        }
+
+        // No Watch Bonus Round in a room without a bonus.
+        private static string Unwatch(PlayMakerFSM gs, string stateName)
+        {
+            var state = gs.Fsm.GetState(stateName);
+            if (state == null) return $"GAMESTAGES has no '{stateName}'";
+            state.LoadActions();
+            if (!state.Actions.Any(a => a is WatchBonusRound)) return $"'{stateName}': no bonus (as it should be)";
+            state.Actions = state.Actions.Where(a => !(a is WatchBonusRound)).ToArray();
+            state.SaveActions();
+            return $"'{stateName}': Watch Bonus Round taken out (no bonus after this room)";
+        }
+
+        // A bonus state that shouldn't be there: whatever went to it goes straight to where it went, and it's deleted.
+        private static string RemoveBonusState(PlayMakerFSM gs, string name)
+        {
+            var f = gs.Fsm;
+            var state = f.GetState(name);
+            if (state == null) return $"'{name}': not there (as it should be)";
+            var next = state.Transitions.FirstOrDefault()?.ToState;
+            int rerouted = 0;
+            foreach (var other in f.States)
+            {
+                foreach (var t in other.Transitions)
+                {
+                    if (t.ToState == name) { t.ToState = next; rerouted++; }
+                }
+            }
+            f.States = f.States.Where(st => st != state).ToArray();
+            return $"'{name}' deleted ({rerouted} transitions now go straight to '{next}')";
+        }
+
+        // Takes out a Destroy Object $BOSS_AREA from a state after a room that has no bonus any more.
+        private static string UnclearField(PlayMakerFSM gs, string stateName)
+        {
+            var state = gs.Fsm.GetState(stateName);
+            if (state == null) return $"GAMESTAGES has no '{stateName}'";
+            state.LoadActions();
+            if (state.ActionData.ActionCount != state.Actions.Length) return $"'{stateName}' didn't load all its actions; left alone";
+            if (!state.Actions.OfType<DestroyObject>().Any(IsFieldDestroy)) return $"'{stateName}': no field to take away (as it should be)";
+            state.Actions = state.Actions.Where(a => !(a is DestroyObject d && IsFieldDestroy(d))).ToArray();
+            state.SaveActions();
+            return $"'{stateName}': its Destroy Object $BOSS_AREA taken out";
+        }
+
+        // Renames a state and every transition to it.
+        private static string RenameState(PlayMakerFSM gs, string from, string to)
+        {
+            var f = gs.Fsm;
+            var state = f.GetState(from);
+            if (state == null) return f.GetState(to) != null ? $"'{to}' already named" : $"GAMESTAGES has no '{from}'";
+            state.Name = to;
+            foreach (var other in f.States)
+            {
+                foreach (var t in other.Transitions)
+                {
+                    if (t.ToState == from) t.ToState = to;
+                }
+            }
+            foreach (var t in f.GlobalTransitions)
+            {
+                if (t.ToState == from) t.ToState = to;
+            }
+            return $"'{from}' renamed '{to}' (Playroom)";
         }
 
         // The state after a bonus state takes the field away: a Destroy Object $BOSS_AREA (the one already in another
