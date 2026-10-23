@@ -12273,6 +12273,7 @@ GameObject:
   - component: {fileID: 3365325741383144048}
   - component: {fileID: 7152457518702997080}
   - component: {fileID: 1902382962154646887}
+  - component: {fileID: 115996671500094674}
   m_Layer: 0
   m_Name: Bee_Smarter
   m_TagString: Enemy
@@ -13863,6 +13864,8 @@ MonoBehaviour:
     fsmEvent: 
     leapToFace: 0
     runAwayAfter: 0
+    throughPlayer: 0
+    throughDistance: 1.2
     slowPlayerTo: 1
     slowSeconds: 0
     pushPower: 1
@@ -13885,6 +13888,8 @@ MonoBehaviour:
     fsmEvent: 
     leapToFace: 0
     runAwayAfter: 0
+    throughPlayer: 0
+    throughDistance: 1.2
     slowPlayerTo: 1
     slowSeconds: 0
     pushPower: 1
@@ -13969,6 +13974,7 @@ MonoBehaviour:
   growSeconds: 7
   hitEffect: {fileID: 0}
   setOnDeath: []
+  aggressiveBoss: 1
   minion: {fileID: 0}
   callBelowHealth: 0.4
   minionCount: {x: 3, y: 5}
@@ -13978,6 +13984,33 @@ MonoBehaviour:
   minionEffect: {fileID: 0}
   rallyRange: 20
   minionsUseEnemyLimit: 1
+  minionsFillLimit: 0
+  callWhenFleeing: 1
+  hideChance: 0
+  hideRange: 6
+  hideBurst: {fileID: 0}
+  hideBurstCount: 3
+  rotSeconds: 5.5
+  rotPuffs: []
+  rotBurstEffects: []
+  rotHiss: []
+  rotBurstSound: {fileID: 0}
+  rotSquashSound: {fileID: 0}
+  rotPieces: {fileID: 0}
+  anomalyChance: 0.01
+  anomalySpeed: 1.5
+  anomalyHelmetSeconds: 10
+  anomalyKeepAway: 6
+  anomalyMaterial: {fileID: 2100000, guid: 12dcd3cdc10e6d5439f5177b97b7c449, type: 2}
+  anomalyGlow: {fileID: 4407701992690780987, guid: 3a11fd1285525cc42b8f958c9ae28848,
+    type: 3}
+  anomalyPop: {fileID: 1937718453956067109, guid: a43d1c8d30bba3040ac7f5cba9a7022d,
+    type: 3}
+  anomalyRewardSound: {fileID: 8300000, guid: e099ffdff64cfea48992357c5acf46a2, type: 3}
+  anomalyBody: {fileID: 8879391879696220359, guid: 05da503bb47783844a68712d2fd9719c,
+    type: 3}
+  anomalyLifetime: {x: 25, y: 40}
+  anomalyHealth: 2
   noticeSounds:
   - {fileID: 8300000, guid: 1e84af0fd5b41824d81c02dcfd140605, type: 3}
   - {fileID: 8300000, guid: 6e047f42e49fd8c498f29da9b09ad2f5, type: 3}
@@ -13992,6 +14025,41 @@ MonoBehaviour:
   sameSoundGap: 0.3
   warnWhenUnseen: 1
   unseenAngle: 70
+--- !u!114 &115996671500094674
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5493437295386993518}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 14b234370660a894894b064ff72cfc38, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Enemies.WingBuzz
+  wings:
+  - bone: Up_Wing_01.L
+    middle: {x: 0.8187306, y: -0.29352295, z: 0.2658765, w: 0.41573343}
+    axis: {x: 0.22288105, y: 0.38995004, z: 0.89345556}
+    swing: 62.070923
+    phase: 0
+  - bone: Up_Wing_01.R
+    middle: {x: 0.8186734, y: 0.2875923, z: -0.2728984, w: 0.4154409}
+    axis: {x: 0.20282121, y: -0.3676244, z: -0.907588}
+    swing: 61.644882
+    phase: 0
+  - bone: D_Wing_01.L
+    middle: {x: 0.57711375, y: -0.51330024, z: 0.4281422, w: 0.46920884}
+    axis: {x: 0.072745495, y: -0.2237356, z: 0.97193164}
+    swing: 59.588707
+    phase: 0.15
+  - bone: D_Wing_01.R
+    middle: {x: 0.5768088, y: 0.51378834, z: -0.42827466, w: 0.46892846}
+    axis: {x: 0.07243737, y: 0.22343142, z: -0.9720243}
+    swing: 59.691666
+    phase: 0.15
+  beatsPerSecond: 26
+  swingShare: 0.8
 --- !u!1 &5495325056223515303
 GameObject:
   m_ObjectHideFlags: 0

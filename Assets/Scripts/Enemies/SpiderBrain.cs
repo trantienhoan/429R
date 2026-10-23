@@ -34,8 +34,17 @@ namespace Game.Enemies
     /// Attack, Bite, Blocked, Missed, Flinch, WeakFlinch, Flee, CallMinions, Died) for sounds and effects made in
     /// PlayMaker, and when it dies it can set bools in other FSMs, like the old bosses' Set Fsm Variable (e.g.
     /// BigSpiderDown in an EnemyManager).
-    /// A boss with a Minion (Calling minions) calls for help once, low on health: the enemies around it come for the
-    /// player and a few of its minions come out around it.
+    /// A boss with a Minion (Calling minions) calls for help once, low on health or as it runs away: the enemies around
+    /// it come for the player and its minions come out around it (with Minions Fill Limit, as many as the Enemy Limit
+    /// has room for). A mini boss (Aggressive Boss) hunts the player down from the moment it's out, never waits its turn
+    /// and never circles; the others make way for it.
+    /// Now and then (Anomaly Chance, 1 in 100) a bug appears as the rare white one, always a small white cockroach (a
+    /// spider or bee becomes one, Anomaly Body): it never bites, only runs, fast, among the other bugs and from tree
+    /// pumpkin to tree pumpkin, always keeping away from the player; one good throw kills it (Anomaly Health), for the
+    /// Candy Helmet for a few seconds. After
+    /// Anomaly Lifetime it dives into the closest tree pumpkin and is gone.
+    /// A cockroach low on health may hide in a tree pumpkin instead of running away (Hiding in pumpkins): it rots black
+    /// and bursts into small roaches (Rotting Pumpkin).
     /// With Target on Tagged Object it ignores the player and goes for the nearest object with that tag instead (the
     /// tree spiders: the PumpkinTree, whose Damage FSM its bites hurt).
     /// Goes on the spider's root, next to its NavMesh Agent; Tools > 429 Game > Enemies > Set Up Smarter Spider adds it.
@@ -104,6 +113,13 @@ namespace Game.Enemies
             public bool leapToFace;
             [Tooltip("Afterwards it turns and runs away (Run Away Distance) instead of backing off facing the player.")]
             public bool runAwayAfter;
+            [Tooltip("A face leap that doesn't drop back off the face: as it lets go it carries on through the player's " +
+                     "head and lands Through Distance behind them (never through a wall), then turns round to face them. " +
+                     "Instead of Run Away After and backing off.")]
+            public bool throughPlayer;
+            [Tooltip("How far behind the player it lands, in metres, with Through Player.")]
+            [Min(0f)]
+            public float throughDistance = 1.2f;
             [Tooltip("When this attack lands, the player walks at this share of their speed (0.35 = 35%) for Slow " +
                      "Seconds, like a web ball does. Only with Slow Seconds above 0.")]
             [Range(0.1f, 1f)]
@@ -225,6 +241,7 @@ namespace Game.Enemies
             Dodge,
             WebShot,
             WingsOff,
+            Hide,
             Dead,
         }
 
@@ -524,6 +541,14 @@ namespace Game.Enemies
                  "that EnemyManager knows its boss is down. Empty: none.")]
         [SerializeField] private List<DeathFlag> setOnDeath = new();
 
+        [Header("Boss")]
+        [Tooltip("Boss size only (the mini bosses): it goes for the player as soon as it's out and never gives up on " +
+                 "them, wherever they are. It never waits for a turn (no boss does), the other enemies make way for it, " +
+                 "it runs straight at the player (no skittering), and between attacks it stays close, facing the player, " +
+                 "instead of circling; after a leap it doesn't run off. A flier waits up high half as long. Off: it acts " +
+                 "like the others (still without waiting for a turn).")]
+        [SerializeField] private bool aggressiveBoss = true;
+
         [Header("Calling minions (bosses)")]
         [Tooltip("The minion a boss calls when it gets low on health: Spider_Small for the white Spider_Boss, " +
                  "Spider_Normal for Spider_Boss_PumpkinButt, and so on. Empty: it never calls (every regular enemy).")]
@@ -550,6 +575,71 @@ namespace Game.Enemies
         [Tooltip("Each minion waits for room in the Enemy Limit (12 on Quest, 20 on PC): with the game full, the next " +
                  "one comes as soon as another enemy dies. Off: they all come regardless.")]
         [SerializeField] private bool minionsUseEnemyLimit = true;
+        [Tooltip("As many minions come as the Enemy Limit has room for when it calls (12 on Quest, 20 on PC, less the " +
+                 "enemies already out), at least the smaller Minion Count. Off: Minion Count.")]
+        [SerializeField] private bool minionsFillLimit;
+        [Tooltip("It also calls as soon as it runs away (Flee Below Health), if that comes first.")]
+        [SerializeField] private bool callWhenFleeing = true;
+
+        [Header("Hiding in pumpkins")]
+        [Tooltip("Chance (0 to 1) that, when it would run away low on health, it hides in the nearest tree pumpkin " +
+                 "lying on the floor instead (within Hide Range): the pumpkin rots black and bursts into Hide Burst Count " +
+                 "Hide Bursts; the roach has eaten its candies. Smashed first, the roach dies inside. 0 = never. Normal " +
+                 "cockroaches 1 in 5 (0.2), small ones 1 in 17.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float hideChance;
+        [Tooltip("How far it looks for a tree pumpkin to hide in, in metres.")]
+        [Min(1f)]
+        [SerializeField] private float hideRange = 6f;
+        [Tooltip("What bursts out of the rotten pumpkin: a Prefab Link to e.g. Cockroach_Small (a prefab can't link to itself).")]
+        [SerializeField] private PrefabLink hideBurst;
+        [Min(0)]
+        [SerializeField] private int hideBurstCount = 3;
+        [Tooltip("How long the pumpkin takes to rot black and burst, in seconds.")]
+        [Min(0.5f)]
+        [SerializeField] private float rotSeconds = 5.5f;
+        [Tooltip("Dark puffs from the rotting pumpkin, and the burst's effects (Effect Pool).")]
+        [SerializeField] private GameObject[] rotPuffs = Array.Empty<GameObject>();
+        [SerializeField] private GameObject[] rotBurstEffects = Array.Empty<GameObject>();
+        [Tooltip("The hissing from inside it (one at random, more often as it rots), the burst, and the squelch when it's smashed first.")]
+        [SerializeField] private AudioClip[] rotHiss = Array.Empty<AudioClip>();
+        [SerializeField] private AudioClip rotBurstSound;
+        [SerializeField] private AudioClip rotSquashSound;
+        [Tooltip("The tree pumpkin's pieces, spawned without its candy (Pumpkin_On_Tree: pumpkin_2_Drop).")]
+        [SerializeField] private GameObject rotPieces;
+
+        [Header("White anomaly (rare)")]
+        [Tooltip("Chance (0 to 1) that a bug turns out to be the rare white one as it appears: 0.01 = 1 in 100. Never a " +
+                 "boss or a tree spider. It's small and white and never bites: it only runs, Anomaly Speed times as fast, " +
+                 "keeping away from the player. Killing it gives the player the bonus round's Candy Helmet for Anomaly " +
+                 "Helmet Seconds. It isn't part of its spawner's wave, and the bonus round doesn't wait for it.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float anomalyChance = 0.01f;
+        [Min(0.1f)]
+        [SerializeField] private float anomalySpeed = 1.5f;
+        [Min(0f)]
+        [SerializeField] private float anomalyHelmetSeconds = 10f;
+        [Tooltip("It keeps at least this far from the player, in metres: closer, it runs off to the furthest spot it can " +
+                 "reach; further, it scurries about, but never to a spot (a bug, a pumpkin) nearer the player than this, " +
+                 "or past them on the way.")]
+        [Min(1f)]
+        [SerializeField] private float anomalyKeepAway = 6f;
+        [Tooltip("Its white look: the white mini boss's painted material for its kind, put on its body.")]
+        [SerializeField] private Material anomalyMaterial;
+        [Tooltip("Sparkles it carries (made as its child).")]
+        [SerializeField] private GameObject anomalyGlow;
+        [Tooltip("Played where it dies (Effect Pool) when the player kills it.")]
+        [SerializeField] private GameObject anomalyPop;
+        [SerializeField] private AudioClip anomalyRewardSound;
+        [Tooltip("The white bug is always a small white cockroach: a bug of another kind (a spider, a bee) that turns " +
+                 "out white becomes one of these instead, where it appeared. Empty: it stays its own kind (the roaches).")]
+        [SerializeField] private GameObject anomalyBody;
+        [Tooltip("Seconds it runs about (random between) before it dives into the closest tree pumpkin and is gone.")]
+        [SerializeField] private Vector2 anomalyLifetime = new(25f, 40f);
+        [Tooltip("Its health. It takes hits like a normal bug (Toughness 1): 2 = one good throw of a tree pumpkin kills " +
+                 "it, a soft lob does half. It keeps away, so a throw (or a flying punch) is the way to catch it.")]
+        [Min(1f)]
+        [SerializeField] private float anomalyHealth = 2f;
 
         [Header("Sounds")]
         [SerializeField] private AudioClip[] noticeSounds = Array.Empty<AudioClip>();
@@ -631,6 +721,18 @@ namespace Game.Enemies
         private float bobPhase;
         private readonly List<Transform> wings = new();
         private bool fled;
+        // The rare white bug: it only runs. Until when it keeps its way, when it may pick a new one, and whether it's
+        // running away from the player.
+        private bool anomaly;
+        private float scurryUntil;
+        private float nextScurryPick;
+        private bool scurryAway;
+        private float anomalyLeaveAt;
+        // A white bug being made in place of a bug of another kind: it doesn't turn into another one.
+        private static bool makingWhite;
+        // The tree pumpkin it's running to, to hide in.
+        private Transform hideTarget;
+        private float nextHidePath;
         // Calling minions: done (once), how many are still to come, and when the next one may.
         private bool called;
         private int minionsLeft;
@@ -679,6 +781,13 @@ namespace Game.Enemies
         private bool attackResolved;
         // A face leap's shove (height, distance), given as it lets go of the face.
         private Vector2 pendingPush;
+        // A face leap going on through the player (Through Player): which way, how far is left, and how long it takes.
+        private bool passStarted;
+        private Vector3 passDirection;
+        private float passLeft;
+        private float passSeconds;
+        // How far the face leap's shove sent the player (metres): one going through flies that much further.
+        private float shoveDistance;
         private float lungeLeft;
         private float lungeTotal;
         private float hitShownUntil;
@@ -709,6 +818,16 @@ namespace Game.Enemies
         /// <summary>What it's doing right now (for debugging and FSMs that want to know).</summary>
         public string Doing => state.ToString();
 
+        /// <summary>The rare white bug (White anomaly): small, never bites, only runs.</summary>
+        public bool IsAnomaly => anomaly;
+
+        /// <summary>Whether this is the rare white bug (not part of waves; the bonus round doesn't wait for it).</summary>
+        public static bool IsAnomalyBug(GameObject enemy) =>
+            enemy != null && enemy.TryGetComponent(out SpiderBrain brain) && brain.anomaly;
+
+        /// <summary>For testing: the next bug that appears is a white one (if it can be).</summary>
+        public static bool ForceNextAnomaly;
+
         /// <summary>Which size it turned out to be: Small, Normal or Boss.</summary>
         public string SizeName => kindName.ToString();
         /// <summary>True while its Stun Guard is up: hits hurt but don't stop it (for debugging and FSMs).</summary>
@@ -717,6 +836,8 @@ namespace Game.Enemies
         private float WalkSpeed => walkSpeed * kind.speed * (grounded ? groundSpeed : 1f);
         private float RunSpeed => runSpeed * kind.speed * (grounded ? groundSpeed : 1f);
         private float Rest => kind != null ? kind.rest : 1f;
+        // A mini boss that hunts the player down (Aggressive Boss).
+        private bool Aggressive => aggressiveBoss && kindName == SizeClass.Boss && !GoesForObject && !anomaly;
 
         /// <summary>Flying right now (a flier that hasn't lost its wings).</summary>
         public bool IsFlying => flies && !grounded;
@@ -746,12 +867,20 @@ namespace Game.Enemies
             voiceEnds.Clear();
             soundStarted.Clear();
             player = null;
+            ForceNextAnomaly = false;
+            makingWhite = false;
         }
 
         private void Awake()
         {
             agent = GetComponent<NavMeshAgent>();
             TryGetComponent(out speaker);
+            anomaly = RollAnomaly();
+            if (anomaly && anomalyBody != null && !makingWhite)
+            {
+                BecomeWhiteRoach();
+                return;
+            }
             ChooseSize();
             PickModel();
             if (models != null) modelsHome = models.localPosition;
@@ -782,6 +911,21 @@ namespace Game.Enemies
             nextWeb =Time.time + Random.Range(2f, Mathf.Max(2f, webCooldown.y));
             EnemyHitDamage.AnyHit += OnAnyHit;
             EnemyHitDamage.WeakHit += OnWeakHit;
+
+            if (anomaly)
+            {
+                BecomeAnomaly();
+                anomalyLeaveAt = Time.time + Random.Range(anomalyLifetime.x, Mathf.Max(anomalyLifetime.x, anomalyLifetime.y));
+                // A good throw kills it.
+                if (health != null) health.Value = startHealth = anomalyHealth;
+                if (hits != null) hits.Toughness = 1f;
+            }
+            if (Aggressive)
+            {
+                noticeOnSpawn = true;
+                // The others make way for it (lower goes first).
+                agent.avoidancePriority = 5;
+            }
 
             if (StartAppearing()) return;
             if (noticeOnSpawn) Notice(true);
@@ -850,6 +994,14 @@ namespace Game.Enemies
                 agent.updateRotation = resumeTurning;
             }
 
+            if (anomaly && Scurries(state))
+            {
+                DoScurry();
+                FallIfLifted();
+                if (flies) UpdateHeight();
+                return;
+            }
+
             switch (state)
             {
                 case State.Appear: DoAppear(); break;
@@ -866,6 +1018,7 @@ namespace Game.Enemies
                 case State.Dodge: DoDodge(); break;
                 case State.WebShot: DoWebShot(); break;
                 case State.WingsOff: DoWingsOff(); break;
+                case State.Hide: DoHide(); break;
             }
             FallIfLifted();
             if (flies) UpdateHeight();
@@ -887,11 +1040,11 @@ namespace Game.Enemies
 
             if (!noticed)
             {
-                if (hears || sees) Notice(true);
+                if (hears || sees || Aggressive) Notice(true);
                 return;
             }
 
-            if (hears || sees || distance <= sightRange) lastSeen = Time.time;
+            if (Aggressive || hears || sees || distance <= sightRange) lastSeen = Time.time;
             else if (distance > loseInterestRange && Time.time - lastSeen > loseInterestSeconds) CalmDown();
         }
 
@@ -1013,6 +1166,7 @@ namespace Game.Enemies
 
         private void CalmDown()
         {
+            if (Aggressive) return;
             noticed = false;
             GiveUpTurn();
             Enter(State.Idle, Random.Range(1f, 3f));
@@ -1116,6 +1270,11 @@ namespace Game.Enemies
             }
 
             if (TryStartWebShot(distance)) return;
+            if (Aggressive && !IsFlying)
+            {
+                PressIn(distance);
+                return;
+            }
             if (distance <= circleDistance + 0.6f)
             {
                 var orbit = OrbitCenter();
@@ -1126,10 +1285,23 @@ namespace Game.Enemies
             Run(PlayerFloor());
         }
 
+        // A mini boss resting between attacks doesn't circle: it stays right in front of the player, facing them.
+        private void PressIn(float distance)
+        {
+            if (distance > WindUpDistance() + 0.4f)
+            {
+                Run(PlayerFloor());
+                return;
+            }
+            Stop();
+            Face(PlayerFloor());
+            Play(IdleLook);
+        }
+
         // Circles the player at a distance, now and then turning round, until it may attack.
         private void DoCircle()
         {
-            if (TryTakeTurn())
+            if (TryTakeTurn() || (Aggressive && !IsFlying))
             {
                 Enter(State.Chase, 0f);
                 return;
@@ -1221,6 +1393,9 @@ namespace Game.Enemies
             pendingPush = Vector2.zero;
             // Just far enough to put its mouth where the player is now (a face leap stops just in front of the face).
             lungeTotal = lungeLeft = Mathf.Clamp(distance - move.reach * Size() - (move.leapToFace ? 0.1f : 0.05f), 0f, move.lunge);
+            passStarted = false;
+            passLeft = 0f;
+            shoveDistance = 0f;
             // A homing sting may go further, up to its whole budget, if the player backs off.
             if (HomingExtra > 0f && !move.leapToFace) lungeLeft = move.lunge + HomingExtra;
             Play(move.animation, true);
@@ -1261,13 +1436,21 @@ namespace Game.Enemies
                     lungeLeft -= step;
                 }
             }
-            if (move.leapToFace) Leap(t);
             // A face leap kicks off the face as it lets go.
             if (pendingPush != Vector2.zero && t >= move.hitUntil)
             {
                 Push(pendingPush.x, pendingPush.y);
+                shoveDistance = pendingPush.y * Game.Leveling.PlayerLevel.PushShare;
                 pendingPush = Vector2.zero;
             }
+            // ...and with Through Player it carries on through them instead of dropping back.
+            bool through = move.leapToFace && move.throughPlayer;
+            if (through && t >= move.hitUntil)
+            {
+                if (!passStarted) StartPass();
+                PassThrough();
+            }
+            if (move.leapToFace) Leap(t);
 
             if (!attackResolved && t >= move.hitFrom && t <= move.hitUntil) TryBite();
             if (!attackResolved && t > move.hitUntil)
@@ -1276,13 +1459,57 @@ namespace Game.Enemies
                 SendToOwnFsms("Missed");
             }
 
-            // A leaper waits until it's back on the floor.
-            if (Time.time < stateUntil || leapLift > 0.001f) return;
-            if (move.runAwayAfter) StartRunAway();
+            // A leaper waits until it's back on the floor (one going through, until it has landed behind the player).
+            if (Time.time < stateUntil || leapLift > 0.001f || (through && passLeft > 0.001f)) return;
+            if (through)
+            {
+                TurnRound();
+                return;
+            }
+            // A mini boss (Aggressive Boss) never runs off after a leap: it backs off a step and comes again.
+            if (move.runAwayAfter && !Aggressive) StartRunAway();
             else StartRetreat(retreatDistance * Rest, 0.6f * Rest);
         }
 
-        // Up to the player's face (it follows their head height while it clings), then a quickening drop.
+        // Through Player: from the face on past the player, landing Through Distance behind where its shove sends them
+        // (or short of a wall): it overtakes them as they're thrown back.
+        private void StartPass()
+        {
+            passStarted = true;
+            var across = PlayerFloor() - transform.position;
+            across.y = 0f;
+            passDirection = across.sqrMagnitude > 0.0001f ? across.normalized : transform.forward;
+            var from = transform.position;
+            var to = PlayerFloor() + passDirection * (shoveDistance + move.throughDistance);
+            to.y = from.y;
+            if (NavMesh.Raycast(from, to, out var wall, NavMesh.AllAreas)) to = wall.position - passDirection * 0.15f;
+            var flat = to - from;
+            flat.y = 0f;
+            passLeft = Mathf.Max(0f, Vector3.Dot(flat, passDirection));
+            // Fast, like the leap in: about 6 m/s, and never quicker than its normal drop.
+            passSeconds = Mathf.Max(leapRiseFall.y, passLeft / 6f);
+        }
+
+        private void PassThrough()
+        {
+            if (passLeft <= 0f) return;
+            float step = Mathf.Min(passLeft, passLeft / Mathf.Max(0.02f, passSeconds - (Time.time - attackStart - move.hitUntil)) * Time.deltaTime);
+            if (float.IsNaN(step) || step <= 0f) step = passLeft;
+            agent.Move(passDirection * step);
+            passLeft -= step;
+        }
+
+        // Landed behind the player: it whips round to face them, and its turn is over.
+        private void TurnRound()
+        {
+            GiveUpTurn();
+            nextAttack = Time.time + Random.Range(attackCooldown.x, attackCooldown.y) * Rest;
+            Stop();
+            Enter(State.Notice, 0.35f);
+        }
+
+        // Up to the player's face (it follows their head height while it clings), then a quickening drop (over the
+        // pass, for one going on through the player).
         private void Leap(float t)
         {
             float takeoff = Mathf.Max(0f, move.hitFrom - leapRiseFall.x);
@@ -1303,7 +1530,8 @@ namespace Game.Enemies
             }
             else
             {
-                float s = Mathf.Clamp01((t - move.hitUntil) / Mathf.Max(0.01f, leapRiseFall.y));
+                float fall = move.throughPlayer && passStarted ? passSeconds : leapRiseFall.y;
+                float s = Mathf.Clamp01((t - move.hitUntil) / Mathf.Max(0.01f, fall));
                 leapLift = leapDropFrom * (1f - s * s);
             }
             leapFallSpeed = 0f;
@@ -1517,12 +1745,9 @@ namespace Game.Enemies
             if (!fled && fleeBelowHealth > 0f && health != null && health.Value / startHealth <= fleeBelowHealth)
             {
                 fled = true;
-                var away = transform.position - PlayerFloor();
-                away.y = 0f;
-                var point = transform.position + (away.sqrMagnitude > 0.01f ? away.normalized : -transform.forward) * 5f;
-                if (NavMesh.SamplePosition(point, out var hit, 3f, NavMesh.AllAreas)) GoTo(hit.position, RunSpeed * 1.1f, true);
-                Enter(State.Flee, fleeSeconds);
-                SendToOwnFsms("Flee");
+                // Now and then it hides in a tree pumpkin instead (Hiding in pumpkins).
+                if (hideChance > 0f && !anomaly && Random.value < hideChance && StartHide(true)) return;
+                StartFlee();
                 return;
             }
             // A flier goes back up after a hit; one with a Stun Guard (a Pumpkin Butt boss) comes straight back instead.
@@ -1534,6 +1759,16 @@ namespace Game.Enemies
             Enter(noticed ? State.Chase : State.Idle, 1f);
         }
 
+        private void StartFlee()
+        {
+            var away = transform.position - PlayerFloor();
+            away.y = 0f;
+            var point = transform.position + (away.sqrMagnitude > 0.01f ? away.normalized : -transform.forward) * 5f;
+            if (NavMesh.SamplePosition(point, out var hit, 3f, NavMesh.AllAreas)) GoTo(hit.position, RunSpeed * 1.1f, true);
+            Enter(State.Flee, fleeSeconds);
+            SendToOwnFsms("Flee");
+        }
+
         private void DoFlee()
         {
             PlayMoving(RunLook, false);
@@ -1542,17 +1777,20 @@ namespace Game.Enemies
 
         // ---- Calling minions (bosses) ----
 
-        // Low on health a boss calls for help, once: a cry, every enemy around comes for the player, and its minions
-        // come out around it one after another, each waiting for room in the Enemy Limit. Nothing more once it's dead
+        // Low on health (or as it runs away) a boss calls for help, once: a cry, every enemy around comes for the player,
+        // and its minions come out around it one after another, each waiting for room in the Enemy Limit. Nothing more once it's dead
         // (Update no longer runs).
         private void UpdateCall()
         {
             if (minion == null || callBelowHealth <= 0f || health == null) return;
             if (!called)
             {
-                if (state == State.Appear || health.Value / startHealth > callBelowHealth) return;
+                if (state == State.Appear) return;
+                if (health.Value / startHealth > callBelowHealth && !(callWhenFleeing && fled)) return;
                 called = true;
                 minionsLeft = Random.Range(minionCount.x, Mathf.Max(minionCount.x, minionCount.y) + 1);
+                // As many as there's room for in the game.
+                if (minionsFillLimit) minionsLeft = Mathf.Max(minionCount.x, EnemyLimit.Max - EnemyLimit.AliveCount);
                 nextMinion = Time.time + 0.3f;
                 PlayOne(noticeSounds, true);
                 SendToOwnFsms("CallMinions");
@@ -1617,6 +1855,336 @@ namespace Game.Enemies
         {
             var holder = FsmVariables.GlobalVariables.FindFsmGameObject(SpawnedStuffVariable);
             return holder != null && holder.Value != null ? holder.Value.transform : null;
+        }
+
+        // ---- The white anomaly ----
+
+        // One in a hundred (Anomaly Chance) of the bugs that go for the player; never a boss.
+        private bool RollAnomaly()
+        {
+            if (size == SizeClass.Boss || target != TargetKind.Player) return false;
+            if (ForceNextAnomaly)
+            {
+                ForceNextAnomaly = false;
+                return true;
+            }
+            return anomalyChance > 0f && Random.value < anomalyChance;
+        }
+
+        // White all over, with its sparkles.
+        private void BecomeAnomaly()
+        {
+            noticeOnSpawn = false;
+            if (anomalyMaterial != null)
+            {
+                // Its body (the model variants); anything else it wears keeps its own look.
+                foreach (var r in GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                {
+                    var materials = r.sharedMaterials;
+                    for (int i = 0; i < materials.Length; i++) materials[i] = anomalyMaterial;
+                    r.sharedMaterials = materials;
+                }
+            }
+            if (anomalyGlow != null) Instantiate(anomalyGlow, transform.position + Vector3.up * 0.15f, Quaternion.identity, transform);
+            name += " (White)";
+        }
+
+        private static bool Scurries(State s) =>
+            s == State.Idle || s == State.Wander || s == State.Notice || s == State.Chase || s == State.Circle ||
+            s == State.Prepare || s == State.Attack || s == State.Retreat || s == State.WebShot;
+
+        // It never bites: it runs about, fast, among the other bugs and from tree pumpkin to tree pumpkin, away from the
+        // player when they come close. Its time up, it dives into the closest pumpkin and is gone.
+        private void DoScurry()
+        {
+            GiveUpTurn();
+            if (Time.time >= anomalyLeaveAt)
+            {
+                if (StartHide(true)) return;
+                // No pumpkin about: a little longer, then it slips away anyway.
+                if (Time.time >= anomalyLeaveAt + 4f)
+                {
+                    Vanish();
+                    return;
+                }
+            }
+            var fromPlayer = transform.position - PlayerFloor();
+            fromPlayer.y = 0f;
+            bool near = fromPlayer.sqrMagnitude < anomalyKeepAway * anomalyKeepAway;
+            bool arrived = !agent.pathPending && agent.remainingDistance <= 0.4f;
+            // Chased, and the player has got round in front of where it's running: it picks again at once.
+            bool headingIn = near && scurryAway && agent.hasPath &&
+                             FlatDistance(agent.destination, PlayerFloor()) < fromPlayer.magnitude;
+            if (Time.time >= nextScurryPick && (Time.time >= scurryUntil || arrived || (near && !scurryAway) || headingIn))
+            {
+                nextScurryPick = Time.time + 0.3f;
+                scurryAway = near;
+                Vector3 point;
+                if (near) point = AwayFromPlayer();
+                else
+                {
+                    // Not chased: it darts to another bug or to a tree pumpkin (a random one), to throw the player off,
+                    // but never towards the player.
+                    point = transform.position + Quaternion.Euler(0f, Random.Range(0f, 360f), 0f) * Vector3.forward * Random.Range(3f, 6f);
+                    float pick = Random.value;
+                    if (pick < 0.45f && RandomOtherBug(out var other)) point = other + Random.insideUnitSphere.normalized * 0.8f;
+                    else if (pick < 0.8f && FindPumpkin(false, 12f, out var pumpkin)) point = pumpkin.position + Random.insideUnitSphere.normalized * 0.5f;
+                    if (!KeepsAway(point)) point = AwayFromPlayer();
+                }
+                if (NavMesh.SamplePosition(point, out var hit, 2.5f, NavMesh.AllAreas)) GoTo(hit.position, RunSpeed * anomalySpeed, true);
+                scurryUntil = Time.time + (near ? Random.Range(0.6f, 1.2f) : Random.Range(1f, 2.2f));
+            }
+            PlayMoving(RunLook, false);
+        }
+
+        // Where the white bug runs when the player comes close: of a ring of spots round it (cut short by walls), the one
+        // furthest from the player, not past them on the way. Cornered, that's along the wall.
+        private Vector3 AwayFromPlayer()
+        {
+            var from = transform.position;
+            var playerAt = PlayerFloor();
+            var best = from;
+            float bestScore = float.MinValue;
+            float turn = Random.Range(0f, 360f);
+            for (int i = 0; i < 10; i++)
+            {
+                var to = from + Quaternion.Euler(0f, turn + i * 36f, 0f) * Vector3.forward * Random.Range(3f, 6f);
+                if (NavMesh.Raycast(from, to, out var wall, NavMesh.AllAreas)) to = wall.position;
+                float score = FlatDistance(to, playerAt) + 0.5f * Mathf.Min(PassesBy(from, to, playerAt), anomalyKeepAway) +
+                              Random.value * 0.5f;
+                if (score <= bestScore) continue;
+                bestScore = score;
+                best = to;
+            }
+            return best;
+        }
+
+        // A spot the white bug may run to: at least Anomaly Keep Away from the player, and not past them on the way.
+        private bool KeepsAway(Vector3 point)
+        {
+            var playerAt = PlayerFloor();
+            return FlatDistance(point, playerAt) >= anomalyKeepAway &&
+                   PassesBy(transform.position, point, playerAt) >= anomalyKeepAway * 0.75f;
+        }
+
+        // How close a straight run from one spot to another comes to a point (flat, in metres).
+        private static float PassesBy(Vector3 from, Vector3 to, Vector3 point)
+        {
+            var run = to - from;
+            run.y = 0f;
+            var off = point - from;
+            off.y = 0f;
+            float along = run.sqrMagnitude > 0.0001f ? Mathf.Clamp01(Vector3.Dot(off, run) / run.sqrMagnitude) : 0f;
+            return (off - run * along).magnitude;
+        }
+
+        private static float FlatDistance(Vector3 a, Vector3 b)
+        {
+            a.y = b.y;
+            return Vector3.Distance(a, b);
+        }
+
+        // ---- Hiding in a tree pumpkin ----
+
+        // Off to the closest (or a random) tree pumpkin lying on the floor within reach. False if there's none.
+        private bool StartHide(bool closest)
+        {
+            float range = anomaly ? 15f : hideRange;
+            if (!FindPumpkin(closest, range, out var pumpkin) || !RottingPumpkin.Claim(pumpkin.gameObject)) return false;
+            hideTarget = pumpkin;
+            GiveUpTurn();
+            StopShooting();
+            nextHidePath = 0f;
+            // Long enough to get there; it gives up (and runs off) if it can't.
+            Enter(State.Hide, 3f + range / Mathf.Max(0.5f, RunSpeed));
+            SendToOwnFsms("Flee");
+            return true;
+        }
+
+        private void DoHide()
+        {
+            if (!PumpkinStillThere(hideTarget))
+            {
+                GiveUpHiding();
+                return;
+            }
+            var to = hideTarget.position;
+            if (Time.time >= nextHidePath)
+            {
+                nextHidePath = Time.time + RepathEvery;
+                GoTo(NavMesh.SamplePosition(to, out var spot, 1f, NavMesh.AllAreas) ? spot.position : to,
+                    RunSpeed * (anomaly ? anomalySpeed : 1.15f), true);
+            }
+            PlayMoving(RunLook, false);
+            var flat = to - transform.position;
+            flat.y = 0f;
+            if (flat.magnitude <= 0.55f + 0.2f * Size())
+            {
+                DiveIn();
+                return;
+            }
+            // The player got close to the white one on its way: it runs off, and tries another pumpkin in a moment.
+            if (anomaly && FlatDistance(transform.position, PlayerFloor()) < anomalyKeepAway * 0.75f)
+            {
+                GiveUpHiding();
+                return;
+            }
+            if (Time.time >= stateUntil) GiveUpHiding();
+        }
+
+        // The pumpkin went (broken, picked up, taken) or it couldn't get there: a roach runs off instead; the white one
+        // carries on scurrying (and tries again in a moment).
+        private void GiveUpHiding()
+        {
+            if (hideTarget != null) RottingPumpkin.Release(hideTarget.gameObject);
+            hideTarget = null;
+            if (anomaly)
+            {
+                anomalyLeaveAt = Mathf.Max(anomalyLeaveAt, Time.time + 1.5f);
+                Enter(State.Idle, 0f);
+                return;
+            }
+            StartFlee();
+        }
+
+        // Into the pumpkin: the white one is gone; a roach stays inside it (unseen) while it rots.
+        private void DiveIn()
+        {
+            var pumpkin = hideTarget.gameObject;
+            hideTarget = null;
+            var at = pumpkin.transform.position;
+            if (rotPuffs.Length > 0 && rotPuffs[0] != null) EffectPool.Play(rotPuffs[0], at, 0.4f);
+            if (rotSquashSound != null) AudioSource.PlayClipAtPoint(rotSquashSound, at, 0.6f);
+            if (anomaly)
+            {
+                RottingPumpkin.Release(pumpkin);
+                Vanish();
+                return;
+            }
+
+            Stop();
+            state = State.Hide;
+            // Shrunk away to nothing inside it (its colliders off, so nothing bumps it there).
+            foreach (var c in GetComponentsInChildren<Collider>(true)) c.enabled = false;
+            agent.enabled = false;
+            // Its own body rides along inside the pumpkin, held still.
+            if (TryGetComponent(out Rigidbody own))
+            {
+                own.isKinematic = true;
+                own.detectCollisions = false;
+            }
+            // Not a child of the pumpkin (it would go when the pumpkin breaks, before its death plays): the pumpkin keeps
+            // it inside itself (Rotting Pumpkin).
+            transform.position = at;
+            transform.localScale = Vector3.one * 0.001f;
+            enabled = false;
+            RottingPumpkin.Begin(pumpkin, gameObject, new RottingPumpkin.Settings
+            {
+                burstPrefab = hideBurst != null ? hideBurst.prefab : null, burstCount = hideBurstCount, rotSeconds = rotSeconds, puffs = rotPuffs,
+                burstEffects = rotBurstEffects, hiss = rotHiss, burstSound = rotBurstSound, squashSound = rotSquashSound,
+                pieces = rotPieces,
+            });
+        }
+
+        // The white bug slips away: a white burst, "GONE!", and no reward.
+        private void Vanish()
+        {
+            var at = transform.position + Vector3.up * 0.1f;
+            if (anomalyPop != null) EffectPool.Play(anomalyPop, at);
+            Game.VFX.FloatingWords.Show("GONE!", new Color(0.85f, 0.9f, 1f), at + Vector3.up * 0.3f);
+            if (TryGetComponent(out EnemyHitDamage hits)) hits.noReward = true;
+            state = State.Dead;
+            Destroy(gameObject);
+        }
+
+        // A tree pumpkin (it has Break On Thrown Hit) lying on the floor near its height, whole, not in a hand, not
+        // taken by another roach, on floor it can walk to: the closest, or a random one, within this range.
+        private bool FindPumpkin(bool closest, float range, out Transform found)
+        {
+            found = null;
+            float best = float.MaxValue;
+            int seen = 0;
+            foreach (var p in FindObjectsByType<Game.Weapons.BreakOnThrownHit>(FindObjectsSortMode.None))
+            {
+                var t = p.transform;
+                if (!PumpkinStillThere(t) || RottingPumpkin.IsTaken(p.gameObject)) continue;
+                if (Mathf.Abs(t.position.y - transform.position.y) > 0.8f) continue;
+                var flat = t.position - transform.position;
+                flat.y = 0f;
+                float d = flat.magnitude;
+                if (d > range || !NavMesh.SamplePosition(t.position, out _, 1f, NavMesh.AllAreas)) continue;
+                // The white one keeps away from the player: none near them, or past them.
+                if (anomaly && !KeepsAway(t.position)) continue;
+                if (closest)
+                {
+                    if (d < best) { best = d; found = t; }
+                }
+                else if (Random.Range(0, ++seen) == 0) found = t;
+            }
+            return found != null;
+        }
+
+        private static bool PumpkinStillThere(Transform pumpkin)
+        {
+            if (pumpkin == null || !pumpkin.gameObject.activeInHierarchy) return false;
+            if (pumpkin.TryGetComponent(out XRGrabInteractable grab) && grab.isSelected) return false;
+            if (pumpkin.TryGetComponent(out Rigidbody body) && body.isKinematic) return false;
+            foreach (var fsm in pumpkin.GetComponents<PlayMakerFSM>())
+            {
+                if (fsm.FsmName != "Health") continue;
+                var hp = fsm.FsmVariables.FindFsmFloat("health");
+                if (hp != null && hp.Value <= 0f) return false;
+            }
+            return true;
+        }
+
+        // Somewhere near another bug that goes for the player (the white one runs among them), not one near the player.
+        private bool RandomOtherBug(out Vector3 at)
+        {
+            at = default;
+            int seen = 0;
+            foreach (var other in spiders)
+            {
+                if (other == this || other.anomaly || other.state == State.Dead || other.GoesForObject) continue;
+                if ((other.transform.position - transform.position).sqrMagnitude > 144f) continue;
+                if (!KeepsAway(other.transform.position)) continue;
+                if (Random.Range(0, ++seen) == 0) at = other.transform.position;
+            }
+            return seen > 0;
+        }
+
+        // A white bug of another kind (a spider, a bee): a small white roach takes its place.
+        private void BecomeWhiteRoach()
+        {
+            var at = transform.position;
+            if (NavMesh.SamplePosition(at, out var hit, 4f, NavMesh.AllAreas)) at = hit.position;
+            ForceNextAnomaly = true;
+            makingWhite = true;
+            try
+            {
+                Instantiate(anomalyBody, at, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f), transform.parent);
+            }
+            finally
+            {
+                makingWhite = false;
+                ForceNextAnomaly = false;
+            }
+            state = State.Dead;
+            gameObject.SetActive(false);
+            Destroy(gameObject);
+        }
+
+        // Killed by the player (not by a fall): the Candy Helmet for a few seconds.
+        private void AnomalyKilled()
+        {
+            if (!TryGetComponent(out EnemyHitDamage hits) || hits.noReward) return;
+            var at = hits.BodyCenter;
+            if (anomalyPop != null) EffectPool.Play(anomalyPop, at);
+            if (anomalyRewardSound != null) AudioSource.PlayClipAtPoint(anomalyRewardSound, at);
+            if (anomalyHelmetSeconds <= 0f) return;
+            Game.Leveling.PlayerBuffs.Give(Game.Leveling.Buff.CandyHelmet, anomalyHelmetSeconds);
+            Game.VFX.FloatingWords.Show("CANDY HELMET!", Game.Leveling.PlayerBuffs.ColorOf(Game.Leveling.Buff.CandyHelmet),
+                at + Vector3.up * 0.35f);
         }
 
         // ---- Losing its wings ----
@@ -1694,6 +2262,8 @@ namespace Game.Enemies
         private float TargetHeight()
         {
             if (grounded || state == State.Dead) return 0f;
+            // The white bee flies at chest height, where it can be caught.
+            if (anomaly && state != State.Appear) return wanderHeight + 0.5f;
             switch (state)
             {
                 case State.Appear:
@@ -1744,7 +2314,7 @@ namespace Game.Enemies
         private void GoHigh()
         {
             GiveUpTurn();
-            nextAttack = Time.time + Random.Range(highWait.x, Mathf.Max(highWait.x, highWait.y));
+            nextAttack = Time.time + Random.Range(highWait.x, Mathf.Max(highWait.x, highWait.y)) * (Aggressive ? 0.5f : 1f);
             nextCruiseChange = 0f;
             var center = OrbitCenter();
             orbitAngle = Mathf.Atan2(transform.position.z - center.z, transform.position.x - center.x) * Mathf.Rad2Deg;
@@ -2119,6 +2689,7 @@ namespace Game.Enemies
         // The Health FSM plays the death; the brain only lets go.
         private void Die()
         {
+            if (anomaly && state != State.Dead) AnomalyKilled();
             state = State.Dead;
             GiveUpTurn();
             StopShooting();
@@ -2240,8 +2811,8 @@ namespace Game.Enemies
 
         private void Run(Vector3 point, float speedShare = 1f)
         {
-            // Skittering: bursts of running with tiny stops in between.
-            bool skitters = skitter && !IsFlying;
+            // Skittering: bursts of running with tiny stops in between. A mini boss runs straight at the player.
+            bool skitters = skitter && !IsFlying && !Aggressive;
             if (skitters && Time.time >= burstUntil)
             {
                 pausing = !pausing;
@@ -2381,6 +2952,8 @@ namespace Game.Enemies
                     : roll < normal.weight + small.weight ? SizeClass.Small
                     : SizeClass.Boss;
             }
+            // The white bug is always a small one.
+            if (anomaly) kindName = SizeClass.Small;
             kind = kindName switch
             {
                 SizeClass.Small => small,

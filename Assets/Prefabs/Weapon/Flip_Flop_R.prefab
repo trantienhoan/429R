@@ -6714,11 +6714,27 @@ MonoBehaviour:
   radius: 0.15
   damage: 3
   push: 4
+  playerEvent: Damage
   breakApart: 0
+  shakeToCharge: 0
+  charge:
+  - {x: 1, y: 0.5}
+  - {x: 2, y: 1}
+  - {x: 2.5, y: 1.25}
+  - {x: 3, y: 1.5}
+  chargeDamage: {x: 3, y: 8}
+  chargePush: {x: 4, y: 10}
+  shakeStrength: 20
+  inHandEvent: DamageHeavy
+  shakeSound: {fileID: 0}
+  shakeVolume: 0.8
+  warningSound: {fileID: 0}
+  warnBefore: 0.7
   effects:
   - {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
   - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}
   - {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac, type: 3}
+  effectSize: 0.7
   sound: {fileID: 8300000, guid: 0c38739de2059ac40ab5b60a42fd1c5f, type: 3}
   volume: 1
   rumbleStrength: 1
@@ -6735,13 +6751,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 982a9014cc7640d408db134d5e3bdf8f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Weapons.HitRumble
-  minHitSpeed: 1
-  fullHitSpeed: 12
-  minStrength: 0.2
-  maxStrength: 1
-  duration: 0.06
-  cooldown: 0.08
   ignoreTag: Player
+  quietAfterGrab: 0.3
 --- !u!114 &229750604706596611
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6755,6 +6766,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.WeaponPower
   power: 1.2
+  damage: 1
 --- !u!1 &5853063292150961962
 GameObject:
   m_ObjectHideFlags: 0

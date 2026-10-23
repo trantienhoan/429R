@@ -72,7 +72,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2331266065811276141}
   serializedVersion: 5
-  m_Mass: 520
+  m_Mass: 1000
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -609,7 +609,7 @@ MonoBehaviour:
         tooltip: 
         showInInspector: 0
         networkSync: 0
-        value: 14
+        value: 25
       intVariables: []
       boolVariables: []
       stringVariables: []
@@ -1591,7 +1591,11 @@ MonoBehaviour:
   knockBackTime: 0.45
   knockBackHop: 0.25
   knockBackStun: 0.3
+  strayToughness: 1
+  hitEffectSize: 1
+  hideHitEffect: 0
   exp: 0
+  expOrbs: 1
   healthFsm: Health
   healthVariable: health
   hitEvent: Damage

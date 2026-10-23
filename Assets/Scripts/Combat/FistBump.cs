@@ -6,7 +6,8 @@ namespace Game.Combat
     /// <summary>
     /// Notices the player bumping their two fists together: both hands are fists (Fist), the fists touch, and each
     /// hand was moving towards the other (so a punch flying past the other fist doesn't count). Each bump clanks like two
-    /// knight gauntlets and flashes a little star where the fists meet (Feedback), so the player notices it counted.
+    /// knight gauntlets over a heavy punch thump, and a hit goes off where the fists meet (Feedback: Fist_Bump_Impact, a
+    /// flash, a spiky blast, rays and cartoon stars), so the player notices it counted.
     /// Two bumps in a row (Double Bump Seconds) is the double bump that opens the Level Up menu.
     /// Goes on the XR Origin; it finds the two Fists on the controllers by itself.
     /// </summary>
@@ -28,8 +29,8 @@ namespace Game.Combat
         [SerializeField] private float rumble = 0.6f;
 
         [Header("Feedback")]
-        [Tooltip("A little flash where the fists meet at each bump (e.g. Flash_star_ellow_purple). The second bump of a " +
-                 "double bump makes it twice as big. Empty = none.")]
+        [Tooltip("The hit where the fists meet at each bump (Fist_Bump_Impact; Tools > 429 Game > Player > Punchier Fist " +
+                 "Bump makes it). The second bump of a double bump makes it twice as big. Empty = none.")]
         [SerializeField] private GameObject bumpEffect;
         [Tooltip("Size of the flash: this many times its prefab's own size. 0 = no flash.")]
         [Min(0f)]
@@ -38,6 +39,10 @@ namespace Game.Combat
         [SerializeField] private AudioClip bumpSound;
         [Range(0f, 1f)]
         [SerializeField] private float bumpVolume = 0.6f;
+        [Tooltip("A heavy punch thump played under the clank (e.g. fist_bump_punch), so the bump feels like a hit. Empty = none.")]
+        [SerializeField] private AudioClip punchSound;
+        [Range(0f, 1f)]
+        [SerializeField] private float punchVolume = 0.8f;
 
         // The fists must come this much farther apart again, in metres, before the next bump counts.
         private const float PartGap = 0.05f;
@@ -122,6 +127,7 @@ namespace Game.Combat
         {
             if (bumpEffect != null && bumpEffectSize > 0f) EffectPool.Play(bumpEffect, at, bumpEffectSize * size);
             if (bumpSound != null && bumpVolume > 0f) AudioSource.PlayClipAtPoint(bumpSound, at, bumpVolume);
+            if (punchSound != null && punchVolume > 0f) AudioSource.PlayClipAtPoint(punchSound, at, punchVolume * Mathf.Min(size, 1.25f));
         }
     }
 }

@@ -442,6 +442,8 @@ namespace Game.Combat
                 sparkleBlock = new MaterialPropertyBlock();
             }
             if (sparkleRenderer == null) return;
+            // The renderer can outlive the block (Unity keeps it through a script reload; the block it doesn't).
+            sparkleBlock ??= new MaterialPropertyBlock();
             sparkleBlock.SetColor(ColorId, new Color(1f, 1f, 1f, alpha));
             sparkleRenderer.SetPropertyBlock(sparkleBlock);
         }

@@ -26,9 +26,10 @@ namespace Game.Enemies
             waves.Remove(spawner);
         }
 
+        /// <summary>Counts the enemy in the spawner's wave. Not the rare white bug: it only runs, and the wave doesn't wait for it.</summary>
         public static void Add(object spawner, GameObject enemy)
         {
-            if (spawner == null || enemy == null) return;
+            if (spawner == null || enemy == null || SpiderBrain.IsAnomalyBug(enemy)) return;
             if (!waves.TryGetValue(spawner, out var list)) waves[spawner] = list = new List<GameObject>();
             if (!list.Contains(enemy)) list.Add(enemy);
         }

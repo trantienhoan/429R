@@ -8124,6 +8124,8 @@ MonoBehaviour:
     fsmEvent: 
     leapToFace: 0
     runAwayAfter: 0
+    throughPlayer: 0
+    throughDistance: 1.2
     slowPlayerTo: 1
     slowSeconds: 0
     pushPower: 1
@@ -8146,6 +8148,8 @@ MonoBehaviour:
     fsmEvent: 
     leapToFace: 0
     runAwayAfter: 0
+    throughPlayer: 0
+    throughDistance: 1.2
     slowPlayerTo: 1
     slowSeconds: 0
     pushPower: 1
@@ -8168,6 +8172,8 @@ MonoBehaviour:
     fsmEvent: 
     leapToFace: 0
     runAwayAfter: 0
+    throughPlayer: 0
+    throughDistance: 1.2
     slowPlayerTo: 1
     slowSeconds: 0
     pushPower: 1
@@ -8242,6 +8248,7 @@ MonoBehaviour:
   growSeconds: 7
   hitEffect: {fileID: 0}
   setOnDeath: []
+  aggressiveBoss: 1
   minion: {fileID: 0}
   callBelowHealth: 0.4
   minionCount: {x: 3, y: 5}
@@ -8251,6 +8258,33 @@ MonoBehaviour:
   minionEffect: {fileID: 0}
   rallyRange: 20
   minionsUseEnemyLimit: 1
+  minionsFillLimit: 0
+  callWhenFleeing: 1
+  hideChance: 0
+  hideRange: 6
+  hideBurst: {fileID: 0}
+  hideBurstCount: 3
+  rotSeconds: 5.5
+  rotPuffs: []
+  rotBurstEffects: []
+  rotHiss: []
+  rotBurstSound: {fileID: 0}
+  rotSquashSound: {fileID: 0}
+  rotPieces: {fileID: 0}
+  anomalyChance: 0.01
+  anomalySpeed: 1.5
+  anomalyHelmetSeconds: 10
+  anomalyKeepAway: 6
+  anomalyMaterial: {fileID: 2100000, guid: 2b88837f084dd994384e9090fe3adfe6, type: 2}
+  anomalyGlow: {fileID: 4407701992690780987, guid: 3a11fd1285525cc42b8f958c9ae28848,
+    type: 3}
+  anomalyPop: {fileID: 1937718453956067109, guid: a43d1c8d30bba3040ac7f5cba9a7022d,
+    type: 3}
+  anomalyRewardSound: {fileID: 8300000, guid: e099ffdff64cfea48992357c5acf46a2, type: 3}
+  anomalyBody: {fileID: 8879391879696220359, guid: 05da503bb47783844a68712d2fd9719c,
+    type: 3}
+  anomalyLifetime: {x: 25, y: 40}
+  anomalyHealth: 2
   noticeSounds:
   - {fileID: 8300000, guid: 1e84af0fd5b41824d81c02dcfd140605, type: 3}
   - {fileID: 8300000, guid: 6e047f42e49fd8c498f29da9b09ad2f5, type: 3}

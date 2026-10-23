@@ -26,7 +26,7 @@ PrefabInstance:
     - target: {fileID: 679559184592435696, guid: ffdaad9fea2921d449f30b386c41b1a7,
         type: 3}
       propertyPath: toughness
-      value: 2
+      value: 2.5
       objectReference: {fileID: 0}
     - target: {fileID: 679559184592435696, guid: ffdaad9fea2921d449f30b386c41b1a7,
         type: 3}
@@ -56,7 +56,7 @@ PrefabInstance:
     - target: {fileID: 3403500053744978270, guid: ffdaad9fea2921d449f30b386c41b1a7,
         type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5432127017008514071, guid: ffdaad9fea2921d449f30b386c41b1a7,
         type: 3}
@@ -121,6 +121,21 @@ PrefabInstance:
         type: 3}
     - target: {fileID: 7343046779444146590, guid: ffdaad9fea2921d449f30b386c41b1a7,
         type: 3}
+      propertyPath: attackRange
+      value: 2.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 7343046779444146590, guid: ffdaad9fea2921d449f30b386c41b1a7,
+        type: 3}
+      propertyPath: minionGap.x
+      value: 0.15
+      objectReference: {fileID: 0}
+    - target: {fileID: 7343046779444146590, guid: ffdaad9fea2921d449f30b386c41b1a7,
+        type: 3}
+      propertyPath: minionGap.y
+      value: 0.35
+      objectReference: {fileID: 0}
+    - target: {fileID: 7343046779444146590, guid: ffdaad9fea2921d449f30b386c41b1a7,
+        type: 3}
       propertyPath: minionEffect
       value: 
       objectReference: {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac,
@@ -128,17 +143,37 @@ PrefabInstance:
     - target: {fileID: 7343046779444146590, guid: ffdaad9fea2921d449f30b386c41b1a7,
         type: 3}
       propertyPath: boss.health.x
-      value: 31
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 7343046779444146590, guid: ffdaad9fea2921d449f30b386c41b1a7,
         type: 3}
       propertyPath: boss.health.y
-      value: 35
+      value: 56
+      objectReference: {fileID: 0}
+    - target: {fileID: 7343046779444146590, guid: ffdaad9fea2921d449f30b386c41b1a7,
+        type: 3}
+      propertyPath: callBelowHealth
+      value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 7343046779444146590, guid: ffdaad9fea2921d449f30b386c41b1a7,
+        type: 3}
+      propertyPath: minionsFillLimit
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7343046779444146590, guid: ffdaad9fea2921d449f30b386c41b1a7,
+        type: 3}
+      propertyPath: stunGuardSeconds
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 7343046779444146590, guid: ffdaad9fea2921d449f30b386c41b1a7,
         type: 3}
       propertyPath: setOnDeath.Array.size
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7343046779444146590, guid: ffdaad9fea2921d449f30b386c41b1a7,
+        type: 3}
+      propertyPath: attacks.Array.data[1].lunge
+      value: 2.6
       objectReference: {fileID: 0}
     - target: {fileID: 7343046779444146590, guid: ffdaad9fea2921d449f30b386c41b1a7,
         type: 3}
@@ -149,6 +184,11 @@ PrefabInstance:
         type: 3}
       propertyPath: setOnDeath.Array.data[0].value
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7343046779444146590, guid: ffdaad9fea2921d449f30b386c41b1a7,
+        type: 3}
+      propertyPath: attacks.Array.data[1].maxDistance
+      value: 2.8
       objectReference: {fileID: 0}
     - target: {fileID: 7343046779444146590, guid: ffdaad9fea2921d449f30b386c41b1a7,
         type: 3}

@@ -7197,6 +7197,8 @@ MonoBehaviour:
     fsmEvent: 
     leapToFace: 0
     runAwayAfter: 0
+    throughPlayer: 0
+    throughDistance: 1.2
     slowPlayerTo: 1
     slowSeconds: 0
     pushPower: 1.3
@@ -7219,6 +7221,8 @@ MonoBehaviour:
     fsmEvent: 
     leapToFace: 1
     runAwayAfter: 1
+    throughPlayer: 1
+    throughDistance: 1.2
     slowPlayerTo: 0.35
     slowSeconds: 1.5
     pushPower: 2.5
@@ -7241,6 +7245,8 @@ MonoBehaviour:
     fsmEvent: 
     leapToFace: 0
     runAwayAfter: 0
+    throughPlayer: 0
+    throughDistance: 1.2
     slowPlayerTo: 1
     slowSeconds: 0
     pushPower: 2.5
@@ -7315,6 +7321,7 @@ MonoBehaviour:
   growSeconds: 7
   hitEffect: {fileID: 0}
   setOnDeath: []
+  aggressiveBoss: 1
   minion: {fileID: 0}
   callBelowHealth: 0.4
   minionCount: {x: 3, y: 5}
@@ -7324,6 +7331,37 @@ MonoBehaviour:
   minionEffect: {fileID: 0}
   rallyRange: 20
   minionsUseEnemyLimit: 1
+  minionsFillLimit: 0
+  callWhenFleeing: 1
+  hideChance: 0
+  hideRange: 6
+  hideBurst: {fileID: 11400000, guid: 54fc3212bafc3cf41881974728f5fa5b, type: 2}
+  hideBurstCount: 3
+  rotSeconds: 5.5
+  rotPuffs:
+  - {fileID: 4774269423018728791, guid: 363e7368242b41d40bcaf1733a7ed45e, type: 3}
+  rotBurstEffects:
+  - {fileID: 4774269423018728791, guid: 363e7368242b41d40bcaf1733a7ed45e, type: 3}
+  - {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac, type: 3}
+  rotHiss:
+  - {fileID: 8300000, guid: a4b58480c18e0374e9c1d2b386d637a0, type: 3}
+  rotBurstSound: {fileID: 8300000, guid: fa130e6cf4c8cb84eb979ef3ddbaff63, type: 3}
+  rotSquashSound: {fileID: 8300000, guid: 96a7abdb3843a074faa2d85edbff8584, type: 3}
+  rotPieces: {fileID: 6470502820101553460, guid: dd7824eba498c3d43b713291ed16e64d,
+    type: 3}
+  anomalyChance: 0.01
+  anomalySpeed: 1.5
+  anomalyHelmetSeconds: 10
+  anomalyKeepAway: 6
+  anomalyMaterial: {fileID: 2100000, guid: 85c4c9b971c18794f9e18ae97fee7dfd, type: 2}
+  anomalyGlow: {fileID: 4407701992690780987, guid: 3a11fd1285525cc42b8f958c9ae28848,
+    type: 3}
+  anomalyPop: {fileID: 1937718453956067109, guid: a43d1c8d30bba3040ac7f5cba9a7022d,
+    type: 3}
+  anomalyRewardSound: {fileID: 8300000, guid: e099ffdff64cfea48992357c5acf46a2, type: 3}
+  anomalyBody: {fileID: 0}
+  anomalyLifetime: {x: 25, y: 40}
+  anomalyHealth: 2
   noticeSounds:
   - {fileID: 8300000, guid: 1e84af0fd5b41824d81c02dcfd140605, type: 3}
   - {fileID: 8300000, guid: 6e047f42e49fd8c498f29da9b09ad2f5, type: 3}

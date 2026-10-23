@@ -278,14 +278,15 @@ namespace Game.Bonus
             return seed != null ? inventory.GetCount(seed) : 0;
         }
 
-        // Enemies still alive: bugs and bosses that give EXP (not furniture, doors or the start pumpkin, and not the ones a
-        // broken wall's portal keeps letting in).
+        // Enemies still alive: bugs and bosses that give EXP (not furniture, doors or the start pumpkin, not the ones a
+        // broken wall's portal keeps letting in, and not the rare white bug).
         private static int AliveEnemies()
         {
             int alive = 0;
             foreach (var enemy in FindObjectsByType<EnemyHitDamage>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
             {
-                if (enemy.enabled && enemy.CountsAsKill && !enemy.IsDead && !Game.Enemies.WallPortal.IsPortalEnemy(enemy.gameObject)) alive++;
+                if (enemy.enabled && enemy.CountsAsKill && !enemy.IsDead && !Game.Enemies.WallPortal.IsPortalEnemy(enemy.gameObject) &&
+                    !Game.Enemies.SpiderBrain.IsAnomalyBug(enemy.gameObject)) alive++;
             }
             return alive;
         }

@@ -131,6 +131,10 @@ namespace Game.Combat
         // A hit this close to the head counts as on it: this share of the enemy's size, at least Min Head Reach metres.
         private const float HeadShare = 0.3f;
         private const float MinHeadReach = 0.12f;
+        // A throw counts as in the face (a headshot) this far to the front of its body (share of half its depth) and
+        // this high up it (share of its height).
+        private const float FaceFront = 0.35f;
+        private const float FaceUp = 0.4f;
 
         /// <summary>Raised after every hit that hurts an enemy: the enemy, and what the hit did.</summary>
         public static event Action<EnemyHitDamage, HitResult> AnyHit;
@@ -173,6 +177,13 @@ namespace Game.Combat
         /// orbs. See PlayerLevel.NoRewardFor.
         /// </summary>
         [NonSerialized] public bool noReward;
+
+        /// <summary>Its Toughness (set while the game runs, e.g. for the white bug; not saved).</summary>
+        public float Toughness
+        {
+            get => toughness;
+            set => toughness = Mathf.Max(0.1f, value);
+        }
 
         /// <summary>Gold EXP orbs fly from it when it dies: an enemy (not furniture) that gives EXP, with EXP Orbs ticked.</summary>
         public bool ShowsExpOrbs => expOrbs && !furniture && exp > 0 && !noReward;
@@ -302,9 +313,56 @@ namespace Game.Combat
                 Die();
                 HoldStill();
             }
+            // A thrown thing that hurt it on the head: a headshot (it's knocked out, instead of the big hit's knock-back).
+            var at = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
+            bool headshot = !furniture && !stray && Settings.Headshots && IsThrown(collision) && (IsHead(at) || IsFace(at));
+            if (headshot) Headshot();
             // A big killing blow still knocks the body back: Knockback moves the agent itself, which works while it's held.
-            if (hit.IsBig && knockBack && !stray) KnockBackFromPlayer();
+            else if (hit.IsBig && knockBack && !stray) KnockBackFromPlayer();
             AnyHit?.Invoke(this, hit);
+        }
+
+        // In its face: the front third of its body, from its middle up (small bugs' head bones sit mid-body, and a throw
+        // at the face lands on their front legs).
+        private bool IsFace(Vector3 point)
+        {
+            if (!TryGetBodyBounds(out var body)) return false;
+            var forward = transform.forward;
+            float frontExtent = Vector3.Dot(body.extents, new Vector3(Mathf.Abs(forward.x), Mathf.Abs(forward.y), Mathf.Abs(forward.z)));
+            float front = Vector3.Dot(point - body.center, forward) / Mathf.Max(0.01f, frontExtent);
+            float up = (point.y - body.min.y) / Mathf.Max(0.01f, body.size.y);
+            return front >= FaceFront && up >= FaceUp;
+        }
+
+        // Let go a moment ago and still flying: a throw (not a fist, not a weapon in the hand, not a shot).
+        private static bool IsThrown(Collision collision)
+        {
+            var source = collision.rigidbody;
+            return source != null && source.TryGetComponent<XRGrabInteractable>(out var thrown) && !thrown.isSelected &&
+                   HeldThings.InUse(thrown);
+        }
+
+        // Its words and bonk, the bonus EXP, and the knock-out (no extra damage; a dead body is just thrown back).
+        private void Headshot()
+        {
+            var head = FindHeadPoint();
+            Settings.PlayHeadshot(head);
+            if (Settings.HeadshotExp > 0f) Game.Leveling.PlayerLevel.AddExp(Settings.HeadshotExp);
+            var push = Settings.HeadshotPush;
+            if (dead) KnockBack(push.x, push.y);
+            else KnockOut(0f, push.x, push.y, Settings.HeadshotStunSeconds);
+        }
+
+        // Where its head is (its "Head" child), or the top of its body.
+        private Vector3 FindHeadPoint()
+        {
+            if (!headSearched)
+            {
+                headSearched = true;
+                head = FindHead();
+            }
+            if (head != null) return head.position;
+            return TryGetBodyBounds(out var body) ? new Vector3(body.center.x, body.max.y, body.center.z) : transform.position;
         }
 
         // Its health has run out, however that happened: the player gets its EXP, once (not when No Reward is set).

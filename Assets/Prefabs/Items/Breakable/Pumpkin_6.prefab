@@ -5715,6 +5715,7 @@ GameObject:
   - component: {fileID: 907737880494110718}
   - component: {fileID: 7765225662351206726}
   - component: {fileID: 1539139356228216866}
+  - component: {fileID: 7549725334619885344}
   m_Layer: 0
   m_Name: Pumpkin_6
   m_TagString: Weapon
@@ -9138,6 +9139,30 @@ MonoBehaviour:
   hitSettings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
   toughness: 1
   staminaPerDamage: 6
+  healthFsm: Health
+  healthVariable: health
+--- !u!114 &7549725334619885344
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8690403555129543112}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 836efa7fdb1883740824a85ef8e1ac0e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.PlayGround.PumpkinBoom
+  effects:
+  - {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
+  - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}
+  - {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac, type: 3}
+  size: 1.4
+  maxSize: 2.5
+  sounds:
+  - {fileID: 8300000, guid: 9fa3ff2a48ede5a43bc3e1b550e1dc2d, type: 3}
+  - {fileID: 8300000, guid: fa130e6cf4c8cb84eb979ef3ddbaff63, type: 3}
+  volume: 1
   healthFsm: Health
   healthVariable: health
 --- !u!1 &9121067748849260547

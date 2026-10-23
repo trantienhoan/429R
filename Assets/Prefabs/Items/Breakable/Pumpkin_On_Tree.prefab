@@ -5357,6 +5357,7 @@ GameObject:
   - component: {fileID: 5446972659357586647}
   - component: {fileID: 4464856856857844396}
   - component: {fileID: 6731259867927847557}
+  - component: {fileID: 5716101791975142823}
   m_Layer: 0
   m_Name: Pumpkin_On_Tree
   m_TagString: Weapon
@@ -7331,5 +7332,32 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Leveling.ExpWhenBroken
   exp: 0.25
+  healthFsm: Health
+  healthVariable: health
+--- !u!114 &5716101791975142823
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8690403555129543112}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c028d9ac2e36c0479b74a91d0451de1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Weapons.BreakOnThrownHit
+  minSpeed: 3
+  splatRadius: 1.6
+  splatStunSeconds: 0.8
+  splatPush: {x: 0.5, y: 0.4}
+  maxSplatted: 6
+  splatEffects:
+  - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}
+  - {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac, type: 3}
+  splatEffectSize: 0.8
+  splatSound: {fileID: 8300000, guid: 96a7abdb3843a074faa2d85edbff8584, type: 3}
+  splatVolume: 0.9
+  splatWords: SPLAT!
+  splatColor: {r: 1, g: 0.55, b: 0.1, a: 1}
   healthFsm: Health
   healthVariable: health

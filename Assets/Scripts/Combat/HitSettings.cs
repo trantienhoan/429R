@@ -55,6 +55,24 @@ namespace Game.Combat
         [Tooltip("How big the pop is: x for a 1-damage hit, y for an 8-damage hit (in between, in proportion).")]
         [SerializeField] private Vector2 effectSize = new(0.8f, 1.3f);
 
+        [Header("Headshot (thrown things)")]
+        [Tooltip("A thrown thing (not a fist, not a weapon in the hand) that hurts an enemy on the head knocks it out for " +
+                 "this many seconds: it's shoved back and lies stunned (a boss with its Stun Guard up shrugs that part " +
+                 "off). The hit's own damage is unchanged. 0 = no headshots.")]
+        [Min(0f)]
+        [SerializeField] private float headshotStunSeconds = 1.2f;
+        [Tooltip("How far a headshot knocks it back and how high it hops (shares of a big hit's knock-back).")]
+        [SerializeField] private Vector2 headshotPush = new(0.7f, 0.8f);
+        [Tooltip("EXP the player gets for a headshot, on top of the enemy's own. 0 = none.")]
+        [Min(0f)]
+        [SerializeField] private float headshotExp = 1f;
+        [SerializeField] private string headshotWords = "HEADSHOT!";
+        [SerializeField] private Color headshotColor = new(1f, 0.35f, 0.2f);
+        [Tooltip("Played on the enemy's head at a headshot, e.g. a comic bonk. One at random.")]
+        [SerializeField] private AudioClip[] headshotSounds = System.Array.Empty<AudioClip>();
+        [Range(0f, 1f)]
+        [SerializeField] private float headshotVolume = 1f;
+
         // A pop lasts under half a second, so its copy is free again soon (a swarm fight needs only a few copies).
         private const float EffectSeconds = 0.6f;
         // Moved this far towards the eyes, so the enemy's own body doesn't hide half of it.
@@ -124,6 +142,22 @@ namespace Game.Combat
             var eyes = Camera.main;
             if (eyes != null) at = Vector3.MoveTowards(at, eyes.transform.position, EffectTowardsEyes);
             EffectPool.Play(effect, at, scale, EffectSeconds);
+        }
+
+        /// <summary>Whether thrown things can land headshots (Headshot Stun Seconds above 0).</summary>
+        public bool Headshots => headshotStunSeconds > 0f;
+
+        public float HeadshotStunSeconds => headshotStunSeconds;
+        public Vector2 HeadshotPush => headshotPush;
+        public float HeadshotExp => headshotExp;
+
+        /// <summary>The headshot's words and sound, at the enemy's head.</summary>
+        public void PlayHeadshot(Vector3 at)
+        {
+            if (!string.IsNullOrEmpty(headshotWords)) Game.VFX.FloatingWords.Show(headshotWords, headshotColor, at + Vector3.up * 0.25f);
+            if (headshotSounds.Length == 0) return;
+            var clip = headshotSounds[Random.Range(0, headshotSounds.Length)];
+            if (clip != null) AudioSource.PlayClipAtPoint(clip, at, headshotVolume);
         }
 
         /// <summary>Gets the pops ready, so the first hit doesn't stutter (once; more calls do nothing).</summary>
