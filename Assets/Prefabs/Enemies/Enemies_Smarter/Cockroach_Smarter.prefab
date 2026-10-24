@@ -7113,7 +7113,7 @@ MonoBehaviour:
   small:
     weight: 45
     scale: {x: 0.55, y: 0.75}
-    health: {x: 5, y: 6}
+    health: {x: 9, y: 11}
     speed: 1.1
     windUp: 1
     playerEvent: 
@@ -7127,7 +7127,7 @@ MonoBehaviour:
   normal:
     weight: 45
     scale: {x: 0.85, y: 1.1}
-    health: {x: 8, y: 10}
+    health: {x: 14, y: 18}
     speed: 1.15
     windUp: 1
     playerEvent: 
@@ -7333,6 +7333,42 @@ MonoBehaviour:
   minionsUseEnemyLimit: 1
   minionsFillLimit: 0
   callWhenFleeing: 1
+  special: 0
+  specialBelowHealth: 0.3
+  specialCooldown: {x: 10, y: 15}
+  specialPlayerEvent: PumpkinBossHit
+  specialDistance: 7
+  chargeWindUp: 1.4
+  chargeSpeed: 10
+  chargePast: 3
+  chargeHitRadius: 0.3
+  chargeLaunch: {x: 3, y: 6}
+  chargeRest: 2
+  chargeRoar: {fileID: 0}
+  chargeStartSound: {fileID: 0}
+  chargeHitSound: {fileID: 0}
+  chargeDust: {fileID: 0}
+  chargeDustEvery: 0.8
+  chargeDustSize: 0.3
+  giantWebSize: 2.5
+  giantWebAnimationSpeed: 0.55
+  giantWebSpeed: 8
+  giantWebSlowTo: 0.3
+  giantWebSlowSeconds: 6.5
+  chargeKnockBugs: {x: 3.5, y: 1.2}
+  bombSeconds: 4
+  bombKillsItself: 1
+  bombRadius: 3
+  bombLaunch: {x: 2.5, y: 5}
+  bombPush: 6
+  bombEffects: []
+  bombEffectSize: 2.5
+  bombSound: {fileID: 0}
+  bombBeep: {fileID: 0}
+  bombFlash: {r: 1, g: 0.12, b: 0.05, a: 1}
+  bombBlinks: {x: 2, y: 10}
+  bombSwell: 0.15
+  bombDamageTaken: 2
   hideChance: 0
   hideRange: 6
   hideBurst: {fileID: 11400000, guid: 54fc3212bafc3cf41881974728f5fa5b, type: 2}
@@ -7346,7 +7382,7 @@ MonoBehaviour:
   rotHiss:
   - {fileID: 8300000, guid: a4b58480c18e0374e9c1d2b386d637a0, type: 3}
   rotBurstSound: {fileID: 8300000, guid: fa130e6cf4c8cb84eb979ef3ddbaff63, type: 3}
-  rotSquashSound: {fileID: 8300000, guid: 96a7abdb3843a074faa2d85edbff8584, type: 3}
+  rotSquashSound: {fileID: 8300000, guid: 01fe8e68e54203347902e8ec1c5d1ab1, type: 3}
   rotPieces: {fileID: 6470502820101553460, guid: dd7824eba498c3d43b713291ed16e64d,
     type: 3}
   anomalyChance: 0.01

@@ -209,7 +209,7 @@ namespace Game.EditorTools
             bool changed = SetObject(so, "hideBurst", SmallRoachLink()) |
                            SetObject(so, "rotPieces", AssetDatabase.LoadAssetAtPath<GameObject>(RotPieces)) |
                            SetObject(so, "rotBurstSound", AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "pumpkin_explode_2.wav")) |
-                           SetObject(so, "rotSquashSound", AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "Bug_Squish_Bedroom.wav"));
+                           SetObject(so, "rotSquashSound", AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "bug_die.wav"));
             changed |= SetList(so.FindProperty("rotPuffs"), Lana + "Hit_Blast_BLack.prefab");
             changed |= SetList(so.FindProperty("rotBurstEffects"), Lana + "Hit_Blast_BLack.prefab", Lana + "Smoke_Blast.prefab");
             changed |= SetList(so.FindProperty("rotHiss"), Sfx + "cockroach_screech.wav");

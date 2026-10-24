@@ -125,7 +125,7 @@ namespace Game.Combat
         [Range(0f, 1f)]
         [SerializeField] private float perfectJab = 0.8f;
         [Tooltip("How hard a flying punch hits (a jab, a swing, an uppercut), compared with the fist itself hitting at " +
-                 "the punch's top speed. 1 = the same.")]
+                 "the punch's top speed; a jab that lands with the fist itself hits this hard too. 1 = the same.")]
         [Min(0f)]
         [SerializeField] private float jabPower = 1.8f;
         [Tooltip("Optional sound when a punch flies, e.g. a whoosh.")]
@@ -513,8 +513,8 @@ namespace Game.Combat
                 // to how fast the ball goes, but not to the punch.
                 float ballSpeed = body.linearVelocity.magnitude;
                 weapon.Power = ballSpeed > 0.01f ? Power * Mathf.Clamp01(handVelocity.magnitude / ballSpeed) : Power;
-                // A swing and an uppercut land harder.
-                weapon.Power *= MovePower(CurrentMove);
+                // A jab lands as hard as a flying jab; a swing and an uppercut land harder.
+                weapon.Power *= LandedPower(CurrentMove);
             }
             // The Elon Boong buff: punches do double damage.
             weapon.boost = Game.Leveling.PlayerBuffs.PunchDamage;
@@ -551,7 +551,7 @@ namespace Game.Combat
             {
                 float newSpeed = body.linearVelocity.magnitude;
                 if (newSpeed > 0.01f)
-                    weapon.Power = Mathf.Min(weapon.Power, Power * Mathf.Clamp01(handVelocity.magnitude / newSpeed) * MovePower(CurrentMove));
+                    weapon.Power = Mathf.Min(weapon.Power, Power * Mathf.Clamp01(handVelocity.magnitude / newSpeed) * LandedPower(CurrentMove));
             }
         }
 
@@ -592,8 +592,9 @@ namespace Game.Combat
                 if (punchSpeed < MinPunchSpeed) return;
                 // The fist itself landed: that punch already hit, so it doesn't fly on too.
                 lastBallHit = Time.time;
-                // A swing and an uppercut land harder (a flying one already has this in its speed).
-                punchSpeed *= MovePower(move);
+                // A jab lands as hard as a flying jab, a swing and an uppercut harder (a flying one already has this in
+                // its speed).
+                punchSpeed *= LandedPower(move);
             }
             bool stroke = flying || stroking || Time.time < strokeMoveUntil;
             Landed?.Invoke(new PunchLanded
@@ -640,25 +641,17 @@ namespace Game.Combat
         }
 
         // PlayMaker breakables measure a hit by its speed alone, set for swung weapons, so a punch only ever shook
-        // them. A punch counts as Pumpkin Force times faster: the force is put in and the check done again.
+        // them. A punch counts as Pumpkin Force times faster: the force is put in and the check done again (Play Maker
+        // Hits; also when the FSM heard the collision first and turned it down by its speed).
         private void HelpPlayMaker(Collision collision, float punchSpeed)
         {
             if (pumpkinForce <= 1f) return;
             var hit = collision.rigidbody != null ? collision.rigidbody.gameObject : collision.gameObject;
             // Enemy Hit Damage already counts the punch (by its speed and the fist's power): not twice.
             if (hit.TryGetComponent<EnemyHitDamage>(out _)) return;
-            foreach (var fsm in hit.GetComponents<PlayMakerFSM>())
-            {
-                if (!fsm.enabled || fsm.FsmName != "Damage") continue;
-                var force = fsm.FsmVariables.FindFsmFloat("collisionForce");
-                if (force == null || System.Array.Find(fsm.FsmStates, state => state.Name == "Check force") == null) continue;
-                // Already hurt by this hit (or by one just before): not twice.
-                if (fsm.ActiveStateName != "Wait for Collision" && fsm.ActiveStateName != "shake" && fsm.ActiveStateName != "Check force") continue;
-                // The Elon Boong buff's double damage and Fist Size's extra damage count here too.
-                force.Value = punchSpeed * pumpkinForce * Game.Leveling.PlayerLevel.PunchPowerScale * Game.Leveling.PlayerBuffs.PunchDamage *
-                              Game.Leveling.PlayerLevel.PunchDamageScale;
-                fsm.SetState("Check force");
-            }
+            // The Elon Boong buff's double damage and Fist Size's extra damage count here too.
+            PlayMakerHits.Judge(hit, collision, punchSpeed * pumpkinForce * Game.Leveling.PlayerLevel.PunchPowerScale *
+                                                Game.Leveling.PlayerBuffs.PunchDamage * Game.Leveling.PlayerLevel.PunchDamageScale);
         }
 
         // Sends a loose thing off the way the punch was going, as a throw would: the fist's ball alone is light and
@@ -714,6 +707,8 @@ namespace Game.Combat
             if (goodPunchEffect == null || Time.time < nextPuff) return;
             var enemy = collision.collider != null ? collision.collider.GetComponentInParent<EnemyHitDamage>() : null;
             if (enemy != null && enemy.ShowsOwnHitPop) return;
+            // A chase pumpkin shows its own block instead (Touch Only Damage).
+            if (collision.collider != null && collision.collider.GetComponentInParent<TouchOnlyDamage>() != null) return;
             nextPuff = Time.time + 0.15f;
             var at = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
             Game.EffectPool.Play(goodPunchEffect, at, goodPunchEffectSize * scale);
@@ -950,6 +945,10 @@ namespace Game.Combat
         {
             return move == Move.Swing ? swingPower : move == Move.Uppercut ? uppercutPower : 1f;
         }
+
+        // How much harder the fist itself lands, by the move: a jab as hard as a flying jab (Jab Power), a swing and an
+        // uppercut as Move Power says.
+        private float LandedPower(Move move) => move == Move.Jab ? jabPower : MovePower(move);
 
         // How big a flying punch is, compared with the fist at Fist Scale: Fly Size, bigger with each Fist Size point (up
         // to Max Fly Size); a swing and an uppercut bigger than a jab.

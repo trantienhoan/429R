@@ -156,7 +156,12 @@ namespace Game.Weapons
                     continue;
                 }
 
-                if (health != null && hurt.Add(t.gameObject)) health.Value -= damage;
+                if (health != null && hurt.Add(t.gameObject))
+                {
+                    // The chase pumpkins block blasts (only the player running into them hurts them).
+                    if (Game.Combat.TouchOnlyDamage.Blocks(t, point)) return;
+                    health.Value -= damage * (t.TryGetComponent(out Game.Combat.EnemyHitDamage hits) ? hits.damageTaken : 1f);
+                }
                 return;
             }
 

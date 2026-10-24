@@ -11,7 +11,7 @@ namespace Game.Enemies
     /// A tree pumpkin with a cockroach hiding inside (Spider Brain > Hiding in pumpkins): it rots black over Rot Seconds,
     /// wobbling, hissing and puffing dark smoke more and more, then bursts into Burst Count small cockroaches. The roach
     /// has eaten the candies: whichever way it breaks, no candy comes out (its pieces fly as usual, rotten black).
-    /// Smash it first and the roach dies inside it: the player gets the roach's EXP and "SQUASHED!", and no small ones
+    /// Smash it first and the roach dies inside it: the player gets the roach's EXP, and no small ones
     /// come out. Held in a hand it keeps rotting, and bursts there. Spider Brain adds it as the roach dives in; nothing
     /// to set up by hand.
     /// </summary>
@@ -208,7 +208,6 @@ namespace Game.Enemies
                 EnemyWave.Kill(roach);
             }
             if (settings.squashSound != null) AudioSource.PlayClipAtPoint(settings.squashSound, at);
-            Game.VFX.FloatingWords.Show("SQUASHED!", new Color(0.55f, 0.9f, 0.25f), at + Vector3.up * 0.3f);
             SpawnPieces(at);
             Release(gameObject);
         }

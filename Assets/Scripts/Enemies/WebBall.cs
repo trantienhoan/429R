@@ -10,9 +10,11 @@ namespace Game.Enemies
 {
     /// <summary>
     /// A spider's web shot (Spider Brain launches it). It flies with gravity; reaching the player's body it hurts them
-    /// (Player Event, sent to their Damage FSM) and slows their walking for Slow Seconds. A weapon held in its way, or a
-    /// fist, swats it. Anything else just splats it. It has no collider of its own and finds what it hits by sweeping
+    /// (Player Event, sent to their Damage FSM) and slows their walking for Slow Seconds, with no teleporting meanwhile.
+    /// A weapon held in its way, or a fist, swats it. Anything else just splats it. It has no collider of its own and
+    /// finds what it hits by sweeping
     /// along its flight, so it never knocks things over, hurts other enemies, or sets off other objects' trigger FSMs.
+    /// A boss's giant web (MakeGiant) goes straight through fists and held weapons.
     /// Goes on the web ball prefab's root, next to its Rigidbody.
     /// </summary>
     [DisallowMultipleComponent]
@@ -24,7 +26,7 @@ namespace Game.Enemies
         [Tooltip("The player's walking speed while the web sticks, as a share of normal (0.4 = 40%).")]
         [Range(0f, 1f)]
         [SerializeField] private float slowTo = 0.4f;
-        [Tooltip("How long the web slows the player, in seconds.")]
+        [Tooltip("How long the web slows the player, in seconds. They can't teleport meanwhile.")]
         [Min(0f)]
         [SerializeField] private float slowSeconds = 3f;
         [Tooltip("How big it is for hitting things (radius, metres at size 1).")]
@@ -53,6 +55,9 @@ namespace Game.Enemies
 
         private Rigidbody body;
         private Transform shooter;
+        // The player's FSM its hit goes to, and whether fists and held weapons stop it (not a giant web).
+        private string playerFsm = PlayerDamageFsm;
+        private bool swattable = true;
         private Vector3 lastPosition;
         private float dieAt;
         private bool done;
@@ -76,6 +81,9 @@ namespace Game.Enemies
             body.interpolation = RigidbodyInterpolation.None;
         }
 
+        /// <summary>How big it is for hitting things right now (radius, metres).</summary>
+        public float HitRadius => radius * Mathf.Max(0.01f, transform.lossyScale.x);
+
         /// <summary>Sends it flying at this velocity; the shooter's own body is never hit.</summary>
         public void Launch(Vector3 velocity, Transform from)
         {
@@ -90,6 +98,22 @@ namespace Game.Enemies
             body.linearVelocity = velocity;
             lastPosition = body.position;
             dieAt = Time.time + lifetime;
+        }
+
+        /// <summary>
+        /// Makes it a boss's giant web: on the player it sends <paramref name="eventName"/> to their FSM called
+        /// <paramref name="fsmName"/> and slows them to <paramref name="share"/> of their speed for
+        /// <paramref name="seconds"/>; fists and held weapons don't stop it (a legendary shield still does). Its splat
+        /// is <paramref name="size"/> times as big.
+        /// </summary>
+        public void MakeGiant(string eventName, string fsmName, float share, float seconds, float size)
+        {
+            playerEvent = eventName;
+            playerFsm = fsmName;
+            slowTo = share;
+            slowSeconds = seconds;
+            splatScale *= size;
+            swattable = false;
         }
 
         /// <summary>Bursts where it is, e.g. a half-made ball when its spider is interrupted.</summary>
@@ -128,6 +152,8 @@ namespace Game.Enemies
                 for (int i = 0; i < count; i++)
                 {
                     if (!Counts(hits[i].collider)) continue;
+                    // Scenery it already touches as it sets off (a big ball made near the floor) doesn't splat it.
+                    if (hits[i].distance <= 0f && !IsPlayer(hits[i].collider) && !IsHeldOrFist(hits[i].collider)) continue;
                     if (first == null || hits[i].distance < first.Value.distance) first = hits[i];
                 }
                 if (first != null)
@@ -146,7 +172,8 @@ namespace Game.Enemies
         private bool Counts(Collider other)
         {
             if (other == null || (shooter != null && other.transform.IsChildOf(shooter))) return false;
-            if (IsPlayer(other) || IsHeldOrFist(other)) return true;
+            if (IsHeldOrFist(other)) return swattable;
+            if (IsPlayer(other)) return true;
             if (other.isTrigger || other.GetComponentInParent<NavMeshAgent>() != null || other.GetComponentInParent<WebBall>() != null) return false;
             return true;
         }
@@ -166,8 +193,8 @@ namespace Game.Enemies
             if (IsPlayer(other))
             {
                 DamageVignette.HitFrom(shooter != null ? shooter.position : point);
-                SendToPlayer(playerEvent);
-                PlayerSlow.Apply(slowTo, slowSeconds);
+                SendToPlayer(playerEvent, playerFsm);
+                PlayerSlow.Apply(slowTo, slowSeconds, true);
                 Splat(point, hitSound != null ? hitSound : splatSound);
                 return;
             }
@@ -200,7 +227,7 @@ namespace Game.Enemies
             return held.TryGetComponent(out XRGrabInteractable grab) && grab.isSelected;
         }
 
-        private static void SendToPlayer(string eventName)
+        private static void SendToPlayer(string eventName, string fsmName)
         {
             if (string.IsNullOrEmpty(eventName)) return;
             var global = FsmVariables.GlobalVariables.FindFsmGameObject(PlayerVariable);
@@ -209,7 +236,7 @@ namespace Game.Enemies
             if (target == null) return;
             foreach (var fsm in target.GetComponents<PlayMakerFSM>())
             {
-                if (fsm.FsmName == PlayerDamageFsm) fsm.SendEvent(eventName);
+                if (fsm.FsmName == fsmName) fsm.SendEvent(eventName);
             }
         }
     }

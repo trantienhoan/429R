@@ -178,6 +178,12 @@ namespace Game.Combat
         /// </summary>
         [NonSerialized] public bool noReward;
 
+        /// <summary>
+        /// Multiplies the damage it takes from hits, knock-outs and blasts (set while the game runs, not saved), e.g. 2
+        /// while a bee boss's bomb ticks. 1 = as usual.
+        /// </summary>
+        [NonSerialized] public float damageTaken = 1f;
+
         /// <summary>Its Toughness (set while the game runs, e.g. for the white bug; not saved).</summary>
         public float Toughness
         {
@@ -279,7 +285,7 @@ namespace Game.Combat
                 power /= strayToughness;
                 stray = true;
             }
-            var hit = Settings.Evaluate(power, WeaponPower.DamageOf(collision));
+            var hit = Taken(Settings.Evaluate(power, WeaponPower.DamageOf(collision)));
             LastHit = hit;
 
             if (hit.Damage <= 0f)
@@ -321,6 +327,10 @@ namespace Game.Combat
             else if (hit.IsBig && knockBack && !stray) KnockBackFromPlayer();
             AnyHit?.Invoke(this, hit);
         }
+
+        // The hit's damage times Damage Taken.
+        private HitResult Taken(HitResult hit) =>
+            damageTaken == 1f || hit.Damage <= 0f ? hit : new HitResult(hit.Power, hit.Damage * damageTaken, hit.IsBig);
 
         // In its face: the front third of its body, from its middle up (small bugs' head bones sit mid-body, and a throw
         // at the face lands on their front legs).
@@ -414,7 +424,7 @@ namespace Game.Combat
         {
             if (health == null || dead || furniture) return false;
 
-            var hit = Settings.Evaluate(power / toughness, damageScale);
+            var hit = Taken(Settings.Evaluate(power / toughness, damageScale));
             bool hurt = hit.Damage > 0f;
             if (hurt)
             {

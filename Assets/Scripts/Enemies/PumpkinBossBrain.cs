@@ -25,8 +25,8 @@ namespace Game.Enemies
     ///   the clap, the cyclone) it drops back into the floor to its upper body's depth first, so it doesn't hang in the
     ///   air with its legs folded up; it climbs back out to run, throw, vomit or jump.
     /// Hits never stop it. Its hits throw the player (Player Launch, Push Power) and only hurt when they really land.
-    /// Every health it loses drops a pumpkin to throw back at it. Eating candy (Candy Vacuum) its munching stops its
-    /// laugh for a moment: one mouth, one sound.
+    /// Every health it loses drops a pumpkin to throw back at it. One mouth, one sound: a yelp when it's hurt, a roar,
+    /// or munching candy (Candy Vacuum) cuts its laugh short, and the laugh comes back right after.
     /// When it dies it shrinks back into one big pumpkin head that bursts like the other pumpkins, and sets
     /// GAMESTAGES' BOSS flag.
     /// Hits on it come from Enemy Hit Damage, which lowers the "health" of its (switched off) Health FSM.
@@ -373,7 +373,7 @@ namespace Game.Enemies
             {
                 hitsTaken++;
                 PlayState(GetHit, true);
-                PlaySound(hurtSound);
+                Say(hurtSound);
                 Puff();
                 int step = Mathf.Min(hitsTaken, buried.Length - 1);
                 targetBuried = buried[step];
@@ -385,7 +385,7 @@ namespace Game.Enemies
             if (act != Act.None && act != Act.Taunt && act != Act.Dizzy) return;
             if (Time.time < nextFlinch || phase == Phase.Transforming || phase == Phase.Rising) return;
             nextFlinch = Time.time + 1.8f;
-            PlaySound(hurtSound);
+            Say(hurtSound);
         }
 
         private void Update()
@@ -432,7 +432,7 @@ namespace Game.Enemies
         {
             daze = 0f;
             Begin(Act.Dizzy, state, seconds);
-            PlaySound(hurtSound);
+            Say(hurtSound);
             Puff();
         }
 
@@ -855,7 +855,7 @@ namespace Game.Enemies
             bodySlamNext = false;
             nextBodySlam = Time.time + 2.2f + bodySlamCooldown;
             Begin(Act.JumpSlam, JumpSlamState, 2.2f);
-            PlaySound(roarSound != null ? roarSound : attackSound);
+            Say(roarSound != null ? roarSound : attackSound);
             jumpFrom = transform.position;
             var to = PlayerFloor();
             var leap = to - jumpFrom;
@@ -903,7 +903,7 @@ namespace Game.Enemies
             agent.speed = FormSpeed * 0.7f;
             nextCyclone = Time.time + cycloneSeconds + cycloneCooldown;
             nextScrape = Time.time + CycloneSpinFrom;
-            PlaySound(roarSound != null ? roarSound : attackSound);
+            Say(roarSound != null ? roarSound : attackSound);
         }
 
         private void StartVomit(int count)
@@ -1075,7 +1075,7 @@ namespace Game.Enemies
             targetBuried = 0f;
             targetScale = trueScale;
             PlayState(TransformState, true);
-            PlaySound(roarSound != null ? roarSound : laughs.Length > 0 ? laughs[0] : null);
+            Say(roarSound != null ? roarSound : laughs.Length > 0 ? laughs[0] : null);
             SendShake("ShakeMed");
             phaseUntil = Time.time + 2.0f;
             transformStarted = Time.time;
@@ -1119,7 +1119,7 @@ namespace Game.Enemies
             // A boss killed before it came out of the ground still stands up to die.
             targetBuried = Mathf.Min(targetBuried, buried.Length > 0 ? buried[buried.Length - 1] : 0f);
             PlayState(Death, true);
-            PlaySound(hurtSound);
+            Say(hurtSound);
             phaseUntil = Time.time + 2.5f;
         }
 
@@ -1173,6 +1173,23 @@ namespace Game.Enemies
             if (clip == null) return;
             laughSpeaker.clip = clip;
             laughSpeaker.volume = laughVolume;
+            laughSpeaker.Play();
+            nextLaugh = Time.time + clip.length + laughGap;
+        }
+
+        // A yelp or a roar: the laugh stops for it and comes back Laugh Gap after it ends (one mouth, one sound). Even
+        // dying (its last yelp; nothing laughs after that until it bursts).
+        private void Say(AudioClip clip)
+        {
+            if (clip == null) return;
+            if (laughSpeaker == null)
+            {
+                PlaySound(clip);
+                return;
+            }
+            laughSpeaker.Stop();
+            laughSpeaker.clip = clip;
+            laughSpeaker.volume = speaker != null ? speaker.volume : 1f;
             laughSpeaker.Play();
             nextLaugh = Time.time + clip.length + laughGap;
         }

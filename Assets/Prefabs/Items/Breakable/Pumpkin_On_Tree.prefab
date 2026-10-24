@@ -5358,6 +5358,7 @@ GameObject:
   - component: {fileID: 4464856856857844396}
   - component: {fileID: 6731259867927847557}
   - component: {fileID: 5716101791975142823}
+  - component: {fileID: 427083803342577044}
   m_Layer: 0
   m_Name: Pumpkin_On_Tree
   m_TagString: Weapon
@@ -7355,9 +7356,26 @@ MonoBehaviour:
   - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}
   - {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac, type: 3}
   splatEffectSize: 0.8
-  splatSound: {fileID: 8300000, guid: 96a7abdb3843a074faa2d85edbff8584, type: 3}
+  splatSound: {fileID: 8300000, guid: 9fa3ff2a48ede5a43bc3e1b550e1dc2d, type: 3}
   splatVolume: 0.9
-  splatWords: SPLAT!
-  splatColor: {r: 1, g: 0.55, b: 0.1, a: 1}
   healthFsm: Health
   healthVariable: health
+--- !u!114 &427083803342577044
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8690403555129543112}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fad385497e7776499e18e6bd71d2875, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Enemies.TurnsIntoBowler
+  bowler: {fileID: 4020881062159576119, guid: 6c862f477b83c964f82f60585b1e7114, type: 3}
+  moreThan: 12
+  group: Pumpkin_On_Tree
+  checkEvery: 8
+  chance: 0.35
+  maxAtOnce: 1
+  distance: {x: 3, y: 12}

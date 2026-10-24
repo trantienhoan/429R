@@ -5830,7 +5830,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 1.7
+  m_Radius: 2.6
   m_Center: {x: -0.0037801117, y: 0.23668101, z: 0.00836812}
 --- !u!1 &8690403555129543112
 GameObject:
@@ -5849,6 +5849,7 @@ GameObject:
   - component: {fileID: 6144666242245051080}
   - component: {fileID: 1138949874824122576}
   - component: {fileID: 4211380876426186316}
+  - component: {fileID: 8106884910551488995}
   m_Layer: 0
   m_Name: Pumpkin_3
   m_TagString: Untagged
@@ -7342,3 +7343,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Inventory.CrushCandy
   settledSpeed: 0.4
   underShare: 0.35
+--- !u!114 &8106884910551488995
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8690403555129543112}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff991dd24d7a9394d9891eee6ec51f0e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.TouchOnlyDamage
+  blockEffect: {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c,
+    type: 3}
+  blockEffectSize: 0.5
+  blockSounds:
+  - {fileID: 8300000, guid: 9f33a6c57f37b904caaa68322aa2e0eb, type: 3}
+  - {fileID: 8300000, guid: 956e17fac0656824b963ccb842b10876, type: 3}
+  blockVolume: 0.8
+  minHitSpeed: 1.5
+  blockGap: 0.2

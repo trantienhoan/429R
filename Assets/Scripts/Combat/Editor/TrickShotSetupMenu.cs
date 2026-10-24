@@ -8,9 +8,9 @@ namespace Game.EditorTools
     /// <summary>
     /// Tools > 429 Game > Combat > Trick Shots (Headshot And Splat):
     /// - Headshot: the shared Hit Settings get their headshot bonk (bone_bonk_1/2). Any thrown thing that hurts an enemy
-    ///   on the head knocks it out for a moment, with "HEADSHOT!" and +1 EXP (Hit Settings > Headshot).
+    ///   on the head knocks it out for a moment, with a bonk and +1 EXP (Hit Settings > Headshot).
     /// - Splat: Pumpkin_On_Tree bursting on an enemy (Break On Thrown Hit) splashes the enemies around it, with a pumpkin
-    ///   burst (Hit_Blast + Smoke_Blast), a squelch and "SPLAT!".
+    ///   burst (Hit_Blast + Smoke_Blast) and its sound (pumpkin_explode_1).
     /// Safe to run again.
     /// </summary>
     public static class TrickShotSetupMenu
@@ -23,7 +23,7 @@ namespace Game.EditorTools
             "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Hit_Blast.prefab",
             "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Smoke_Blast.prefab",
         };
-        private const string SplatSound = "Assets/Audio/SFX/Bug_Squish_Bedroom.wav";
+        private const string SplatSound = "Assets/Audio/SFX/pumpkin_explode_1.wav";
 
         [MenuItem("Tools/429 Game/Combat/Trick Shots (Headshot And Splat)")]
         public static void Run()

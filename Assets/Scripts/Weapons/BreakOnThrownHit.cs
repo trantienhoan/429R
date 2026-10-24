@@ -10,7 +10,7 @@ namespace Game.Weapons
     /// takes the hit as before; this adds no damage. Only a throw counts (let go a moment ago, not held), and only an
     /// enemy (anything with Enemy Hit Damage that isn't furniture, or tagged Enemy or Monster), not walls, floors or
     /// furniture. Splat: as it bursts, the other enemies close by are splashed (shoved a little and stunned for a moment,
-    /// no damage), with a burst of pumpkin, a squelch and "SPLAT!". Goes on the throwable's root, next to its XR Grab
+    /// no damage), with a burst of pumpkin and its sound. Goes on the throwable's root, next to its XR Grab
     /// Interactable.
     /// Tools > 429 Game > Items > Tree Pumpkins Break On Enemies adds it to Pumpkin_On_Tree.
     /// </summary>
@@ -40,8 +40,6 @@ namespace Game.Weapons
         [SerializeField] private AudioClip splatSound;
         [Range(0f, 1f)]
         [SerializeField] private float splatVolume = 0.9f;
-        [SerializeField] private string splatWords = "SPLAT!";
-        [SerializeField] private Color splatColor = new(1f, 0.55f, 0.1f);
 
         [Header("PlayMaker")]
         [Tooltip("The FSM whose float \"health\" breaks it at 0.")]
@@ -92,7 +90,6 @@ namespace Game.Weapons
                 if (effect != null) EffectPool.Play(effect, at, splatEffectSize);
             }
             if (splatSound != null) AudioSource.PlayClipAtPoint(splatSound, at, splatVolume);
-            if (!string.IsNullOrEmpty(splatWords)) Game.VFX.FloatingWords.Show(splatWords, splatColor, at + Vector3.up * 0.1f);
             if (splatRadius <= 0f || maxSplatted <= 0) return;
 
             splatted.Clear();

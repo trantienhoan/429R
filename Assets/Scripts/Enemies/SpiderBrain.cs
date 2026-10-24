@@ -34,10 +34,18 @@ namespace Game.Enemies
     /// Attack, Bite, Blocked, Missed, Flinch, WeakFlinch, Flee, CallMinions, Died) for sounds and effects made in
     /// PlayMaker, and when it dies it can set bools in other FSMs, like the old bosses' Set Fsm Variable (e.g.
     /// BigSpiderDown in an EnemyManager).
+    /// A mini boss's attacks are unstoppable (Unstoppable Attacks): once it winds up, punches and blocks don't stop it,
+    /// and they hurt less to make up for it.
     /// A boss with a Minion (Calling minions) calls for help once, low on health or as it runs away: the enemies around
     /// it come for the player and its minions come out around it (with Minions Fill Limit, as many as the Enemy Limit
     /// has room for). A mini boss (Aggressive Boss) hunts the player down from the moment it's out, never waits its turn
     /// and never circles; the others make way for it.
+    /// A boss with a Special Move uses it low on health (Special Below Health), and again every Special Cooldown: it
+    /// gets away from the player, then either rears up and charges in a straight line through where they stand (Bull
+    /// Charge: a hit throws them high and far and hurts a lot; a step aside or a teleport dodges it), or makes and spits
+    /// a giant web ball that slows them for seconds (Giant Web). Nothing stops it while it does. A charge knocks the bugs
+    /// in its way flying. Or it becomes a Ticking Bomb: it flashes and beeps, faster and faster, while it keeps after the
+    /// player, taking double damage meanwhile, and Bomb Seconds later blows up (killed first, it doesn't).
     /// Now and then (Anomaly Chance, 1 in 100) a bug appears as the rare white one, always a small white cockroach (a
     /// spider or bee becomes one, Anomaly Body): it never bites, only runs, fast, among the other bugs and from tree
     /// pumpkin to tree pumpkin, always keeping away from the player; one good throw kills it (Anomaly Health), for the
@@ -163,6 +171,23 @@ namespace Game.Enemies
             Boss,
         }
 
+        /// <summary>A boss's big move, low on health.</summary>
+        public enum SpecialMove
+        {
+            None,
+            BullCharge,
+            GiantWeb,
+            TickingBomb,
+        }
+
+        private enum SpecialPhase
+        {
+            GetAway,
+            WindUp,
+            Charge,
+            Rest,
+        }
+
         /// <summary>
         /// A bool to set when it dies, in the FSM called Fsm on the object in the PlayMaker global Global Object, like a
         /// Set Fsm Variable action (the old bosses set e.g. EnemyManager / EnemyManager / BigSpiderDown this way).
@@ -242,6 +267,7 @@ namespace Game.Enemies
             WebShot,
             WingsOff,
             Hide,
+            Special,
             Dead,
         }
 
@@ -548,6 +574,14 @@ namespace Game.Enemies
                  "instead of circling; after a leap it doesn't run off. A flier waits up high half as long. Off: it acts " +
                  "like the others (still without waiting for a turn).")]
         [SerializeField] private bool aggressiveBoss = true;
+        [Tooltip("Boss size only: once it winds up to attack, nothing stops it until the attack is over. Hits still hurt " +
+                 "but don't make it flinch or knock it back, and a fist or a held weapon in the way doesn't block the bite " +
+                 "(a legendary shield still does), so punching non-stop doesn't keep it off. A step back or aside still " +
+                 "dodges it. Its attacks hurt less to make up for it (Unstoppable Player Event).")]
+        [SerializeField] private bool unstoppableAttacks = true;
+        [Tooltip("Sent to the player's PlayerHealth FSM when an unstoppable attack lands, instead of its size's event: " +
+                 "DamageStrongZ (25-50), DamageHeavy (40-50), Damage (6-9). Empty: its size's event, as usual.")]
+        [SerializeField] private string unstoppablePlayerEvent = "DamageStrongZ";
 
         [Header("Calling minions (bosses)")]
         [Tooltip("The minion a boss calls when it gets low on health: Spider_Small for the white Spider_Boss, " +
@@ -580,6 +614,111 @@ namespace Game.Enemies
         [SerializeField] private bool minionsFillLimit;
         [Tooltip("It also calls as soon as it runs away (Flee Below Health), if that comes first.")]
         [SerializeField] private bool callWhenFleeing = true;
+
+        [Header("Special move (bosses)")]
+        [Tooltip("Its big move, low on health: None; Bull Charge (gets away, rears up, then charges in a straight line " +
+                 "through where the player stands; a step aside or a teleport dodges it); Giant Web (gets away, makes a " +
+                 "giant web ball and spits it at the player: it hurts and slows them for seconds, then it chases as " +
+                 "usual). Nothing stops it while it does it: hits still hurt. Ticking Bomb (it flashes and beeps, faster " +
+                 "and faster, while it keeps after the player, and blows up Bomb Seconds later; killed first, it doesn't).")]
+        [SerializeField] private SpecialMove special = SpecialMove.None;
+        [Tooltip("With this share of its health left or less (0.3 = 30%, when it runs away and calls its minions) it " +
+                 "starts using it...")]
+        [Range(0f, 1f)]
+        [SerializeField] private float specialBelowHealth = 0.3f;
+        [Tooltip("...and uses it again every this many seconds (random between), counted from when the last one ended.")]
+        [SerializeField] private Vector2 specialCooldown = new(10f, 15f);
+        [Tooltip("Sent to the player's PlayerHealth FSM when the move hits them: DamageHeavy (40-50), PumpkinBossHit " +
+                 "(70-90), PumpkinBossHitHeavy (110-140), FallDamage (55).")]
+        [SerializeField] private string specialPlayerEvent = "PumpkinBossHit";
+        [Tooltip("How far from the player it gets before it starts, in metres (less in a small room). It picks a spot " +
+                 "with a clear run at the player.")]
+        [Min(1f)]
+        [SerializeField] private float specialDistance = 7f;
+        [Tooltip("Bull Charge: how long it rears up before it charges, in seconds (its Alert Animation): the player's " +
+                 "warning. It aims at where they stand when this ends.")]
+        [Min(0f)]
+        [SerializeField] private float chargeWindUp = 1.4f;
+        [Tooltip("How fast it charges, in metres per second.")]
+        [Min(1f)]
+        [SerializeField] private float chargeSpeed = 10f;
+        [Tooltip("How far it carries on past where the player stood, in metres (it stops at walls).")]
+        [Min(0f)]
+        [SerializeField] private float chargePast = 3f;
+        [Tooltip("How wide its charge hits: this far either side of its path, in metres at size 1, plus the player's body.")]
+        [Min(0.05f)]
+        [SerializeField] private float chargeHitRadius = 0.3f;
+        [Tooltip("A charge that hits throws the player this high (x) and this far (y), in metres, on along its path " +
+                 "(the player's Toughness cuts both).")]
+        [SerializeField] private Vector2 chargeLaunch = new(3f, 6f);
+        [Tooltip("How long it stands, worn out, after a charge, in seconds (half as long again if it ran into a wall): " +
+                 "the player's chance to hit back.")]
+        [Min(0f)]
+        [SerializeField] private float chargeRest = 2f;
+        [Tooltip("The roar as it rears up, the sound as it sets off, and the sound when it hits the player.")]
+        [SerializeField] private AudioClip chargeRoar;
+        [SerializeField] private AudioClip chargeStartSound;
+        [SerializeField] private AudioClip chargeHitSound;
+        [Tooltip("Puffs of dust it kicks up along its charge (Effect Pool), e.g. Boss_Scrape_Dust: one every Charge Dust " +
+                 "Every metres behind it, a bigger one where it sets off and where it stops. Empty: none.")]
+        [SerializeField] private GameObject chargeDust;
+        [Min(0.1f)]
+        [SerializeField] private float chargeDustEvery = 0.8f;
+        [Tooltip("How big the puffs are, times the effect's own size, at size 1 (a bigger boss kicks up bigger puffs).")]
+        [Min(0f)]
+        [SerializeField] private float chargeDustSize = 0.3f;
+        [Tooltip("Giant Web: how big the ball is, times its normal web ball.")]
+        [Min(1f)]
+        [SerializeField] private float giantWebSize = 2.5f;
+        [Tooltip("How fast its web animation plays while it makes the giant ball (0.55 = slower than a normal shot, so " +
+                 "the player sees it coming).")]
+        [Range(0.1f, 1f)]
+        [SerializeField] private float giantWebAnimationSpeed = 0.55f;
+        [Tooltip("How fast the giant ball flies, in metres per second (it arcs: 8 reaches about 6.5 m, so Special " +
+                 "Distance must be less). It's aimed at where the player is (not ahead of them), so a step aside or a " +
+                 "teleport dodges it; fists and held weapons don't stop it.")]
+        [Min(1f)]
+        [SerializeField] private float giantWebSpeed = 8f;
+        [Tooltip("The player walks at this share of their speed (0.3 = 30%) for Giant Web Slow Seconds once it hits.")]
+        [Range(0.05f, 1f)]
+        [SerializeField] private float giantWebSlowTo = 0.3f;
+        [Min(0f)]
+        [SerializeField] private float giantWebSlowSeconds = 6.5f;
+        [Tooltip("Bull Charge: the bugs in its way (its own minions too) are knocked flying aside, this far (x) and this " +
+                 "high (y), in metres; they're not hurt. 0, 0 = it runs through them.")]
+        [SerializeField] private Vector2 chargeKnockBugs = new(3.5f, 1.2f);
+        [Tooltip("Ticking Bomb: seconds from when it starts flashing to the blast. Killed before then, it doesn't go off.")]
+        [Min(0.5f)]
+        [SerializeField] private float bombSeconds = 4f;
+        [Tooltip("It blows itself up, and that beats it (its Set On Death bools are set as usual). Off: it lives on, " +
+                 "and the bomb comes again after Special Cooldown.")]
+        [SerializeField] private bool bombKillsItself = true;
+        [Tooltip("How far the blast reaches, in metres: the player within it is hurt (Special Player Event) and thrown " +
+                 "away (x high, y far); loose things are blown away and bugs knocked flying (not hurt).")]
+        [Min(0.5f)]
+        [SerializeField] private float bombRadius = 3f;
+        [SerializeField] private Vector2 bombLaunch = new(2.5f, 5f);
+        [Tooltip("How hard loose things are blown away (like a thrown blast's push).")]
+        [Min(0f)]
+        [SerializeField] private float bombPush = 6f;
+        [Tooltip("The blast's effects (Effect Pool) and how big they are, and its sound.")]
+        [SerializeField] private GameObject[] bombEffects = Array.Empty<GameObject>();
+        [Min(0f)]
+        [SerializeField] private float bombEffectSize = 2.5f;
+        [SerializeField] private AudioClip bombSound;
+        [Tooltip("The beep with each flash.")]
+        [SerializeField] private AudioClip bombBeep;
+        [Tooltip("The colour it flashes.")]
+        [SerializeField] private Color bombFlash = new(1f, 0.12f, 0.05f);
+        [Tooltip("Flashes per second as it starts (x) and just before the blast (y).")]
+        [SerializeField] private Vector2 bombBlinks = new(2f, 10f);
+        [Tooltip("How much bigger it swells by the end, as a share of its size (0.15 = 15%).")]
+        [Range(0f, 1f)]
+        [SerializeField] private float bombSwell = 0.15f;
+        [Tooltip("While it ticks, it takes this many times the damage from hits, knock-outs and blasts (2 = double), so " +
+                 "the player has a real chance to beat it before it goes off.")]
+        [Min(0.1f)]
+        [SerializeField] private float bombDamageTaken = 2f;
 
         [Header("Hiding in pumpkins")]
         [Tooltip("Chance (0 to 1) that, when it would run away low on health, it hides in the nearest tree pumpkin " +
@@ -665,6 +804,7 @@ namespace Game.Enemies
 
         private const string PlayerVariable = "Player";
         private const string PlayerDamageFsm = "Damage";
+        private const string PlayerHealthFsm = "PlayerHealth";
         private const string SpawnedStuffVariable = "CurrentlySpawnedStuffs";
         private const float SensesEvery = 0.2f;
         private const float RepathEvery = 0.25f;
@@ -806,6 +946,28 @@ namespace Game.Enemies
         private Transform webHold;
         private GameObject heldWeb;
         private Vector3 heldWebScale;
+
+        // Its special move: which part of it is under way, and when it may come again.
+        private SpecialPhase specialPhase;
+        private float nextSpecial;
+        // A charge: which way, how far is left, whether it has hit, and how long it has been stuck against something.
+        private Vector3 chargeDirection;
+        private float chargeLeft;
+        private bool chargeHit;
+        private float chargeStuck;
+        // How far it has run since its last puff of dust, and the bugs it has knocked flying this charge.
+        private float chargeDustGap;
+        private readonly HashSet<SpiderBrain> knockedThisCharge = new();
+        // Ticking Bomb: when it goes off (-1: not ticking), how far through its flashes it is, whether it's lit, the
+        // renderers that flash, and its models' size before it swelled.
+        private float bombAt = -1f;
+        private float bombPhase;
+        private bool bombLit;
+        private readonly List<Renderer> bombRenderers = new();
+        private MaterialPropertyBlock bombBlock;
+        private Vector3 bombModelsScale;
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
         // Face leap: how high (metres) its model is lifted right now, and how fast it's falling when it lets go.
         private float leapLift;
         private float leapDropFrom;
@@ -838,6 +1000,9 @@ namespace Game.Enemies
         private float Rest => kind != null ? kind.rest : 1f;
         // A mini boss that hunts the player down (Aggressive Boss).
         private bool Aggressive => aggressiveBoss && kindName == SizeClass.Boss && !GoesForObject && !anomaly;
+        // A mini boss winding up or attacking, with Unstoppable Attacks: nothing stops it now.
+        private bool Unstoppable => unstoppableAttacks && kindName == SizeClass.Boss && !GoesForObject && !anomaly &&
+                                    (state == State.Prepare || state == State.Attack);
 
         /// <summary>Flying right now (a flier that hasn't lost its wings).</summary>
         public bool IsFlying => flies && !grounded;
@@ -911,6 +1076,7 @@ namespace Game.Enemies
             nextWeb =Time.time + Random.Range(2f, Mathf.Max(2f, webCooldown.y));
             EnemyHitDamage.AnyHit += OnAnyHit;
             EnemyHitDamage.WeakHit += OnWeakHit;
+            if (special == SpecialMove.BullCharge) EffectPool.Warm(chargeDust, 4);
 
             if (anomaly)
             {
@@ -963,8 +1129,9 @@ namespace Game.Enemies
             if (player == null) player = FindAnyObjectByType<XROrigin>();
             if (player == null || player.Camera == null || !agent.isOnNavMesh) return;
 
-            // Low on health a boss calls its minions, even while it's knocked back or knocked out.
+            // Low on health a boss calls its minions, even while it's knocked back or knocked out, and a bomb ticks.
             UpdateCall();
+            UpdateBomb();
 
             // Knockback moves the agent itself; wait until it's done.
             if (knockback != null || TryGetComponent(out knockback))
@@ -1019,6 +1186,7 @@ namespace Game.Enemies
                 case State.WebShot: DoWebShot(); break;
                 case State.WingsOff: DoWingsOff(); break;
                 case State.Hide: DoHide(); break;
+                case State.Special: DoSpecial(); break;
             }
             FallIfLifted();
             if (flies) UpdateHeight();
@@ -1249,6 +1417,7 @@ namespace Game.Enemies
         // Runs at the player; close enough, it attacks if it's its turn, or circles.
         private void DoChase()
         {
+            if (TryStartSpecial()) return;
             float distance = PlayerDistance();
             if (hasTurn || TryTakeTurn())
             {
@@ -1301,6 +1470,7 @@ namespace Game.Enemies
         // Circles the player at a distance, now and then turning round, until it may attack.
         private void DoCircle()
         {
+            if (TryStartSpecial()) return;
             if (TryTakeTurn() || (Aggressive && !IsFlying))
             {
                 Enter(State.Chase, 0f);
@@ -1622,7 +1792,7 @@ namespace Game.Enemies
             {
                 var other = touching[i];
                 if (other.transform.IsChildOf(transform)) continue;
-                if (heldThingsBlock && IsHeldOrFist(other))
+                if (heldThingsBlock && !Unstoppable && IsHeldOrFist(other))
                 {
                     BiteBlocked();
                     return;
@@ -1658,7 +1828,8 @@ namespace Game.Enemies
 
             attackResolved = true;
             DamageVignette.HitFrom(transform);
-            SendToPlayer(string.IsNullOrEmpty(kind.playerEvent) ? move.playerEvent : kind.playerEvent);
+            if (Unstoppable && !string.IsNullOrEmpty(unstoppablePlayerEvent)) SendToPlayer(unstoppablePlayerEvent, PlayerHealthFsm);
+            else SendToPlayer(string.IsNullOrEmpty(kind.playerEvent) ? move.playerEvent : kind.playerEvent);
             if (move.slowSeconds > 0f) Game.Locomotion.PlayerSlow.Apply(move.slowPlayerTo, move.slowSeconds);
             if (move.landSound != null) PlayOne(move.landSound, true);
             // The size's push, times this attack's Push Power (a jump attack shoves harder).
@@ -1855,6 +2026,366 @@ namespace Game.Enemies
         {
             var holder = FsmVariables.GlobalVariables.FindFsmGameObject(SpawnedStuffVariable);
             return holder != null && holder.Value != null ? holder.Value.transform : null;
+        }
+
+        // ---- Special move (bosses) ----
+
+        // Low on health, once its cooldown is over: it runs to a spot Special Distance from the player with a clear run at
+        // them, then does its move. Its minions (called at the same health) keep the player busy meanwhile.
+        private bool TryStartSpecial()
+        {
+            if (special == SpecialMove.None || special == SpecialMove.TickingBomb || GoesForObject || anomaly || IsFlying ||
+                health == null) return false;
+            if (health.Value / startHealth > specialBelowHealth || Time.time < nextSpecial) return false;
+            if (special == SpecialMove.GiantWeb && webBall == null) return false;
+
+            GiveUpTurn();
+            StopShooting();
+            specialPhase = SpecialPhase.GetAway;
+            Enter(State.Special, 4f);
+            GoTo(SpecialSpot(), RunSpeed * 1.2f, true);
+            SendToOwnFsms("Special");
+            return true;
+        }
+
+        // A spot about Special Distance from the player (less in a small room) with nothing in the way of a straight run
+        // at them, on its own side of them first. Where it is if none fits.
+        private Vector3 SpecialSpot()
+        {
+            var playerFloor = PlayerFloor();
+            if (NavMesh.SamplePosition(playerFloor, out var onFloor, 2f, NavMesh.AllAreas)) playerFloor = onFloor.position;
+            var away = transform.position - playerFloor;
+            float start = Mathf.Atan2(away.z, away.x);
+            for (float distance = specialDistance; distance >= 3f; distance -= 1.5f)
+            {
+                for (int i = 0; i < 12; i++)
+                {
+                    // 0, +30, -30, +60, -60, ... degrees from its own side.
+                    float angle = start + (i % 2 == 0 ? 1f : -1f) * ((i + 1) / 2) * 30f * Mathf.Deg2Rad;
+                    var point = playerFloor + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * distance;
+                    if (!NavMesh.SamplePosition(point, out var hit, 1f, NavMesh.AllAreas)) continue;
+                    if (NavMesh.Raycast(hit.position, playerFloor, out _, NavMesh.AllAreas)) continue;
+                    return hit.position;
+                }
+            }
+            return transform.position;
+        }
+
+        private void DoSpecial()
+        {
+            switch (specialPhase)
+            {
+                case SpecialPhase.GetAway:
+                    PlayMoving(RunLook, false);
+                    if (Time.time < stateUntil && (agent.pathPending || agent.remainingDistance > 0.4f)) return;
+                    StartSpecialWindUp();
+                    return;
+                case SpecialPhase.WindUp:
+                    Face(PlayerFloor());
+                    if (special == SpecialMove.BullCharge)
+                    {
+                        if (Time.time >= stateUntil) StartCharge();
+                        return;
+                    }
+                    if (!webLaunched && Time.time - webStart >= webReleaseTime / giantWebAnimationSpeed)
+                    {
+                        webLaunched = true;
+                        LaunchWeb(true);
+                    }
+                    if (Time.time >= stateUntil) EndSpecial();
+                    return;
+                case SpecialPhase.Charge:
+                    DoCharge();
+                    return;
+                case SpecialPhase.Rest:
+                    Stop();
+                    if (Time.time >= stateUntil) EndSpecial();
+                    return;
+            }
+        }
+
+        // There: it faces the player and rears up (a charge), or starts making the giant web, slowly.
+        private void StartSpecialWindUp()
+        {
+            specialPhase = SpecialPhase.WindUp;
+            Stop();
+            if (special == SpecialMove.BullCharge)
+            {
+                Enter(State.Special, chargeWindUp);
+                Play(AlertLook, true);
+                // Its rear-up (about a second, then the Animator goes on to its attack) stretched over the wind-up.
+                if (animator != null) animator.speed = Mathf.Clamp(0.7f / Mathf.Max(0.01f, chargeWindUp), 0.25f, 1f);
+                if (chargeRoar != null) PlayOne(chargeRoar, true);
+                else PlayOne(noticeSounds, true);
+            }
+            else
+            {
+                Enter(State.Special, webDuration / giantWebAnimationSpeed);
+                webStart = Time.time;
+                webLaunched = false;
+                Play(!string.IsNullOrEmpty(webAnimation) && HasAnimation(webAnimation) ? webAnimation : AlertLook, true);
+                if (animator != null) animator.speed = giantWebAnimationSpeed;
+                if (playing == webAnimation) StartMakingWeb(giantWebSize);
+                PlayOne(noticeSounds, true);
+            }
+            SendToOwnFsms("SpecialWindUp");
+        }
+
+        // Aims at where the player stands now and charges on through, until Charge Past beyond them or a wall.
+        private void StartCharge()
+        {
+            var from = transform.position;
+            var target = PlayerFloor();
+            var way = target - from;
+            way.y = 0f;
+            chargeDirection = way.sqrMagnitude > 0.0001f ? way.normalized : transform.forward;
+            var end = target + chargeDirection * chargePast;
+            end.y = from.y;
+            if (NavMesh.Raycast(from, end, out var wall, NavMesh.AllAreas)) end = wall.position;
+            var length = end - from;
+            length.y = 0f;
+            chargeLeft = Mathf.Max(0f, Vector3.Dot(length, chargeDirection));
+            chargeHit = false;
+            chargeStuck = 0f;
+            chargeDustGap = 0f;
+            knockedThisCharge.Clear();
+            KickDust(1.4f);
+            specialPhase = SpecialPhase.Charge;
+            Enter(State.Special, chargeLeft / chargeSpeed + 1f);
+            transform.rotation = Quaternion.LookRotation(chargeDirection);
+            Play(RunLook, true);
+            if (animator != null) animator.speed = Mathf.Clamp(chargeSpeed / (runAnimationSpeed * Size()), 1f, 3f);
+            if (chargeStartSound != null) PlayOne(chargeStartSound, true);
+            SendToOwnFsms("Charge");
+        }
+
+        private void DoCharge()
+        {
+            transform.rotation = Quaternion.LookRotation(chargeDirection);
+            float step = Mathf.Min(chargeLeft, chargeSpeed * Time.deltaTime);
+            var before = transform.position;
+            agent.Move(chargeDirection * step);
+            chargeLeft -= step;
+            if (!chargeHit) TryChargeHit(before, transform.position);
+            KnockBugsAside(before, transform.position);
+
+            // Ran into something (a wall, big furniture): it stops short, dazed.
+            var moved = transform.position - before;
+            moved.y = 0f;
+            float progress = Vector3.Dot(moved, chargeDirection);
+            if (step > 0.001f && progress < step * 0.3f) chargeStuck += Time.deltaTime;
+            else chargeStuck = 0f;
+            bool crashed = chargeStuck > 0.12f;
+            chargeDustGap += Mathf.Max(0f, progress);
+            if (chargeDustGap >= chargeDustEvery)
+            {
+                chargeDustGap = 0f;
+                KickDust(1f);
+            }
+            if (chargeLeft > 0.01f && !crashed && Time.time < stateUntil) return;
+
+            KickDust(crashed ? 1.7f : 1.2f);
+            specialPhase = SpecialPhase.Rest;
+            Stop();
+            Enter(State.Special, crashed ? chargeRest * 1.5f : chargeRest);
+            Play(crashed ? HitLook : IdleLook, true);
+            if (!chargeHit) SendToOwnFsms("Missed");
+        }
+
+        // A puff of dust at its back legs, on the floor.
+        private void KickDust(float times)
+        {
+            if (chargeDust == null) return;
+            float size = Size();
+            EffectPool.Play(chargeDust, transform.position - chargeDirection * (0.3f * size), chargeDustSize * size * times);
+        }
+
+        // Every other bug its path passes this frame (its own minions too) is knocked flying aside and ahead.
+        private void KnockBugsAside(Vector3 from, Vector3 to)
+        {
+            if (chargeKnockBugs.x <= 0f && chargeKnockBugs.y <= 0f) return;
+            float size = Size();
+            var path = to + chargeDirection * (0.5f * size) - from;
+            path.y = 0f;
+            foreach (var other in spiders)
+            {
+                if (other == this || other.state == State.Dead || other.IsFlying || knockedThisCharge.Contains(other)) continue;
+                var offset = other.transform.position - from;
+                offset.y = 0f;
+                float t = path.sqrMagnitude > 0.0001f ? Mathf.Clamp01(Vector3.Dot(offset, path) / path.sqrMagnitude) : 0f;
+                if ((offset - path * t).magnitude > chargeHitRadius * size + 0.3f * other.Size()) continue;
+                knockedThisCharge.Add(other);
+                // Away from a point on its path just behind the bug: thrown to the side and on ahead.
+                other.KnockedFlying(from + path * t - chargeDirection, chargeKnockBugs.x, chargeKnockBugs.y);
+            }
+        }
+
+        // Thrown through the air (a charge or a blast): off its feet, its turn and its shot lost, then it carries on.
+        private void KnockedFlying(Vector3 awayFrom, float distance, float height)
+        {
+            if (state == State.Dead || state == State.Appear) return;
+            if (knockback == null && !TryGetComponent(out knockback)) knockback = gameObject.AddComponent<Knockback>();
+            GiveUpTurn();
+            StopShooting();
+            weakFlinching = false;
+            const float flight = 0.7f, stunned = 0.5f;
+            Enter(State.Flinch, flight + stunned + 0.2f);
+            Stop();
+            Play(HitLook, true);
+            PlayOne(hitSounds, true);
+            knockback.Push(awayFrom, distance, flight, height, stunned);
+            SendToOwnFsms("Flinch");
+        }
+
+        // Its path this frame (from its middle to its head) passing within Charge Hit Radius of the player's body.
+        private void TryChargeHit(Vector3 from, Vector3 to)
+        {
+            float size = Size();
+            var head = to + chargeDirection * (0.5f * size);
+            var path = head - from;
+            path.y = 0f;
+            var toPlayer = PlayerFloor() - from;
+            toPlayer.y = 0f;
+            float t = path.sqrMagnitude > 0.0001f ? Mathf.Clamp01(Vector3.Dot(toPlayer, path) / path.sqrMagnitude) : 0f;
+            if ((toPlayer - path * t).magnitude > chargeHitRadius * size + playerBodyRadius) return;
+
+            chargeHit = true;
+            DamageVignette.HitFrom(transform);
+            SendToPlayer(specialPlayerEvent, PlayerHealthFsm);
+            if (chargeHitSound != null) PlayOne(chargeHitSound, true);
+            // Thrown on along its path, high and far.
+            Game.Combat.PlayerLaunch.Launch(PlayerFloor() - chargeDirection, chargeLaunch.x, chargeLaunch.y);
+            SendToOwnFsms("SpecialHit");
+        }
+
+        // Back to hunting the player; the move comes again after Special Cooldown.
+        private void EndSpecial()
+        {
+            if (animator != null) animator.speed = 1f;
+            nextSpecial = Time.time + Random.Range(specialCooldown.x, Mathf.Max(specialCooldown.x, specialCooldown.y));
+            nextAttack = Time.time + Random.Range(attackCooldown.x, attackCooldown.y) * Rest;
+            Enter(State.Chase, 0f);
+        }
+
+        // ---- Ticking Bomb ----
+
+        // Low on health (Special Below Health) it starts ticking: flashes and beeps, faster and faster, and swells, while it
+        // keeps after the player without resting between attacks. At Bomb Seconds it blows up. Killed first, nothing
+        // happens: Update no longer runs.
+        private void UpdateBomb()
+        {
+            if (special != SpecialMove.TickingBomb || health == null) return;
+            if (bombAt < 0f)
+            {
+                if (state == State.Appear || Time.time < nextSpecial || health.Value / startHealth > specialBelowHealth) return;
+                ArmBomb();
+                return;
+            }
+            float left = bombAt - Time.time;
+            if (left <= 0f)
+            {
+                BombBlast();
+                return;
+            }
+            nextAttack = Mathf.Min(nextAttack, Time.time);
+
+            float u = 1f - left / bombSeconds;
+            bombPhase += Mathf.Lerp(bombBlinks.x, bombBlinks.y, u * u) * Time.deltaTime;
+            bool lit = bombPhase % 1f < 0.5f;
+            // Every beep plays (Play One would hold back the same sound this soon).
+            if (lit && !bombLit && bombBeep != null && speaker != null) speaker.PlayOneShot(bombBeep, volume);
+            if (lit != bombLit) ShowBombFlash(lit);
+            if (models != null) models.localScale = bombModelsScale * (1f + bombSwell * u);
+        }
+
+        private void ArmBomb()
+        {
+            bombAt = Time.time + bombSeconds;
+            bombPhase = 0f;
+            bombRenderers.Clear();
+            var under = models != null ? models : transform;
+            foreach (var r in under.GetComponentsInChildren<Renderer>())
+            {
+                if (r is ParticleSystemRenderer || r.sharedMaterial == null || !r.sharedMaterial.HasProperty(BaseColorId)) continue;
+                bombRenderers.Add(r);
+            }
+            if (models != null) bombModelsScale = models.localScale;
+            if (TryGetComponent(out EnemyHitDamage hits)) hits.damageTaken = bombDamageTaken;
+            PlayOne(noticeSounds, true);
+            SendToOwnFsms("BombArmed");
+        }
+
+        // Its own colours, or the flash colour on its body and its glow.
+        private void ShowBombFlash(bool lit)
+        {
+            bombLit = lit;
+            bombBlock ??= new MaterialPropertyBlock();
+            foreach (var r in bombRenderers)
+            {
+                if (r == null) continue;
+                var material = r.sharedMaterial;
+                r.GetPropertyBlock(bombBlock);
+                bombBlock.SetColor(BaseColorId, lit ? bombFlash : material.GetColor(BaseColorId));
+                if (material.HasProperty(EmissionColorId))
+                    bombBlock.SetColor(EmissionColorId, lit ? bombFlash * 2f : material.GetColor(EmissionColorId));
+                r.SetPropertyBlock(bombBlock);
+            }
+        }
+
+        private void StopBomb()
+        {
+            bombAt = -1f;
+            if (TryGetComponent(out EnemyHitDamage hits)) hits.damageTaken = 1f;
+            if (bombLit) ShowBombFlash(false);
+            if (models != null && bombModelsScale != Vector3.zero) models.localScale = bombModelsScale;
+        }
+
+        // The blast: the player in reach is hurt and thrown, loose things are blown away, bugs knocked flying.
+        private void BombBlast()
+        {
+            StopBomb();
+            var point = transform.position + Vector3.up * (0.2f * Size() + flyLift);
+            foreach (var effect in bombEffects)
+            {
+                if (effect != null) EffectPool.Play(effect, point, bombEffectSize);
+            }
+            if (bombSound != null) AudioSource.PlayClipAtPoint(bombSound, point, volume);
+
+            int count = Physics.OverlapSphereNonAlloc(point, bombRadius, nearby, Physics.AllLayers, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < count; i++)
+            {
+                var body = nearby[i].attachedRigidbody;
+                if (body == null || body.isKinematic || body.transform.IsChildOf(transform) || IsPlayer(nearby[i])) continue;
+                if (PushWeight.IsImmovable(body)) continue;
+                if (body.TryGetComponent(out XRGrabInteractable held) && held.isSelected) continue;
+                body.AddExplosionForce(bombPush, point, bombRadius, 0.5f, ForceMode.VelocityChange);
+            }
+            foreach (var other in spiders.ToArray())
+            {
+                if (other == this || other.IsFlying || (other.transform.position - point).sqrMagnitude > bombRadius * bombRadius) continue;
+                other.KnockedFlying(point, chargeKnockBugs.x, chargeKnockBugs.y);
+            }
+            if (PlayerInBlast(point))
+            {
+                DamageVignette.HitFrom(point);
+                SendToPlayer(specialPlayerEvent, PlayerHealthFsm);
+                PlayerLaunch.Launch(point, bombLaunch.x, bombLaunch.y);
+                SendToOwnFsms("SpecialHit");
+            }
+            SendToOwnFsms("BombBlast");
+
+            if (bombKillsItself) health.Value = 0f;
+            else nextSpecial = Time.time + Random.Range(specialCooldown.x, Mathf.Max(specialCooldown.x, specialCooldown.y));
+        }
+
+        // The player's body (a standing line from their feet to their head) within Bomb Radius.
+        private bool PlayerInBlast(Vector3 point)
+        {
+            var head = player.Camera.transform.position;
+            float feet = player.transform.position.y;
+            var closest = new Vector3(head.x, Mathf.Clamp(point.y, feet, head.y), head.z);
+            float reach = bombRadius + playerBodyRadius;
+            return (closest - point).sqrMagnitude <= reach * reach;
         }
 
         // ---- The white anomaly ----
@@ -2086,12 +2617,11 @@ namespace Game.Enemies
             });
         }
 
-        // The white bug slips away: a white burst, "GONE!", and no reward.
+        // The white bug slips away: a white burst, and no reward.
         private void Vanish()
         {
             var at = transform.position + Vector3.up * 0.1f;
             if (anomalyPop != null) EffectPool.Play(anomalyPop, at);
-            Game.VFX.FloatingWords.Show("GONE!", new Color(0.85f, 0.9f, 1f), at + Vector3.up * 0.3f);
             if (TryGetComponent(out EnemyHitDamage hits)) hits.noReward = true;
             state = State.Dead;
             Destroy(gameObject);
@@ -2183,8 +2713,6 @@ namespace Game.Enemies
             if (anomalyRewardSound != null) AudioSource.PlayClipAtPoint(anomalyRewardSound, at);
             if (anomalyHelmetSeconds <= 0f) return;
             Game.Leveling.PlayerBuffs.Give(Game.Leveling.Buff.CandyHelmet, anomalyHelmetSeconds);
-            Game.VFX.FloatingWords.Show("CANDY HELMET!", Game.Leveling.PlayerBuffs.ColorOf(Game.Leveling.Buff.CandyHelmet),
-                at + Vector3.up * 0.35f);
         }
 
         // ---- Losing its wings ----
@@ -2348,13 +2876,14 @@ namespace Game.Enemies
             return true;
         }
 
-        // With a web animation and its bone, the ball is there from the start, growing on the bone until it's shot.
-        private void StartMakingWeb()
+        // With a web animation and its bone, the ball is there from the start, growing on the bone until it's shot
+        // (Times bigger than its web ball for the giant web).
+        private void StartMakingWeb(float times = 1f)
         {
             if (webHold == null && !string.IsNullOrEmpty(webHoldBone) && animator != null) webHold = FindBone(animator.transform, webHoldBone);
             if (webHold == null) return;
 
-            heldWebScale = webBall.transform.localScale * Mathf.Clamp(Size(), 0.6f, 1.6f);
+            heldWebScale = webBall.transform.localScale * (Mathf.Clamp(Size(), 0.6f, 1.6f) * times);
             heldWeb = Instantiate(webBall, webHold.position, webHold.rotation);
             heldWeb.transform.localScale = Vector3.zero;
             if (heldWeb.TryGetComponent(out WebBall web)) web.Hold();
@@ -2398,15 +2927,17 @@ namespace Game.Enemies
             Enter(State.Circle, 0f);
         }
 
-        private void LaunchWeb()
+        // The giant web (Special Move) is aimed at where the player is, not ahead of them: a step aside dodges it.
+        private void LaunchWeb(bool giant = false)
         {
             float size = Size();
+            float speed = giant ? giantWebSpeed : webSpeed;
             var mouth = transform.position + transform.forward * (0.35f * size) + Vector3.up * (0.25f * size);
             var head = player.Camera.transform.position;
             var chest = head + Vector3.down * 0.45f;
             var playerBody = player.GetComponent<CharacterController>();
-            var lead = playerBody != null ? Vector3.ProjectOnPlane(playerBody.velocity, Vector3.up) : Vector3.zero;
-            chest += lead * ((chest - mouth).magnitude / webSpeed);
+            var lead = playerBody != null && !giant ? Vector3.ProjectOnPlane(playerBody.velocity, Vector3.up) : Vector3.zero;
+            chest += lead * ((chest - mouth).magnitude / speed);
 
             GameObject ball;
             if (heldWeb != null)
@@ -2420,10 +2951,20 @@ namespace Game.Enemies
             else
             {
                 ball = Instantiate(webBall, mouth, Quaternion.identity);
-                ball.transform.localScale = webBall.transform.localScale * Mathf.Clamp(size, 0.6f, 1.6f);
+                ball.transform.localScale = webBall.transform.localScale * (Mathf.Clamp(size, 0.6f, 1.6f) * (giant ? giantWebSize : 1f));
             }
-            var velocity = WebBall.Aim(mouth, chest, webSpeed, -Physics.gravity.y);
-            if (ball.TryGetComponent(out WebBall web)) web.Launch(velocity, transform);
+            // The giant ball sets off clear of the floor.
+            if (giant && ball.TryGetComponent(out WebBall big) && mouth.y < transform.position.y + big.HitRadius + 0.05f)
+            {
+                mouth.y = transform.position.y + big.HitRadius + 0.05f;
+                ball.transform.position = mouth;
+            }
+            var velocity = WebBall.Aim(mouth, chest, speed, -Physics.gravity.y);
+            if (ball.TryGetComponent(out WebBall web))
+            {
+                if (giant) web.MakeGiant(specialPlayerEvent, PlayerHealthFsm, giantWebSlowTo, giantWebSlowSeconds, giantWebSize);
+                web.Launch(velocity, transform);
+            }
             else if (ball.TryGetComponent(out Rigidbody body)) body.linearVelocity = velocity;
             if (webSound != null) PlayOne(webSound);
         }
@@ -2608,6 +3149,8 @@ namespace Game.Enemies
         /// </summary>
         public bool TryStun(float seconds)
         {
+            // Nothing stops its special move (hits still hurt).
+            if (state == State.Special || Unstoppable) return false;
             if (stunGuardSeconds <= 0f || state == State.Dead) return true;
             bool sameHit = stunFrame == Time.frameCount;
             if (!sameHit && Time.time < stunGuardUntil) return false;
@@ -2624,7 +3167,7 @@ namespace Game.Enemies
             if (hitEffect != null) hitEffect.SetActive(true);
             PlayOne(hitSounds, true);
             if (!noticed) Notice(true);
-            if (state == State.Appear || state == State.WingsOff || Time.time < nextFlinch) return;
+            if (state == State.Appear || state == State.WingsOff || state == State.Special || Unstoppable || Time.time < nextFlinch) return;
             // A boss with a Stun Guard that was stopped a moment ago shrugs this one off: it hurts, the attack goes on.
             if (!TryStun(flinchSeconds)) return;
 
@@ -2649,7 +3192,7 @@ namespace Game.Enemies
             if (!noticed) Notice(true);
             // A boss with a Stun Guard doesn't even jerk at a light tap (only the sound): taps can't slow it down, and
             // they don't use up its guard either.
-            if (stunGuardSeconds > 0f) return;
+            if (stunGuardSeconds > 0f || Unstoppable) return;
             switch (state)
             {
                 case State.Appear:
@@ -2658,6 +3201,7 @@ namespace Game.Enemies
                 case State.Dodge:
                 case State.WebShot:
                 case State.WingsOff:
+                case State.Special:
                     return;
             }
 
@@ -2690,6 +3234,12 @@ namespace Game.Enemies
         private void Die()
         {
             if (anomaly && state != State.Dead) AnomalyKilled();
+            // Beaten before its bomb went off: defused.
+            if (bombAt >= 0f)
+            {
+                StopBomb();
+                SendToOwnFsms("BombDefused");
+            }
             state = State.Dead;
             GiveUpTurn();
             StopShooting();
@@ -3038,7 +3588,7 @@ namespace Game.Enemies
             return body.TryGetComponent(out XRGrabInteractable grab) && grab.isSelected;
         }
 
-        private static void SendToPlayer(string eventName)
+        private static void SendToPlayer(string eventName, string fsmName = PlayerDamageFsm)
         {
             if (string.IsNullOrEmpty(eventName)) return;
             var global = FsmVariables.GlobalVariables.FindFsmGameObject(PlayerVariable);
@@ -3047,7 +3597,7 @@ namespace Game.Enemies
             target.GetComponents(fsmBuffer);
             foreach (var fsm in fsmBuffer)
             {
-                if (fsm.FsmName == PlayerDamageFsm) fsm.SendEvent(eventName);
+                if (fsm.FsmName == fsmName) fsm.SendEvent(eventName);
             }
         }
 

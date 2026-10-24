@@ -112,7 +112,6 @@ namespace Game.Bonus
         [SerializeField] private float helmetSeconds = 60f;
         [Tooltip("Played when the helmet is given.")]
         [SerializeField] private AudioClip helmetSound;
-        [SerializeField] private string helmetText = "CANDY HELMET!";
 
         [Header("Countdown sign")]
         [SerializeField] private TMP_FontAsset font;
@@ -184,7 +183,6 @@ namespace Game.Bonus
         private const float PopSeconds = 1.6f;
         // The camera shake of a blast that doesn't throw the player (one that does shakes by itself).
         private const string BlastShake = "ShakeBigger";
-        private const float HelmetPopSeconds = 2.5f;
         // The longest a throw clear of a pumpkin goes through it, in seconds.
         private const float ThrowSeconds = 3f;
         private const float DefaultBodyRadius = 0.25f;
@@ -567,7 +565,6 @@ namespace Game.Bonus
         {
             if (helmetSeconds <= 0f) return;
             PlayerBuffs.Give(Buff.CandyHelmet, helmetSeconds);
-            Pop(helmetText, PlayerBuffs.ColorOf(Buff.CandyHelmet), HelmetPopSeconds);
             if (helmetSound != null) voice.PlayOneShot(helmetSound);
         }
 
@@ -735,7 +732,7 @@ namespace Game.Bonus
             signText.fontSizeMax = 80f;
             signText.margin = new Vector4(10f, 0f, 10f, 0f);
 
-            // "+5" and "CANDY HELMET!" pop up under it.
+            // "+5" pops up under it.
             popText = WorldUI.CreateText("Pop", sign, "", 60f, FontStyles.Bold, TextAlignmentOptions.Center, BonusColor, face);
             var rect = popText.rectTransform;
             rect.anchorMin = new Vector2(0.5f, 0f);

@@ -66,8 +66,6 @@ namespace Game.Combat
         [Tooltip("EXP the player gets for a headshot, on top of the enemy's own. 0 = none.")]
         [Min(0f)]
         [SerializeField] private float headshotExp = 1f;
-        [SerializeField] private string headshotWords = "HEADSHOT!";
-        [SerializeField] private Color headshotColor = new(1f, 0.35f, 0.2f);
         [Tooltip("Played on the enemy's head at a headshot, e.g. a comic bonk. One at random.")]
         [SerializeField] private AudioClip[] headshotSounds = System.Array.Empty<AudioClip>();
         [Range(0f, 1f)]
@@ -151,10 +149,9 @@ namespace Game.Combat
         public Vector2 HeadshotPush => headshotPush;
         public float HeadshotExp => headshotExp;
 
-        /// <summary>The headshot's words and sound, at the enemy's head.</summary>
+        /// <summary>The headshot's sound, at the enemy's head.</summary>
         public void PlayHeadshot(Vector3 at)
         {
-            if (!string.IsNullOrEmpty(headshotWords)) Game.VFX.FloatingWords.Show(headshotWords, headshotColor, at + Vector3.up * 0.25f);
             if (headshotSounds.Length == 0) return;
             var clip = headshotSounds[Random.Range(0, headshotSounds.Length)];
             if (clip != null) AudioSource.PlayClipAtPoint(clip, at, headshotVolume);

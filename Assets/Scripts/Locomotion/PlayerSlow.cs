@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using Unity.XR.CoreUtils;
 using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit.Interactors;
 using UnityEngine.XR.Interaction.Toolkit.Locomotion.Movement;
+using UnityEngine.XR.Interaction.Toolkit.Locomotion.Teleportation;
 
 namespace Game.Locomotion
 {
@@ -9,7 +11,9 @@ namespace Game.Locomotion
     /// Slows the player's walking (thumbstick and arm swing) for a while, e.g. while a spider's web sticks to them. It
     /// eases back to normal over the last half second. With several slows at once the strongest counts, until the
     /// latest one ends. Getting hurt slows too (Hurt, from the Hurt Slow on the XR Origin): the slowest of the two
-    /// counts. Turning and teleporting aren't slowed. Added to the XR Origin by Apply or Hurt when first needed.
+    /// counts. Turning and teleporting aren't slowed, but a slow that says so (a web ball's) stops teleporting until it
+    /// ends: the teleport ray still shows, it just can't land anywhere. Added to the XR Origin by Apply or Hurt when
+    /// first needed.
     /// </summary>
     [DisallowMultipleComponent]
     public class PlayerSlow : MonoBehaviour
@@ -28,8 +32,17 @@ namespace Game.Locomotion
         private float hurtUntil;
         private float hurtHold;
 
+        // No teleporting until then (a web ball's slow): the teleport layers taken off each teleport ray, to give back.
+        private float noTeleportUntil;
+        private readonly Dictionary<XRRayInteractor, int> takenTeleport = new();
+        // XRI's Teleport interaction layer, if no teleport area is out to tell which one it is.
+        private const int TeleportLayerBit = 1 << 31;
+
         /// <summary>True while the player is slowed.</summary>
         public bool IsSlowed => speedShare < 1f || hurting;
+
+        /// <summary>True while the player can't teleport (a web ball's slow).</summary>
+        public bool TeleportBlocked => takenTeleport.Count > 0;
 
         /// <summary>The share of their walking speed the player has right now (1 = not slowed).</summary>
         public float CurrentShare => IsSlowed ? Mathf.Min(WebShare(), HurtShare()) : 1f;
@@ -52,12 +65,14 @@ namespace Game.Locomotion
 
         /// <summary>
         /// Slows the player to <paramref name="share"/> of their walking speed (0.4 = 40%) for
-        /// <paramref name="seconds"/> seconds.
+        /// <paramref name="seconds"/> seconds. <paramref name="noTeleport"/>: they can't teleport either until then.
         /// </summary>
-        public static void Apply(float share, float seconds)
+        public static void Apply(float share, float seconds, bool noTeleport = false)
         {
             var slow = Find(seconds);
-            if (slow != null) slow.Slow(share, seconds);
+            if (slow == null) return;
+            slow.Slow(share, seconds);
+            if (noTeleport) slow.BlockTeleport(seconds);
         }
 
         /// <summary>
@@ -105,6 +120,33 @@ namespace Game.Locomotion
             SetSpeeds(CurrentShare);
         }
 
+        // Takes the teleport layers off the player's teleport rays (they no longer find anywhere to land), until then.
+        private void BlockTeleport(float seconds)
+        {
+            noTeleportUntil = Mathf.Max(noTeleportUntil, Time.time + seconds);
+            enabled = true;
+            if (TeleportBlocked) return;
+            int teleportLayers = 0;
+            foreach (var area in FindObjectsByType<BaseTeleportationInteractable>(FindObjectsSortMode.None)) teleportLayers |= area.interactionLayers.value;
+            if (teleportLayers == 0) teleportLayers = TeleportLayerBit;
+            foreach (var ray in GetComponentsInChildren<XRRayInteractor>(true))
+            {
+                int taken = ray.interactionLayers.value & teleportLayers;
+                if (taken == 0) continue;
+                takenTeleport[ray] = taken;
+                ray.interactionLayers = ray.interactionLayers.value & ~taken;
+            }
+        }
+
+        private void GiveTeleportBack()
+        {
+            foreach (var pair in takenTeleport)
+            {
+                if (pair.Key != null) pair.Key.interactionLayers = pair.Key.interactionLayers.value | pair.Value;
+            }
+            takenTeleport.Clear();
+        }
+
         private void HurtNow(float share, float seconds, float hold, float slowest)
         {
             TakeNormalSpeeds();
@@ -144,11 +186,12 @@ namespace Game.Locomotion
             bool wasSlowed = IsSlowed;
             if (speedShare < 1f && until - Time.time <= 0f) speedShare = 1f;
             if (hurting && Time.time >= hurtUntil) hurting = false;
+            if (TeleportBlocked && Time.time >= noTeleportUntil) GiveTeleportBack();
             if (!IsSlowed)
             {
                 // Just ended: back to the normal speeds.
                 if (wasSlowed) SetSpeeds(1f);
-                enabled = false;
+                if (!TeleportBlocked) enabled = false;
                 return;
             }
             SetSpeeds(Mathf.Min(WebShare(), HurtShare()));
@@ -156,7 +199,8 @@ namespace Game.Locomotion
 
         private void OnDisable()
         {
-            // Never leave the player slowed (e.g. the scene closing mid-slow).
+            // Never leave the player slowed or unable to teleport (e.g. the scene closing mid-slow).
+            GiveTeleportBack();
             if (!IsSlowed) return;
             speedShare = 1f;
             hurting = false;
