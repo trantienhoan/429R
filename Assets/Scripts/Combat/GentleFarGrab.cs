@@ -11,9 +11,9 @@ namespace Game.Combat
     /// hundredths of a second, so from a few metres away it flies at 50-100 m/s: whatever it brushes on the way gets
     /// smashed, and its own Damage FSM takes the bump as a huge hit (a big puff of smoke and lost health). With this,
     /// the grab starts where the object is and it flies to the hand at Pull Speed, slow enough that a bump on the way
-    /// doesn't count as a big hit (weapons' Damage FSMs need 20-30 m/s). It still collides on the way: switching its
-    /// collisions off would count as leaving the trigger it's in, and things that die on leaving a FIREKILL area would.
-    /// Near grabs are untouched. Goes on the XR Origin; it listens to the hands' interactors, so it costs nothing while
+    /// doesn't count as a big hit (weapons' Damage FSMs need 20-30 m/s); Throw Power makes it faster, up to Max Pull
+    /// Speed. It still collides on the way: switching its collisions off would count as leaving the trigger it's in,
+    /// and things that die on leaving a FIREKILL area would. Near grabs are untouched. Goes on the XR Origin; it listens to the hands' interactors, so it costs nothing while
     /// nothing is being pulled.
     /// </summary>
     [DisallowMultipleComponent]
@@ -22,9 +22,14 @@ namespace Game.Combat
         [Tooltip("A grab from further than this, in metres from the hand, counts as far.")]
         [Min(0.05f)]
         [SerializeField] private float farDistance = 0.4f;
-        [Tooltip("How fast a far-grabbed object flies to the hand, in metres per second.")]
+        [Tooltip("How fast a far-grabbed object flies to the hand, in metres per second. The player's Throw Power (a " +
+                 "level-up stat) makes it faster, up to Max Pull Speed.")]
         [Min(0.5f)]
         [SerializeField] private float pullSpeed = 6f;
+        [Tooltip("The fastest Throw Power makes a pull, in metres per second. Keep it under 15: the Broom's Damage FSM " +
+                 "takes a 15 m/s bump as a hit.")]
+        [Min(0.5f)]
+        [SerializeField] private float maxPullSpeed = 14f;
         [Tooltip("The longest a pull takes, in seconds: things further away fly faster than Pull Speed to make it.")]
         [Min(0.1f)]
         [SerializeField] private float maxPullSeconds = 0.6f;
@@ -79,7 +84,7 @@ namespace Game.Combat
             {
                 grab = grab,
                 hand = hand,
-                speed = Mathf.Max(pullSpeed, distance / maxPullSeconds),
+                speed = Mathf.Max(PullSpeed, distance / maxPullSeconds),
                 giveUpAt = Time.time + maxPullSeconds + 0.5f,
             });
         }
@@ -112,6 +117,9 @@ namespace Game.Combat
                 else pull.hand.interactionAttachController.MoveTo(next);
             }
         }
+
+        // Pull Speed with the player's Throw Power, never past Max Pull Speed (nor below Pull Speed).
+        private float PullSpeed => Mathf.Max(pullSpeed, Mathf.Min(pullSpeed * Game.Leveling.PlayerLevel.PullScale, maxPullSpeed));
 
         private void End(int index, bool backToHand)
         {

@@ -1,6 +1,7 @@
 // Red hit lines around the edges of the player's view (Damage Vignette). Drawn on the inside of a sphere around the
 // headset camera, so it lines up in both eyes. Thin spikes point in towards the middle of the view, each with its own
-// width and length, over a soft red glow at the rim; _Intensity (0-1) fades it, pulling the spikes back out to the edge.
+// width and length, over a soft red glow at the rim; _Intensity (0-1) fades it, pulling the spikes back out to the edge
+// and thinning them (a big hit's burst: long, thick lines; a small one's: shorter, thinner).
 // _HitDir (camera space, w = 1) lights only the arc of the edge on the side the hit came from; w = 0 lights it all.
 Shader "429/Damage Vignette"
 {
@@ -10,9 +11,12 @@ Shader "429/Damage Vignette"
         _Intensity("Intensity", Range(0, 1)) = 0
         _Seed("Seed (a new line pattern per hit)", Float) = 0
         _Lines("Lines around the view", Float) = 64
-        _Inner("Closest a line reaches in (degrees off centre)", Range(5, 60)) = 35
+        _Inner("Closest a line reaches in (degrees off centre)", Range(5, 60)) = 31
         _Reach("Spread of line lengths (degrees)", Range(0, 40)) = 9
-        _Taper("How far from its tip a line reaches full width (degrees)", Range(1, 20)) = 6
+        _Taper("How far from its tip a line reaches full width (degrees)", Range(1, 20)) = 4
+        _WidthMin("Thinnest line (share of its slot around the view)", Range(0.05, 1)) = 0.25
+        _WidthMax("Thickest line (share of its slot around the view)", Range(0.05, 1)) = 0.8
+        _WidthGrow("How much thinner lines are for the weakest burst (0 = never thinner)", Range(0, 1)) = 0.4
         _Retreat("How far lines pull back out as they fade (degrees)", Range(0, 30)) = 7
         _Glow("Edge glow", Range(0, 1)) = 0.45
         _GlowFrom("Edge glow starts (degrees off centre)", Range(0, 90)) = 32
@@ -59,6 +63,9 @@ Shader "429/Damage Vignette"
             float _Inner;
             float _Reach;
             float _Taper;
+            float _WidthMin;
+            float _WidthMax;
+            float _WidthGrow;
             float _Retreat;
             float _Glow;
             float _GlowFrom;
@@ -95,7 +102,8 @@ Shader "429/Damage Vignette"
                 float slice = around * _Lines;
                 float id = floor(slice);
                 float across = 1.0 - abs(frac(slice) - 0.5) * 2.0;   // 1 down the middle of the slice
-                float width = lerp(0.12, 0.5, hash(id + 31.7));
+                // Bigger hits (a stronger burst) give thicker lines; they thin again as they fade.
+                float width = lerp(_WidthMin, _WidthMax, hash(id + 31.7)) * lerp(1.0 - _WidthGrow, 1.0, _Intensity);
                 float tip = _Inner + hash(id) * _Reach + (1.0 - _Intensity) * _Retreat;
                 float outward = saturate((offCentre - tip) / _Taper);   // 0 at the tip, growing towards the edge
                 float edge = 1.0 - width * outward;                   // the line widens from a sharp point

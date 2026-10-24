@@ -89,7 +89,8 @@ namespace Game.Weapons
         [Header("Effects")]
         [Tooltip("Particle effects that appear where it explodes.")]
         [SerializeField] private GameObject[] effects = Array.Empty<GameObject>();
-        [Tooltip("Size of the effects for a plain throw (a charged bottle sizes them to its blast), e.g. 0.8 for a smaller bang.")]
+        [Tooltip("Size of the effects for a plain throw, e.g. 0.7 for a smaller bang. A blast that reaches farther (Throw " +
+                 "Power, a charged bottle) makes them bigger, up to 1.3.")]
         [Min(0.05f)]
         [SerializeField] private float effectSize = 1f;
         [SerializeField] private AudioClip sound;
@@ -243,9 +244,7 @@ namespace Game.Weapons
             else if (throwSpeed >= minThrowSpeed)
             {
                 float reach = Game.Leveling.PlayerLevel.ThrowBlastRadius(radius);
-                // Its own effect size, and bigger as Throw Power makes the blast reach farther.
-                float size = shakeToCharge ? EffectScale(reach) : Mathf.Min(effectSize + EffectScale(reach) - EffectScale(radius), MaxEffectScale);
-                Explode(point, reach, Game.Leveling.PlayerLevel.ThrowBlastDamage(damage), push, playerEvent, false, size, radius);
+                Explode(point, reach, Game.Leveling.PlayerLevel.ThrowBlastDamage(damage), push, playerEvent, false, BangSize(reach), radius);
             }
         }
 
@@ -328,10 +327,15 @@ namespace Game.Weapons
             // Throw Power makes it bigger and harder, but only the charge's own reach can hurt the player.
             float bigger = Game.Leveling.PlayerLevel.ThrowBlastRadius(reach);
             Explode(point, bigger, Game.Leveling.PlayerLevel.ThrowBlastDamage(Mathf.Lerp(chargeDamage.x, chargeDamage.y, strength)),
-                Mathf.Lerp(chargePush.x, chargePush.y, strength), inHand ? inHandEvent : playerEvent, inHand, EffectScale(bigger), reach);
+                Mathf.Lerp(chargePush.x, chargePush.y, strength), inHand ? inHandEvent : playerEvent, inHand, BangSize(bigger), reach);
         }
 
         private const float MaxEffectScale = 1.3f;
+
+        // The effects' size: Effect Size for a plain throw's own blast, bigger as a blast reaches farther (Throw Power, a
+        // charged bottle), at most Max Effect Scale.
+        private float BangSize(float reach) =>
+            Mathf.Min(effectSize + Mathf.Max(0f, EffectScale(reach) - EffectScale(radius)), MaxEffectScale);
 
         private static float EffectScale(float reach)
         {

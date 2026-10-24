@@ -7,8 +7,9 @@ namespace Game.Combat
 {
     /// <summary>
     /// A burst of red lines at the edge of the player's view on the side a hit came from, whenever their health drops
-    /// (bites, webs, bosses). Bigger hits give a stronger burst, and each hit gets a new pattern of lines, which then
-    /// pull back out to the edge and fade; while they fade they keep pointing at the attacker as the player turns.
+    /// (bites, webs, bosses). Bigger hits give a stronger burst (longer, thicker, more solid lines: Full Burst Damage,
+    /// Opacity to Big Hit Opacity), and each hit gets a new pattern of lines, which then pull back out to the edge,
+    /// thin and fade; while they fade they keep pointing at the attacker as the player turns.
     /// Where a hit came from: C# attackers report it with HitFrom (spiders, cockroaches, web balls, ghost balloons,
     /// falling blocks, overheating weapons); for the PlayMaker enemies it's the nearest object tagged Enemy. With
     /// neither, the whole edge flashes. Goes on the XR Origin next to the PlayerHealth FSM; it draws on a sphere around
@@ -23,12 +24,17 @@ namespace Game.Combat
         [Tooltip("The FSM on this object that holds the player's health, and its float variable.")]
         [SerializeField] private string healthFsm = "PlayerHealth";
         [SerializeField] private string healthVariable = "PlayerHealth";
-        [Tooltip("How see-through the lines are overall (1 = as the material sets them).")]
+        [Tooltip("How see-through the lines are for the smallest hits (1 = as the material sets them).")]
         [Range(0f, 1f)]
         [SerializeField] private float opacity = 0.5f;
-        [Tooltip("A hit this big or bigger gives the full burst; smaller ones a weaker one.")]
+        [Tooltip("How see-through they are for a Full Burst Damage hit or bigger; in between, in proportion to the damage. " +
+                 "So the bigger the hit, the more solid the lines.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float bigHitOpacity = 1f;
+        [Tooltip("A hit this big or bigger gives the full burst (the longest, thickest, most solid lines); smaller ones a " +
+                 "weaker one. Bites do 6-9, heavy hits 40-50, the pumpkin boss 70-140.")]
         [Min(1f)]
-        [SerializeField] private float fullBurstDamage = 30f;
+        [SerializeField] private float fullBurstDamage = 60f;
         [Tooltip("How strong the burst is for the smallest hits.")]
         [Range(0f, 1f)]
         [SerializeField] private float smallestBurst = 0.55f;
@@ -67,6 +73,8 @@ namespace Game.Combat
         private Transform head;
         private Material instance;
         private float peak;
+        private float baseAlpha;
+        private float burstOpacity;
         private float hitAt = -100f;
         private bool hasSource;
         private Vector3 sourcePoint;
@@ -117,9 +125,8 @@ namespace Game.Combat
             sphere.AddComponent<MeshFilter>().sharedMesh = mesh;
             view = sphere.AddComponent<MeshRenderer>();
             instance = new Material(material);
-            var colour = instance.GetColor(ColorId);
-            colour.a *= opacity;
-            instance.SetColor(ColorId, colour);
+            // Each hit sets how solid its lines are (Opacity to Big Hit Opacity), from the material's own.
+            baseAlpha = instance.GetColor(ColorId).a;
             view.sharedMaterial = instance;
             view.shadowCastingMode = ShadowCastingMode.Off;
             view.receiveShadows = false;
@@ -151,9 +158,16 @@ namespace Game.Combat
 
         private void Hit(float damage)
         {
-            float strength = Mathf.Lerp(smallestBurst, 1f, Mathf.Clamp01(damage / fullBurstDamage));
+            float size = Mathf.Clamp01(damage / fullBurstDamage);
+            float strength = Mathf.Lerp(smallestBurst, 1f, size);
+            float solid = Mathf.Lerp(opacity, bigHitOpacity, size);
             // A second hit during a burst never makes it weaker.
+            bool bursting = CurrentIntensity() > 0.002f;
             peak = Mathf.Max(strength, CurrentIntensity());
+            burstOpacity = bursting ? Mathf.Max(solid, burstOpacity) : solid;
+            var colour = instance.GetColor(ColorId);
+            colour.a = baseAlpha * burstOpacity;
+            instance.SetColor(ColorId, colour);
             hitAt = Time.unscaledTime;
             instance.SetFloat(SeedId, Random.Range(0f, 100f));
             FindSource();

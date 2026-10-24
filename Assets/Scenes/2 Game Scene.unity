@@ -45642,7 +45642,9 @@ MonoBehaviour:
   punchSizePerPoint: 0.1
   handSizePerPoint: 0.02
   punchDamagePerPoint: 0.1
-  throwPerPoint: 0.06
+  throwPerPoint: 0.03
+  maxThrowScale: 1.6
+  pullPerPoint: 0.035
   blastRadiusPerPoint: 0.08
   blastDamagePerPoint: 0.1
   maxBlastRadius: 2
@@ -331259,6 +331261,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.GentleFarGrab
   farDistance: 0.6
   pullSpeed: 9
+  maxPullSpeed: 14
   maxPullSeconds: 0.6
 --- !u!114 &8317466445825997488
 MonoBehaviour:
@@ -331276,7 +331279,8 @@ MonoBehaviour:
   healthFsm: PlayerHealth
   healthVariable: PlayerHealth
   opacity: 0.5
-  fullBurstDamage: 30
+  bigHitOpacity: 1
+  fullBurstDamage: 60
   smallestBurst: 0.55
   holdSeconds: 0.08
   fadeSeconds: 0.6

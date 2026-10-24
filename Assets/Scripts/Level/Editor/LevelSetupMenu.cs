@@ -145,7 +145,7 @@ namespace Game.EditorTools
         }
 
         [MenuItem("Tools/429 Game/Player/Set Up Level System", true)]
-        [MenuItem("Tools/429 Game/Player/Update Skill Points (Candy Heal, Enemy Push)", true)]
+        [MenuItem("Tools/429 Game/Player/Update Skill Points (Candy Heal, Enemy Push, Throw Speed)", true)]
         private static bool CanSetUp()
         {
             // Changes made while playing are thrown away.
@@ -155,14 +155,18 @@ namespace Game.EditorTools
         // The C# default of Push Cut Per Point before Toughness was made to resist enemy pushes more.
         private const float OldPushCut = 0.06f;
         private const float NewPushCut = 0.08f;
+        // Throw Power's throw speed a point before it also made far grabs pull faster (it was halved to make room).
+        private const float OldThrowPerPoint = 0.06f;
+        private const float NewThrowPerPoint = 0.03f;
 
         /// <summary>
         /// The scene side of the skill point rework (2026-10): Candy Heal Bonus is ticked on the PlayerHealth FSM's candy
-        /// heal (Health1's Float Add Random), so Max Health makes candy heal more, and Toughness resists enemy pushes more
-        /// (the Player Level's Push Cut Per Point 0.06 becomes 0.08; a value changed by hand is left alone). Running it
-        /// again changes nothing. Save the scene afterwards.
+        /// heal (Health1's Float Add Random), so Max Health makes candy heal more, Toughness resists enemy pushes more
+        /// (the Player Level's Push Cut Per Point 0.06 becomes 0.08), and Throw Power's throw speed is halved now that it
+        /// also makes far grabs pull faster (Throw Per Point 0.06 becomes 0.03). A value changed by hand is left alone.
+        /// Running it again changes nothing. Save the scene afterwards.
         /// </summary>
-        [MenuItem("Tools/429 Game/Player/Update Skill Points (Candy Heal, Enemy Push)")]
+        [MenuItem("Tools/429 Game/Player/Update Skill Points (Candy Heal, Enemy Push, Throw Speed)")]
         public static void UpdateSkillPoints()
         {
             var notes = new List<string>();
@@ -182,6 +186,14 @@ namespace Game.EditorTools
                     notes.Add($"Push Cut Per Point {OldPushCut} > {NewPushCut}");
                 }
                 else notes.Add($"Push Cut Per Point left at {push.floatValue}");
+                var throwSpeed = so.FindProperty("throwPerPoint");
+                if (Mathf.Abs(throwSpeed.floatValue - OldThrowPerPoint) < 0.0001f)
+                {
+                    throwSpeed.floatValue = NewThrowPerPoint;
+                    so.ApplyModifiedProperties();
+                    notes.Add($"Throw Per Point {OldThrowPerPoint} > {NewThrowPerPoint}");
+                }
+                else notes.Add($"Throw Per Point left at {throwSpeed.floatValue}");
             }
 
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());

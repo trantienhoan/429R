@@ -40,8 +40,9 @@ namespace Game.Leveling
     /// far enemies push the player; Weapon Efficiency makes weapons hit harder and wear out slower; Fist Size unlocks the
     /// flying Jab at 1 point (Swing and Uppercut are locked for later: Lock Swing And Uppercut), and every point makes
     /// punches hit harder and flying punches bigger and fly farther (Triple Punch at 10), the hand itself only a little
-    /// bigger; Throw Power makes throws leave the hand faster, and from 1 point thrown books, bottles and flip-flops
-    /// explode (Grenade), more points making the blast reach farther and hurt more (at 0 they don't explode); Move Speed
+    /// bigger; Throw Power makes throws leave the hand faster and far grabs pull faster (Gentle Far Grab), and from 1
+    /// point thrown books, bottles and flip-flops explode (Grenade), more points making the blast reach farther and
+    /// hurt more (at 0 they don't explode); Move Speed
     /// makes walking faster. What one point gives is set below; the last point that fills a stat up counts as Last Point
     /// Worth (7) points (all but Fist Size, whose last point is the Triple Punch).
     /// Reaching a Bonus Level (10, 20, 21) also gives a bonus point for the three bonus stats (the menu's Bonus Stats
@@ -138,9 +139,19 @@ namespace Game.Leveling
                  "point: a best hit of 5 does 6 at 1 point, 10 at 10). Only normal Fist Size points count.")]
         [Min(0f)]
         [SerializeField] private float punchDamagePerPoint = 0.1f;
-        [Tooltip("Throw Power: things leave the hand this share faster (0.06 = 6% more a point). Gentle drops aren't sped up.")]
+        [Tooltip("Throw Power: things leave the hand this share faster (0.03 = 3% more a point; a full stat counts as 16 " +
+                 "points: +48%). Gentle drops aren't sped up.")]
         [Min(0f)]
-        [SerializeField] private float throwPerPoint = 0.06f;
+        [SerializeField] private float throwPerPoint = 0.03f;
+        [Tooltip("Throw Power and the Power bonus together never make throws more than this many times faster (1.6 = " +
+                 "+60%). Throws already leave the hand 4.5-6 times faster than it moves; much faster and bottles and " +
+                 "pumpkins can fly through a small bug.")]
+        [Min(1f)]
+        [SerializeField] private float maxThrowScale = 1.6f;
+        [Tooltip("Throw Power: far grabs pull things to the hand this share faster (0.035 = 3.5% more a point; a full " +
+                 "stat counts as 16 points: +56%, 9 m/s becomes 14). Gentle Far Grab's Max Pull Speed caps it.")]
+        [Min(0f)]
+        [SerializeField] private float pullPerPoint = 0.035f;
 
         [Header("Exploding throws (Throw Power)")]
         [Tooltip("At 0 Throw Power, thrown books, bottles and flip-flops (Grenade) don't explode: they just hit and break. " +
@@ -352,8 +363,13 @@ namespace Game.Leveling
         /// <summary>How much harder punches hit, the fist itself and flying punches (Fist Size): 1 = as always.</summary>
         public static float PunchDamageScale => Instance != null ? 1f + Instance.Points(Stat.FistSize) * Instance.punchDamagePerPoint : 1f;
 
-        /// <summary>How much faster throws leave the hand (Throw Power, and the Power bonus): 1 = as always.</summary>
-        public static float ThrowScale => Instance != null ? 1f + Instance.WithBonus(Stat.ThrowPower, Stat.BonusPower) * Instance.throwPerPoint : 1f;
+        /// <summary>How much faster throws leave the hand (Throw Power, and the Power bonus, at most Max Throw Scale): 1 = as always.</summary>
+        public static float ThrowScale => Instance != null
+            ? Mathf.Min(1f + Instance.WithBonus(Stat.ThrowPower, Stat.BonusPower) * Instance.throwPerPoint, Instance.maxThrowScale)
+            : 1f;
+
+        /// <summary>How much faster far grabs pull things to the hand (Throw Power): 1 = as always.</summary>
+        public static float PullScale => Instance != null ? Instance.Gain(Stat.ThrowPower, Instance.pullPerPoint) : 1f;
 
         /// <summary>
         /// Whether thrown books, bottles and flip-flops explode (Grenade): from the first Throw Power point. Without a Player
@@ -498,12 +514,14 @@ namespace Game.Leveling
             return $", {string.Join(" + ", names)} at {next}";
         }
 
-        // The Throw Power row: "Throws explode at 1 point" at 0, then the throw speed and how much bigger the blasts are.
+        // The Throw Power row: "Throws explode at 1 point" at 0, then the throw and pull speed and how much bigger the
+        // blasts are.
         private string ThrowNote()
         {
             int p = Points(Stat.ThrowPower);
             if (p == 0) return "Throws explode at 1 point";
-            string speed = $"+{Percent(Worth(Stat.ThrowPower) * throwPerPoint)} throw speed";
+            float throwShare = Mathf.Min(Worth(Stat.ThrowPower) * throwPerPoint, maxThrowScale - 1f);
+            string speed = $"+{Percent(throwShare)} throw speed, +{Percent(PullScale - 1f)} pull";
             if (BlastSteps == 0) return speed + ", throws explode";
             return $"{speed}, blasts +{Percent(BlastSteps * blastDamagePerPoint)} damage, +{BlastSteps * blastRadiusPerPoint:0.0} m";
         }

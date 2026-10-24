@@ -29,8 +29,23 @@ namespace Game.EditorTools
         private const string WarningSound = "Assets/Audio/SFX/elon_boong_beep_beep.wav";
         private const string ShakeSound = "Assets/Audio/SFX/poision_bottle_shake.wav";
 
-        // Seconds shaken and the blast's reach then: small enough that a blast doesn't break a whole room at once.
-        private static readonly Vector2[] BottleCharge = { new(1f, 0.5f), new(2f, 1f), new(2.5f, 1.25f), new(3f, 1.5f) };
+        // Seconds shaken and the blast's reach then: small enough that a blast doesn't break a whole room at once. The
+        // first step already reaches well past a plain throw's 0.4 m.
+        private static readonly Vector2[] BottleCharge = { new(1f, 0.6f), new(2f, 1f), new(2.5f, 1.25f), new(3f, 1.5f) };
+        // A charged bottle's damage: at the first step of the charge, and at the last (always more than a plain throw).
+        private static readonly Vector2 BottleChargeDamage = new(4f, 8f);
+
+        // Each kind of exploding throw at 1 Throw Power point (each point after it: +0.08 m reach, +10% damage). Books
+        // are everywhere: a small splash. Bottles a bit more (shaken, much more). A flip-flop is a weapon given up: the
+        // biggest plain blast. Each reaches far enough to catch a bug next to the one it hits; the player is hurt
+        // (Damage, like a bug bite) only within it. Effect sizes: the flip-flops' 0.7 (Smaller Flip-Flop Blasts), the
+        // others a little smaller.
+        private static readonly (string name, string folder, float radius, float damage, float push, float effectSize)[] Blasts =
+        {
+            ("Bedroom_Book_", "Assets/Prefabs/Items/Breakable", 0.3f, 2.4f, 3.2f, 0.55f),
+            ("Empty_Bottle_", "Assets/Prefabs/Items/Breakable", 0.4f, 3f, 4f, 0.65f),
+            ("Flip_Flop", "Assets/Prefabs/Weapon", 0.5f, 4f, 4f, 0.7f),
+        };
 
         private static readonly string[] Bottles =
         {
@@ -42,10 +57,11 @@ namespace Game.EditorTools
         };
 
         /// <summary>
-        /// Makes the empty bottles shake-to-charge grenades (see Grenade): shaken 1 s they blow 0.5 m wide, 2 s 1 m,
-        /// 2.5 s 1.25 m, and at 3 s they go off in the hand (1.5 m). They rattle while shaken and beep a warning just
-        /// before going off in the hand. Also has the explosion, rattle and beep sounds loaded with the scene, so they
-        /// don't stutter the first time. Bottles keep their other grenade settings.
+        /// Makes the empty bottles shake-to-charge grenades (see Grenade): shaken 1 s they blow 0.6 m wide, 2 s 1 m,
+        /// 2.5 s 1.25 m, and at 3 s they go off in the hand (1.5 m); 4 damage at the first step, 8 at the last. They
+        /// rattle while shaken and beep a warning just before going off in the hand. Also has the explosion, rattle and
+        /// beep sounds loaded with the scene, so they don't stutter the first time. Bottles keep their other grenade
+        /// settings.
         /// </summary>
         [MenuItem("Tools/429 Game/Weapons/Make Bottles Shake To Charge")]
         public static void MakeBottlesShakeToCharge()
@@ -74,6 +90,7 @@ namespace Game.EditorTools
                     var steps = serialized.FindProperty("charge");
                     steps.arraySize = BottleCharge.Length;
                     for (int i = 0; i < BottleCharge.Length; i++) steps.GetArrayElementAtIndex(i).vector2Value = BottleCharge[i];
+                    serialized.FindProperty("chargeDamage").vector2Value = BottleChargeDamage;
                     if (serialized.FindProperty("warningSound").objectReferenceValue == null)
                         serialized.FindProperty("warningSound").objectReferenceValue = beep;
                     if (serialized.FindProperty("shakeSound").objectReferenceValue == null)
@@ -256,13 +273,14 @@ namespace Game.EditorTools
 
         /// <summary>
         /// Makes the books (Bedroom_Book_*) small grenades: thrown hard at something (8 m/s, like a flip-flop) they blow
-        /// up at 80% of a flip-flop (0.12 m reach, 2.4 damage, 3.2 push, effects and sound at 0.8) and break into their
-        /// pages. Running it again sets them to these numbers again.
+        /// up (the book's numbers in Blasts: 0.3 m reach, 2.4 damage, 3.2 push, effects at 0.55; sound at 0.8) and
+        /// break into their pages. Running it again sets them to these numbers again.
         /// </summary>
         [MenuItem("Tools/429 Game/Weapons/Make Books Explode")]
         public static void MakeBooksExplode()
         {
             const float power = 0.8f;
+            var book = Blasts[0];
             var effects = new List<GameObject>();
             foreach (var path in Effects)
             {
@@ -283,16 +301,16 @@ namespace Game.EditorTools
                     if (grenade == null) grenade = root.AddComponent<Grenade>();
                     var serialized = new SerializedObject(grenade);
                     serialized.FindProperty("minThrowSpeed").floatValue = 8f;
-                    serialized.FindProperty("radius").floatValue = 0.15f * power;
-                    serialized.FindProperty("damage").floatValue = 3f * power;
-                    serialized.FindProperty("push").floatValue = 4f * power;
+                    serialized.FindProperty("radius").floatValue = book.radius;
+                    serialized.FindProperty("damage").floatValue = book.damage;
+                    serialized.FindProperty("push").floatValue = book.push;
                     serialized.FindProperty("playerEvent").stringValue = "Damage";
                     serialized.FindProperty("breakApart").boolValue = true;
                     serialized.FindProperty("shakeToCharge").boolValue = false;
                     var list = serialized.FindProperty("effects");
                     list.arraySize = effects.Count;
                     for (int i = 0; i < effects.Count; i++) list.GetArrayElementAtIndex(i).objectReferenceValue = effects[i];
-                    serialized.FindProperty("effectSize").floatValue = power;
+                    serialized.FindProperty("effectSize").floatValue = book.effectSize;
                     serialized.FindProperty("sound").objectReferenceValue = sound;
                     serialized.FindProperty("volume").floatValue = power;
                     serialized.FindProperty("rumbleStrength").floatValue = power;
@@ -306,6 +324,57 @@ namespace Game.EditorTools
                 }
             }
             Debug.Log($"[Grenade] {made.Count} book(s) now explode when thrown: {string.Join(", ", made)}.");
+        }
+
+        /// <summary>
+        /// Sets every exploding throw's blast to its numbers in Blasts (reach, damage, push, effect size: books, bottles,
+        /// flip-flops), and the bottles' charge (Bottle Charge, Bottle Charge Damage). Their other settings are kept.
+        /// Running it again sets them to these numbers again.
+        /// </summary>
+        [MenuItem("Tools/429 Game/Weapons/Balance Explosive Throws")]
+        public static void BalanceExplosiveThrows()
+        {
+            var stage = UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
+            var made = new List<string>();
+            foreach (var blast in Blasts)
+            {
+                foreach (var guid in AssetDatabase.FindAssets(blast.name + " t:Prefab", new[] { blast.folder }))
+                {
+                    var path = AssetDatabase.GUIDToAssetPath(guid);
+                    if (!System.IO.Path.GetFileName(path).StartsWith(blast.name)) continue;
+                    if (stage != null && stage.assetPath == path)
+                    {
+                        Debug.LogError($"[Grenade] {path} is open in Prefab Mode: close it and run this again. It was skipped.");
+                        continue;
+                    }
+                    var root = PrefabUtility.LoadPrefabContents(path);
+                    try
+                    {
+                        var grenade = root.GetComponent<Grenade>();
+                        if (grenade == null) continue;
+                        var serialized = new SerializedObject(grenade);
+                        serialized.FindProperty("radius").floatValue = blast.radius;
+                        serialized.FindProperty("damage").floatValue = blast.damage;
+                        serialized.FindProperty("push").floatValue = blast.push;
+                        serialized.FindProperty("effectSize").floatValue = blast.effectSize;
+                        if (serialized.FindProperty("shakeToCharge").boolValue)
+                        {
+                            var steps = serialized.FindProperty("charge");
+                            steps.arraySize = BottleCharge.Length;
+                            for (int i = 0; i < BottleCharge.Length; i++) steps.GetArrayElementAtIndex(i).vector2Value = BottleCharge[i];
+                            serialized.FindProperty("chargeDamage").vector2Value = BottleChargeDamage;
+                        }
+                        serialized.ApplyModifiedPropertiesWithoutUndo();
+                        PrefabUtility.SaveAsPrefabAsset(root, path);
+                        made.Add(root.name);
+                    }
+                    finally
+                    {
+                        PrefabUtility.UnloadPrefabContents(root);
+                    }
+                }
+            }
+            Debug.Log($"[Grenade] {made.Count} exploding throw(s) balanced: {string.Join(", ", made)}.");
         }
 
         /// <summary>
