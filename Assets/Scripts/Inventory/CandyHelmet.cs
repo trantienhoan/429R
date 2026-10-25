@@ -8,11 +8,12 @@ using FsmVariables = HutongGames.PlayMaker.FsmVariables;
 namespace Game.Inventory
 {
     /// <summary>
-    /// The invisible Candy Helmet (a timed buff, Player Buffs: Candy Helmet; the bonus round gives it when the giant
-    /// pumpkin breaks): while it's on, candies lying around fly into the player's mouth one after another and are eaten
-    /// the normal way, by the candy's own "Damage" FSM state "Health 1" (it heals, says om nom and adds 1 Candy to the
-    /// save). Candies still flying out of something, held in a hand or busy breaking are left until they're lying still.
-    /// Made by itself the first time the buff is given; nothing to put in a scene.
+    /// The invisible Candy Helmet, a candy vacuum (a timed buff, Player Buffs: Candy Helmet; every pumpkin the bonus
+    /// round's player breaks adds 5 s): while it's on, every candy around flies into the player's mouth, many at once, and
+    /// is eaten the normal way, by the candy's own "Damage" FSM state "Health 1" (it heals, says om nom and adds 1 Candy to
+    /// the save). It takes them the moment it sees them, even ones still flying out of a pumpkin, so punches and pumpkin
+    /// pieces can't break them first (a candy breaks on any bump over 7 m/s). Ones held in a hand or busy breaking are
+    /// left. Made by itself the first time the buff is given; nothing to put in a scene.
     /// </summary>
     [DisallowMultipleComponent]
     public class CandyHelmet : MonoBehaviour
@@ -20,13 +21,13 @@ namespace Game.Inventory
         [Tooltip("How far from the player's head candies are pulled in, in metres.")]
         [SerializeField] private float reach = 30f;
         [Tooltip("Candies in the air at once.")]
-        [SerializeField] private int maxFlying = 6;
-        [Tooltip("Seconds between one candy setting off and the next, so the eating (and the om noms) come one by one.")]
-        [SerializeField] private float nextEvery = 0.15f;
-        [Tooltip("A candy is taken once it has been lying (nearly) still this long, in seconds.")]
-        [SerializeField] private float settleSeconds = 0.4f;
+        [SerializeField] private int maxFlying = 24;
+        [Tooltip("Seconds between one candy setting off and the next: a quick stream into the mouth.")]
+        [SerializeField] private float nextEvery = 0.04f;
+        [Tooltip("A candy is taken once it has been lying (nearly) still this long, in seconds (0: at once, even flying).")]
+        [SerializeField] private float settleSeconds = 0f;
         [Tooltip("... or once it's been about this long anyway (one that keeps rolling), in seconds.")]
-        [SerializeField] private float takeAnywayAfter = 2.5f;
+        [SerializeField] private float takeAnywayAfter = 0f;
 
         // The candies: Candy_1 ... Candy_8 (not their broken pieces, Candy_Drop).
         private static readonly Regex CandyName = new(@"^Candy_\d+$");
@@ -39,7 +40,7 @@ namespace Game.Inventory
         // Where the mouth is from the eyes when there's no Mouth (as the Mouth sits under the Main Camera).
         private static readonly Vector3 MouthOffset = new(0f, -0.09f, 0.07f);
         private const float StillSpeed = 0.6f;
-        private const float ScanEvery = 0.25f;
+        private const float ScanEvery = 0.1f;
         private const float ArriveSeconds = 0.25f;
 
         private static CandyHelmet instance;

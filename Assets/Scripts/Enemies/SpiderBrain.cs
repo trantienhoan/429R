@@ -18,7 +18,9 @@ namespace Game.Enemies
     /// bursts, and circles at a distance; only Max Attackers spiders attack at a time, the rest wait their turn. An
     /// attack starts with a wind-up (it rears up: the player's chance to step back or block), then it picks one of its
     /// Attacks that fits the distance, lunges and bites. The bite only hurts if its mouth actually touches the player's
-    /// body collider; a weapon held in the way, or a fist, blocks it. An attack can also slow the player's walking for a
+    /// body collider; a weapon held in the way, or a fist, blocks it (a held thing takes the bite instead, losing health
+    /// by how hard it would have hurt: Block Wear Per; a bare fist stops only half: Fist Block Share). An attack can also
+    /// slow the player's walking for a
     /// moment when it lands (Slow Player To, e.g. the cockroach's face leap). Afterwards it backs off and circles again.
     /// A hit makes it flinch (not again for Flinch Cooldown; with a Stun Guard nothing stops it again for that many
     /// seconds after any stop, so a boss can't be stun-locked); low on health it runs away once.
@@ -379,6 +381,15 @@ namespace Game.Enemies
         [SerializeField] private float walkBackSpeed = 0.7f;
         [Tooltip("A weapon held in the way of the bite, or a fist, blocks it.")]
         [SerializeField] private bool heldThingsBlock = true;
+        [Tooltip("A held thing that blocks a bite takes it instead: it loses 1 health for every this much damage the bite " +
+                 "would have done to the player (a bite of 6-9: 1, so a tree pumpkin breaks on the 4th; a heavy one of " +
+                 "40-50: 6). Fists and legendary gear don't wear. 0 = blocking costs nothing.")]
+        [Min(0f)]
+        [SerializeField] private float blockWearPer = 7.5f;
+        [Tooltip("A bare fist that blocks a bite only stops part of it: the player still takes this share of its damage " +
+                 "(0.5 = half; the bite's push and slow are stopped). 0 = a fist stops all of it.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float fistBlockShare = 0.5f;
 
         [Header("Dodging")]
         [Tooltip("Animator states for hopping back, left and right. It only dodges once at least one is set and in the " +
@@ -582,6 +593,10 @@ namespace Game.Enemies
         [Tooltip("Sent to the player's PlayerHealth FSM when an unstoppable attack lands, instead of its size's event: " +
                  "DamageStrongZ (25-50), DamageHeavy (40-50), Damage (6-9). Empty: its size's event, as usual.")]
         [SerializeField] private string unstoppablePlayerEvent = "DamageStrongZ";
+        [Tooltip("Boss size only: killed by the player, it gives them this many seconds of the bonus round's Candy Helmet " +
+                 "(every candy around flies into their mouth), on top of any time it has left. 0 = none.")]
+        [Min(0f)]
+        [SerializeField] private float bossHelmetSeconds = 3f;
 
         [Header("Calling minions (bosses)")]
         [Tooltip("The minion a boss calls when it gets low on health: Spider_Small for the white Spider_Boss, " +
@@ -805,6 +820,8 @@ namespace Game.Enemies
         private const string PlayerVariable = "Player";
         private const string PlayerDamageFsm = "Damage";
         private const string PlayerHealthFsm = "PlayerHealth";
+        // A held thing's Damage FSM state that takes one point off its health with its hit look and sound.
+        private const string OwnHitState = "Deal 1 damage";
         private const string SpawnedStuffVariable = "CurrentlySpawnedStuffs";
         private const float SensesEvery = 0.2f;
         private const float RepathEvery = 0.25f;
@@ -1794,6 +1811,8 @@ namespace Game.Enemies
                 if (other.transform.IsChildOf(transform)) continue;
                 if (heldThingsBlock && !Unstoppable && IsHeldOrFist(other))
                 {
+                    if (Fist.IsFistBall(other.attachedRigidbody)) FistBlocked();
+                    else WearBlocker(other.attachedRigidbody);
                     BiteBlocked();
                     return;
                 }
@@ -1829,7 +1848,7 @@ namespace Game.Enemies
             attackResolved = true;
             DamageVignette.HitFrom(transform);
             if (Unstoppable && !string.IsNullOrEmpty(unstoppablePlayerEvent)) SendToPlayer(unstoppablePlayerEvent, PlayerHealthFsm);
-            else SendToPlayer(string.IsNullOrEmpty(kind.playerEvent) ? move.playerEvent : kind.playerEvent);
+            else SendToPlayer(BiteEvent);
             if (move.slowSeconds > 0f) Game.Locomotion.PlayerSlow.Apply(move.slowPlayerTo, move.slowSeconds);
             if (move.landSound != null) PlayOne(move.landSound, true);
             // The size's push, times this attack's Push Power (a jump attack shoves harder).
@@ -1846,6 +1865,47 @@ namespace Game.Enemies
         private void Push(float height, float distance)
         {
             Game.Combat.PlayerLaunch.Launch(transform.position, height, distance, distance * Game.Leveling.PlayerLevel.PushShare >= 1f);
+        }
+
+        // The event this bite sends the player (its size's, or the attack's own).
+        private string BiteEvent => kind != null && !string.IsNullOrEmpty(kind.playerEvent) ? kind.playerEvent : move != null ? move.playerEvent : "Damage";
+
+        // Bit a held thing instead of the player: it takes the bite, losing 1 health for every Block Wear Per of damage the
+        // bite would have done, through its own Health FSM (it breaks the usual way at 0). One point goes through its
+        // Damage FSM's own hit, so it shows its hit look and sound; the rest come straight off. Fists and legendary gear
+        // block for free.
+        private void WearBlocker(Rigidbody body)
+        {
+            if (blockWearPer <= 0f || body == null || Fist.IsFistBall(body) || body.GetComponent<Game.Weapons.LegendaryGear>() != null) return;
+            if (!Game.Weapons.Blast.HasHealth(body.gameObject, out var health, out var damageFsm) || health == null) return;
+            int wear = Mathf.Max(1, Mathf.RoundToInt(PlayerDamageOf(BiteEvent) / blockWearPer));
+            bool ownHit = damageFsm != null && damageFsm.Fsm.GetState(OwnHitState) != null;
+            health.Value -= ownHit ? wear - 1 : wear;
+            if (ownHit) damageFsm.SetState(OwnHitState);
+        }
+
+        // A bare fist only stops part of a bite: the player still takes Fist Block Share of its damage (no push, no slow).
+        private void FistBlocked()
+        {
+            if (fistBlockShare <= 0f) return;
+            Game.Combat.PlayerDamageShare.Next(fistBlockShare);
+            DamageVignette.HitFrom(transform);
+            SendToPlayer(BiteEvent);
+        }
+
+        // How much a player event takes off the player's health (the middle of the PlayerHealth FSM's range).
+        private static float PlayerDamageOf(string playerEvent)
+        {
+            switch (playerEvent)
+            {
+                case "DamageStrongZ": return 37.5f;
+                case "DamageHeavy": return 45f;
+                case "FallDamage": return 55f;
+                case "PumpkinBossHit": return 80f;
+                case "Pumpkin_Boss_Damage": return 107.5f;
+                case "PumpkinBossHitHeavy": return 125f;
+                default: return 7.5f;
+            }
         }
 
         // Bit a held weapon or a fist (or a shield covered the player): it flinches and backs off.
@@ -2715,6 +2775,14 @@ namespace Game.Enemies
             Game.Leveling.PlayerBuffs.Give(Game.Leveling.Buff.CandyHelmet, anomalyHelmetSeconds);
         }
 
+        // A mini boss killed by the player (not by a fall or Live Limit): a few more seconds of the Candy Helmet, so its
+        // candies come to them.
+        private void BossKilled()
+        {
+            if (bossHelmetSeconds <= 0f || !TryGetComponent(out EnemyHitDamage hits) || hits.noReward) return;
+            Game.Leveling.PlayerBuffs.Add(Game.Leveling.Buff.CandyHelmet, bossHelmetSeconds);
+        }
+
         // ---- Losing its wings ----
 
         // Low on health a flier's wings come off: it stops, drops to the floor and walks from then on.
@@ -3234,6 +3302,7 @@ namespace Game.Enemies
         private void Die()
         {
             if (anomaly && state != State.Dead) AnomalyKilled();
+            if (kindName == SizeClass.Boss && !anomaly && state != State.Dead) BossKilled();
             // Beaten before its bomb went off: defused.
             if (bombAt >= 0f)
             {

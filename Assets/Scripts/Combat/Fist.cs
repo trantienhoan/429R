@@ -154,6 +154,14 @@ namespace Game.Combat
                  "twice that (0.5 = 1.5x and 2x as far). Each also starts a fist's width farther out than the one before.")]
         [Min(0f)]
         [SerializeField] private float tripleReach = 0.5f;
+        [Tooltip("Puffs of smoke a flying punch leaves along its way (Effect Pool), e.g. Smoke_Blast. Empty: none.")]
+        [SerializeField] private GameObject flyTrailPuff;
+        [Tooltip("A puff every this many metres it flies.")]
+        [Min(0.05f)]
+        [SerializeField] private float flyTrailEvery = 0.3f;
+        [Tooltip("How big the puffs are for a flying punch the size of the fist; bigger flying punches leave bigger puffs.")]
+        [Min(0f)]
+        [SerializeField] private float flyTrailSize = 0.25f;
 
         [Header("Swing")]
         [Tooltip("A fast sideways sweep of the fist (a hook) hits harder, and flies on sideways, level, the way the fist " +
@@ -265,6 +273,8 @@ namespace Game.Combat
         private const int MinFlyers = 9;
         // How fast the flying fist flies, in metres per second; its damage is worked out from the punch's own speed.
         private const float FlySpeed = 8f;
+        // Copies of the trail's puff made at load: about a second of three flying fists' puffs.
+        private const int TrailCopies = 30;
         // Punches slower than this (metres per second) don't send things flying, and nothing leaves faster than Max.
         // A hand moving slower than this (metres per second) isn't punching: no rumble, push, puff or pumpkin help.
         private const float MinPunchSpeed = 1f;
@@ -433,6 +443,8 @@ namespace Game.Combat
             MakeBall();
             // Ready at load, so the first good punch doesn't stutter.
             Game.EffectPool.Warm(goodPunchEffect);
+            // The trail's puffs too: a few flying punches' worth (each lasts about a second).
+            Game.EffectPool.Warm(flyTrailPuff, TrailCopies);
             // The Elon Boong's explosions too, with enough copies for a hand blasting as often as it may (Boong Blast
             // Every) for as long as a copy stays busy, so the first Elon fight doesn't make them mid-punch. The other
             // hand and the bottles share them, so nothing more is made for those.
@@ -486,6 +498,12 @@ namespace Game.Combat
                 if (flyer != null) Destroy(flyer.gameObject);
             }
         }
+
+        /// <summary>
+        /// The hand is squeezed into a fist right now (grip, and the trigger if Need Trigger), holding nothing. Unlike
+        /// Is Fist it's read from the buttons at once, so it also works while the game is paused (a notice up).
+        /// </summary>
+        public bool Squeezing => Read(gripAction) >= squeeze && (!needTrigger || triggerAction == null || Read(triggerAction) >= squeeze) && !Holding();
 
         private void Update()
         {
@@ -1202,6 +1220,7 @@ namespace Game.Combat
             private Vector3 direction;
             private float reach;
             private float flown;
+            private float sinceTrail;
             private float hitSpeed;
             private Move move;
             private bool done;
@@ -1262,6 +1281,8 @@ namespace Game.Combat
                 direction = towards.normalized;
                 reach = Mathf.Max(distance, 0.01f);
                 flown = 0f;
+                // The first puff comes soon after it leaves the hand.
+                sinceTrail = owner.flyTrailEvery * 0.5f;
                 fade = 0f;
                 done = false;
                 body.position = from;
@@ -1280,8 +1301,19 @@ namespace Game.Combat
                     return;
                 }
                 flown += FlySpeed * Time.fixedDeltaTime;
+                Trail(FlySpeed * Time.fixedDeltaTime);
                 if (flown >= reach) Stop();
                 else body.linearVelocity = direction * FlySpeed;
+            }
+
+            // A puff of smoke behind it every Fly Trail Every metres, as big as it is.
+            private void Trail(float step)
+            {
+                if (owner.flyTrailPuff == null) return;
+                sinceTrail += step;
+                if (sinceTrail < owner.flyTrailEvery) return;
+                sinceTrail = 0f;
+                Game.EffectPool.Play(owner.flyTrailPuff, body.position - direction * Ball.radius, owner.flyTrailSize * size);
             }
 
             // Its collider goes off next step, so whatever it hit still gets this hit.

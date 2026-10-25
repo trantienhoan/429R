@@ -52,6 +52,8 @@ namespace Game.Bonus
             board.head = Camera.main != null ? Camera.main.transform : null;
             board.Build(punches, perfectJabs, place, font != null ? font : TMP_Settings.defaultFontAsset);
             board.PlaceInFront();
+            // A punch shatters it: gone at once, the shards take its place.
+            Game.Menus.PunchToShatter.Add(panel, () => Destroy(board.gameObject));
             return board;
         }
 

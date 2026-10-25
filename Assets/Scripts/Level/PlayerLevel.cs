@@ -346,11 +346,14 @@ namespace Game.Leveling
         /// <summary>The share of a hit's wear a weapon takes (Weapon Efficiency): 1 = all of it.</summary>
         public static float WeaponWearShare => Instance != null ? Instance.Cut(Stat.WeaponEfficiency, Instance.weaponWearCutPerPoint) : 1f;
 
-        /// <summary>How much bigger the hand is as a fist, in hand sizes (Fist Size and its bonus, a little): 0 = as always.</summary>
-        public static float FistSizeBonus => Instance != null ? Instance.FistSizePoints * Instance.handSizePerPoint : 0f;
+        /// <summary>
+        /// How much bigger the hand is as a fist, in hand sizes (Fist Size and its bonus, a little, and the Green Boong's
+        /// buff): 0 = as always.
+        /// </summary>
+        public static float FistSizeBonus => Instance != null ? (Instance.FistSizePoints + PlayerBuffs.FistSizePoints) * Instance.handSizePerPoint : 0f;
 
-        /// <summary>How much bigger flying punches are (Fist Size and its bonus): 0 = as always, 1 = twice as big.</summary>
-        public static float PunchSizeBonus => Instance != null ? Instance.FistSizePoints * Instance.punchSizePerPoint : 0f;
+        /// <summary>How much bigger flying punches are (Fist Size and its bonus, and the Green Boong's buff): 0 = as always, 1 = twice as big.</summary>
+        public static float PunchSizeBonus => Instance != null ? (Instance.FistSizePoints + PlayerBuffs.FistSizePoints) * Instance.punchSizePerPoint : 0f;
 
         /// <summary>
         /// How far flying punches have come along to their farthest: 0 at the Fist Size that unlocks the Jab, 1 at the

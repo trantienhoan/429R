@@ -133,6 +133,8 @@ namespace Game.Leveling
         private void Awake()
         {
             if (panel != null) panel.gameObject.SetActive(false);
+            // A punch shatters it: gone at once, the shards take its place.
+            if (panel != null) Game.Menus.PunchToShatter.Add((RectTransform)panel.transform, () => { panel.alpha = 0f; Close(); });
             // Its own speaker for the level-up sound, heard even while the notice pauses the game's sound.
             sound = gameObject.AddComponent<AudioSource>();
             sound.playOnAwake = false;

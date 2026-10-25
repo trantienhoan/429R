@@ -97,6 +97,9 @@ namespace Game.Menus
 
             shownThisLaunch = true;
             shownAt = Time.unscaledTime;
+            // A punch shatters it once it can be closed (after its reading time): gone at once, the shards take its place.
+            PunchToShatter.Add((RectTransform)panel.transform, () => { panel.alpha = 0f; closing = true; },
+                () => Time.unscaledTime - shownAt >= readingTime);
             panel.alpha = 0f;
             panel.interactable = false;
             panel.blocksRaycasts = false;

@@ -58,6 +58,10 @@ namespace Game.Menus
             // Hidden, and costing nothing, until Show.
             if (panel != null) panel.gameObject.SetActive(false);
             enabled = false;
+            // A punch shatters it once it can be closed (after its reading time): gone at once, the shards take its place.
+            if (panel != null)
+                PunchToShatter.Add((RectTransform)panel.transform, () => { panel.alpha = 0f; closing = true; },
+                    () => Time.unscaledTime - shownAt >= readingTime);
         }
 
         private void OnEnable()

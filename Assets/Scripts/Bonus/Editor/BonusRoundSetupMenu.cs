@@ -334,6 +334,18 @@ namespace Game.EditorTools
                     filled.Add($"{blasts.arraySize} blast effects");
                 }
                 if (Changed(so, "count", 14, 6)) filled.Add("6 pumpkins");
+                // 9 pumpkins (user, 2026-10-25), from the giant down to the same smallest, toughest one as the 6 had.
+                if (Changed(so, "count", 6, 9))
+                {
+                    Changed(so, "shrinkEach", 0.15f, 0.1f);
+                    Changed(so, "tougherPerPumpkin", 0.2f, 0.125f);
+                    Changed(so, "stifferPerPumpkin", 0.15f, 0.09f);
+                    filled.Add("9 pumpkins");
+                }
+                // The giant bursts out (user, 2026-10-25): much quicker than the old slow grow.
+                if (Changed(so, "growSeconds", 1.2f, 0.45f)) filled.Add("giant bursts out in 0.45 s");
+                // The candy vacuum (user, 2026-10-25): 5 s for every pumpkin, stacking, instead of 60 s from the giant.
+                if (Changed(so, "helmetSeconds", 60f, 5f)) filled.Add("candy vacuum 5 s per pumpkin");
                 if (Changed(so, "giantHealth", 60f, 120f)) filled.Add("giant health 120");
                 if (Changed(so, "bonusSeconds", 5f, 6f)) filled.Add("+6 s per pumpkin");
                 var list = so.FindProperty("candies");

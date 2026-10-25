@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
@@ -79,6 +80,11 @@ namespace Game.Bonus
         private int exp = -1;
         private float jiggle = 1f;
         private bool setUp;
+        private bool burst;
+
+        // A burst comes up from this far under the floor, in metres, and lands with a wobble this strong (1 = a hit's).
+        private const float BurstDepth = 0.5f;
+        private const float LandingWobble = 2.5f;
         // Its FSMs, held off until it's set up.
         private readonly List<PlayMakerFSM> held = new();
 
@@ -125,11 +131,15 @@ namespace Game.Bonus
             jiggle = Mathf.Max(0f, newJiggle);
         }
 
-        /// <summary>Called by Bonus Round before Setup: it grows out of where it is in 'seconds' (no drop from the sky).</summary>
-        public void GrowHere(float seconds)
+        /// <summary>
+        /// Called by Bonus Round before Setup: it grows out of where it is in 'seconds' (no drop from the sky). Burst (the
+        /// giant): it shoots up out of the ground, swells past its size and settles, and lands with a big wobble.
+        /// </summary>
+        public void GrowHere(float seconds, bool burstOut = false)
         {
             dropFromTheSky = false;
             popSeconds = Mathf.Max(0.05f, seconds);
+            burst = burstOut;
         }
 
         /// <summary>
@@ -158,6 +168,13 @@ namespace Game.Bonus
             foreach (var wobble in GetComponentsInChildren<Game.VFX.Jiggle>(true)) wobble.Amount = jiggle;
             if (!dropFromTheSky) PopOutInstead();
             else DropFrom(dropHeight);
+            if (burst && !dropFromTheSky) StartCoroutine(WobbleOnLanding());
+        }
+
+        private IEnumerator WobbleOnLanding()
+        {
+            yield return new WaitForSeconds(popSeconds);
+            foreach (var wobble in GetComponentsInChildren<Game.VFX.Jiggle>()) wobble.Hit(LandingWobble);
         }
 
         /// <summary>
@@ -200,22 +217,32 @@ namespace Game.Bonus
             }
             var state = healthMachine.Fsm.GetState(entranceState);
             if (state == null) return;
+            // A burst shoots up from under the floor and swells past its size before it settles (Ease Out Back).
+            float scale = Mathf.Max(0.01f, Body.lossyScale.y);
             foreach (var action in state.Actions)
             {
                 string type = action.GetType().Name;
                 if (type == "TweenPosition")
                 {
-                    SetVector(action, "fromPosition", Vector3.zero);
+                    SetVector(action, "fromPosition", burst ? Vector3.down * (BurstDepth / scale) : Vector3.zero);
                     SetFloat(action, "startDelay", 0f);
                     SetFloat(action, "time", popSeconds);
+                    if (burst) SetEase(action, HutongGames.EasingFunction.Ease.EaseOutBack);
                 }
                 else if (type == "TweenScale")
                 {
                     SetVector(action, "fromScale", Body.localScale * 0.2f);
                     SetFloat(action, "startDelay", 0f);
                     SetFloat(action, "time", popSeconds);
+                    if (burst) SetEase(action, HutongGames.EasingFunction.Ease.EaseOutBack);
                 }
             }
+        }
+
+        private static void SetEase(object action, HutongGames.EasingFunction.Ease ease)
+        {
+            if (action.GetType().GetField("easeType", BindingFlags.Instance | BindingFlags.Public)?.GetValue(action) is HutongGames.PlayMaker.FsmEnum e)
+                e.Value = ease;
         }
 
         // The entrance's fall starts 'height' metres up (its offset is in the pumpkin's own scale).

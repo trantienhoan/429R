@@ -18,8 +18,8 @@ namespace Game.Bonus
     /// - every pumpkin broken bursts, drops its candies (its Enemy Hit Damage gives the EXP), adds Bonus Seconds to the
     ///   countdown, and the next one inside it pops out where it was: smaller (Shrink Each less than the one before)
     ///   but tougher (more health, less jiggle; the giant jiggles most), down to the last one (Count);
-    /// - breaking the giant gives the player the invisible Candy Helmet (a timed buff: candies lying around fly into
-    ///   their mouth);
+    /// - every pumpkin broken gives the player Helmet Seconds more of the invisible Candy Helmet (a timed buff that stacks:
+    ///   every candy around flies into their mouth, even ones still coming out of the pumpkin);
     /// - when they're all broken or time's up (the one left blows up, throwing the player back) the player keeps what they got: the helmet eats
     ///   every candy left, then the round is over (Finished) and Play Bonus Round goes on. The Bonus Board shows how many
     ///   punches the pumpkins took and how many were perfect jabs, with the player's leaderboard (saved, Bonus Scores).
@@ -30,15 +30,21 @@ namespace Game.Bonus
     public class BonusRound : MonoBehaviour
     {
         [Header("Start")]
-        [Tooltip("Seconds the giant takes to grow out of the chest.")]
+        [Tooltip("Seconds the giant takes to burst out of the chest (it shoots up, swells past its size and lands wobbling).")]
         [Min(0.05f)]
-        [SerializeField] private float growSeconds = 1.2f;
+        [SerializeField] private float growSeconds = 0.45f;
         [Tooltip("A pumpkin coming where the player stands throws them clear of it: this high, in metres. 0 = no throw.")]
         [Min(0f)]
         [SerializeField] private float launchHeight = 1.2f;
         [Tooltip("... landing this far clear of the pumpkin's side, in metres.")]
         [Min(0f)]
         [SerializeField] private float launchMargin = 1f;
+        [Tooltip("The giant bursting out shoves the player back if they're within this many metres of its side (inside it: " +
+                 "thrown clear as above).")]
+        [Min(0f)]
+        [SerializeField] private float giantPushReach = 2f;
+        [Tooltip("... this high (x) and at least this far (y), in metres. Their Toughness doesn't cut it.")]
+        [SerializeField] private Vector2 giantPush = new(0.7f, 2.5f);
 
         [Header("Pumpkins")]
         [Tooltip("The giant, the first one (Nesting_Pumpkin_1): the stage's chest makes it.")]
@@ -51,22 +57,26 @@ namespace Game.Bonus
         [SerializeField] private float giantTimes = 1.3f;
         [Tooltip("How many pumpkins there are: the giant and the ones inside it.")]
         [Min(1)]
-        [SerializeField] private int count = 6;
-        [Tooltip("Each pumpkin is this much smaller than the one before (0.15 = 15%: 100%, 85%, 72%, 61% ...).")]
+        [SerializeField] private int count = 9;
+        [Tooltip("Each pumpkin is this much smaller than the one before (0.1 = 10%: 100%, 90%, 81%, 73% ...).")]
         [Range(0.01f, 0.5f)]
-        [SerializeField] private float shrinkEach = 0.15f;
+        [SerializeField] private float shrinkEach = 0.1f;
         [Tooltip("The giant's health. The smaller, the tougher: each one after it has Tougher Per Pumpkin of this more.")]
         [Min(1f)]
         [SerializeField] private float giantHealth = 120f;
-        [Tooltip("Each pumpkin has this share of the giant's health more than the one before (0.2 = +20%: 120, 144, 168 ...).")]
+        [Tooltip("Each pumpkin has this share of the giant's health more than the one before (0.125 = +12.5%: 120, 135, " +
+                 "150 ... 240 for the 9th).")]
         [Range(0f, 1f)]
-        [SerializeField] private float tougherPerPumpkin = 0.2f;
+        [SerializeField] private float tougherPerPumpkin = 0.125f;
         [Tooltip("How much the giant jiggles when hit (1 = as its Jiggle is set; more = wobblier).")]
         [Min(0f)]
         [SerializeField] private float giantJiggle = 1.6f;
-        [Tooltip("... and each one after it jiggles this share of the giant's jiggle less (0.15 = 100%, 85%, 70% ...).")]
+        [Tooltip("The giant itself (the first) jiggles this many times more on top (the ones inside it don't).")]
+        [Min(0f)]
+        [SerializeField] private float giantExtraJiggle = 1.5f;
+        [Tooltip("... and each one after it jiggles this share of the giant's jiggle less (0.09 = 100%, 91%, 82% ...).")]
         [Range(0f, 0.3f)]
-        [SerializeField] private float stifferPerPumpkin = 0.15f;
+        [SerializeField] private float stifferPerPumpkin = 0.09f;
         [Tooltip("Candies each pumpkin drops (the last one: Last Candies).")]
         [Min(0)]
         [SerializeField] private int candiesEach = 3;
@@ -107,10 +117,11 @@ namespace Game.Bonus
         [SerializeField] private float tickVolume = 0.6f;
 
         [Header("Candy Helmet")]
-        [Tooltip("Seconds the Candy Helmet lasts (given when the giant breaks). 0 = none.")]
+        [Tooltip("Seconds of the Candy Helmet (the candy vacuum: every candy around flies into the player's mouth) each " +
+                 "pumpkin broken gives. They add up: two pumpkins quickly one after the other, 10 s. 0 = none.")]
         [Min(0f)]
-        [SerializeField] private float helmetSeconds = 60f;
-        [Tooltip("Played when the helmet is given.")]
+        [SerializeField] private float helmetSeconds = 5f;
+        [Tooltip("Played when the helmet comes on (not when a pumpkin only adds to it).")]
         [SerializeField] private AudioClip helmetSound;
 
         [Header("Countdown sign")]
@@ -308,7 +319,8 @@ namespace Game.Bonus
         public float HealthOf(int index) => Mathf.Round(giantHealth * (1f + tougherPerPumpkin * index));
 
         /// <summary>How much pumpkin number 'index' jiggles when hit: the giant most, the smaller ones stiffer.</summary>
-        public float JiggleOf(int index) => Mathf.Max(MinJiggle, giantJiggle * (1f - stifferPerPumpkin * index));
+        public float JiggleOf(int index) =>
+            Mathf.Max(MinJiggle, giantJiggle * (1f - stifferPerPumpkin * index)) * (index == 0 ? giantExtraJiggle : 1f);
 
         /// <summary>
         /// Called by a nesting pumpkin something else made (the bonus stage's chest), before its FSMs start: it becomes
@@ -322,7 +334,7 @@ namespace Game.Bonus
             at.y = transform.position.y;
             pumpkin.transform.SetPositionAndRotation(at, Quaternion.Euler(0f, pumpkin.transform.eulerAngles.y, 0f));
             Prepare(pumpkin, 0);
-            pumpkin.GrowHere(growSeconds);
+            pumpkin.GrowHere(growSeconds, true);
             pumpkin.Setup();
             // Candies already lying about (e.g. the stage's) are looked after like the pumpkins' (pumpkins go through them).
             AdoptCandies();
@@ -400,7 +412,7 @@ namespace Game.Bonus
                     var at = lastSeen;
                     Puff(at, currentSize * 1.2f);
                     DropCandies(at, currentCandies);
-                    if (Broken == 1) GiveHelmet();
+                    GiveHelmet();
                     if (Broken >= total)
                     {
                         won = true;
@@ -507,7 +519,8 @@ namespace Game.Bonus
 
         // A pumpkin coming where the player stands (it reaches their body) throws them clear of it, landing Launch Margin
         // from its side, so they can walk back up to it and punch. One that comes next to them (each is a little smaller
-        // than the last, which they stood outside of) leaves them be.
+        // than the last, which they stood outside of) leaves them be. The giant bursting out also shoves back a player
+        // standing near it (Giant Push Reach), at least Giant Push far.
         private void ThrowClear(NestingPumpkin pumpkin)
         {
             var eyes = Head();
@@ -515,7 +528,11 @@ namespace Game.Bonus
             var middle = pumpkin.transform.position;
             float radius = RadiusPerSize * pumpkin.transform.localScale.x;
             float off = Flat(eyes.position - middle).magnitude;
-            if (off < radius + BodyRadius()) StartCoroutine(Throw(pumpkin, middle, radius + launchMargin - off));
+            bool inside = off < radius + BodyRadius();
+            bool giant = Broken == 0;
+            if (giant && (inside || off < radius + BodyRadius() + giantPushReach))
+                StartCoroutine(Throw(pumpkin, middle, inside ? launchHeight : giantPush.x, Mathf.Max(giantPush.y, radius + launchMargin - off)));
+            else if (inside) StartCoroutine(Throw(pumpkin, middle, launchHeight, radius + launchMargin - off));
         }
 
         // How wide the player's body is (the XR Origin's Character Controller).
@@ -527,13 +544,13 @@ namespace Game.Bonus
 
         // The throw goes through the pumpkin growing round the player (their Character Controller ignores it meanwhile);
         // the player's Toughness doesn't cut it, so they always land clear.
-        private IEnumerator Throw(NestingPumpkin pumpkin, Vector3 middle, float distance)
+        private IEnumerator Throw(NestingPumpkin pumpkin, Vector3 middle, float height, float distance)
         {
             var origin = FindAnyObjectByType<XROrigin>();
             var body = origin != null ? origin.GetComponent<CharacterController>() : null;
             var parts = pumpkin.GetComponentsInChildren<Collider>(true);
             SetIgnored(body, parts, true);
-            if (PlayerLaunch.Launch(middle, launchHeight, distance, true, false))
+            if (PlayerLaunch.Launch(middle, height, distance, true, false))
             {
                 var flight = origin.GetComponent<PlayerLaunch>();
                 yield return null;
@@ -561,11 +578,13 @@ namespace Game.Bonus
             if (bonusSound != null) voice.PlayOneShot(bonusSound);
         }
 
+        // Every pumpkin broken: more seconds of the candy vacuum, on top of what's left.
         private void GiveHelmet()
         {
             if (helmetSeconds <= 0f) return;
-            PlayerBuffs.Give(Buff.CandyHelmet, helmetSeconds);
-            if (helmetSound != null) voice.PlayOneShot(helmetSound);
+            bool was = PlayerBuffs.CandyHelmet;
+            PlayerBuffs.Add(Buff.CandyHelmet, helmetSeconds);
+            if (!was && helmetSound != null) voice.PlayOneShot(helmetSound);
         }
 
         private void DropCandies(Vector3 at, int amount)

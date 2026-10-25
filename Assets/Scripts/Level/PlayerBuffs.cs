@@ -15,7 +15,7 @@ namespace Game.Leveling
         GreenBoong,
         /// <summary>Bus_Boong: +7 Move Speed points.</summary>
         BusBoong,
-        /// <summary>The bonus round's invisible Candy Helmet: candies lying around fly into the player's mouth (Candy Helmet).</summary>
+        /// <summary>The bonus round's invisible Candy Helmet: every candy around flies into the player's mouth (Candy Helmet).</summary>
         CandyHelmet,
     }
 
@@ -27,12 +27,13 @@ namespace Game.Leveling
     ///   (pumpkins and other PlayMaker breakables feel them twice as hard too), and every punch that hits anything
     ///   explodes once more where it hit, a small blast that never hurts the player (Fist: Elon Boong).
     /// - Bone Boong: +7 Toughness points (less damage and knockback), on top of the level-up points.
-    /// - Green Boong: the player stands 0.5 m taller (eased in and out over 1.5 s) and flying punches fly 5 m further.
+    /// - Green Boong: the player stands 0.5 m taller (eased in and out over 1.5 s), flying punches fly 5 m further, and
+    ///   fists are 7 Fist Size points bigger (size only; the flying punches 70% bigger, the hand a little).
     /// - Bus Boong: +7 Move Speed points (faster walking).
     /// - Any boong also makes the player high while it's on: they take 1.5x damage, candy heals them 1.5x and they walk
     ///   30% slower (High; once, however many boongs are on).
-    /// - Candy Helmet (the bonus round gives it when the giant pumpkin breaks): candies lying around fly into the
-    ///   player's mouth and are eaten (Game.Inventory.CandyHelmet does it).
+    /// - Candy Helmet (every pumpkin the bonus round's player breaks adds 5 s, Add): every candy around flies into the
+    ///   player's mouth and is eaten, even ones still flying out of the pumpkin (Game.Inventory.CandyHelmet does it).
     /// The extra points are never saved and never count as a stat's big last point; the Level Up menu keeps showing the
     /// player's own points. The health HUD shows them: while any is on the heart smokes white and stays in view, with a
     /// countdown under it for each (in the buff's colour, no names). With no buff on, everything is exactly as without this.
@@ -58,6 +59,9 @@ namespace Game.Leveling
 
         /// <summary>Green Boong: how much further flying punches fly, in metres.</summary>
         public const float GreenFlyReach = 5f;
+
+        /// <summary>Green Boong: Fist Size points' worth of bigger fists (size only: no damage, no new punches).</summary>
+        public const int GreenFistSize = 7;
 
         /// <summary>Bus Boong: extra Move Speed points.</summary>
         public const int BusSpeed = 7;
@@ -109,6 +113,21 @@ namespace Game.Leveling
             runner.enabled = true;
             if (!was) PointsChanged(buff);
             Debug.Log($"[Player Buffs] {buff} {(was ? "refreshed" : "on")} for {seconds:0} s.");
+            Given?.Invoke(buff);
+        }
+
+        /// <summary>Adds 'seconds' of game time to the buff, on top of what it has left (starts it if it's off): it stacks.</summary>
+        public static void Add(Buff buff, float seconds)
+        {
+            int i = (int)buff;
+            if (i < 0 || i >= Count || seconds <= 0f || !EnsureRunner()) return;
+
+            bool was = IsActive(buff);
+            on[i] = true;
+            until[i] = (was ? until[i] : Time.time) + seconds;
+            runner.enabled = true;
+            if (!was) PointsChanged(buff);
+            Debug.Log($"[Player Buffs] {buff} {(was ? "+" : "on for ")}{seconds:0} s ({until[i] - Time.time:0} s left).");
             Given?.Invoke(buff);
         }
 
@@ -183,6 +202,12 @@ namespace Game.Leveling
         /// <summary>Metres the player stands taller (Green Boong, eased in and out).</summary>
         public static float Height => GreenHeight * Smooth(eased[(int)Buff.GreenBoong]);
 
+        /// <summary>
+        /// Fist Size points' worth of bigger fists for now (Green Boong, eased in and out): the hand a little and the
+        /// flying punches a lot bigger. Size only: they don't add damage, reach or unlock punches.
+        /// </summary>
+        public static float FistSizePoints => GreenFistSize * Smooth(eased[(int)Buff.GreenBoong]);
+
         /// <summary>Points the buffs add to a stat for now (Bone Boong: Toughness, Bus Boong: Move Speed), never saved.</summary>
         public static int ExtraPoints(Stat stat)
         {
@@ -217,7 +242,7 @@ namespace Game.Leveling
             {
                 case Buff.ElonBoong: return "Far exploding punches";
                 case Buff.BoneBoong: return $"+{BoneToughness} Toughness";
-                case Buff.GreenBoong: return "Taller, far flying punches";
+                case Buff.GreenBoong: return "Taller, big far flying punches";
                 case Buff.CandyHelmet: return "Candies fly into your mouth";
                 default: return $"+{BusSpeed} Move Speed";
             }

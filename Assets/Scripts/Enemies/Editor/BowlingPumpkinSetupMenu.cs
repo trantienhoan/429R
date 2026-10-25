@@ -63,7 +63,7 @@ namespace Game.EditorTools
                 agent.radius = ModelRadius * 0.9f;
                 agent.height = ModelRadius * 2f;
                 agent.baseOffset = 0f;
-                agent.speed = 7f;
+                agent.speed = 4.55f;
                 agent.angularSpeed = 0f;
                 agent.autoBraking = false;
                 agent.obstacleAvoidanceType = ObstacleAvoidanceType.NoObstacleAvoidance;
@@ -102,6 +102,8 @@ namespace Game.EditorTools
                 SetList(so.FindProperty("breakOutEffects"), Lana + "Confetti/Hit_Blast.prefab", Lana + "Confetti/Smoke_Blast.prefab");
                 so.FindProperty("breakOutSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "pumpkin_explode_1.wav");
                 SetList(so.FindProperty("wakeSounds"), Sfx + "laughing_pumpkin_1.wav", Sfx + "laughing_pumpkin_2.wav", Sfx + "laughing_pumpkin_3.wav");
+                // The user's whistle (2026-10-25): it ends as the ball sets off.
+                so.FindProperty("rollWarning").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "choo_choo.wav");
                 so.FindProperty("rollSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "giant_ball_rolling.wav");
                 so.FindProperty("trailPuff").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Enemies/Boss_FX/Boss_Scrape_Dust.prefab");
                 SetList(so.FindProperty("blastEffects"), Lana + "Flash/Flash_round_yellow.prefab", Lana + "Confetti/Hit_Blast.prefab", Lana + "Confetti/Smoke_Blast.prefab");

@@ -8,8 +8,8 @@ namespace Game.Weapons
     /// A throwable that bursts the moment it's thrown into an enemy (Pumpkin_On_Tree): it breaks the way it always
     /// does, through its Health FSM (its health goes to 0: pieces, candy, its EXP), instead of bouncing off. The enemy
     /// takes the hit as before; this adds no damage. Only a throw counts (let go a moment ago, not held), and only an
-    /// enemy (anything with Enemy Hit Damage that isn't furniture, or tagged Enemy or Monster), not walls, floors or
-    /// furniture. Splat: as it bursts, the other enemies close by are splashed (shoved a little and stunned for a moment,
+    /// enemy (anything with Enemy Hit Damage that isn't furniture, tagged Enemy or Monster, or one of the stage pumpkins
+    /// Pumpkin_0, 1, 2, ...: Run Away Pumpkin, Touch Only Damage, Laughing Pumpkin), not walls, floors or furniture. Splat: as it bursts, the other enemies close by are splashed (shoved a little and stunned for a moment,
     /// no damage), with a burst of pumpkin and its sound. Goes on the throwable's root, next to its XR Grab
     /// Interactable.
     /// Tools > 429 Game > Items > Tree Pumpkins Break On Enemies adds it to Pumpkin_On_Tree.
@@ -110,7 +110,16 @@ namespace Game.Weapons
             var other = collision.rigidbody != null ? collision.rigidbody.gameObject : collision.gameObject;
             var hits = other.GetComponentInParent<EnemyHitDamage>();
             if (hits != null) return !hits.IsFurniture && !hits.IsDead;
-            return other.CompareTag("Enemy") || other.CompareTag("Monster");
+            return other.CompareTag("Enemy") || other.CompareTag("Monster") || IsPumpkinEnemy(other);
+        }
+
+        // The stage pumpkins the player fights (Pumpkin_0, 1, 2, ...): the ones that run away, chase the player or
+        // laugh. Not the pumpkins that are just things to throw (Pumpkin_00, Pumpkin_51, the tree pumpkins).
+        private static bool IsPumpkinEnemy(GameObject other)
+        {
+            return other.GetComponentInParent<Game.PlayGround.RunAwayPumpkin>() != null ||
+                   other.GetComponentInParent<TouchOnlyDamage>() != null ||
+                   other.GetComponentInParent<Game.PlayGround.LaughingPumpkin>() != null;
         }
     }
 }

@@ -9,7 +9,8 @@ namespace Game.Enemies
 {
     /// <summary>
     /// A tree pumpkin turned bowling ball (Turns Into Bowler makes it): it bursts out where a Pumpkin_On_Tree was, turns
-    /// to the player and shakes for Wind Up Seconds (the warning), then rolls at where they stand in a straight line,
+    /// to the player and shakes for Wind Up Seconds (the warning: a laugh, then the Roll Warning's choo-choo, which ends
+    /// as it sets off), then rolls at where they stand in a straight line,
     /// trailing smoke. It explodes when it reaches the player, when it runs into a wall or reaches a Fall Edge (both stop
     /// it on its NavMesh), after Max Roll metres, or when the player hits it first (a punch, a weapon, something thrown):
     /// the game's explosion (Blast), and the player within Blast Radius is hurt (Player Event) and thrown. A step aside
@@ -32,20 +33,24 @@ namespace Game.Enemies
         [Min(0f)]
         [SerializeField] private float breakOutEffectSize = 1f;
         [SerializeField] private AudioClip breakOutSound;
-        [Tooltip("How long it turns to the player and shakes before it rolls, in seconds: the player's warning. It aims at " +
-                 "where they stand when this ends.")]
+        [Tooltip("How long it turns to the player and shakes before it rolls, in seconds: the player's warning (its laugh, " +
+                 "then Roll Warning). It aims at where they stand when this ends.")]
         [Min(0f)]
-        [SerializeField] private float windUpSeconds = 1.2f;
+        [SerializeField] private float windUpSeconds = 2f;
         [Tooltip("How far it shakes while it winds up, in metres.")]
         [Min(0f)]
         [SerializeField] private float shake = 0.03f;
         [Tooltip("Its laugh as it wakes up (one at random).")]
         [SerializeField] private AudioClip[] wakeSounds = System.Array.Empty<AudioClip>();
+        [Tooltip("Played just before it rolls, timed to end the moment it sets off (choo_choo); the laugh fades out under it.")]
+        [SerializeField] private AudioClip rollWarning;
+        [Range(0f, 1f)]
+        [SerializeField] private float rollWarningVolume = 1f;
 
         [Header("Rolling")]
         [Tooltip("How fast it rolls, in metres per second.")]
         [Min(0.5f)]
-        [SerializeField] private float rollSpeed = 7f;
+        [SerializeField] private float rollSpeed = 4.55f;
         [Tooltip("It explodes after rolling this far, in metres, if nothing stopped it before.")]
         [Min(1f)]
         [SerializeField] private float maxRoll = 15f;
@@ -88,6 +93,8 @@ namespace Game.Enemies
         // Seconds it may wait for a player at all, and how long its pop out of the pumpkin takes.
         private const float GiveUpSeconds = 12f;
         private const float PopSeconds = 0.25f;
+        // How quickly the laugh fades out under the roll warning, in seconds.
+        private const float LaughFadeSeconds = 0.25f;
 
         /// <summary>How many are out right now.</summary>
         public static int Alive { get; private set; }
@@ -95,6 +102,9 @@ namespace Game.Enemies
         private NavMeshAgent agent;
         private Rigidbody body;
         private AudioSource speaker;
+        private AudioSource warner;
+        private float speakerVolume = 1f;
+        private bool warned;
         private XROrigin player;
         private Phase phase;
         private float phaseUntil;
@@ -119,6 +129,21 @@ namespace Game.Enemies
             if (agent.isOnNavMesh) agent.isStopped = true;
             TryGetComponent(out body);
             TryGetComponent(out speaker);
+            if (speaker != null)
+            {
+                speakerVolume = speaker.volume;
+                // The roll warning has its own speaker, heard from the ball like the laugh, so the laugh can fade under it.
+                if (rollWarning != null)
+                {
+                    warner = gameObject.AddComponent<AudioSource>();
+                    warner.playOnAwake = false;
+                    warner.spatialBlend = speaker.spatialBlend;
+                    warner.rolloffMode = speaker.rolloffMode;
+                    warner.minDistance = speaker.minDistance;
+                    warner.maxDistance = speaker.maxDistance;
+                    warner.outputAudioMixerGroup = speaker.outputAudioMixerGroup;
+                }
+            }
             player = FindAnyObjectByType<XROrigin>();
             if (model != null) modelHome = model.localPosition;
             fullScale = transform.localScale;
@@ -156,6 +181,7 @@ namespace Game.Enemies
             if (to.sqrMagnitude > 0.0001f)
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(to), 360f * Time.deltaTime);
             if (model != null) model.localPosition = modelHome + Random.insideUnitSphere * (shake / Mathf.Max(0.01f, transform.lossyScale.y));
+            WarnBeforeRolling();
             if (Time.time < phaseUntil) return;
 
             if (model != null) model.localPosition = modelHome;
@@ -167,10 +193,26 @@ namespace Game.Enemies
             stuck = 0f;
             if (speaker != null && rollSound != null)
             {
+                // What's left of the laugh goes; the rolling sound at full volume.
+                speaker.Stop();
+                speaker.volume = speakerVolume;
                 speaker.clip = rollSound;
                 speaker.loop = true;
                 speaker.Play();
             }
+        }
+
+        // The roll warning starts so it ends the moment the ball sets off, and the laugh fades out under it.
+        private void WarnBeforeRolling()
+        {
+            if (warner == null) return;
+            if (!warned && Time.time >= phaseUntil - rollWarning.length)
+            {
+                warned = true;
+                warner.PlayOneShot(rollWarning, rollWarningVolume);
+            }
+            if (warned && speaker != null)
+                speaker.volume = Mathf.MoveTowards(speaker.volume, 0f, speakerVolume * Time.deltaTime / LaughFadeSeconds);
         }
 
         private void Roll()
@@ -230,6 +272,7 @@ namespace Game.Enemies
             phase = Phase.Gone;
             var at = Middle();
             if (speaker != null) speaker.Stop();
+            if (warner != null) warner.Stop();
             bool hurt = Blast.Explode(at, blastRadius, blastDamage, blastPush, body, blastEffects, blastSound, 1f, playerEvent,
                 false, blastEffectSize);
             if (hurt) PlayerLaunch.Launch(at, playerLaunch.x, playerLaunch.y);

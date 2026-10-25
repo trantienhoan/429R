@@ -96,6 +96,8 @@ namespace Game.Leveling
         {
             Instance = this;
             if (panel == null) return;
+            // A punch shatters it shut (the shards take its place); a poke or the pointer still uses its buttons.
+            Game.Menus.PunchToShatter.Add(panel, Close);
             // On the panel, it also hears the pointer on the arrow and the Bonus Stats panel: they're under it.
             if (!panel.TryGetComponent(out pointer)) pointer = panel.gameObject.AddComponent<PointerInside>();
             if (rowTemplate != null) rowTemplate.gameObject.SetActive(false);

@@ -44,20 +44,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae61cf9da2c6e6047bbb8bf544057ded, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Bonus.BonusRound
-  growSeconds: 1.2
+  growSeconds: 0.45
   launchHeight: 1.2
   launchMargin: 1
+  giantPushReach: 2
+  giantPush: {x: 0.7, y: 2.5}
   giant: {fileID: 7751877861004765832, guid: 11e48e2876d24c4438d02f7350b444db, type: 3}
   smaller: {fileID: 7943707614584160551, guid: d2351c656a2a8f04888d0146c0df7b1e, type: 3}
   startPumpkin: {fileID: 4871850987860103417, guid: 477e502e5e0f1ad4d84839fd93efc08d,
     type: 3}
   giantTimes: 1.3
-  count: 6
-  shrinkEach: 0.15
+  count: 9
+  shrinkEach: 0.1
   giantHealth: 120
-  tougherPerPumpkin: 0.2
+  tougherPerPumpkin: 0.125
   giantJiggle: 1.6
-  stifferPerPumpkin: 0.15
+  giantExtraJiggle: 1.5
+  stifferPerPumpkin: 0.09
   candiesEach: 3
   lastCandies: 15
   expEach: 3
@@ -80,9 +83,8 @@ MonoBehaviour:
   warnSeconds: 10
   tickSound: {fileID: 8300000, guid: 18b247bf43ebeb6459aa30fee226ba0d, type: 3}
   tickVolume: 0.6
-  helmetSeconds: 60
+  helmetSeconds: 5
   helmetSound: {fileID: 8300000, guid: 580b8b5019ed5124bb152631a92150a3, type: 3}
-  helmetText: CANDY HELMET!
   font: {fileID: 11400000, guid: d7a5e2d89139b2940a46b4a7c3289c9e, type: 2}
   signAbove: 0.9
   signLowest: 2.6
@@ -90,6 +92,7 @@ MonoBehaviour:
   candyWaitSeconds: 20
   puffEffect: {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
+  boardSeconds: 12
   blastEffects:
   - {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
   - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}

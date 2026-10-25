@@ -133,6 +133,8 @@ namespace Game.Menus
             {
                 baseScale = panel.transform.localScale;
                 panel.gameObject.SetActive(false);
+                // A punch shatters it (whatever page it's on): gone at once, the shards take its place.
+                PunchToShatter.Add((RectTransform)panel.transform, () => { panel.alpha = 0f; Close(); });
             }
             if (arrow != null) arrowHome = arrow.anchoredPosition;
             sound = gameObject.AddComponent<AudioSource>();
