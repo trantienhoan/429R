@@ -26,7 +26,9 @@ namespace Game.Leveling
         ExtraRevive,
         // No longer offered (Extra Revive gives the health now); kept so the saved points keep their places.
         BonusMaxHealth,
+        // Explosive Fist (named from when it was Fist Size x10; the name keeps the saved points in place).
         BonusFistSize,
+        // Weapon Master (named from when it was Power; the name keeps the saved points in place).
         BonusPower,
     }
 
@@ -46,8 +48,9 @@ namespace Game.Leveling
     /// makes walking faster. What one point gives is set below; the last point that fills a stat up counts as Last Point
     /// Worth (7) points (all but Fist Size, whose last point is the Triple Punch).
     /// Reaching a Bonus Level (10, 20, 21) also gives a bonus point for the three bonus stats (the menu's Bonus Stats
-    /// panel): Fist Size at Bonus Multiplier (10) times a normal point, Power (throws as Bonus Multiplier times a normal
-    /// Throw Power point, and punches hit and push harder) and Extra Revive (one more revive every run, see Checkpoints:
+    /// panel): Explosive Fist (every punch that hits something explodes, harder with each point, and flying punches come
+    /// quicker one after another; no bigger fists), Weapon Master (weapons held in the hand hit 30/40/50% harder, and a
+    /// held thing that blocks a bite wears 20/30/40% less) and Extra Revive (one more revive every run, see Checkpoints:
     /// one more lucky coin to flip when the player goes down, see Revive Coins; and a higher health cap).
     /// A smoked boong adds Toughness or Move Speed points for a while (Player Buffs); those are never saved.
     /// The level, the EXP and the points are kept in the save (Save Manager). Keep one in the scene;
@@ -93,12 +96,12 @@ namespace Game.Leveling
         [Tooltip("Reaching each of these levels gives a bonus point, for the bonus stats only. The menu's Bonus Stats page " +
                  "shows from the first of them on.")]
         [SerializeField] private int[] bonusLevels = { 10, 20, 21 };
-        [Tooltip("A bonus point in Fist Size, and Power's throws, give this many times what a normal point does.")]
-        [Min(1f)]
-        [SerializeField] private float bonusMultiplier = 10f;
-        [Tooltip("Power: besides the throws, punches hit, break and push this share harder (0.25 = 25% more a bonus point).")]
-        [Min(0f)]
-        [SerializeField] private float punchPowerPerPoint = 0.25f;
+        [Tooltip("Weapon Master: weapons held in the hand hit this share harder, by its points (1st, 2nd, 3rd point: " +
+                 "+30%, +40%, +50%). Fists and thrown things don't count.")]
+        [SerializeField] private float[] weaponMasterDamage = { 0.3f, 0.4f, 0.5f };
+        [Tooltip("Weapon Master: a held thing that blocks an enemy's bite loses this share less health, by its points " +
+                 "(1st, 2nd, 3rd point: 20%, 30%, 40% less).")]
+        [SerializeField] private float[] weaponMasterBlockCut = { 0.2f, 0.3f, 0.4f };
         [Tooltip("Extra Revive: besides one more revive every run, the health cap goes up by this much a bonus point (and " +
                  "the player is healed that much).")]
         [Min(0f)]
@@ -143,7 +146,7 @@ namespace Game.Leveling
                  "points: +48%). Gentle drops aren't sped up.")]
         [Min(0f)]
         [SerializeField] private float throwPerPoint = 0.03f;
-        [Tooltip("Throw Power and the Power bonus together never make throws more than this many times faster (1.6 = " +
+        [Tooltip("Throw Power never makes throws more than this many times faster (1.6 = " +
                  "+60%). Throws already leave the hand 4.5-6 times faster than it moves; much faster and bottles and " +
                  "pumpkins can fly through a small bug.")]
         [Min(1f)]
@@ -185,8 +188,8 @@ namespace Game.Leveling
         [SerializeField] private int lastPointWorth = 7;
 
         [Header("Flying punches unlocked by Fist Size")]
-        [Tooltip("Fist Size points that unlock the Jab (a fast straight punch flies on). Below it no punch flies. A bonus " +
-                 "Fist Size point counts as Bonus Multiplier points. 0 = unlocked from the start.")]
+        [Tooltip("Fist Size points that unlock the Jab (a fast straight punch flies on). Below it no punch flies. " +
+                 "0 = unlocked from the start.")]
         [Min(0)]
         [SerializeField] private int jabAtFistSize = 1;
         [Tooltip("Swing and Uppercut stay locked whatever the Fist Size (kept for later). Untick to unlock them at their " +
@@ -366,9 +369,9 @@ namespace Game.Leveling
         /// <summary>How much harder punches hit, the fist itself and flying punches (Fist Size): 1 = as always.</summary>
         public static float PunchDamageScale => Instance != null ? 1f + Instance.Points(Stat.FistSize) * Instance.punchDamagePerPoint : 1f;
 
-        /// <summary>How much faster throws leave the hand (Throw Power, and the Power bonus, at most Max Throw Scale): 1 = as always.</summary>
+        /// <summary>How much faster throws leave the hand (Throw Power, at most Max Throw Scale): 1 = as always.</summary>
         public static float ThrowScale => Instance != null
-            ? Mathf.Min(1f + Instance.WithBonus(Stat.ThrowPower, Stat.BonusPower) * Instance.throwPerPoint, Instance.maxThrowScale)
+            ? Mathf.Min(1f + Instance.Worth(Stat.ThrowPower) * Instance.throwPerPoint, Instance.maxThrowScale)
             : 1f;
 
         /// <summary>How much faster far grabs pull things to the hand (Throw Power): 1 = as always.</summary>
@@ -394,8 +397,24 @@ namespace Game.Leveling
         /// <summary>How much faster the player walks (Move Speed): 1 = as always.</summary>
         public static float SpeedScale => Instance != null ? Instance.Gain(Stat.MoveSpeed, Instance.speedPerPoint) : 1f;
 
-        /// <summary>How much harder punches hit, break and push (the Power bonus): 1 = as always.</summary>
-        public static float PunchPowerScale => Instance != null ? Instance.Gain(Stat.BonusPower, Instance.punchPowerPerPoint) : 1f;
+        /// <summary>How much harder weapons held in the hand hit (the Weapon Master bonus): 1 = as always.</summary>
+        public static float WeaponMasterDamageScale => Instance != null ? 1f + Instance.Tier(Instance.weaponMasterDamage) : 1f;
+
+        /// <summary>The share of a block's wear a held thing takes (the Weapon Master bonus): 1 = all of it.</summary>
+        public static float WeaponMasterBlockShare => Instance != null ? 1f - Instance.Tier(Instance.weaponMasterBlockCut) : 1f;
+
+        // Weapon Master's value for its points now (its 1st, 2nd or 3rd entry; 0 with no point).
+        private float Tier(float[] byPoint)
+        {
+            int p = Points(Stat.BonusPower);
+            return p <= 0 || byPoint == null || byPoint.Length == 0 ? 0f : byPoint[Mathf.Min(p, byPoint.Length) - 1];
+        }
+
+        /// <summary>
+        /// Explosive Fist points (a bonus stat): every punch that hits something explodes, harder with each, and the hand
+        /// can throw flying punches quicker one after another (Fist: Explosive Fist Faster). 0 = none.
+        /// </summary>
+        public static int ExplosiveFist => Instance != null ? Instance.Points(Stat.BonusFistSize) : 0;
 
         /// <summary>Worn weapons (Weapon Wear): the share of its health at which a weapon cracks (0 = never), and its sounds.</summary>
         public static float CrackShare => Instance != null ? Instance.crackShare : 0f;
@@ -425,9 +444,6 @@ namespace Game.Leveling
         private float Cut(Stat stat, float perPoint) => Mathf.Clamp(1f - Worth(stat) * perPoint, 0.1f, 1f);
 
         private float Gain(Stat stat, float perPoint) => 1f + Worth(stat) * perPoint;
-
-        // A stat's points with its bonus stat's on top, each bonus point worth Bonus Multiplier normal ones.
-        private float WithBonus(Stat stat, Stat bonus) => Worth(stat) + bonusMultiplier * Points(bonus);
 
         // A stat's points as they count: a full Big Last Point stat's last point counts as Last Point Worth. A boong's
         // points for now (Player Buffs: Toughness, Move Speed) come on top, never as that last point, and aren't saved.
@@ -460,14 +476,11 @@ namespace Game.Leveling
                 case Stat.FistSize: return "Fist Size";
                 case Stat.ThrowPower: return "Throw Power";
                 case Stat.MoveSpeed: return "Move Speed";
-                case Stat.BonusFistSize: return "Fist Size " + Times;
-                case Stat.BonusPower: return "Power";
+                case Stat.BonusFistSize: return "Explosive Fist";
+                case Stat.BonusPower: return "Weapon Master";
                 default: return "Extra Revive";
             }
         }
-
-        // "x10": how many normal points a bonus point is worth.
-        private static string Times => "x" + (Instance != null ? Instance.bonusMultiplier : 10f).ToString("0.#");
 
         /// <summary>
         /// What the stat's points give right now, for the Level Up menu, e.g. "+30 health" (a bonus stat with no point
@@ -487,8 +500,8 @@ namespace Game.Leveling
                 case Stat.FistSize: return $"+{Percent(p * punchSizePerPoint)} size, +{Percent(PunchDamageScale - 1f)} damage{PunchNote()}";
                 case Stat.ThrowPower: return ThrowNote();
                 case Stat.MoveSpeed: return $"+{Percent(SpeedScale - 1f)} walking speed";
-                case Stat.BonusFistSize: return $"+{Percent(shown * bonusMultiplier * punchSizePerPoint)} punch size{each}";
-                case Stat.BonusPower: return $"+{Percent(shown * bonusMultiplier * throwPerPoint)} throws, +{Percent(shown * punchPowerPerPoint)} punches{each}";
+                case Stat.BonusFistSize: return (shown == 1 ? "Punches explode" : $"Punches explode, {shown}x blast") + ", quicker jabs";
+                case Stat.BonusPower: return WeaponMasterNote(shown);
                 default:
                     return (shown == 1 ? "+1 lucky coin every run" : $"+{shown} lucky coins every run") +
                            $", +{shown * reviveHealthPerPoint:0} max health{each}";
@@ -496,6 +509,13 @@ namespace Game.Leveling
         }
 
         private static string Percent(float share) => Mathf.RoundToInt(share * 100f) + "%";
+
+        // The Weapon Master row: what this many points give, e.g. "+30% held weapon damage, -20% block wear".
+        private string WeaponMasterNote(int points)
+        {
+            float Pick(float[] byPoint) => byPoint == null || byPoint.Length == 0 ? 0f : byPoint[Mathf.Clamp(points, 1, byPoint.Length) - 1];
+            return $"+{Percent(Pick(weaponMasterDamage))} held weapon damage, -{Percent(Pick(weaponMasterBlockCut))} block wear";
+        }
 
         // The Fist Size row also says which punch comes next: ", Jab at 1", ", Triple Punch at 10" (and ", Swing +
         // Uppercut at 3" when they aren't locked), and ", Triple Punch" once everything is unlocked.
@@ -530,7 +550,8 @@ namespace Game.Leveling
         }
 
         // Fist Size points, a bonus point counting as Bonus Multiplier of them.
-        private float FistSizePoints => WithBonus(Stat.FistSize, Stat.BonusFistSize);
+        // Fist Size points as they count (the bonus stat is Explosive Fist now: it gives no size).
+        private float FistSizePoints => Worth(Stat.FistSize);
 
         // The flying punches unlock at their Fist Size (and lock again if the points go, e.g. Reset Progress). Announce:
         // a point just raised it (not the save being read), so the player is told about each new punch.

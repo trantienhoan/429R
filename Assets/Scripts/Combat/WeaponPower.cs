@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
 namespace Game.Combat
 {
@@ -7,7 +8,8 @@ namespace Game.Combat
     /// damage is worked out, so a hammer (2) turns a normal swing into a big hit. Damage multiplies the damage that hit
     /// does: a fist's best hit does 5, a hammer's (1.6) 8, a thrown book's (0.4) 2. Anything without it counts as 1 and 1.
     /// Goes on the weapon's root (the object with the Rigidbody). The player's Weapon Efficiency (a level-up stat)
-    /// multiplies the Damage of everything but fists, whose Damage grows with Fist Size instead (and Power makes them hit harder).
+    /// multiplies the Damage of everything but fists, whose Damage grows with Fist Size instead; Weapon Master (a bonus
+    /// stat) multiplies it more while the weapon is held in the hand.
     /// Tools > 429 Game > Combat > Balance Damage sets both for every weapon and throwable.
     /// </summary>
     [DisallowMultipleComponent]
@@ -61,9 +63,18 @@ namespace Game.Combat
         private static float DamageOf(WeaponPower weapon)
         {
             if (weapon == null) return 1f;
-            // Fists (the hand and flying punches) grow with Fist Size, everything else with Weapon Efficiency.
-            float scale = weapon.damage * (Fist.IsFistBall(weapon) ? Game.Leveling.PlayerLevel.PunchDamageScale : Game.Leveling.PlayerLevel.WeaponDamageScale);
-            return scale * weapon.boost;
+            // Fists (the hand and flying punches) grow with Fist Size, everything else with Weapon Efficiency (and, while
+            // it's held in the hand, Weapon Master).
+            if (Fist.IsFistBall(weapon)) return weapon.damage * Game.Leveling.PlayerLevel.PunchDamageScale * weapon.boost;
+            return weapon.damage * Game.Leveling.PlayerLevel.WeaponDamageScale * MasterScale(weapon) * weapon.boost;
+        }
+
+        /// <summary>The Weapon Master bonus for this weapon: its scale while it's held in the hand, else 1.</summary>
+        public static float MasterScale(Component weapon)
+        {
+            return weapon != null && weapon.TryGetComponent(out XRGrabInteractable grab) && grab.isSelected
+                ? Game.Leveling.PlayerLevel.WeaponMasterDamageScale
+                : 1f;
         }
 
         /// <summary>Whether whatever made this collision is a weapon, a fist or a throwable (has a Weapon Power).</summary>

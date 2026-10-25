@@ -1878,9 +1878,11 @@ namespace Game.Enemies
         {
             if (blockWearPer <= 0f || body == null || Fist.IsFistBall(body) || body.GetComponent<Game.Weapons.LegendaryGear>() != null) return;
             if (!Game.Weapons.Blast.HasHealth(body.gameObject, out var health, out var damageFsm) || health == null) return;
-            int wear = Mathf.Max(1, Mathf.RoundToInt(PlayerDamageOf(BiteEvent) / blockWearPer));
+            // Weapon Master (a bonus stat) makes it wear less: 0.8 of a point for a plain bite with its 1st point.
+            float wear = Mathf.Max(1f, Mathf.Round(PlayerDamageOf(BiteEvent) / blockWearPer)) * Game.Leveling.PlayerLevel.WeaponMasterBlockShare;
             bool ownHit = damageFsm != null && damageFsm.Fsm.GetState(OwnHitState) != null;
-            health.Value -= ownHit ? wear - 1 : wear;
+            // Its own hit takes exactly one point, so the rest (or what's given back, under a point) goes straight off.
+            health.Value -= ownHit ? wear - 1f : wear;
             if (ownHit) damageFsm.SetState(OwnHitState);
         }
 

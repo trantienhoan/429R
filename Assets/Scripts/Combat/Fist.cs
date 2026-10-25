@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Unity.XR.CoreUtils;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 using UnityEngine.XR.Interaction.Toolkit.Filtering;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
@@ -34,8 +35,8 @@ namespace Game.Combat
     /// Pointing (trigger let go) and squeezing the grip still pulls things from afar.
     /// A smoked boong's buff (Player Buffs) makes punches stronger for a while: with the Elon Boong the ball reaches 0.5 m
     /// past the knuckles, punches do double damage, and every punch that hits something explodes once more where it hit
-    /// (Elon Boong, never hurting the player); the Elon Boong (0.5 m) and the Green Boong (5 m) make every flying punch
-    /// fly farther.
+    /// (Elon Boong, never hurting the player; the Explosive Fist bonus stat does that too, harder with each point); the
+    /// Elon Boong (0.5 m) and the Green Boong (5 m) make every flying punch fly farther.
     /// Goes on each controller (Left Controller, Right Controller), next to the hand model.
     /// </summary>
     [DisallowMultipleComponent]
@@ -136,8 +137,8 @@ namespace Game.Combat
                  "Each Fist Size point makes it bigger still (Punch Size Per Point on Player Level).")]
         [Min(0.5f)]
         [SerializeField] private float flySize = 1.3f;
-        [Tooltip("The biggest a flying jab gets compared with the fist (at Fist Scale), however much Fist Size (Bonus Fist " +
-                 "Size goes far past full), so it never fills the view. Swings and uppercuts are Big Move Size times this.")]
+        [Tooltip("The biggest a flying jab gets compared with the fist (at Fist Scale), however much Fist Size (with the " +
+                 "Green Boong's on top), so it never fills the view. Swings and uppercuts are Big Move Size times this.")]
         [Min(0.5f)]
         [SerializeField] private float maxFlySize = 4f;
         [Tooltip("A flying swing and a flying uppercut are this many times as big as a flying jab.")]
@@ -154,14 +155,14 @@ namespace Game.Combat
                  "twice that (0.5 = 1.5x and 2x as far). Each also starts a fist's width farther out than the one before.")]
         [Min(0f)]
         [SerializeField] private float tripleReach = 0.5f;
-        [Tooltip("Puffs of smoke a flying punch leaves along its way (Effect Pool), e.g. Smoke_Blast. Empty: none.")]
-        [SerializeField] private GameObject flyTrailPuff;
-        [Tooltip("A puff every this many metres it flies.")]
-        [Min(0.05f)]
-        [SerializeField] private float flyTrailEvery = 0.3f;
-        [Tooltip("How big the puffs are for a flying punch the size of the fist; bigger flying punches leave bigger puffs.")]
+        [Tooltip("A puff of smoke at the wrist of a flying punch, riding along with it (it leaves no trail behind and goes " +
+                 "when the punch does), e.g. Smoke_Blast. Empty: none.")]
+        [FormerlySerializedAs("flyTrailPuff")]
+        [SerializeField] private GameObject wristSmoke;
+        [Tooltip("How big that puff is for a flying punch the size of the fist; bigger flying punches have a bigger puff.")]
+        [FormerlySerializedAs("flyTrailSize")]
         [Min(0f)]
-        [SerializeField] private float flyTrailSize = 0.25f;
+        [SerializeField] private float wristSmokeSize = 0.05f;
 
         [Header("Swing")]
         [Tooltip("A fast sideways sweep of the fist (a hook) hits harder, and flies on sideways, level, the way the fist " +
@@ -210,8 +211,9 @@ namespace Game.Combat
         [Min(0.01f)]
         [SerializeField] private float goodPunchEffectSize = 0.5f;
 
-        [Header("Elon Boong (a smoked boong's buff, see Player Buffs)")]
-        [Tooltip("While the Elon Boong buff is on, every punch that hits something explodes once more where it hit, with " +
+        [Header("Elon Boong (a smoked boong's buff, see Player Buffs) and Explosive Fist (a bonus stat)")]
+        [Tooltip("While the Elon Boong buff is on, or with Explosive Fist points, every punch that hits something explodes " +
+                 "once more where it hit (each Explosive Fist point is one Boong Blast Damage), with " +
                  "these effects (the bottles': Flash_round_yellow, Hit_Blast, Smoke_Blast). Empty: the Good Punch Effect. " +
                  "Tools > 429 Game > Player > Set Up Boong Buffs fills them in.")]
         [SerializeField] private GameObject[] boongBlastEffects = System.Array.Empty<GameObject>();
@@ -235,6 +237,10 @@ namespace Game.Combat
                  "landing together explode once).")]
         [Min(0f)]
         [SerializeField] private float boongBlastEvery = 0.2f;
+        [Tooltip("Explosive Fist: each point cuts the time before the hand can throw another flying punch by this share " +
+                 "(0.25 = 25% a point: 0.25 s, then 0.19, 0.13, 0.06 s at 3 points).")]
+        [Range(0f, 0.33f)]
+        [SerializeField] private float explosiveFistFaster = 0.25f;
 
         // Where the fist is when the bones can't be found: a little in front of the controller.
         private static readonly Vector3 FallbackPoint = new(0f, -0.01f, 0.05f);
@@ -266,15 +272,16 @@ namespace Game.Combat
         private const float UppercutAngle = 45f;
         // Longest a swing or an uppercut may take, in seconds (they travel farther than a jab).
         private const float LongMoveSeconds = 0.7f;
-        // Shortest time between two flying punches from one hand.
+        // Shortest time between two flying punches from one hand (Explosive Fist makes it shorter, never under the min).
         private const float FlyCooldown = 0.25f;
+        private const float MinFlyCooldown = 0.05f;
         // Fewest flying fists one hand may have out at once (a Triple Punch is 3); punches that fly far allow more (Max
         // Flyers). Past it, the one nearest the end of its flight is thrown again.
         private const int MinFlyers = 9;
         // How fast the flying fist flies, in metres per second; its damage is worked out from the punch's own speed.
         private const float FlySpeed = 8f;
-        // Copies of the trail's puff made at load: about a second of three flying fists' puffs.
-        private const int TrailCopies = 30;
+        // How far behind a flying fist's middle its wrist smoke sits, in its ball's radii.
+        private const float WristBehind = 1.5f;
         // Punches slower than this (metres per second) don't send things flying, and nothing leaves faster than Max.
         // A hand moving slower than this (metres per second) isn't punching: no rumble, push, puff or pumpkin help.
         private const float MinPunchSpeed = 1f;
@@ -413,8 +420,8 @@ namespace Game.Combat
             return thing != null && thing.TryGetComponent<Punch>(out var punch) && punch.owner != null ? punch.owner.rumbler : null;
         }
 
-        // Power, with the Punch Power level-up bonus.
-        private float Power => power * Game.Leveling.PlayerLevel.PunchPowerScale;
+        // Power (it used to grow with the old Power bonus stat, which is Weapon Master now: held weapons only).
+        private float Power => power;
 
         /// <summary>Whether this is a fist's punching ball (it has a Weapon Power like a weapon, but it's a hand).</summary>
         public static bool IsFistBall(Component thing)
@@ -443,8 +450,6 @@ namespace Game.Combat
             MakeBall();
             // Ready at load, so the first good punch doesn't stutter.
             Game.EffectPool.Warm(goodPunchEffect);
-            // The trail's puffs too: a few flying punches' worth (each lasts about a second).
-            Game.EffectPool.Warm(flyTrailPuff, TrailCopies);
             // The Elon Boong's explosions too, with enough copies for a hand blasting as often as it may (Boong Blast
             // Every) for as long as a copy stays busy, so the first Elon fight doesn't make them mid-punch. The other
             // hand and the bottles share them, so nothing more is made for those.
@@ -668,7 +673,7 @@ namespace Game.Combat
             // Enemy Hit Damage already counts the punch (by its speed and the fist's power): not twice.
             if (hit.TryGetComponent<EnemyHitDamage>(out _)) return;
             // The Elon Boong buff's double damage and Fist Size's extra damage count here too.
-            PlayMakerHits.Judge(hit, collision, punchSpeed * pumpkinForce * Game.Leveling.PlayerLevel.PunchPowerScale *
+            PlayMakerHits.Judge(hit, collision, punchSpeed * pumpkinForce *
                                                 Game.Leveling.PlayerBuffs.PunchDamage * Game.Leveling.PlayerLevel.PunchDamageScale);
         }
 
@@ -697,22 +702,24 @@ namespace Game.Combat
                 direction = (direction * 0.5f + Vector3.up).normalized;
             }
             // Up to that speed along the punch, not on top of what the bump already gave it.
-            float wanted = Mathf.Min(punchSpeed * push * Game.Leveling.PlayerLevel.PunchPowerScale, MaxPushSpeed) * share;
+            float wanted = Mathf.Min(punchSpeed * push, MaxPushSpeed) * share;
             float has = Vector3.Dot(thing.linearVelocity, direction);
             if (has >= wanted) return;
             var at = collision.contactCount > 0 ? collision.GetContact(0).point : thing.worldCenterOfMass;
             thing.AddForceAtPosition(direction * (wanted - has), Vector3.Lerp(at, thing.worldCenterOfMass, 0.7f), ForceMode.VelocityChange);
         }
 
-        // The Elon Boong buff: a punch (the fist's own or a flying one) that hits anything explodes once more where it hit,
-        // a small blast that hurts and pushes what's around it but never the player. Once per Boong Blast Every per hand,
-        // as a hit can be reported several times in one step. True if it went off.
+        // The Elon Boong buff, and the Explosive Fist bonus stat: a punch (the fist's own or a flying one) that hits anything
+        // explodes once more where it hit, a small blast that hurts and pushes what's around it but never the player. Each
+        // Explosive Fist point is one Boong Blast Damage (the buff alone: one). Once per Boong Blast Every per hand, as a hit
+        // can be reported several times in one step. True if it went off.
         private bool BoongBlast(Collision collision, Rigidbody hitter)
         {
-            if (!Game.Leveling.PlayerBuffs.ExplodingPunches || Time.time < nextBoongBlast) return false;
+            int power = Mathf.Max(Game.Leveling.PlayerBuffs.ExplodingPunches ? 1 : 0, Game.Leveling.PlayerLevel.ExplosiveFist);
+            if (power <= 0 || Time.time < nextBoongBlast) return false;
             nextBoongBlast = Time.time + boongBlastEvery;
             var at = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
-            Game.Weapons.Blast.Explode(at, boongBlastRadius, boongBlastDamage, boongBlastPush, hitter, boongEffects,
+            Game.Weapons.Blast.Explode(at, boongBlastRadius, boongBlastDamage * power, boongBlastPush, hitter, boongEffects,
                 boongBlastSound, boongBlastVolume, null, false, boongBlastEffectSize);
             return true;
         }
@@ -922,7 +929,7 @@ namespace Game.Combat
             if (move == Move.Swing) direction.y = 0f;
             if (direction.sqrMagnitude < 0.0001f) return;
             direction.Normalize();
-            nextFly = Time.time + FlyCooldown;
+            nextFly = Time.time + FlyCooldownNow;
 
             float reach = Mathf.Lerp(jabReach.x, jabReach.y, quality) * Mathf.Lerp(1f, maxReachScale, Game.Leveling.PlayerLevel.PunchReachGrowth);
             // Sized from the fist at Fist Scale, so it grows with Fist Size apart from the hand's own little growth.
@@ -1018,8 +1025,12 @@ namespace Game.Combat
             farthest += Game.Leveling.PlayerBuffs.FlyReach;
             // A physics step or two more, as it stops and fades step by step.
             float seconds = farthest / FlySpeed + FlyingFist.FadeSeconds + 2f * Time.fixedDeltaTime;
-            return Mathf.Max(MinFlyers, (TriplePunch ? 3 : 1) * Mathf.CeilToInt(seconds / FlyCooldown));
+            return Mathf.Max(MinFlyers, (TriplePunch ? 3 : 1) * Mathf.CeilToInt(seconds / FlyCooldownNow));
         }
+
+        // The time between two flying punches from this hand now: Fly Cooldown, shorter with each Explosive Fist point.
+        private float FlyCooldownNow =>
+            Mathf.Max(MinFlyCooldown, FlyCooldown * (1f - explosiveFistFaster * Game.Leveling.PlayerLevel.ExplosiveFist));
 
         private Vector3 InPlayArea(Vector3 point)
         {
@@ -1070,6 +1081,23 @@ namespace Game.Combat
                 look.receiveShadows = false;
                 flying.echo = echo;
                 flying.echoShape = echoObject.transform;
+            }
+            if (wristSmoke != null)
+            {
+                // Its own copy of the smoke, simulated in its own space so the puff rides along at the wrist (no trail),
+                // played at each throw (Launch).
+                var smoke = Instantiate(wristSmoke, go.transform, false);
+                smoke.name = "Wrist Smoke";
+                flying.smoke = smoke.transform;
+                flying.smokeSystems = smoke.GetComponentsInChildren<ParticleSystem>(true);
+                foreach (var system in flying.smokeSystems)
+                {
+                    var main = system.main;
+                    main.simulationSpace = ParticleSystemSimulationSpace.Local;
+                    main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+                    main.playOnAwake = false;
+                    system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                }
             }
             // It ignores the player's body each time it's thrown (Launch), once it's switched on.
             return flying;
@@ -1213,6 +1241,9 @@ namespace Game.Combat
             public Transform echo;
             public Transform echoShape;
             public Mesh echoMesh;
+            // Its puff of smoke at the wrist (Wrist Smoke), and its particle systems (the first one plays them all).
+            public Transform smoke;
+            public ParticleSystem[] smokeSystems = System.Array.Empty<ParticleSystem>();
 
             private Rigidbody body;
             private SphereCollider ball;
@@ -1220,7 +1251,6 @@ namespace Game.Combat
             private Vector3 direction;
             private float reach;
             private float flown;
-            private float sinceTrail;
             private float hitSpeed;
             private Move move;
             private bool done;
@@ -1281,8 +1311,7 @@ namespace Game.Combat
                 direction = towards.normalized;
                 reach = Mathf.Max(distance, 0.01f);
                 flown = 0f;
-                // The first puff comes soon after it leaves the hand.
-                sinceTrail = owner.flyTrailEvery * 0.5f;
+                PuffAtTheWrist();
                 fade = 0f;
                 done = false;
                 body.position = from;
@@ -1301,19 +1330,19 @@ namespace Game.Combat
                     return;
                 }
                 flown += FlySpeed * Time.fixedDeltaTime;
-                Trail(FlySpeed * Time.fixedDeltaTime);
                 if (flown >= reach) Stop();
                 else body.linearVelocity = direction * FlySpeed;
             }
 
-            // A puff of smoke behind it every Fly Trail Every metres, as big as it is.
-            private void Trail(float step)
+            // A puff of smoke just behind it, at the wrist, as big as it is; it rides along (Wrist Smoke).
+            private void PuffAtTheWrist()
             {
-                if (owner.flyTrailPuff == null) return;
-                sinceTrail += step;
-                if (sinceTrail < owner.flyTrailEvery) return;
-                sinceTrail = 0f;
-                Game.EffectPool.Play(owner.flyTrailPuff, body.position - direction * Ball.radius, owner.flyTrailSize * size);
+                if (smoke == null) return;
+                smoke.localPosition = -direction * (Ball.radius * WristBehind);
+                smoke.localRotation = Quaternion.LookRotation(-direction);
+                smoke.localScale = Vector3.one * (owner.wristSmokeSize * size);
+                foreach (var system in smokeSystems) system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                if (smokeSystems.Length > 0) smokeSystems[0].Play(true);
             }
 
             // Its collider goes off next step, so whatever it hit still gets this hit.
