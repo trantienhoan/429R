@@ -19,6 +19,8 @@ namespace Game.EditorTools
         private const string HeartSprite = "Assets/Images/heart_white.png";
         private const string ShineSprite = "Assets/Images/heart_shine.png";
         private const string CrackSprite = "Assets/Images/heart_crack.png";
+        private const string WebSprite = "Assets/Images/heart_web_{0}.png";
+        private const int WebRings = 5;
         private const string MaterialFolder = "Assets/Data/UI";
         private const string ImageMaterialPath = MaterialFolder + "/HUD Image Overlay.mat";
         private const string TextMaterialPath = MaterialFolder + "/HUD Text Overlay.mat";
@@ -213,6 +215,146 @@ namespace Game.EditorTools
 
         [MenuItem("Tools/429 Game/Player/Update Health HUD (Cracked Heart, Show Heals)", true)]
         private static bool CanUpdateHud() => !EditorApplication.isPlaying;
+
+        /// <summary>
+        /// Adds the spider web to the heart (Player Web: one ring per 20% of web, five when the player is webbed): draws
+        /// its five pictures (Assets/Images/heart_web_1..5.png: white, cut to the heart's shape; repaint them freely, they're
+        /// only drawn when missing) and puts a Web image over the heart, above the crack, hidden until there's web. Leaves
+        /// everything else as it is. Safe to run again.
+        /// </summary>
+        [MenuItem("Tools/429 Game/Player/Add Web To Health HUD")]
+        public static void AddWeb()
+        {
+            var hud = Object.FindAnyObjectByType<PlayerHealthHUD>(FindObjectsInactive.Include);
+            var settings = hud != null ? new SerializedObject(hud) : null;
+            var heart = settings?.FindProperty("heart").objectReferenceValue as RectTransform;
+            if (heart == null)
+            {
+                Debug.LogError("[Health HUD] Needs the Player Health HUD with its heart in the open scene (run Set Up Health HUD first). Nothing changed.");
+                return;
+            }
+            var fill = settings.FindProperty("heartFill").objectReferenceValue as Image;
+            var crack = settings.FindProperty("crack").objectReferenceValue as Image;
+
+            var sprites = new Sprite[WebRings];
+            for (int rings = 1; rings <= WebRings; rings++)
+            {
+                string path = string.Format(WebSprite, rings);
+                if (!System.IO.File.Exists(path))
+                {
+                    DrawWeb(path, rings);
+                    AssetDatabase.ImportAsset(path);
+                }
+                sprites[rings - 1] = PrepareSprite(path);
+                if (sprites[rings - 1] != null) continue;
+                Debug.LogError($"[Health HUD] Couldn't make '{path}', so the web wasn't added.", hud);
+                return;
+            }
+
+            var web = FindOrCreateImage(heart, "Web");
+            web.sprite = sprites[0];
+            web.color = Color.white;
+            web.material = fill != null ? fill.material : null;
+            web.preserveAspect = true;
+            web.raycastTarget = false;
+            web.type = Image.Type.Simple;
+            web.rectTransform.localScale = Vector3.one;
+            SetupUtility.Stretch(web.rectTransform, Vector2.zero, Vector2.zero);
+            // Right above the crack (or the fill), so the shine stays on top.
+            var below = crack != null ? crack.transform : fill != null ? fill.transform : null;
+            if (below != null)
+            {
+                int at = below.GetSiblingIndex();
+                web.transform.SetSiblingIndex(web.transform.GetSiblingIndex() < at ? at : at + 1);
+            }
+            web.enabled = false;
+            SetupUtility.SetReference(hud, "web", web);
+
+            var list = new SerializedObject(hud);
+            var pictures = list.FindProperty("webSprites");
+            pictures.arraySize = WebRings;
+            for (int i = 0; i < WebRings; i++) pictures.GetArrayElementAtIndex(i).objectReferenceValue = sprites[i];
+            list.ApplyModifiedProperties();
+
+            EditorSceneManager.MarkSceneDirty(hud.gameObject.scene);
+            Debug.Log("[Health HUD] Added the spider web to the heart (Player Web). Save the scene.", hud);
+        }
+
+        [MenuItem("Tools/429 Game/Player/Add Web To Health HUD", true)]
+        private static bool CanAddWeb() => !EditorApplication.isPlaying;
+
+        // The web with this many rings: 8 spokes from the middle and one ring per 20% of web, each ring sagging between
+        // the spokes like a spider's; white, cut to the heart's shape (heart_white.png's alpha), with soft edges. The full
+        // web (5 rings) has thicker lines.
+        private static void DrawWeb(string path, int rings)
+        {
+            const int size = 256;
+            const int spokes = 8;
+            const int curveSteps = 12;
+            float[] ringRadii = { 0.09f, 0.18f, 0.28f, 0.38f, 0.48f };
+            var mask = new Texture2D(2, 2);
+            mask.LoadImage(System.IO.File.ReadAllBytes(HeartSprite));
+            var middle = new Vector2(0.5f * size, (1f - 0.49f) * size);
+            float halfWidth = (rings >= WebRings ? 4.5f : 3f) * 0.5f;
+
+            // The web as straight bits: the spokes, then each ring's sags.
+            var from = new List<Vector2>();
+            var to = new List<Vector2>();
+            System.Func<float, Vector2> along = degrees => new Vector2(Mathf.Cos(degrees * Mathf.Deg2Rad), Mathf.Sin(degrees * Mathf.Deg2Rad));
+            for (int i = 0; i < spokes; i++)
+            {
+                from.Add(middle);
+                to.Add(middle + along(22.5f + i * 45f) * (0.6f * size));
+            }
+            for (int r = 0; r < rings && r < ringRadii.Length; r++)
+            {
+                float radius = ringRadii[r] * size;
+                for (int i = 0; i < spokes; i++)
+                {
+                    float a = 22.5f + i * 45f, b = a + 45f;
+                    var p = middle + along(a) * radius;
+                    var q = middle + along(b) * radius;
+                    var sag = middle + along((a + b) * 0.5f) * (radius * 0.8f);
+                    var last = p;
+                    for (int k = 1; k <= curveSteps; k++)
+                    {
+                        float t = k / (float)curveSteps;
+                        var point = (1f - t) * (1f - t) * p + 2f * (1f - t) * t * sag + t * t * q;
+                        from.Add(last);
+                        to.Add(point);
+                        last = point;
+                    }
+                }
+            }
+
+            var pixels = new Color32[size * size];
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    var at = new Vector2(x + 0.5f, y + 0.5f);
+                    float nearest = float.MaxValue;
+                    for (int i = 0; i < from.Count; i++) nearest = Mathf.Min(nearest, DistanceToSegment(at, from[i], to[i]));
+                    // The heart's own pixel (a bilinear read would bleed a little past its edge).
+                    float inside = mask.GetPixel(x * mask.width / size, y * mask.height / size).a;
+                    float ink = Mathf.Clamp01(halfWidth + 0.5f - nearest) * inside;
+                    pixels[y * size + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(ink * 255f));
+                }
+            }
+            var picture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            picture.SetPixels32(pixels);
+            picture.Apply();
+            System.IO.File.WriteAllBytes(path, picture.EncodeToPNG());
+            Object.DestroyImmediate(picture);
+            Object.DestroyImmediate(mask);
+        }
+
+        private static float DistanceToSegment(Vector2 point, Vector2 a, Vector2 b)
+        {
+            var ab = b - a;
+            float t = Mathf.Clamp01(Vector2.Dot(point - a, ab) / Mathf.Max(0.0001f, ab.sqrMagnitude));
+            return Vector2.Distance(point, a + ab * t);
+        }
 
         // The crack over the heart, between its fill and its shine; hidden until the player has died this run.
         private static bool AddCrack(PlayerHealthHUD hud)

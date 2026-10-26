@@ -45,6 +45,13 @@ namespace Game.Saving
         /// </summary>
         public static event Action Resumed;
 
+        /// <summary>
+        /// Raised when a new run starts (Start New Run: dying with no revive left, "Re-Dream", beating the game), after
+        /// Changed. Getting up with a revive goes on with the same run and doesn't raise it. Player Level drops the candy
+        /// points then.
+        /// </summary>
+        public static event Action RunStarted;
+
         /// <summary>The checkpoint reached this run ("" = none: the game goes on from the start).</summary>
         public static string Current { get; private set; } = "";
 
@@ -91,6 +98,7 @@ namespace Game.Saving
             Changed = null;
             Reached = null;
             Resumed = null;
+            RunStarted = null;
             IsLoaded = false;
             HasResumed = false;
         }
@@ -173,6 +181,7 @@ namespace Game.Saving
             RestHealth = -1f;
             IsDying = false;
             Changed?.Invoke();
+            RunStarted?.Invoke();
         }
 
         /// <summary>The revive coins are thrown (Try Revive): saved at once as if the run were over, until they land.</summary>

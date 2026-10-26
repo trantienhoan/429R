@@ -52,7 +52,9 @@ namespace Game.Leveling
     /// quicker one after another; no bigger fists), Weapon Master (weapons held in the hand hit 30/40/50% harder, and a
     /// held thing that blocks a bite wears 20/30/40% less) and Extra Revive (one more revive every run, see Checkpoints:
     /// one more lucky coin to flip when the player goes down, see Revive Coins; and a higher health cap).
-    /// A smoked boong adds Toughness or Move Speed points for a while (Player Buffs); those are never saved.
+    /// A smoked boong adds Toughness or Move Speed points for a while (Player Buffs); those are never saved. Eaten candies
+    /// add points for the run (Eat Candy Buff: Toughness, Move Speed, Throw Power, and punch damage only for Fist Size),
+    /// at most Candy Max Points a stat; never saved, gone when a new run starts.
     /// The level, the EXP and the points are kept in the save (Save Manager). Keep one in the scene;
     /// Tools > 429 Game > Player > Set Up Level System makes it, with its menu and its notice.
     /// </summary>
@@ -139,7 +141,8 @@ namespace Game.Leveling
         [Min(0f)]
         [SerializeField] private float handSizePerPoint = 0.02f;
         [Tooltip("Fist Size: punches (the fist itself and flying punches) do this share more damage (0.1 = 10% more a " +
-                 "point: a best hit of 5 does 6 at 1 point, 10 at 10). Only normal Fist Size points count.")]
+                 "point: a best hit of 5 does 6 at 1 point, 10 at 10). Normal Fist Size points count, and eaten " +
+                 "candies' punch damage points (not the bonus or a boong's).")]
         [Min(0f)]
         [SerializeField] private float punchDamagePerPoint = 0.1f;
         [Tooltip("Throw Power: things leave the hand this share faster (0.03 = 3% more a point; a full stat counts as 16 " +
@@ -187,6 +190,12 @@ namespace Game.Leveling
         [Min(1)]
         [SerializeField] private int lastPointWorth = 7;
 
+        [Header("Candy")]
+        [Tooltip("The most points eaten candies add to one stat this run (each candy's Eat Candy Buff adds its share, " +
+                 "e.g. 0.5). They come on top of the player's own points, aren't saved, and go when a new run starts.")]
+        [Min(0f)]
+        [SerializeField] private float candyMaxPoints = 10f;
+
         [Header("Flying punches unlocked by Fist Size")]
         [Tooltip("Fist Size points that unlock the Jab (a fast straight punch flies on). Below it no punch flies. " +
                  "0 = unlocked from the start.")]
@@ -224,6 +233,8 @@ namespace Game.Leveling
         [SerializeField] private string[] noCrackNames = { "Pumpkin", "Box" };
 
         private readonly int[] points = new int[StatCount];
+        // Points eaten candies add this run (Eat Candy Buff), by stat; never saved, so a new scene starts without them.
+        private readonly float[] candyPoints = new float[StatCount];
         private readonly Dictionary<ContinuousMoveProvider, float> normalSpeeds = new();
         private readonly List<XRBaseInteractor> hands = new();
         private int level;
@@ -366,8 +377,13 @@ namespace Game.Leveling
             ? Mathf.InverseLerp(Instance.jabAtFistSize, Instance.triplePunchAtFistSize, Instance.FistSizePoints)
             : 0f;
 
-        /// <summary>How much harder punches hit, the fist itself and flying punches (Fist Size): 1 = as always.</summary>
-        public static float PunchDamageScale => Instance != null ? 1f + Instance.Points(Stat.FistSize) * Instance.punchDamagePerPoint : 1f;
+        /// <summary>
+        /// How much harder punches hit, the fist itself and flying punches (Fist Size, and eaten candies' Fist Size points,
+        /// which only add damage): 1 = as always.
+        /// </summary>
+        public static float PunchDamageScale => Instance != null
+            ? 1f + (Instance.Points(Stat.FistSize) + Instance.candyPoints[(int)Stat.FistSize]) * Instance.punchDamagePerPoint
+            : 1f;
 
         /// <summary>How much faster throws leave the hand (Throw Power, at most Max Throw Scale): 1 = as always.</summary>
         public static float ThrowScale => Instance != null
@@ -392,7 +408,7 @@ namespace Game.Leveling
             Instance != null ? Mathf.Min(own * (1f + Instance.BlastSteps * Instance.blastDamagePerPoint), Mathf.Max(own, Instance.maxBlastDamage)) : own;
 
         // Throw Power points after the one that unlocks exploding throws (the last point counting as Last Point Worth).
-        private int BlastSteps => Mathf.Max(0, Worth(Stat.ThrowPower) - 1);
+        private float BlastSteps => Mathf.Max(0f, Worth(Stat.ThrowPower) - 1f);
 
         /// <summary>How much faster the player walks (Move Speed): 1 = as always.</summary>
         public static float SpeedScale => Instance != null ? Instance.Gain(Stat.MoveSpeed, Instance.speedPerPoint) : 1f;
@@ -446,13 +462,53 @@ namespace Game.Leveling
         private float Gain(Stat stat, float perPoint) => 1f + Worth(stat) * perPoint;
 
         // A stat's points as they count: a full Big Last Point stat's last point counts as Last Point Worth. A boong's
-        // points for now (Player Buffs: Toughness, Move Speed) come on top, never as that last point, and aren't saved.
-        private int Worth(Stat stat)
+        // points for now (Player Buffs: Toughness, Move Speed) and eaten candies' points (Toughness, Move Speed, Throw
+        // Power) come on top, never as that last point, and aren't saved. Candies' Fist Size points only add punch
+        // damage (Punch Damage Scale), so they aren't counted here.
+        private float Worth(Stat stat)
         {
             int p = Points(stat);
             if (p > 0 && p >= MaxPoints(stat) && bigLastPoint != null && Array.IndexOf(bigLastPoint, stat) >= 0)
                 p += lastPointWorth - 1;
-            return p + PlayerBuffs.ExtraPoints(stat);
+            return p + PlayerBuffs.ExtraPoints(stat) + (stat != Stat.FistSize ? candyPoints[(int)stat] : 0f);
+        }
+
+        /// <summary>
+        /// An eaten candy's points for this run (the PlayMaker action Eat Candy Buff): Toughness, Move Speed and Throw Power
+        /// count like the player's own points, Fist Size only as punch damage (no bigger fist, no new punches). At most
+        /// Candy Max Points a stat; never saved, and gone when a new run starts. Returns the stat's candy points now (0 for
+        /// any other stat, or without a Player Level).
+        /// </summary>
+        public static float AddCandyPoints(Stat stat, float points)
+        {
+            if (Instance == null) return 0f;
+            if (!TakesCandy(stat))
+            {
+                Debug.LogWarning($"[Player Level] Candy can't add {Name(stat)} points.", Instance);
+                return 0f;
+            }
+            int i = (int)stat;
+            Instance.candyPoints[i] = Mathf.Clamp(Instance.candyPoints[i] + points, 0f, Instance.candyMaxPoints);
+            if (stat == Stat.MoveSpeed) Instance.ApplySpeed();
+            return Instance.candyPoints[i];
+        }
+
+        /// <summary>The points eaten candies have added to the stat this run (0 without a Player Level).</summary>
+        public static float CandyPoints(Stat stat) => Instance != null ? Instance.candyPoints[(int)stat] : 0f;
+
+        /// <summary>Drops every candy point (a new run starts: Checkpoints.RunStarted).</summary>
+        public static void ClearCandyPoints()
+        {
+            if (Instance != null) Instance.DropCandy();
+        }
+
+        private static bool TakesCandy(Stat stat) =>
+            stat == Stat.Toughness || stat == Stat.MoveSpeed || stat == Stat.ThrowPower || stat == Stat.FistSize;
+
+        private void DropCandy()
+        {
+            Array.Clear(candyPoints, 0, StatCount);
+            ApplySpeed();
         }
 
         /// <summary>
@@ -722,6 +778,8 @@ namespace Game.Leveling
         private void OnEnable()
         {
             if (Instance != this) return;
+            // A new run drops the candy points.
+            Checkpoints.RunStarted += DropCandy;
             // Weapons the player picks up wear out slower with Weapon Efficiency.
             var origin = FindAnyObjectByType<XROrigin>(FindObjectsInactive.Include);
             if (origin != null) origin.GetComponentsInChildren(true, hands);
@@ -730,6 +788,7 @@ namespace Game.Leveling
 
         private void OnDisable()
         {
+            Checkpoints.RunStarted -= DropCandy;
             foreach (var hand in hands)
             {
                 if (hand != null) hand.selectEntered.RemoveListener(OnPickedUp);

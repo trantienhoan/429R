@@ -15,8 +15,10 @@ namespace Game.Combat
     /// (until a new run). The player can hide it all in the pause menu (Health: hidden), e.g. to record video: the
     /// hit and heal flashes on it (particles the PlayerHealth FSM switches on) are hidden too. While a smoked boong's buff
     /// is on (Player Buffs) the heart smokes white and stays in view, with a countdown under it for each
-    /// buff (its colour, no name), blinking red over the last 10 seconds. It only reads the FSM, so damage and heals still
-    /// all happen there.
+    /// buff (its colour, no name), blinking red over the last 10 seconds. Spider web on the player (Player Web) shows as
+    /// white rings over the heart, one per 20%, each new ring with a little pop; webbed (a full web), the heart turns paler
+    /// and shakes, with a white countdown under it. The HUD stays in view while there's web. It only reads the FSM, so
+    /// damage and heals still all happen there.
     /// Goes on the HUD canvas under the Main Camera. Tools > 429 Game > Player > Set Up Health HUD sets it up.
     /// </summary>
     [DisallowMultipleComponent]
@@ -44,6 +46,24 @@ namespace Game.Combat
         [Tooltip("White smoke round the heart while a boong buff is on (optional). It fades with the HUD. " +
                  "Tools > 429 Game > Player > Add Buff Smoke To Health HUD makes it.")]
         [SerializeField] private ParticleSystem buffSmoke;
+        [Tooltip("The spider web over the heart (Player Web), hidden while there's none (optional). " +
+                 "Tools > 429 Game > Player > Add Web To Health HUD makes it.")]
+        [SerializeField] private Image web;
+        [Tooltip("The web's pictures, one per ring: 1 ring first, the full web (5 rings) last.")]
+        [SerializeField] private Sprite[] webSprites = new Sprite[0];
+
+        [Header("Web")]
+        [Tooltip("How much bigger the web pops when a ring is added (0.15 = 15%), and for how long.")]
+        [Min(0f)]
+        [SerializeField] private float webPop = 0.15f;
+        [Min(0.05f)]
+        [SerializeField] private float webPopSeconds = 0.25f;
+        [Tooltip("While the player is webbed the heart turns this much paler (0.3 = 30% of the way to white) and shakes " +
+                 "this far (canvas units).")]
+        [Range(0f, 1f)]
+        [SerializeField] private float webLockPale = 0.3f;
+        [Min(0f)]
+        [SerializeField] private float webShake = 3f;
 
         [Header("Colours")]
         [SerializeField] private Color healthColor = new(0.93f, 0.16f, 0.2f);
@@ -140,6 +160,15 @@ namespace Game.Combat
         private bool wasBuffed;
         private ParticleSystemRenderer smokeRenderer;
         private MaterialPropertyBlock smokeBlock;
+
+        // Spider web: the rings shown, when the last one popped in, where the heart rests when it isn't shaking, and the
+        // web countdown's colour (the row after the buffs').
+        private static readonly Color WebTimerColor = new(0.945f, 0.937f, 0.91f);
+        private int webRings;
+        private float webPoppedAt = -100f;
+        private Vector2 heartHome;
+        private bool heartHomeKnown;
+        private bool wasWebbed;
 
         // The heartbeat: counts heartbeats (one per whole number; the big beat at .0, the small one at .25), so the
         // heart and the sound stay in step while the beat speeds up.
@@ -297,11 +326,13 @@ namespace Game.Combat
             bool bonus = hp > full + 0.01f;
             bool low = hp <= full * lowShare;
             float time = Time.unscaledTime;
+            bool webbedNow = Game.Locomotion.PlayerWeb.Locked;
 
             if (heartFill != null)
             {
                 heartFill.fillAmount = Mathf.Clamp01(share);
                 var target = bonus ? bonusColor * (1f + 0.08f * Mathf.Sin(time * 3f)) : healthColor;
+                if (webbedNow) target = Color.Lerp(target, Color.white, webLockPale);
                 target.a = 1f;
                 heartFill.color = instant ? target : Color.Lerp(heartFill.color, target, 1f - Mathf.Exp(-Time.unscaledDeltaTime * 8f));
             }
@@ -322,8 +353,18 @@ namespace Game.Combat
                 float popT = (time - healedAt) / healPopSeconds;
                 float pop = popT >= 0f && popT < 1f ? healPop * Mathf.Sin(popT * Mathf.PI) : 0f;
                 heart.localScale = Vector3.one * (1f + 0.12f * beat + pop);
+                // Webbed: the heart shakes where it is.
+                if (!heartHomeKnown)
+                {
+                    heartHome = heart.anchoredPosition;
+                    heartHomeKnown = true;
+                }
+                heart.anchoredPosition = webbedNow
+                    ? heartHome + new Vector2(Mathf.Sin(time * 53f), Mathf.Sin(time * 61f + 1.3f)) * webShake
+                    : heartHome;
             }
             if (crack != null && crack.enabled != cracked) crack.enabled = cracked;
+            UpdateWeb(time);
             if (number != null)
             {
                 number.SetText("{0}", Mathf.Max(0, Mathf.CeilToInt(hp - 0.001f)));
@@ -347,12 +388,16 @@ namespace Game.Combat
             bool buffed = Game.Leveling.PlayerBuffs.AnyActive;
             if (wasBuffed && !buffed) changedAt = time;
             wasBuffed = buffed;
+            // So does spider web, so the player sees it build up and melt away.
+            bool webbed = Game.Locomotion.PlayerWeb.Rings > 0 || webbedNow;
+            if (wasWebbed && !webbed) changedAt = time;
+            wasWebbed = webbed;
 
             float shown = time - changedAt;
-            group.alpha = !Shown ? 0f : alwaysShow || low || buffed ? 1f : 1f - Mathf.Clamp01((shown - showSeconds) / fadeSeconds);
+            group.alpha = !Shown ? 0f : alwaysShow || low || buffed || webbed ? 1f : 1f - Mathf.Clamp01((shown - showSeconds) / fadeSeconds);
             Sparkle(bonus && group.alpha > 0.01f, group.alpha);
             Smoke(buffed && group.alpha > 0.01f, group.alpha);
-            UpdateTimers(buffed);
+            UpdateTimers(buffed, webbedNow);
             if (effectsShown != Shown)
             {
                 effectsShown = Shown;
@@ -448,6 +493,22 @@ namespace Game.Combat
             sparkleRenderer.SetPropertyBlock(sparkleBlock);
         }
 
+        // Spider web over the heart: the picture with as many rings as the player has web, popping a little when one is
+        // added; hidden with no web.
+        private void UpdateWeb(float time)
+        {
+            if (web == null) return;
+            int rings = Game.Locomotion.PlayerWeb.Rings;
+            if (rings > webRings) webPoppedAt = time;
+            webRings = rings;
+            bool on = rings > 0 && webSprites != null && rings <= webSprites.Length && webSprites[rings - 1] != null;
+            if (web.enabled != on) web.enabled = on;
+            if (!on) return;
+            if (web.sprite != webSprites[rings - 1]) web.sprite = webSprites[rings - 1];
+            float t = (time - webPoppedAt) / webPopSeconds;
+            web.rectTransform.localScale = Vector3.one * (1f + (t >= 0f && t < 1f ? webPop * Mathf.Sin(t * Mathf.PI) : 0f));
+        }
+
         // Buff smoke: white puffs round the heart while a boong buff is on, fading with the HUD like the sparkles.
         private void Smoke(bool on, float alpha)
         {
@@ -465,10 +526,11 @@ namespace Game.Combat
             smokeRenderer.SetPropertyBlock(smokeBlock);
         }
 
-        // The countdowns under the heart: one per buff that's on, in its colour, "0:57", blinking red near the end.
-        private void UpdateTimers(bool buffed)
+        // The countdowns under the heart: one per buff that's on, in its colour, "0:57", blinking red near the end; and
+        // the web's while the player is webbed, last, in white.
+        private void UpdateTimers(bool buffed, bool webbed)
         {
-            if (!buffed)
+            if (!buffed && !webbed)
             {
                 if (timers != null && timers.gameObject.activeSelf) timers.gameObject.SetActive(false);
                 timerMask = -1;
@@ -477,26 +539,29 @@ namespace Game.Combat
             if (!BuildTimers()) return;
             if (!timers.gameObject.activeSelf) timers.gameObject.SetActive(true);
 
+            int buffs = Game.Leveling.PlayerBuffs.Count;
             int mask = 0;
-            for (int i = 0; i < Game.Leveling.PlayerBuffs.Count; i++)
+            for (int i = 0; i < buffs; i++)
             {
                 if (Game.Leveling.PlayerBuffs.IsActive((Game.Leveling.Buff)i)) mask |= 1 << i;
             }
+            if (webbed) mask |= 1 << buffs;
             if (mask != timerMask) LayOutTimers(mask);
 
             bool blinkOn = Mathf.Repeat(Time.time * 2f, 1f) < 0.6f;
             for (int i = 0; i < timerTexts.Length; i++)
             {
                 if ((mask & (1 << i)) == 0) continue;
-                var buff = (Game.Leveling.Buff)i;
-                float left = Game.Leveling.PlayerBuffs.SecondsLeft(buff);
+                bool isWeb = i == buffs;
+                float left = isWeb ? Game.Locomotion.PlayerWeb.LockSecondsLeft : Game.Leveling.PlayerBuffs.SecondsLeft((Game.Leveling.Buff)i);
                 int seconds = Mathf.CeilToInt(left);
                 if (seconds != timerSeconds[i])
                 {
                     timerSeconds[i] = seconds;
                     timerTexts[i].SetText("{0}:{1:00}", seconds / 60, seconds % 60);
                 }
-                timerTexts[i].color = left <= TimerWarnSeconds && blinkOn ? TimerWarnColor : Game.Leveling.PlayerBuffs.ColorOf(buff);
+                timerTexts[i].color = isWeb ? WebTimerColor
+                    : left <= TimerWarnSeconds && blinkOn ? TimerWarnColor : Game.Leveling.PlayerBuffs.ColorOf((Game.Leveling.Buff)i);
             }
         }
 
@@ -530,8 +595,10 @@ namespace Game.Combat
             timers.anchorMin = timers.anchorMax = new Vector2(0.5f, 0.5f);
             timers.pivot = new Vector2(0.5f, 1f);
             timers.sizeDelta = new Vector2(TimerWidth, 0f);
-            float bottom = anchor.anchoredPosition.y - anchor.rect.height * anchor.pivot.y;
-            timers.anchoredPosition = new Vector2(anchor.anchoredPosition.x, bottom - 8f);
+            // Under where the heart rests (it may be shaking from the web right now).
+            var anchorAt = anchor == heart && heartHomeKnown ? heartHome : anchor.anchoredPosition;
+            float bottom = anchorAt.y - anchor.rect.height * anchor.pivot.y;
+            timers.anchoredPosition = new Vector2(anchorAt.x, bottom - 8f);
 
             var plate = transform.Find("Plate");
             if (plate != null)
@@ -543,12 +610,13 @@ namespace Game.Combat
                 timerPlate.anchoredPosition = Vector2.zero;
             }
 
-            timerTexts = new TMP_Text[Game.Leveling.PlayerBuffs.Count];
+            // One row per buff, then the web's.
+            timerTexts = new TMP_Text[Game.Leveling.PlayerBuffs.Count + 1];
             timerSeconds = new int[timerTexts.Length];
             for (int i = 0; i < timerTexts.Length; i++)
             {
                 var text = Instantiate(number, timers, false);
-                text.name = ((Game.Leveling.Buff)i).ToString();
+                text.name = i < Game.Leveling.PlayerBuffs.Count ? ((Game.Leveling.Buff)i).ToString() : "Web";
                 text.enableAutoSizing = false;
                 text.fontSize = 40f;
                 text.alignment = TextAlignmentOptions.Center;

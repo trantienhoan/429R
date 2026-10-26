@@ -8104,6 +8104,13 @@ MonoBehaviour:
   prepareSeconds: 0.6
   playerBodyRadius: 0.2
   leapRiseFall: {x: 0.2, y: 0.3}
+  clingOffset: {x: 0, y: -0.13, z: 0.4}
+  clingCrawlSpeed: 0.35
+  clingSlapRadius: 0.12
+  clingSlapSpeed: 1.2
+  clingStunSeconds: 0.8
+  clingLetGoJump: 0.75
+  clingBiteAnimation: bite
   runAwayDistance: 3
   attacks:
   - name: Bite
@@ -8126,6 +8133,8 @@ MonoBehaviour:
     runAwayAfter: 0
     throughPlayer: 0
     throughDistance: 1.2
+    clingToFace: 0
+    clingBiteSeconds: 2
     slowPlayerTo: 1
     slowSeconds: 0
     pushPower: 1
@@ -8150,6 +8159,8 @@ MonoBehaviour:
     runAwayAfter: 0
     throughPlayer: 0
     throughDistance: 1.2
+    clingToFace: 0
+    clingBiteSeconds: 2
     slowPlayerTo: 1
     slowSeconds: 0
     pushPower: 1
@@ -8174,6 +8185,8 @@ MonoBehaviour:
     runAwayAfter: 0
     throughPlayer: 0
     throughDistance: 1.2
+    clingToFace: 0
+    clingBiteSeconds: 2
     slowPlayerTo: 1
     slowSeconds: 0
     pushPower: 1
@@ -8183,6 +8196,8 @@ MonoBehaviour:
   retreatDistance: 1.2
   walkBackSpeed: 0.7
   heldThingsBlock: 1
+  blockWearPer: 7.5
+  fistBlockShare: 0.5
   dodgeBackAnimation: dodge_back
   dodgeLeftAnimation: dodge_left
   dodgeRightAnimation: dodge_right
@@ -8197,9 +8212,9 @@ MonoBehaviour:
   webHoldBone: Web_Ball
   webDuration: 1.75
   webRange: {x: 2, y: 7}
-  webCooldown: {x: 5, y: 9}
+  webCooldown: {x: 3, y: 5}
   webSpeed: 9
-  maxWebShooters: 1
+  maxWebShooters: 2
   webSound: {fileID: 8300000, guid: 3b726b2cac4693747bbae56f01b234e5, type: 3}
   flies: 0
   cruiseHeight: {x: 2, y: 2.5}
@@ -8249,6 +8264,9 @@ MonoBehaviour:
   hitEffect: {fileID: 0}
   setOnDeath: []
   aggressiveBoss: 1
+  unstoppableAttacks: 1
+  unstoppablePlayerEvent: DamageStrongZ
+  bossHelmetSeconds: 3
   minion: {fileID: 0}
   callBelowHealth: 0.4
   minionCount: {x: 3, y: 5}
@@ -8260,6 +8278,40 @@ MonoBehaviour:
   minionsUseEnemyLimit: 1
   minionsFillLimit: 0
   callWhenFleeing: 1
+  special: 0
+  specialBelowHealth: 0.3
+  specialCooldown: {x: 10, y: 15}
+  specialPlayerEvent: PumpkinBossHit
+  specialDistance: 7
+  chargeWindUp: 1.4
+  chargeSpeed: 10
+  chargePast: 3
+  chargeHitRadius: 0.3
+  chargeLaunch: {x: 3, y: 6}
+  chargeRest: 2
+  chargeRoar: {fileID: 0}
+  chargeStartSound: {fileID: 0}
+  chargeHitSound: {fileID: 0}
+  chargeDust: {fileID: 0}
+  chargeDustEvery: 0.8
+  chargeDustSize: 0.3
+  giantWebSize: 2.5
+  giantWebAnimationSpeed: 0.55
+  giantWebSpeed: 8
+  chargeKnockBugs: {x: 3.5, y: 1.2}
+  bombSeconds: 4
+  bombKillsItself: 1
+  bombRadius: 3
+  bombLaunch: {x: 2.5, y: 5}
+  bombPush: 6
+  bombEffects: []
+  bombEffectSize: 2.5
+  bombSound: {fileID: 0}
+  bombBeep: {fileID: 0}
+  bombFlash: {r: 1, g: 0.12, b: 0.05, a: 1}
+  bombBlinks: {x: 2, y: 10}
+  bombSwell: 0.15
+  bombDamageTaken: 2
   hideChance: 0
   hideRange: 6
   hideBurst: {fileID: 0}

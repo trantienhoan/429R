@@ -37,7 +37,7 @@ namespace Game.EditorTools
         /// itself picks one at random). Spider_Boss takes TheSpider 1's place: it gets a Bulldozer like the old bosses, the
         /// white spider's material (Spider_Smol_White_Painted_Mat) and sets WhiteSpiderDown in EnemyManager 0 when it dies. Spider_Boss_PumpkinButt, a variant of it, takes TheSpider's
         /// place: TheSpider's pumpkin, skull and crown, toughness 2, and BigSpiderDown in EnemyManager 1.
-        /// Also makes Spider_Web_Ball (the web shot: hurts and slows the player) and gives it to the spiders.
+        /// Also makes Spider_Web_Ball (the web shot: hurts the player and adds web to them) and gives it to the spiders.
         /// Run it again any time: whatever is already set up keeps its settings.
         /// </summary>
         [MenuItem("Tools/429 Game/Enemies/Set Up Smarter Spider")]
@@ -81,7 +81,7 @@ namespace Game.EditorTools
                     webSettings.FindProperty("webBall").objectReferenceValue = web;
                     webSettings.FindProperty("webSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(SpitSound);
                     webSettings.ApplyModifiedPropertiesWithoutUndo();
-                    notes.Add("spiders shoot Spider_Web_Ball while they wait their turn (Normal and Boss; it hurts and slows the player)");
+                    notes.Add("spiders shoot Spider_Web_Ball while they wait their turn (Normal and Boss; it hurts the player and adds web to them)");
                 }
 
                 if (oldBrain != null)

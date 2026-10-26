@@ -11,9 +11,9 @@ namespace Game.Locomotion
     /// Slows the player's walking (thumbstick and arm swing) for a while, e.g. while a spider's web sticks to them. It
     /// eases back to normal over the last half second. With several slows at once the strongest counts, until the
     /// latest one ends. Getting hurt slows too (Hurt, from the Hurt Slow on the XR Origin): the slowest of the two
-    /// counts. Turning and teleporting aren't slowed, but a slow that says so (a web ball's) stops teleporting until it
-    /// ends: the teleport ray still shows, it just can't land anywhere. Added to the XR Origin by Apply or Hurt when
-    /// first needed.
+    /// counts. Turning and teleporting aren't slowed, but a slow that says so (being webbed, Player Web) stops
+    /// teleporting until it ends: the teleport ray still shows, it just can't land anywhere. Added to the XR Origin by
+    /// Apply or Hurt when first needed.
     /// </summary>
     [DisallowMultipleComponent]
     public class PlayerSlow : MonoBehaviour
@@ -32,7 +32,7 @@ namespace Game.Locomotion
         private float hurtUntil;
         private float hurtHold;
 
-        // No teleporting until then (a web ball's slow): the teleport layers taken off each teleport ray, to give back.
+        // No teleporting until then (being webbed): the teleport layers taken off each teleport ray, to give back.
         private float noTeleportUntil;
         private readonly Dictionary<XRRayInteractor, int> takenTeleport = new();
         // XRI's Teleport interaction layer, if no teleport area is out to tell which one it is.
@@ -41,7 +41,7 @@ namespace Game.Locomotion
         /// <summary>True while the player is slowed.</summary>
         public bool IsSlowed => speedShare < 1f || hurting;
 
-        /// <summary>True while the player can't teleport (a web ball's slow).</summary>
+        /// <summary>True while the player can't teleport (being webbed, Player Web).</summary>
         public bool TeleportBlocked => takenTeleport.Count > 0;
 
         /// <summary>The share of their walking speed the player has right now (1 = not slowed).</summary>
@@ -93,6 +93,21 @@ namespace Game.Locomotion
             if (origin == null || !origin.TryGetComponent(out PlayerSlow slow) || !slow.hurting) return;
             // Update puts the speed back.
             slow.hurtUntil = 0f;
+        }
+
+        /// <summary>
+        /// Ends every slow from Apply (a web, a cockroach's leap, a bug pumpkin) and lets the player teleport again, e.g.
+        /// they went down while webbed: they get up free.
+        /// </summary>
+        public static void EndWebSlow()
+        {
+            var origin = FindAnyObjectByType<XROrigin>();
+            if (origin == null || !origin.TryGetComponent(out PlayerSlow slow)) return;
+            if (slow.speedShare >= 1f && !slow.TeleportBlocked) return;
+            // Update puts the speed back and gives teleporting back.
+            slow.until = 0f;
+            slow.noTeleportUntil = 0f;
+            slow.enabled = true;
         }
 
         private static PlayerSlow Find(float seconds)

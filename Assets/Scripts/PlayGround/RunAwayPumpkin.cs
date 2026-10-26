@@ -22,6 +22,9 @@ namespace Game.PlayGround
     /// Delay), while it's held, or once its health is gone. While it runs it can't tip over (its X/Z rotation is frozen
     /// until it has landed and settled). With Turn Away After Run (Pumpkin_1, 2, 4, 6) it turns its back to the player
     /// once a run is over and keeps it turned until it's hit or runs again.
+    /// Hide and seek: it keeps its back to the player, so its face doesn't give it away, until they come within Face
+    /// Range (caught) or hit it; then it turns round to face them (its Health FSM's Look At). A hit shows its face until
+    /// it runs again.
     /// Tools > 429 Game > Items > Make Stage Pumpkins Run Away adds it with each pumpkin's stamina.
     /// </summary>
     [DisallowMultipleComponent]
@@ -62,12 +65,17 @@ namespace Game.PlayGround
         [Tooltip("Once at its hiding spot with the player at least this far, it stops running to save its breath.")]
         [Min(0.1f)]
         [SerializeField] private float calmRange = 7f;
+        [Tooltip("Hide and seek: with the player farther than this (metres, along the floor) it keeps its back to them, " +
+                 "so its face doesn't give it away, unless they've hit it (then it looks at them until it runs again). " +
+                 "Closer, it turns round to face them (its Health FSM's Look At). 0: it always faces the player, as before.")]
+        [Min(0f)]
+        [SerializeField] private float faceRange = 1f;
 
         [Header("After a run")]
         [Tooltip("After running away it turns its back to the player and keeps it turned, sulking, until it's hit or " +
                  "runs again (its Health FSM's Look At is overruled meanwhile). Off: it faces the player as before.")]
         [SerializeField] private bool turnAwayAfterRun;
-        [Tooltip("How fast it turns its back, in degrees per second.")]
+        [Tooltip("How fast it turns round (its back to the player, or back to face them), in degrees per second.")]
         [Min(1f)]
         [SerializeField] private float turnAwaySpeed = 240f;
 
@@ -117,9 +125,14 @@ namespace Game.PlayGround
         private bool hasTarget;
         private Vector3 target;
         private readonly List<Vector3> corners = new();
-        // Turned away after a run (Turn Away After Run): the way it faces, eased round to its back to the player.
+        // Turned away after a run (Turn Away After Run).
         private bool turnedAway;
-        private float awayYaw;
+        // Hit by the player: it shows its face (looks at them) wherever they are, until it runs again.
+        private bool revealed;
+        // While it turns its back (sulking, or the player beyond Face Range) and while it turns round to face them again:
+        // the way it faces, eased round.
+        private bool easing;
+        private float shownYaw;
         private float lastHealth = float.MaxValue;
 
         public Mood Current => mood;
@@ -171,8 +184,8 @@ namespace Game.PlayGround
                 TurnBack();
                 return;
             }
-            // Hurt (its Damage FSM took health): it looks at the player again.
-            if (healthNow < lastHealth - 0.01f) TurnBack();
+            // Hurt (its Damage FSM took health): it looks at the player again. The first reading is only where it starts.
+            if (lastHealth != float.MaxValue && healthNow < lastHealth - 0.01f) Reveal();
             lastHealth = healthNow;
 
             if (grab != null && grab.isSelected)
@@ -256,34 +269,53 @@ namespace Game.PlayGround
             mood = Mood.Fleeing;
             KeepUpright(true);
             TurnBack();
+            // Running off to hide again: the face goes back into hiding.
+            revealed = false;
             PickHidingSpot(head);
         }
 
-        // A run is over: it turns its back to the player (Turn Away After Run), from the way it faces now.
+        // A run is over: it turns its back to the player (Turn Away After Run).
         private void TurnAway()
         {
-            if (!turnAwayAfterRun || turnedAway) return;
-            turnedAway = true;
-            awayYaw = transform.eulerAngles.y;
+            if (turnAwayAfterRun) turnedAway = true;
         }
 
-        // Hit, running again, held or broken: its Health FSM's Look At turns it to the player again.
+        // Hit, running again, held or broken: its Health FSM's Look At turns it to the player again (if they're close).
         private void TurnBack() => turnedAway = false;
 
-        // After its FSMs' Look At (Update), so its back stays to the player: upright, eased round, following them.
+        // Hit by the player: it looks at them, wherever they are, until it runs again.
+        private void Reveal()
+        {
+            TurnBack();
+            revealed = true;
+        }
+
+        // After its FSMs' Look At (Update). Sulking or with the player beyond Face Range (and not hit since its last run),
+        // its back stays to the player: upright, eased round, following them. Close or hit, it eases round to face them,
+        // then the Look At takes over.
         private void LateUpdate()
         {
-            if (!turnedAway) return;
             var head = Camera.main != null ? Camera.main.transform : null;
-            if (head == null) return;
-            var away = Flat(transform.position - head.position);
-            if (away.sqrMagnitude > 0.0001f)
+            if (head == null || mood == Mood.Held || mood == Mood.Done)
             {
-                float wanted = Quaternion.LookRotation(away, Vector3.up).eulerAngles.y;
-                awayYaw = Mathf.MoveTowardsAngle(awayYaw, wanted, turnAwaySpeed * Time.deltaTime);
+                easing = false;
+                return;
             }
-            var turned = Quaternion.Euler(0f, awayYaw, 0f);
-            transform.rotation = turned;
+            var away = Flat(transform.position - head.position);
+            bool hideFace = !revealed && (turnedAway || (faceRange > 0f && away.magnitude > faceRange));
+            // Facing the player with nothing left to ease: the Look At turns it, as before.
+            if (!hideFace && !easing) return;
+            if (!easing)
+            {
+                easing = true;
+                shownYaw = transform.eulerAngles.y;
+            }
+            float wanted = transform.eulerAngles.y;
+            if (hideFace && away.sqrMagnitude > 0.0001f) wanted = Quaternion.LookRotation(away, Vector3.up).eulerAngles.y;
+            shownYaw = Mathf.MoveTowardsAngle(shownYaw, wanted, turnAwaySpeed * Time.deltaTime);
+            // Round to face the player (or to where its FSM leaves it): done easing.
+            if (!hideFace && Mathf.Abs(Mathf.DeltaAngle(shownYaw, wanted)) < 1f) easing = false;
+            transform.rotation = Quaternion.Euler(0f, shownYaw, 0f);
             if (!body.isKinematic) body.angularVelocity = Vector3.zero;
         }
 
@@ -330,7 +362,7 @@ namespace Game.PlayGround
             nextHurt = Time.time + HurtCooldown;
             LoseStamina(hit.Damage * staminaPerDamage);
             // Hit: it looks at the player again.
-            TurnBack();
+            Reveal();
         }
 
         // Hurt: out of breath sooner. At 0 it's tired.
@@ -564,19 +596,26 @@ namespace Game.PlayGround
         private void OnDrawGizmosSelected()
         {
             Gizmos.color = Color.yellow;
-            var last = transform.position + Vector3.forward * fleeRange;
-            for (int i = 1; i <= 32; i++)
-            {
-                float angle = i / 32f * Mathf.PI * 2f;
-                var next = transform.position + new Vector3(Mathf.Sin(angle), 0f, Mathf.Cos(angle)) * fleeRange;
-                Gizmos.DrawLine(last, next);
-                last = next;
-            }
+            DrawRing(fleeRange);
+            Gizmos.color = Color.cyan;
+            if (faceRange > 0f) DrawRing(faceRange);
             if (hasTarget)
             {
                 Gizmos.color = Color.green;
                 Gizmos.DrawLine(transform.position, target);
                 Gizmos.DrawWireSphere(target, 0.3f);
+            }
+        }
+
+        private void DrawRing(float radius)
+        {
+            var last = transform.position + Vector3.forward * radius;
+            for (int i = 1; i <= 32; i++)
+            {
+                float angle = i / 32f * Mathf.PI * 2f;
+                var next = transform.position + new Vector3(Mathf.Sin(angle), 0f, Mathf.Cos(angle)) * radius;
+                Gizmos.DrawLine(last, next);
+                last = next;
             }
         }
 #endif

@@ -26,7 +26,8 @@ namespace Game.Enemies
     /// seconds after any stop, so a boss can't be stun-locked); low on health it runs away once.
     /// Size picks Small, Normal or Boss (or one at random by Weight): each has its own size range, health, speed and
     /// bite. It can first play an appearing animation (e.g. climbing out of the ground) before it does anything.
-    /// While it waits for its turn it may shoot a web ball (Web Shot) that hurts and slows the player. A flier (Flies,
+    /// While it waits for its turn it may shoot a web ball (Web Shot) that hurts the player and adds web to them (a full
+    /// web slows them and stops teleporting for a while: Player Web). A flier (Flies,
     /// e.g. the bee) flies at heights the brain sets (its animations stay at the root): it circles up high, dives to the
     /// player's chest to sting whenever it's ready (no waiting for a turn), and after a sting, a hit or a dodge goes
     /// back up, flies around a little and dives again. Low on health it loses its wings, drops to the floor and from
@@ -45,7 +46,7 @@ namespace Game.Enemies
     /// A boss with a Special Move uses it low on health (Special Below Health), and again every Special Cooldown: it
     /// gets away from the player, then either rears up and charges in a straight line through where they stand (Bull
     /// Charge: a hit throws them high and far and hurts a lot; a step aside or a teleport dodges it), or makes and spits
-    /// a giant web ball that slows them for seconds (Giant Web). Nothing stops it while it does. A charge knocks the bugs
+    /// a giant web ball that webs them at once (Giant Web). Nothing stops it while it does. A charge knocks the bugs
     /// in its way flying. Or it becomes a Ticking Bomb: it flashes and beeps, faster and faster, while it keeps after the
     /// player, taking double damage meanwhile, and Bomb Seconds later blows up (killed first, it doesn't).
     /// Now and then (Anomaly Chance, 1 in 100) a bug appears as the rare white one, always a small white cockroach (a
@@ -130,8 +131,16 @@ namespace Game.Enemies
             [Tooltip("How far behind the player it lands, in metres, with Through Player.")]
             [Min(0f)]
             public float throughDistance = 1.2f;
+            [Tooltip("A face leap that holds on: it clings to the player's face, crawling, biting every Cling Bite " +
+                     "Seconds, until a hand slaps or punches it off (or it's hit or dies, or the player goes down, is " +
+                     "teleported or falls). One spider at a time: while one clings, the others leap the usual way " +
+                     "(Through Player). How it sits and how hard a slap must be: Face Cling.")]
+            public bool clingToFace;
+            [Tooltip("While it clings, seconds between bites.")]
+            [Min(0.2f)]
+            public float clingBiteSeconds = 2f;
             [Tooltip("When this attack lands, the player walks at this share of their speed (0.35 = 35%) for Slow " +
-                     "Seconds, like a web ball does. Only with Slow Seconds above 0.")]
+                     "Seconds. Only with Slow Seconds above 0.")]
             [Range(0.1f, 1f)]
             public float slowPlayerTo = 1f;
             [Tooltip("How long the slow lasts, in seconds; it eases back to normal over the last half second. 0 = none.")]
@@ -270,6 +279,7 @@ namespace Game.Enemies
             WingsOff,
             Hide,
             Special,
+            Cling,
             Dead,
         }
 
@@ -363,6 +373,29 @@ namespace Game.Enemies
         [SerializeField] private float playerBodyRadius = 0.2f;
         [Tooltip("Face leaps: seconds to spring up to the player's face (x), and to drop back down after the bite (y).")]
         [SerializeField] private Vector2 leapRiseFall = new(0.2f, 0.3f);
+
+        [Header("Face Cling")]
+        [Tooltip("Where a face leap with Cling To Face sits on the player's face, from their eyes, in metres: x right, " +
+                 "y up, z forward. Its belly is towards them and its head up; it covers part of the view, never all of it.")]
+        [SerializeField] private Vector3 clingOffset = new(0f, -0.13f, 0.4f);
+        [Tooltip("How fast its legs scurry while it clings (its run animation's speed: 1 = as when it runs).")]
+        [Range(0.05f, 2f)]
+        [SerializeField] private float clingCrawlSpeed = 0.35f;
+        [Tooltip("Its body's radius for slaps, in metres at size 1: a hand coming within this (plus 8 cm) slaps it.")]
+        [Min(0.02f)]
+        [SerializeField] private float clingSlapRadius = 0.12f;
+        [Tooltip("A hand moving into it at least this fast (metres a second) knocks it off; slower hands near the face " +
+                 "(eating a candy) don't.")]
+        [Min(0.1f)]
+        [SerializeField] private float clingSlapSpeed = 1.2f;
+        [Tooltip("Knocked off, it's stunned this long on the floor (its hit look) before it fights on, in seconds.")]
+        [Min(0f)]
+        [SerializeField] private float clingStunSeconds = 0.8f;
+        [Tooltip("The player's head moving this far in one frame (a teleport, a fall off an edge) makes it let go, in metres.")]
+        [Min(0.1f)]
+        [SerializeField] private float clingLetGoJump = 0.75f;
+        [Tooltip("Played on each bite while it clings (then it crawls on). Empty or not in the Animator: it just crawls.")]
+        [SerializeField] private string clingBiteAnimation = "bite";
         [Tooltip("How far it runs away after an attack that runs away, in metres.")]
         [Min(0f)]
         [SerializeField] private float runAwayDistance = 3f;
@@ -633,7 +666,7 @@ namespace Game.Enemies
         [Header("Special move (bosses)")]
         [Tooltip("Its big move, low on health: None; Bull Charge (gets away, rears up, then charges in a straight line " +
                  "through where the player stands; a step aside or a teleport dodges it); Giant Web (gets away, makes a " +
-                 "giant web ball and spits it at the player: it hurts and slows them for seconds, then it chases as " +
+                 "giant web ball and spits it at the player: it hurts and webs them at once, then it chases as " +
                  "usual). Nothing stops it while it does it: hits still hurt. Ticking Bomb (it flashes and beeps, faster " +
                  "and faster, while it keeps after the player, and blows up Bomb Seconds later; killed first, it doesn't).")]
         [SerializeField] private SpecialMove special = SpecialMove.None;
@@ -694,11 +727,6 @@ namespace Game.Enemies
                  "teleport dodges it; fists and held weapons don't stop it.")]
         [Min(1f)]
         [SerializeField] private float giantWebSpeed = 8f;
-        [Tooltip("The player walks at this share of their speed (0.3 = 30%) for Giant Web Slow Seconds once it hits.")]
-        [Range(0.05f, 1f)]
-        [SerializeField] private float giantWebSlowTo = 0.3f;
-        [Min(0f)]
-        [SerializeField] private float giantWebSlowSeconds = 6.5f;
         [Tooltip("Bull Charge: the bugs in its way (its own minions too) are knocked flying aside, this far (x) and this " +
                  "high (y), in metres; they're not hurt. 0, 0 = it runs through them.")]
         [SerializeField] private Vector2 chargeKnockBugs = new(3.5f, 1.2f);
@@ -845,6 +873,8 @@ namespace Game.Enemies
         private static readonly List<PlayMakerFSM> fsmBuffer = new();
         private static int attackersNow;
         private static int webShootersNow;
+        // The one spider on the player's face (Cling To Face), if any.
+        private static SpiderBrain clinger;
         // Every enemy's sounds together: when the ones playing end, and when each sound last started.
         private static readonly List<float> voiceEnds = new();
         private static readonly Dictionary<AudioClip, float> soundStarted = new();
@@ -990,6 +1020,23 @@ namespace Game.Enemies
         private float leapDropFrom;
         private float leapFallSpeed;
         private bool leapShown;
+        // Clinging to the player's face (Cling To Face): the next bite and when it crawls again after one, the hands it
+        // watches for slaps (where each was, and whether it was on it), where it was itself, the head's last position (a
+        // jump = a teleport or a fall), and the models' own turn to give back when it lets go.
+        private float clingBiteAt;
+        private float clingCrawlAt;
+        private Transform[] clingHands = Array.Empty<Transform>();
+        private readonly Vector3[] clingLastHand = new Vector3[2];
+        private readonly bool[] clingHandTouching = new bool[2];
+        private Vector3 clingLastAt;
+        private Vector3 clingLastHead;
+        private float clingWiggleSeed;
+        private bool posedOnFace;
+        // Slapped off the face, it's flung away from the player as it falls: which way, and how much further.
+        private Vector3 flungAway;
+        private float flungLeft;
+        private Quaternion modelsHomeRotation = Quaternion.identity;
+        private Game.Locomotion.DeathCameraFall deathFall;
         private bool runningAway;
         private readonly List<Collider> bodyColliders = new();
         private readonly List<Vector3> bodyColliderCentres = new();
@@ -1046,6 +1093,7 @@ namespace Game.Enemies
             spiders.Clear();
             attackersNow = 0;
             webShootersNow = 0;
+            clinger = null;
             voiceEnds.Clear();
             soundStarted.Clear();
             player = null;
@@ -1065,7 +1113,11 @@ namespace Game.Enemies
             }
             ChooseSize();
             PickModel();
-            if (models != null) modelsHome = models.localPosition;
+            if (models != null)
+            {
+                modelsHome = models.localPosition;
+                modelsHomeRotation = models.localRotation;
+            }
         }
 
         private void Start()
@@ -1123,6 +1175,7 @@ namespace Game.Enemies
         private void OnDisable()
         {
             spiders.Remove(this);
+            if (clinger == this) clinger = null;
             GiveUpTurn();
             StopShooting();
         }
@@ -1144,16 +1197,25 @@ namespace Game.Enemies
 
             Grow();
             if (player == null) player = FindAnyObjectByType<XROrigin>();
+            // On the face it never waits on the rest of the brain: no player or no NavMesh under it, it lets go.
+            if (state == State.Cling && (player == null || player.Camera == null || !agent.isOnNavMesh)) LetGo(false);
             if (player == null || player.Camera == null || !agent.isOnNavMesh) return;
 
             // Low on health a boss calls its minions, even while it's knocked back or knocked out, and a bomb ticks.
             UpdateCall();
             UpdateBomb();
 
-            // Knockback moves the agent itself; wait until it's done.
+            // Knockback moves the agent itself; wait until it's done. Knocked back while on the face (a big hit, a level-up
+            // burst), it lets go; and a lifted one falls as it slides (the knock-back is its fling).
             if (knockback != null || TryGetComponent(out knockback))
             {
-                if (knockback.IsKnockedBack) return;
+                if (knockback.IsKnockedBack)
+                {
+                    if (state == State.Cling) LetGo(true);
+                    flungLeft = 0f;
+                    FallIfLifted();
+                    return;
+                }
             }
 
             if (Time.time >= nextSenses) Sense();
@@ -1204,6 +1266,7 @@ namespace Game.Enemies
                 case State.WingsOff: DoWingsOff(); break;
                 case State.Hide: DoHide(); break;
                 case State.Special: DoSpecial(); break;
+                case State.Cling: DoCling(); break;
             }
             FallIfLifted();
             if (flies) UpdateHeight();
@@ -1366,7 +1429,11 @@ namespace Game.Enemies
             appearStart = Time.time;
             appearTimed = appearSeconds > 0f;
             if (appearTimed) stateUntil = Time.time + appearSeconds;
-            if (models != null) modelsHome = models.localPosition;
+            if (models != null)
+            {
+                modelsHome = models.localPosition;
+                modelsHomeRotation = models.localRotation;
+            }
             Stop();
             Play(appearAnimation, true);
             SendToOwnFsms("Appear");
@@ -1639,7 +1706,11 @@ namespace Game.Enemies
             }
             if (move.leapToFace) Leap(t);
 
-            if (!attackResolved && t >= move.hitFrom && t <= move.hitUntil) TryBite();
+            if (!attackResolved && t >= move.hitFrom && t <= move.hitUntil && TryBite() && CanCling())
+            {
+                StartCling();
+                return;
+            }
             if (!attackResolved && t > move.hitUntil)
             {
                 attackResolved = true;
@@ -1743,17 +1814,232 @@ namespace Game.Enemies
             models.localPosition = modelsHome + Vector3.up * (local - animationDrop);
             dropShown = animationDrop > 0f;
             if (!lifted) return;
-            if (bodyColliders.Count == 0 && bodyColliderCentres.Count == 0)
-            {
-                foreach (var c in GetComponents<Collider>())
-                {
-                    if (c.isTrigger) continue;
-                    bodyColliders.Add(c);
-                    bodyColliderCentres.Add(Centre(c));
-                }
-            }
+            EnsureBodyColliders();
             for (int i = 0; i < bodyColliders.Count; i++) SetCentre(bodyColliders[i], bodyColliderCentres[i] + Vector3.up * local);
             leapShown = lift > 0f;
+        }
+
+        // Its own solid colliders and where they sit at rest (they're moved along when it leaps or clings).
+        private void EnsureBodyColliders()
+        {
+            if (bodyColliders.Count > 0 || bodyColliderCentres.Count > 0) return;
+            foreach (var c in GetComponents<Collider>())
+            {
+                if (c.isTrigger) continue;
+                bodyColliders.Add(c);
+                bodyColliderCentres.Add(Centre(c));
+            }
+        }
+
+        // ---- Clinging to the face (Cling To Face) ----
+
+        /// <summary>Whether it's clinging to the player's face right now (a face leap with Cling To Face).</summary>
+        public bool IsClinging => state == State.Cling;
+
+        // How close a hand must come to slap it off, in metres.
+        private float ClingSlapReach => clingSlapRadius * Size() + 0.08f;
+
+        // Slapped off, it's flung this far from the player (metres along the floor), this fast (metres a second).
+        private const float ClingFlingDistance = 0.7f;
+        private const float ClingFlingSpeed = 2.5f;
+
+        // This face leap holds on: nobody else is on the face, and the player is up.
+        private bool CanCling() =>
+            move != null && move.leapToFace && move.clingToFace && (clinger == null || clinger == this) && !PlayerDown();
+
+        // The player is down: falling dead, or the revive coins are in the air.
+        private bool deathFallSearched;
+        private bool PlayerDown()
+        {
+            if (Game.Saving.Checkpoints.IsDying) return true;
+            if (!deathFallSearched)
+            {
+                deathFallSearched = true;
+                deathFall = FindAnyObjectByType<Game.Locomotion.DeathCameraFall>(FindObjectsInactive.Include);
+            }
+            return deathFall != null && deathFall.IsDown;
+        }
+
+        // Landed on the face with Cling To Face: it holds on, crawling, and watches the hands for a slap.
+        private void StartCling()
+        {
+            clinger = this;
+            // No shove: it stays on the face.
+            pendingPush = Vector2.zero;
+            Enter(State.Cling, 0f);
+            Stop();
+            clingBiteAt = Time.time + Mathf.Max(0.2f, move.clingBiteSeconds);
+            clingCrawlAt = 0f;
+            clingWiggleSeed = Random.value * 10f;
+            var head = player.Camera.transform;
+            clingLastHead = head.position;
+            clingHands = new[] { XRRig.FindController(left: true), XRRig.FindController(left: false) };
+            var at = ClingPoint(head);
+            clingLastAt = at;
+            float reach = ClingSlapReach;
+            for (int i = 0; i < clingHands.Length && i < clingLastHand.Length; i++)
+            {
+                clingLastHand[i] = clingHands[i] != null ? clingHands[i].position : Vector3.zero;
+                // A hand already on it as it lands doesn't slap it until it has come away first.
+                clingHandTouching[i] = clingHands[i] != null && (clingLastHand[i] - at).sqrMagnitude <= reach * reach;
+            }
+            Crawl();
+            SendToOwnFsms("Cling");
+        }
+
+        // On the face: it bites now and then, and lets go when it's slapped off, or the player goes down or jumps away
+        // (a teleport, a fall off an edge).
+        private void DoCling()
+        {
+            if (player == null || player.Camera == null || PlayerDown())
+            {
+                LetGo(false);
+                return;
+            }
+            var head = player.Camera.transform;
+            bool jumped = (head.position - clingLastHead).magnitude > clingLetGoJump;
+            clingLastHead = head.position;
+            if (jumped)
+            {
+                LetGo(false);
+                return;
+            }
+            // Its body keeps under its spot on the face, turned to the player: a knock-back throws it away from them, and
+            // its bites and sounds come from there.
+            var under = ClingPoint(head);
+            under.y = transform.position.y;
+            var follow = under - transform.position;
+            if (follow.sqrMagnitude > 0.0001f) agent.Move(follow);
+            Face(PlayerFloor());
+            if (CheckClingSlaps(head))
+            {
+                LetGo(true);
+                return;
+            }
+            if (Time.time >= clingBiteAt)
+            {
+                clingBiteAt = Time.time + Mathf.Max(0.2f, move.clingBiteSeconds);
+                BitePlayer(false, false);
+                if (HasAnimationQuiet(clingBiteAnimation))
+                {
+                    Play(clingBiteAnimation, true);
+                    clingCrawlAt = Time.time + 0.6f;
+                }
+            }
+            if (clingCrawlAt > 0f && Time.time >= clingCrawlAt)
+            {
+                clingCrawlAt = 0f;
+                Crawl();
+            }
+        }
+
+        // Its legs scurry on the face: the run animation, slowed down.
+        private void Crawl()
+        {
+            Play(runAnimation, true);
+            if (animator != null) animator.speed = clingCrawlSpeed;
+        }
+
+        // A hand that has just come onto it, moving into it fast enough, slaps it off.
+        private bool CheckClingSlaps(Transform head)
+        {
+            var at = ClingPoint(head);
+            float dt = Mathf.Max(Time.deltaTime, 0.0001f);
+            var moved = at - clingLastAt;
+            clingLastAt = at;
+            float reach = ClingSlapReach;
+            bool slapped = false;
+            for (int i = 0; i < clingHands.Length && i < clingLastHand.Length; i++)
+            {
+                var hand = clingHands[i];
+                if (hand == null) continue;
+                var now = hand.position;
+                if (SlapsFace(clingLastHand[i], now, moved, dt, at, reach, clingHandTouching[i], clingSlapSpeed)) slapped = true;
+                clingHandTouching[i] = (now - at).sqrMagnitude <= reach * reach;
+                clingLastHand[i] = now;
+            }
+            return slapped;
+        }
+
+        /// <summary>
+        /// Whether a hand slaps a spider clinging to the face this frame: it has just come within Reach of it (it wasn't
+        /// on it the frame before), moving into it at Min Speed or more, with the spider's own movement taken off (it
+        /// rides along with the head).
+        /// </summary>
+        public static bool SlapsFace(Vector3 handBefore, Vector3 handNow, Vector3 spiderMoved, float dt, Vector3 spiderAt,
+            float reach, bool wasTouching, float minSpeed)
+        {
+            if (wasTouching || (handNow - spiderAt).sqrMagnitude > reach * reach) return false;
+            float speed = (handNow - handBefore - spiderMoved).magnitude / Mathf.Max(dt, 0.0001f);
+            return speed >= minSpeed;
+        }
+
+        // Where it sits on the face: in front of the eyes (Cling Offset), swaying a little as it crawls.
+        private Vector3 ClingPoint(Transform head)
+        {
+            float sway = Mathf.Sin((Time.time + clingWiggleSeed) * 2.3f) * 0.02f;
+            return head.position + head.right * (clingOffset.x + sway) + head.up * clingOffset.y + head.forward * clingOffset.z;
+        }
+
+        // On the face: belly to the player, head up, turning a little as it crawls. Its body's colliders come along, so
+        // it can be punched off.
+        private void PoseOnFace()
+        {
+            if (models == null || player == null || player.Camera == null) return;
+            var head = player.Camera.transform;
+            var at = ClingPoint(head);
+            float turn = Mathf.Sin((Time.time + clingWiggleSeed) * 1.7f) * 12f;
+            models.SetPositionAndRotation(at, Quaternion.LookRotation(head.up, head.forward) * Quaternion.AngleAxis(turn, Vector3.up));
+            posedOnFace = true;
+            EnsureBodyColliders();
+            var shift = transform.InverseTransformPoint(at) - modelsHome;
+            for (int i = 0; i < bodyColliders.Count; i++) SetCentre(bodyColliders[i], bodyColliderCentres[i] + shift);
+        }
+
+        // Lets go of the face: it falls from where it was, upright, stunned a moment, then fights on after its usual
+        // cooldown. Knocked off (slapped, punched, hit): its hit sound, and it's flung away from the player as it falls.
+        private void LetGo(bool knocked)
+        {
+            if (state != State.Cling) return;
+            flungLeft = 0f;
+            if (knocked && player != null && player.Camera != null && models != null)
+            {
+                var away = models.position - player.Camera.transform.position;
+                away.y = 0f;
+                if (away.sqrMagnitude < 0.0001f) away = player.Camera.transform.forward;
+                away.y = 0f;
+                flungAway = away.normalized;
+                flungLeft = ClingFlingDistance;
+            }
+            LeaveFace();
+            GiveUpTurn();
+            nextAttack = Time.time + Random.Range(attackCooldown.x, attackCooldown.y) * Rest;
+            Enter(State.Flinch, clingStunSeconds);
+            Stop();
+            Play(HitLook, true);
+            if (knocked) PlayOne(hitSounds, true);
+            SendToOwnFsms(knocked ? "KnockedOff" : "LetGo");
+        }
+
+        // Off the face: its body goes under where it was and its model is turned back upright at that height, so it falls
+        // from there (Fall If Lifted, Show Leap).
+        private void LeaveFace()
+        {
+            if (clinger == this) clinger = null;
+            if (!posedOnFace || models == null)
+            {
+                posedOnFace = false;
+                return;
+            }
+            posedOnFace = false;
+            var at = models.position;
+            if (agent.isOnNavMesh && NavMesh.SamplePosition(new Vector3(at.x, transform.position.y, at.z), out var floor, 1.5f, NavMesh.AllAreas))
+                agent.Warp(floor.position);
+            models.localRotation = modelsHomeRotation;
+            leapLift = Mathf.Max(0f, at.y - transform.position.y - modelsHome.y * transform.lossyScale.y);
+            leapFallSpeed = 0f;
+            if (animator != null) animator.speed = 1f;
+            ShowLeap();
         }
 
         private static Vector3 Centre(Collider c) => c switch
@@ -1799,7 +2085,8 @@ namespace Game.Enemies
             if (NavMesh.SamplePosition(point, out var hit, runAwayDistance + 0.5f, NavMesh.AllAreas)) GoTo(hit.position, RunSpeed, true);
         }
 
-        private void TryBite()
+        // True when it bit the player.
+        private bool TryBite()
         {
             float size = Size();
             var mouth = transform.position + transform.forward * (move.reach * size) + Vector3.up * (0.15f * size + leapLift + flyLift);
@@ -1814,46 +2101,54 @@ namespace Game.Enemies
                     if (Fist.IsFistBall(other.attachedRigidbody)) FistBlocked();
                     else WearBlocker(other.attachedRigidbody);
                     BiteBlocked();
-                    return;
+                    return false;
                 }
                 if (!other.isTrigger && IsPlayer(other)) bitPlayer = true;
                 if (GoesForObject && targetObject != null && other.transform.IsChildOf(targetObject)) bitObject = true;
             }
             if (GoesForObject)
             {
-                if (targetObject == null) return;
+                if (targetObject == null) return false;
                 if (!bitObject)
                 {
                     var flat = mouth - targetObject.position;
                     flat.y = 0f;
                     bitObject = flat.magnitude <= targetRadius + move.biteRadius * size + 0.15f;
                 }
-                if (!bitObject) return;
+                if (!bitObject) return false;
                 attackResolved = true;
                 SendToTarget();
                 SendToOwnFsms("Bite");
-                return;
+                return false;
             }
             // The player's colliders sit on the rig, not always under their head (room-scale), and a small spider's
             // bite is small: the body around where they stand counts too.
             if (!bitPlayer) bitPlayer = ReachesBody(mouth, move.biteRadius * size);
-            if (!bitPlayer) return;
+            if (!bitPlayer) return false;
             // A legendary shield held between it and the player's head stops it, even if the bite missed the shield.
             if (heldThingsBlock && Game.Weapons.LegendaryGear.TryBlock(mouth))
             {
                 BiteBlocked();
-                return;
+                return false;
             }
 
             attackResolved = true;
+            BitePlayer(true, true);
+            return true;
+        }
+
+        // The bite lands on the player: their damage (and slow), the land sound, and with Shove the attack's push (a face
+        // leap's comes as it lets go of the face).
+        private void BitePlayer(bool shove, bool landSound)
+        {
             DamageVignette.HitFrom(transform);
             if (Unstoppable && !string.IsNullOrEmpty(unstoppablePlayerEvent)) SendToPlayer(unstoppablePlayerEvent, PlayerHealthFsm);
             else SendToPlayer(BiteEvent);
             if (move.slowSeconds > 0f) Game.Locomotion.PlayerSlow.Apply(move.slowPlayerTo, move.slowSeconds);
-            if (move.landSound != null) PlayOne(move.landSound, true);
+            if (landSound && move.landSound != null) PlayOne(move.landSound, true);
             // The size's push, times this attack's Push Power (a jump attack shoves harder).
             float height = kind.launchHeight * move.PushPower, distance = kind.launchDistance * move.PushPower;
-            if (height > 0f || distance > 0f)
+            if (shove && (height > 0f || distance > 0f))
             {
                 if (move.leapToFace) pendingPush = new Vector2(height, distance);
                 else Push(height, distance);
@@ -1973,6 +2268,13 @@ namespace Game.Enemies
         private void DoFlinch()
         {
             Stop();
+            // Slapped off the face: flung away from the player as it falls.
+            if (flungLeft > 0f)
+            {
+                float step = Mathf.Min(flungLeft, ClingFlingSpeed * Time.deltaTime);
+                agent.Move(flungAway * step);
+                flungLeft -= step;
+            }
             if (Time.time < stateUntil) return;
 
             if (!fled && fleeBelowHealth > 0f && health != null && health.Value / startHealth <= fleeBelowHealth)
@@ -2975,7 +3277,14 @@ namespace Game.Enemies
         {
             if (grounded) ShrinkWings();
             if (flies) DropAnimationHover();
-            ShowLeap();
+            if (state == State.Cling) PoseOnFace();
+            else
+            {
+                // Something else took it off the face without letting go properly (even before it was ever posed there):
+                // the face is free again, and it falls from there, upright.
+                if (posedOnFace || clinger == this) LeaveFace();
+                ShowLeap();
+            }
             if (heldWeb == null || webHold == null) return;
             heldWeb.transform.SetPositionAndRotation(webHold.position, webHold.rotation);
             float parentScale = webHold.parent != null ? Mathf.Max(0.0001f, webHold.parent.lossyScale.x) : 1f;
@@ -3032,7 +3341,7 @@ namespace Game.Enemies
             var velocity = WebBall.Aim(mouth, chest, speed, -Physics.gravity.y);
             if (ball.TryGetComponent(out WebBall web))
             {
-                if (giant) web.MakeGiant(specialPlayerEvent, PlayerHealthFsm, giantWebSlowTo, giantWebSlowSeconds, giantWebSize);
+                if (giant) web.MakeGiant(specialPlayerEvent, PlayerHealthFsm, giantWebSize);
                 web.Launch(velocity, transform);
             }
             else if (ball.TryGetComponent(out Rigidbody body)) body.linearVelocity = velocity;
@@ -3233,6 +3542,8 @@ namespace Game.Enemies
         private void OnAnyHit(EnemyHitDamage enemy, HitResult hit)
         {
             if (enemy == null || enemy.gameObject != gameObject || state == State.Dead) return;
+            // Any hit knocks it off the face, whatever else it shrugs off.
+            if (state == State.Cling) LetGo(true);
 
             if (hitEffect != null) hitEffect.SetActive(true);
             PlayOne(hitSounds, true);
@@ -3254,6 +3565,12 @@ namespace Game.Enemies
         // wind-up still ends in its sting). In the middle of a sting or bite only the sound: light taps can't cancel it.
         private void OnWeakHit(EnemyHitDamage enemy)
         {
+            // Even a tap knocks it off the face.
+            if (enemy != null && enemy.gameObject == gameObject && state == State.Cling)
+            {
+                LetGo(true);
+                return;
+            }
             if (enemy == null || enemy.gameObject != gameObject || state == State.Dead || weakFlinchSeconds <= 0f) return;
             if (Time.time < nextWeakFlinch) return;
             nextWeakFlinch = Time.time + Mathf.Max(0.5f, weakFlinchSeconds * 2f);
@@ -3303,6 +3620,8 @@ namespace Game.Enemies
         // The Health FSM plays the death; the brain only lets go.
         private void Die()
         {
+            // Killed on the player's face: it falls from there.
+            if (state == State.Cling) LetGo(false);
             if (anomaly && state != State.Dead) AnomalyKilled();
             if (kindName == SizeClass.Boss && !anomaly && state != State.Dead) BossKilled();
             // Beaten before its bomb went off: defused.

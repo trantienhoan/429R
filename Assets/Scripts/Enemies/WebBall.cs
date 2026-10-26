@@ -10,8 +10,9 @@ namespace Game.Enemies
 {
     /// <summary>
     /// A spider's web shot (Spider Brain launches it). It flies with gravity; reaching the player's body it hurts them
-    /// (Player Event, sent to their Damage FSM) and slows their walking for Slow Seconds, with no teleporting meanwhile.
-    /// A weapon held in its way, or a fist, swats it. Anything else just splats it. It has no collider of its own and
+    /// (Player Event, sent to their Damage FSM) and adds web to them (Web Added; a full web slows them and stops
+    /// teleporting for a while, Player Web). A weapon held in its way, or a fist, swats it: no web. Anything else just
+    /// splats it. It has no collider of its own and
     /// finds what it hits by sweeping
     /// along its flight, so it never knocks things over, hurts other enemies, or sets off other objects' trigger FSMs.
     /// A boss's giant web (MakeGiant) goes straight through fists and held weapons.
@@ -23,12 +24,10 @@ namespace Game.Enemies
     {
         [Tooltip("Sent to the player's Damage FSM when it hits them: Damage (1-3 health), DamageHeavy (6-12), ...")]
         [SerializeField] private string playerEvent = "Damage";
-        [Tooltip("The player's walking speed while the web sticks, as a share of normal (0.4 = 40%).")]
+        [Tooltip("How much web it adds to the player when it hits them (0.2 = 20% of a full web). A full web slows them " +
+                 "and stops teleporting for a while (Player Web on the XR Origin).")]
         [Range(0f, 1f)]
-        [SerializeField] private float slowTo = 0.4f;
-        [Tooltip("How long the web slows the player, in seconds. They can't teleport meanwhile.")]
-        [Min(0f)]
-        [SerializeField] private float slowSeconds = 3f;
+        [SerializeField] private float webAdded = 0.2f;
         [Tooltip("How big it is for hitting things (radius, metres at size 1).")]
         [Min(0.01f)]
         [SerializeField] private float radius = 0.1f;
@@ -102,16 +101,14 @@ namespace Game.Enemies
 
         /// <summary>
         /// Makes it a boss's giant web: on the player it sends <paramref name="eventName"/> to their FSM called
-        /// <paramref name="fsmName"/> and slows them to <paramref name="share"/> of their speed for
-        /// <paramref name="seconds"/>; fists and held weapons don't stop it (a legendary shield still does). Its splat
-        /// is <paramref name="size"/> times as big.
+        /// <paramref name="fsmName"/> and fills their web at once (they're webbed); fists and held weapons don't stop it
+        /// (a legendary shield still does). Its splat is <paramref name="size"/> times as big.
         /// </summary>
-        public void MakeGiant(string eventName, string fsmName, float share, float seconds, float size)
+        public void MakeGiant(string eventName, string fsmName, float size)
         {
             playerEvent = eventName;
             playerFsm = fsmName;
-            slowTo = share;
-            slowSeconds = seconds;
+            webAdded = 1f;
             splatScale *= size;
             swattable = false;
         }
@@ -194,7 +191,7 @@ namespace Game.Enemies
             {
                 DamageVignette.HitFrom(shooter != null ? shooter.position : point);
                 SendToPlayer(playerEvent, playerFsm);
-                PlayerSlow.Apply(slowTo, slowSeconds, true);
+                PlayerWeb.Add(webAdded);
                 Splat(point, hitSound != null ? hitSound : splatSound);
                 return;
             }

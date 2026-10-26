@@ -6,6 +6,8 @@ namespace Game
     /// After every jump (anything that sends it flying, e.g. the Damage FSM's Set Velocity when the player touches it),
     /// once it's back on the ground it turns round to face the player and stops spinning. Its front is its blue Z arrow,
     /// the side PlayMaker's Look At turns toward the target. Only turns it round its up/down line, so it stays upright.
+    /// With Face Range it only pays attention to a player that close: it keeps facing them (also while it waits), and
+    /// with the player farther away it doesn't turn at all, not even after a jump.
     /// Goes on a pumpkin with a Rigidbody (Pumpkin_3, 5, 7). Tools > 429 Game > Items > Pumpkins Face The Player After
     /// Jumping adds it.
     /// </summary>
@@ -21,6 +23,11 @@ namespace Game
         [SerializeField] private float turnSpeed = 300f;
         [Tooltip("Keep facing the player all the time, not only after a jump.")]
         [SerializeField] private bool keepFacing;
+        [Tooltip("With the player farther than this (metres, along the floor) it pays them no attention: no turning, " +
+                 "not even after a jump. Closer, it keeps facing them, also while it waits. 0: it turns to them after " +
+                 "every jump, wherever they are, as before.")]
+        [Min(0f)]
+        [SerializeField] private float faceRange = 5f;
 
         // Slower than this (metres a second) counts as stopped.
         private const float StoppedSpeed = 0.15f;
@@ -56,12 +63,24 @@ namespace Game
                 turning = true;
             }
 
-            if (!turning && !keepFacing) return;
+            if (!turning && !keepFacing && faceRange <= 0f) return;
             if (head == null && Camera.main != null) head = Camera.main.transform;
             if (head == null) return;
 
             var toPlayer = head.position - body.position;
             toPlayer.y = 0f;
+            if (faceRange > 0f)
+            {
+                // Too far away: it pays the player no attention, not even after a jump.
+                if (toPlayer.magnitude > faceRange)
+                {
+                    turning = false;
+                    return;
+                }
+                // Close by: it keeps facing them, except in the air.
+                if (!jumped) turning = true;
+            }
+            if (!turning && !keepFacing) return;
             if (toPlayer.sqrMagnitude < 0.0001f) return;
 
             var facing = Quaternion.LookRotation(toPlayer.normalized, Vector3.up);

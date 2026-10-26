@@ -156,13 +156,14 @@ namespace Game.Combat
         [Min(0f)]
         [SerializeField] private float tripleReach = 0.5f;
         [Tooltip("A puff of smoke at the wrist of a flying punch, riding along with it (it leaves no trail behind and goes " +
-                 "when the punch does), e.g. Smoke_Blast. Empty: none.")]
+                 "when the punch does), e.g. Smoke_Blast. Its star flash (the system on its root, with the puffs under it) " +
+                 "shows only with Explosive Fist points. Empty: none.")]
         [FormerlySerializedAs("flyTrailPuff")]
         [SerializeField] private GameObject wristSmoke;
         [Tooltip("How big that puff is for a flying punch the size of the fist; bigger flying punches have a bigger puff.")]
         [FormerlySerializedAs("flyTrailSize")]
         [Min(0f)]
-        [SerializeField] private float wristSmokeSize = 0.05f;
+        [SerializeField] private float wristSmokeSize = 0.004f;
 
         [Header("Swing")]
         [Tooltip("A fast sideways sweep of the fist (a hook) hits harder, and flies on sideways, level, the way the fist " +
@@ -1090,6 +1091,8 @@ namespace Game.Combat
                 smoke.name = "Wrist Smoke";
                 flying.smoke = smoke.transform;
                 flying.smokeSystems = smoke.GetComponentsInChildren<ParticleSystem>(true);
+                // Its star flash: the system on the effect's own root, when the puffs are systems under it (Smoke_Blast).
+                if (flying.smokeSystems.Length > 1) flying.smokeStar = smoke.GetComponent<ParticleSystemRenderer>();
                 foreach (var system in flying.smokeSystems)
                 {
                     var main = system.main;
@@ -1241,9 +1244,11 @@ namespace Game.Combat
             public Transform echo;
             public Transform echoShape;
             public Mesh echoMesh;
-            // Its puff of smoke at the wrist (Wrist Smoke), and its particle systems (the first one plays them all).
+            // Its puff of smoke at the wrist (Wrist Smoke), its particle systems (the first one plays them all), and its
+            // star flash (only with Explosive Fist points).
             public Transform smoke;
             public ParticleSystem[] smokeSystems = System.Array.Empty<ParticleSystem>();
+            public ParticleSystemRenderer smokeStar;
 
             private Rigidbody body;
             private SphereCollider ball;
@@ -1341,6 +1346,8 @@ namespace Game.Combat
                 smoke.localPosition = -direction * (Ball.radius * WristBehind);
                 smoke.localRotation = Quaternion.LookRotation(-direction);
                 smoke.localScale = Vector3.one * (owner.wristSmokeSize * size);
+                // The star flash only with Explosive Fist points: a plain flying punch just puffs.
+                if (smokeStar != null) smokeStar.enabled = Game.Leveling.PlayerLevel.ExplosiveFist > 0;
                 foreach (var system in smokeSystems) system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
                 if (smokeSystems.Length > 0) smokeSystems[0].Play(true);
             }
