@@ -1070,6 +1070,9 @@ namespace Game.Enemies
 
         /// <summary>Flying right now (a flier that hasn't lost its wings).</summary>
         public bool IsFlying => flies && !grounded;
+
+        /// <summary>A boss (its Size is Boss).</summary>
+        public bool IsBoss => kindName == SizeClass.Boss;
         // How much further it may chase a backing-off player while it stings (fliers with Homing Sting; 0 otherwise).
         private float HomingExtra => flies && homingSting ? homingReach : 0f;
 

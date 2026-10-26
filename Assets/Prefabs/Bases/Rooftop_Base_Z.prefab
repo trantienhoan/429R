@@ -7892,7 +7892,7 @@ MonoBehaviour:
         - 
         - 
         actionEnabled: 0101
-        actionIsOpen: 0000
+        actionIsOpen: 0101
         actionStartIndex: 0000000005000000
         actionHashCodes: 81294e0448c01101
         unityObjectParams: []
@@ -7997,6 +7997,7 @@ MonoBehaviour:
         - HutongGames.PlayMaker.Actions.ActivateGameObject
         - HutongGames.PlayMaker.Actions.ActivateGameObject
         - HutongGames.PlayMaker.Actions.SetFsmVariable
+        - HutongGames.PlayMaker.Actions.LaunchPlayer
         - HutongGames.PlayMaker.Actions.SendEvent
         - HutongGames.PlayMaker.Actions.SendEvent
         - HutongGames.PlayMaker.Actions.ActivateGameObject
@@ -8017,12 +8018,19 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 0101010101010101010101
-        actionIsOpen: 0000010100010101010101
-        actionStartIndex: 00000000050000000a0000000f00000013000000170000001c0000001f000000220000002500000028000000
-        actionHashCodes: b2cf1000b2cf1000fcb1a0015e69bb045e69bb04b2cf10009ff80c029ff80c029ff80c029ff80c020d5f5c01
+        - 
+        actionEnabled: 010101010101010101010101
+        actionIsOpen: 010101010100010101010101
+        actionStartIndex: 00000000050000000a0000000f00000013000000170000001b000000200000002300000026000000290000002c000000
+        actionHashCodes: b2cf1000b2cf1000fcb1a00149ba29025e69bb045e69bb04b2cf10009ff80c029ff80c029ff80c029ff80c020d5f5c01
         unityObjectParams: []
         fsmGameObjectParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 0}
         - useVariable: 0
           name: 
           tooltip: 
@@ -8197,6 +8205,18 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
+          value: 3
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
           value: 0
         - useVariable: 0
           name: 
@@ -8277,6 +8297,12 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
+          value: 1
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
           value: 0
         - useVariable: 0
           name: 
@@ -8316,7 +8342,7 @@ MonoBehaviour:
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1400000011000000110000000100000001000000140000001100000011000000010000000100000014000000120000001200000027000000010000001f000000170000000f000000010000001f000000170000000f000000010000001400000011000000110000000100000001000000130000000f00000011000000130000000f00000011000000130000000f00000011000000130000000f000000110000000f0000000f0000001700000001000000
+        paramDataType: 140000001100000011000000010000000100000014000000110000001100000001000000010000001400000012000000120000002700000001000000130000000f0000000f000000110000001f000000170000000f000000010000001f000000170000000f000000010000001400000011000000110000000100000001000000130000000f00000011000000130000000f00000011000000130000000f00000011000000130000000f000000110000000f0000000f0000001700000001000000
         paramName:
         - gameObject
         - activate
@@ -8333,6 +8359,10 @@ MonoBehaviour:
         - variableName
         - setValue
         - everyFrame
+        - from
+        - height
+        - distance
+        - ignoreToughness
         - eventTarget
         - sendEvent
         - delay
@@ -8362,8 +8392,8 @@ MonoBehaviour:
         - max
         - finishEvent
         - realTime
-        paramDataPos: 0000000000000000010000000000000001000000010000000200000003000000020000000300000002000000000000000100000000000000040000000000000000000000000000000500000001000000010000000100000006000000030000000400000005000000070000000800000000000000020000000600000001000000030000000700000002000000040000000800000003000000050000000900000006000000070000000200000009000000
-        paramByteDataSize: 0000000000000000000000000100000001000000000000000000000000000000010000000100000000000000000000000000000000000000010000000000000000000000000000000100000000000000000000000000000001000000000000000000000000000000010000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000
+        paramDataPos: 000000000000000001000000000000000100000001000000020000000300000002000000030000000200000000000000010000000000000004000000000000000000000001000000040000000000000000000000020000000500000001000000010000000300000006000000030000000500000006000000070000000800000001000000040000000700000002000000050000000800000003000000060000000900000004000000070000000a00000008000000090000000200000009000000
+        paramByteDataSize: 000000000000000000000000010000000100000000000000000000000000000001000000010000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000001000000000000000000000000000000010000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000
     - name: EnDD
       description: 
       colorIndex: 0
@@ -55692,6 +55722,7 @@ MonoBehaviour:
   fallSeconds: 1.5
   blockEnemies: 1
   onlyWhileSmallerThan: 0
+  sizeOf: {fileID: 0}
 --- !u!1 &3251477416648701014
 GameObject:
   m_ObjectHideFlags: 0
@@ -56823,6 +56854,7 @@ MonoBehaviour:
   fallSeconds: 1.5
   blockEnemies: 1
   onlyWhileSmallerThan: 0
+  sizeOf: {fileID: 0}
 --- !u!1 &3948185588322828479
 GameObject:
   m_ObjectHideFlags: 0
@@ -72028,6 +72060,7 @@ MonoBehaviour:
   fallSeconds: 1.5
   blockEnemies: 1
   onlyWhileSmallerThan: 0
+  sizeOf: {fileID: 0}
 --- !u!1 &4390992070961607337
 GameObject:
   m_ObjectHideFlags: 0
@@ -73276,6 +73309,7 @@ MonoBehaviour:
   fallSeconds: 1.5
   blockEnemies: 1
   onlyWhileSmallerThan: 0
+  sizeOf: {fileID: 0}
 --- !u!1 &4439320522808247564
 GameObject:
   m_ObjectHideFlags: 0
@@ -93422,6 +93456,7 @@ MonoBehaviour:
   fallSeconds: 1.5
   blockEnemies: 1
   onlyWhileSmallerThan: 0
+  sizeOf: {fileID: 0}
 --- !u!1 &6920255815017143933
 GameObject:
   m_ObjectHideFlags: 0
@@ -100063,6 +100098,7 @@ MonoBehaviour:
   fallSeconds: 1.5
   blockEnemies: 1
   onlyWhileSmallerThan: 0
+  sizeOf: {fileID: 0}
 --- !u!1 &7836632893775771028
 GameObject:
   m_ObjectHideFlags: 0
@@ -116602,6 +116638,7 @@ MonoBehaviour:
   fallSeconds: 1.5
   blockEnemies: 1
   onlyWhileSmallerThan: 0
+  sizeOf: {fileID: 0}
 --- !u!1 &8843820455812062096
 GameObject:
   m_ObjectHideFlags: 0
@@ -121822,6 +121859,7 @@ MonoBehaviour:
   fallSeconds: 1.5
   blockEnemies: 1
   onlyWhileSmallerThan: 0
+  sizeOf: {fileID: 0}
 --- !u!1 &8959826949525721647
 GameObject:
   m_ObjectHideFlags: 0

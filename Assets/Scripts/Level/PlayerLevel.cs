@@ -192,7 +192,7 @@ namespace Game.Leveling
 
         [Header("Candy")]
         [Tooltip("The most points eaten candies add to one stat this run (each candy's Eat Candy Buff adds its share, " +
-                 "e.g. 0.5). They come on top of the player's own points, aren't saved, and go when a new run starts.")]
+                 "e.g. 0.1). They come on top of the player's own points, aren't saved, and go when a new run starts.")]
         [Min(0f)]
         [SerializeField] private float candyMaxPoints = 10f;
 
@@ -258,6 +258,9 @@ namespace Game.Leveling
         /// <summary>The first Throw Power point was just spent: thrown things explode from now on (not when the save is read).</summary>
         public static event Action ExplodingThrowsUnlocked;
 
+        /// <summary>An eaten candy added points to this stat (Eat Candy Buff): the health HUD shows which, e.g. "+SPD".</summary>
+        public static event Action<Stat> CandyEaten;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
         {
@@ -266,6 +269,7 @@ namespace Game.Leveling
             LeveledUp = null;
             PunchUnlocked = null;
             ExplodingThrowsUnlocked = null;
+            CandyEaten = null;
             lastRead = null;
         }
 
@@ -490,6 +494,7 @@ namespace Game.Leveling
             int i = (int)stat;
             Instance.candyPoints[i] = Mathf.Clamp(Instance.candyPoints[i] + points, 0f, Instance.candyMaxPoints);
             if (stat == Stat.MoveSpeed) Instance.ApplySpeed();
+            if (points > 0f) CandyEaten?.Invoke(stat);
             return Instance.candyPoints[i];
         }
 

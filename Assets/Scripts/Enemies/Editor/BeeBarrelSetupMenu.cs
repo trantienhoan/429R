@@ -29,6 +29,55 @@ namespace Game.EditorTools
             ("-Wood_Barrels_Whack_Pumpkin_7-", "GAME-Pumpkin7", "Bee_Normal", "Bee_Boss_PumpkinButt", "whack_7"),
         };
 
+        private const string SmokePath = "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Smoke_Blast.prefab";
+        private const string BeeBuzzPath = "Assets/Audio/SFX/bee_fly.wav";
+
+        /// <summary>
+        /// Whack 7's boss bee (Bee_Boss_PumpkinButt) no longer comes out with the swarm: its Spawn From Barrels gets Boss
+        /// Last, so the boss comes once 2 or fewer Bee_Normal are alive (at least 3 s, at most 15 s after the last one came
+        /// out), after a 1.5 s warning at its barrel: a Smoke_Blast puff, the bee buzz (bee_fly) and ShakeMed. Whack 6 is
+        /// unchanged. Safe to run again.
+        /// </summary>
+        [MenuItem("Tools/429 Game/Enemies/Whack 7 Boss Waits For Swarm")]
+        public static void BossWaitsForSwarm()
+        {
+            var scene = SceneManager.GetActiveScene();
+            var holder = scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<Transform>(true))
+                .FirstOrDefault(t => t.name == "-Wood_Barrels_Whack_Pumpkin_7-");
+            var fsm = holder != null ? holder.GetComponents<PlayMakerFSM>().FirstOrDefault(f => f.FsmName == "GAME-Pumpkin7") : null;
+            if (fsm == null)
+            {
+                Debug.LogWarning("[Bee Barrels] -Wood_Barrels_Whack_Pumpkin_7- / GAME-Pumpkin7 not found in the open scene.");
+                return;
+            }
+            if (!fsm.Fsm.Initialized) fsm.Fsm.Init(fsm);
+            var state = fsm.Fsm.GetState("Deactivate");
+            state?.LoadActions();
+            var spawn = state?.Actions.OfType<SpawnFromBarrels>().FirstOrDefault();
+            // Saving writes back only the actions that could be read: if one couldn't, leave the state alone.
+            if (spawn == null || state.ActionData.ActionCount != state.Actions.Length)
+            {
+                Debug.LogWarning("[Bee Barrels] GAME-Pumpkin7's Deactivate has no Spawn From Barrels (run Set Up Bee Barrels), or an " +
+                                 "action in it couldn't be read; nothing changed.", fsm);
+                return;
+            }
+            Undo.RecordObject(fsm, "Whack 7 Boss Waits For Swarm");
+            spawn.bossLast = true;
+            spawn.bossWhenLeft = 2;
+            spawn.bossMinWait = 3f;
+            spawn.bossMaxWait = 15f;
+            spawn.bossWarning = 1.5f;
+            spawn.warningEffect = new FsmGameObject { Value = AssetDatabase.LoadAssetAtPath<GameObject>(SmokePath) };
+            spawn.warningSound = new FsmObject { ObjectType = typeof(AudioClip), Value = AssetDatabase.LoadAssetAtPath<AudioClip>(BeeBuzzPath) };
+            spawn.warningShake = "ShakeMed";
+            state.SaveActions();
+            EditorUtility.SetDirty(fsm);
+            EditorSceneManager.MarkSceneDirty(scene);
+            Debug.Log("[Bee Barrels] GAME-Pumpkin7: the boss bee waits until 2 or fewer bees are left (3-15 s after the last), " +
+                      $"then a 1.5 s warning (smoke {(spawn.warningEffect.Value != null ? "ok" : "MISSING")}, buzz " +
+                      $"{(spawn.warningSound.Value != null ? "ok" : "MISSING")}, ShakeMed) and it comes out of its barrel. Save the scene.", fsm);
+        }
+
         [MenuItem("Tools/429 Game/Enemies/Set Up Bee Barrels")]
         public static void SetUp()
         {

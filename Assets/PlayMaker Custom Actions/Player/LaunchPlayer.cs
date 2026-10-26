@@ -16,18 +16,25 @@ namespace HutongGames.PlayMaker.Actions
         [Tooltip("How far along the floor the player is thrown, in metres.")]
         public FsmFloat distance;
 
+        [Tooltip("The player's Toughness (a level-up stat) doesn't cut the throw: for a throw that's part of a scene, e.g. " +
+                 "the rooftop breaking under them.")]
+        public FsmBool ignoreToughness;
+
         public override void Reset()
         {
             from = null;
             height = 1.2f;
             distance = 2.5f;
+            ignoreToughness = false;
         }
 
         public override void OnEnter()
         {
             var source = from != null && !from.IsNone && from.Value != null ? from.Value : Owner;
             Vector3 position = source != null ? source.transform.position : Vector3.zero;
-            Game.Combat.PlayerLaunch.Launch(position, height.Value, distance.Value);
+            // FSMs saved before Ignore Toughness existed have it unset: Toughness still counts there, as before.
+            bool tough = ignoreToughness == null || ignoreToughness.IsNone || !ignoreToughness.Value;
+            Game.Combat.PlayerLaunch.Launch(position, height.Value, distance.Value, true, tough);
             Finish();
         }
     }

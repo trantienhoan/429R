@@ -27,8 +27,9 @@ namespace Game.Enemies
     /// Hits never stop it. Its hits throw the player (Player Launch, Push Power) and only hurt when they really land.
     /// Every health it loses drops a pumpkin to throw back at it. One mouth, one sound: a yelp when it's hurt, a roar,
     /// or munching candy (Candy Vacuum) cuts its laugh short, and the laugh comes back right after.
-    /// When it dies it shrinks back into one big pumpkin head that bursts like the other pumpkins, and sets
-    /// GAMESTAGES' BOSS flag.
+    /// When it dies it climbs out of the floor and screams at the sky with its whole body showing, shaking harder and
+    /// harder; then every pumpkin of its body bursts into a tree pumpkin's break (Pumpkin Break), the fists first and
+    /// the hips last, its shards flying everywhere, and it sets GAMESTAGES' BOSS flag.
     /// Hits on it come from Enemy Hit Damage, which lowers the "health" of its (switched off) Health FSM.
     /// Tools > 429 Game > Enemies > Set Up Pumpkin Boss builds it.
     /// </summary>
@@ -36,6 +37,29 @@ namespace Game.Enemies
     public class PumpkinBossBrain : MonoBehaviour
     {
         private enum Phase { Head, Rising, Upper, Transforming, True, Dying }
+
+        /// <summary>One pumpkin of its body, for bursting it when the boss dies.</summary>
+        [System.Serializable]
+        public struct BodyPumpkin
+        {
+            public string bone;
+            [Tooltip("Its middle, in the bone's own space.")]
+            public Vector3 offset;
+            [Tooltip("How big it is, in model units (the boss at size 1).")]
+            [Min(0.01f)]
+            public float size;
+            [Tooltip("Seconds after the first pumpkin bursts.")]
+            [Min(0f)]
+            public float at;
+
+            public BodyPumpkin(string bone, Vector3 offset, float size, float at)
+            {
+                this.bone = bone;
+                this.offset = offset;
+                this.size = size;
+                this.at = at;
+            }
+        }
 
         private enum Act { None, Taunt, PunchL, PunchR, Slam, Throw, JumpSlam, Vomit, Cyclone, Dizzy, Clap }
 
@@ -108,6 +132,9 @@ namespace Game.Enemies
         [Min(0f)] [SerializeField] private float pushPower = 1f;
         [Tooltip("The same for its cyclone (its throw is already the furthest). 1 (or 0) = as set above.")]
         [Min(0f)] [SerializeField] private float cyclonePushPower = 1f;
+        [Tooltip("The player's Toughness (level-up points and candy) cuts its throws, but never below this share: 0.6 = a " +
+                 "fully tough player still flies at least 60% as high and far. (Toughness alone would cut them to a tenth.)")]
+        [Range(0f, 1f)] [SerializeField] private float minPushShare = 0.6f;
         [Tooltip("How long the whole cyclone lasts, in seconds: the length of its clip (wind-up, spin, hard stop).")]
         [SerializeField] private float cycloneSeconds = 3f;
         [Tooltip("After a cyclone it can't spin another for this many seconds (nor in the first half of that after it " +
@@ -186,7 +213,19 @@ namespace Game.Enemies
         [SerializeField] private GameObject smoke;
 
         [Header("Dying")]
-        [Tooltip("What its big head bursts into (the pieces of a broken pumpkin).")]
+        [Tooltip("What each pumpkin of its body bursts into when it dies: a tree pumpkin's break (pumpkin_2_Drop: its " +
+                 "shards, its crunch and its candies). Empty: its head bursts into Burst Into instead, the old way.")]
+        [SerializeField] private GameObject pumpkinBreak;
+        [Tooltip("Its body's pumpkins: the bone each sits on, its middle in that bone's space, its size (model units) and " +
+                 "when it bursts (seconds after the first): the fists first, the hips last.")]
+        [SerializeField] private BodyPumpkin[] bodyPumpkins = DefaultBodyPumpkins();
+        [Tooltip("How fast the shards fly off, in metres per second.")]
+        [Min(0f)]
+        [SerializeField] private float shardSpeed = 7f;
+        [Tooltip("How hard it shakes in its death pose before it bursts (metres at full size).")]
+        [Min(0f)]
+        [SerializeField] private float deathTremble = 0.05f;
+        [Tooltip("What its big head bursts into (the pieces of a broken pumpkin), when there's no Pumpkin Break.")]
         [SerializeField] private GameObject burstInto;
         [SerializeField] private string gameStagesBool = "BOSS";
         [SerializeField] private string gameStagesEvent = "Win";
@@ -210,6 +249,9 @@ namespace Game.Enemies
         [SerializeField] private AudioClip attackSound;
         [SerializeField] private AudioClip hurtSound;
         [SerializeField] private AudioClip roarSound;
+        [Tooltip("Its scream as it dies (one of these, at random): arms up, shaking, until its pumpkins burst (about 2.5 s). " +
+                 "Empty: its hurt yelp.")]
+        [SerializeField] private AudioClip[] deathScreams = System.Array.Empty<AudioClip>();
 
         // Animator states and their timing (seconds): when the hit lands, when the move is over.
         private const string Laugh = "laugh", GetHit = "gethit", Come = "come", Move = "move", Slam = "attack",
@@ -248,6 +290,11 @@ namespace Game.Enemies
         private float lastHitAt;
         private bool wokeItself;
         private float phaseUntil;
+        // Dying: the bones of its body's pumpkins, which have burst, and when the bursting started (-1: not yet).
+        private Transform[] pumpkinBones;
+        private bool[] pumpkinBurst;
+        private float burstingFrom = -1f;
+        private Vector3 modelHome;
         private float targetBuried;
         private float targetScale;
         private Vector3 jumpFrom, jumpTo;
@@ -325,9 +372,11 @@ namespace Game.Enemies
             }
         }
 
-        // A punch's arm tilts to point at the player's chest (after the Animator has posed it this frame).
+        // A punch's arm tilts to point at the player's chest (after the Animator has posed it this frame). Dying, the
+        // pumpkins that have burst are gone from its body.
         private void LateUpdate()
         {
+            if (phase == Phase.Dying) HideBurstPumpkins();
             if (punchAim <= 0f || player == null || (act != Act.PunchL && act != Act.PunchR)) return;
             var arm = act == Act.PunchL ? upperArmL : upperArmR;
             if (arm == null) return;
@@ -1043,7 +1092,7 @@ namespace Game.Enemies
             }
             // Push Power throws them further (as high: the same arc, faster); its cyclone has its own.
             float push = act == Act.Cyclone ? cyclonePushPower : pushPower;
-            PlayerLaunch.Launch(transform.position, launch.x, launch.y * (push > 0f ? push : 1f));
+            PlayerLaunch.Launch(transform.position, launch.x, launch.y * (push > 0f ? push : 1f), true, true, minPushShare);
         }
 
         // A sphere touching the player's body: a standing cylinder from their feet to their head.
@@ -1116,16 +1165,136 @@ namespace Game.Enemies
             phase = Phase.Dying;
             act = Act.None;
             Stop();
-            // A boss killed before it came out of the ground still stands up to die.
-            targetBuried = Mathf.Min(targetBuried, buried.Length > 0 ? buried[buried.Length - 1] : 0f);
+            // It dies with its whole body showing: killed in the ground (as a head, its upper body, or sunk for a
+            // punch), it climbs right out.
+            targetBuried = 0f;
+            quickBury = true;
             PlayState(Death, true);
-            Say(hurtSound);
-            phaseUntil = Time.time + 2.5f;
+            var scream = deathScreams.Length > 0 ? deathScreams[Random.Range(0, deathScreams.Length)] : null;
+            Say(scream != null ? scream : hurtSound);
+            phaseUntil = Time.time + DeathPoseSeconds;
+            if (model != null) modelHome = model.localPosition;
         }
 
+        // Its death pose (arms up, screaming at the sky) shakes harder and harder; then every pumpkin of its body bursts,
+        // one after another, the fists first and the hips last, and the stage goes on.
         private void UpdateDying()
         {
-            if (Time.time < phaseUntil || model == null || !model.gameObject.activeSelf) return;
+            if (model == null || !model.gameObject.activeSelf) return;
+            if (Time.time < phaseUntil)
+            {
+                Tremble(1f - (phaseUntil - Time.time) / (DeathPoseSeconds - TrembleFrom));
+                return;
+            }
+            if (pumpkinBreak == null || bodyPumpkins == null || bodyPumpkins.Length == 0)
+            {
+                BurstHead();
+                Gone();
+                return;
+            }
+            if (burstingFrom < 0f) StartBursting();
+            float t = Time.time - burstingFrom;
+            bool allBurst = true;
+            for (int i = 0; i < bodyPumpkins.Length; i++)
+            {
+                if (pumpkinBurst[i]) continue;
+                if (t >= bodyPumpkins[i].at) BurstPumpkin(i);
+                else allBurst = false;
+            }
+            if (allBurst) Gone();
+        }
+
+        // Shaking in place (0 = still, 1 = hardest), sideways only: its height is how deep it's buried.
+        private void Tremble(float amount)
+        {
+            if (amount <= 0f) return;
+            float r = deathTremble * Size * Mathf.Clamp01(amount);
+            var p = model.localPosition;
+            p.x = modelHome.x + (Mathf.PerlinNoise(Time.time * 31f, 0.3f) - 0.5f) * 2f * r;
+            p.z = modelHome.z + (Mathf.PerlinNoise(0.7f, Time.time * 29f) - 0.5f) * 2f * r;
+            model.localPosition = p;
+        }
+
+        // Seconds of the death clip (arms up, screaming at the sky) before its pumpkins burst, and when the shaking starts.
+        private const float DeathPoseSeconds = 2.5f;
+        private const float TrembleFrom = 0.8f;
+        // How big a tree pumpkin's break (pumpkin_2_Drop) is at scale 1, in metres.
+        private const float BreakSize = 0.62f;
+
+        // Its 12 pumpkins, measured on Pumpkin_Boss_Z.fbx (the orange of the atlas, per bone): fists, elbows, shoulders,
+        // head, chest, waist, knees, hips. The offsets are in the bones' own space (the armature is scaled 100).
+        private static BodyPumpkin[] DefaultBodyPumpkins() => new[]
+        {
+            new BodyPumpkin("Hand.L", new Vector3(0.00002f, -0.00032f, -0.0001f), 0.52f, 0f),
+            new BodyPumpkin("Hand.R", new Vector3(-0.0001f, 0.00006f, 0.00001f), 0.43f, 0f),
+            new BodyPumpkin("LowerArm.L", new Vector3(-0.00018f, 0.00099f, 0.00012f), 0.26f, 0.1f),
+            new BodyPumpkin("LowerArm.R", new Vector3(-0.00016f, 0.00019f, -0.00013f), 0.21f, 0.1f),
+            new BodyPumpkin("UpperArm.L", new Vector3(-0.00023f, 0.00079f, -0.00014f), 0.29f, 0.2f),
+            new BodyPumpkin("UpperArm.R", new Vector3(-0.00021f, 0.00053f, -0.00001f), 0.28f, 0.2f),
+            new BodyPumpkin("Head", new Vector3(-0.00009f, 0.00324f, 0.00006f), 0.6f, 0.32f),
+            new BodyPumpkin("Chest", new Vector3(-0.00001f, 0.00005f, -0.00009f), 0.33f, 0.42f),
+            new BodyPumpkin("Waist", new Vector3(-0.00003f, 0.00243f, 0.00007f), 0.19f, 0.5f),
+            new BodyPumpkin("Shin.L", new Vector3(0f, -0.00021f, 0.00003f), 0.18f, 0.58f),
+            new BodyPumpkin("Shin.R", new Vector3(-0.00002f, -0.00011f, -0.00002f), 0.18f, 0.58f),
+            new BodyPumpkin("Hips", new Vector3(0f, 0.00273f, -0.00003f), 0.28f, 0.66f),
+        };
+
+        private void StartBursting()
+        {
+            burstingFrom = Time.time;
+            var p = model.localPosition;
+            p.x = modelHome.x;
+            p.z = modelHome.z;
+            model.localPosition = p;
+            // Its shards fly free (not off its own hit spheres).
+            foreach (var part in GetComponentsInChildren<Collider>()) part.enabled = false;
+            var named = new Dictionary<string, Transform>();
+            foreach (var bone in model.GetComponentsInChildren<Transform>(true)) named[bone.name] = bone;
+            pumpkinBones = new Transform[bodyPumpkins.Length];
+            pumpkinBurst = new bool[bodyPumpkins.Length];
+            for (int i = 0; i < bodyPumpkins.Length; i++)
+            {
+                named.TryGetValue(bodyPumpkins[i].bone ?? "", out pumpkinBones[i]);
+                // A bone it hasn't got: nothing to burst there.
+                if (pumpkinBones[i] == null) pumpkinBurst[i] = true;
+            }
+        }
+
+        // One pumpkin of its body bursts into a tree pumpkin's break, as big as it is, with a puff; its shards fly off
+        // away from the boss's middle.
+        private void BurstPumpkin(int i)
+        {
+            pumpkinBurst[i] = true;
+            var bone = pumpkinBones[i];
+            var at = bone.TransformPoint(bodyPumpkins[i].offset);
+            float size = bodyPumpkins[i].size * Size;
+            var bits = Instantiate(pumpkinBreak, at, Random.rotation, transform.parent);
+            bits.transform.localScale *= size / BreakSize;
+            var middle = head != null ? Vector3.Lerp(transform.position, head.position, 0.5f) : transform.position + Vector3.up * size;
+            foreach (var shard in bits.GetComponentsInChildren<Rigidbody>())
+            {
+                if (shard.isKinematic) continue;
+                var away = shard.worldCenterOfMass - middle;
+                away = away.sqrMagnitude > 0.0001f ? away.normalized : Random.onUnitSphere;
+                shard.linearVelocity = (away + Vector3.up * 0.5f).normalized * shardSpeed * Random.Range(0.6f, 1.2f);
+                shard.angularVelocity = Random.insideUnitSphere * 12f;
+            }
+            if (smoke != null) EffectPool.Play(smoke, at, Mathf.Max(1f, size * 1.5f));
+        }
+
+        // Each pumpkin that has burst is gone from its body (its bone squashed to nothing after the Animator posed it).
+        private void HideBurstPumpkins()
+        {
+            if (pumpkinBurst == null) return;
+            for (int i = 0; i < pumpkinBurst.Length; i++)
+            {
+                if (pumpkinBurst[i] && pumpkinBones[i] != null) pumpkinBones[i].localScale = Vector3.one * 0.0001f;
+            }
+        }
+
+        // No Pumpkin Break: its head bursts into Burst Into (the old way).
+        private void BurstHead()
+        {
             var at = head != null ? head.position : transform.position;
             // Killed while half in the ground, its head is partly under the floor: it bursts just above it.
             at.y = Mathf.Max(at.y, transform.position.y + 0.8f);
@@ -1135,6 +1304,11 @@ namespace Game.Enemies
                 bits.transform.localScale *= Mathf.Max(1f, model.localScale.x * 1.2f);
             }
             if (smoke != null) EffectPool.Play(smoke, at);
+        }
+
+        // It's gone: a last blast, a laugh, and GAMESTAGES goes on (its BOSS flag, Win).
+        private void Gone()
+        {
             GroundBlast(transform.position, PumpkinBossFx.Blast.Huge);
             PlaySound(laughs);
             SendShake("ShakeBig");

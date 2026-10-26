@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,7 +10,8 @@ namespace Game.Combat
     /// The player's health on the head-locked canvas: a heart and the health as a number. The heart drains from the top
     /// as health drops below the starting health (the PlayerHealth FSM's DefautPlayerHealth, 120), and turns green,
     /// with little green sparkles flying up around it, when candy has pushed health above it. Health has no cap, so the number tells the rest. Each change pops a
-    /// "-8" / "+5" next to the number, and a heal makes the heart pop. The HUD shows for a few seconds after any change, then fades, and stays up
+    /// "-8" / "+5" next to the number, and a heal makes the heart pop. An eaten candy's buff shows under the number for a
+    /// moment: "+TOPH", "+SPD", "+THROW" or "+ATK" (no amount). The HUD shows for a few seconds after any change, then fades, and stays up
     /// while health is low; then the heart beats, and the player hears it beat too (Heartbeat), faster as health drops.
     /// Once the player has died and got back up this run (a revive), the heart is cracked
     /// (until a new run). The player can hide it all in the pause menu (Health: hidden), e.g. to record video: the
@@ -114,6 +116,15 @@ namespace Game.Combat
         [SerializeField] private float changeSeconds = 1.1f;
         [SerializeField] private float changeRise = 40f;
 
+        [Header("Candy buff")]
+        [Tooltip("Under the number: what an eaten candy made better for the run (+TOPH, +SPD, +THROW or +ATK; no " +
+                 "amount). Left empty, it's made from the Change text.")]
+        [SerializeField] private TMP_Text candyBuff;
+        [SerializeField] private Color candyBuffColor = new(1f, 0.84f, 0.35f);
+        [Tooltip("Seconds it stays under the number.")]
+        [Min(0.1f)]
+        [SerializeField] private float candyBuffSeconds = 1.6f;
+
         [Header("Placement")]
         [Tooltip("Place the HUD in front of the eyes from the values below (on start, and live while you change them).")]
         [SerializeField] private bool place = true;
@@ -136,6 +147,12 @@ namespace Game.Combat
         private Vector2 changeHome;
         private bool ready;
         private float healedAt = -100f;
+        // The candy buffs shown under the number: when the last candy was eaten, and each buff since (once each).
+        private float candyBuffAt = -100f;
+        private readonly List<string> candyBuffNames = new();
+        // Under the number's middle, in canvas units: inside the plate, below the digits.
+        private const float CandyBuffBelow = 51f;
+        private const float CandyBuffHeight = 36f;
         private bool cracked;
         private ParticleSystemRenderer sparkleRenderer;
         private MaterialPropertyBlock sparkleBlock;
@@ -211,6 +228,9 @@ namespace Game.Combat
         {
             group = GetComponent<CanvasGroup>();
             if (change != null) changeHome = change.rectTransform.anchoredPosition;
+            MakeCandyBuff();
+            // Heard even while the HUD is switched off (the PlayerHealth FSM switches it on and off).
+            Game.Leveling.PlayerLevel.CandyEaten += OnCandyEaten;
             effects = GetComponentsInChildren<ParticleSystemRenderer>(true);
             Place();
             if (heartbeatVolume.x > 0f || heartbeatVolume.y > 0f)
@@ -222,6 +242,59 @@ namespace Game.Combat
                 heartbeatSource.spatialBlend = 0f;
                 heartbeatSource.priority = 0;
                 heartbeatClip = heartbeatSound != null ? heartbeatSound : MakeHeartbeat();
+            }
+        }
+
+        private void OnDestroy()
+        {
+            Game.Leveling.PlayerLevel.CandyEaten -= OnCandyEaten;
+        }
+
+        // The candy's buff under the number, from the Change text (its font, outline and overlay material).
+        private void MakeCandyBuff()
+        {
+            if (candyBuff == null && change != null && number != null)
+            {
+                candyBuff = Instantiate(change, change.transform.parent);
+                candyBuff.name = "Candy Buff";
+                var rect = candyBuff.rectTransform;
+                var under = number.rectTransform;
+                rect.anchorMin = under.anchorMin;
+                rect.anchorMax = under.anchorMax;
+                rect.pivot = new Vector2(0.5f, 0.5f);
+                rect.sizeDelta = new Vector2(under.rect.width, CandyBuffHeight);
+                rect.anchoredPosition = under.anchoredPosition + new Vector2(0f, -CandyBuffBelow);
+                candyBuff.alignment = number.alignment;
+                candyBuff.textWrappingMode = TextWrappingModes.NoWrap;
+                candyBuff.enableAutoSizing = true;
+                candyBuff.fontSizeMin = 16f;
+                candyBuff.fontSizeMax = 30f;
+            }
+            if (candyBuff != null) candyBuff.enabled = false;
+        }
+
+        // A candy was eaten: its buff shows under the number ("+SPD"). Candies eaten one after another add up on one
+        // line, each buff once.
+        private void OnCandyEaten(Game.Leveling.Stat stat)
+        {
+            float time = Time.unscaledTime;
+            if (time - candyBuffAt > candyBuffSeconds * 0.5f) candyBuffNames.Clear();
+            string name = CandyBuffName(stat);
+            if (!candyBuffNames.Contains(name)) candyBuffNames.Add(name);
+            candyBuffAt = time;
+            changedAt = time;
+            if (candyBuff != null) candyBuff.text = string.Join("  ", candyBuffNames);
+        }
+
+        private static string CandyBuffName(Game.Leveling.Stat stat)
+        {
+            switch (stat)
+            {
+                case Game.Leveling.Stat.Toughness: return "+TOPH";
+                case Game.Leveling.Stat.MoveSpeed: return "+SPD";
+                case Game.Leveling.Stat.ThrowPower: return "+THROW";
+                case Game.Leveling.Stat.FistSize: return "+ATK";
+                default: return "+" + Game.Leveling.PlayerLevel.Name(stat).ToUpperInvariant();
             }
         }
 
@@ -381,6 +454,20 @@ namespace Game.Combat
                     var c = change.color;
                     c.a = t < 0.7f ? 1f : 1f - (t - 0.7f) / 0.3f;
                     change.color = c;
+                }
+            }
+            if (candyBuff != null)
+            {
+                float t = (time - candyBuffAt) / candyBuffSeconds;
+                bool on = t >= 0f && t < 1f;
+                if (candyBuff.enabled != on) candyBuff.enabled = on;
+                if (on)
+                {
+                    // A little pop as it comes, then it fades at the end.
+                    candyBuff.rectTransform.localScale = Vector3.one * (1f + 0.25f * Mathf.Exp(-(time - candyBuffAt) * 10f));
+                    var c = candyBuffColor;
+                    c.a = t < 0.7f ? 1f : 1f - (t - 0.7f) / 0.3f;
+                    candyBuff.color = c;
                 }
             }
 

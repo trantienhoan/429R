@@ -7608,6 +7608,59 @@ MonoBehaviour:
   maxDropsAround: 10
   fx: {fileID: 7085716964971832184}
   smoke: {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac, type: 3}
+  pumpkinBreak: {fileID: 6470502820101553460, guid: dd7824eba498c3d43b713291ed16e64d,
+    type: 3}
+  bodyPumpkins:
+  - bone: Hand.L
+    offset: {x: 0.00002, y: -0.00032, z: -0.0001}
+    size: 0.52
+    at: 0
+  - bone: Hand.R
+    offset: {x: -0.0001, y: 0.00006, z: 0.00001}
+    size: 0.43
+    at: 0
+  - bone: LowerArm.L
+    offset: {x: -0.00018, y: 0.00099, z: 0.00012}
+    size: 0.26
+    at: 0.1
+  - bone: LowerArm.R
+    offset: {x: -0.00016, y: 0.00019, z: -0.00013}
+    size: 0.21
+    at: 0.1
+  - bone: UpperArm.L
+    offset: {x: -0.00023, y: 0.00079, z: -0.00014}
+    size: 0.29
+    at: 0.2
+  - bone: UpperArm.R
+    offset: {x: -0.00021, y: 0.00053, z: -0.00001}
+    size: 0.28
+    at: 0.2
+  - bone: Head
+    offset: {x: -0.00009, y: 0.00324, z: 0.00006}
+    size: 0.6
+    at: 0.32
+  - bone: Chest
+    offset: {x: -0.00001, y: 0.00005, z: -0.00009}
+    size: 0.33
+    at: 0.42
+  - bone: Waist
+    offset: {x: -0.00003, y: 0.00243, z: 0.00007}
+    size: 0.19
+    at: 0.5
+  - bone: Shin.L
+    offset: {x: 0, y: -0.00021, z: 0.00003}
+    size: 0.18
+    at: 0.58
+  - bone: Shin.R
+    offset: {x: -0.00002, y: -0.00011, z: -0.00002}
+    size: 0.18
+    at: 0.58
+  - bone: Hips
+    offset: {x: 0, y: 0.00273, z: -0.00003}
+    size: 0.28
+    at: 0.66
+  shardSpeed: 7
+  deathTremble: 0.05
   burstInto: {fileID: 8267452086300733742, guid: 4ffa58a190b9aa34b91f567576459ae0,
     type: 3}
   gameStagesBool: BOSS
@@ -7624,6 +7677,9 @@ MonoBehaviour:
   attackSound: {fileID: 8300000, guid: 7655546cf456af942b5c94d157a4d512, type: 3}
   hurtSound: {fileID: 8300000, guid: a4661761129bc014490b3df27a00e952, type: 3}
   roarSound: {fileID: 8300000, guid: 95867a459646868489c87aa8003feba0, type: 3}
+  deathScreams:
+  - {fileID: 8300000, guid: 34e568a8a8fb4a848b35169c5f104e5a, type: 3}
+  - {fileID: 8300000, guid: bb45f556f027d1a4f9dfe7eca57d4e19, type: 3}
 --- !u!114 &7085716964971832184
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -29,6 +29,8 @@ namespace Game.EditorTools
         private const string SmokePath = "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Smoke_Blast.prefab";
         private const string SmallBurstPath = "Assets/Prefabs/Items/Broken_Stuffs/pumpkin_0_drop.prefab";
         private const string BigBurstPath = "Assets/Prefabs/Items/Broken_Stuffs/Pumpkin_BOSS_Drop.prefab";
+        // A tree pumpkin's break (Pumpkin_On_Tree makes it): each pumpkin of the boss's body bursts into one when it dies.
+        private const string PumpkinBreakPath = "Assets/Prefabs/Items/Broken_Stuffs/pumpkin_2_Drop.prefab";
         private const string PumpkinDropPath = "Assets/Prefabs/Items/Breakable/Pumpkin_On_Tree.prefab";
         private const string Sfx = "Assets/Audio/SFX/";
         private static readonly string[] BugPaths =
@@ -220,6 +222,7 @@ namespace Game.EditorTools
                 so.FindProperty("bugPumpkin").objectReferenceValue = bugPumpkin;
                 so.FindProperty("pumpkinDrop").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(PumpkinDropPath);
                 so.FindProperty("burstInto").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(BigBurstPath);
+                so.FindProperty("pumpkinBreak").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(PumpkinBreakPath);
                 so.FindProperty("smoke").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(SmokePath);
                 SetArray(so.FindProperty("bugs"), BugPaths.Select(p => (Object)AssetDatabase.LoadAssetAtPath<GameObject>(p)).ToArray());
                 SetArray(so.FindProperty("laughs"), new[] { "laughing_pumpkin_1", "laughing_pumpkin_2", "laughing_pumpkin_3", "pumpkin_laugh_1", "pumpkin_laugh_2", "pumpkin_laugh_3", "pumpkin_laugh_4" }
@@ -227,6 +230,8 @@ namespace Game.EditorTools
                 so.FindProperty("attackSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "pumpkin_boss_attack.wav");
                 so.FindProperty("hurtSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "ouch_pumpkin_2.wav");
                 so.FindProperty("roarSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "pumpkin_boss_COME.wav");
+                SetArray(so.FindProperty("deathScreams"), new[] { "boss_scream_1", "boss_scream_2" }
+                    .Select(n => (Object)AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + n + ".wav")).ToArray());
                 so.ApplyModifiedPropertiesWithoutUndo();
 
                 PrefabUtility.SaveAsPrefabAsset(root, BossPath);

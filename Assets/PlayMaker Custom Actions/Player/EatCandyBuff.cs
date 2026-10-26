@@ -26,13 +26,13 @@ namespace HutongGames.PlayMaker.Actions
         public Boost boost;
 
         [RequiredField]
-        [Tooltip("Level-up points it adds: 0.5 = half a level-up point.")]
+        [Tooltip("Level-up points it adds: 0.1 = a tenth of a level-up point.")]
         public FsmFloat points;
 
         public override void Reset()
         {
             boost = Boost.Toughness;
-            points = 0.5f;
+            points = 0.1f;
         }
 
         public override void OnEnter()

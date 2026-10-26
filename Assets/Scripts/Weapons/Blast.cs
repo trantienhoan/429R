@@ -128,6 +128,17 @@ namespace Game.Weapons
             return true;
         }
 
+        /// <summary>
+        /// Hurts one thing the way a blast does (its Damage FSM's health, or IHittable; the chase pumpkins still block it),
+        /// e.g. a rolling pumpkin smashing what's in its way. Never the player.
+        /// </summary>
+        public static void Damage(Collider hit, Vector3 point, float damage)
+        {
+            if (hit == null || IsPlayer(hit)) return;
+            hurt.Clear();
+            Hurt(hit.transform, point, damage);
+        }
+
         /// <summary>The player's body, head and hands: everything under the XR Origin.</summary>
         public static bool IsPlayer(Collider collider)
         {

@@ -351,6 +351,8 @@ namespace Game.Weapons
             var hand = inHand && grab.firstInteractorSelecting is XRBaseInputInteractor holder ? holder : thrower;
             if (rumbleStrength > 0f) Game.Combat.HitBuzz.Other(hand, rumbleStrength, rumbleDuration);
             Blast.Explode(point, reach, hurt, force, body, effects, sound, volume, eventForPlayer, inHand, effectScale, playerReach);
+            // The bang shakes the view, harder close by; a bigger bang reaches farther.
+            ViewShake.Near(point, 1.5f + reach * 1.5f, 5f + reach * 3f);
 
             // Breaking the usual way lets its own Health FSM drop the pieces and remove it; otherwise it just vanishes.
             // Weapon Wear is switched off first: it gives back part of a small loss (Weapon Efficiency), so a worn weapon
