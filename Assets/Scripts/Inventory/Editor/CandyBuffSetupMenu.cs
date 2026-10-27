@@ -9,15 +9,15 @@ namespace Game.Inventory.Editor
     /// <summary>
     /// Tools > 429 Game > Player > Give Candies Their Buffs.
     /// Each Candy_1..8 gets an Eat Candy Buff in its eat state (the Damage FSM's "Health 1", where it heals and adds the
-    /// Wrap): Candy 1, 2, 6, 7 Toughness, Candy 3, 4 Throw Power, Candy 5 Move Speed, Candy 8 Punch Damage, a tenth of a
-    /// level-up point each (Player Level keeps them for the run, at most 10 a stat). Safe to run again: a candy that
-    /// already has one gets this table's boost and points back.
+    /// Wrap): Candy 1, 2, 6, 7 Toughness, Candy 3, 4 Throw Power, Candy 5 Move Speed, Candy 8 Punch Damage, half a
+    /// level-up point each (Player Level keeps them for the run: the full half point up to +5 a stat, then a tenth a
+    /// candy, at most 10). Safe to run again: a candy that already has one gets this table's boost and points back.
     /// </summary>
     public static class CandyBuffSetupMenu
     {
         private const string CandyFolder = "Assets/Prefabs/Items/Breakable/";
         private const string EatState = "Health 1";
-        private const float PointsPerCandy = 0.1f;
+        private const float PointsPerCandy = 0.5f;
 
         // Candy_1..8, in order.
         private static readonly EatCandyBuff.Boost[] Boosts =

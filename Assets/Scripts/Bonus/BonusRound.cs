@@ -19,7 +19,8 @@ namespace Game.Bonus
     ///   countdown, and the next one inside it pops out where it was: smaller (Shrink Each less than the one before)
     ///   but tougher (more health, less jiggle; the giant jiggles most), down to the last one (Count);
     /// - every pumpkin broken gives the player Helmet Seconds more of the invisible Candy Helmet (a timed buff that stacks:
-    ///   every candy around flies into their mouth, even ones still coming out of the pumpkin);
+    ///   every candy around flies to their head, even ones still coming out of the pumpkin);
+    /// - all of them broken: fireworks go up beyond where the last one burst (Win Fireworks), in front of the player;
     /// - when they're all broken or time's up (the one left blows up, throwing the player back) the player keeps what they got: the helmet eats
     ///   every candy left, then the round is over (Finished) and Play Bonus Round goes on. The Bonus Board shows how many
     ///   punches the pumpkins took and how many were perfect jabs, with the player's leaderboard (saved, Bonus Scores).
@@ -144,6 +145,14 @@ namespace Game.Bonus
                  "player's leaderboard (saved, see Bonus Scores). 0 = no board (the round still goes on the leaderboard).")]
         [Min(0f)]
         [SerializeField] private float boardSeconds = 12f;
+
+        [Header("All broken: fireworks")]
+        [Tooltip("Fireworks that go up when every pumpkin is broken (Firework_Big); none when time runs out.")]
+        [SerializeField] private GameObject winFireworks;
+        [Min(0.1f)]
+        [SerializeField] private float fireworkScale = 1f;
+        [Tooltip("How far beyond the last pumpkin (seen from the player) they go up, and how far to each side, in metres.")]
+        [SerializeField] private Vector2 fireworkSpread = new(2.5f, 2.2f);
 
         [Header("Time's up: the pumpkin left blows up")]
         [Tooltip("Particle effects where it blows up (the grenades': Flash_round_yellow, Hit_Blast, Smoke_Blast).")]
@@ -416,6 +425,7 @@ namespace Game.Bonus
                     if (Broken >= total)
                     {
                         won = true;
+                        StartCoroutine(Fireworks(new Vector3(at.x, spot.y, at.z)));
                         break;
                     }
                     AddSeconds();
@@ -461,6 +471,28 @@ namespace Game.Bonus
             while (blowing) yield return null;
             ShowBoard();
             Finished = true;
+        }
+
+        // Every pumpkin broken: two fireworks go up beyond where the last one burst (so the player sees them in front),
+        // one to each side, then one in the middle.
+        private IEnumerator Fireworks(Vector3 at)
+        {
+            if (winFireworks == null) yield break;
+            var eyes = Head();
+            var away = eyes != null ? Flat(at - eyes.position) : Vector3.forward;
+            away = away.sqrMagnitude > 0.01f ? away.normalized : Vector3.forward;
+            var side = Vector3.Cross(Vector3.up, away);
+            Firework(at + away * fireworkSpread.x + side * fireworkSpread.y);
+            Firework(at + away * fireworkSpread.x - side * fireworkSpread.y);
+            yield return new WaitForSeconds(1.4f);
+            Firework(at + away * (fireworkSpread.x + 1f));
+        }
+
+        private void Firework(Vector3 at)
+        {
+            var show = Instantiate(winFireworks, at, Quaternion.identity, SpawnedStuff());
+            show.transform.localScale = Vector3.one * fireworkScale;
+            Destroy(show, 5f);
         }
 
         // The round goes on the player's leaderboard (saved), and the board shows it: it stays a while by itself, as the

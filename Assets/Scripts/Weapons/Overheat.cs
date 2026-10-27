@@ -197,7 +197,8 @@ namespace Game.Weapons
             StopShaking();
 
             // The player is hurt if they're in the blast, or still holding it.
-            Blast.Explode(body.worldCenterOfMass, radius, damage, push, body, effects, sound, volume, playerEvent, grab.isSelected);
+            // The player's weapon going off: overheated hands (Hot Hands) make it hurt more.
+            Blast.Explode(body.worldCenterOfMass, radius, damage * Game.Combat.HotHands.DamageScale, push, body, effects, sound, volume, playerEvent, grab.isSelected);
             Buzz(rumbleStrength, rumbleDuration);
 
             // Breaking the usual way lets its own Health FSM drop the pieces and remove it; otherwise it just vanishes.

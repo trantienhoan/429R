@@ -541,6 +541,45 @@ namespace Game.Enemies
         [Min(0.1f)]
         [SerializeField] private float groundRunAnimationSpeed = 1f;
 
+        [Header("Bee tactics (fliers)")]
+        [Tooltip("Swarm dives: when it dives, up to Swarm Join other fliers with Swarm Dives that are circling near it and " +
+                 "nearly ready dive too, a moment later and from other sides of the player, so blocking one leaves them " +
+                 "open to the others. Bosses don't lead or join these (they have the Boss Rush).")]
+        [SerializeField] private bool swarmDives;
+        [Tooltip("At most this many fliers dive with it.")]
+        [Min(0)]
+        [SerializeField] private int swarmJoin = 2;
+        [Tooltip("How near it they must be, in metres.")]
+        [Min(0f)]
+        [SerializeField] private float swarmRange = 7f;
+        [Tooltip("Seconds after it that each one starts its dive (random between).")]
+        [SerializeField] private Vector2 swarmDelay = new(0.1f, 0.45f);
+        [Tooltip("How far round the player (degrees) from it one must be to join, so they come from other sides.")]
+        [Range(0f, 180f)]
+        [SerializeField] private float swarmSpread = 50f;
+        [Tooltip("Feint dives: the chance (0 to 1) that a dive is a feint. Swung at on its way in or in its wind-up, it " +
+                 "always pulls up out of reach (whatever its Dodge Chance), then comes straight back down and strikes " +
+                 "with a quick wind-up (Feint Wind Up) while the arm is still out. 0 = never.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float feintChance;
+        [Tooltip("The strike-back's wind-up, as a share of its normal one.")]
+        [Range(0.1f, 1f)]
+        [SerializeField] private float feintWindUp = 0.4f;
+        [Tooltip("Boss Rush (Boss size): every Rush Every seconds it orders every flier within Rush Range to dive at " +
+                 "once. First the warning (Rush Sound, Rush Shake): they all climb and hang for Rush Warning seconds; " +
+                 "then they all come down together, the boss too. Only with at least 2 fliers about.")]
+        [SerializeField] private bool bossRush;
+        [Tooltip("Seconds between rushes (random between).")]
+        [SerializeField] private Vector2 rushEvery = new(9f, 12f);
+        [Min(0f)]
+        [SerializeField] private float rushRange = 15f;
+        [Min(0f)]
+        [SerializeField] private float rushWarning = 1.2f;
+        [Tooltip("Its warning buzz (played by the boss, so a big one sounds deeper).")]
+        [SerializeField] private AudioClip rushSound;
+        [Tooltip("The camera shake with the warning (ShakeSmall, ShakeMed, ShakeBig). Empty: none.")]
+        [SerializeField] private string rushShake = "ShakeMed";
+
         [Header("Getting hit")]
         [Tooltip("How long a hit stops it, in seconds.")]
         [Min(0f)]
@@ -961,6 +1000,16 @@ namespace Game.Enemies
         private float appearStart;
         private Vector3 modelsHome;
         private bool appearTimed;
+        // Until then it hangs where it came out, facing the player (Hold Off).
+        private float holdUntil;
+        // Bee tactics: this dive is a feint; swung at, it pulls up and strikes back (with a quick wind-up); it was called
+        // into a swarm dive or a rush (so it doesn't call others); a boss's next rush; hanging for a rush until then.
+        private bool feinting;
+        private bool strikeBack;
+        private bool quickWindUp;
+        private bool calledIn;
+        private float nextRush;
+        private float rushHoldUntil;
         private readonly HashSet<string> missingAnimations = new();
 
         private AttackMove move;
@@ -1166,7 +1215,7 @@ namespace Game.Enemies
             }
 
             if (StartAppearing()) return;
-            if (noticeOnSpawn) Notice(true);
+            if (noticeOnSpawn && !Holding) Notice(true);
             else Enter(State.Idle, Random.Range(0.5f, 2f));
         }
 
@@ -1207,6 +1256,7 @@ namespace Game.Enemies
             // Low on health a boss calls its minions, even while it's knocked back or knocked out, and a bomb ticks.
             UpdateCall();
             UpdateBomb();
+            UpdateRush();
 
             // Knockback moves the agent itself; wait until it's done. Knocked back while on the face (a big hit, a level-up
             // burst), it lets go; and a lifted one falls as it slides (the knock-back is its fling).
@@ -1221,6 +1271,12 @@ namespace Game.Enemies
                 }
             }
 
+            // Its wait is over: now it comes.
+            if (holdUntil > 0f && Time.time >= holdUntil)
+            {
+                holdUntil = 0f;
+                if (noticeOnSpawn || Aggressive) Notice(true);
+            }
             if (Time.time >= nextSenses) Sense();
             if (Time.time >= nextThreatScan) ScanThreats();
             if (IsFlying && groundBelowHealth > 0f && state != State.Appear && health != null && health.Value / startHealth <= groundBelowHealth)
@@ -1384,8 +1440,21 @@ namespace Game.Enemies
             if (state != State.Appear) Notice(true);
         }
 
+        /// <summary>
+        /// For a boss that just came out (Spawn From Barrels' Boss Wait): it hangs there facing the player for this many
+        /// seconds before it comes for them; hitting it ends the wait at once. Safe to call straight after Instantiate.
+        /// </summary>
+        public void HoldOff(float seconds)
+        {
+            if (seconds > 0f) holdUntil = Time.time + seconds;
+        }
+
+        private bool Holding => holdUntil > 0f && Time.time < holdUntil;
+
         private void Notice(bool tellFriends)
         {
+            // Holding off (Hold Off): it doesn't come yet, whoever calls (its senses, the bees around it).
+            if (Holding) return;
             if (state == State.Dead || noticed) return;
             if (GoesForObject && targetObject == null) return;
             noticed = true;
@@ -1482,6 +1551,12 @@ namespace Game.Enemies
             Play(IdleLook);
             // Its idle may be the same animation as its walk (a flier hovering), sped up or slowed down for walking.
             if (animator != null) animator.speed = 1f;
+            // Holding off: it stays where it came out and stares the player down.
+            if (Holding)
+            {
+                Face(PlayerFloor());
+                return;
+            }
             if (Time.time < stateUntil) return;
             var point = home + Random.insideUnitSphere * wanderRadius;
             if (NavMesh.SamplePosition(point, out var hit, wanderRadius, NavMesh.AllAreas)) GoTo(hit.position, WalkSpeed, true);
@@ -1584,7 +1659,9 @@ namespace Game.Enemies
 
         private void StartPrepare()
         {
-            Enter(State.Prepare, prepareSeconds * kind.windUp);
+            // A feinting flier's strike-back winds up quickly, while the arm that swung is still out.
+            Enter(State.Prepare, prepareSeconds * kind.windUp * (quickWindUp ? feintWindUp : 1f));
+            quickWindUp = false;
             Stop();
             Play(AlertLook);
             SendToOwnFsms("Prepare");
@@ -3217,11 +3294,101 @@ namespace Game.Enemies
         private void GoHigh()
         {
             GiveUpTurn();
+            feinting = strikeBack = quickWindUp = false;
             nextAttack = Time.time + Random.Range(highWait.x, Mathf.Max(highWait.x, highWait.y)) * (Aggressive ? 0.5f : 1f);
+            // Called into a boss's rush: it comes down with the others.
+            if (rushHoldUntil > Time.time) nextAttack = rushHoldUntil + Random.Range(0f, 0.2f);
             nextCruiseChange = 0f;
             var center = OrbitCenter();
             orbitAngle = Mathf.Atan2(transform.position.z - center.z, transform.position.x - center.x) * Mathf.Rad2Deg;
             Enter(State.Circle, 0f);
+        }
+
+        // ---- Bee tactics ----
+
+        // A flier starts a dive: maybe a feint, and the swarm around it may come with it.
+        private void StartDive()
+        {
+            feinting = feintChance > 0f && Random.value < feintChance;
+            strikeBack = quickWindUp = false;
+            if (swarmDives && !calledIn && kindName != SizeClass.Boss && !anomaly) CallSwarm();
+            calledIn = false;
+        }
+
+        // Swarm dives: up to Swarm Join fliers circling nearby, nearly ready, from other sides of the player, dive a moment
+        // after it (those furthest round go first in the list).
+        private void CallSwarm()
+        {
+            if (swarmJoin <= 0 || player == null) return;
+            float mine = AngleAroundPlayer(transform.position);
+            var ready = new List<(SpiderBrain bee, float apart)>();
+            foreach (var other in spiders)
+            {
+                if (other == this || !other.swarmDives || !other.IsFlying || !other.noticed || other.anomaly ||
+                    other.kindName == SizeClass.Boss || other.state != State.Circle || other.hasTurn ||
+                    Time.time < other.nextAttack - 1.5f || Time.time < other.rushHoldUntil) continue;
+                if ((other.transform.position - transform.position).sqrMagnitude > swarmRange * swarmRange) continue;
+                float apart = Mathf.Abs(Mathf.DeltaAngle(mine, AngleAroundPlayer(other.transform.position)));
+                if (apart >= swarmSpread) ready.Add((other, apart));
+            }
+            ready.Sort((a, b) => b.apart.CompareTo(a.apart));
+            for (int i = 0; i < ready.Count && i < swarmJoin; i++)
+            {
+                var bee = ready[i].bee;
+                bee.calledIn = true;
+                bee.nextAttack = Time.time + Random.Range(swarmDelay.x, Mathf.Max(swarmDelay.x, swarmDelay.y));
+            }
+        }
+
+        // Where something is round the player, in degrees (flat).
+        private float AngleAroundPlayer(Vector3 point)
+        {
+            var from = PlayerFloor();
+            return Mathf.Atan2(point.z - from.z, point.x - from.x) * Mathf.Rad2Deg;
+        }
+
+        // Boss Rush: now and then the boss orders every flier about to come down at once, after a warning.
+        private void UpdateRush()
+        {
+            if (!bossRush || kindName != SizeClass.Boss || !IsFlying || !noticed || Holding || state == State.Appear) return;
+            if (nextRush <= 0f)
+            {
+                nextRush = Time.time + Random.Range(rushEvery.x, Mathf.Max(rushEvery.x, rushEvery.y));
+                return;
+            }
+            if (Time.time < nextRush) return;
+            nextRush = Time.time + Random.Range(rushEvery.x, Mathf.Max(rushEvery.x, rushEvery.y));
+
+            var crew = new List<SpiderBrain>();
+            foreach (var other in spiders)
+            {
+                if (other == this || !other.flies || !other.IsFlying || other.anomaly || other.state == State.Dead ||
+                    other.state == State.Appear || other.GoesForObject) continue;
+                if ((other.transform.position - transform.position).sqrMagnitude <= rushRange * rushRange) crew.Add(other);
+            }
+            if (crew.Count < 2) return;
+
+            if (rushSound != null) PlayOne(rushSound, true);
+            if (!string.IsNullOrEmpty(rushShake)) ViewShake.Send(rushShake);
+            Signalled?.Invoke(this, "Rush");
+            float go = Time.time + rushWarning;
+            crew.Add(this);
+            foreach (var bee in crew) bee.JoinRush(go);
+        }
+
+        // Called into a rush: it climbs and hangs (one on its way down pulls back up, unless it's already winding up or
+        // stinging), then comes down when the warning is over.
+        private void JoinRush(float go)
+        {
+            rushHoldUntil = go;
+            calledIn = true;
+            if (!noticed) Notice(false);
+            if (state == State.Chase && hasTurn)
+            {
+                GoHigh();
+                return;
+            }
+            nextAttack = go + Random.Range(0f, 0.2f);
         }
 
         private bool IsGroundState(AnimatorStateInfo info) =>
@@ -3379,9 +3546,11 @@ namespace Game.Enemies
             bool canDodge = noticed && Time.time >= nextDodge && kind.dodgeChance > 0f && HasDodge &&
                             (state == State.Chase || state == State.Circle || state == State.Prepare || state == State.Retreat) &&
                             PlayerDistance() < 8f;
+            // A feinting flier on its way in (or winding up) watches for the swing it's baiting.
+            bool canFeint = feinting && IsFlying && hasTurn && noticed && (state == State.Chase || state == State.Prepare);
             float elapsed = lastThreatScan < 0f ? 0f : Time.time - lastThreatScan;
             lastThreatScan = Time.time;
-            bool measure = canDodge && elapsed > 0.001f && elapsed < 0.12f;
+            bool measure = (canDodge || canFeint) && elapsed > 0.001f && elapsed < 0.12f;
 
             float size = Size();
             var center = transform.position + Vector3.up * (0.2f * size + flyLift + leapLift);
@@ -3424,6 +3593,19 @@ namespace Game.Enemies
             }
 
             if (!found || !measure) return;
+            // The feint pays off: swung at, it always pulls up, then strikes back while the arm is out.
+            if (canFeint && melee)
+            {
+                feinting = false;
+                StartDodge(threatPoint - center, threatVelocity, true);
+                if (state == State.Dodge)
+                {
+                    strikeBack = true;
+                    Signalled?.Invoke(this, "Feint");
+                    return;
+                }
+            }
+            if (!canDodge) return;
             // One roll per threat: if it doesn't dodge this one, it doesn't keep trying for the same swing.
             nextDodge = Time.time + 0.6f;
             if (Random.value > kind.dodgeChance) return;
@@ -3481,6 +3663,14 @@ namespace Game.Enemies
             if (Time.time < stateUntil) return;
             if (IsFlying)
             {
+                // A feint's pull-up: straight back down at the player, keeping its turn, with a quick wind-up.
+                if (strikeBack && hasTurn)
+                {
+                    strikeBack = false;
+                    quickWindUp = true;
+                    Enter(State.Chase, 0f);
+                    return;
+                }
                 GoHigh();
                 return;
             }
@@ -3550,6 +3740,8 @@ namespace Game.Enemies
 
             if (hitEffect != null) hitEffect.SetActive(true);
             PlayOne(hitSounds, true);
+            // Hit while it held off: it comes now.
+            holdUntil = 0f;
             if (!noticed) Notice(true);
             if (state == State.Appear || state == State.WingsOff || state == State.Special || Unstoppable || Time.time < nextFlinch) return;
             // A boss with a Stun Guard that was stopped a moment ago shrugs this one off: it hurts, the attack goes on.
@@ -3579,6 +3771,7 @@ namespace Game.Enemies
             nextWeakFlinch = Time.time + Mathf.Max(0.5f, weakFlinchSeconds * 2f);
 
             PlayOne(hitSounds);
+            holdUntil = 0f;
             if (!noticed) Notice(true);
             // A boss with a Stun Guard doesn't even jerk at a light tap (only the sound): taps can't slow it down, and
             // they don't use up its guard either.
@@ -3658,12 +3851,15 @@ namespace Game.Enemies
         {
             if (hasTurn) return true;
             if (Time.time < nextAttack) return false;
+            // Hanging for a boss's rush: everyone comes down together when it's over.
+            if (Time.time < rushHoldUntil) return false;
             // A flier (with or without its wings) doesn't wait for a turn, and doesn't take one from the walkers. Nor does a
             // boss (only the mini bosses are Boss size), so the minions it calls can't crowd it out of attacking.
             if (flies || kindName == SizeClass.Boss)
             {
                 hasTurn = true;
                 turnCounted = false;
+                if (IsFlying) StartDive();
                 return true;
             }
             if (attackersNow >= maxAttackers) return false;

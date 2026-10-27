@@ -84,6 +84,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 6378080290528265359}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 263e42a2840a4994594e4527adf0de64,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3141653035475128091}
   m_SourcePrefab: {fileID: 100100000, guid: 263e42a2840a4994594e4527adf0de64, type: 3}
 --- !u!1 &4767344992678396797 stripped
 GameObject:
@@ -721,3 +725,27 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &3141653035475128091
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4767344992678396797}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b17a3d6eb81c2074e9d550065bc40029, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.VFX.FireworkShow
+  firework: {fileID: 4623798490042213957, guid: e1812b1d90f61c94dab0f126b70eb3f3,
+    type: 3}
+  firstDelay: 0.3
+  interval: 4.5
+  showSeconds: 30
+  spots:
+  - {x: -5, y: -1.2, z: -2.5}
+  - {x: 5, y: -1.2, z: -2.5}
+  - {x: 0, y: -1.4, z: -4}
+  finaleState: GO UP!
+  fireworkScale: 1
+  fireworkSeconds: 5

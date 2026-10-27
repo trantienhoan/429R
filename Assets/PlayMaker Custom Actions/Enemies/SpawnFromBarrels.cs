@@ -9,7 +9,7 @@ namespace HutongGames.PlayMaker.Actions
              "n x Delay Between seconds after the state starts, to match the barrels breaking (Send Event Dead with delays). " +
              "Leaving the state early spawns the rest at once. With Boss Last, the boss waits for the swarm instead: it comes " +
              "out of its barrel once no more than Boss When Left regular ones are alive, after a warning (it keeps waiting " +
-             "even when the state is left).")]
+             "even when the state is left). Out, the boss can hang there facing the player for Boss Hold Off seconds first.")]
     public class SpawnFromBarrels : FsmStateAction
     {
         [Tooltip("The barrels, in the order they break.")]
@@ -66,6 +66,10 @@ namespace HutongGames.PlayMaker.Actions
         [Tooltip("The camera shake with the warning (ShakeSmall, ShakeMed, ShakeBig). Empty: none.")]
         public FsmString warningShake;
 
+        [Tooltip("Seconds the boss hangs where it came out, facing the player, before it comes for them (hitting it " +
+                 "ends the wait). 0 = it comes at once. With Boss Last off too.")]
+        public FsmFloat bossHoldOff;
+
         private readonly List<(Vector3 position, Quaternion rotation, bool isBoss)> waiting = new();
         private readonly List<GameObject> regulars = new();
         private float elapsed;
@@ -90,10 +94,14 @@ namespace HutongGames.PlayMaker.Actions
             warningEffect = null;
             warningSound = null;
             warningShake = "ShakeMed";
+            bossHoldOff = 2.5f;
         }
 
         // FSMs saved before Boss Last existed have it unset: off, as before.
         private bool BossLast => bossLast != null && !bossLast.IsNone && bossLast.Value;
+
+        // FSMs saved before Boss Hold Off existed have it unset: it comes at once, as before.
+        private float HoldOffSeconds => bossHoldOff != null && !bossHoldOff.IsNone ? Mathf.Max(0f, bossHoldOff.Value) : 0f;
 
         public override void OnEnter()
         {
@@ -143,6 +151,8 @@ namespace HutongGames.PlayMaker.Actions
             if (prefab == null) return;
             var enemy = Object.Instantiate(prefab, at.position, Quaternion.Euler(0f, at.rotation.eulerAngles.y, 0f));
             if (!parent.IsNone && parent.Value != null) enemy.transform.SetParent(parent.Value.transform, true);
+            if (at.isBoss && boss.Value != null && HoldOffSeconds > 0f && enemy.TryGetComponent(out Game.Enemies.SpiderBrain brain))
+                brain.HoldOff(HoldOffSeconds);
             if (at.isBoss && !storeBoss.IsNone) storeBoss.Value = enemy;
             else if (!at.isBoss) regulars.Add(enemy);
         }
@@ -170,6 +180,7 @@ namespace HutongGames.PlayMaker.Actions
                 warningEffect = warningEffect != null ? warningEffect.Value : null,
                 warningSound = warningSound != null ? warningSound.Value as AudioClip : null,
                 warningShake = warningShake != null ? warningShake.Value : null,
+                holdSeconds = HoldOffSeconds,
                 spawned = enemy => { if (store != null && !store.IsNone) store.Value = enemy; },
             }, regulars);
         }

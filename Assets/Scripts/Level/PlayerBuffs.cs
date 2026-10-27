@@ -32,8 +32,9 @@ namespace Game.Leveling
     /// - Bus Boong: +7 Move Speed points (faster walking).
     /// - Any boong also makes the player high while it's on: they take 1.5x damage, candy heals them 1.5x and they walk
     ///   30% slower (High; once, however many boongs are on).
-    /// - Candy Helmet (every pumpkin the bonus round's player breaks adds 5 s, Add): every candy around flies into the
-    ///   player's mouth and is eaten, even ones still flying out of the pumpkin (Game.Inventory.CandyHelmet does it).
+    /// - Candy Helmet (every pumpkin the bonus round's player breaks adds 5 s, Add): every candy around flies to the
+    ///   player, over their head and into the top of it, and is eaten, even ones still flying out of the pumpkin
+    ///   (Game.Inventory.CandyHelmet does it).
     /// The extra points are never saved and never count as a stat's big last point; the Level Up menu keeps showing the
     /// player's own points. The health HUD shows them: while any is on the heart smokes white and stays in view, with a
     /// countdown under it for each (in the buff's colour, no names). With no buff on, everything is exactly as without this.
@@ -243,7 +244,7 @@ namespace Game.Leveling
                 case Buff.ElonBoong: return "Far exploding punches";
                 case Buff.BoneBoong: return $"+{BoneToughness} Toughness";
                 case Buff.GreenBoong: return "Taller, big far flying punches";
-                case Buff.CandyHelmet: return "Candies fly into your mouth";
+                case Buff.CandyHelmet: return "Candies fly to your head";
                 default: return $"+{BusSpeed} Move Speed";
             }
         }

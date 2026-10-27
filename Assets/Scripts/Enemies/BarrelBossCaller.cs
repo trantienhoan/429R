@@ -8,7 +8,8 @@ namespace Game.Enemies
     /// <summary>
     /// The boss of a barrel stage, held back until the swarm is nearly cleared (Spawn From Barrels with Boss Last): once
     /// the regular enemies are out, it waits until no more than When Left of them are alive (but at least Min Wait, at
-    /// most Max Wait seconds), then warns the player (a puff at its barrel, a sound, a camera shake) and comes out there.
+    /// most Max Wait seconds), then warns the player (a puff at its barrel, a sound, a camera shake) and comes out there,
+    /// where it can hang facing the player a moment (Hold Seconds) before it comes for them.
     /// It runs on its own, so the stage's FSM can move on meanwhile (e.g. to wait for the boss to die). Spawn From
     /// Barrels adds it to its GameObject when needed; switched off (the stage reset), the boss is called off.
     /// </summary>
@@ -28,18 +29,30 @@ namespace Game.Enemies
             public GameObject warningEffect;
             public AudioClip warningSound;
             public string warningShake;
+            // Once out, it hangs there facing the player this many seconds before it comes (a hit ends the wait).
+            public float holdSeconds;
             public System.Action<GameObject> spawned;
         }
 
         // The puff's size at the barrel.
         private const float WarningEffectSize = 1.6f;
 
+        // The callers still waiting to call their boss (a boss is on its way): the bee swarm keeps going for it.
+        private static readonly HashSet<BarrelBossCaller> waitingCallers = new();
+
+        /// <summary>A barrel boss is still on its way (its caller is waiting for the swarm, or warning).</summary>
+        public static bool AnyCalling => waitingCallers.Count > 0;
+
         private Coroutine calling;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => waitingCallers.Clear();
 
         /// <summary>Starts waiting for the swarm (these are the regular enemies that came out), then calls the boss.</summary>
         public void Begin(Call call, IReadOnlyList<GameObject> regulars)
         {
             if (calling != null) StopCoroutine(calling);
+            waitingCallers.Add(this);
             calling = StartCoroutine(Calling(call, new List<GameObject>(regulars)));
         }
 
@@ -47,6 +60,7 @@ namespace Game.Enemies
         {
             if (calling != null) StopCoroutine(calling);
             calling = null;
+            waitingCallers.Remove(this);
         }
 
         private IEnumerator Calling(Call call, List<GameObject> regulars)
@@ -67,9 +81,11 @@ namespace Game.Enemies
             {
                 var boss = Instantiate(call.boss, call.at, call.rotation);
                 if (call.parent != null) boss.transform.SetParent(call.parent, true);
+                if (call.holdSeconds > 0f && boss.TryGetComponent(out SpiderBrain brain)) brain.HoldOff(call.holdSeconds);
                 call.spawned?.Invoke(boss);
             }
             calling = null;
+            waitingCallers.Remove(this);
         }
 
         // Regular enemies still fighting: there, and not dead.

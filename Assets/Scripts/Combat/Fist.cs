@@ -155,15 +155,17 @@ namespace Game.Combat
                  "twice that (0.5 = 1.5x and 2x as far). Each also starts a fist's width farther out than the one before.")]
         [Min(0f)]
         [SerializeField] private float tripleReach = 0.5f;
-        [Tooltip("A puff of smoke at the wrist of a flying punch, riding along with it (it leaves no trail behind and goes " +
-                 "when the punch does), e.g. Smoke_Blast. Its star flash (the system on its root, with the puffs under it) " +
-                 "shows only with Explosive Fist points. Empty: none.")]
+        [Tooltip("The burst at the wrist of a flying punch, riding along with it (it leaves no trail behind and goes when " +
+                 "the punch does), e.g. Flying_Punch_Shockwave (or Smoke_Blast). Its star flash (a part called Star, or for " +
+                 "Smoke_Blast the system on its root) shows only with Explosive Fist points; it burns red while the hands " +
+                 "are hot (Hot Hands). Empty: none.")]
         [FormerlySerializedAs("flyTrailPuff")]
         [SerializeField] private GameObject wristSmoke;
-        [Tooltip("How big that puff is for a flying punch the size of the fist; bigger flying punches have a bigger puff.")]
+        [Tooltip("How big that burst is for a flying punch the size of the fist; bigger flying punches have a bigger one " +
+                 "(Flying_Punch_Shockwave is made in metres: 1; Smoke_Blast: 0.004).")]
         [FormerlySerializedAs("flyTrailSize")]
         [Min(0f)]
-        [SerializeField] private float wristSmokeSize = 0.004f;
+        [SerializeField] private float wristSmokeSize = 1f;
 
         [Header("Swing")]
         [Tooltip("A fast sideways sweep of the fist (a hook) hits harder, and flies on sideways, level, the way the fist " +
@@ -428,6 +430,19 @@ namespace Game.Combat
         public static bool IsFistBall(Component thing)
         {
             return thing != null && thing.TryGetComponent<Punch>(out _);
+        }
+
+        /// <summary>The hand's model (its skin), once the fist has found it.</summary>
+        public SkinnedMeshRenderer HandSkin => handSkin;
+
+        /// <summary>Adds what looks like this hand: its model and its flying punches' echoes (Hot Hands makes them glow).</summary>
+        public void CollectHandRenderers(List<Renderer> into)
+        {
+            if (handSkin != null) into.Add(handSkin);
+            foreach (var flyer in flyers)
+            {
+                if (flyer != null && flyer.echoLook != null) into.Add(flyer.echoLook);
+            }
         }
 
         private void Awake()
@@ -720,7 +735,7 @@ namespace Game.Combat
             if (power <= 0 || Time.time < nextBoongBlast) return false;
             nextBoongBlast = Time.time + boongBlastEvery;
             var at = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
-            Game.Weapons.Blast.Explode(at, boongBlastRadius, boongBlastDamage * power, boongBlastPush, hitter, boongEffects,
+            Game.Weapons.Blast.Explode(at, boongBlastRadius, boongBlastDamage * power * HotHands.DamageScale, boongBlastPush, hitter, boongEffects,
                 boongBlastSound, boongBlastVolume, null, false, boongBlastEffectSize);
             return true;
         }
@@ -1082,24 +1097,30 @@ namespace Game.Combat
                 look.receiveShadows = false;
                 flying.echo = echo;
                 flying.echoShape = echoObject.transform;
+                flying.echoLook = look;
             }
             if (wristSmoke != null)
             {
-                // Its own copy of the smoke, simulated in its own space so the puff rides along at the wrist (no trail),
+                // Its own copy of the effect, simulated in its own space so it rides along at the wrist (no trail),
                 // played at each throw (Launch).
                 var smoke = Instantiate(wristSmoke, go.transform, false);
                 smoke.name = "Wrist Smoke";
                 flying.smoke = smoke.transform;
                 flying.smokeSystems = smoke.GetComponentsInChildren<ParticleSystem>(true);
-                // Its star flash: the system on the effect's own root, when the puffs are systems under it (Smoke_Blast).
-                if (flying.smokeSystems.Length > 1) flying.smokeStar = smoke.GetComponent<ParticleSystemRenderer>();
-                foreach (var system in flying.smokeSystems)
+                // Its star flash: a part called "Star" (Flying_Punch_Shockwave), or the system on the effect's own root
+                // when the puffs are systems under it (Smoke_Blast).
+                var star = smoke.transform.Find("Star");
+                if (star != null) flying.smokeStar = star.GetComponent<ParticleSystemRenderer>();
+                else if (flying.smokeSystems.Length > 1) flying.smokeStar = smoke.GetComponent<ParticleSystemRenderer>();
+                flying.smokeColours = new ParticleSystem.MinMaxGradient[flying.smokeSystems.Length];
+                for (int i = 0; i < flying.smokeSystems.Length; i++)
                 {
-                    var main = system.main;
+                    var main = flying.smokeSystems[i].main;
                     main.simulationSpace = ParticleSystemSimulationSpace.Local;
                     main.scalingMode = ParticleSystemScalingMode.Hierarchy;
                     main.playOnAwake = false;
-                    system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                    flying.smokeColours[i] = main.startColor;
+                    flying.smokeSystems[i].Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
                 }
             }
             // It ignores the player's body each time it's thrown (Launch), once it's switched on.
@@ -1249,6 +1270,9 @@ namespace Game.Combat
             public Transform smoke;
             public ParticleSystem[] smokeSystems = System.Array.Empty<ParticleSystem>();
             public ParticleSystemRenderer smokeStar;
+            // Each system's own colour (it burns red while the hands are hot), and the echo's renderer (it glows too).
+            public ParticleSystem.MinMaxGradient[] smokeColours = System.Array.Empty<ParticleSystem.MinMaxGradient>();
+            public MeshRenderer echoLook;
 
             private Rigidbody body;
             private SphereCollider ball;
@@ -1348,8 +1372,22 @@ namespace Game.Combat
                 smoke.localScale = Vector3.one * (owner.wristSmokeSize * size);
                 // The star flash only with Explosive Fist points: a plain flying punch just puffs.
                 if (smokeStar != null) smokeStar.enabled = Game.Leveling.PlayerLevel.ExplosiveFist > 0;
-                foreach (var system in smokeSystems) system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-                if (smokeSystems.Length > 0) smokeSystems[0].Play(true);
+                // Overheated hands (Hot Hands): it burns their red.
+                bool hot = HotHands.Active;
+                var red = HotHands.GlowColor;
+                red = new Color(Mathf.Min(1f, red.r), Mathf.Min(1f, red.g * 1.6f), Mathf.Min(1f, red.b * 1.6f), 1f);
+                for (int i = 0; i < smokeSystems.Length; i++)
+                {
+                    var system = smokeSystems[i];
+                    system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                    if (i < smokeColours.Length)
+                    {
+                        var main = system.main;
+                        main.startColor = hot ? new ParticleSystem.MinMaxGradient(red) : smokeColours[i];
+                    }
+                }
+                // Every part plays (they needn't sit under one another).
+                foreach (var system in smokeSystems) system.Play(false);
             }
 
             // Its collider goes off next step, so whatever it hit still gets this hit.

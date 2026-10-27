@@ -350,7 +350,8 @@ namespace Game.Weapons
 
             var hand = inHand && grab.firstInteractorSelecting is XRBaseInputInteractor holder ? holder : thrower;
             if (rumbleStrength > 0f) Game.Combat.HitBuzz.Other(hand, rumbleStrength, rumbleDuration);
-            Blast.Explode(point, reach, hurt, force, body, effects, sound, volume, eventForPlayer, inHand, effectScale, playerReach);
+            // The player's bomb: overheated hands (Hot Hands) make it hurt more.
+            Blast.Explode(point, reach, hurt * Game.Combat.HotHands.DamageScale, force, body, effects, sound, volume, eventForPlayer, inHand, effectScale, playerReach);
             // The bang shakes the view, harder close by; a bigger bang reaches farther.
             ViewShake.Near(point, 1.5f + reach * 1.5f, 5f + reach * 3f);
 

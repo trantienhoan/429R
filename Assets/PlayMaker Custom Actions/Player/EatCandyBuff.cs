@@ -4,9 +4,9 @@ namespace HutongGames.PlayMaker.Actions
 {
     [ActionCategory("Player")]
     [Tooltip("A candy was eaten: the player gets a little stronger for this run (Player Level's candy points). Each stat " +
-             "takes at most Candy Max Points from candies (10); they come on top of the level-up points, aren't saved and " +
-             "go when a new run starts. Put it in the candy's eat state (Tools > 429 Game > Player > Give Candies Their " +
-             "Buffs does it for Candy_1..8).")]
+             "takes the full Points up to Candy Full Rate Points (5), then only Candy Slow Points a candy (0.1), at most " +
+             "Candy Max Points (10); they come on top of the level-up points, aren't saved and go when a new run starts. " +
+             "Put it in the candy's eat state (Tools > 429 Game > Player > Give Candies Their Buffs does it for Candy_1..8).")]
     public class EatCandyBuff : FsmStateAction
     {
         public enum Boost

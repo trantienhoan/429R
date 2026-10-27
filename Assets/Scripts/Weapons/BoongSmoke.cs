@@ -393,7 +393,8 @@ namespace Game.Weapons
             grab.enabled = false;
 
             var point = body != null ? body.worldCenterOfMass : transform.position;
-            Blast.Explode(point, radius, damage, push, body, effects, sound, volume, null, false, effectSize);
+            // The player's blast: overheated hands (Hot Hands) make it hurt more.
+            Blast.Explode(point, radius, damage * Game.Combat.HotHands.DamageScale, push, body, effects, sound, volume, null, false, effectSize);
             PlayerBuffs.Give(buff, buffSeconds);
 
             // Breaking the usual way lets its own Health FSM drop the pieces and remove it; otherwise it just vanishes.

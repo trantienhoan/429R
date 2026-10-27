@@ -54,7 +54,8 @@ namespace Game.Leveling
     /// one more lucky coin to flip when the player goes down, see Revive Coins; and a higher health cap).
     /// A smoked boong adds Toughness or Move Speed points for a while (Player Buffs); those are never saved. Eaten candies
     /// add points for the run (Eat Candy Buff: Toughness, Move Speed, Throw Power, and punch damage only for Fist Size),
-    /// at most Candy Max Points a stat; never saved, gone when a new run starts.
+    /// each its full share up to Candy Full Rate Points a stat (5), then only Candy Slow Points (0.1), at most Candy Max
+    /// Points (10); never saved, gone when a new run starts.
     /// The level, the EXP and the points are kept in the save (Save Manager). Keep one in the scene;
     /// Tools > 429 Game > Player > Set Up Level System makes it, with its menu and its notice.
     /// </summary>
@@ -192,9 +193,16 @@ namespace Game.Leveling
 
         [Header("Candy")]
         [Tooltip("The most points eaten candies add to one stat this run (each candy's Eat Candy Buff adds its share, " +
-                 "e.g. 0.1). They come on top of the player's own points, aren't saved, and go when a new run starts.")]
+                 "e.g. 0.5). They come on top of the player's own points, aren't saved, and go when a new run starts.")]
         [Min(0f)]
         [SerializeField] private float candyMaxPoints = 10f;
+        [Tooltip("Candy points a stat takes at the full rate (each candy its own share). Past this, each candy adds only " +
+                 "Candy Slow Points to it, up to Candy Max Points.")]
+        [Min(0f)]
+        [SerializeField] private float candyFullRatePoints = 5f;
+        [Tooltip("What each candy adds to a stat past Candy Full Rate Points (0.1 = a tenth of a point).")]
+        [Min(0f)]
+        [SerializeField] private float candySlowPoints = 0.1f;
 
         [Header("Flying punches unlocked by Fist Size")]
         [Tooltip("Fist Size points that unlock the Jab (a fast straight punch flies on). Below it no punch flies. " +
@@ -479,9 +487,10 @@ namespace Game.Leveling
 
         /// <summary>
         /// An eaten candy's points for this run (the PlayMaker action Eat Candy Buff): Toughness, Move Speed and Throw Power
-        /// count like the player's own points, Fist Size only as punch damage (no bigger fist, no new punches). At most
-        /// Candy Max Points a stat; never saved, and gone when a new run starts. Returns the stat's candy points now (0 for
-        /// any other stat, or without a Player Level).
+        /// count like the player's own points, Fist Size only as punch damage (no bigger fist, no new punches). Full points
+        /// up to Candy Full Rate Points a stat, then only Candy Slow Points a candy, up to Candy Max Points; never saved,
+        /// and gone when a new run starts. Returns the stat's candy points now (0 for any other stat, or without a Player
+        /// Level).
         /// </summary>
         public static float AddCandyPoints(Stat stat, float points)
         {
@@ -492,7 +501,13 @@ namespace Game.Leveling
                 return 0f;
             }
             int i = (int)stat;
-            Instance.candyPoints[i] = Mathf.Clamp(Instance.candyPoints[i] + points, 0f, Instance.candyMaxPoints);
+            float had = Instance.candyPoints[i];
+            // The candy that reaches Candy Full Rate Points tops it up to there; every candy after it adds the slow share.
+            if (points > 0f)
+                points = had < Instance.candyFullRatePoints
+                    ? Mathf.Min(points, Instance.candyFullRatePoints - had)
+                    : Mathf.Min(points, Instance.candySlowPoints);
+            Instance.candyPoints[i] = Mathf.Clamp(had + points, 0f, Instance.candyMaxPoints);
             if (stat == Stat.MoveSpeed) Instance.ApplySpeed();
             if (points > 0f) CandyEaten?.Invoke(stat);
             return Instance.candyPoints[i];

@@ -9,8 +9,9 @@ namespace Game.Inventory
 {
     /// <summary>
     /// The invisible Candy Helmet, a candy vacuum (a timed buff, Player Buffs: Candy Helmet; every pumpkin the bonus
-    /// round's player breaks adds 5 s): while it's on, every candy around flies into the player's mouth, many at once, and
-    /// is eaten the normal way, by the candy's own "Damage" FSM state "Health 1" (it heals, says om nom and adds 1 Candy to
+    /// round's player breaks adds 5 s): while it's on, every candy around flies to the player, many at once, up over
+    /// their head and down into the top of it (not into their face, where a stream of candies hid everything), and is
+    /// eaten the normal way, by the candy's own "Damage" FSM state "Health 1" (it heals, says om nom and adds 1 Candy to
     /// the save). It takes them the moment it sees them, even ones still flying out of a pumpkin, so punches and pumpkin
     /// pieces can't break them first (a candy breaks on any bump over 7 m/s). Ones held in a hand or busy breaking are
     /// left. Made by itself the first time the buff is given; nothing to put in a scene.
@@ -22,7 +23,7 @@ namespace Game.Inventory
         [SerializeField] private float reach = 30f;
         [Tooltip("Candies in the air at once.")]
         [SerializeField] private int maxFlying = 24;
-        [Tooltip("Seconds between one candy setting off and the next: a quick stream into the mouth.")]
+        [Tooltip("Seconds between one candy setting off and the next: a quick stream to the head.")]
         [SerializeField] private float nextEvery = 0.04f;
         [Tooltip("A candy is taken once it has been lying (nearly) still this long, in seconds (0: at once, even flying).")]
         [SerializeField] private float settleSeconds = 0f;
@@ -36,9 +37,10 @@ namespace Game.Inventory
         private const string ListeningState = "Wait for Collision";
         private const string EatState = "Health 1";
         private const string DoneState = "Destroy Self";
-        private const string MouthTag = "Mouth";
-        // Where the mouth is from the eyes when there's no Mouth (as the Mouth sits under the Main Camera).
-        private static readonly Vector3 MouthOffset = new(0f, -0.09f, 0.07f);
+        // Where candies go in: above the eyes and a little back, the top of the head (world up, so it stays out of
+        // sight whichever way the player looks).
+        private const float HeadTopUp = 0.3f;
+        private const float HeadTopBack = 0.06f;
         private const float StillSpeed = 0.6f;
         private const float ScanEvery = 0.1f;
         private const float ArriveSeconds = 0.25f;
@@ -68,12 +70,11 @@ namespace Game.Inventory
         private readonly List<GameObject> lying = new();
         private readonly List<Flight> flights = new();
         private readonly List<GameObject> gone = new();
-        private Transform mouth;
         private Transform head;
         private float nextScan;
         private float nextStart;
 
-        /// <summary>Candies flying into the mouth right now.</summary>
+        /// <summary>Candies flying to the player's head right now.</summary>
         public static int Flying => instance != null ? instance.flights.Count : 0;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -97,7 +98,7 @@ namespace Game.Inventory
 
         /// <summary>
         /// Candies within 'radius' of 'near' that the helmet would still eat: lying about, in nobody's hand (the ones
-        /// flying to the mouth are counted by Flying).
+        /// flying to the head are counted by Flying).
         /// </summary>
         public static int LyingAround(Vector3 near, float radius)
         {
@@ -219,7 +220,7 @@ namespace Game.Inventory
                 body.interpolation = RigidbodyInterpolation.None;
             }
 
-            float distance = Vector3.Distance(candy.transform.position, MouthPoint());
+            float distance = Vector3.Distance(candy.transform.position, HeadTop());
             flights.Add(new Flight
             {
                 candy = candy,
@@ -236,19 +237,23 @@ namespace Game.Inventory
         private bool Fly(Flight flight, float now)
         {
             if (flight.candy == null) return true;
-            var target = MouthPoint();
+            var target = HeadTop();
             if (flight.eaten)
             {
-                // Its eat state shrinks it away (and destroys it); it stays at the mouth meanwhile.
+                // Its eat state shrinks it away (and destroys it); it stays on top of the head meanwhile.
                 flight.candy.transform.position = target;
                 return now - flight.eatenAt > 1f;
             }
 
             float t = Mathf.Clamp01((now - flight.start) / flight.seconds);
-            // Slow off the ground, faster and faster into the mouth, over a little arc.
+            // Slow off the ground, faster and faster, up over the player's head and down into the top of it: the curve
+            // bends round a point high above the head (on the candy's side), so it never comes at the face.
             float k = t * t * (3f - 2f * t) * 0.35f + t * t * 0.65f;
-            var straight = Vector3.LerpUnclamped(flight.from, target, k);
-            flight.candy.transform.position = straight + Vector3.up * (flight.arc * 4f * k * (1f - k));
+            var back = flight.from - target;
+            back.y = 0f;
+            var high = target + Vector3.up * Mathf.Min(0.5f + flight.arc * 0.25f, 0.8f) + back * 0.35f;
+            float u = 1f - k;
+            flight.candy.transform.position = flight.from * (u * u) + high * (2f * u * k) + target * (k * k);
             flight.candy.transform.Rotate(flight.spin * Time.deltaTime, Space.World);
             if (t < 1f && (target - flight.candy.transform.position).sqrMagnitude > 0.0225f) return false;
 
@@ -303,16 +308,14 @@ namespace Game.Inventory
             return null;
         }
 
-        private Vector3 MouthPoint()
+        // The top of the player's head, where the candies drop in.
+        private Vector3 HeadTop()
         {
-            if (mouth == null)
-            {
-                var found = GameObject.FindWithTag(MouthTag);
-                if (found != null) mouth = found.transform;
-            }
-            if (mouth != null) return mouth.position;
             var eyes = Head();
-            return eyes != null ? eyes.TransformPoint(MouthOffset) : transform.position;
+            if (eyes == null) return transform.position;
+            var forward = Vector3.ProjectOnPlane(eyes.forward, Vector3.up);
+            forward = forward.sqrMagnitude > 0.0001f ? forward.normalized : Vector3.zero;
+            return eyes.position + Vector3.up * HeadTopUp - forward * HeadTopBack;
         }
 
         private Transform Head()

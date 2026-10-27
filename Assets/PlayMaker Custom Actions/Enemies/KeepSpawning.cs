@@ -39,7 +39,8 @@ namespace HutongGames.PlayMaker.Actions
                  "killed or gone. Empty: only Stop When stops it.")]
         public FsmGameObject[] untilGone;
 
-        [Tooltip("With Until Gone set: stops if none of them has shown up after this many seconds.")]
+        [Tooltip("With Until Gone set: stops if none of them has shown up after this many seconds (it keeps waiting " +
+                 "while a barrel boss is still on its way: Spawn From Barrels with Boss Last).")]
         public FsmFloat bossWait;
 
         [UIHint(UIHint.Variable)]
@@ -131,7 +132,8 @@ namespace HutongGames.PlayMaker.Actions
             return BossGone();
         }
 
-        // A boss that was alive is gone (fewer alive than the most seen), or none came in time.
+        // A boss that was alive is gone (fewer alive than the most seen), or none came in time. A barrel boss still on its
+        // way (it waits for its swarm to thin out, then warns) is coming: no giving up on it.
         private bool BossGone()
         {
             if (untilGone == null || untilGone.Length == 0 || Time.time < nextBossCheck) return false;
@@ -139,7 +141,7 @@ namespace HutongGames.PlayMaker.Actions
             int alive = AliveBosses();
             if (alive < bossesSeen) return true;
             bossesSeen = alive;
-            return alive == 0 && Time.time - startedAt >= bossWait.Value;
+            return alive == 0 && Time.time - startedAt >= bossWait.Value && !Game.Enemies.BarrelBossCaller.AnyCalling;
         }
 
         private int AliveBosses()

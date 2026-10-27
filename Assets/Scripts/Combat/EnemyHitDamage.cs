@@ -285,7 +285,7 @@ namespace Game.Combat
                 power /= strayToughness;
                 stray = true;
             }
-            var hit = Taken(Settings.Evaluate(power, WeaponPower.DamageOf(collision)));
+            var hit = Taken(Settings.Evaluate(power, WeaponPower.DamageOf(collision)), byPlayer);
             LastHit = hit;
 
             if (hit.Damage <= 0f)
@@ -328,9 +328,13 @@ namespace Game.Combat
             AnyHit?.Invoke(this, hit);
         }
 
-        // The hit's damage times Damage Taken.
-        private HitResult Taken(HitResult hit) =>
-            damageTaken == 1f || hit.Damage <= 0f ? hit : new HitResult(hit.Power, hit.Damage * damageTaken, hit.IsBig);
+        // The hit's damage times Damage Taken, and for the player's own hits times Hot Hands' damage scale (overheated
+        // hands hit harder).
+        private HitResult Taken(HitResult hit, bool byPlayer)
+        {
+            float scale = damageTaken * (byPlayer ? HotHands.DamageScale : 1f);
+            return scale == 1f || hit.Damage <= 0f ? hit : new HitResult(hit.Power, hit.Damage * scale, hit.IsBig);
+        }
 
         // In its face: the front third of its body, from its middle up (small bugs' head bones sit mid-body, and a throw
         // at the face lands on their front legs).
@@ -424,7 +428,7 @@ namespace Game.Combat
         {
             if (health == null || dead || furniture) return false;
 
-            var hit = Taken(Settings.Evaluate(power / toughness, damageScale));
+            var hit = Taken(Settings.Evaluate(power / toughness, damageScale), true);
             bool hurt = hit.Damage > 0f;
             if (hurt)
             {

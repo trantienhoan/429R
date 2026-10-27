@@ -14,6 +14,9 @@ The boosts are lost when the run ends.
 | Candy_1, Candy_2, Candy_6, Candy_7 | Toughness points | +0.5 point | +10 points |
 | Candy_8 | Punch damage (Fist Size's punch damage per point) | +0.5 point | +10 points |
 
+- 2026-10-27: past +5 on a stat, each candy adds only +0.1 to it (Player Level: Candy Full Rate Points 5, Candy Slow
+  Points 0.1). +10 takes 10 candies of that stat, then 50 more.
+
 - Candy points stack on top of the player's level-up points and work like them (same per-point values on Player Level),
   including the game's existing floors and caps (damage never below 10%, Max Throw Scale).
 - Candy 8 adds punch damage only: no bigger fist, no new punches.
