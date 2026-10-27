@@ -31,7 +31,7 @@ namespace Game.EditorTools
         private const string Sfx = "Assets/Audio/SFX/";
         private const string ShortcutEvent = "DOOR_SHORTCUT";
         private const string ShortcutState = "Door Shortcut";
-        private const float DoorHealth = 150f;
+        private const float DoorHealth = 75f; // halved for whole-number damage (2026-10-27)
 
         [MenuItem("Tools/429 Game/Rooms/Set Up Bedroom Shortcut Door")]
         public static void SetUp()

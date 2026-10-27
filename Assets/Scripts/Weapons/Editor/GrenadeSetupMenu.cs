@@ -33,7 +33,8 @@ namespace Game.EditorTools
         // first step already reaches well past a plain throw's 0.4 m.
         private static readonly Vector2[] BottleCharge = { new(1f, 0.6f), new(2f, 1f), new(2.5f, 1.25f), new(3f, 1.5f) };
         // A charged bottle's damage: at the first step of the charge, and at the last (always more than a plain throw).
-        private static readonly Vector2 BottleChargeDamage = new(4f, 8f);
+        // Blast damage halved for whole-number damage (user, 2026-10-27).
+        private static readonly Vector2 BottleChargeDamage = new(2f, 3f); // bottles were too strong (user, 2026-10-27)
 
         // Each kind of exploding throw at 1 Throw Power point (each point after it: +0.08 m reach, +10% damage). Books
         // are everywhere: a small splash. Bottles a bit more (shaken, much more). A flip-flop is a weapon given up: the
@@ -42,9 +43,9 @@ namespace Game.EditorTools
         // others a little smaller.
         private static readonly (string name, string folder, float radius, float damage, float push, float effectSize)[] Blasts =
         {
-            ("Bedroom_Book_", "Assets/Prefabs/Items/Breakable", 0.3f, 2.4f, 3.2f, 0.55f),
-            ("Empty_Bottle_", "Assets/Prefabs/Items/Breakable", 0.4f, 3f, 4f, 0.65f),
-            ("Flip_Flop", "Assets/Prefabs/Weapon", 0.5f, 4f, 4f, 0.7f),
+            ("Bedroom_Book_", "Assets/Prefabs/Items/Breakable", 0.3f, 1f, 3.2f, 0.55f),
+            ("Empty_Bottle_", "Assets/Prefabs/Items/Breakable", 0.4f, 1f, 4f, 0.65f),
+            ("Flip_Flop", "Assets/Prefabs/Weapon", 0.5f, 2f, 4f, 0.7f),
         };
 
         private static readonly string[] Bottles =
@@ -273,7 +274,7 @@ namespace Game.EditorTools
 
         /// <summary>
         /// Makes the books (Bedroom_Book_*) small grenades: thrown hard at something (8 m/s, like a flip-flop) they blow
-        /// up (the book's numbers in Blasts: 0.3 m reach, 2.4 damage, 3.2 push, effects at 0.55; sound at 0.8) and
+        /// up (the book's numbers in Blasts: 0.3 m reach, 1 damage, 3.2 push, effects at 0.55; sound at 0.8) and
         /// break into their pages. Running it again sets them to these numbers again.
         /// </summary>
         [MenuItem("Tools/429 Game/Weapons/Make Books Explode")]
@@ -300,7 +301,7 @@ namespace Game.EditorTools
                     var grenade = root.GetComponent<Grenade>();
                     if (grenade == null) grenade = root.AddComponent<Grenade>();
                     var serialized = new SerializedObject(grenade);
-                    serialized.FindProperty("minThrowSpeed").floatValue = 8f;
+                    serialized.FindProperty("hardThrowHandSpeed").floatValue = 3.5f;
                     serialized.FindProperty("radius").floatValue = book.radius;
                     serialized.FindProperty("damage").floatValue = book.damage;
                     serialized.FindProperty("push").floatValue = book.push;

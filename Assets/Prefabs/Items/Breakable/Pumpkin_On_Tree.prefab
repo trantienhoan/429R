@@ -5357,8 +5357,8 @@ GameObject:
   - component: {fileID: 5446972659357586647}
   - component: {fileID: 4464856856857844396}
   - component: {fileID: 6731259867927847557}
-  - component: {fileID: 5716101791975142823}
   - component: {fileID: 427083803342577044}
+  - component: {fileID: 4579088779525671740}
   m_Layer: 0
   m_Name: Pumpkin_On_Tree
   m_TagString: Weapon
@@ -5648,22 +5648,13 @@ MonoBehaviour:
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
-      transitions:
-      - fsmEvent:
-          name: next
-          isSystemEvent: 0
-          isGlobal: 1
-        toState: Check force
-        linkStyle: 0
-        linkConstraint: 0
-        linkTarget: 0
-        colorIndex: 0
+      transitions: []
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.CollisionEvent
         customNames:
         - 
-        actionEnabled: 01
+        actionEnabled: 00
         actionIsOpen: 01
         actionStartIndex: 00000000
         actionHashCodes: beb33100
@@ -5908,7 +5899,7 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 010101010101
+        actionEnabled: 000000010101
         actionIsOpen: 010000000101
         actionStartIndex: 0000000005000000090000000e0000001300000018000000
         actionHashCodes: 876045022a6e8a0087604502b2cf10005978870081294e04
@@ -6025,8 +6016,8 @@ MonoBehaviour:
           stringValues: []
           vector4Values: []
           objectReferences:
-          - {fileID: 8300000, guid: 91ee0fb710467fa47b637aeee96a5649, type: 3}
-          - {fileID: 8300000, guid: 0bab81a9dcd291a4890520fb3dbc2625, type: 3}
+          - {fileID: 8300000, guid: be9beca93dc0f514c8220a12fd387f63, type: 3}
+          - {fileID: 8300000, guid: 1ab0a3a1ae573ae4a83eec9c81323797, type: 3}
         fsmEnumParams: []
         fsmFloatParams:
         - useVariable: 1
@@ -6274,7 +6265,31 @@ MonoBehaviour:
     - name: ignore
       isSystemEvent: 0
       isGlobal: 0
-    globalTransitions: []
+    - name: Damage
+      isSystemEvent: 0
+      isGlobal: 1
+    - name: ShakeSmall
+      isSystemEvent: 0
+      isGlobal: 1
+    globalTransitions:
+    - fsmEvent:
+        name: Damage
+        isSystemEvent: 0
+        isGlobal: 1
+      toState: Deal 1 damage
+      linkStyle: 0
+      linkConstraint: 0
+      linkTarget: 0
+      colorIndex: 0
+    - fsmEvent:
+        name: ShakeSmall
+        isSystemEvent: 0
+        isGlobal: 1
+      toState: shake
+      linkStyle: 0
+      linkConstraint: 0
+      linkTarget: 0
+      colorIndex: 0
     variables:
       floatVariables:
       - useVariable: 1
@@ -7111,7 +7126,7 @@ MonoBehaviour:
         tooltip: 
         showInInspector: 1
         networkSync: 0
-        value: 4
+        value: 3
       intVariables: []
       boolVariables: []
       stringVariables: []
@@ -7319,7 +7334,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.WeaponPower
   power: 1
-  damage: 1.2
+  damage: 1
+  thrownBonus: 1
 --- !u!114 &6731259867927847557
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7333,31 +7349,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Leveling.ExpWhenBroken
   exp: 0.25
-  healthFsm: Health
-  healthVariable: health
---- !u!114 &5716101791975142823
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8690403555129543112}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3c028d9ac2e36c0479b74a91d0451de1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Weapons.BreakOnThrownHit
-  minSpeed: 3
-  splatRadius: 1.6
-  splatStunSeconds: 0.8
-  splatPush: {x: 0.5, y: 0.4}
-  maxSplatted: 6
-  splatEffects:
-  - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}
-  - {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac, type: 3}
-  splatEffectSize: 0.8
-  splatSound: {fileID: 8300000, guid: 9fa3ff2a48ede5a43bc3e1b550e1dc2d, type: 3}
-  splatVolume: 0.9
   healthFsm: Health
   healthVariable: health
 --- !u!114 &427083803342577044
@@ -7379,3 +7370,37 @@ MonoBehaviour:
   chance: 0.35
   maxAtOnce: 1
   distance: {x: 3, y: 12}
+--- !u!114 &4579088779525671740
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8690403555129543112}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3fa9bbce902d9de4989faa4be958db6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.EnemyHitDamage
+  settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
+  toughness: 2
+  hitCooldown: 0.3
+  knockBack: 0
+  knockBackDistance: 2
+  knockBackTime: 0.45
+  knockBackHop: 0.25
+  knockBackStun: 0.3
+  strayToughness: 1
+  hitEffectSize: 1
+  hideHitEffect: 1
+  exp: 0
+  expOrbs: 0
+  healthFsm: Health
+  healthVariable: health
+  hitEvent: Damage
+  weakHitEvent: ShakeSmall
+  oldDamageFsm: 
+  furniture: 1
+  bumpShare: 1
+  wieldedShare: 1
+  settleSeconds: 0

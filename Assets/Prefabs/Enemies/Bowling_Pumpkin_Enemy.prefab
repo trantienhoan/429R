@@ -264,6 +264,8 @@ MonoBehaviour:
   rollWarning: {fileID: 8300000, guid: c89ca9af279ae154ca895c0ef6a0057a, type: 3}
   rollWarningVolume: 1
   rollSpeed: 4.55
+  rollAcceleration: 3
+  maxRollSpeed: 12
   maxRoll: 15
   hitRadius: 0.3
   rollSound: {fileID: 8300000, guid: abd37bb9b11220447b30377203be3076, type: 3}
@@ -271,17 +273,21 @@ MonoBehaviour:
     type: 3}
   trailEvery: 0.6
   trailSize: 0.3
-  blastRadius: 2
-  blastDamage: 3
-  blastPush: 6
+  smashReach: 0.35
+  smashDamage: 2
+  pushSpeed: 8
+  blastRadius: 1.4
+  blastDamage: 1
+  blastPush: 10
   blastEffects:
   - {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
   - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}
   - {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac, type: 3}
-  blastEffectSize: 1.5
+  blastEffectSize: 1
   blastSound: {fileID: 8300000, guid: 0c38739de2059ac40ab5b60a42fd1c5f, type: 3}
   playerEvent: DamageHeavy
-  playerLaunch: {x: 1.5, y: 3}
+  playerDamageShare: 0.5
+  playerLaunch: {x: 2, y: 5}
   setOffByHit: 3
 --- !u!1001 &8207039424861612725
 PrefabInstance:

@@ -22,7 +22,7 @@ namespace Game.Bonus
         [SerializeField] private float size = 2f;
         [Tooltip("Its health.")]
         [Min(1f)]
-        [SerializeField] private float health = 120f;
+        [SerializeField] private float health = 60f;
         [Tooltip("Candies it drops when it breaks. (Its EXP is on pumpkin_Start > Enemy Hit Damage > Exp.)")]
         [Min(0)]
         [SerializeField] private int candies = 5;

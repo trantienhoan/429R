@@ -9,9 +9,10 @@ using FsmFloat = HutongGames.PlayMaker.FsmFloat;
 namespace Game.Combat
 {
     /// <summary>
-    /// Turns hits into damage for an enemy made in PlayMaker. Hit power = hit speed x the weapon's Power / Toughness:
-    /// too weak does nothing (the enemy just flinches), a normal hit does 1-2 damage, a big hit 3-5 and knocks it back
-    /// (the numbers are in the Hit Settings asset), times the weapon's Damage (a hammer more, a thrown book less). It lowers the "health" variable of the enemy's Health FSM, which
+    /// Turns hits into damage for an enemy made in PlayMaker (or, with Furniture ticked, a breakable thing: furniture and
+    /// props). Hit power = hit speed x the weapon's Power / Toughness: too weak does nothing (the enemy just flinches), a
+    /// normal hit does the weapon's Damage (a punch 1, a hammer 2), a hard hit twice that and knocks it back (Hit
+    /// Settings), always whole numbers. It lowers the "health" variable of the enemy's Health FSM, which
     /// already watches it, sends "Damage" (or "ShakeSmall" for weak hits) so the enemy's hit reactions play, and
     /// switches off the enemy's old "Damage" FSM so hits aren't counted twice. Where a hit of the player's hurts an enemy,
     /// a small pop shows (set in the Hit Settings asset; a big hit gets the bigger one).
@@ -92,7 +93,7 @@ namespace Game.Combat
         [SerializeField] private string oldDamageFsm = "Damage";
 
         [Header("Furniture")]
-        [Tooltip("A piece of furniture (or another breakable thing), not an enemy: only the player's hits count in full " +
+        [Tooltip("A piece of furniture or a prop (a book, a pumpkin, a weapon), not an enemy: only the player's hits count in full " +
                  "(a fist, or a thing they hold or just threw); falls, tumbles and things lying around that slide or drop " +
                  "into it count only Bump Share as hard. A launched player can land on it, the level-up burst pushes it like " +
                  "any loose thing, and it never gives EXP. Tools > 429 Game > Rooms > Set Up Breakable Furniture sets it.")]
@@ -135,6 +136,8 @@ namespace Game.Combat
         // this high up it (share of its height).
         private const float FaceFront = 0.35f;
         private const float FaceUp = 0.4f;
+        // A bug's own knock-back (Knock Back Distance), what a combo punch's distance is measured against.
+        private const float BugKnockBack = 1.5f;
 
         /// <summary>Raised after every hit that hurts an enemy: the enemy, and what the hit did.</summary>
         public static event Action<EnemyHitDamage, HitResult> AnyHit;
@@ -285,8 +288,17 @@ namespace Game.Combat
                 power /= strayToughness;
                 stray = true;
             }
-            var hit = Taken(Settings.Evaluate(power, WeaponPower.DamageOf(collision)), byPlayer);
+            // A thrown thing in the hit (what hit it, or this thing itself flying from a throw): a hard one counts the most.
+            bool thrown = IsThrown(collision) || (furniture && WeaponPower.IsThrown(this));
+            // Throw Power makes a throw count as hard sooner (a tree pumpkin bursts, a hit counts three times).
+            if (thrown) power /= Game.Leveling.PlayerLevel.HardThrowShare;
+            // A flying jab: the skill move, its hard hit one more (not twice).
+            bool flyingFist = Fist.IsFlyingFist(collision.rigidbody);
+            var hit = Taken(Settings.Evaluate(power, WeaponPower.DamageOf(collision), thrown, flyingFist), byPlayer);
             LastHit = hit;
+            // Punches are the last resort (user, 2026-10-27): little damage, but every one shoves the enemy back and stuns
+            // it; a flying jab shoves it much farther.
+            bool punch = byPlayer && !furniture && knockBack && Fist.IsFistBall(collision.rigidbody);
 
             if (hit.Damage <= 0f)
             {
@@ -295,6 +307,7 @@ namespace Game.Combat
                     nextFlinch = Time.time + FlinchInterval;
                     Send(weakHitEvent);
                     WeakHit?.Invoke(this);
+                    if (punch) PunchBack(Settings.PunchKnock(false, false), true);
                 }
                 return;
             }
@@ -323,17 +336,33 @@ namespace Game.Combat
             var at = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
             bool headshot = !furniture && !stray && Settings.Headshots && IsThrown(collision) && (IsHead(at) || IsFace(at));
             if (headshot) Headshot();
+            // Any punch that hurt knocks it back (a hard one farther), for longer.
+            else if (punch) PunchBack(Settings.PunchKnock(true, hit.IsBig, flyingFist), !flyingFist);
             // A big killing blow still knocks the body back: Knockback moves the agent itself, which works while it's held.
             else if (hit.IsBig && knockBack && !stray) KnockBackFromPlayer();
             AnyHit?.Invoke(this, hit);
         }
 
-        // The hit's damage times Damage Taken, and for the player's own hits times Hot Hands' damage scale (overheated
-        // hands hit harder).
+        // A punch's knock-back (Hit Settings' Punch Knock: the distance and hop as shares, the stun in seconds). Combo: the
+        // fist's own punch, its distance a share of how far a flying jab reaches now (Fist.JabReach), so the jab that
+        // follows still lands; an enemy heavier than a bug (a smaller Knock Back Distance, e.g. a boss) goes that much less.
+        private void PunchBack(Vector3 knock, bool combo)
+        {
+            if (knock.x <= 0f) return;
+            scaledUntil = Time.time + 0.1f;
+            scaledDistance = combo ? knock.x * Fist.JabReach / BugKnockBack : knock.x;
+            scaledHop = knock.y;
+            scaledStun = Mathf.Max(knockBackStun, knock.z);
+            KnockBackFromPlayer();
+        }
+
+        // The hit's damage times Damage Taken, and for the player's own hits plus Hot Hands' bonus (overheated hands hit
+        // harder). Whole numbers.
         private HitResult Taken(HitResult hit, bool byPlayer)
         {
-            float scale = damageTaken * (byPlayer ? HotHands.DamageScale : 1f);
-            return scale == 1f || hit.Damage <= 0f ? hit : new HitResult(hit.Power, hit.Damage * scale, hit.IsBig);
+            if (hit.Damage <= 0f) return hit;
+            float damage = Mathf.Max(1f, Mathf.Round(hit.Damage * damageTaken) + (byPlayer ? HotHands.DamageBonus : 0));
+            return damage == hit.Damage ? hit : new HitResult(hit.Power, damage, hit.IsBig);
         }
 
         // In its face: the front third of its body, from its middle up (small bugs' head bones sit mid-body, and a throw
@@ -385,6 +414,7 @@ namespace Game.Combat
             if (dead) return;
             dead = true;
             if (exp > 0 && !noReward) Game.Leveling.PlayerLevel.AddExp(exp);
+            Game.VFX.StunStars.Hide(transform);
             Died?.Invoke(this);
         }
 
@@ -543,6 +573,45 @@ namespace Game.Combat
             if (knockback == null && !TryGetComponent(out knockback)) knockback = gameObject.AddComponent<Knockback>();
             knockback.Push(eyes.transform.position, knockBackDistance * (scaled ? scaledDistance : 1f), knockBackTime,
                 knockBackHop * (scaled ? scaledHop : 1f), stun);
+            // A mini boss knocked back and stunned sees stars until it's back on its feet.
+            if (!dead && brain != null && brain.IsBoss) ShowStunned(knockBackTime + stun);
+        }
+
+        /// <summary>
+        /// Stars circling over its head for this many seconds (Hit Settings' Stun Stars), e.g. a mini boss knocked back and
+        /// stunned, or the pumpkin boss dizzy. Head: the bone to follow (left empty: its "Head" child, or itself). Lift and
+        /// Radius, in metres: how far above the head and how wide (below 0: worked out from its body).
+        /// </summary>
+        public void ShowStunned(float seconds, Transform head = null, float lift = -1f, float radius = -1f)
+        {
+            if (lift >= 0f && radius > 0f && head != null)
+            {
+                if (Settings.StunStars != null && seconds > 0f && !dead)
+                    Game.VFX.StunStars.Show(Settings.StunStars, transform, head, lift, radius * Settings.StunStarsSize, seconds);
+                return;
+            }
+            var prefab = Settings.StunStars;
+            if (prefab == null || seconds <= 0f || dead) return;
+            if (head == null)
+            {
+                if (!headSearched)
+                {
+                    headSearched = true;
+                    this.head = FindHead();
+                }
+                head = this.head != null ? this.head : transform;
+            }
+            // On its head (user, 2026-10-27): centred over the head bone, a ring as wide as the head (from its body's width
+            // side to side), floating just over it. Without a head bone: over the top of its body.
+            float width = 0.3f, top = transform.position.y;
+            if (TryGetBodyBounds(out var body))
+            {
+                width = body.extents.x;
+                top = body.max.y;
+            }
+            float ring = Mathf.Clamp(width * 0.45f, 0.14f, 0.45f) * Settings.StunStarsSize;
+            float over = head != transform ? ring * 0.9f : Mathf.Max(0f, top - head.position.y) + ring * 0.35f;
+            Game.VFX.StunStars.Show(prefab, transform, head, over, ring, seconds);
         }
 
         private void Send(string eventName)

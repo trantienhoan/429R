@@ -213,6 +213,12 @@ namespace Game.Combat
         [Tooltip("Size of that effect, compared with its prefab.")]
         [Min(0.01f)]
         [SerializeField] private float goodPunchEffectSize = 0.5f;
+        [Tooltip("Played where a punch (the fist or a flying one) lands on anything, e.g. fist_bump_punch. Empty: none.")]
+        [SerializeField] private AudioClip punchHitSound;
+        [Tooltip("Its loudness: x for the slowest punch that counts, y from Jab Speed on.")]
+        [SerializeField] private Vector2 punchHitVolume = new(0.45f, 0.9f);
+        [Tooltip("Its pitch, at random between these, so punches don't all sound the same.")]
+        [SerializeField] private Vector2 punchHitPitch = new(0.9f, 1.12f);
 
         [Header("Elon Boong (a smoked boong's buff, see Player Buffs) and Explosive Fist (a bonus stat)")]
         [Tooltip("While the Elon Boong buff is on, or with Explosive Fist points, every punch that hits something explodes " +
@@ -339,6 +345,11 @@ namespace Game.Combat
         private float nextFly;
         private float nextPuff;
         private float nextBoongBlast;
+        // The punch hit sound: where it plays from (made on first use), and when it may play again (a hit can be
+        // reported several times in one step).
+        private AudioSource punchSpeaker;
+        private float nextPunchSound;
+        private const float PunchSoundEvery = 0.08f;
         // The Elon Boong's explosion effects: Boong Blast Effects, or the Good Punch Effect when that's empty.
         private GameObject[] boongEffects;
         // The Elon Boong reach: how far out from the knuckles the ball is now (world space, moving out at Reach Out
@@ -432,6 +443,28 @@ namespace Game.Combat
             return thing != null && thing.TryGetComponent<Punch>(out _);
         }
 
+        /// <summary>
+        /// How far a good flying jab flies on from the knuckles right now, in metres (Fist Size and the buffs included; the
+        /// first jab's reach before jabs are unlocked). A punch knocks an enemy back a share of this, so the jab after it
+        /// still reaches it: the combo.
+        /// </summary>
+        public static float JabReach
+        {
+            get
+            {
+                var fist = fists.Count > 0 ? fists[0] : null;
+                if (fist == null) return 0.75f;
+                return Mathf.Max(fist.jabReach.x, fist.jabReach.y) *
+                       Mathf.Lerp(1f, fist.maxReachScale, Game.Leveling.PlayerLevel.PunchReachGrowth) + Game.Leveling.PlayerBuffs.FlyReach;
+            }
+        }
+
+        /// <summary>Whether this is a flying punch (a jab carried on ahead of the fist), not the fist's own ball.</summary>
+        public static bool IsFlyingFist(Component thing)
+        {
+            return thing != null && thing.TryGetComponent<FlyingFist>(out _);
+        }
+
         /// <summary>The hand's model (its skin), once the fist has found it.</summary>
         public SkinnedMeshRenderer HandSkin => handSkin;
 
@@ -514,6 +547,7 @@ namespace Game.Combat
         private void OnDestroy()
         {
             if (body != null) Destroy(body.gameObject);
+            if (punchSpeaker != null) Destroy(punchSpeaker.gameObject);
             foreach (var flyer in flyers)
             {
                 if (flyer != null) Destroy(flyer.gameObject);
@@ -635,6 +669,7 @@ namespace Game.Combat
                 // its speed).
                 punchSpeed *= LandedPower(move);
             }
+            PlayPunchHit(collision, punchSpeed);
             bool stroke = flying || stroking || Time.time < strokeMoveUntil;
             Landed?.Invoke(new PunchLanded
             {
@@ -679,6 +714,25 @@ namespace Game.Combat
             HitBuzz.Watch(collision, hitter);
         }
 
+        // A thump where the punch landed (Punch Hit Sound), louder the faster it was; not when the two fists meet (the
+        // Fist Bump has its own).
+        private void PlayPunchHit(Collision collision, float punchSpeed)
+        {
+            if (punchHitSound == null || Time.time < nextPunchSound || IsFistBall(collision.rigidbody)) return;
+            nextPunchSound = Time.time + PunchSoundEvery;
+            if (punchSpeaker == null)
+            {
+                var speaker = new GameObject($"{name} Punch Hit Sound");
+                punchSpeaker = speaker.AddComponent<AudioSource>();
+                punchSpeaker.playOnAwake = false;
+                punchSpeaker.spatialBlend = 1f;
+            }
+            punchSpeaker.transform.position = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
+            punchSpeaker.pitch = Random.Range(punchHitPitch.x, punchHitPitch.y);
+            float loud = Mathf.InverseLerp(MinPunchSpeed, jabSpeed, punchSpeed);
+            punchSpeaker.PlayOneShot(punchHitSound, Mathf.Lerp(punchHitVolume.x, punchHitVolume.y, loud));
+        }
+
         // PlayMaker breakables measure a hit by its speed alone, set for swung weapons, so a punch only ever shook
         // them. A punch counts as Pumpkin Force times faster: the force is put in and the check done again (Play Maker
         // Hits; also when the FSM heard the collision first and turned it down by its speed).
@@ -688,9 +742,8 @@ namespace Game.Combat
             var hit = collision.rigidbody != null ? collision.rigidbody.gameObject : collision.gameObject;
             // Enemy Hit Damage already counts the punch (by its speed and the fist's power): not twice.
             if (hit.TryGetComponent<EnemyHitDamage>(out _)) return;
-            // The Elon Boong buff's double damage and Fist Size's extra damage count here too.
-            PlayMakerHits.Judge(hit, collision, punchSpeed * pumpkinForce *
-                                                Game.Leveling.PlayerBuffs.PunchDamage * Game.Leveling.PlayerLevel.PunchDamageScale);
+            // The Elon Boong buff's double damage counts here too.
+            PlayMakerHits.Judge(hit, collision, punchSpeed * pumpkinForce * Game.Leveling.PlayerBuffs.PunchDamage);
         }
 
         // Sends a loose thing off the way the punch was going, as a throw would: the fist's ball alone is light and
@@ -735,7 +788,7 @@ namespace Game.Combat
             if (power <= 0 || Time.time < nextBoongBlast) return false;
             nextBoongBlast = Time.time + boongBlastEvery;
             var at = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
-            Game.Weapons.Blast.Explode(at, boongBlastRadius, boongBlastDamage * power * HotHands.DamageScale, boongBlastPush, hitter, boongEffects,
+            Game.Weapons.Blast.Explode(at, boongBlastRadius, HotHands.Boost(boongBlastDamage * power), boongBlastPush, hitter, boongEffects,
                 boongBlastSound, boongBlastVolume, null, false, boongBlastEffectSize);
             return true;
         }

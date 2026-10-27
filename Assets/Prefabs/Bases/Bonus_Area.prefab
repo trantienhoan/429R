@@ -235,15 +235,19 @@ MonoBehaviour:
   growSeconds: 1.2
   launchHeight: 1.2
   launchMargin: 1
+  giantPushReach: 2
+  giantPush: {x: 0.7, y: 2.5}
   giant: {fileID: 7751877861004765832, guid: 11e48e2876d24c4438d02f7350b444db, type: 3}
   smaller: {fileID: 7943707614584160551, guid: d2351c656a2a8f04888d0146c0df7b1e, type: 3}
   startPumpkin: {fileID: 4871850987860103417, guid: 477e502e5e0f1ad4d84839fd93efc08d,
     type: 3}
   giantTimes: 4
   count: 14
-  shrinkPerPumpkin: 0.07
-  giantHealth: 60
+  shrinkEach: 0.1
+  giantHealth: 30
   tougherPerPumpkin: 0.2
+  giantJiggle: 1.6
+  giantExtraJiggle: 1.5
   stifferPerPumpkin: 0.15
   candiesEach: 3
   lastCandies: 15
@@ -269,12 +273,22 @@ MonoBehaviour:
   tickVolume: 0.6
   helmetSeconds: 60
   helmetSound: {fileID: 8300000, guid: 580b8b5019ed5124bb152631a92150a3, type: 3}
-  helmetText: CANDY HELMET!
   font: {fileID: 11400000, guid: d7a5e2d89139b2940a46b4a7c3289c9e, type: 2}
   signAbove: 0.9
   signLowest: 2.6
   signScale: 0.007
   candyWaitSeconds: 8
-  sinkSeconds: 2
   puffEffect: {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac,
     type: 3}
+  boardSeconds: 12
+  winFireworks: {fileID: 0}
+  fireworkScale: 1
+  fireworkSpread: {x: 2.5, y: 2.2}
+  blastEffects: []
+  blastEffectSize: 1.2
+  blastSound: {fileID: 0}
+  blastVolume: 1
+  blastReach: 6
+  blastHeight: 1.6
+  blastDistance: 4
+  blastPush: 7

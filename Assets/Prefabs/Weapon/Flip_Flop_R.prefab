@@ -5267,6 +5267,7 @@ GameObject:
   - component: {fileID: 6252974172835697457}
   - component: {fileID: 580887686428388821}
   - component: {fileID: 229750604706596611}
+  - component: {fileID: 7083012721412951929}
   m_Layer: 0
   m_Name: Flip_Flop_R
   m_TagString: Weapon
@@ -5447,22 +5448,13 @@ MonoBehaviour:
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
-      transitions:
-      - fsmEvent:
-          name: next
-          isSystemEvent: 0
-          isGlobal: 1
-        toState: Check force
-        linkStyle: 0
-        linkConstraint: 0
-        linkTarget: 0
-        colorIndex: 0
+      transitions: []
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.CollisionEvent
         customNames:
         - 
-        actionEnabled: 01
+        actionEnabled: 00
         actionIsOpen: 01
         actionStartIndex: 00000000
         actionHashCodes: beb33100
@@ -5666,7 +5658,7 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 0101010101
+        actionEnabled: 0000000101
         actionIsOpen: 0000000101
         actionStartIndex: 0000000005000000090000000e00000013000000
         actionHashCodes: 876045022a6e8a0087604502b2cf100048c01101
@@ -5825,7 +5817,19 @@ MonoBehaviour:
     - name: FINISHED
       isSystemEvent: 1
       isGlobal: 0
-    globalTransitions: []
+    - name: Damage
+      isSystemEvent: 0
+      isGlobal: 1
+    globalTransitions:
+    - fsmEvent:
+        name: Damage
+        isSystemEvent: 0
+        isGlobal: 1
+      toState: Deal 1 damage
+      linkStyle: 0
+      linkConstraint: 0
+      linkTarget: 0
+      colorIndex: 0
     variables:
       floatVariables:
       - useVariable: 1
@@ -6712,7 +6716,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Weapons.Grenade
   minThrowSpeed: 8
   radius: 0.5
-  damage: 4
+  damage: 2
   push: 4
   playerEvent: Damage
   breakApart: 0
@@ -6722,7 +6726,7 @@ MonoBehaviour:
   - {x: 2, y: 1}
   - {x: 2.5, y: 1.25}
   - {x: 3, y: 1.5}
-  chargeDamage: {x: 3, y: 8}
+  chargeDamage: {x: 2, y: 4}
   chargePush: {x: 4, y: 10}
   shakeStrength: 20
   inHandEvent: DamageHeavy
@@ -6767,6 +6771,40 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.WeaponPower
   power: 1.2
   damage: 1
+--- !u!114 &7083012721412951929
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4337052619155732277}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3fa9bbce902d9de4989faa4be958db6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.EnemyHitDamage
+  settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
+  toughness: 10
+  hitCooldown: 0.3
+  knockBack: 0
+  knockBackDistance: 2
+  knockBackTime: 0.45
+  knockBackHop: 0.25
+  knockBackStun: 0.3
+  strayToughness: 1
+  hitEffectSize: 1
+  hideHitEffect: 1
+  exp: 0
+  expOrbs: 0
+  healthFsm: Health
+  healthVariable: health
+  hitEvent: Damage
+  weakHitEvent: ShakeSmall
+  oldDamageFsm: 
+  furniture: 1
+  bumpShare: 1
+  wieldedShare: 1
+  settleSeconds: 0
 --- !u!1 &5853063292150961962
 GameObject:
   m_ObjectHideFlags: 0

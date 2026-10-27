@@ -25,9 +25,9 @@ namespace Game.Combat
         [Tooltip("How long the hands stay hot after the last kill, in seconds (each kill while hot starts it again).")]
         [Min(0.1f)]
         [SerializeField] private float keepSeconds = 3f;
-        [Tooltip("While hot, the damage the player deals is multiplied by this (1.5 = 50% more).")]
-        [Min(1f)]
-        [SerializeField] private float damageScale = 1.5f;
+        [Tooltip("While hot, every hit and blast of the player's does this much more damage (whole points: 1 = a punch 2).")]
+        [Min(0)]
+        [SerializeField] private int damageBonus = 1;
 
         [Header("Looks")]
         [Tooltip("The hands' glow while hot (bright: an HDR colour).")]
@@ -52,8 +52,11 @@ namespace Game.Combat
         /// <summary>The hands are hot now.</summary>
         public static bool Active => instance != null && instance.hot;
 
-        /// <summary>The player's damage is multiplied by this: Damage Scale while hot, else 1.</summary>
-        public static float DamageScale => Active ? instance.damageScale : 1f;
+        /// <summary>The player's hits and blasts do this much more damage: Damage Bonus while hot, else 0.</summary>
+        public static int DamageBonus => Active ? instance.damageBonus : 0;
+
+        /// <summary>A blast's damage with the Damage Bonus (a blast with no damage stays a push only).</summary>
+        public static float Boost(float damage) => damage > 0f ? damage + DamageBonus : damage;
 
         /// <summary>How hot the hands look now, 0 (cold) to 1 (overheated).</summary>
         public static float Heat => instance != null ? instance.heat : 0f;

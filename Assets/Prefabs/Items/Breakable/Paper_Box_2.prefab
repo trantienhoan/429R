@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 5419019432973716090}
   - component: {fileID: 6128300106284532410}
   - component: {fileID: 6899749273522936523}
+  - component: {fileID: 5406813230119669110}
   m_Layer: 0
   m_Name: Paper_Box_2
   m_TagString: Weapon
@@ -176,22 +177,13 @@ MonoBehaviour:
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
-      transitions:
-      - fsmEvent:
-          name: next
-          isSystemEvent: 0
-          isGlobal: 1
-        toState: Check force
-        linkStyle: 0
-        linkConstraint: 0
-        linkTarget: 0
-        colorIndex: 0
+      transitions: []
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.CollisionEvent
         customNames:
         - 
-        actionEnabled: 01
+        actionEnabled: 00
         actionIsOpen: 01
         actionStartIndex: 00000000
         actionHashCodes: beb33100
@@ -397,7 +389,7 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 010101010101
+        actionEnabled: 000000010101
         actionIsOpen: 010101010101
         actionStartIndex: 0000000005000000090000000e000000170000001c000000
         actionHashCodes: 876045022a6e8a0087604502bc338a035978870081294e04
@@ -660,7 +652,19 @@ MonoBehaviour:
     - name: Dead
       isSystemEvent: 0
       isGlobal: 1
-    globalTransitions: []
+    - name: Damage
+      isSystemEvent: 0
+      isGlobal: 1
+    globalTransitions:
+    - fsmEvent:
+        name: Damage
+        isSystemEvent: 0
+        isGlobal: 1
+      toState: Deal 1 damage
+      linkStyle: 0
+      linkConstraint: 0
+      linkTarget: 0
+      colorIndex: 0
     variables:
       floatVariables:
       - useVariable: 1
@@ -1584,7 +1588,41 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.WeaponPower
   power: 1
-  damage: 0.4
+  damage: 1
+--- !u!114 &5406813230119669110
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 936478556243301555}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3fa9bbce902d9de4989faa4be958db6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.EnemyHitDamage
+  settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
+  toughness: 2.3333333
+  hitCooldown: 0.3
+  knockBack: 0
+  knockBackDistance: 2
+  knockBackTime: 0.45
+  knockBackHop: 0.25
+  knockBackStun: 0.3
+  strayToughness: 1
+  hitEffectSize: 1
+  hideHitEffect: 1
+  exp: 0
+  expOrbs: 0
+  healthFsm: Health
+  healthVariable: health
+  hitEvent: Damage
+  weakHitEvent: ShakeSmall
+  oldDamageFsm: 
+  furniture: 1
+  bumpShare: 1
+  wieldedShare: 1
+  settleSeconds: 0
 --- !u!1 &1100433147235037478
 GameObject:
   m_ObjectHideFlags: 0

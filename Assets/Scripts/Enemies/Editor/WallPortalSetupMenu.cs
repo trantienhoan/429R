@@ -41,7 +41,7 @@ namespace Game.EditorTools
         private const string SmokeTexture = "Assets/Lana Studio/Hyper Casual FX/Textures/Dust01.png";
         private const string RingTexture = "Assets/Data/Effects/Textures/Seal_Ring.png";
         private const string SealTexture = "Assets/Data/Effects/Textures/Seal_Circle.png";
-        private const float WallHealth = 150f;
+        private const float WallHealth = 75f; // halved for whole-number damage (2026-10-27)
         // The brick wall sits at the end of a passage 1.6 m wide (room units; x1.5 in the Playroom): the circle on the
         // floor in front of it fills the passage.
         private const float Diameter = 1.5f;

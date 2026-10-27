@@ -14,9 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.HitSettings
   minHitPower: 3
   bigHitPower: 8
-  maxHitPower: 14
-  normalHitDamage: {x: 1, y: 2}
-  bigHitDamage: {x: 3, y: 5}
+  hardHitTimes: 2
+  hardThrowTimes: 3
+  healthHalved: 1
+  punchPush: {x: 0.55, y: 0.75}
+  punchHop: {x: 0.35, y: 0.5}
+  punchStun: {x: 0.7, y: 1}
+  weakPunchPush: 0.3
+  weakPunchStun: 0.25
+  flyingHardBonus: 1
+  flyingPush: {x: 1.6, y: 2.2}
+  flyingHop: {x: 0.8, y: 1.2}
+  flyingStun: {x: 1, y: 1.4}
   hitEffect: {fileID: 574279314376281928, guid: 4f6101e8a897c36498bd25a20e324fa9,
     type: 3}
   bigHitEffect: {fileID: 2368829095516144201, guid: 39c7955ad20a2fd4c9358d79f7941e50,
@@ -24,11 +33,12 @@ MonoBehaviour:
   effectMinDamage: 1
   effectOnlyPlayerHits: 1
   effectSize: {x: 0.8, y: 1.3}
+  stunStars: {fileID: 7677325272559620522, guid: 6d1846d9543c33b488672d5292c98e1b,
+    type: 3}
+  stunStarsSize: 1
   headshotStunSeconds: 1.2
   headshotPush: {x: 0.7, y: 0.8}
   headshotExp: 1
-  headshotWords: HEADSHOT!
-  headshotColor: {r: 1, g: 0.35, b: 0.2, a: 1}
   headshotSounds:
   - {fileID: 8300000, guid: 9f33a6c57f37b904caaa68322aa2e0eb, type: 3}
   - {fileID: 8300000, guid: 956e17fac0656824b963ccb842b10876, type: 3}

@@ -169,7 +169,7 @@ namespace Game.PlayGround.Editor
                 if (!root.TryGetComponent<LaughingPumpkin>(out var pumpkin)) pumpkin = root.AddComponent<LaughingPumpkin>();
                 var so = new SerializedObject(pumpkin);
                 so.FindProperty("canRun").boolValue = false;
-                so.FindProperty("candyEveryHealth").floatValue = 10f;
+                so.FindProperty("candyEveryHealth").floatValue = 5f;
                 so.FindProperty("candyLaunchSpeed").floatValue = 3.5f;
                 SetArray(so.FindProperty("candies"), candies.ToArray());
                 SetArray(so.FindProperty("laughs"), Clips("pumpkin_boss_laugh", "pumpkin_boss_laugh_2", "laughing_pumpkin_1", "laughing_pumpkin_3"));
@@ -195,7 +195,7 @@ namespace Game.PlayGround.Editor
                 {
                     if (fsm.FsmName != "Health") continue;
                     var health = fsm.FsmVariables.FindFsmFloat("health");
-                    if (health != null) health.Value = 100f;
+                    if (health != null) health.Value = 50f; // halved for whole-number damage (2026-10-27)
                     EditorUtility.SetDirty(fsm);
                 }
 

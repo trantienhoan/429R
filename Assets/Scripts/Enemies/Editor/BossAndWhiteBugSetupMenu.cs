@@ -55,15 +55,19 @@ namespace Game.EditorTools
             public Vector2Int health;
             public float toughness;
             public float stunGuard;
+            // Share of the Enemy Limit's room its low-health call fills (user, 2026-10-27: white bosses half).
+            public float minionShare = 1f;
         }
 
         private static readonly Boss[] Bosses =
         {
-            new() { name = "Spider_Boss", minion = "Spider_Small", walks = true, health = new Vector2Int(50, 64), toughness = 3f, stunGuard = 2f },
-            new() { name = "Spider_Boss_PumpkinButt", minion = "Spider_Small", walks = true, health = new Vector2Int(115, 126), toughness = 2.5f, stunGuard = 4f },
-            new() { name = "Cockroach_Boss", minion = "Cockroach_Small", walks = true, health = new Vector2Int(50, 56), toughness = 2.5f, stunGuard = 2f },
-            new() { name = "Cockroach_Boss_PumpkinButt", minion = "Cockroach_Small", walks = true, health = new Vector2Int(176, 195), toughness = 2.5f, stunGuard = 4f },
-            new() { name = "Bee_Boss", minion = "Bee_Small" },
+            // Stun guard (user, 2026-10-27): white bosses 0.5 s, Pumpkin Butt bosses 2 s. Health as on the prefabs, halved
+            // for whole-number damage (2026-10-27).
+            new() { name = "Spider_Boss", minion = "Spider_Small", walks = true, health = new Vector2Int(38, 48), toughness = 3f, stunGuard = 0.5f, minionShare = 0.5f },
+            new() { name = "Spider_Boss_PumpkinButt", minion = "Spider_Small", walks = true, health = new Vector2Int(87, 95), toughness = 2.5f, stunGuard = 2f },
+            new() { name = "Cockroach_Boss", minion = "Cockroach_Small", walks = true, health = new Vector2Int(44, 49), toughness = 2.5f, stunGuard = 0.5f, minionShare = 0.5f },
+            new() { name = "Cockroach_Boss_PumpkinButt", minion = "Cockroach_Small", walks = true, health = new Vector2Int(132, 147), toughness = 2.5f, stunGuard = 2f },
+            new() { name = "Bee_Boss", minion = "Bee_Small", minionShare = 0.5f },
             new() { name = "Bee_Boss_PumpkinButt", minion = "Bee_Small" },
         };
 
@@ -127,6 +131,7 @@ namespace Game.EditorTools
 
             brain.FindProperty("minion").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(Folder + boss.minion + ".prefab");
             brain.FindProperty("minionsFillLimit").boolValue = true;
+            brain.FindProperty("minionFillShare").floatValue = boss.minionShare;
             brain.FindProperty("callWhenFleeing").boolValue = true;
             brain.FindProperty("minionGap").vector2Value = new Vector2(0.15f, 0.35f);
             brain.FindProperty("aggressiveBoss").boolValue = true;
@@ -175,6 +180,8 @@ namespace Game.EditorTools
             move.FindPropertyRelative("leapToFace").boolValue = true;
             move.FindPropertyRelative("runAwayAfter").boolValue = false;
             move.FindPropertyRelative("pushPower").floatValue = 2f;
+            // Its jump can't be stopped (user, 2026-10-27: only the jumps and charges).
+            move.FindPropertyRelative("unstoppable").boolValue = true;
             return "Pounce up to 3 m";
         }
 
@@ -185,6 +192,9 @@ namespace Game.EditorTools
             if (leap == null) return "no Face Leap found";
             leap.FindPropertyRelative("maxDistance").floatValue = 2.8f;
             leap.FindPropertyRelative("lunge").floatValue = 2.6f;
+            leap.FindPropertyRelative("unstoppable").boolValue = true;
+            var dive = Find(attacks, "Dive Bomb");
+            if (dive != null) dive.FindPropertyRelative("unstoppable").boolValue = true;
             return "Face Leap up to 2.8 m";
         }
 

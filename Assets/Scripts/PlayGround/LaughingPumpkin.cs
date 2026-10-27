@@ -110,7 +110,7 @@ namespace Game.PlayGround
         [Tooltip("Metres: just big enough to reach the hand holding it.")]
         [Min(0.1f)] [SerializeField] private float handBlastRadius = 0.6f;
         [Tooltip("Health it takes from things in reach (bugs, breakables), like a grenade's damage.")]
-        [Min(0f)] [SerializeField] private float handBlastDamage = 2f;
+        [Min(0f)] [SerializeField] private float handBlastDamage = 1f;
         [Min(0f)] [SerializeField] private float handBlastPush = 3f;
         [Tooltip("Sent to the player's Damage FSM when it explodes in their hand: DamageHeavy (40-50 health) or Damage (a bite).")]
         [SerializeField] private string handBlastEvent = "DamageHeavy";
@@ -118,7 +118,7 @@ namespace Game.PlayGround
         [Header("Candy (the big one)")]
         [Tooltip("Throws out one candy for every this much health it loses. 0 = none.")]
         [Min(0f)]
-        [SerializeField] private float candyEveryHealth = 10f;
+        [SerializeField] private float candyEveryHealth = 5f;
         [Tooltip("Candies to throw out; one picked at random each time.")]
         [SerializeField] private GameObject[] candies = Array.Empty<GameObject>();
         [Tooltip("How fast a thrown-out candy flies up, in metres per second.")]

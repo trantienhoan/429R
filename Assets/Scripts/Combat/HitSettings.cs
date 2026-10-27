@@ -20,8 +20,10 @@ namespace Game.Combat
 
     /// <summary>
     /// How hard a hit has to be to hurt, and how much it hurts. A hit's power is its speed in metres per second, times
-    /// the weapon's Power, divided by the enemy's Toughness. Too weak does nothing, a normal hit does 1-2 damage, and a
-    /// big hit 3-5 and knocks the enemy back. Shared by every enemy; Tools > 429 Game > Combat > Set Up Hit Damage makes it.
+    /// the weapon's Power, divided by the enemy's Toughness. Two steps, whole numbers (user, 2026-10-27): too weak does
+    /// nothing, a normal hit does the weapon's Damage (a punch 1, a hammer 2), and a hard hit twice that (a hard throw
+    /// three times) and knocks the
+    /// enemy back. Shared by every enemy, piece of furniture and prop; Tools > 429 Game > Combat > Set Up Hit Damage makes it.
     /// </summary>
     [CreateAssetMenu(menuName = "429 Game/Combat/Hit Settings", fileName = "Hit Settings")]
     public class HitSettings : ScriptableObject
@@ -29,16 +31,49 @@ namespace Game.Combat
         [Tooltip("Hits weaker than this do no damage; the enemy only flinches.")]
         [Min(0f)]
         [SerializeField] private float minHitPower = 3f;
-        [Tooltip("Hits at least this strong are big hits: more damage, and the enemy is knocked back.")]
+        [Tooltip("Hits at least this strong are hard hits: Hard Hit Times the damage, and the enemy is knocked back.")]
         [Min(0f)]
         [SerializeField] private float bigHitPower = 8f;
-        [Tooltip("Big hits this strong or stronger do the most damage.")]
+        [Tooltip("A hard hit does this many times a normal hit's damage (2: a punch 1, a hard punch 2).")]
+        [Min(1)]
+        [SerializeField] private int hardHitTimes = 2;
+        [Tooltip("A hard hit with a thrown thing (on what it hits, and on the thrown thing itself) does this many times a " +
+                 "normal hit's damage instead: a good hard throw counts the most (user, 2026-10-27: 3, a thrown book 6).")]
+        [Min(1)]
+        [SerializeField] private int hardThrowTimes = 3;
+        // Set by Tools > 429 Game > Combat > Whole Numbers > 1. Halve Health And Blasts, so it only ever halves once.
+        [SerializeField, HideInInspector] private bool healthHalved;
+
+        [Header("Punches (the last resort: little damage, a big shove)")]
+        [Tooltip("The combo (user, 2026-10-27): a punch that hurts knocks the enemy back out of the fist's reach but into " +
+                 "the flying jab's, whatever its Fist Size: this share of how far a good jab flies now (0.4-0.75 m at Fist " +
+                 "Size 1, up to about 1.9 m at 10), x for a normal punch, y for a hard one. Heavier enemies (the bosses) go " +
+                 "less far.")]
+        [SerializeField] private Vector2 punchPush = new(0.55f, 0.75f);
+        [Tooltip("How high a punched enemy hops (shares of a hard hit's hop): x normal punch, y hard.")]
+        [SerializeField] private Vector2 punchHop = new(0.35f, 0.5f);
+        [Tooltip("How long a punched enemy stays stunned after it lands, in seconds (time for the follow-up jab): x normal " +
+                 "punch, y hard.")]
+        [SerializeField] private Vector2 punchStun = new(0.7f, 1f);
+        [Tooltip("A punch too weak to hurt still shoves the enemy this share of a good jab's reach (and stuns it Weak " +
+                 "Punch Stun seconds). 0 = it only flinches.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float weakPunchPush = 0.3f;
         [Min(0f)]
-        [SerializeField] private float maxHitPower = 14f;
-        [Tooltip("Damage of a normal hit: x for the weakest, y for the hardest.")]
-        [SerializeField] private Vector2 normalHitDamage = new(1f, 2f);
-        [Tooltip("Damage of a big hit: x for the weakest, y for the hardest.")]
-        [SerializeField] private Vector2 bigHitDamage = new(3f, 5f);
+        [SerializeField] private float weakPunchStun = 0.25f;
+
+        [Header("Flying jabs (the skill move: unlocked and grown by Fist Size)")]
+        [Tooltip("A hard, fast flying jab does this much more than a normal one (not twice): 2 at the 1st Fist Size point, " +
+                 "3 hard (user, 2026-10-27).")]
+        [Min(0)]
+        [SerializeField] private int flyingHardBonus = 1;
+        [Tooltip("A flying jab that hurts knocks the enemy back much farther than a punch: shares of a hard hit's " +
+                 "knock-back, x normal, y hard.")]
+        [SerializeField] private Vector2 flyingPush = new(1.6f, 2.2f);
+        [Tooltip("How high it hops (shares of a hard hit's hop): x normal, y hard.")]
+        [SerializeField] private Vector2 flyingHop = new(0.8f, 1.2f);
+        [Tooltip("How long it stays stunned after it lands, in seconds: x normal, y hard.")]
+        [SerializeField] private Vector2 flyingStun = new(1f, 1.4f);
 
         [Header("Hit effect (every enemy)")]
         [Tooltip("The small pop shown where a hit hurts an enemy (Enemy_Hit_Pop). Empty: none. Tools > 429 Game > " +
@@ -52,8 +87,16 @@ namespace Game.Combat
         [Tooltip("Only the player's hits pop (a fist, a thing they hold or just threw, a shot). Off: also a chair " +
                  "tipping over or a book falling onto an enemy.")]
         [SerializeField] private bool effectOnlyPlayerHits = true;
-        [Tooltip("How big the pop is: x for a 1-damage hit, y for an 8-damage hit (in between, in proportion).")]
+        [Tooltip("How big the pop is: x for a 1-damage hit, y for a 4-damage hit (in between, in proportion).")]
         [SerializeField] private Vector2 effectSize = new(0.8f, 1.3f);
+
+        [Header("Stunned (mini bosses and the pumpkin boss)")]
+        [Tooltip("Stars circling over the head while a mini boss is knocked back and stunned, or the pumpkin boss is " +
+                 "dizzy (Stun_Stars; Tools > 429 Game > Enemies > Build Stun Stars FX makes it). Empty: none.")]
+        [SerializeField] private GameObject stunStars;
+        [Tooltip("How big the ring of stars is, compared with the head it's over (1 = the usual).")]
+        [Min(0.1f)]
+        [SerializeField] private float stunStarsSize = 1f;
 
         [Header("Headshot (thrown things)")]
         [Tooltip("A thrown thing (not a fist, not a weapon in the hand) that hurts an enemy on the head knocks it out for " +
@@ -93,33 +136,41 @@ namespace Game.Combat
         }
 
         /// <summary>
-        /// What a hit of this power does with a weapon of this Damage (see Weapon Power): the damage times it, a whole
-        /// number, at least 1 for a hit that counts. It's only a big hit (knock-back) if it still does a big hit's damage,
-        /// so a thrown book doesn't send an enemy flying.
+        /// What a hit of this power does with a weapon of this Damage (see Weapon Power, a whole number, at least 1): a
+        /// normal hit does the Damage, a hard hit Hard Hit Times it (and knocks the enemy back), or Hard Throw Times it when
+        /// a thrown thing is in it (Thrown).
         /// </summary>
-        public HitResult Evaluate(float power, float damageScale)
-        {
-            var hit = Evaluate(power);
-            if (hit.Damage <= 0f || Mathf.Approximately(damageScale, 1f)) return hit;
-
-            float damage = Mathf.Max(1f, Whole(hit.Damage * damageScale));
-            return new HitResult(power, damage, hit.IsBig && damage >= bigHitDamage.x);
-        }
-
-        /// <summary>Works out what a hit of this power does. Damage is a whole number.</summary>
-        public HitResult Evaluate(float power)
+        public HitResult Evaluate(float power, float damage, bool thrown = false, bool flyingFist = false)
         {
             if (power < minHitPower) return new HitResult(power, 0f, false);
 
-            if (power < bigHitPower)
-            {
-                float normal = Mathf.InverseLerp(minHitPower, bigHitPower, power);
-                return new HitResult(power, Whole(Mathf.Lerp(normalHitDamage.x, normalHitDamage.y, normal)), false);
-            }
-
-            float big = Mathf.InverseLerp(bigHitPower, maxHitPower, power);
-            return new HitResult(power, Whole(Mathf.Lerp(bigHitDamage.x, bigHitDamage.y, big)), true);
+            damage = Mathf.Max(1f, Whole(damage));
+            bool hard = power >= bigHitPower;
+            if (!hard) return new HitResult(power, damage, false);
+            // A hard flying jab: one more (technique, user 2026-10-27), not twice.
+            if (flyingFist) return new HitResult(power, damage + flyingHardBonus, true);
+            return new HitResult(power, damage * (thrown ? hardThrowTimes : hardHitTimes), true);
         }
+
+        /// <summary>What a hit of this power does with a Damage of 1 (a punch): 0, 1, or a hard hit's 2.</summary>
+        public HitResult Evaluate(float power) => Evaluate(power, 1f);
+
+        /// <summary>
+        /// How a punch knocks an enemy back: x = the distance (for the fist's own punch a share of the flying jab's reach,
+        /// for a flying jab a share of a hard hit's knock-back), y = share of a hard hit's hop, z = stun seconds.
+        /// Hurt: a punch that did damage (Hard: a hard one); otherwise a punch too weak to hurt (zero x: no shove).
+        /// </summary>
+        public Vector3 PunchKnock(bool hurt, bool hard, bool flyingFist = false)
+        {
+            if (!hurt) return new Vector3(weakPunchPush, weakPunchPush, weakPunchStun);
+            if (flyingFist)
+                return hard ? new Vector3(flyingPush.y, flyingHop.y, flyingStun.y) : new Vector3(flyingPush.x, flyingHop.x, flyingStun.x);
+            return hard ? new Vector3(punchPush.y, punchHop.y, punchStun.y) : new Vector3(punchPush.x, punchHop.x, punchStun.x);
+        }
+
+        /// <summary>A hit that counts, normal or hard, with a weapon of this Damage (Thrown: a thrown thing is in it).</summary>
+        public float HitDamage(float damage, bool hard, bool thrown = false) =>
+            Mathf.Max(1f, Whole(damage)) * (hard ? (thrown ? hardThrowTimes : hardHitTimes) : 1);
 
         /// <summary>Whether this hit shows a pop: it hurt enough, and (with Effect Only Player Hits) the player made it.</summary>
         public bool ShowsEffect(HitResult hit, bool byPlayer)
@@ -136,7 +187,7 @@ namespace Game.Combat
             var effect = hit.IsBig && bigHitEffect != null ? bigHitEffect : hitEffect;
             if (effect == null) return;
 
-            float scale = Mathf.Lerp(effectSize.x, effectSize.y, Mathf.InverseLerp(1f, 8f, hit.Damage)) * size;
+            float scale = Mathf.Lerp(effectSize.x, effectSize.y, Mathf.InverseLerp(1f, 4f, hit.Damage)) * size;
             var eyes = Camera.main;
             if (eyes != null) at = Vector3.MoveTowards(at, eyes.transform.position, EffectTowardsEyes);
             EffectPool.Play(effect, at, scale, EffectSeconds);
@@ -144,6 +195,10 @@ namespace Game.Combat
 
         /// <summary>Whether thrown things can land headshots (Headshot Stun Seconds above 0).</summary>
         public bool Headshots => headshotStunSeconds > 0f;
+
+        /// <summary>The stars shown over a stunned boss's head (null: none), and how big (1 = the usual).</summary>
+        public GameObject StunStars => stunStars;
+        public float StunStarsSize => stunStarsSize;
 
         public float HeadshotStunSeconds => headshotStunSeconds;
         public Vector2 HeadshotPush => headshotPush;

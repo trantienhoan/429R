@@ -5911,7 +5911,7 @@ MonoBehaviour:
         tooltip: 
         showInInspector: 1
         networkSync: 0
-        value: 3
+        value: 2
       intVariables: []
       boolVariables: []
       stringVariables: []
@@ -6856,7 +6856,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.WeaponPower
   power: 1
-  damage: 1.4
+  damage: 2
 --- !u!114 &2460579260653190075
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6877,7 +6877,11 @@ MonoBehaviour:
   knockBackTime: 0.45
   knockBackHop: 0.25
   knockBackStun: 0.3
+  strayToughness: 1
+  hitEffectSize: 1
+  hideHitEffect: 0
   exp: 0
+  expOrbs: 1
   healthFsm: Health
   healthVariable: health
   hitEvent: Damage

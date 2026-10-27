@@ -230,7 +230,8 @@ namespace Game.EditorTools
             if (damageFsm != null) QuietDamageFsm(damageFsm, piece.Name, notes);
 
             float size = Size(root);
-            float health = Mathf.Max(2f, Mathf.Round((HealthBase + HealthPerSize * Mathf.Sqrt(size)) * piece.HealthScale));
+            // Halved for whole-number damage (user, 2026-10-27): a punch does 1-2 instead of 1-5.
+            float health = Mathf.Max(1f, Mathf.Round((HealthBase + HealthPerSize * Mathf.Sqrt(size)) * piece.HealthScale * 0.5f));
             SetHealth(healthFsm, health);
             float oldMass = body.mass;
             switch (piece.Kind)

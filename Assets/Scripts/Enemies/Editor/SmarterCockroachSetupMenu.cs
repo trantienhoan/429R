@@ -79,9 +79,9 @@ namespace Game.EditorTools
                     s.FindProperty("runAnimationSpeed").floatValue = 2.5f;  // until its run is re-done
 
                     // Sizes: the model is ~0.5 m long at scale 1; the old bosses were scale 2.
-                    Size(s, "small", new Vector2(0.55f, 0.75f), new Vector2Int(3, 4), 1.1f, 1f, "", 0.5f);
-                    Size(s, "normal", new Vector2(0.85f, 1.1f), new Vector2Int(6, 8), 1.15f, 1f, "", 0.35f);
-                    Size(s, "boss", new Vector2(1.9f, 2.2f), new Vector2Int(20, 24), 0.95f, 1.3f, "DamageHeavy", 0.15f);
+                    Size(s, "small", new Vector2(0.55f, 0.75f), new Vector2Int(2, 2), 1.1f, 1f, "", 0.5f);
+                    Size(s, "normal", new Vector2(0.85f, 1.1f), new Vector2Int(3, 4), 1.15f, 1f, "", 0.35f);
+                    Size(s, "boss", new Vector2(1.9f, 2.2f), new Vector2Int(10, 12), 0.95f, 1.3f, "DamageHeavy", 0.15f);
 
                     // One bite on its current attack animation (1.9 s); the timing gets matched when the attack is re-done.
                     var attacks = s.FindProperty("attacks");

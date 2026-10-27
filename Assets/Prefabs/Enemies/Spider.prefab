@@ -8394,7 +8394,7 @@ MonoBehaviour:
         tooltip: 
         showInInspector: 1
         networkSync: 0
-        value: 8
+        value: 4
       - useVariable: 1
         name: collisionForce
         tooltip: 
@@ -9579,12 +9579,20 @@ MonoBehaviour:
   knockBackTime: 0.45
   knockBackHop: 0.25
   knockBackStun: 0.3
+  strayToughness: 1
+  hitEffectSize: 1
+  hideHitEffect: 0
   exp: 2
+  expOrbs: 1
   healthFsm: 
   healthVariable: health
   hitEvent: Damage
   weakHitEvent: ShakeSmall
   oldDamageFsm: Damage
+  furniture: 0
+  bumpShare: 0.35
+  wieldedShare: 0.15
+  settleSeconds: 2
 --- !u!114 &7724561700927853831
 MonoBehaviour:
   m_ObjectHideFlags: 0

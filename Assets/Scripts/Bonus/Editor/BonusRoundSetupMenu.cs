@@ -53,8 +53,9 @@ namespace Game.EditorTools
         // from the sky. Only what they have on their own: the Bonus Round sets these for each pumpkin it takes.
         private static readonly (float size, float health, int candies, int exp, float pitch, bool fromSky)[] Pumpkins =
         {
-            (2.282f, 120f, 3, 3, 1f, true),
-            (2.123f, 144f, 3, 3, 1.12f, false),
+            // Health halved for whole-number damage (user, 2026-10-27).
+            (2.282f, 60f, 3, 3, 1f, true),
+            (2.123f, 72f, 3, 3, 1.12f, false),
         };
         private const string BonusSoundPath = "Assets/Audio/Kenney Audio/kenney_interface-sounds/Audio/confirmation_002.ogg";
         private const string HelmetSoundPath = "Assets/Audio/Kenney Audio/kenney_digital-audio/Audio/powerUp2.ogg";
@@ -346,7 +347,8 @@ namespace Game.EditorTools
                 if (Changed(so, "growSeconds", 1.2f, 0.45f)) filled.Add("giant bursts out in 0.45 s");
                 // The candy vacuum (user, 2026-10-25): 5 s for every pumpkin, stacking, instead of 60 s from the giant.
                 if (Changed(so, "helmetSeconds", 60f, 5f)) filled.Add("candy vacuum 5 s per pumpkin");
-                if (Changed(so, "giantHealth", 60f, 120f)) filled.Add("giant health 120");
+                // Whole-number damage (user, 2026-10-27): a punch does 1-2 instead of 1-5, so half the health.
+                if (Changed(so, "giantHealth", 120f, 60f)) filled.Add("giant health 60");
                 if (Changed(so, "bonusSeconds", 5f, 6f)) filled.Add("+6 s per pumpkin");
                 var list = so.FindProperty("candies");
                 if (list.arraySize == 0)

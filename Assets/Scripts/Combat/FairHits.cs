@@ -1,4 +1,3 @@
-using Game.Leveling;
 using UnityEngine;
 
 namespace Game.Combat
@@ -7,7 +6,7 @@ namespace Game.Combat
     /// Makes a PlayMaker breakable that judges hits by their speed alone (a Damage FSM with collisionForce and a Check
     /// Force state, like the whack pumpkins) judge the player's weapons and throws the way enemies do: as fast as the
     /// weapon moved where it hit (a swing lands with its tip, not its middle), times the weapon's Power (a hammer 2, a
-    /// pillow 0.6), with the Weapon Efficiency level-up, Weapon Master (held weapons) and a two-handed grip. The FSM's own
+    /// pillow 0.6) and a two-handed grip. The FSM's own
     /// thresholds stay as they are
     /// (Whack 6: over 12, Whack 7: over 15). Punches are judged by the Fist itself. Goes on the breakable's root, next
     /// to its Rigidbody.
@@ -28,7 +27,7 @@ namespace Game.Combat
             for (int i = 0; i < collision.contactCount; i++)
                 speed = Mathf.Max(speed, body.GetPointVelocity(collision.GetContact(i).point).magnitude);
             float power = body.TryGetComponent(out WeaponPower weapon) ? weapon.Power * weapon.boost : 1f;
-            PlayMakerHits.Judge(gameObject, collision, speed * power * PlayerLevel.WeaponDamageScale * WeaponPower.MasterScale(body));
+            PlayMakerHits.Judge(gameObject, collision, speed * power);
         }
     }
 }

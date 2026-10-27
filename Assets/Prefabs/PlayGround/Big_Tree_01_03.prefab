@@ -5559,6 +5559,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1704708886903218180}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 685b0b0f5d0bd3d4998412308b5241a6,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4032459798857907408}
   m_SourcePrefab: {fileID: 100100000, guid: 685b0b0f5d0bd3d4998412308b5241a6, type: 3}
 --- !u!1 &7266108928728872884 stripped
 GameObject:
@@ -5611,7 +5615,7 @@ MonoBehaviour:
   ghostsPerHit: {x: 1, y: 2}
   hitGhostCooldown: 1.5
   maxGhostsWhenHit: 6
-  health: 12
+  health: 6
   minHitSpeed: 3
   hitSounds:
   - {fileID: 8300000, guid: be9beca93dc0f514c8220a12fd387f63, type: 3}
@@ -5701,22 +5705,13 @@ MonoBehaviour:
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
-      transitions:
-      - fsmEvent:
-          name: next
-          isSystemEvent: 0
-          isGlobal: 1
-        toState: Check force
-        linkStyle: 0
-        linkConstraint: 0
-        linkTarget: 0
-        colorIndex: 0
+      transitions: []
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.CollisionEvent
         customNames:
         - 
-        actionEnabled: 01
+        actionEnabled: 00
         actionIsOpen: 01
         actionStartIndex: 00000000
         actionHashCodes: beb33100
@@ -5922,7 +5917,7 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 010101010101
+        actionEnabled: 010100000001
         actionIsOpen: 010101010101
         actionStartIndex: 00000000050000000a0000000f0000001300000018000000
         actionHashCodes: b2cf100081294e04876045022a6e8a008760450248c01101
@@ -6572,6 +6567,40 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &4032459798857907408
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7266108928728872884}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3fa9bbce902d9de4989faa4be958db6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.EnemyHitDamage
+  settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
+  toughness: 5
+  hitCooldown: 0.3
+  knockBack: 0
+  knockBackDistance: 2
+  knockBackTime: 0.45
+  knockBackHop: 0.25
+  knockBackStun: 0.3
+  strayToughness: 1
+  hitEffectSize: 1
+  hideHitEffect: 1
+  exp: 0
+  expOrbs: 0
+  healthFsm: Health
+  healthVariable: health
+  hitEvent: Damage
+  weakHitEvent: ShakeSmall
+  oldDamageFsm: 
+  furniture: 1
+  bumpShare: 1
+  wieldedShare: 1
+  settleSeconds: 0
 --- !u!4 &8042785987117313294 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 685b0b0f5d0bd3d4998412308b5241a6,

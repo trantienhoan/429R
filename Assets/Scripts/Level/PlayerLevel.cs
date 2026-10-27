@@ -99,9 +99,9 @@ namespace Game.Leveling
         [Tooltip("Reaching each of these levels gives a bonus point, for the bonus stats only. The menu's Bonus Stats page " +
                  "shows from the first of them on.")]
         [SerializeField] private int[] bonusLevels = { 10, 20, 21 };
-        [Tooltip("Weapon Master: weapons held in the hand hit this share harder, by its points (1st, 2nd, 3rd point: " +
-                 "+30%, +40%, +50%). Fists and thrown things don't count.")]
-        [SerializeField] private float[] weaponMasterDamage = { 0.3f, 0.4f, 0.5f };
+        [Tooltip("Weapon Master: weapons held in the hand do this much more damage, by its points (1st, 2nd, 3rd point: " +
+                 "+1, +1, +2). Fists and thrown things don't count.")]
+        [SerializeField] private int[] weaponMasterBonus = { 1, 1, 2 };
         [Tooltip("Weapon Master: a held thing that blocks an enemy's bite loses this share less health, by its points " +
                  "(1st, 2nd, 3rd point: 20%, 30%, 40% less).")]
         [SerializeField] private float[] weaponMasterBlockCut = { 0.2f, 0.3f, 0.4f };
@@ -125,10 +125,10 @@ namespace Game.Leveling
                  "and high (0.08 = 8% less a point). Never less than a tenth.")]
         [Range(0f, 0.09f)]
         [SerializeField] private float pushCutPerPoint = 0.08f;
-        [Tooltip("Weapon Efficiency: weapons and their bullets hit this share harder (0.05 = 5% more a point). Fists don't " +
-                 "count: they have Fist Size.")]
-        [Min(0f)]
-        [SerializeField] private float weaponDamagePerPoint = 0.05f;
+        [Tooltip("+1 damage every this many points (5: +1 at 5, +2 at 10): Weapon Efficiency to weapons and their bullets, " +
+                 "eaten candies' punch points to flying jabs. (Fist Size itself gives flying jabs +1 every point.)")]
+        [Min(1)]
+        [SerializeField] private int damageStepPoints = 5;
         [Tooltip("Weapon Efficiency: a hard hit wears a weapon the player has held this share less (0.05 = 5% less a " +
                  "point), so it takes more hits to break.")]
         [Range(0f, 0.09f)]
@@ -141,11 +141,6 @@ namespace Game.Leveling
                  "view (0.02: Fist Scale 1.25 becomes 1.27; the Fist's Max Hand Growth caps it).")]
         [Min(0f)]
         [SerializeField] private float handSizePerPoint = 0.02f;
-        [Tooltip("Fist Size: punches (the fist itself and flying punches) do this share more damage (0.1 = 10% more a " +
-                 "point: a best hit of 5 does 6 at 1 point, 10 at 10). Normal Fist Size points count, and eaten " +
-                 "candies' punch damage points (not the bonus or a boong's).")]
-        [Min(0f)]
-        [SerializeField] private float punchDamagePerPoint = 0.1f;
         [Tooltip("Throw Power: things leave the hand this share faster (0.03 = 3% more a point; a full stat counts as 16 " +
                  "points: +48%). Gentle drops aren't sped up.")]
         [Min(0f)]
@@ -166,17 +161,24 @@ namespace Game.Leveling
                  "metres farther (a full stat counts as 16 points: +1.2 m).")]
         [Min(0f)]
         [SerializeField] private float blastRadiusPerPoint = 0.08f;
-        [Tooltip("Throw Power: each point after the 1st makes the blast do this share more damage (0.1 = 10% more a " +
-                 "point: a full stat +150%).")]
-        [Min(0f)]
-        [SerializeField] private float blastDamagePerPoint = 0.1f;
+        [Tooltip("Throw Power: +1 blast damage every this many points after the 1st (5: +1 at 6 points, +2 at 11, +3 for a " +
+                 "full stat, which counts as 16).")]
+        [Min(1)]
+        [SerializeField] private int blastDamageStepPoints = 5;
+        [Tooltip("Throw Power: every point after the 1st makes a throw need this share less speed to count as a hard throw " +
+                 "(set off a book, flip-flop or bottle, burst a tree pumpkin, hit hard): 0.03 = 3% a point, never below Min " +
+                 "Hard Throw Share. Throws also leave the hand faster with each point, so it adds up (user, 2026-10-27).")]
+        [Range(0f, 0.1f)]
+        [SerializeField] private float hardThrowCutPerPoint = 0.03f;
+        [Range(0.1f, 1f)]
+        [SerializeField] private float minHardThrowShare = 0.55f;
         [Tooltip("The farthest a thrown blast reaches with Throw Power, in metres (a blast that reaches farther by itself " +
                  "keeps its own reach).")]
         [Min(0.1f)]
         [SerializeField] private float maxBlastRadius = 2f;
         [Tooltip("The most damage a thrown blast does with Throw Power (a blast that does more by itself keeps its own).")]
         [Min(0f)]
-        [SerializeField] private float maxBlastDamage = 10f;
+        [SerializeField] private float maxBlastDamage = 5f;
         [Tooltip("Move Speed: walking is this share faster (0.04 = 4% more a point).")]
         [Min(0f)]
         [SerializeField] private float speedPerPoint = 0.04f;
@@ -366,8 +368,8 @@ namespace Game.Leveling
         /// <summary>How much more eating candy heals (Max Health): 1 = as always.</summary>
         public static float CandyHealScale => Instance != null ? Instance.Gain(Stat.MaxHealth, Instance.candyHealPerPoint) : 1f;
 
-        /// <summary>How much harder weapons hit (Weapon Efficiency): 1 = as always.</summary>
-        public static float WeaponDamageScale => Instance != null ? Instance.Gain(Stat.WeaponEfficiency, Instance.weaponDamagePerPoint) : 1f;
+        /// <summary>The extra damage weapons do (Weapon Efficiency): +1 every Damage Step Points. 0 = as always.</summary>
+        public static int WeaponDamageBonus => Instance != null ? Instance.Steps(Instance.Worth(Stat.WeaponEfficiency)) : 0;
 
         /// <summary>The share of a hit's wear a weapon takes (Weapon Efficiency): 1 = all of it.</summary>
         public static float WeaponWearShare => Instance != null ? Instance.Cut(Stat.WeaponEfficiency, Instance.weaponWearCutPerPoint) : 1f;
@@ -390,12 +392,24 @@ namespace Game.Leveling
             : 0f;
 
         /// <summary>
-        /// How much harder punches hit, the fist itself and flying punches (Fist Size, and eaten candies' Fist Size points,
-        /// which only add damage): 1 = as always.
+        /// The extra damage flying jabs do (user, 2026-10-27): +1 every Fist Size point, and +1 every Damage Step Points of
+        /// eaten candies' Fist Size points. The closed fist itself never gets it (1, a hard punch 2: the last resort).
         /// </summary>
-        public static float PunchDamageScale => Instance != null
-            ? 1f + (Instance.Points(Stat.FistSize) + Instance.candyPoints[(int)Stat.FistSize]) * Instance.punchDamagePerPoint
-            : 1f;
+        public static int FlyingJabBonus => Instance != null
+            ? Instance.Points(Stat.FistSize) + Instance.Steps(Instance.candyPoints[(int)Stat.FistSize])
+            : 0;
+
+        // Whole damage steps for this many points: +1 every Damage Step Points.
+        private int Steps(float points) => Mathf.FloorToInt((points + 0.001f) / Mathf.Max(1, damageStepPoints));
+
+        // What the next step needs, for the menu: "+1 damage at 5", "+1 damage, +2 at 10", "+2 damage" (no more steps).
+        private string DamageNote(int bonus, float points, int maxPoints)
+        {
+            int step = Mathf.Max(1, damageStepPoints);
+            int next = (bonus + 1) * step;
+            if (bonus <= 0) return next <= maxPoints ? $"+1 damage at {next}" : "";
+            return next <= maxPoints && points < next ? $"+{bonus} damage, +{bonus + 1} at {next}" : $"+{bonus} damage";
+        }
 
         /// <summary>How much faster throws leave the hand (Throw Power, at most Max Throw Scale): 1 = as always.</summary>
         public static float ThrowScale => Instance != null
@@ -417,7 +431,18 @@ namespace Game.Leveling
 
         /// <summary>A thrown blast's damage with Throw Power, from its own: more with every point after the first.</summary>
         public static float ThrowBlastDamage(float own) =>
-            Instance != null ? Mathf.Min(own * (1f + Instance.BlastSteps * Instance.blastDamagePerPoint), Mathf.Max(own, Instance.maxBlastDamage)) : own;
+            Instance != null ? Mathf.Min(own + Instance.BlastDamageBonus, Mathf.Max(own, Instance.maxBlastDamage)) : own;
+
+        // Whole blast damage steps from Throw Power: +1 every Blast Damage Step Points after the 1st point.
+        private int BlastDamageBonus => Mathf.FloorToInt((BlastSteps + 0.001f) / Mathf.Max(1, blastDamageStepPoints));
+
+        /// <summary>
+        /// The share of a hard throw's speed a throw needs with Throw Power (1 = as always, less with every point after the
+        /// 1st, never below Min Hard Throw Share): books, flip-flops and bottles go off and tree pumpkins burst more easily.
+        /// </summary>
+        public static float HardThrowShare => Instance != null
+            ? Mathf.Max(Instance.minHardThrowShare, 1f - Instance.BlastSteps * Instance.hardThrowCutPerPoint)
+            : 1f;
 
         // Throw Power points after the one that unlocks exploding throws (the last point counting as Last Point Worth).
         private float BlastSteps => Mathf.Max(0f, Worth(Stat.ThrowPower) - 1f);
@@ -425,8 +450,17 @@ namespace Game.Leveling
         /// <summary>How much faster the player walks (Move Speed): 1 = as always.</summary>
         public static float SpeedScale => Instance != null ? Instance.Gain(Stat.MoveSpeed, Instance.speedPerPoint) : 1f;
 
-        /// <summary>How much harder weapons held in the hand hit (the Weapon Master bonus): 1 = as always.</summary>
-        public static float WeaponMasterDamageScale => Instance != null ? 1f + Instance.Tier(Instance.weaponMasterDamage) : 1f;
+        /// <summary>The extra damage of weapons held in the hand (the Weapon Master bonus): 0 = as always.</summary>
+        public static int WeaponMasterBonus
+        {
+            get
+            {
+                if (Instance == null) return 0;
+                int p = Instance.Points(Stat.BonusPower);
+                var bonus = Instance.weaponMasterBonus;
+                return p <= 0 || bonus == null || bonus.Length == 0 ? 0 : bonus[Mathf.Min(p, bonus.Length) - 1];
+            }
+        }
 
         /// <summary>The share of a block's wear a held thing takes (the Weapon Master bonus): 1 = all of it.</summary>
         public static float WeaponMasterBlockShare => Instance != null ? 1f - Instance.Tier(Instance.weaponMasterBlockCut) : 1f;
@@ -476,7 +510,7 @@ namespace Game.Leveling
         // A stat's points as they count: a full Big Last Point stat's last point counts as Last Point Worth. A boong's
         // points for now (Player Buffs: Toughness, Move Speed) and eaten candies' points (Toughness, Move Speed, Throw
         // Power) come on top, never as that last point, and aren't saved. Candies' Fist Size points only add punch
-        // damage (Punch Damage Scale), so they aren't counted here.
+        // damage (Punch Damage Bonus), so they aren't counted here.
         private float Worth(Stat stat)
         {
             int p = Points(stat);
@@ -572,8 +606,10 @@ namespace Game.Leveling
             {
                 case Stat.MaxHealth: return $"+{Worth(stat) * healthPerPoint:0} health, +{Percent(CandyHealScale - 1f)} candy heal";
                 case Stat.Toughness: return $"-{Percent(1f - DamageShare)} damage, -{Percent(1f - PushShare)} enemy push";
-                case Stat.WeaponEfficiency: return $"+{Percent(WeaponDamageScale - 1f)} damage, -{Percent(1f - WeaponWearShare)} wear";
-                case Stat.FistSize: return $"+{Percent(p * punchSizePerPoint)} size, +{Percent(PunchDamageScale - 1f)} damage{PunchNote()}";
+                case Stat.WeaponEfficiency:
+                    return Join(DamageNote(WeaponDamageBonus, Worth(stat), MaxPoints(stat)), $"-{Percent(1f - WeaponWearShare)} wear");
+                case Stat.FistSize:
+                    return Join($"+{Percent(p * punchSizePerPoint)} size", p > 0 ? $"flying jab +{FlyingJabBonus} damage" : "") + PunchNote();
                 case Stat.ThrowPower: return ThrowNote();
                 case Stat.MoveSpeed: return $"+{Percent(SpeedScale - 1f)} walking speed";
                 case Stat.BonusFistSize: return (shown == 1 ? "Punches explode" : $"Punches explode, {shown}x blast") + ", quicker jabs";
@@ -586,11 +622,16 @@ namespace Game.Leveling
 
         private static string Percent(float share) => Mathf.RoundToInt(share * 100f) + "%";
 
-        // The Weapon Master row: what this many points give, e.g. "+30% held weapon damage, -20% block wear".
+        private static string Join(string a, string b) => string.IsNullOrEmpty(a) ? b : string.IsNullOrEmpty(b) ? a : a + ", " + b;
+
+        // The Weapon Master row: what this many points give, e.g. "+1 held weapon damage, -20% block wear".
         private string WeaponMasterNote(int points)
         {
             float Pick(float[] byPoint) => byPoint == null || byPoint.Length == 0 ? 0f : byPoint[Mathf.Clamp(points, 1, byPoint.Length) - 1];
-            return $"+{Percent(Pick(weaponMasterDamage))} held weapon damage, -{Percent(Pick(weaponMasterBlockCut))} block wear";
+            int bonus = weaponMasterBonus == null || weaponMasterBonus.Length == 0
+                ? 0
+                : weaponMasterBonus[Mathf.Clamp(points, 1, weaponMasterBonus.Length) - 1];
+            return $"+{bonus} held weapon damage, -{Percent(Pick(weaponMasterBlockCut))} block wear";
         }
 
         // The Fist Size row also says which punch comes next: ", Jab at 1", ", Triple Punch at 10" (and ", Swing +
@@ -622,7 +663,9 @@ namespace Game.Leveling
             float throwShare = Mathf.Min(Worth(Stat.ThrowPower) * throwPerPoint, maxThrowScale - 1f);
             string speed = $"+{Percent(throwShare)} throw speed, +{Percent(PullScale - 1f)} pull";
             if (BlastSteps == 0) return speed + ", throws explode";
-            return $"{speed}, blasts +{Percent(BlastSteps * blastDamagePerPoint)} damage, +{BlastSteps * blastRadiusPerPoint:0.0} m";
+            return BlastDamageBonus > 0
+                ? $"{speed}, blasts +{BlastDamageBonus} damage, +{BlastSteps * blastRadiusPerPoint:0.0} m"
+                : $"{speed}, blasts +{BlastSteps * blastRadiusPerPoint:0.0} m";
         }
 
         // Fist Size points, a bonus point counting as Bonus Multiplier of them.

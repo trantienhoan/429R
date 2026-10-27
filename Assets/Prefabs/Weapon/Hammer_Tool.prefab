@@ -5219,6 +5219,7 @@ GameObject:
   - component: {fileID: 1614799444158985349}
   - component: {fileID: 4084030493251924205}
   - component: {fileID: 8073363461685121463}
+  - component: {fileID: 4301678564488558157}
   m_Layer: 0
   m_Name: Hammer_Tool
   m_TagString: Weapon
@@ -5325,15 +5326,6 @@ MonoBehaviour:
       hideUnused: 0
       transitions:
       - fsmEvent:
-          name: next
-          isSystemEvent: 0
-          isGlobal: 1
-        toState: Check force
-        linkStyle: 0
-        linkConstraint: 0
-        linkTarget: 0
-        colorIndex: 0
-      - fsmEvent:
           name: FINISHED
           isSystemEvent: 1
           isGlobal: 0
@@ -5349,7 +5341,7 @@ MonoBehaviour:
         customNames:
         - 
         - 
-        actionEnabled: 0101
+        actionEnabled: 0001
         actionIsOpen: 0101
         actionStartIndex: 0000000006000000
         actionHashCodes: beb331009c512400
@@ -5581,7 +5573,7 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 010101010101
+        actionEnabled: 000000010101
         actionIsOpen: 000000000001
         actionStartIndex: 0000000005000000090000000e0000001300000018000000
         actionHashCodes: 876045022a6e8a0087604502b2cf10005978870081294e04
@@ -5698,8 +5690,8 @@ MonoBehaviour:
           stringValues: []
           vector4Values: []
           objectReferences:
-          - {fileID: 8300000, guid: 54fac89927f7abb49aed32ea51436d23, type: 3}
-          - {fileID: 8300000, guid: 423ec03b8e688e04db8d55b7f3119fef, type: 3}
+          - {fileID: 8300000, guid: 4e6efe95af19bb14aa25c0029c0bc5dc, type: 3}
+          - {fileID: 8300000, guid: 3834bd401e6164e4297188d4c336ca3b, type: 3}
         fsmEnumParams: []
         fsmFloatParams:
         - useVariable: 1
@@ -5982,7 +5974,19 @@ MonoBehaviour:
     - name: FINISHED
       isSystemEvent: 1
       isGlobal: 0
-    globalTransitions: []
+    - name: Damage
+      isSystemEvent: 0
+      isGlobal: 1
+    globalTransitions:
+    - fsmEvent:
+        name: Damage
+        isSystemEvent: 0
+        isGlobal: 1
+      toState: Deal 1 damage
+      linkStyle: 0
+      linkConstraint: 0
+      linkTarget: 0
+      colorIndex: 0
     variables:
       floatVariables:
       - useVariable: 1
@@ -6955,7 +6959,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.WeaponPower
   power: 2
-  damage: 1.6
+  damage: 2
 --- !u!114 &8073363461685121463
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6973,6 +6977,40 @@ MonoBehaviour:
   triggeredSize: 3
   damageBoost: 1.5
   powerBoost: 1
+--- !u!114 &4301678564488558157
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4337052619155732277}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3fa9bbce902d9de4989faa4be958db6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.EnemyHitDamage
+  settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
+  toughness: 10
+  hitCooldown: 0.3
+  knockBack: 0
+  knockBackDistance: 2
+  knockBackTime: 0.45
+  knockBackHop: 0.25
+  knockBackStun: 0.3
+  strayToughness: 1
+  hitEffectSize: 1
+  hideHitEffect: 1
+  exp: 0
+  expOrbs: 0
+  healthFsm: Health
+  healthVariable: health
+  hitEvent: Damage
+  weakHitEvent: ShakeSmall
+  oldDamageFsm: 
+  furniture: 1
+  bumpShare: 1
+  wieldedShare: 1
+  settleSeconds: 0
 --- !u!1 &5546693805270308101
 GameObject:
   m_ObjectHideFlags: 0

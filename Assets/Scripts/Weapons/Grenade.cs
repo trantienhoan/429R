@@ -9,14 +9,16 @@ using UnityEngine.XR.Interaction.Toolkit.Interactors;
 namespace Game.Weapons
 {
     /// <summary>
-    /// Turns a weapon into a grenade: thrown hard enough, it explodes on the first thing it hits. Everything in the
+    /// Turns a weapon into a grenade: thrown really hard (Hard Throw Hand Speed, easier with Throw Power), it explodes on
+    /// the first thing it hits; a normal throw just hits. Everything in the
     /// blast that can be hit loses health, loose objects are pushed away, the player is hurt like a bug bite if they're
     /// in it too (Player Event), the hand that threw it buzzes, and the weapon is gone (with Break Apart, it shatters
     /// into its pieces, like a bottle). Dropped or tossed gently, it stays a normal weapon. Goes on the weapon's root,
     /// next to its XR Grab Interactable; Tools > 429 Game > Weapons > Make Flip-Flops Explode adds it.
     /// With Shake To Charge (the bottles), shaking it in the hand charges it: shaken long enough (the first step of
-    /// Charge), it explodes on whatever it hits first once it leaves the hand, however it left it, and the longer it
-    /// was shaken the bigger and harder the blast; shaken to the last step it goes off in the hand (In Hand Event).
+    /// Charge), it explodes bigger and harder the longer it was shaken, and goes off from a softer throw the longer it
+    /// was shaken (just before the last step, from anything); shaken to the last step it goes off in the hand (In Hand
+    /// Event).
     /// The hand buzzes while it charges, harder at each step, a puff of smoke marks each step, the bottle rattles
     /// (Shake Sound) while it's shaken, and just before it would go off in the hand it sounds its warning (Warning Sound).
     /// "Can be hit" means what the game's PlayMaker damage uses: a "Health" FSM (or "SpiderHealth", "BeeHealth", ...)
@@ -36,10 +38,12 @@ namespace Game.Weapons
     public class Grenade : MonoBehaviour
     {
         [Header("Throw")]
-        [Tooltip("It only explodes if it leaves your hand at least this fast, in metres per second. Your hand's speed is " +
-                 "multiplied by the grab's Throw Velocity Scale (6 on the flip-flops), so 8 takes a quick flick, not a drop.")]
+        [Tooltip("Only a real hard throw sets it off (user, 2026-10-27): the hand moving at least this fast as it lets go, " +
+                 "in metres per second (a toss is 1.5-2.5, a hard throw 3.5 and up). Throw Power lowers it (Player Level: " +
+                 "Hard Throw Cut Per Point), and so does shaking a bottle: the longer, the easier, till a bottle about to go " +
+                 "off in the hand goes off on anything. A throw that isn't hard enough just hits.")]
         [Min(0f)]
-        [SerializeField] private float minThrowSpeed = 8f;
+        [SerializeField] private float hardThrowHandSpeed = 3.5f;
 
         [Header("Blast")]
         [Tooltip("How far the blast reaches, in metres.")]
@@ -47,7 +51,7 @@ namespace Game.Weapons
         [SerializeField] private float radius = 1.5f;
         [Tooltip("Health everything in the blast loses.")]
         [Min(0f)]
-        [SerializeField] private float damage = 3f;
+        [SerializeField] private float damage = 2f;
         [Tooltip("How fast loose objects in the middle of the blast are pushed away, in metres per second; the same for " +
                  "light and heavy things, less further out. 0 = no push.")]
         [Min(0f)]
@@ -66,7 +70,7 @@ namespace Game.Weapons
                  "Shaken less than the first x, it's the plain grenade above. Shaken to the last x, it goes off in the hand.")]
         [SerializeField] private Vector2[] charge = { new(1f, 0.5f), new(2f, 1f), new(2.5f, 1.25f), new(3f, 1.5f) };
         [Tooltip("Health everything in a charged blast loses: x at the first step of Charge, y at the last.")]
-        [SerializeField] private Vector2 chargeDamage = new(3f, 8f);
+        [SerializeField] private Vector2 chargeDamage = new(2f, 4f);
         [Tooltip("How fast a charged blast pushes loose things away: x at the first step of Charge, y at the last.")]
         [SerializeField] private Vector2 chargePush = new(4f, 10f);
         [Tooltip("How hard the hand must shake for it to count, in metres per second squared: a real shake is 30-60, " +
@@ -240,11 +244,27 @@ namespace Game.Weapons
             // No Throw Power yet: it just hits (its Damage FSM breaks it as usual).
             if (!Game.Leveling.PlayerLevel.ExplodingThrows) return;
             var point = collision.contactCount > 0 ? collision.GetContact(0).point : body.position;
+            // A throw that isn't hard enough just hits.
+            if (throwSpeed < HardThrowSpeed) return;
             if (Charged) ExplodeCharged(point, false);
-            else if (throwSpeed >= minThrowSpeed)
+            else
             {
                 float reach = Game.Leveling.PlayerLevel.ThrowBlastRadius(radius);
                 Explode(point, reach, Game.Leveling.PlayerLevel.ThrowBlastDamage(damage), push, playerEvent, false, BangSize(reach), radius);
+            }
+        }
+
+        // How fast it has to leave the hand to go off, in metres per second: Hard Throw Hand Speed times the grab's Throw
+        // Velocity Scale (a throw leaves the hand that many times faster than the hand moves), less with Throw Power, and
+        // for a bottle less the longer it was shaken (nothing at all just before it would go off in the hand).
+        private float HardThrowSpeed
+        {
+            get
+            {
+                float speed = hardThrowHandSpeed * (grab != null ? grab.throwVelocityScale : 1f) * Game.Leveling.PlayerLevel.HardThrowShare;
+                if (shakeToCharge && charge != null && charge.Length > 0)
+                    speed *= 1f - Mathf.Clamp01(shaken / Mathf.Max(charge[charge.Length - 1].x, 0.01f));
+                return speed;
             }
         }
 
@@ -351,7 +371,7 @@ namespace Game.Weapons
             var hand = inHand && grab.firstInteractorSelecting is XRBaseInputInteractor holder ? holder : thrower;
             if (rumbleStrength > 0f) Game.Combat.HitBuzz.Other(hand, rumbleStrength, rumbleDuration);
             // The player's bomb: overheated hands (Hot Hands) make it hurt more.
-            Blast.Explode(point, reach, hurt * Game.Combat.HotHands.DamageScale, force, body, effects, sound, volume, eventForPlayer, inHand, effectScale, playerReach);
+            Blast.Explode(point, reach, Game.Combat.HotHands.Boost(hurt), force, body, effects, sound, volume, eventForPlayer, inHand, effectScale, playerReach);
             // The bang shakes the view, harder close by; a bigger bang reaches farther.
             ViewShake.Near(point, 1.5f + reach * 1.5f, 5f + reach * 3f);
 

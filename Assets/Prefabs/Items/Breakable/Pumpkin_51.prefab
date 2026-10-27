@@ -5658,6 +5658,7 @@ GameObject:
   - component: {fileID: 926779879881929870}
   - component: {fileID: 1344823483077781989}
   - component: {fileID: 9137958776314166324}
+  - component: {fileID: 5037314879626519114}
   m_Layer: 0
   m_Name: Pumpkin_51
   m_TagString: Weapon
@@ -7150,28 +7151,10 @@ MonoBehaviour:
       hideUnused: 0
       transitions:
       - fsmEvent:
-          name: Dead
-          isSystemEvent: 0
-          isGlobal: 1
-        toState: Deal 999 damage
-        linkStyle: 0
-        linkConstraint: 0
-        linkTarget: 0
-        colorIndex: 0
-      - fsmEvent:
           name: FINISHED
           isSystemEvent: 1
           isGlobal: 0
         toState: Deal 999 damage 2
-        linkStyle: 0
-        linkConstraint: 0
-        linkTarget: 0
-        colorIndex: 0
-      - fsmEvent:
-          name: next
-          isSystemEvent: 0
-          isGlobal: 1
-        toState: Check force
         linkStyle: 0
         linkConstraint: 0
         linkTarget: 0
@@ -7185,7 +7168,7 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 010101
+        actionEnabled: 000001
         actionIsOpen: 010101
         actionStartIndex: 00000000060000000c000000
         actionHashCodes: beb33100beb331009c512400
@@ -7452,7 +7435,7 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 01010101010101
+        actionEnabled: 00000001010101
         actionIsOpen: 00000000010101
         actionStartIndex: 0000000005000000090000000e00000013000000180000001d000000
         actionHashCodes: 876045022a6e8a0087604502b2cf10005978870081294e04bac44f04
@@ -7583,10 +7566,9 @@ MonoBehaviour:
           stringValues: []
           vector4Values: []
           objectReferences:
-          - {fileID: 8300000, guid: 2de644d96a3052640b8989ecba915a80, type: 3}
-          - {fileID: 8300000, guid: a4661761129bc014490b3df27a00e952, type: 3}
-          - {fileID: 8300000, guid: b2291c3f8b565e74db9bd7833fe197bb, type: 3}
-          - {fileID: 8300000, guid: 5367bd01c33fd1343b9e3fea0381da10, type: 3}
+          - {fileID: 8300000, guid: 91ee0fb710467fa47b637aeee96a5649, type: 3}
+          - {fileID: 8300000, guid: 0bab81a9dcd291a4890520fb3dbc2625, type: 3}
+          - {fileID: 8300000, guid: a7dbe31763e93d4478f2e12bbf3907fa, type: 3}
         fsmEnumParams:
         - useVariable: 0
           name: 
@@ -8080,7 +8062,19 @@ MonoBehaviour:
     - name: Dead
       isSystemEvent: 0
       isGlobal: 1
-    globalTransitions: []
+    - name: Damage
+      isSystemEvent: 0
+      isGlobal: 1
+    globalTransitions:
+    - fsmEvent:
+        name: Damage
+        isSystemEvent: 0
+        isGlobal: 1
+      toState: Deal 1 damage
+      linkStyle: 0
+      linkConstraint: 0
+      linkTarget: 0
+      colorIndex: 0
     variables:
       floatVariables:
       - useVariable: 1
@@ -8574,4 +8568,38 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.WeaponPower
   power: 1
-  damage: 1.2
+  damage: 1
+--- !u!114 &5037314879626519114
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8690403555129543112}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3fa9bbce902d9de4989faa4be958db6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.EnemyHitDamage
+  settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
+  toughness: 3.3333333
+  hitCooldown: 0.3
+  knockBack: 0
+  knockBackDistance: 2
+  knockBackTime: 0.45
+  knockBackHop: 0.25
+  knockBackStun: 0.3
+  strayToughness: 1
+  hitEffectSize: 1
+  hideHitEffect: 1
+  exp: 0
+  expOrbs: 0
+  healthFsm: Health
+  healthVariable: health
+  hitEvent: Damage
+  weakHitEvent: ShakeSmall
+  oldDamageFsm: 
+  furniture: 1
+  bumpShare: 1
+  wieldedShare: 1
+  settleSeconds: 0

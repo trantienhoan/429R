@@ -103,7 +103,7 @@ namespace Game.Weapons
         [SerializeField] private float radius = 1f;
         [Tooltip("Health everything else in the blast loses (bugs close by; a flip-flop grenade takes 3).")]
         [Min(0f)]
-        [SerializeField] private float damage = 3f;
+        [SerializeField] private float damage = 2f;
         [Tooltip("How fast loose objects in the middle of the blast are pushed away, in metres per second. 0 = no push.")]
         [Min(0f)]
         [SerializeField] private float push = 3f;
@@ -394,7 +394,7 @@ namespace Game.Weapons
 
             var point = body != null ? body.worldCenterOfMass : transform.position;
             // The player's blast: overheated hands (Hot Hands) make it hurt more.
-            Blast.Explode(point, radius, damage * Game.Combat.HotHands.DamageScale, push, body, effects, sound, volume, null, false, effectSize);
+            Blast.Explode(point, radius, Game.Combat.HotHands.Boost(damage), push, body, effects, sound, volume, null, false, effectSize);
             PlayerBuffs.Give(buff, buffSeconds);
 
             // Breaking the usual way lets its own Health FSM drop the pieces and remove it; otherwise it just vanishes.

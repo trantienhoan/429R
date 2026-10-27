@@ -7,26 +7,25 @@ using UnityEngine;
 namespace Game.EditorTools
 {
     /// <summary>
-    /// Sets the Damage (and for new ones the Power) of every weapon and throwable, so they hit by what they are: a
-    /// fist's best hit does 5, a hammer's 8, a heavy throw (barrel, chair) 7, a medium one (wood box, pumpkin) 6, a light
-    /// one (book, paper box, candy) 2, a bottle 2 plus its blast. Throwables fly at 15-40 m/s (their Throw Velocity
-    /// Scale), far past the fastest swing, so without this every throw did a fist's best.
+    /// Sets the Damage (and for new ones the Power) of every weapon and throwable, so they hit by what they are, in
+    /// whole numbers (a normal hit does it, a hard hit twice): a fist 1, a hammer 2, a heavy throw (barrel, chair) 2, a
+    /// medium one (wood box, pumpkin) 1, a light one (book, paper box, candy) 1, a bottle 1 plus its blast, the knight's
+    /// sword 2, the legendary one 3.
     /// Weapons keep their Power (how easily they land big hits); things without a Weapon Power get one (Power 1).
     /// Run again after changing the table; values set by hand on a prefab are overwritten, so change them here.
     /// </summary>
     public static class DamageBalanceMenu
     {
-        // Damage multipliers. A fist is 1: its best hit does 5 (Hit Settings), so these do 5 x the number at best.
-        private const float Hammer = 1.6f;   // 8
-        private const float Heavy = 1.2f;    // 6: the broom
-        private const float FistLike = 1f;   // 5: flip-flops, guns swung as clubs
-        private const float Medium = 0.8f;   // 4
-        private const float Soft = 0.6f;     // 3: the pillow
-        private const float Small = 0.4f;    // 2: and bottles, which also blow up
-        // Thrown things do a little more than a fist (a throw costs you what you threw): a heavy throw 7, a medium one 6.
-        // Light ones stay at 2: 3 is already a big hit, which would make a thrown book knock enemies back.
-        private const float ThrowHeavy = 1.4f;  // 7
-        private const float ThrowMedium = 1.2f; // 6
+        // Damage, a whole number (user, 2026-10-27): a normal hit does it, a hard hit twice (Hit Settings). A fist is 1.
+        private const float Hammer = 2f;
+        private const float Heavy = 1f;      // the broom
+        private const float FistLike = 1f;   // flip-flops, guns swung as clubs
+        private const float Medium = 1f;
+        private const float Soft = 1f;       // the pillow (its low Power makes a hit hard to count)
+        private const float Small = 1f;      // and bottles, which also blow up
+        // A heavy throw does more than a fist (a throw costs you what you threw); a medium one as much.
+        private const float ThrowHeavy = 2f;
+        private const float ThrowMedium = 1f;
 
         private static readonly (string path, float damage, float power)[] Table =
         {
@@ -44,9 +43,9 @@ namespace Game.EditorTools
             ("Weapon/Boong_Gun", FistLike, 0f),
             ("Weapon/Bus_Boong", FistLike, 0f),
             ("Weapon/Elon_Boong", FistLike, 0f),
-            ("Items/Pie_Knight_Sword", 1.4f, 1.5f),
-            // The shop's legendary sword (best hit 12) and shield (Tools > 429 Game > Weapons > Make Legendary Knight Gear).
-            ("Items/Pie_Knight_Sword_Legendary", 2.4f, 2.5f),
+            ("Items/Pie_Knight_Sword", 2f, 1.5f),
+            // The shop's legendary sword (3, a hard hit 6) and shield (Tools > 429 Game > Weapons > Make Legendary Knight Gear).
+            ("Items/Pie_Knight_Sword_Legendary", 3f, 2.5f),
             ("Items/Pie_Knight_Shield_Legendary", Medium, 0f),
 
             // Heavy throws.
@@ -181,13 +180,17 @@ namespace Game.EditorTools
                     if (added) weapon = root.AddComponent<WeaponPower>();
 
                     float oldDamage = weapon.Damage, oldPower = weapon.Power;
+                    int oldBonus = weapon.ThrownBonus;
                     weapon.Damage = damage;
                     if (power > 0f) weapon.Power = power;
-                    if (!added && Mathf.Approximately(oldDamage, damage) && Mathf.Approximately(oldPower, weapon.Power)) continue;
+                    // Thrown things do 1 more than in the hand, but the bottles: their blast is their extra (user, 2026-10-27).
+                    weapon.ThrownBonus = root.name.StartsWith("Empty_Bottle") ? 0 : 1;
+                    if (!added && Mathf.Approximately(oldDamage, damage) && Mathf.Approximately(oldPower, weapon.Power) &&
+                        oldBonus == weapon.ThrownBonus) continue;
 
                     PrefabUtility.SaveAsPrefabAsset(root, path);
                     changed++;
-                    report.AppendLine($"  {root.name}: damage x{damage} (best hit {Mathf.Max(1f, Mathf.Floor(5f * damage + 0.5f))}), power {weapon.Power}{(added ? " (new)" : "")}");
+                    report.AppendLine($"  {root.name}: damage {damage} (hard hit {damage * 2}), thrown +{weapon.ThrownBonus}, power {weapon.Power}{(added ? " (new)" : "")}");
                 }
                 finally
                 {

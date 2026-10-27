@@ -64,9 +64,9 @@ namespace Game.Bonus
         [SerializeField] private float shrinkEach = 0.1f;
         [Tooltip("The giant's health. The smaller, the tougher: each one after it has Tougher Per Pumpkin of this more.")]
         [Min(1f)]
-        [SerializeField] private float giantHealth = 120f;
-        [Tooltip("Each pumpkin has this share of the giant's health more than the one before (0.125 = +12.5%: 120, 135, " +
-                 "150 ... 240 for the 9th).")]
+        [SerializeField] private float giantHealth = 60f;
+        [Tooltip("Each pumpkin has this share of the giant's health more than the one before (0.125 = +12.5%: 60, 68, " +
+                 "75 ... 120 for the 9th).")]
         [Range(0f, 1f)]
         [SerializeField] private float tougherPerPumpkin = 0.125f;
         [Tooltip("How much the giant jiggles when hit (1 = as its Jiggle is set; more = wobblier).")]

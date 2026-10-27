@@ -5476,6 +5476,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 3581745287070432680}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a4614de27b62fcf4ea47fe928e81f457,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6349237255639327079}
   m_SourcePrefab: {fileID: 100100000, guid: a4614de27b62fcf4ea47fe928e81f457, type: 3}
 --- !u!4 &4760044967352357460 stripped
 Transform:
@@ -5568,22 +5572,13 @@ MonoBehaviour:
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
-      transitions:
-      - fsmEvent:
-          name: next
-          isSystemEvent: 0
-          isGlobal: 1
-        toState: Check force
-        linkStyle: 0
-        linkConstraint: 0
-        linkTarget: 0
-        colorIndex: 0
+      transitions: []
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.CollisionEvent
         customNames:
         - 
-        actionEnabled: 01
+        actionEnabled: 00
         actionIsOpen: 01
         actionStartIndex: 00000000
         actionHashCodes: beb33100
@@ -5789,7 +5784,7 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 010101010101
+        actionEnabled: 000000010101
         actionIsOpen: 000000000101
         actionStartIndex: 0000000005000000090000000e0000001300000018000000
         actionHashCodes: 876045022a6e8a0087604502b2cf10005978870081294e04
@@ -6030,7 +6025,19 @@ MonoBehaviour:
     - name: Dead
       isSystemEvent: 0
       isGlobal: 1
-    globalTransitions: []
+    - name: Damage
+      isSystemEvent: 0
+      isGlobal: 1
+    globalTransitions:
+    - fsmEvent:
+        name: Damage
+        isSystemEvent: 0
+        isGlobal: 1
+      toState: Deal 1 damage
+      linkStyle: 0
+      linkConstraint: 0
+      linkTarget: 0
+      colorIndex: 0
     variables:
       floatVariables:
       - useVariable: 1
@@ -6740,7 +6747,7 @@ MonoBehaviour:
   ghostsPerHit: {x: 1, y: 2}
   hitGhostCooldown: 1.5
   maxGhostsWhenHit: 6
-  health: 12
+  health: 6
   minHitSpeed: 3
   hitSounds:
   - {fileID: 8300000, guid: 9f33a6c57f37b904caaa68322aa2e0eb, type: 3}
@@ -6773,3 +6780,37 @@ MonoBehaviour:
   springiness: 200
   settle: 5
   bulge: 0.5
+--- !u!114 &6349237255639327079
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5279559072438028526}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3fa9bbce902d9de4989faa4be958db6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.EnemyHitDamage
+  settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
+  toughness: 4
+  hitCooldown: 0.3
+  knockBack: 0
+  knockBackDistance: 2
+  knockBackTime: 0.45
+  knockBackHop: 0.25
+  knockBackStun: 0.3
+  strayToughness: 1
+  hitEffectSize: 1
+  hideHitEffect: 1
+  exp: 0
+  expOrbs: 0
+  healthFsm: Health
+  healthVariable: health
+  hitEvent: Damage
+  weakHitEvent: ShakeSmall
+  oldDamageFsm: 
+  furniture: 1
+  bumpShare: 1
+  wieldedShare: 1
+  settleSeconds: 0

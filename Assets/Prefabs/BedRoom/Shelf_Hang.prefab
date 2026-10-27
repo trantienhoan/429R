@@ -1016,6 +1016,7 @@ GameObject:
   - component: {fileID: -5561696770007362777}
   - component: {fileID: 8503787089720049897}
   - component: {fileID: 3897710970079957290}
+  - component: {fileID: 3778323309073140224}
   m_Layer: 0
   m_Name: Shelf_Hang
   m_TagString: Furniture
@@ -1178,7 +1179,7 @@ MonoBehaviour:
       - fsmEvent:
           name: next
           isSystemEvent: 0
-          isGlobal: 0
+          isGlobal: 1
         toState: Activate Parts
         linkStyle: 0
         linkConstraint: 0
@@ -1673,7 +1674,7 @@ MonoBehaviour:
     events:
     - name: next
       isSystemEvent: 0
-      isGlobal: 0
+      isGlobal: 1
     - name: FINISHED
       isSystemEvent: 1
       isGlobal: 0
@@ -1780,16 +1781,7 @@ MonoBehaviour:
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
-      transitions:
-      - fsmEvent:
-          name: next
-          isSystemEvent: 0
-          isGlobal: 0
-        toState: Check force
-        linkStyle: 0
-        linkConstraint: 0
-        linkTarget: 0
-        colorIndex: 0
+      transitions: []
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.CollisionEvent
@@ -1797,7 +1789,7 @@ MonoBehaviour:
         customNames:
         - 
         - 
-        actionEnabled: 0101
+        actionEnabled: 0001
         actionIsOpen: 0001
         actionStartIndex: 0000000006000000
         actionHashCodes: beb33100910fc300
@@ -1972,7 +1964,7 @@ MonoBehaviour:
       - fsmEvent:
           name: next
           isSystemEvent: 0
-          isGlobal: 0
+          isGlobal: 1
         toState: Deal 1 damage
         linkStyle: 0
         linkConstraint: 0
@@ -2082,7 +2074,7 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 0101010101
+        actionEnabled: 0000000101
         actionIsOpen: 0000000101
         actionStartIndex: 0000000005000000090000000e00000013000000
         actionHashCodes: 876045022a6e8a00876045025978870081294e04
@@ -2191,8 +2183,8 @@ MonoBehaviour:
           stringValues: []
           vector4Values: []
           objectReferences:
-          - {fileID: 8300000, guid: 485f850c23ef8d74f95b1b8cdfafc966, type: 3}
-          - {fileID: 8300000, guid: 60905b18fcff3b04280b4d367bb7855e, type: 3}
+          - {fileID: 8300000, guid: 54fac89927f7abb49aed32ea51436d23, type: 3}
+          - {fileID: 8300000, guid: 203f2e59b19996f42bd2571ae51d8de8, type: 3}
         fsmEnumParams: []
         fsmFloatParams:
         - useVariable: 1
@@ -2288,14 +2280,26 @@ MonoBehaviour:
     events:
     - name: next
       isSystemEvent: 0
-      isGlobal: 0
+      isGlobal: 1
     - name: back
       isSystemEvent: 0
       isGlobal: 0
     - name: FINISHED
       isSystemEvent: 1
       isGlobal: 0
-    globalTransitions: []
+    - name: Damage
+      isSystemEvent: 0
+      isGlobal: 1
+    globalTransitions:
+    - fsmEvent:
+        name: Damage
+        isSystemEvent: 0
+        isGlobal: 1
+      toState: Deal 1 damage
+      linkStyle: 0
+      linkConstraint: 0
+      linkTarget: 0
+      colorIndex: 0
     variables:
       floatVariables:
       - useVariable: 1
@@ -2493,3 +2497,37 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &3778323309073140224
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9044708629856060257}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3fa9bbce902d9de4989faa4be958db6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.EnemyHitDamage
+  settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
+  toughness: 3.3333333
+  hitCooldown: 0.3
+  knockBack: 0
+  knockBackDistance: 2
+  knockBackTime: 0.45
+  knockBackHop: 0.25
+  knockBackStun: 0.3
+  strayToughness: 1
+  hitEffectSize: 1
+  hideHitEffect: 1
+  exp: 0
+  expOrbs: 0
+  healthFsm: Health
+  healthVariable: health
+  hitEvent: Damage
+  weakHitEvent: ShakeSmall
+  oldDamageFsm: 
+  furniture: 1
+  bumpShare: 0
+  wieldedShare: 1
+  settleSeconds: 0

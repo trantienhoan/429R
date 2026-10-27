@@ -27,7 +27,8 @@ namespace Game.Combat
         private const float FullStrength = 1f;
         private const float WeakSeconds = 0.04f;
         private const float FullSeconds = 0.15f;
-        private const float FullDamage = 6f;
+        // Whole-number damage (2026-10-27): a hard punch does 2, a hammer's 4.
+        private const float FullDamage = 3f;
         // One buzz per hand at most this often (a swing that hits twice).
         private const float Cooldown = 0.06f;
         // How long a PlayMaker breakable is watched after a hit.

@@ -2007,7 +2007,7 @@ MonoBehaviour:
       - fsmEvent:
           name: next
           isSystemEvent: 0
-          isGlobal: 0
+          isGlobal: 1
         toState: Activate Parts
         linkStyle: 0
         linkConstraint: 0
@@ -2406,7 +2406,7 @@ MonoBehaviour:
     events:
     - name: next
       isSystemEvent: 0
-      isGlobal: 0
+      isGlobal: 1
     - name: FINISHED
       isSystemEvent: 1
       isGlobal: 0
@@ -2542,7 +2542,7 @@ MonoBehaviour:
       - fsmEvent:
           name: next
           isSystemEvent: 0
-          isGlobal: 0
+          isGlobal: 1
         toState: Check force
         linkStyle: 0
         linkConstraint: 0
@@ -2691,7 +2691,7 @@ MonoBehaviour:
       - fsmEvent:
           name: next
           isSystemEvent: 0
-          isGlobal: 0
+          isGlobal: 1
         toState: Deal 1 damage
         linkStyle: 0
         linkConstraint: 0
@@ -2953,7 +2953,7 @@ MonoBehaviour:
     events:
     - name: next
       isSystemEvent: 0
-      isGlobal: 0
+      isGlobal: 1
     - name: back
       isSystemEvent: 0
       isGlobal: 0
@@ -16869,6 +16869,7 @@ GameObject:
   - component: {fileID: 7359496080433350348}
   - component: {fileID: 5246388945536842361}
   - component: {fileID: 751460022640409778}
+  - component: {fileID: 2777923231280502143}
   m_Layer: 0
   m_Name: Bedroom_Coffer_Metal
   m_TagString: Furniture
@@ -17033,7 +17034,7 @@ MonoBehaviour:
       - fsmEvent:
           name: next
           isSystemEvent: 0
-          isGlobal: 0
+          isGlobal: 1
         toState: Activate Parts
         linkStyle: 0
         linkConstraint: 0
@@ -17494,7 +17495,7 @@ MonoBehaviour:
     events:
     - name: next
       isSystemEvent: 0
-      isGlobal: 0
+      isGlobal: 1
     - name: FINISHED
       isSystemEvent: 1
       isGlobal: 0
@@ -17626,25 +17627,7 @@ MonoBehaviour:
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
-      transitions:
-      - fsmEvent:
-          name: next
-          isSystemEvent: 0
-          isGlobal: 0
-        toState: Check force
-        linkStyle: 0
-        linkConstraint: 0
-        linkTarget: 0
-        colorIndex: 0
-      - fsmEvent:
-          name: FINISHED
-          isSystemEvent: 1
-          isGlobal: 0
-        toState: Deal 1 damage
-        linkStyle: 0
-        linkConstraint: 0
-        linkTarget: 0
-        colorIndex: 0
+      transitions: []
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.CollisionEvent
@@ -17652,7 +17635,7 @@ MonoBehaviour:
         customNames:
         - 
         - 
-        actionEnabled: 0101
+        actionEnabled: 0000
         actionIsOpen: 0101
         actionStartIndex: 0000000006000000
         actionHashCodes: beb33100beb33100
@@ -17779,7 +17762,7 @@ MonoBehaviour:
       - fsmEvent:
           name: next
           isSystemEvent: 0
-          isGlobal: 0
+          isGlobal: 1
         toState: Deal 1 damage
         linkStyle: 0
         linkConstraint: 0
@@ -17893,7 +17876,7 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 01010101010101
+        actionEnabled: 00000001010101
         actionIsOpen: 00000000000001
         actionStartIndex: 0000000005000000090000000e00000013000000180000001d000000
         actionHashCodes: 876045022a6e8a0087604502b2cf10005978870081294e04bac44f04
@@ -18024,9 +18007,9 @@ MonoBehaviour:
           stringValues: []
           vector4Values: []
           objectReferences:
-          - {fileID: 8300000, guid: 693c989e9dcc7c2439a5fc1361c295ed, type: 3}
-          - {fileID: 8300000, guid: 1d3e9a2d9af772241983787c2066f8ec, type: 3}
-          - {fileID: 8300000, guid: 841f5f6ac64768e4b83dad4eb3584bc5, type: 3}
+          - {fileID: 8300000, guid: 54fac89927f7abb49aed32ea51436d23, type: 3}
+          - {fileID: 8300000, guid: 423ec03b8e688e04db8d55b7f3119fef, type: 3}
+          - {fileID: 8300000, guid: 203f2e59b19996f42bd2571ae51d8de8, type: 3}
         fsmEnumParams:
         - useVariable: 0
           name: 
@@ -18184,14 +18167,26 @@ MonoBehaviour:
     events:
     - name: next
       isSystemEvent: 0
-      isGlobal: 0
+      isGlobal: 1
     - name: back
       isSystemEvent: 0
       isGlobal: 0
     - name: FINISHED
       isSystemEvent: 1
       isGlobal: 0
-    globalTransitions: []
+    - name: Damage
+      isSystemEvent: 0
+      isGlobal: 1
+    globalTransitions:
+    - fsmEvent:
+        name: Damage
+        isSystemEvent: 0
+        isGlobal: 1
+      toState: Deal 1 damage
+      linkStyle: 0
+      linkConstraint: 0
+      linkTarget: 0
+      colorIndex: 0
     variables:
       floatVariables:
       - useVariable: 1
@@ -18406,6 +18401,40 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &2777923231280502143
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7182657678705412295}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3fa9bbce902d9de4989faa4be958db6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.EnemyHitDamage
+  settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
+  toughness: 3.3333333
+  hitCooldown: 0.3
+  knockBack: 0
+  knockBackDistance: 2
+  knockBackTime: 0.45
+  knockBackHop: 0.25
+  knockBackStun: 0.3
+  strayToughness: 1
+  hitEffectSize: 1
+  hideHitEffect: 1
+  exp: 0
+  expOrbs: 0
+  healthFsm: Health
+  healthVariable: health
+  hitEvent: Damage
+  weakHitEvent: ShakeSmall
+  oldDamageFsm: 
+  furniture: 1
+  bumpShare: 0
+  wieldedShare: 1
+  settleSeconds: 0
 --- !u!1 &8122581588030705955
 GameObject:
   m_ObjectHideFlags: 0

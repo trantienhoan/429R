@@ -44,7 +44,7 @@ namespace Game.PlayGround
         [Header("Chopping down")]
         [Tooltip("Damage it takes before it falls: a hit does 1 per 4 m/s of speed (at least 1), a grenade 3. Not used " +
                  "when it has its own Damage and Health FSMs: their health counts instead.")]
-        [Min(1f)] [SerializeField] private float health = 12f;
+        [Min(1f)] [SerializeField] private float health = 6f;
         [Tooltip("Hits slower than this, in metres per second, don't hurt it.")]
         [Min(0f)] [SerializeField] private float minHitSpeed = 3f;
         [SerializeField] private AudioClip[] hitSounds = System.Array.Empty<AudioClip>();

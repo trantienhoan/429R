@@ -122,6 +122,10 @@ namespace Game.Enemies
             [Tooltip("A leap at the player's face: it springs up to their face (Lunge is how far it jumps), clings there " +
                      "biting from Hit From to Hit Until, then drops off. It can be swatted out of the air.")]
             public bool leapToFace;
+            [Tooltip("Boss size with Unstoppable Attacks: once it winds up this attack, nothing stops it until it's over (the " +
+                     "jumps: a pounce, a face leap, a dive bomb). Off: hits make it flinch and knock it back, and a fist or a " +
+                     "held weapon blocks it, as for any bug (user, 2026-10-27: only some attacks can't be stopped).")]
+            public bool unstoppable;
             [Tooltip("Afterwards it turns and runs away (Run Away Distance) instead of backing off facing the player.")]
             public bool runAwayAfter;
             [Tooltip("A face leap that doesn't drop back off the face: as it lets go it carries on through the player's " +
@@ -227,7 +231,7 @@ namespace Game.Enemies
             [Tooltip("Its size (scale), random between.")]
             public Vector2 scale = new(0.4f, 0.75f);
             [Tooltip("Its health, a whole number random between (both included).")]
-            public Vector2Int health = new(8, 10);
+            public Vector2Int health = new(4, 5);
             [Tooltip("Multiplies its walking and running speed.")]
             [Min(0.1f)]
             public float speed = 1f;
@@ -286,11 +290,11 @@ namespace Game.Enemies
         [Header("Size")]
         [Tooltip("Which size this spider is. Random: one of the three, picked by their Weight each time one appears.")]
         [SerializeField] private SizeClass size = SizeClass.Random;
-        [SerializeField] private SizeSettings small = new() { weight = 45f, scale = new Vector2(0.3f, 0.5f), health = new Vector2Int(3, 5), speed = 1f, pitch = 1.3f, dodgeChance = 0.5f, webs = false };
-        [SerializeField] private SizeSettings normal = new() { weight = 45f, scale = new Vector2(0.4f, 0.75f), health = new Vector2Int(8, 10), speed = 1.15f, pitch = 1f, dodgeChance = 0.35f };
+        [SerializeField] private SizeSettings small = new() { weight = 45f, scale = new Vector2(0.3f, 0.5f), health = new Vector2Int(2, 3), speed = 1f, pitch = 1.3f, dodgeChance = 0.5f, webs = false };
+        [SerializeField] private SizeSettings normal = new() { weight = 45f, scale = new Vector2(0.4f, 0.75f), health = new Vector2Int(4, 5), speed = 1.15f, pitch = 1f, dodgeChance = 0.35f };
         [SerializeField] private SizeSettings boss = new()
         {
-            weight = 10f, scale = new Vector2(1.25f, 1.5f), health = new Vector2Int(20, 25), speed = 0.9f, windUp = 1.3f,
+            weight = 10f, scale = new Vector2(1.25f, 1.5f), health = new Vector2Int(10, 13), speed = 0.9f, windUp = 1.3f,
             playerEvent = "DamageHeavy", knockBack = 0.35f, pitch = 0.7f, dodgeChance = 0.15f, rest = 0.4f, launchHeight = 0.8f, launchDistance = 1.6f,
         };
 
@@ -343,6 +347,10 @@ namespace Game.Enemies
         [Tooltip("Speed while running at or around the player, in metres per second.")]
         [Min(0.1f)]
         [SerializeField] private float runSpeed = 2.8f;
+        [Tooltip("Every walk and run (wandering, coming for the player, running away) is this share as fast: 0.7 = 30% " +
+                 "slower (user, 2026-10-27: the game is about throwing). Leaps, charges and knock-backs aren't changed.")]
+        [Range(0.1f, 2f)]
+        [SerializeField] private float moveSpeedScale = 0.7f;
         [Tooltip("Runs in short bursts with tiny stops, like a spider, instead of gliding.")]
         [SerializeField] private bool skitter = true;
         [Tooltip("How long each burst lasts, in seconds (random between).")]
@@ -590,7 +598,7 @@ namespace Game.Enemies
         [Tooltip("Stun guard: after something stops it (a flinch, a knock-back, a knock-out), nothing can stop it again " +
                  "for this many seconds, counted from when it's back on its feet. Light taps never make it jerk, and a " +
                  "flier comes straight back at the player after a hit instead of flying up. Hits still hurt. 0 = off " +
-                 "(minions and the white mini bosses can be stun-locked). Pumpkin Butt mini bosses: 4.")]
+                 "(minions can be stun-locked). White mini bosses: 0.5; Pumpkin Butt mini bosses: 2.")]
         [Min(0f)]
         [SerializeField] private float stunGuardSeconds;
         [Tooltip("A hit too weak to hurt it (a soft throw, a light tap) still makes it flinch this long, in seconds: it " +
@@ -657,10 +665,11 @@ namespace Game.Enemies
                  "instead of circling; after a leap it doesn't run off. A flier waits up high half as long. Off: it acts " +
                  "like the others (still without waiting for a turn).")]
         [SerializeField] private bool aggressiveBoss = true;
-        [Tooltip("Boss size only: once it winds up to attack, nothing stops it until the attack is over. Hits still hurt " +
-                 "but don't make it flinch or knock it back, and a fist or a held weapon in the way doesn't block the bite " +
-                 "(a legendary shield still does), so punching non-stop doesn't keep it off. A step back or aside still " +
-                 "dodges it. Its attacks hurt less to make up for it (Unstoppable Player Event).")]
+        [Tooltip("Boss size only: once it winds up an attack ticked Unstoppable (its jumps; its special moves always), " +
+                 "nothing stops it until the attack is over. Hits still hurt but don't make it flinch or knock it back, and " +
+                 "a fist or a held weapon in the way doesn't block it (a legendary shield still does). A step back or aside " +
+                 "still dodges it. Its other attacks can be stopped and blocked. All its attacks hurt less to make up for it " +
+                 "(Unstoppable Player Event).")]
         [SerializeField] private bool unstoppableAttacks = true;
         [Tooltip("Sent to the player's PlayerHealth FSM when an unstoppable attack lands, instead of its size's event: " +
                  "DamageStrongZ (25-50), DamageHeavy (40-50), Damage (6-9). Empty: its size's event, as usual.")]
@@ -699,6 +708,10 @@ namespace Game.Enemies
         [Tooltip("As many minions come as the Enemy Limit has room for when it calls (12 on Quest, 20 on PC, less the " +
                  "enemies already out), at least the smaller Minion Count. Off: Minion Count.")]
         [SerializeField] private bool minionsFillLimit;
+        [Tooltip("With Minions Fill Limit: the share of that room it fills (0.5 = half). White mini bosses: 0.5; " +
+                 "Pumpkin Butt mini bosses: 1.")]
+        [Range(0.1f, 1f)]
+        [SerializeField] private float minionFillShare = 1f;
         [Tooltip("It also calls as soon as it runs away (Flee Below Health), if that comes first.")]
         [SerializeField] private bool callWhenFleeing = true;
 
@@ -860,7 +873,7 @@ namespace Game.Enemies
         [Tooltip("Its health. It takes hits like a normal bug (Toughness 1): 2 = one good throw of a tree pumpkin kills " +
                  "it, a soft lob does half. It keeps away, so a throw (or a flying punch) is the way to catch it.")]
         [Min(1f)]
-        [SerializeField] private float anomalyHealth = 2f;
+        [SerializeField] private float anomalyHealth = 1f;
 
         [Header("Sounds")]
         [SerializeField] private AudioClip[] noticeSounds = Array.Empty<AudioClip>();
@@ -1113,9 +1126,12 @@ namespace Game.Enemies
         private float Rest => kind != null ? kind.rest : 1f;
         // A mini boss that hunts the player down (Aggressive Boss).
         private bool Aggressive => aggressiveBoss && kindName == SizeClass.Boss && !GoesForObject && !anomaly;
-        // A mini boss winding up or attacking, with Unstoppable Attacks: nothing stops it now.
-        private bool Unstoppable => unstoppableAttacks && kindName == SizeClass.Boss && !GoesForObject && !anomaly &&
-                                    (state == State.Prepare || state == State.Attack);
+        // A mini boss winding up or attacking, with Unstoppable Attacks: its bites use Unstoppable Player Event.
+        private bool BossAttacking => unstoppableAttacks && kindName == SizeClass.Boss && !GoesForObject && !anomaly &&
+                                      (state == State.Prepare || state == State.Attack);
+        // ...and in the middle of one of its unstoppable attacks (its jumps; the attack is only picked as its wind-up
+        // ends, so the wind-up itself can still be stopped): nothing stops it now.
+        private bool Unstoppable => BossAttacking && state == State.Attack && move != null && move.unstoppable;
 
         /// <summary>Flying right now (a flier that hasn't lost its wings).</summary>
         public bool IsFlying => flies && !grounded;
@@ -1708,7 +1724,7 @@ namespace Game.Enemies
                 // Keeps the gap it wound up at, so backing off a little during the warning doesn't throw it off.
                 var to = PlayerFloor() - transform.position;
                 float gap = to.magnitude - WindUpDistance();
-                if (gap > 0.05f) agent.Move(to.normalized * Mathf.Min(gap, RunSpeed * 0.6f * Time.deltaTime));
+                if (gap > 0.05f) agent.Move(to.normalized * Mathf.Min(gap, RunSpeed * moveSpeedScale * 0.6f * Time.deltaTime));
             }
             if (Time.time < stateUntil) return;
 
@@ -2222,7 +2238,7 @@ namespace Game.Enemies
         private void BitePlayer(bool shove, bool landSound)
         {
             DamageVignette.HitFrom(transform);
-            if (Unstoppable && !string.IsNullOrEmpty(unstoppablePlayerEvent)) SendToPlayer(unstoppablePlayerEvent, PlayerHealthFsm);
+            if (BossAttacking && !string.IsNullOrEmpty(unstoppablePlayerEvent)) SendToPlayer(unstoppablePlayerEvent, PlayerHealthFsm);
             else SendToPlayer(BiteEvent);
             if (move.slowSeconds > 0f) Game.Locomotion.PlayerSlow.Apply(move.slowPlayerTo, move.slowSeconds);
             if (landSound && move.landSound != null) PlayOne(move.landSound, true);
@@ -2253,11 +2269,14 @@ namespace Game.Enemies
         {
             if (blockWearPer <= 0f || body == null || Fist.IsFistBall(body) || body.GetComponent<Game.Weapons.LegendaryGear>() != null) return;
             if (!Game.Weapons.Blast.HasHealth(body.gameObject, out var health, out var damageFsm) || health == null) return;
-            // Weapon Master (a bonus stat) makes it wear less: 0.8 of a point for a plain bite with its 1st point.
-            float wear = Mathf.Max(1f, Mathf.Round(PlayerDamageOf(BiteEvent) / blockWearPer)) * Game.Leveling.PlayerLevel.WeaponMasterBlockShare;
+            // Weapon Master (a bonus stat) makes it wear less. Whole points, at least 1.
+            float wear = Mathf.Max(1f, Mathf.Round(PlayerDamageOf(BiteEvent) / blockWearPer));
+            wear = Mathf.Max(1f, Mathf.Round(wear * Game.Leveling.PlayerLevel.WeaponMasterBlockShare));
             bool ownHit = damageFsm != null && damageFsm.Fsm.GetState(OwnHitState) != null;
-            // Its own hit takes exactly one point, so the rest (or what's given back, under a point) goes straight off.
-            health.Value -= ownHit ? wear - 1f : wear;
+            // Its own hit takes exactly one point, so the rest goes straight off; with Enemy Hit Damage counting its hits
+            // (furniture, props) that hit only shows, and all of it goes straight off.
+            bool ownCounts = ownHit && !body.TryGetComponent<EnemyHitDamage>(out _);
+            health.Value -= ownCounts ? wear - 1f : wear;
             if (ownHit) damageFsm.SetState(OwnHitState);
         }
 
@@ -2404,8 +2423,10 @@ namespace Game.Enemies
                 if (health.Value / startHealth > callBelowHealth && !(callWhenFleeing && fled)) return;
                 called = true;
                 minionsLeft = Random.Range(minionCount.x, Mathf.Max(minionCount.x, minionCount.y) + 1);
-                // As many as there's room for in the game.
-                if (minionsFillLimit) minionsLeft = Mathf.Max(minionCount.x, EnemyLimit.Max - EnemyLimit.AliveCount);
+                // As many as there's room for in the game (or a share of it).
+                if (minionsFillLimit)
+                    minionsLeft = Mathf.Max(minionCount.x,
+                        Mathf.RoundToInt((EnemyLimit.Max - EnemyLimit.AliveCount) * minionFillShare));
                 nextMinion = Time.time + 0.3f;
                 PlayOne(noticeSounds, true);
                 SendToOwnFsms("CallMinions");
@@ -4001,7 +4022,7 @@ namespace Game.Enemies
 
         private void GoTo(Vector3 point, float speed, bool turnToPath)
         {
-            agent.speed = speed;
+            agent.speed = speed * moveSpeedScale;
             agent.updateRotation = turnToPath;
             agent.isStopped = false;
             agent.SetDestination(point);

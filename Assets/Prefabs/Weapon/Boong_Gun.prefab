@@ -1920,6 +1920,7 @@ GameObject:
   - component: {fileID: 7627449132777865989}
   - component: {fileID: 2075216818442432465}
   - component: {fileID: 4991937432670639671}
+  - component: {fileID: 8328630166229657584}
   m_Layer: 0
   m_Name: Boong_Gun
   m_TagString: Weapon
@@ -2171,22 +2172,13 @@ MonoBehaviour:
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
-      transitions:
-      - fsmEvent:
-          name: next
-          isSystemEvent: 0
-          isGlobal: 1
-        toState: Check force
-        linkStyle: 0
-        linkConstraint: 0
-        linkTarget: 0
-        colorIndex: 0
+      transitions: []
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.CollisionEvent
         customNames:
         - 
-        actionEnabled: 01
+        actionEnabled: 00
         actionIsOpen: 01
         actionStartIndex: 00000000
         actionHashCodes: beb33100
@@ -2394,7 +2386,7 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 01010101010101
+        actionEnabled: 00000001010101
         actionIsOpen: 00000001010101
         actionStartIndex: 0000000005000000090000000e00000013000000160000001b000000
         actionHashCodes: 876045022a6e8a0087604502b2cf100048c011015978870081294e04
@@ -2642,7 +2634,19 @@ MonoBehaviour:
     - name: FINISHED
       isSystemEvent: 1
       isGlobal: 0
-    globalTransitions: []
+    - name: Damage
+      isSystemEvent: 0
+      isGlobal: 1
+    globalTransitions:
+    - fsmEvent:
+        name: Damage
+        isSystemEvent: 0
+        isGlobal: 1
+      toState: Deal 1 damage
+      linkStyle: 0
+      linkConstraint: 0
+      linkTarget: 0
+      colorIndex: 0
     variables:
       floatVariables:
       - useVariable: 1
@@ -3525,13 +3529,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 982a9014cc7640d408db134d5e3bdf8f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Weapons.HitRumble
-  minHitSpeed: 1
-  fullHitSpeed: 12
-  minStrength: 0.2
-  maxStrength: 1
-  duration: 0.06
-  cooldown: 0.08
   ignoreTag: Player
+  quietAfterGrab: 0.3
 --- !u!114 &2075216818442432465
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3545,6 +3544,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.WeaponPower
   power: 1.6
+  damage: 1
 --- !u!114 &4991937432670639671
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3567,7 +3567,7 @@ MonoBehaviour:
   smoke: {fileID: 4774269423018728791, guid: 6dc229f4e3c8311428773c7f0214f2ac, type: 3}
   smokeScale: 0.04
   radius: 2
-  damage: 5
+  damage: 3
   push: 5
   playerEvent: Damage
   breakApart: 1
@@ -3579,6 +3579,40 @@ MonoBehaviour:
   volume: 1
   rumbleStrength: 1
   rumbleDuration: 0.4
+--- !u!114 &8328630166229657584
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4098069887184717952}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3fa9bbce902d9de4989faa4be958db6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.EnemyHitDamage
+  settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
+  toughness: 6.6666665
+  hitCooldown: 0.3
+  knockBack: 0
+  knockBackDistance: 2
+  knockBackTime: 0.45
+  knockBackHop: 0.25
+  knockBackStun: 0.3
+  strayToughness: 1
+  hitEffectSize: 1
+  hideHitEffect: 1
+  exp: 0
+  expOrbs: 0
+  healthFsm: Health
+  healthVariable: health
+  hitEvent: Damage
+  weakHitEvent: ShakeSmall
+  oldDamageFsm: 
+  furniture: 1
+  bumpShare: 1
+  wieldedShare: 1
+  settleSeconds: 0
 --- !u!1 &4695882866860672089
 GameObject:
   m_ObjectHideFlags: 0

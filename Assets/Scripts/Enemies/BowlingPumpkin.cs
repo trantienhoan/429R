@@ -83,7 +83,7 @@ namespace Game.Enemies
         [SerializeField] private float smashReach = 0.35f;
         [Tooltip("Damage to each breakable thing in its way (tree pumpkins, boxes, furniture), once.")]
         [Min(0f)]
-        [SerializeField] private float smashDamage = 8f;
+        [SerializeField] private float smashDamage = 4f;
         [Tooltip("How fast loose things are shoved away, in metres per second (faster when it rolls faster, up to twice " +
                  "this).")]
         [Min(0f)]
@@ -95,7 +95,7 @@ namespace Game.Enemies
         [Min(0.5f)]
         [SerializeField] private float blastRadius = 2f;
         [Min(0f)]
-        [SerializeField] private float blastDamage = 3f;
+        [SerializeField] private float blastDamage = 2f;
         [Min(0f)]
         [SerializeField] private float blastPush = 6f;
         [SerializeField] private GameObject[] blastEffects = System.Array.Empty<GameObject>();
@@ -104,6 +104,10 @@ namespace Game.Enemies
         [SerializeField] private AudioClip blastSound;
         [Tooltip("Sent to the player's Damage FSM when the blast reaches them: Damage (6-9), DamageHeavy (40-50).")]
         [SerializeField] private string playerEvent = "DamageHeavy";
+        [Tooltip("The share of that event's damage the player takes (0.5 = half: DamageHeavy does 20-25). Less damage, " +
+                 "more push (user, 2026-10-27).")]
+        [Range(0.05f, 1f)]
+        [SerializeField] private float playerDamageShare = 0.5f;
         [Tooltip("The blast throws the player this high (x) and this far (y), in metres (Toughness cuts both).")]
         [SerializeField] private Vector2 playerLaunch = new(1.5f, 3f);
         [Tooltip("A hit of the player's at least this fast (metres per second: a punch, a weapon, something thrown) sets it " +
@@ -391,6 +395,10 @@ namespace Game.Enemies
             var at = Middle();
             if (speaker != null) speaker.Stop();
             if (warner != null) warner.Stop();
+            // The player in reach takes only Player Damage Share of the blast (the next damage they take is cut).
+            var eyes = Camera.main;
+            if (eyes != null && (eyes.transform.position - at).sqrMagnitude <= blastRadius * blastRadius)
+                PlayerDamageShare.Next(playerDamageShare);
             bool hurt = Blast.Explode(at, blastRadius, blastDamage, blastPush, body, blastEffects, blastSound, 1f, playerEvent,
                 false, blastEffectSize);
             if (hurt) PlayerLaunch.Launch(at, playerLaunch.x, playerLaunch.y);

@@ -91,9 +91,9 @@ namespace Game.EditorTools
                     s.FindProperty("walkSpeed").floatValue = 0.8f;
 
                     // Sizes: the old Bee was scale 1 with 5 health, Bee_Small 3, the old bosses 2.2-2.5 with 21.
-                    Size(s, "small", new Vector2(0.7f, 0.85f), new Vector2Int(2, 3), 1.1f, 1f, "", 0.5f);
-                    Size(s, "normal", new Vector2(0.95f, 1.1f), new Vector2Int(4, 5), 1f, 1f, "", 0.35f);
-                    Size(s, "boss", new Vector2(2.2f, 2.5f), new Vector2Int(20, 22), 0.9f, 1.3f, "DamageHeavy", 0.15f);
+                    Size(s, "small", new Vector2(0.7f, 0.85f), new Vector2Int(1, 2), 1.1f, 1f, "", 0.5f);
+                    Size(s, "normal", new Vector2(0.95f, 1.1f), new Vector2Int(2, 3), 1f, 1f, "", 0.35f);
+                    Size(s, "boss", new Vector2(2.2f, 2.5f), new Vector2Int(10, 11), 0.9f, 1.3f, "DamageHeavy", 0.15f);
 
                     // One sting on its attack animation (a 1 s loop).
                     var attacks = s.FindProperty("attacks");

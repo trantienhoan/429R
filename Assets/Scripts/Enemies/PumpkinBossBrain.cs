@@ -114,6 +114,9 @@ namespace Game.Enemies
         [Tooltip("After coming round, it can't be made dizzy again for this many seconds.")]
         [Min(0f)]
         [SerializeField] private float dizzyCooldown = 20f;
+        [Tooltip("The dizzy stars (Hit Settings' Stun Stars) circle this far above its head bone, in metres (x), on a " +
+                 "ring this wide from the middle (y): just over the top of the big pumpkin head.")]
+        [SerializeField] private Vector2 dizzyStars = new(1f, 0.5f);
 
         [Header("Hitting the player")]
         [Tooltip("Sent to the player's PlayerHealth FSM when an upper-body hit or the true form's body slam lands " +
@@ -483,6 +486,8 @@ namespace Game.Enemies
             Begin(Act.Dizzy, state, seconds);
             Say(hurtSound);
             Puff();
+            // Stars circling over its head while it reels.
+            if (TryGetComponent(out Game.Combat.EnemyHitDamage hits)) hits.ShowStunned(seconds, head, dizzyStars.x, dizzyStars.y);
         }
 
         private void DropPumpkin()
