@@ -16,10 +16,12 @@ namespace Game.EditorTools
     /// - Ring: a faint golden circle lying level, turning slowly.
     /// - Stars: five chubby gold stars spaced round the ring, circling on it, spinning and twinkling.
     /// - Sparkles: little white-gold twinkles left along the ring behind them, fading fast.
+    /// - Sound: the user's dizzy twinkle (ElevenLabs, 2026-10-28) looping from the ring for as long as the stars are up.
     /// </summary>
     public static class StunStarsFxMenu
     {
         private const string Folder = "Assets/Prefabs/Enemies/Hit_FX";
+        private const string SoundPath = "Assets/Audio/SFX/Cartoon_dizzy_stun1.wav";
         private const string SettingsPath = "Assets/Data/Combat/Hit Settings.asset";
         private const string MaterialPath = "Assets/Lana Studio/Hyper Casual FX/Materials/Circles_AB.mat";
         private const string Textures = "Assets/Lana Studio/Hyper Casual FX/Textures/";
@@ -42,6 +44,7 @@ namespace Game.EditorTools
             MakeRing(root);
             MakeStars(root);
             MakeSparkles(root);
+            AddSound(root);
             GameObject prefab;
             try { prefab = PrefabUtility.SaveAsPrefabAsset(root, $"{Folder}/Stun_Stars.prefab"); }
             finally { Object.DestroyImmediate(root); }
@@ -57,6 +60,26 @@ namespace Game.EditorTools
                 note = "Hit Settings: Stun Stars set";
             }
             Debug.Log($"[Stun Stars] Built {Folder}/Stun_Stars.prefab; {note}.");
+        }
+
+        /// <summary>
+        /// The dizzy twinkle on the stars' root: loops from when a copy appears until it's destroyed, heard from the head
+        /// (3D, like the pumpkins' laughs). Scaling the copy to the ring doesn't change how far it carries.
+        /// </summary>
+        public static void AddSound(GameObject root)
+        {
+            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(SoundPath);
+            if (clip == null) { Debug.LogWarning("Stun stars FX: no " + SoundPath + ", so the stars are silent"); return; }
+            if (!root.TryGetComponent(out AudioSource source)) source = root.AddComponent<AudioSource>();
+            source.clip = clip;
+            source.loop = true;
+            source.playOnAwake = true;
+            source.volume = 0.6f;
+            source.spatialBlend = 1f;
+            source.rolloffMode = AudioRolloffMode.Logarithmic;
+            source.minDistance = 2f;
+            source.maxDistance = 20f;
+            source.dopplerLevel = 0f;
         }
 
         private static void MakeRing(GameObject root)

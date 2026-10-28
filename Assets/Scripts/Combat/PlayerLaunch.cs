@@ -28,8 +28,11 @@ namespace Game.Combat
         private float flightStarted;
         private bool flying;
         private bool shakeOnLand;
+        // Sent to the PlayerHealth FSM when this flight ends (Hurt On Landing), else empty.
+        private string landEvent;
         // The player's health (the PlayerHealth FSM on this object), looked up when first needed.
         private HutongGames.PlayMaker.FsmFloat health;
+        private PlayMakerFSM healthFsm;
 
         /// <summary>Whether the player is in the air from a launch right now.</summary>
         public bool Flying => flying;
@@ -54,6 +57,18 @@ namespace Game.Combat
             float share = toughness ? Mathf.Max(Game.Leveling.PlayerLevel.PushShare, Mathf.Clamp01(minShare)) : 1f;
             launcher.Begin(from, height * share, distance * share, shake);
             return true;
+        }
+
+        /// <summary>
+        /// The flight going now hurts when it ends: <paramref name="healthEvent"/> goes to the player's PlayerHealth FSM
+        /// as they land (e.g. the rooftop giants' smash: the fall is the hit). Not flying: it's sent now.
+        /// </summary>
+        public static void HurtOnLanding(string healthEvent)
+        {
+            var launcher = Find();
+            if (launcher == null || string.IsNullOrEmpty(healthEvent)) return;
+            launcher.landEvent = healthEvent;
+            if (!launcher.flying) launcher.Hurt();
         }
 
         private static PlayerLaunch cached;
@@ -86,7 +101,16 @@ namespace Game.Combat
             if (body != null && body.enabled) EndFlight(false);
             // The body is off (something else is moving the rig): the flight just ends; what it passed through is made
             // solid again when the next flight ends.
-            else { flying = false; velocity = Vector3.zero; }
+            else { flying = false; velocity = Vector3.zero; Hurt(); }
+        }
+
+        // Sends the Hurt On Landing event, once, unless the player is already down.
+        private void Hurt()
+        {
+            var healthEvent = landEvent;
+            landEvent = null;
+            if (string.IsNullOrEmpty(healthEvent) || PlayerDown() || healthFsm == null) return;
+            healthFsm.SendEvent(healthEvent);
         }
 
         // The player is down: health out, the death (or the lucky coins) under way, or getting back up from a revive.
@@ -96,7 +120,9 @@ namespace Game.Combat
             {
                 foreach (var fsm in GetComponents<PlayMakerFSM>())
                 {
-                    if (fsm.FsmName == "PlayerHealth") health = fsm.FsmVariables.FindFsmFloat("PlayerHealth");
+                    if (fsm.FsmName != "PlayerHealth") continue;
+                    healthFsm = fsm;
+                    health = fsm.FsmVariables.FindFsmFloat("PlayerHealth");
                 }
             }
             return Game.Saving.Checkpoints.IsDying ||
@@ -227,6 +253,7 @@ namespace Game.Combat
             }
             passedThrough.Clear();
             if (landed && shakeOnLand) Shake(landShake);
+            Hurt();
         }
 
         private static void Shake(string eventName)

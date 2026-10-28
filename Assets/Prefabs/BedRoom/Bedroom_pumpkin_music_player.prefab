@@ -10200,6 +10200,7 @@ GameObject:
   - component: {fileID: 7751107247652146109}
   - component: {fileID: 5795266637212713084}
   - component: {fileID: 2989336954860658897}
+  - component: {fileID: 2295823363254428520}
   m_Layer: 0
   m_Name: Bedroom_pumpkin_music_player
   m_TagString: Furniture
@@ -11887,7 +11888,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8134454340205444463}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 1384774831, guid: e743331561ef77147ae48cda9bcb8209, type: 3}
   m_Name: 
@@ -12183,6 +12184,24 @@ MonoBehaviour:
   bumpShare: 1
   wieldedShare: 1
   settleSeconds: 0
+--- !u!114 &2295823363254428520
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8134454340205444463}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c7d49a284f8d31544af208a5667b3f86, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Audio.PlaylistPlayer
+  playlist: {fileID: 11400000, guid: ba949f49dc9ea264e8924c4d7de8e0a6, type: 2}
+  spatialBlend: 0
+  punchToSkip: 1
+  skipCooldown: 1
+  doneBool: 
+  doneFsm: EnemyManager
 --- !u!1001 &8353984320580238564
 PrefabInstance:
   m_ObjectHideFlags: 0

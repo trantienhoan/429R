@@ -6565,10 +6565,6 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 5114028429046287829}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6f79a690977f953468de116b7a904e71,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 6149852412383081363}
     - targetCorrespondingSourceObject: {fileID: 7728299111888508900, guid: 6f79a690977f953468de116b7a904e71,
         type: 3}
       insertIndex: -1
@@ -6688,7 +6684,16 @@ MonoBehaviour:
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
-      transitions: []
+      transitions:
+      - fsmEvent:
+          name: next
+          isSystemEvent: 0
+          isGlobal: 1
+        toState: Check force
+        linkStyle: 0
+        linkConstraint: 0
+        linkTarget: 0
+        colorIndex: 0
       actionData:
         actionNames:
         - HutongGames.PlayMaker.Actions.CollisionEvent
@@ -6696,7 +6701,7 @@ MonoBehaviour:
         customNames:
         - 
         - 
-        actionEnabled: 0001
+        actionEnabled: 0101
         actionIsOpen: 0101
         actionStartIndex: 0000000006000000
         actionHashCodes: beb33100979e4104
@@ -6951,7 +6956,7 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 01010100000001
+        actionEnabled: 01010101010101
         actionIsOpen: 01010101010101
         actionStartIndex: 000000000d00000012000000170000001c0000002000000025000000
         actionHashCodes: bac44f04b2cf100081294e04876045022a6e8a008760450248c01101
@@ -7744,7 +7749,7 @@ MonoBehaviour:
         tooltip: 
         showInInspector: 1
         networkSync: 0
-        value: 169
+        value: 69
       intVariables: []
       boolVariables: []
       stringVariables: []
@@ -8690,40 +8695,6 @@ MonoBehaviour:
   mostPerHit: 14
   gap: 0.15
   whenItDies: 40
---- !u!114 &6149852412383081363
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3669239750392371536}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3fa9bbce902d9de4989faa4be958db6f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.EnemyHitDamage
-  settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
-  toughness: 8.333333
-  hitCooldown: 0.3
-  knockBack: 0
-  knockBackDistance: 2
-  knockBackTime: 0.45
-  knockBackHop: 0.25
-  knockBackStun: 0.3
-  strayToughness: 1
-  hitEffectSize: 1
-  hideHitEffect: 1
-  exp: 0
-  expOrbs: 0
-  healthFsm: Health
-  healthVariable: health
-  hitEvent: Damage
-  weakHitEvent: ShakeSmall
-  oldDamageFsm: 
-  furniture: 1
-  bumpShare: 1
-  wieldedShare: 1
-  settleSeconds: 0
 --- !u!4 &4152339405024068586 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 6f79a690977f953468de116b7a904e71,
@@ -9455,6 +9426,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: 1f16fcd39d7ccc4459fc0674d1117c32,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 52f8b99e57b4a0c48840b6db083ef939, type: 2}
     - target: {fileID: 919132149155446097, guid: 1f16fcd39d7ccc4459fc0674d1117c32,
         type: 3}
       propertyPath: m_Name

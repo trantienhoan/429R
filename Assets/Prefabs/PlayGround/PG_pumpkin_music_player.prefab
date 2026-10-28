@@ -10200,6 +10200,7 @@ GameObject:
   - component: {fileID: 4113846074985571971}
   - component: {fileID: 5983765553264184897}
   - component: {fileID: 7898225379705019191}
+  - component: {fileID: 8058712842191328247}
   m_Layer: 0
   m_Name: PG_pumpkin_music_player
   m_TagString: Furniture
@@ -11965,7 +11966,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5427892139217793775}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 1384774831, guid: e743331561ef77147ae48cda9bcb8209, type: 3}
   m_Name: 
@@ -12259,6 +12260,24 @@ MonoBehaviour:
   bumpShare: 1
   wieldedShare: 1
   settleSeconds: 0
+--- !u!114 &8058712842191328247
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5427892139217793775}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c7d49a284f8d31544af208a5667b3f86, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Audio.PlaylistPlayer
+  playlist: {fileID: 11400000, guid: ef867bf4aae0d3b468b1ba19ae323de3, type: 2}
+  spatialBlend: 0
+  punchToSkip: 1
+  skipCooldown: 1
+  doneBool: 
+  doneFsm: EnemyManager
 --- !u!1001 &7605998043907885906
 PrefabInstance:
   m_ObjectHideFlags: 0

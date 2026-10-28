@@ -2298,7 +2298,7 @@ namespace Game.Enemies
                 case "DamageHeavy": return 45f;
                 case "FallDamage": return 55f;
                 case "PumpkinBossHit": return 80f;
-                case "Pumpkin_Boss_Damage": return 107.5f;
+                case "Pumpkin_Boss_Damage": return 240f;
                 case "PumpkinBossHitHeavy": return 125f;
                 default: return 7.5f;
             }

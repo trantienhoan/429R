@@ -78,7 +78,8 @@ namespace Game.VFX.Editor
                 if (state.ActionData.ActionCount != state.Actions.Length ||
                     state.Actions.Any(a => a == null || a.GetType().Name == "MissingAction"))
                     return $"Rooftop_Base_Z: an action in '{RooftopBreaks}' couldn't be read, so it was left as it is";
-                if (state.Actions.OfType<LaunchPlayer>().Any()) return "Rooftop_Base_Z: already throws the player up";
+                // (The Giant Smash that replaced it throws them up too.)
+                if (state.Actions.Any(a => a is LaunchPlayer || a is GiantSmash)) return "Rooftop_Base_Z: already throws the player up";
 
                 var launch = new LaunchPlayer();
                 launch.Reset();

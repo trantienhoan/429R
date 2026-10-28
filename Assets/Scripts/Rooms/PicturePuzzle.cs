@@ -154,6 +154,14 @@ namespace Game.Rooms
         [Range(0f, 1f)]
         [SerializeField] private float volume = 0.8f;
 
+        [Header("Music")]
+        [Tooltip("Songs for the mini game, chill at first and tense as time runs out (user, 2026-10-28). Each time it " +
+                 "plays one whose length is nearest the Time Limit (one of them at random), started so it ends just as " +
+                 "the time runs out. It stops while the pause menu is open and when the puzzle is done or broken. Empty: none.")]
+        [SerializeField] private AudioClip[] music = System.Array.Empty<AudioClip>();
+        [Range(0f, 1f)]
+        [SerializeField] private float musicVolume = 0.6f;
+
         private enum Phase { Waiting, Playing, Done, Broken }
         private enum PieceState { Placed, Hidden, Flying, Floating, Held, Snapping }
 
@@ -201,6 +209,7 @@ namespace Game.Rooms
         private Phase phase;
         private WallHungProp hung;
         private AudioSource voice;
+        private AudioSource musicSpeaker;
         private XROrigin origin;
         private readonly Transform[] hands = new Transform[2];
         private readonly Piece[] held = new Piece[2];
@@ -276,6 +285,11 @@ namespace Game.Rooms
             voice.spatialBlend = 0f;
             // Its sounds play while the game (and its sound) is stopped for the puzzle.
             voice.ignoreListenerPause = true;
+            musicSpeaker = gameObject.AddComponent<AudioSource>();
+            musicSpeaker.playOnAwake = false;
+            musicSpeaker.spatialBlend = 0f;
+            musicSpeaker.priority = 32;
+            musicSpeaker.ignoreListenerPause = true;
         }
 
         private static InputAction Action(InputActionType type, params string[] bindings)
@@ -496,15 +510,18 @@ namespace Game.Rooms
 
             timeLeft = timeLimit;
             lastTick = Mathf.CeilToInt(timeLeft);
+            StartMusic();
             while (phase == Phase.Playing)
             {
                 if (AllPlaced())
                 {
+                    musicSpeaker.Stop();
                     yield return Won(wallPos, wallRot);
                     break;
                 }
                 if (timeLeft <= 0f)
                 {
+                    musicSpeaker.Stop();
                     yield return Lost(wallPos, wallRot);
                     break;
                 }
@@ -516,6 +533,9 @@ namespace Game.Rooms
         // One frame of play: the clock, the hands, the pieces.
         private void Play(float dt, float now)
         {
+            // The song waits with the clock while the pause menu is open.
+            if (PauseMenu.IsPaused && musicSpeaker.isPlaying) musicSpeaker.Pause();
+            else if (!PauseMenu.IsPaused && !musicSpeaker.isPlaying && musicSpeaker.clip != null && musicSpeaker.time > 0f) musicSpeaker.UnPause();
             if (!PauseMenu.IsPaused && timeLeft > 0f && !AllPlaced())
             {
                 timeLeft = Mathf.Max(0f, timeLeft - dt);
@@ -1418,6 +1438,28 @@ namespace Game.Rooms
             over.renderQueue = TextQueue;
             copies.Add(over);
             return tmp;
+        }
+
+        // One of the songs nearest the Time Limit in length (within 5 s of the nearest), at random, started so that it ends
+        // as the time runs out (a shorter one just starts with the clock).
+        private void StartMusic()
+        {
+            musicSpeaker.Stop();
+            musicSpeaker.clip = null;
+            if (music == null || music.Length == 0) return;
+            float nearest = float.MaxValue;
+            foreach (var song in music)
+                if (song != null) nearest = Mathf.Min(nearest, Mathf.Abs(song.length - timeLimit));
+            var fits = new List<AudioClip>();
+            foreach (var song in music)
+                if (song != null && Mathf.Abs(song.length - timeLimit) <= nearest + 5f) fits.Add(song);
+            if (fits.Count == 0) return;
+            var pick = fits[Random.Range(0, fits.Count)];
+            musicSpeaker.clip = pick;
+            musicSpeaker.volume = musicVolume;
+            musicSpeaker.Play();
+            // (Set once playing: a streamed song ignores it before.)
+            if (pick.length - timeLimit > 0.05f) musicSpeaker.time = pick.length - timeLimit;
         }
 
         private void Say(AudioClip clip, float loudness = 1f, float pitch = 1f)

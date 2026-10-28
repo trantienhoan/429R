@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Game.Rooms;
 using UnityEditor;
 using UnityEngine;
@@ -636,6 +637,7 @@ namespace Game.EditorTools
                 Sound(so, "winSound", "A_gentle_miracle_sound_2.wav");
                 Sound(so, "breakSound", "wood_furniture_break_complete.wav");
                 Sound(so, "buzzSound", "bee_fly.wav");
+                Music(so);
                 so.ApplyModifiedPropertiesWithoutUndo();
                 done.Add(pieces.Count + " pieces, complete " + (complete != null ? complete.name : "MISSING") + ", " + candyList.Count + " candy kinds");
                 PrefabUtility.SaveAsPrefabAsset(root, picturePath);
@@ -651,6 +653,33 @@ namespace Game.EditorTools
         {
             so.FindProperty(field).objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + file);
         }
+
+        // The user's puzzle songs (ElevenLabs, 2026-10-28): two of 60 s, two of 90 s; each puzzle plays one whose length
+        // fits its Time Limit. Set where the list is empty (an edited list stays), streamed like the game's other songs.
+        public static void Music(SerializedObject so)
+        {
+            var list = so.FindProperty("music");
+            if (list == null || list.arraySize > 0) return;
+            var songs = PuzzleSongs.Select(file => AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + file)).Where(c => c != null).ToArray();
+            list.arraySize = songs.Length;
+            for (int n = 0; n < songs.Length; n++)
+            {
+                list.GetArrayElementAtIndex(n).objectReferenceValue = songs[n];
+                if (!(AssetImporter.GetAtPath(Sfx + songs[n].name + ".wav") is AudioImporter importer)) continue;
+                var settings = importer.defaultSampleSettings;
+                if (settings.loadType == AudioClipLoadType.Streaming) continue;
+                settings.loadType = AudioClipLoadType.Streaming;
+                settings.compressionFormat = AudioCompressionFormat.Vorbis;
+                settings.quality = 0.7f;
+                importer.defaultSampleSettings = settings;
+                importer.SaveAndReimport();
+            }
+        }
+
+        private static readonly string[] PuzzleSongs =
+        {
+            "Puzzle_Clock_Rush_60_1.wav", "Puzzle_Clock_Rush_60_2.wav", "Puzzle_Countdown_90_1.wav", "Last_Piece_Standing_90_2.wav",
+        };
 
         private static Transform FindChild(Transform root, string name)
         {

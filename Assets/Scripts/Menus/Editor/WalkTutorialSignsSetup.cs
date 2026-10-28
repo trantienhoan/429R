@@ -12,10 +12,10 @@ namespace Game.EditorTools
 {
     /// <summary>
     /// Tools > 429 Game > Menu > Set Up Walk Tutorial Signs. On the walk from where the player starts to the Fairy, two
-    /// big wooden signs (like the Knight's tip board, 6 m wide): to the player's left how to move (the left stick), to their
-    /// right how to teleport (push the right stick forward, aim, let go). Each stands on the ground just past the edge
-    /// of the stone path (6.2 m out), 8.2 m to the side of where the player starts, facing them: turning the head left or
-    /// right shows them.
+    /// big wooden signs (like the Knight's tip board, 4.5 m wide): to the player's left how to move (the left stick), to
+    /// their right how to teleport (push the right stick forward, aim, let go). Each stands on top of the rooftop's
+    /// battlement wall beside where the player starts (5.8 m to the side), facing them: turning the head left or right
+    /// shows them.
     /// GAMESTAGES shows them in "Walk Tuttorial" and hides them in "Send death" (when the player reaches the Fairy). Like
     /// the enemy tutorial they're shown only the first time the game is played on this install (Once Per Install).
     /// Running it again builds them anew. Save the scene afterwards.
@@ -29,12 +29,15 @@ namespace Game.EditorTools
         private static readonly Color TitleColor = new(1f, 0.8f, 0.3f, 1f);
         // Where the player starts (LevelREStartPos, facing the Fairy), and the signs: to the player's left and right.
         private static readonly Vector3 Start = new(-0.01f, 0f, -10.9f);
-        // Just past the stone path's edge (6.2 m out on both sides), the sign's foot just above the ground: its middle is
-        // half its height (800 units x Sign Scale) up.
-        private static readonly Vector3 LeftSign = new(-8.2f, 2.42f, -10.9f);
-        private static readonly Vector3 RightSign = new(8.2f, 2.42f, -10.9f);
-        // Canvas units to metres: 1000 units = 6 m wide (4.8 m tall).
-        private const float SignScale = 0.006f;
+        // On top of the battlement walls (x 5.15 to 6.47 m out, 2.55 m high; standing on the ground past them they hid
+        // most of the sign), over the wall's middle. The sign's foot is at 2.75 m, high enough that the wall's inner top
+        // edge doesn't cut it off from eye height at the start; its middle is half its height (800 units x Sign Scale)
+        // above that.
+        private static readonly Vector3 LeftSign = new(-5.81f, 4.55f, -10.9f);
+        private static readonly Vector3 RightSign = new(5.81f, 4.55f, -10.9f);
+        // Canvas units to metres: 1000 units = 4.5 m wide (3.6 m tall); from 5.8 m away it looks as big as the 6 m sign
+        // did from 8.2 m.
+        private const float SignScale = 0.0045f;
 
         [MenuItem("Tools/429 Game/Menu/Set Up Walk Tutorial Signs")]
         public static void SetUp()
@@ -93,7 +96,7 @@ namespace Game.EditorTools
             var rect = SetupUtility.CreateWorldCanvas(name, parent, new Vector2(1000f, 800f), new Color(0f, 0f, 0f, 0f));
             var away = Vector3.ProjectOnPlane(position - Start, Vector3.up).normalized;
             rect.SetPositionAndRotation(position, Quaternion.LookRotation(away, Vector3.up));
-            // Big: 6 m wide, read from 8 m away.
+            // Big: 4.5 m wide, read from 6 m away.
             rect.localScale = Vector3.one * SignScale;
 
             var frame = SetupUtility.CreateImage("Frame", rect, FrameColor);
