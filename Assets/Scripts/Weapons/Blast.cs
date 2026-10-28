@@ -27,11 +27,14 @@ namespace Game.Weapons
         /// Explodes at 'point', leaving out 'self' (the thing exploding), its effects this many times their size. The
         /// player is hurt if they're in reach (within 'playerReach' of it, if that's given and shorter than the radius,
         /// e.g. a thrown blast Throw Power made bigger; what they hold is spared beyond it too), or 'held' (it went off in
-        /// their hand): 'playerEvent' is sent to their Damage FSM (empty: never). Returns whether the player was hurt.
+        /// their hand): 'playerEvent' is sent to their Damage FSM (empty: never). By Player: the player's blast (a grenade,
+        /// a Boong, an exploding punch), which hurts in full; any other counts like a knock the player didn't make.
+        /// Everything is hurt by the one rule (Enemy Hit Damage's Take Blast: Toughness counts, more push than damage).
+        /// Returns whether the player was hurt.
         /// </summary>
         public static bool Explode(Vector3 point, float radius, float damage, float push, Rigidbody self,
             GameObject[] effects, AudioClip sound, float volume, string playerEvent, bool held = false, float effectScale = 1f,
-            float playerReach = -1f)
+            float playerReach = -1f, bool byPlayer = true)
         {
             foreach (var effect in effects)
             {
@@ -56,8 +59,8 @@ namespace Game.Weapons
                 // What the player holds is spared by the extra reach too (a weapon in the other hand doesn't wear out).
                 if (InHand(hit) && !Within(hit, point, reachesPlayer, radius)) continue;
 
-                Hurt(hit.transform, point, damage);
-                Push(hit.attachedRigidbody, point, radius, push);
+                Hurt(hit.transform, point, radius, damage, byPlayer);
+                Push(hit.attachedRigidbody, point, radius, push * Game.Combat.HitSettings.Shared.BlastPushScale);
             }
 
             if (!player || string.IsNullOrEmpty(playerEvent)) return false;
@@ -129,14 +132,14 @@ namespace Game.Weapons
         }
 
         /// <summary>
-        /// Hurts one thing the way a blast does (its Damage FSM's health, or IHittable; the chase pumpkins still block it),
-        /// e.g. a rolling pumpkin smashing what's in its way. Never the player.
+        /// Hurts one thing the way a blast does, in full (no edge), e.g. a rolling pumpkin smashing what's in its way: see
+        /// Explode for By Player. Never the player.
         /// </summary>
-        public static void Damage(Collider hit, Vector3 point, float damage)
+        public static void Damage(Collider hit, Vector3 point, float damage, bool byPlayer = true)
         {
             if (hit == null || IsPlayer(hit)) return;
             hurt.Clear();
-            Hurt(hit.transform, point, damage);
+            Hurt(hit.transform, point, 0f, damage, byPlayer);
         }
 
         /// <summary>The player's body, head and hands: everything under the XR Origin.</summary>
@@ -145,16 +148,34 @@ namespace Game.Weapons
             return collider.GetComponentInParent<XROrigin>() != null;
         }
 
-        // A script that handles hits itself (IHittable, e.g. the ghost tree or bush) is hit first. Otherwise it takes
-        // 'damage' from the health its own Damage FSM would lower, so breaking, drops and GAMESTAGES flags happen as
-        // usual. Colliders are often on children, so the nearest object upwards with a health FSM is the one hit. With
-        // no health anywhere upwards, the nearest Damage FSM is sent "Blast".
-        private static void Hurt(Transform part, Vector3 point, float damage)
+        // The one rule: a script that handles hits itself (IHittable: the ghost tree, bush and balloons, the laughing
+        // pumpkins) takes only the player's blasts; an enemy or breakable with Enemy Hit Damage takes it as a blast (Take
+        // Blast: Toughness counts, an enemy is thrown back from the middle); a whack pumpkin counts the player's blast as
+        // one whack. Anything else takes 'damage' from the health its own Damage FSM would lower, so breaking, drops and
+        // GAMESTAGES flags happen as usual. Colliders are often on children, so the nearest object upwards is the one hit.
+        // With no health anywhere upwards, the nearest Damage FSM is sent "Blast".
+        private static void Hurt(Transform part, Vector3 point, float radius, float damage, bool byPlayer)
         {
             var hittable = part.GetComponentInParent<Game.Combat.IHittable>();
             if (hittable is Component target)
             {
-                if (hurt.Add(target.gameObject)) hittable.Hit(damage, point);
+                if (byPlayer && hurt.Add(target.gameObject)) hittable.Hit(damage, point);
+                return;
+            }
+
+            var hits = part.GetComponentInParent<Game.Combat.EnemyHitDamage>();
+            if (hits != null)
+            {
+                // The chase pumpkins block blasts (only the player running into them hurts them).
+                if (hurt.Add(hits.gameObject) && !Game.Combat.TouchOnlyDamage.Blocks(hits.transform, point))
+                    hits.TakeBlast(damage, point, radius, byPlayer);
+                return;
+            }
+
+            var whack = part.GetComponentInParent<Game.Combat.FairHits>();
+            if (whack != null)
+            {
+                if (byPlayer && damage > 0f && hurt.Add(whack.gameObject)) whack.Blasted();
                 return;
             }
 
@@ -172,8 +193,7 @@ namespace Game.Weapons
                     // The chase pumpkins block blasts (only the player running into them hurts them).
                     if (Game.Combat.TouchOnlyDamage.Blocks(t, point)) return;
                     // Whole numbers, at least 1 (a blast with no damage only pushes).
-                    if (damage > 0f)
-                        health.Value -= Mathf.Max(1f, Mathf.Round(damage * (t.TryGetComponent(out Game.Combat.EnemyHitDamage hits) ? hits.damageTaken : 1f)));
+                    if (damage > 0f) health.Value -= Mathf.Max(1f, Game.Combat.HitSettings.Whole(damage));
                 }
                 return;
             }

@@ -197,7 +197,7 @@ namespace Game.Enemies
             Release(gameObject);
         }
 
-        // Smashed with the roach still inside: it dies there (its EXP goes to the player), no small ones.
+        // Smashed with the roach still inside: it dies there (its EXP goes to the player if they broke it), no small ones.
         private void Squashed()
         {
             finished = true;
@@ -205,6 +205,8 @@ namespace Game.Enemies
             if (roach != null)
             {
                 roach.transform.position = at;
+                // Its EXP only when the player broke the pumpkin.
+                if (!Earned()) Game.Leveling.PlayerLevel.NoRewardFor(roach);
                 EnemyWave.Kill(roach);
             }
             if (settings.squashSound != null) AudioSource.PlayClipAtPoint(settings.squashSound, at);
@@ -246,7 +248,21 @@ namespace Game.Enemies
             Release(gameObject);
             // Gone some other way before it noticed (broken and gone in one go, the fairy's shield, the stage clearing
             // up): the roach inside dies with it.
-            if (!finished && roach != null) EnemyWave.Kill(roach);
+            if (!finished && roach != null)
+            {
+                // Broken by the player in one go pays its EXP; cleared away with the stage doesn't.
+                if (health == null || health.Value > 0f || !Earned()) Game.Leveling.PlayerLevel.NoRewardFor(roach);
+                EnemyWave.Kill(roach);
+            }
+        }
+
+        // The player broke it: not the giant, a fall, the tree pumpkins' limit or the fairy's shield (they mark it No
+        // Reward, or the shield pops it).
+        private bool Earned()
+        {
+            if (healthFsm != null && healthFsm.ActiveStateName == "pop") return false;
+            if (TryGetComponent(out Game.Leveling.ExpWhenBroken reward) && reward.noReward) return false;
+            return !(TryGetComponent(out EnemyHitDamage hits) && hits.noReward);
         }
 
         private Vector3 Centre()

@@ -393,8 +393,8 @@ namespace Game.Weapons
             grab.enabled = false;
 
             var point = body != null ? body.worldCenterOfMass : transform.position;
-            // The player's blast: overheated hands (Hot Hands) make it hurt more.
-            Blast.Explode(point, radius, Game.Combat.HotHands.Boost(damage), push, body, effects, sound, volume, null, false, effectSize);
+            // The player's blast (Hot Hands gives blasts no bonus).
+            Blast.Explode(point, radius, damage, push, body, effects, sound, volume, null, false, effectSize);
             PlayerBuffs.Give(buff, buffSeconds);
 
             // Breaking the usual way lets its own Health FSM drop the pieces and remove it; otherwise it just vanishes.
@@ -403,6 +403,8 @@ namespace Game.Weapons
             if (breakApart && health != null)
             {
                 if (TryGetComponent(out WeaponWear wear)) wear.enabled = false;
+                // It broke itself, not a hit: no damage number.
+                Game.Combat.DamageNumbers.Quiet(gameObject);
                 health.Value = 0f;
             }
             else Destroy(gameObject);

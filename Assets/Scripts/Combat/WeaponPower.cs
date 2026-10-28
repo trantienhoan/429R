@@ -69,18 +69,19 @@ namespace Game.Combat
             return DamageOf(body != null && body.TryGetComponent(out WeaponPower weapon) ? weapon : null);
         }
 
-        // A whole number, at least 1. The closed fist always does its own (1: punching is the last resort); a flying jab
-        // gets Fist Size's (and eaten candies') bonus; everything else Weapon Efficiency's, plus Weapon Master's while it's
-        // held in the hand or its Thrown Bonus once thrown. A boost (two hands, the Elon Boong) multiplies.
+        // A whole number, at least 1 (halves round up). The closed fist does its own (1: punching is the last resort) plus
+        // eaten candies' punch bonus; a flying jab gets Fist Size's bonus; everything else Weapon Efficiency's, plus Weapon
+        // Master's while it's held in the hand or its Thrown Bonus once thrown. A boost (two hands, the Elon Boong)
+        // multiplies.
         private static float DamageOf(WeaponPower weapon)
         {
             if (weapon == null) return 1f;
-            float own = Mathf.Max(1f, Mathf.Round(weapon.damage));
+            float own = Mathf.Max(1f, HitSettings.Whole(weapon.damage));
             float bonus;
             if (Fist.IsFlyingFist(weapon)) bonus = Game.Leveling.PlayerLevel.FlyingJabBonus;
-            else if (Fist.IsFistBall(weapon)) bonus = 0f;
+            else if (Fist.IsFistBall(weapon)) bonus = Game.Leveling.PlayerLevel.CandyPunchBonus;
             else bonus = Game.Leveling.PlayerLevel.WeaponDamageBonus + MasterBonus(weapon) + (IsThrown(weapon) ? weapon.thrownBonus : 0);
-            return Mathf.Max(1f, Mathf.Round((own + bonus) * weapon.boost));
+            return Mathf.Max(1f, HitSettings.Whole((own + bonus) * weapon.boost));
         }
 
         /// <summary>Let go a moment ago and still flying: thrown (not held, not a fist, not a shot).</summary>

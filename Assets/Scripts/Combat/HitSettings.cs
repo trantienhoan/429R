@@ -75,6 +75,25 @@ namespace Game.Combat
         [Tooltip("How long it stays stunned after it lands, in seconds: x normal, y hard.")]
         [SerializeField] private Vector2 flyingStun = new(1f, 1.4f);
 
+        [Header("Blasts (more push than damage)")]
+        [Tooltip("A blast's damage at its edge, as a share of its damage in the middle (1 = the same everywhere). Like a " +
+                 "hit's, it's divided by the Toughness and made whole: a tough enemy near the edge is only pushed.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float blastEdgeDamage = 0.5f;
+        [Tooltip("How far a blast throws an enemy in its middle, in shares of the enemy's own Knock Back Distance (less " +
+                 "towards the edge, none at it). Enemies with Knock Back off (bosses that stand their ground) stay put.")]
+        [Min(0f)]
+        [SerializeField] private float blastKnockBack = 1.5f;
+        [Tooltip("How high it hops in the middle, in shares of its own Knock Back Hop.")]
+        [Min(0f)]
+        [SerializeField] private float blastHop = 1.2f;
+        [Tooltip("How long it lies stunned after landing, in seconds, in the middle.")]
+        [Min(0f)]
+        [SerializeField] private float blastStun = 0.8f;
+        [Tooltip("Loose things (props, furniture, weapons) are pushed this many times as hard as each blast's own Push.")]
+        [Min(0f)]
+        [SerializeField] private float blastPushScale = 1.5f;
+
         [Header("Hit effect (every enemy)")]
         [Tooltip("The small pop shown where a hit hurts an enemy (Enemy_Hit_Pop). Empty: none. Tools > 429 Game > " +
                  "Enemies > Build Enemy Hit FX makes it.")]
@@ -120,6 +139,7 @@ namespace Game.Combat
         private const float EffectTowardsEyes = 0.05f;
 
         private static HitSettings defaults;
+        private static HitSettings shared;
 
         /// <summary>The numbers used when no settings asset is assigned.</summary>
         public static HitSettings Defaults
@@ -128,11 +148,26 @@ namespace Game.Combat
             {
                 if (defaults == null)
                 {
+                    makingDefaults = true;
                     defaults = CreateInstance<HitSettings>();
+                    makingDefaults = false;
                     defaults.hideFlags = HideFlags.HideAndDontSave;
                 }
                 return defaults;
             }
+        }
+
+        /// <summary>
+        /// The game's Hit Settings asset once anything using it has loaded (every enemy and breakable points at it), else
+        /// the defaults: for code with no asset of its own, e.g. the blasts.
+        /// </summary>
+        public static HitSettings Shared => shared != null ? shared : Defaults;
+
+        private static bool makingDefaults;
+
+        private void OnEnable()
+        {
+            if (!makingDefaults) shared = this;
         }
 
         /// <summary>
@@ -193,6 +228,25 @@ namespace Game.Combat
             EffectPool.Play(effect, at, scale, EffectSeconds);
         }
 
+        /// <summary>
+        /// What a blast of this Damage (in its middle) does to something Edge of the way out (0 = in the middle, 1 = at
+        /// the edge) with this Toughness: whole, 0 = it's only pushed.
+        /// </summary>
+        public float BlastDamage(float damage, float edge, float toughness)
+        {
+            if (damage <= 0f) return 0f;
+            return Whole(damage * Mathf.Lerp(1f, blastEdgeDamage, Mathf.Clamp01(edge)) / Mathf.Max(0.1f, toughness));
+        }
+
+        /// <summary>
+        /// How a blast throws an enemy Edge of the way out: x = shares of its Knock Back Distance, y = shares of its hop,
+        /// z = stun seconds (all less towards the edge, nothing at it).
+        /// </summary>
+        public Vector3 BlastKnock(float edge) => new Vector3(blastKnockBack, blastHop, blastStun) * (1f - Mathf.Clamp01(edge));
+
+        /// <summary>Loose things are pushed this many times as hard as a blast's own Push.</summary>
+        public float BlastPushScale => blastPushScale;
+
         /// <summary>Whether thrown things can land headshots (Headshot Stun Seconds above 0).</summary>
         public bool Headshots => headshotStunSeconds > 0f;
 
@@ -219,8 +273,8 @@ namespace Game.Combat
             EffectPool.Warm(bigHitEffect, 2);
         }
 
-        // Rounds halves up (Mathf.Round rounds them to even, which would make 4.5 into 4).
-        private static float Whole(float damage)
+        /// <summary>Rounds halves up (Mathf.Round rounds them to even, which would make 4.5 into 4).</summary>
+        public static float Whole(float damage)
         {
             return Mathf.Floor(damage + 0.5f);
         }

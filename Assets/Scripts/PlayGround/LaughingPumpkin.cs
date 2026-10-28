@@ -347,6 +347,8 @@ namespace Game.PlayGround
         {
             if (mood == Mood.Broken) return;
             bool inHand = LetGo();
+            // Caught, not hit: no damage number.
+            DamageNumbers.Quiet(gameObject);
             if (health != null) health.Value = 0f;
             Broke(inHand);
         }
@@ -388,7 +390,7 @@ namespace Game.PlayGround
             hasTarget = false;
             if (!body.isKinematic) body.linearVelocity = new Vector3(0f, Mathf.Min(0f, body.linearVelocity.y), 0f);
             Blast.Explode(center, handBlastRadius, handBlastDamage, handBlastPush, body, handBlastEffects, handBlastSound,
-                1f, inHand ? handBlastEvent : null, held: inHand, effectScale: handBlastEffectScale);
+                1f, inHand ? handBlastEvent : null, held: inHand, effectScale: handBlastEffectScale, byPlayer: false);
             if (exp > 0) Game.Leveling.PlayerLevel.AddExp(exp);
             onCaught.Invoke();
             Caught?.Invoke(this);
@@ -452,12 +454,11 @@ namespace Game.PlayGround
             bool thrownOrSwung = (otherBody != null && !otherBody.isKinematic) || other.CompareTag("Weapon");
             if (!thrownOrSwung) return;
 
-            // The hit's damage, worked out as for an enemy, comes off its stamina.
+            // The hit's damage, worked out as for an enemy (the one rule), comes off its stamina: only the player's hits.
             if (Time.time >= nextHurt)
             {
-                float power = collision.relativeVelocity.magnitude * WeaponPower.Of(collision) / toughness;
-                var hit = (hitSettings != null ? hitSettings : HitSettings.Defaults).Evaluate(power, WeaponPower.DamageOf(collision));
-                if (hit.Damage > 0f)
+                var hit = EnemyHitDamage.Judge(collision, toughness, hitSettings, out bool byPlayer);
+                if (byPlayer && hit.Damage > 0f)
                 {
                     LoseStamina(hit.Damage * staminaPerDamage);
                     nextHurt = Time.time + HurtCooldown;
@@ -473,11 +474,14 @@ namespace Game.PlayGround
             if (mood == Mood.Fresh) mood = Mood.Watching;
         }
 
-        /// <summary>A blast (grenade, bottle): its damage times Stamina Per Damage comes off its stamina, and it's knocked away.</summary>
+        /// <summary>
+        /// The player's blast (grenade, bottle): its damage over the Toughness, whole (the one rule), times Stamina Per
+        /// Damage comes off its stamina, and it's knocked away.
+        /// </summary>
         public void Hit(float strength, Vector3 point)
         {
             if (mood == Mood.Broken || mood == Mood.Held || !canRun) return;
-            LoseStamina(strength * staminaPerDamage);
+            LoseStamina(HitSettings.Whole(strength / Mathf.Max(0.1f, toughness)) * staminaPerDamage);
             Knock(Flat(body.position - point));
             Play(hitSounds, 1f, 1f);
             if (mood == Mood.Fresh) mood = Mood.Watching;

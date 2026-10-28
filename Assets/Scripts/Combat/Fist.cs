@@ -742,8 +742,8 @@ namespace Game.Combat
             var hit = collision.rigidbody != null ? collision.rigidbody.gameObject : collision.gameObject;
             // Enemy Hit Damage already counts the punch (by its speed and the fist's power): not twice.
             if (hit.TryGetComponent<EnemyHitDamage>(out _)) return;
-            // The Elon Boong buff's double damage counts here too.
-            PlayMakerHits.Judge(hit, collision, punchSpeed * pumpkinForce * Game.Leveling.PlayerBuffs.PunchDamage);
+            // How hard it was, not how much damage it does: the Elon Boong's double damage doesn't make it harder.
+            PlayMakerHits.Judge(hit, collision, punchSpeed * pumpkinForce);
         }
 
         // Sends a loose thing off the way the punch was going, as a throw would: the fist's ball alone is light and
@@ -788,7 +788,7 @@ namespace Game.Combat
             if (power <= 0 || Time.time < nextBoongBlast) return false;
             nextBoongBlast = Time.time + boongBlastEvery;
             var at = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
-            Game.Weapons.Blast.Explode(at, boongBlastRadius, HotHands.Boost(boongBlastDamage * power), boongBlastPush, hitter, boongEffects,
+            Game.Weapons.Blast.Explode(at, boongBlastRadius, boongBlastDamage * power, boongBlastPush, hitter, boongEffects,
                 boongBlastSound, boongBlastVolume, null, false, boongBlastEffectSize);
             return true;
         }

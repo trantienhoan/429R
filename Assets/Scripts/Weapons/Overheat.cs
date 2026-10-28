@@ -197,12 +197,20 @@ namespace Game.Weapons
             StopShaking();
 
             // The player is hurt if they're in the blast, or still holding it.
-            // The player's weapon going off: overheated hands (Hot Hands) make it hurt more.
-            Blast.Explode(body.worldCenterOfMass, radius, Game.Combat.HotHands.Boost(damage), push, body, effects, sound, volume, playerEvent, grab.isSelected);
+            // The player's weapon going off (Hot Hands gives blasts no bonus).
+            Blast.Explode(body.worldCenterOfMass, radius, damage, push, body, effects, sound, volume, playerEvent, grab.isSelected);
             Buzz(rumbleStrength, rumbleDuration);
 
             // Breaking the usual way lets its own Health FSM drop the pieces and remove it; otherwise it just vanishes.
-            if (breakApart && Blast.HasHealth(gameObject, out var ownHealth, out _) && ownHealth != null) ownHealth.Value = 0f;
+            // Weapon Wear is switched off first: it gives back part of a small loss (Weapon Efficiency), so a worn gun
+            // would never reach 0 and stay whole.
+            if (breakApart && Blast.HasHealth(gameObject, out var ownHealth, out _) && ownHealth != null)
+            {
+                if (TryGetComponent(out Game.Leveling.WeaponWear wear)) wear.enabled = false;
+                // It broke itself, not a hit: no damage number.
+                Game.Combat.DamageNumbers.Quiet(gameObject);
+                ownHealth.Value = 0f;
+            }
             else Destroy(gameObject);
         }
 

@@ -185,7 +185,10 @@ namespace Game.Bonus
         {
             if (healthMachine == null) return;
             var value = healthMachine.FsmVariables.FindFsmFloat(healthVariable);
-            if (value != null) value.Value = 0f;
+            if (value == null) return;
+            // Time's up, not a hit: no damage number.
+            Game.Combat.DamageNumbers.Quiet(healthMachine.gameObject);
+            value.Value = 0f;
         }
 
         /// <summary>No more hits: it stays as it is, laughing (time's up).</summary>

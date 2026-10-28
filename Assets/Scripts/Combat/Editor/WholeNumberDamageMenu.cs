@@ -18,7 +18,7 @@ namespace Game.EditorTools
 {
     /// <summary>
     /// Whole-number damage (user, 2026-10-27): a punch does 1, a hard punch 2, a weapon its own whole number (Hit
-    /// Settings, Weapon Power). Two steps, run in order with 2 Game Scene open, then save the scene:
+    /// Settings, Weapon Power). Three steps, run in order with 2 Game Scene open, then save the scene:
     /// 1. Halve Health And Blasts (once): hits now do about half what they did (1 or 2 instead of 1-2 or 3-5), so every
     ///    bug, boss, piece of furniture, door and pumpkin that took those hits gets half its health (whole, at least 1),
     ///    and every blast half its damage. Props (books, pumpkins, weapons) keep theirs: they lost 1 a hit before too.
@@ -27,6 +27,8 @@ namespace Game.EditorTools
     ///    Check Force speed) gets Enemy Hit Damage (Furniture ticked) to count them by the same rule as everything else.
     ///    Its Toughness is its old speed / the Hit Settings' Min Hit Power, so the same bump still just counts; a hard one
     ///    now counts 2. The Damage FSM keeps its smoke, sound and shake, and its FIREKILL / Fairy Shield kills.
+    /// 3. Nested Props Use Hit Damage (2026-10-28): the same for props inside other prefabs (step 2 only looked at roots),
+    ///    e.g. the old doors in the bedroom's walls.
     /// The whack pumpkins (Fair Hits), the chase pumpkins (Touch Only Damage) and the laughing pumpkin keep their own rules.
     /// </summary>
     public static class WholeNumberDamageMenu
@@ -394,6 +396,62 @@ namespace Game.EditorTools
             so.FindProperty("settleSeconds").floatValue = 0f;
             so.ApplyModifiedPropertiesWithoutUndo();
             return $"old speed {speed:0.#} -> toughness {toughness:0.##}{(anyBump ? "" : ", only the player's hits")}{(shake != null ? ", weak hits shake" : "")}";
+        }
+
+        // ---------- 3. Nested props use hit damage ----------
+
+        /// <summary>
+        /// Step 2 only looked at each prefab's root, so a prop inside another prefab (the old doors in the bedroom's walls)
+        /// still counted its own hits, bugs' bumps too (user, 2026-10-28: all damage through the one rule). This converts
+        /// those the same way, in the prefabs 2 Game Scene uses (others are listed). Their health stays: they lost 1 a hit
+        /// before too, as step 2's props did.
+        /// </summary>
+        [MenuItem("Tools/429 Game/Combat/Whole Numbers/3. Nested Props Use Hit Damage")]
+        public static void NestedPropsUseHitDamage() => Debug.Log(ConvertNestedProps());
+
+        public static string ConvertNestedProps()
+        {
+            if (!Ready()) return "[Whole Numbers] Not ready (see the error).";
+            var settingsAsset = AssetDatabase.LoadAssetAtPath<HitSettings>(HitSettingsPath);
+            float minPower = new SerializedObject(settingsAsset).FindProperty("minHitPower").floatValue;
+            var used = new HashSet<string>(AssetDatabase.GetDependencies(SceneManager.GetActiveScene().path, true));
+            var log = new StringBuilder();
+            var unused = new List<string>();
+            int converted = 0;
+
+            foreach (var path in PrefabPaths())
+            {
+                var root = PrefabUtility.LoadPrefabContents(path);
+                try
+                {
+                    var notes = new List<string>();
+                    foreach (var t in root.GetComponentsInChildren<Transform>(true))
+                    {
+                        if (t == root.transform || !NeedsConverting(t.gameObject, out _)) continue;
+                        // A Damage FSM from a nested prefab (or this one's base) is converted in that prefab.
+                        var damage = t.GetComponents<PlayMakerFSM>().First(f => f.FsmName == DamageFsm);
+                        if (FromPrefab(damage)) continue;
+                        if (!used.Contains(path))
+                        {
+                            unused.Add($"{root.name}/{t.name}");
+                            continue;
+                        }
+                        string note = Convert(t.gameObject, settingsAsset, minPower);
+                        if (note != null) notes.Add($"{t.name}: {note}");
+                    }
+                    if (notes.Count == 0) continue;
+                    PrefabUtility.SaveAsPrefabAsset(root, path);
+                    converted++;
+                    log.AppendLine($"  {path.Substring(Prefabs.Length + 1)}: {string.Join("; ", notes)}");
+                }
+                finally
+                {
+                    PrefabUtility.UnloadPrefabContents(root);
+                }
+            }
+            AssetDatabase.SaveAssets();
+            return $"[Whole Numbers] {converted} prefab(s) with nested props now count hits by the hit rule:\n{log}" +
+                   (unused.Count > 0 ? $"Left alone (prefabs the game scene doesn't use): {string.Join(", ", unused)}" : "");
         }
 
         // ---------- shared ----------

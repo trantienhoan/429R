@@ -68,11 +68,19 @@ namespace Game.Combat
             public PlayMakerFSM fsm;
             public HutongGames.PlayMaker.FsmFloat health;
             public float last;
+            // Shown even while its FSM is switched off (Enemy Hit Damage keeps the health: the pumpkin boss).
+            public bool always;
+            // A thing that can be picked up (a weapon): no numbers while the player holds or has just thrown it.
+            public UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable grab;
         }
 
         private static DamageNumbers instance;
         // When each object last took a big hit (told by Enemy Hit Damage), so its number shows big.
         private static readonly Dictionary<int, float> bigHits = new();
+        // Objects whose health the game itself is about to empty (Quiet): no number for that.
+        private static readonly Dictionary<int, float> quiet = new();
+        // Health FSMs handed over by Enemy Hit Damage (Watch) before a Damage Numbers was there to take them.
+        private static readonly List<Watched> handedOver = new();
         private readonly List<Popup> popups = new();
         private readonly List<Watched> watched = new();
         private readonly HashSet<PlayMakerFSM> known = new();
@@ -110,6 +118,8 @@ namespace Game.Combat
             instance = null;
             enabled = null;
             bigHits.Clear();
+            quiet.Clear();
+            handedOver.Clear();
         }
 
         // One per scene, made when the scene starts unless the scene already has one.
@@ -136,6 +146,42 @@ namespace Game.Combat
             if (target != null) bigHits[target.GetInstanceID()] = Time.time + 0.4f;
         }
 
+        /// <summary>
+        /// The game is about to empty <paramref name="target"/>'s health itself (a tree pumpkin over the limit, a fall off
+        /// the edge, paying at the seed lock, a weapon breaking in the hand): no number for that, as the player didn't hit it.
+        /// </summary>
+        public static void Quiet(GameObject target)
+        {
+            if (target != null) quiet[target.GetInstanceID()] = Time.time + 0.4f;
+        }
+
+        /// <summary>
+        /// Watches a Health FSM that's switched off (its health kept by Enemy Hit Damage, e.g. the pumpkin boss's), which
+        /// the scan for running FSMs would miss.
+        /// </summary>
+        public static void Watch(PlayMakerFSM fsm, HutongGames.PlayMaker.FsmFloat health)
+        {
+            if (fsm == null || health == null) return;
+            var w = new Watched { fsm = fsm, health = health, last = health.Value, always = true };
+            if (instance != null)
+            {
+                instance.known.Add(fsm);
+                instance.watched.RemoveAll(other => other.fsm == fsm);
+                instance.watched.Add(w);
+            }
+            else handedOver.Add(w);
+        }
+
+        // Quieted (Quiet), it or what it sits on.
+        private static bool IsQuiet(Transform target)
+        {
+            for (int up = 0; target != null && up < 3; up++, target = target.parent)
+            {
+                if (quiet.TryGetValue(target.gameObject.GetInstanceID(), out float until) && Time.time <= until) return true;
+            }
+            return false;
+        }
+
         private void Awake()
         {
             if (instance != null && instance != this)
@@ -155,6 +201,17 @@ namespace Game.Combat
         private void Update()
         {
             if (Time.time >= nextScan) Rescan();
+            if (handedOver.Count > 0)
+            {
+                foreach (var w in handedOver)
+                {
+                    if (w.fsm == null) continue;
+                    known.Add(w.fsm);
+                    watched.RemoveAll(other => other.fsm == w.fsm);
+                    watched.Add(w);
+                }
+                handedOver.Clear();
+            }
             for (int i = watched.Count - 1; i >= 0; i--)
             {
                 var w = watched[i];
@@ -172,7 +229,11 @@ namespace Game.Combat
                 float before = w.last;
                 w.last = now;
                 // Nothing for hits on something already dead or broken, or while it's switched off.
-                if (before <= 0f || !show || !Enabled || !w.fsm.isActiveAndEnabled) continue;
+                bool on = w.always ? w.fsm.gameObject.activeInHierarchy : w.fsm.isActiveAndEnabled;
+                if (before <= 0f || !show || !Enabled || !on) continue;
+                // Nor when the game emptied it itself (Quiet), nor on a weapon wearing down in the player's hands.
+                if (now <= 0f && IsQuiet(w.fsm.transform)) continue;
+                if (w.grab != null && HeldThings.InUse(w.grab)) continue;
                 float lost = before - now;
                 // A "deal 999 damage" kill shows what it really had left.
                 if (now <= 0f && lost > 50f && lost > before * 3f) lost = before;
@@ -196,9 +257,19 @@ namespace Game.Combat
                 if (fsm.GetComponentInParent<Unity.XR.CoreUtils.XROrigin>() != null) continue;
                 var health = fsm.FsmVariables.FindFsmFloat(healthVariable);
                 if (health == null) continue;
-                watched.Add(new Watched { fsm = fsm, health = health, last = health.Value });
+                watched.Add(new Watched
+                {
+                    fsm = fsm, health = health, last = health.Value,
+                    grab = fsm.GetComponentInParent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>(),
+                });
             }
             known.RemoveWhere(f => f == null);
+            if (quiet.Count > 32)
+            {
+                var old = new List<int>();
+                foreach (var pair in quiet) if (pair.Value < Time.time) old.Add(pair.Key);
+                foreach (int id in old) quiet.Remove(id);
+            }
         }
 
         private void Spawn(Transform target, float damage, bool big, bool kill)

@@ -356,9 +356,9 @@ namespace Game.PlayGround
             // Its Damage FSM may knock it away: let that play out before the next hop.
             nextHop = Mathf.Max(nextHop, Time.time + 0.6f);
             if (Time.time < nextHurt) return;
-            float power = speed * WeaponPower.Of(collision) / toughness;
-            var hit = (hitSettings != null ? hitSettings : HitSettings.Defaults).Evaluate(power, WeaponPower.DamageOf(collision));
-            if (hit.Damage <= 0f) return;
+            // The one rule, as for an enemy: only the player's hits tire it.
+            var hit = EnemyHitDamage.Judge(collision, toughness, hitSettings, out bool byPlayer);
+            if (!byPlayer || hit.Damage <= 0f) return;
             nextHurt = Time.time + HurtCooldown;
             LoseStamina(hit.Damage * staminaPerDamage);
             // Hit: it looks at the player again.

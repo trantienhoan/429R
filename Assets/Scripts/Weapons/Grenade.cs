@@ -370,8 +370,8 @@ namespace Game.Weapons
 
             var hand = inHand && grab.firstInteractorSelecting is XRBaseInputInteractor holder ? holder : thrower;
             if (rumbleStrength > 0f) Game.Combat.HitBuzz.Other(hand, rumbleStrength, rumbleDuration);
-            // The player's bomb: overheated hands (Hot Hands) make it hurt more.
-            Blast.Explode(point, reach, Game.Combat.HotHands.Boost(hurt), force, body, effects, sound, volume, eventForPlayer, inHand, effectScale, playerReach);
+            // The player's bomb (Hot Hands gives blasts no bonus).
+            Blast.Explode(point, reach, hurt, force, body, effects, sound, volume, eventForPlayer, inHand, effectScale, playerReach);
             // The bang shakes the view, harder close by; a bigger bang reaches farther.
             ViewShake.Near(point, 1.5f + reach * 1.5f, 5f + reach * 3f);
 
@@ -381,6 +381,8 @@ namespace Game.Weapons
             if (breakApart && Blast.HasHealth(gameObject, out var ownHealth, out _) && ownHealth != null)
             {
                 if (TryGetComponent(out Game.Leveling.WeaponWear wear)) wear.enabled = false;
+                // It broke itself, not a hit: no damage number.
+                Game.Combat.DamageNumbers.Quiet(gameObject);
                 ownHealth.Value = 0f;
             }
             else Destroy(gameObject);

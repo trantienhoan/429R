@@ -156,14 +156,14 @@ namespace Game.Paths
             Destroy(gameObject);
         }
 
-        // Hit by something the player holds or threw, or by the player's hand.
+        // Hit by the player: a punch (the fist's own or a flying one), something they hold or just threw, a shot or an
+        // arrow, or their body.
         private void OnCollisionEnter(Collision collision)
         {
             if (opened || prices.Length == 0 || collision.relativeVelocity.magnitude < showSpeed) return;
 
-            bool byPlayer = collision.collider.GetComponentInParent<XROrigin>() != null;
-            bool byItem = collision.rigidbody != null && collision.rigidbody.GetComponentInParent<XRGrabInteractable>() != null;
-            if (byPlayer || byItem) ShowBoard();
+            bool byBody = collision.collider.GetComponentInParent<XROrigin>() != null;
+            if (byBody || Game.Combat.HeldThings.ByPlayer(collision)) ShowBoard();
         }
 
         /// <summary>Shows the price board above the block.</summary>
@@ -302,6 +302,8 @@ namespace Game.Paths
                 if (fsm.FsmName != healthFsm) continue;
                 var health = fsm.FsmVariables.FindFsmFloat(healthVariable);
                 if (health == null) break;
+                // Paid for, not hit: no damage number.
+                Game.Combat.DamageNumbers.Quiet(gameObject);
                 health.Value = 0f;
                 return;
             }

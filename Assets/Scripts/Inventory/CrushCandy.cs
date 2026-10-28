@@ -95,7 +95,10 @@ namespace Game.Inventory
 
         private static void Break(GameObject candy)
         {
-            if (Blast.HasHealth(candy, out var health, out _) && health != null && health.Value > 0f) health.Value = 0f;
+            if (!Blast.HasHealth(candy, out var health, out _) || health == null || health.Value <= 0f) return;
+            // Crushed by a pumpkin, not hit: no damage number.
+            Game.Combat.DamageNumbers.Quiet(candy);
+            health.Value = 0f;
         }
     }
 }

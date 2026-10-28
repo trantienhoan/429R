@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Game.Combat
@@ -14,6 +15,15 @@ namespace Game.Combat
         public const string DamageFsm = "Damage";
         public const string ForceVariable = "collisionForce";
         public const string CheckState = "Check force";
+
+        /// <summary>
+        /// Collision Events Fair Hits has switched off (so only the player's hits count): they still mark a state as
+        /// listening for a hit.
+        /// </summary>
+        public static readonly HashSet<HutongGames.PlayMaker.Actions.CollisionEvent> Muted = new();
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => Muted.Clear();
 
         /// <summary>
         /// Has the Damage FSMs on <paramref name="hit"/> judge this collision with <paramref name="force"/> as its force,
@@ -46,7 +56,7 @@ namespace Game.Combat
             if (active == null) return false;
             foreach (var action in active.Actions)
             {
-                if (action is HutongGames.PlayMaker.Actions.CollisionEvent listens && listens.Enabled &&
+                if (action is HutongGames.PlayMaker.Actions.CollisionEvent listens && (listens.Enabled || Muted.Contains(listens)) &&
                     listens.storeForce != null && listens.storeForce.Name == ForceVariable) return true;
             }
             return false;

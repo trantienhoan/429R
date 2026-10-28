@@ -87,6 +87,10 @@ namespace Game.Menus
         [SerializeField] private AudioClip[] knockSounds = { };
         [Range(0f, 1f)]
         [SerializeField] private float knockVolume = 0.8f;
+        [Tooltip("A small light over the knight that casts its shadow (the start's own light is too far away for one to " +
+                 "show). Left where it is like the board, it fades away with the board and goes away with the knight. " +
+                 "Empty: none.")]
+        [SerializeField] private Light shadowLight;
 
         // Which tips Tools > 429 Game > Menu > Set Up Knight Tip Board has already put on, so tips and hints deleted by
         // hand stay deleted when it runs again.
@@ -111,6 +115,7 @@ namespace Game.Menus
         private Transform head;
         private CanvasGroup fade;
         private bool passed;
+        private float shadowLightIntensity;
 
         // The tip showing: an index into Tips, or -1 for the First Tip.
         private int current = -1;
@@ -164,6 +169,11 @@ namespace Game.Menus
                 boardBody = board.GetComponentsInChildren<Collider>(true);
                 LetPlayerThrough();
             }
+            if (shadowLight != null)
+            {
+                shadowLight.transform.SetParent(transform.parent, true);
+                shadowLightIntensity = shadowLight.intensity;
+            }
             current = PickTip();
             Write();
         }
@@ -185,7 +195,12 @@ namespace Game.Menus
             if (passed)
             {
                 fade.alpha = Mathf.MoveTowards(fade.alpha, 0f, Time.deltaTime / fadeSeconds);
-                if (fade.alpha <= 0f) board.gameObject.SetActive(false);
+                if (shadowLight != null) shadowLight.intensity = shadowLightIntensity * fade.alpha;
+                if (fade.alpha <= 0f)
+                {
+                    board.gameObject.SetActive(false);
+                    if (shadowLight != null) shadowLight.gameObject.SetActive(false);
+                }
                 return;
             }
 
@@ -224,6 +239,7 @@ namespace Game.Menus
         private void OnDestroy()
         {
             if (board != null) Destroy(board.gameObject);
+            if (shadowLight != null) Destroy(shadowLight.gameObject);
         }
 
         // Hits on the knight itself (its colliders are on this object's body).

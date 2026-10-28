@@ -153,7 +153,14 @@ namespace Game.PlayGround
         {
             if (felled) return;
 
-            float damage = Mathf.Max(1f, strength);
+            // A blast on a tree with Enemy Hit Damage: by the one rule (its Toughness counts); LateUpdate jiggles it and
+            // sees whether it falls.
+            if (TryGetComponent(out EnemyHitDamage hits))
+            {
+                hits.TakeBlast(strength, point, 0f, true);
+                return;
+            }
+            float damage = Mathf.Max(1f, HitSettings.Whole(strength));
             if (fsmHealth != null)
             {
                 // Its Health FSM's health takes it; LateUpdate jiggles it and sees whether it falls.

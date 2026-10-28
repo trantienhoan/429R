@@ -324,6 +324,8 @@ namespace Game.Enemies
                     if (IsBoss(enemy)) return false;
                     if (smashed.Add(enemy))
                     {
+                        // Run over, not the player's kill: no EXP.
+                        Game.Leveling.PlayerLevel.NoRewardFor(enemy.gameObject);
                         Blast.Damage(hit, hit.ClosestPoint(center), KillDamage);
                         foreach (var effect in breakOutEffects)
                         {
@@ -334,7 +336,12 @@ namespace Game.Enemies
                 }
 
                 Object key = thing != null ? thing : hit;
-                if (smashed.Add(key)) Blast.Damage(hit, center, smashDamage);
+                if (smashed.Add(key))
+                {
+                    // Smashed in full (a bulldozer), but not the player's doing: no EXP.
+                    Game.Leveling.PlayerLevel.NoRewardFor(thing != null ? thing.gameObject : hit.gameObject);
+                    Blast.Damage(hit, center, smashDamage);
+                }
                 if (thing != null && !thing.isKinematic && !PushWeight.IsImmovable(thing)) Shove(thing, center, shove);
             }
             return true;
@@ -380,15 +387,16 @@ namespace Game.Enemies
             if (phase == Phase.Gone) return;
             var other = collision.rigidbody;
             if (other == null || collision.relativeVelocity.magnitude < setOffByHit) return;
-            if (Fist.IsFistBall(other)) { Explode(); return; }
+            if (Fist.IsFistBall(other)) { Explode(true); return; }
             if (!other.TryGetComponent<WeaponPower>(out _) && !other.CompareTag("Weapon")) return;
             // Only the player's: held or just thrown (or a shot, which can't be held). A weapon lying in its way is
             // ploughed aside, not a hit.
             if (other.TryGetComponent<XRGrabInteractable>(out var grab) && !HeldThings.InUse(grab)) return;
-            Explode();
+            Explode(true);
         }
 
-        private void Explode()
+        // By Player: the player's hit set it off, so its blast is theirs (else it counts like a knock they didn't make).
+        private void Explode(bool byPlayer = false)
         {
             if (phase == Phase.Gone) return;
             phase = Phase.Gone;
@@ -400,7 +408,7 @@ namespace Game.Enemies
             if (eyes != null && (eyes.transform.position - at).sqrMagnitude <= blastRadius * blastRadius)
                 PlayerDamageShare.Next(playerDamageShare);
             bool hurt = Blast.Explode(at, blastRadius, blastDamage, blastPush, body, blastEffects, blastSound, 1f, playerEvent,
-                false, blastEffectSize);
+                false, blastEffectSize, -1f, byPlayer);
             if (hurt) PlayerLaunch.Launch(at, playerLaunch.x, playerLaunch.y);
             // The bang shakes the view, harder close by (a throw shakes it already).
             ViewShake.Near(at, blastRadius + 2f, blastRadius + 7f);

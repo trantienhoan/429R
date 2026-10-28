@@ -7,8 +7,9 @@ namespace Game.Combat
     /// <summary>
     /// Hot hands, a kill combo: killing Kills Needed enemies within Within Seconds overheats the player's hands, so they
     /// glow bright red with embers coming off them, for Keep Seconds; every kill while hot starts those seconds again.
-    /// While hot, all the damage the player deals is multiplied by Damage Scale: fists and flying punches, weapons,
-    /// throws, and their blasts. Once the hands have cooled down it takes Kills Needed kills within Within Seconds again.
+    /// While hot, the player's punches (the fist's own and flying ones) and throws do Damage Bonus more (user, 2026-10-28:
+    /// not weapons in the hand, shots or blasts). Once the hands have cooled down it takes Kills Needed kills within Within
+    /// Seconds again.
     /// A kill is an enemy that gives EXP dying of the player's doing (not furniture, not one a Fall Edge took). The last
     /// second before it ends, the glow flickers. Goes on the XR Origin (Tools > 429 Game > Player > Hot Hands And Punch
     /// Shockwave puts it there).
@@ -25,7 +26,7 @@ namespace Game.Combat
         [Tooltip("How long the hands stay hot after the last kill, in seconds (each kill while hot starts it again).")]
         [Min(0.1f)]
         [SerializeField] private float keepSeconds = 3f;
-        [Tooltip("While hot, every hit and blast of the player's does this much more damage (whole points: 1 = a punch 2).")]
+        [Tooltip("While hot, the player's punches and throws do this much more damage (whole points: 1 = a punch 2).")]
         [Min(0)]
         [SerializeField] private int damageBonus = 1;
 
@@ -52,11 +53,8 @@ namespace Game.Combat
         /// <summary>The hands are hot now.</summary>
         public static bool Active => instance != null && instance.hot;
 
-        /// <summary>The player's hits and blasts do this much more damage: Damage Bonus while hot, else 0.</summary>
+        /// <summary>The player's punches and throws do this much more damage: Damage Bonus while hot, else 0.</summary>
         public static int DamageBonus => Active ? instance.damageBonus : 0;
-
-        /// <summary>A blast's damage with the Damage Bonus (a blast with no damage stays a push only).</summary>
-        public static float Boost(float damage) => damage > 0f ? damage + DamageBonus : damage;
 
         /// <summary>How hot the hands look now, 0 (cold) to 1 (overheated).</summary>
         public static float Heat => instance != null ? instance.heat : 0f;

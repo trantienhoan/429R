@@ -15,7 +15,8 @@ namespace Game.Combat
     /// Settings), always whole numbers. It lowers the "health" variable of the enemy's Health FSM, which
     /// already watches it, sends "Damage" (or "ShakeSmall" for weak hits) so the enemy's hit reactions play, and
     /// switches off the enemy's old "Damage" FSM so hits aren't counted twice. Where a hit of the player's hurts an enemy,
-    /// a small pop shows (set in the Hit Settings asset; a big hit gets the bigger one).
+    /// a small pop shows (set in the Hit Settings asset; a big hit gets the bigger one). Blasts come in through Take
+    /// Blast by the same rule (Toughness counts), with more push than damage.
     /// Once the health runs out, however it happened, more hits are ignored and the enemy's NavMesh agent is held
     /// still: the death states switch off the FSM that walks the enemy, but not the agent, which would carry the body
     /// on along its last path.
@@ -237,16 +238,23 @@ namespace Game.Combat
         private void Start()
         {
             GetComponents(fsms);
+            PlayMakerFSM healthOwner = null;
             foreach (var fsm in fsms)
             {
                 if (!string.IsNullOrEmpty(oldDamageFsm) && fsm.FsmName == oldDamageFsm) fsm.enabled = false;
 
                 bool holdsHealth = string.IsNullOrEmpty(healthFsm) ? fsm.FsmName.EndsWith("Health") : fsm.FsmName == healthFsm;
-                if (health == null && holdsHealth) health = fsm.FsmVariables.FindFsmFloat(healthVariable);
+                if (health == null && holdsHealth)
+                {
+                    health = fsm.FsmVariables.FindFsmFloat(healthVariable);
+                    healthOwner = fsm;
+                }
             }
 
             if (health == null)
                 Debug.LogWarning($"[Hit Damage] '{name}' has no Health FSM with a \"{healthVariable}\" variable, so hits can't hurt it.", this);
+            // A health FSM that's switched off (the pumpkin boss keeps its health in one) still shows its damage numbers.
+            else if (!healthOwner.enabled) DamageNumbers.Watch(healthOwner, health);
 
             TryGetComponent(out agent);
             // The hit pops are made ready once, by the first enemy, so the first hit doesn't stutter.
@@ -294,7 +302,8 @@ namespace Game.Combat
             if (thrown) power /= Game.Leveling.PlayerLevel.HardThrowShare;
             // A flying jab: the skill move, its hard hit one more (not twice).
             bool flyingFist = Fist.IsFlyingFist(collision.rigidbody);
-            var hit = Taken(Settings.Evaluate(power, WeaponPower.DamageOf(collision), thrown, flyingFist), byPlayer);
+            var hit = Taken(Settings.Evaluate(power, WeaponPower.DamageOf(collision), thrown, flyingFist),
+                byPlayer && HotHandsCount(collision));
             LastHit = hit;
             // Punches are the last resort (user, 2026-10-27): little damage, but every one shoves the enemy back and stuns
             // it; a flying jab shoves it much farther.
@@ -356,13 +365,109 @@ namespace Game.Combat
             KnockBackFromPlayer();
         }
 
-        // The hit's damage times Damage Taken, and for the player's own hits plus Hot Hands' bonus (overheated hands hit
-        // harder). Whole numbers.
-        private HitResult Taken(HitResult hit, bool byPlayer)
+        // The hit's damage times Damage Taken, plus Hot Hands' bonus when Hot (overheated hands hit harder: the player's
+        // punches and throws). Whole numbers.
+        private HitResult Taken(HitResult hit, bool hot)
         {
             if (hit.Damage <= 0f) return hit;
-            float damage = Mathf.Max(1f, Mathf.Round(hit.Damage * damageTaken) + (byPlayer ? HotHands.DamageBonus : 0));
+            float damage = Mathf.Max(1f, HitSettings.Whole(hit.Damage * damageTaken) + (hot ? HotHands.DamageBonus : 0));
             return damage == hit.Damage ? hit : new HitResult(hit.Power, damage, hit.IsBig);
+        }
+
+        // Hot Hands' bonus is for punches (the fist's own and flying ones) and throws (user, 2026-10-28): not for a weapon
+        // in the hand, a shot, or a blast.
+        private static bool HotHandsCount(Collision collision)
+        {
+            var source = collision.rigidbody;
+            return Fist.IsFistBall(source) || Fist.IsFlyingFist(source) || IsThrown(collision);
+        }
+
+        /// <summary>
+        /// What a collision does by the one rule, as on an enemy of this Toughness: its power (hit speed x the weapon's
+        /// Power / Toughness, a throw counting harder with Throw Power) and its whole damage (the weapon's Damage, more for
+        /// a hard hit), plus Hot Hands' bonus for the player's punches and throws. For things that use the rule for
+        /// something other than health (a laughing pumpkin's stamina). By Player: the player made it.
+        /// </summary>
+        public static HitResult Judge(Collision collision, float toughness, HitSettings settings, out bool byPlayer)
+        {
+            settings = settings != null ? settings : HitSettings.Shared;
+            byPlayer = HeldThings.ByPlayer(collision);
+            float power = collision.relativeVelocity.magnitude * WeaponPower.Of(collision) / Mathf.Max(0.1f, toughness);
+            bool thrown = IsThrown(collision);
+            if (thrown) power /= Game.Leveling.PlayerLevel.HardThrowShare;
+            var hit = settings.Evaluate(power, WeaponPower.DamageOf(collision), thrown, Fist.IsFlyingFist(collision.rigidbody));
+            if (hit.Damage <= 0f || !byPlayer || !HotHandsCount(collision) || HotHands.DamageBonus == 0) return hit;
+            return new HitResult(hit.Power, hit.Damage + HotHands.DamageBonus, hit.IsBig);
+        }
+
+        /// <summary>
+        /// A blast at Center reaching Radius (the one rule, with more push than damage): its Damage in the middle, less
+        /// towards the edge (Hit Settings' Blasts), divided by the Toughness like a hit's and made whole; it throws an enemy
+        /// away from the middle and stuns it. By Player: the player's blast (a grenade, a Boong, an exploding punch); any
+        /// other counts as a knock the player didn't make (Stray Toughness; furniture's Bump Share). Plays the hit reaction,
+        /// or the flinch if it did no damage. No Hot Hands bonus. True if it hurt.
+        /// </summary>
+        public bool TakeBlast(float damage, Vector3 center, float radius, bool byPlayer)
+        {
+            if (health == null || dead || Time.time < settledAt) return false;
+
+            float edge = radius > 0f ? Mathf.Clamp01(DistanceFrom(center) / radius) : 0f;
+            float share = 1f;
+            bool stray = false;
+            if (furniture)
+            {
+                if (!byPlayer) share = bumpShare;
+            }
+            else if (!byPlayer && strayToughness > 1f)
+            {
+                share = 1f / strayToughness;
+                stray = true;
+            }
+            float amount = Settings.BlastDamage(damage * share * damageTaken, edge, toughness);
+            var hit = new HitResult(0f, amount, false);
+            LastHit = hit;
+
+            if (amount <= 0f)
+            {
+                if (!stray)
+                {
+                    Send(weakHitEvent);
+                    WeakHit?.Invoke(this);
+                }
+            }
+            else
+            {
+                health.Value -= amount;
+                Send(hitEvent);
+                if (health.Value <= 0f)
+                {
+                    // Killed by a blast that wasn't the player's: they didn't earn it (no EXP, no orbs).
+                    if (!byPlayer) noReward = true;
+                    Die();
+                    HoldStill();
+                }
+            }
+            if (!furniture && !stray) BlastBack(center, edge);
+            if (amount > 0f) AnyHit?.Invoke(this, hit);
+            return amount > 0f;
+        }
+
+        // Thrown away from the blast's middle (Hit Settings' Blast Knock Back), less the farther out it was.
+        private void BlastBack(Vector3 center, float edge)
+        {
+            if (!knockBack) return;
+            var knock = Settings.BlastKnock(edge);
+            if (knock.x <= 0f) return;
+            if (!dead && brain != null && !brain.TryStun(knockBackTime + knock.z)) return;
+            if (knockback == null && !TryGetComponent(out knockback)) knockback = gameObject.AddComponent<Knockback>();
+            knockback.Push(center, knockBackDistance * knock.x, knockBackTime, knockBackHop * knock.y, Mathf.Max(knockBackStun, knock.z));
+            if (!dead && brain != null && brain.IsBoss) ShowStunned(knockBackTime + knock.z);
+        }
+
+        // How far its body is from a point (0 inside it).
+        private float DistanceFrom(Vector3 point)
+        {
+            return TryGetBodyBounds(out var body) ? Mathf.Sqrt(body.SqrDistance(point)) : Vector3.Distance(transform.position, point);
         }
 
         // In its face: the front third of its body, from its middle up (small bugs' head bones sit mid-body, and a throw
@@ -458,7 +563,8 @@ namespace Game.Combat
         {
             if (health == null || dead || furniture) return false;
 
-            var hit = Taken(Settings.Evaluate(power / toughness, damageScale), true);
+            // No Hot Hands bonus: the punch that landed it already had it.
+            var hit = Taken(Settings.Evaluate(power / toughness, damageScale), false);
             bool hurt = hit.Damage > 0f;
             if (hurt)
             {

@@ -78,6 +78,9 @@ namespace Game.PlayGround
         [SerializeField] private bool cleanWithFairyShield = true;
         [Tooltip("The shield object's name in the scene.")]
         [SerializeField] private string shieldName = "Shield_Sphere";
+        [Tooltip("The smoke that goes off with the shield, as everywhere the shield is used (user, 2026-10-28): its name in " +
+                 "the scene. Empty: none.")]
+        [SerializeField] private string shieldSmokeName = "Smoke_Blast_Green";
         [Tooltip("The chest drops this many seconds after the shield goes off (it grows over 3 s).")]
         [Min(0f)] [SerializeField] private float chestAfterShield = 3.2f;
 
@@ -225,19 +228,25 @@ namespace Game.PlayGround
             DropChest(chest);
         }
 
-        // Switches the GAMESTAGES Fairy Shield on: it grows over the stage by itself and switches itself off again.
+        // Switches the GAMESTAGES Fairy Shield on, and its green smoke with it: the shield grows over the stage by itself and
+        // switches itself off again, and so does the smoke.
         private bool FireFairyShield()
         {
-            GameObject shield = null;
+            GameObject shield = null, smoke = null;
             foreach (var candidate in Resources.FindObjectsOfTypeAll<GameObject>())
             {
-                if (candidate.name != shieldName || !candidate.scene.IsValid() || !candidate.CompareTag("Fairy_Shield")) continue;
-                shield = candidate;
-                break;
+                if (!candidate.scene.IsValid()) continue;
+                if (shield == null && candidate.name == shieldName && candidate.CompareTag("Fairy_Shield")) shield = candidate;
+                else if (smoke == null && !string.IsNullOrEmpty(shieldSmokeName) && candidate.name == shieldSmokeName) smoke = candidate;
             }
             if (shield == null) return false;
             if (shield.activeSelf) shield.SetActive(false);
             shield.SetActive(true);
+            if (smoke != null)
+            {
+                if (smoke.activeSelf) smoke.SetActive(false);
+                smoke.SetActive(true);
+            }
             return true;
         }
 

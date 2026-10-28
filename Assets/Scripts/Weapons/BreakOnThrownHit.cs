@@ -76,6 +76,8 @@ namespace Game.Weapons
             if (grab == null || grab.isSelected || !HeldThings.InUse(grab)) return;
             if (collision.relativeVelocity.magnitude < minSpeed || !IsEnemy(collision)) return;
             broken = true;
+            // It broke itself on the enemy: no damage number of its own.
+            DamageNumbers.Quiet(gameObject);
             health.Value = 0f;
             var at = collision.contactCount > 0 ? collision.GetContact(0).point : transform.position;
             var other = collision.rigidbody != null ? collision.rigidbody.gameObject : collision.gameObject;

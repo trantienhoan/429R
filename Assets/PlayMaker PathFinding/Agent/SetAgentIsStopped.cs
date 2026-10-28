@@ -50,11 +50,17 @@ namespace HutongGames.PlayMaker.Actions
 		
 		void DoSetIsStopped()
 		{
-			if (isStopped == null || _agent == null) 
+			if (isStopped == null || _agent == null)
 			{
 				return;
 			}
-			
+			// Only an agent placed on the NavMesh can stop (one that died off it, e.g. a bee over a fall edge, has none):
+			// Unity would log an error, and PlayMaker breaks on it.
+			if (!_agent.isActiveAndEnabled || !_agent.isOnNavMesh)
+			{
+				return;
+			}
+
 			_agent.isStopped = isStopped.Value;
 		}
 

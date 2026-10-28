@@ -126,7 +126,7 @@ namespace Game.Leveling
         [Range(0f, 0.09f)]
         [SerializeField] private float pushCutPerPoint = 0.08f;
         [Tooltip("+1 damage every this many points (5: +1 at 5, +2 at 10): Weapon Efficiency to weapons and their bullets, " +
-                 "eaten candies' punch points to flying jabs. (Fist Size itself gives flying jabs +1 every point.)")]
+                 "eaten candies' punch points to closed punches. (Fist Size itself gives flying jabs +1 every point.)")]
         [Min(1)]
         [SerializeField] private int damageStepPoints = 5;
         [Tooltip("Weapon Efficiency: a hard hit wears a weapon the player has held this share less (0.05 = 5% less a " +
@@ -392,12 +392,15 @@ namespace Game.Leveling
             : 0f;
 
         /// <summary>
-        /// The extra damage flying jabs do (user, 2026-10-27): +1 every Fist Size point, and +1 every Damage Step Points of
-        /// eaten candies' Fist Size points. The closed fist itself never gets it (1, a hard punch 2: the last resort).
+        /// The extra damage flying jabs do (user, 2026-10-27): +1 every Fist Size point. The closed fist doesn't get it.
         /// </summary>
-        public static int FlyingJabBonus => Instance != null
-            ? Instance.Points(Stat.FistSize) + Instance.Steps(Instance.candyPoints[(int)Stat.FistSize])
-            : 0;
+        public static int FlyingJabBonus => Instance != null ? Instance.Points(Stat.FistSize) : 0;
+
+        /// <summary>
+        /// The extra damage the closed fist does from eaten candies (user, 2026-10-28: the candy punch buff helps closed
+        /// punches only): +1 every Damage Step Points of eaten candies' Fist Size points.
+        /// </summary>
+        public static int CandyPunchBonus => Instance != null ? Instance.Steps(Instance.candyPoints[(int)Stat.FistSize]) : 0;
 
         // Whole damage steps for this many points: +1 every Damage Step Points.
         private int Steps(float points) => Mathf.FloorToInt((points + 0.001f) / Mathf.Max(1, damageStepPoints));
@@ -509,8 +512,8 @@ namespace Game.Leveling
 
         // A stat's points as they count: a full Big Last Point stat's last point counts as Last Point Worth. A boong's
         // points for now (Player Buffs: Toughness, Move Speed) and eaten candies' points (Toughness, Move Speed, Throw
-        // Power) come on top, never as that last point, and aren't saved. Candies' Fist Size points only add punch
-        // damage (Punch Damage Bonus), so they aren't counted here.
+        // Power) come on top, never as that last point, and aren't saved. Candies' Fist Size points only add closed
+        // punch damage (Candy Punch Bonus), so they aren't counted here.
         private float Worth(Stat stat)
         {
             int p = Points(stat);
@@ -720,6 +723,8 @@ namespace Game.Leveling
             if (thing == null) return;
             foreach (var reward in thing.GetComponentsInChildren<ExpWhenBroken>(true)) reward.noReward = true;
             foreach (var enemy in thing.GetComponentsInChildren<EnemyHitDamage>(true)) enemy.noReward = true;
+            // Not the player's hit either: no damage number when its health is emptied.
+            DamageNumbers.Quiet(thing);
         }
 
         private void GainExpPart(float amount)
