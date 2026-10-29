@@ -91,16 +91,16 @@ namespace Game.Combat
 
         // Where the player's choice is kept (off for a new player).
         private const string EnabledKey = "429 Game.DamageNumbers";
-        private static bool? enabled;
+        private static bool? chosen;
 
         /// <summary>The player's choice (pause menu): whether numbers show. Setting it saves it; off hides any showing.</summary>
         public static bool Enabled
         {
-            get => enabled ??= PlayerPrefs.GetInt(EnabledKey, 0) != 0;
+            get => chosen ??= PlayerPrefs.GetInt(EnabledKey, 0) != 0;
             set
             {
                 if (value == Enabled) return;
-                enabled = value;
+                chosen = value;
                 PlayerPrefs.SetInt(EnabledKey, value ? 1 : 0);
                 PlayerPrefs.Save();
                 if (!value && instance != null) instance.HideAll();
@@ -110,13 +110,13 @@ namespace Game.Combat
         public static string Label() => Enabled ? "Damage numbers: on" : "Damage numbers: off";
 
         /// <summary>The settings were wiped (reset to a new install): the choice is read again, off for a new player.</summary>
-        public static void ForgetChoice() => enabled = null;
+        public static void ForgetChoice() => chosen = null;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
         {
             instance = null;
-            enabled = null;
+            chosen = null;
             bigHits.Clear();
             quiet.Clear();
             handedOver.Clear();

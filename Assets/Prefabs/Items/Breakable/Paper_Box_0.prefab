@@ -131,7 +131,7 @@ Rigidbody:
   m_GameObject: {fileID: 936478556243301555}
   serializedVersion: 5
   m_Mass: 100
-  m_LinearDamping: 0
+  m_LinearDamping: 0.1
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
@@ -1495,7 +1495,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  m_ThrowVelocityScale: 6
+  m_ThrowVelocityScale: 1.8
   m_ThrowAngularVelocityScale: 1
   m_ForceGravityOnDetach: 0
   m_RetainTransformParent: 1
@@ -6508,7 +6508,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {fileID: 1382077054152326572, guid: 573868fb972b8504db3df4340657744d,
+          value: {fileID: 1382077054152326572, guid: b6ece224f67772b43a83df13a75d34fa,
             type: 3}
         - useVariable: 1
           name: CurrentlySpawnedStuffs
@@ -11491,7 +11491,7 @@ PrefabInstance:
     - target: {fileID: 5789750351418582037, guid: a47daad1ccbf2de439cd134aebe0afe5,
         type: 3}
       propertyPath: ShapeModule.donutRadius
-      value: 0.18
+      value: 0.05
       objectReference: {fileID: 0}
     - target: {fileID: 5789750351418582037, guid: a47daad1ccbf2de439cd134aebe0afe5,
         type: 3}
@@ -11511,7 +11511,7 @@ PrefabInstance:
     - target: {fileID: 5789750351418582037, guid: a47daad1ccbf2de439cd134aebe0afe5,
         type: 3}
       propertyPath: ShapeModule.radius.value
-      value: 0.08
+      value: 0.0001
       objectReference: {fileID: 0}
     - target: {fileID: 5789750351418582037, guid: a47daad1ccbf2de439cd134aebe0afe5,
         type: 3}
@@ -11531,7 +11531,7 @@ PrefabInstance:
     - target: {fileID: 5789750351418582037, guid: a47daad1ccbf2de439cd134aebe0afe5,
         type: 3}
       propertyPath: InitialModule.startSpeed.scalar
-      value: 0.1
+      value: 0.001
       objectReference: {fileID: 0}
     - target: {fileID: 5789750351418582037, guid: a47daad1ccbf2de439cd134aebe0afe5,
         type: 3}
@@ -11541,7 +11541,7 @@ PrefabInstance:
     - target: {fileID: 5789750351418582037, guid: a47daad1ccbf2de439cd134aebe0afe5,
         type: 3}
       propertyPath: InitialModule.startSpeed.minScalar
-      value: 0.2
+      value: 0.005
       objectReference: {fileID: 0}
     - target: {fileID: 5789750351418582037, guid: a47daad1ccbf2de439cd134aebe0afe5,
         type: 3}

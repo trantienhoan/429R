@@ -166,12 +166,13 @@ namespace Game.Bonus
         [Tooltip("A player this close to it (metres, from its side) is thrown...")]
         [Min(0f)]
         [SerializeField] private float blastReach = 6f;
-        [Tooltip("...this high (metres)...")]
+        [Tooltip("...this high (metres)... Half what it was (1.6 m, 4 m away; user, 2026-10-29: \"push the Player less, " +
+                 "with 50% force\").")]
         [Min(0f)]
-        [SerializeField] private float blastHeight = 1.6f;
+        [SerializeField] private float blastHeight = 0.8f;
         [Tooltip("...and this far away from it (metres). Their Toughness doesn't cut it.")]
         [Min(0f)]
-        [SerializeField] private float blastDistance = 4f;
+        [SerializeField] private float blastDistance = 2f;
         [Tooltip("How fast its pieces fly off, in metres per second.")]
         [Min(0f)]
         [SerializeField] private float blastPush = 7f;

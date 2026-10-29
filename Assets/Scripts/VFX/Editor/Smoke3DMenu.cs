@@ -597,6 +597,89 @@ namespace Game.EditorTools
             return sheet.enabled && sheet.numTilesX == 2 && sheet.numTilesY == 2;
         }
 
+        /// <summary>
+        /// Gives one particle system the shared Smoke_Puff's 3D puffs (its meshes and material; a black smoke gets the dark
+        /// material), e.g. the smoke part of an effect that was built from flat cards (the pumpkin boss's blasts). False if
+        /// Smoke_Puff isn't 3D yet (4. Make Smoke_Puff 3D).
+        /// </summary>
+        public static bool UseSharedPuffs(ParticleSystem system)
+        {
+            var shared = AssetDatabase.LoadAssetAtPath<GameObject>(PuffPath);
+            var look = shared != null ? shared.GetComponent<ParticleSystemRenderer>() : null;
+            if (look == null || look.renderMode != ParticleSystemRenderMode.Mesh || look.meshCount == 0) return false;
+            var meshes = new Mesh[look.meshCount];
+            look.GetMeshes(meshes);
+            var dark = IsBlack(system) ? AssetDatabase.LoadAssetAtPath<Material>(DarkMaterialPath) : null;
+            Make3D(system, meshes, dark != null ? dark : look.sharedMaterial);
+            EvenGrowth(system);
+            return true;
+        }
+
+        /// <summary>
+        /// A puff grows evenly: a card stretched one way as it lives (Hit_Blast's clouds streak out long and thin, then
+        /// round off) would make a puff a long slab, so it takes the smaller of its widths at each moment (small as it
+        /// streaks out, its round size once it settles), only growing until its biggest, then shrinking (no pulsing).
+        /// </summary>
+        public static void EvenGrowth(ParticleSystem system)
+        {
+            var grow = system.sizeOverLifetime;
+            if (!grow.enabled || !grow.separateAxes) return;
+            const int Steps = 10;
+            var widths = new float[Steps + 1];
+            int biggest = 0;
+            for (int i = 0; i <= Steps; i++)
+            {
+                float t = (float)i / Steps;
+                widths[i] = Mathf.Min(grow.x.Evaluate(t), grow.y.Evaluate(t));
+                if (widths[i] > widths[biggest]) biggest = i;
+            }
+            for (int i = 1; i < biggest; i++) widths[i] = Mathf.Max(widths[i], widths[i - 1]);
+            var smaller = new AnimationCurve();
+            for (int i = 0; i <= Steps; i++) smaller.AddKey((float)i / Steps, widths[i]);
+            for (int i = 0; i < smaller.length; i++) smaller.SmoothTangents(i, 0f);
+            grow.separateAxes = false;
+            grow.size = new ParticleSystem.MinMaxCurve(1f, smaller);
+        }
+
+        // Lana's blasts that the game plays with its own smokes (the Elon Boong's punch, the bottles, books and flip-flops,
+        // bursting pumpkins, the boongs): their cloud puffs (the 2x2 cloud sheet) drawn as the shared 3D puffs too; their
+        // flash, star and ring stay flat (user, 2026-10-29: "Elon Smoke punch buff, it still uses the old smoke").
+        private static readonly string[] LanaBlasts = { "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Hit_Blast.prefab" };
+
+        [MenuItem("Tools/429 Game/Effects/Smoke/10. Lana Hit_Blast Clouds To 3D")]
+        public static void LanaBlastsMenu() => Debug.Log(LanaBlasts3D());
+
+        /// <summary>The cloud puffs in Lana's blasts (Hit_Blast) as the shared 3D puffs. What was done, as a sentence.</summary>
+        public static string LanaBlasts3D()
+        {
+            if (EditorApplication.isPlaying) return "[Smoke 3D] Stop play mode first.";
+            var log = new List<string>();
+            foreach (var path in LanaBlasts)
+            {
+                if (AssetDatabase.LoadAssetAtPath<GameObject>(path) == null) continue;
+                var stage = PrefabStageUtility.GetCurrentPrefabStage();
+                if (stage != null && stage.assetPath == path) { log.Add(System.IO.Path.GetFileNameWithoutExtension(path) + " is open in Prefab Mode, skipped"); continue; }
+                var root = PrefabUtility.LoadPrefabContents(path);
+                try
+                {
+                    int count = 0;
+                    foreach (var system in root.GetComponentsInChildren<ParticleSystem>(true))
+                    {
+                        var look = system.GetComponent<ParticleSystemRenderer>();
+                        if (look.renderMode != ParticleSystemRenderMode.Mesh && IsCloudSheet(system) && UseSharedPuffs(system)) count++;
+                    }
+                    if (count == 0) continue;
+                    PrefabUtility.SaveAsPrefabAsset(root, path);
+                    log.Add($"{root.name} ({count} puff{(count > 1 ? "s" : "")})");
+                }
+                finally
+                {
+                    PrefabUtility.UnloadPrefabContents(root);
+                }
+            }
+            return log.Count > 0 ? "[Smoke 3D] 3D puffs in " + string.Join(", ", log) + "." : "[Smoke 3D] Lana's blasts already have 3D puffs.";
+        }
+
         // One particle system drawn as 3D puffs: these meshes (at random), the 3D material, spread out (Scatter), turning
         // slowly.
         private static void Make3D(ParticleSystem system, Mesh[] meshes, Material material)

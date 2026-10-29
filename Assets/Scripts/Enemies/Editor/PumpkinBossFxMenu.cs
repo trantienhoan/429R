@@ -20,6 +20,9 @@ namespace Game.EditorTools
     /// - Boss_Vomit_Cloud: the black cloud that rolls out where the vomited bugs come out (puffs up to about 1.5 m).
     /// Puffs grow, then shrink away while still solid, like the game's other cartoon smoke. All particles are kept to
     /// half the view at most, like the Effect Pool's, for the headset's sake (the floor ring gets more, in the game).
+    /// Their smoke and dust (not the booms, rings or dirt) are then drawn as the shared Smoke_Puff's 3D puffs, the black
+    /// vomit with its dark material (user, 2026-10-29: "the Pumpkin_Boss_Z still use the old smoke"): Tools > 429 Game >
+    /// Enemies > Pumpkin Boss Smoke FX: 3D Puffs does that to the prefabs as they are.
     /// </summary>
     public static class PumpkinBossFxMenu
     {
@@ -31,6 +34,10 @@ namespace Game.EditorTools
         private const float MaxScreen = 0.5f;
 
         private static Material material;
+
+        // The smoke and dust parts, drawn as the shared 3D puffs.
+        private static readonly string[] SmokeParts = { "Dust Ring", "Smoke Column", "Puffs", "Dust", "Boss_Vomit_Stream", "Boss_Vomit_Cloud" };
+        private static readonly string[] Effects = { "Boss_Ground_Blast", "Boss_Hit_Blast", "Boss_Scrape_Dust", "Boss_Vomit_Stream", "Boss_Vomit_Cloud" };
 
         [MenuItem("Tools/429 Game/Enemies/Build Pumpkin Boss Smoke FX")]
         public static void Build()
@@ -45,7 +52,40 @@ namespace Game.EditorTools
             var stream = Save(MakeVomitStream(), "Boss_Vomit_Stream");
             var cloud = Save(MakeVomitCloud(), "Boss_Vomit_Cloud");
             string set = SetUpBoss(ground, hit, scrape, stream, cloud);
-            Debug.Log($"Pumpkin boss FX built in {Folder}. {set}");
+            Debug.Log($"Pumpkin boss FX built in {Folder}. {set} {MakePuffs3D()}");
+        }
+
+        [MenuItem("Tools/429 Game/Enemies/Pumpkin Boss Smoke FX: 3D Puffs")]
+        public static void MakePuffs3DMenu() => Debug.Log(MakePuffs3D());
+
+        /// <summary>The boss effects' smoke and dust drawn as the shared 3D puffs, in the prefabs as they are.</summary>
+        public static string MakePuffs3D()
+        {
+            var made = new List<string>();
+            foreach (var name in Effects)
+            {
+                string path = $"{Folder}/{name}.prefab";
+                if (AssetDatabase.LoadAssetAtPath<GameObject>(path) == null) continue;
+                var stage = PrefabStageUtility.GetCurrentPrefabStage();
+                if (stage != null && stage.assetPath == path) { made.Add(name + " open in Prefab Mode, skipped"); continue; }
+                var root = PrefabUtility.LoadPrefabContents(path);
+                try
+                {
+                    int count = 0;
+                    foreach (var system in root.GetComponentsInChildren<ParticleSystem>(true))
+                    {
+                        if (SmokeParts.Contains(system.name) && Smoke3DMenu.UseSharedPuffs(system)) count++;
+                    }
+                    if (count == 0) continue;
+                    PrefabUtility.SaveAsPrefabAsset(root, path);
+                    made.Add($"{name} ({count})");
+                }
+                finally
+                {
+                    PrefabUtility.UnloadPrefabContents(root);
+                }
+            }
+            return made.Count > 0 ? "3D puffs: " + string.Join(", ", made) + "." : "No 3D puffs (is Smoke_Puff 3D?).";
         }
 
         // ---------- the effects ----------

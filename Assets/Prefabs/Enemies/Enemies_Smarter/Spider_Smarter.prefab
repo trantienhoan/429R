@@ -887,7 +887,7 @@ Transform:
   m_Children:
   - {fileID: 5425142022583709300}
   - {fileID: 447515758618431092}
-  - {fileID: 4855296363428188049}
+  - {fileID: 6269743667992159458}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!195 &2569083251903338554
@@ -3104,7 +3104,7 @@ MonoBehaviour:
   aggressiveBoss: 1
   unstoppableAttacks: 1
   unstoppablePlayerEvent: DamageStrongZ
-  bossHelmetSeconds: 3
+  bossHelmetSeconds: 0
   minion: {fileID: 0}
   callBelowHealth: 0.4
   minionCount: {x: 3, y: 5}
@@ -3531,7 +3531,7 @@ Transform:
   - {fileID: 8986349096288024622}
   - {fileID: 2653177655587054684}
   - {fileID: 7476848429728149272}
-  m_Father: {fileID: 7779331538366485845}
+  m_Father: {fileID: 6269743667992159458}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!95 &8409055935635219634
 Animator:
@@ -4619,6 +4619,61 @@ Transform:
   m_Children: []
   m_Father: {fileID: 5380579752060560771}
   m_LocalEulerAnglesHint: {x: 13.233857, y: 48.162567, z: 47.52784}
+--- !u!1 &6966554451067052308
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6269743667992159458}
+  - component: {fileID: 5922369985056684876}
+  m_Layer: 0
+  m_Name: Jiggle
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6269743667992159458
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6966554451067052308}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 4855296363428188049}
+  m_Father: {fileID: 7779331538366485845}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5922369985056684876
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6966554451067052308}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db50a45c0d14e3242b21e6fa1d84be5c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.VFX.Jiggle
+  jiggleWhenHurt: 1
+  hurtStrength: 1
+  squash: 0.25
+  tilt: 12
+  wobblesPerSecond: 5
+  settleTime: 0.7
+  softHitPause: 0.75
+  around: {fileID: 4855296363428188049}
+  healthFsm: SpiderHealth
+  healthVariable: health
 --- !u!1 &7066916853087833316
 GameObject:
   m_ObjectHideFlags: 0

@@ -675,9 +675,10 @@ namespace Game.Enemies
                  "DamageStrongZ (25-50), DamageHeavy (40-50), Damage (6-9). Empty: its size's event, as usual.")]
         [SerializeField] private string unstoppablePlayerEvent = "DamageStrongZ";
         [Tooltip("Boss size only: killed by the player, it gives them this many seconds of the bonus round's Candy Helmet " +
-                 "(every candy around flies into their mouth), on top of any time it has left. 0 = none.")]
+                 "(every candy around flies into their mouth), on top of any time it has left. 0 = none: the user took it out " +
+                 "(2026-10-29).")]
         [Min(0f)]
-        [SerializeField] private float bossHelmetSeconds = 3f;
+        [SerializeField] private float bossHelmetSeconds;
 
         [Header("Calling minions (bosses)")]
         [Tooltip("The minion a boss calls when it gets low on health: Spider_Small for the white Spider_Boss, " +

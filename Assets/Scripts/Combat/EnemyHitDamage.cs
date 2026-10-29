@@ -38,6 +38,9 @@ namespace Game.Combat
         [Tooltip("After a hit that hurts, more hits are ignored this long, in seconds, so one swing counts once.")]
         [Min(0f)]
         [SerializeField] private float hitCooldown = 0.3f;
+        [Tooltip("Every hit of the player's counts (user, 2026-10-29, the bonus round's pumpkins): Hit Cooldown is for each " +
+                 "fist or thing on its own, so the other fist's punch still lands, and one too soft to hurt still takes 1.")]
+        [SerializeField] private bool everyHitCounts;
 
         [Header("Big hits")]
         [Tooltip("Knock the enemy back, away from the player, on a big hit.")]
@@ -118,6 +121,8 @@ namespace Game.Combat
         private NavMeshAgent agent;
         private SpiderBrain brain;
         private float nextHit;
+        // Every Hit Counts: when each fist or thing may hurt it again.
+        private readonly Dictionary<UnityEngine.Object, float> nextHitBy = new();
         private float nextFlinch;
         private bool dead;
         private float scaledUntil = -1f;
@@ -126,6 +131,11 @@ namespace Game.Combat
         private float scaledStun;
         private Transform head;
         private bool headSearched;
+        // Where the stun stars sit (a point on the head bone, in the middle of the face), how wide, and how far up the
+        // face's top is from there.
+        private Transform stunPoint;
+        private float stunPointRing;
+        private float stunPointLift;
         private float settledAt;
         // Furniture the player can pick up (chairs, boxes).
         private XRGrabInteractable grab;
@@ -275,7 +285,10 @@ namespace Game.Combat
         // The enemy's Rigidbody gets the collisions of all its colliders, so any part of it can be hit.
         private void OnCollisionEnter(Collision collision)
         {
-            if (health == null || dead || Time.time < nextHit || Time.time < settledAt) return;
+            if (health == null || dead || Time.time < settledAt) return;
+            // What hit it: with Every Hit Counts, each one waits out its own Hit Cooldown.
+            UnityEngine.Object hitter = collision.rigidbody != null ? collision.rigidbody : collision.collider;
+            if (Time.time < (everyHitCounts ? NextHitBy(hitter) : nextHit)) return;
 
             float power = collision.relativeVelocity.magnitude * WeaponPower.Of(collision) / toughness;
             bool stray = false;
@@ -302,8 +315,11 @@ namespace Game.Combat
             if (thrown) power /= Game.Leveling.PlayerLevel.HardThrowShare;
             // A flying jab: the skill move, its hard hit one more (not twice).
             bool flyingFist = Fist.IsFlyingFist(collision.rigidbody);
-            var hit = Taken(Settings.Evaluate(power, WeaponPower.DamageOf(collision), thrown, flyingFist),
-                byPlayer && HotHandsCount(collision));
+            var judged = Settings.Evaluate(power, WeaponPower.DamageOf(collision), thrown, flyingFist);
+            // Every Hit Counts: the player's hit too soft to hurt (but more than a touch) takes its weapon's damage.
+            if (everyHitCounts && byPlayer && !furniture && judged.Damage <= 0f && power >= MinFlinchPower)
+                judged = new HitResult(power, Mathf.Max(1f, HitSettings.Whole(WeaponPower.DamageOf(collision))), false);
+            var hit = Taken(judged, byPlayer && HotHandsCount(collision));
             LastHit = hit;
             // Punches are the last resort (user, 2026-10-27): little damage, but every one shoves the enemy back and stuns
             // it; a flying jab shoves it much farther.
@@ -323,7 +339,8 @@ namespace Game.Combat
 
             bool wasAlive = health.Value > 0f;
             health.Value -= hit.Damage;
-            nextHit = Time.time + hitCooldown;
+            if (everyHitCounts) WaitOut(hitter);
+            else nextHit = Time.time + hitCooldown;
             // The hand behind it (a fist, or a hand holding what hit) buzzes as hard as it hurt.
             HitBuzz.Dealt(collision, hit.Damage);
             // The killing blow on an enemy: that hand gets one more, strong thump just after.
@@ -350,6 +367,24 @@ namespace Game.Combat
             // A big killing blow still knocks the body back: Knockback moves the agent itself, which works while it's held.
             else if (hit.IsBig && knockBack && !stray) KnockBackFromPlayer();
             AnyHit?.Invoke(this, hit);
+        }
+
+        private float NextHitBy(UnityEngine.Object hitter) => hitter != null && nextHitBy.TryGetValue(hitter, out float at) ? at : 0f;
+
+        // This hitter may hurt it again after Hit Cooldown; the ones long done are forgotten.
+        private void WaitOut(UnityEngine.Object hitter)
+        {
+            if (hitter == null) return;
+            if (nextHitBy.Count > 16)
+            {
+                var done = new List<UnityEngine.Object>();
+                foreach (var pair in nextHitBy)
+                {
+                    if (pair.Key == null || pair.Value < Time.time) done.Add(pair.Key);
+                }
+                foreach (var key in done) nextHitBy.Remove(key);
+            }
+            nextHitBy[hitter] = Time.time + hitCooldown;
         }
 
         // A punch's knock-back (Hit Settings' Punch Knock: the distance and hop as shares, the stun in seconds). Combo: the
@@ -617,6 +652,35 @@ namespace Game.Combat
             return front > 0.4f || up > 0.7f;
         }
 
+        // A point riding on the head bone in the middle of the face (its eye and jaw bones), with a ring as wide as the
+        // face. False when the head has no such bones.
+        private bool MakeStunPoint()
+        {
+            var face = new List<Vector3>();
+            foreach (var bone in head.GetComponentsInChildren<Transform>(true))
+            {
+                if (bone == head) continue;
+                if (bone.name.StartsWith("Eye", StringComparison.OrdinalIgnoreCase) ||
+                    bone.name.StartsWith("Jaw", StringComparison.OrdinalIgnoreCase)) face.Add(bone.position);
+            }
+            if (face.Count == 0) return false;
+            var middle = Vector3.zero;
+            foreach (var at in face) middle += at;
+            middle /= face.Count;
+            float spread = 0f, top = middle.y;
+            foreach (var at in face)
+            {
+                spread = Mathf.Max(spread, new Vector2(at.x - middle.x, at.z - middle.z).magnitude);
+                top = Mathf.Max(top, at.y);
+            }
+            stunPointRing = Mathf.Clamp(spread * 1.6f, 0.05f, 0.16f);
+            stunPointLift = top - middle.y;
+            stunPoint = new GameObject("Stun Point").transform;
+            stunPoint.SetParent(head, false);
+            stunPoint.position = middle;
+            return true;
+        }
+
         private Transform FindHead()
         {
             Transform contains = null;
@@ -707,13 +771,20 @@ namespace Game.Combat
                 }
                 head = this.head != null ? this.head : transform;
             }
-            // On its head (user, 2026-10-27): centred over the head bone, a ring as wide as the head (from its body's width
-            // side to side), floating just over it. Without a head bone: over the top of its body.
+            // On its head (user, 2026-10-27), and only its head (2026-10-29: "make it smaller, don't let the circle run over
+            // its back"): the head bone sits at the neck, so the ring goes over the face (its eye and jaw bones), as wide
+            // as the face, floating just over it. Without them, over the head bone; without a head bone, over its body.
             float width = 0.3f, top = transform.position.y;
             if (TryGetBodyBounds(out var body))
             {
                 width = body.extents.x;
                 top = body.max.y;
+            }
+            if (head != transform && (stunPoint != null || MakeStunPoint()))
+            {
+                float ringOnFace = stunPointRing * Settings.StunStarsSize;
+                Game.VFX.StunStars.Show(prefab, transform, stunPoint, stunPointLift + ringOnFace * 0.7f, ringOnFace, seconds);
+                return;
             }
             float ring = Mathf.Clamp(width * 0.45f, 0.14f, 0.45f) * Settings.StunStarsSize;
             float over = head != transform ? ring * 0.9f : Mathf.Max(0f, top - head.position.y) + ring * 0.35f;

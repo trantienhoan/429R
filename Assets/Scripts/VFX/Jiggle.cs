@@ -9,7 +9,8 @@ namespace Game.VFX
     /// It jiggles by itself whenever the health in the Health FSM on it or above it drops (whatever did the damage); the
     /// Jiggle Object action (PlayMaker, Tween) jiggles it from any state, e.g. a little for a hit too weak to hurt.
     /// Quick hits add up (to a limit); soft ones wait until it has settled, so something touching it can't keep it going.
-    /// It only changes its own scale and rotation, so tweens and Look At on a parent still work.
+    /// It only changes its own scale and rotation (and, with Around, its position), so tweens and Look At on a parent still
+    /// work.
     /// </summary>
     [DisallowMultipleComponent]
     public class Jiggle : MonoBehaviour
@@ -36,6 +37,10 @@ namespace Game.VFX
                  "and for this many seconds after the last one, so a hand resting against it can't keep it wobbling.")]
         [Min(0f)]
         [SerializeField] private float softHitPause = 0.75f;
+        [Tooltip("Squash and rock around this child's origin instead of its own pivot, e.g. a bug's model, which its " +
+                 "brain lifts into the air when it flies (otherwise a flying bee would bounce from the floor). Empty: " +
+                 "around its own pivot.")]
+        [SerializeField] private Transform around;
         [Tooltip("The FSM holding the health, and its float variable.")]
         [SerializeField] private string healthFsm = "Health";
         [SerializeField] private string healthVariable = "health";
@@ -49,6 +54,7 @@ namespace Game.VFX
 
         private Vector3 restScale;
         private Quaternion restRotation;
+        private Vector3 restPosition;
         private bool hasRest;
         private bool moving;
         // Squash: + taller, - flatter. Tilt: a world-space axis whose length is the angle in degrees.
@@ -114,6 +120,7 @@ namespace Game.VFX
         {
             restScale = transform.localScale;
             restRotation = transform.localRotation;
+            restPosition = transform.localPosition;
             hasRest = true;
         }
 
@@ -183,6 +190,14 @@ namespace Game.VFX
             float angle = tiltAmount.magnitude;
             var rock = angle > 0.0001f ? Quaternion.AngleAxis(angle, tiltAmount / angle) : Quaternion.identity;
             transform.localRotation = Quaternion.Inverse(parentRotation) * rock * parentRotation * restRotation;
+
+            // Around a child: that child's origin stays where it would be at rest.
+            if (around != null && around.parent == transform)
+            {
+                var point = around.localPosition;
+                transform.localPosition = restPosition + restRotation * Vector3.Scale(restScale, point)
+                                          - transform.localRotation * Vector3.Scale(transform.localScale, point);
+            }
         }
 
         private void Settle()
@@ -192,6 +207,7 @@ namespace Game.VFX
             tiltAmount = tiltSpeed = Vector3.zero;
             transform.localScale = restScale;
             transform.localRotation = restRotation;
+            if (around != null) transform.localPosition = restPosition;
         }
     }
 }

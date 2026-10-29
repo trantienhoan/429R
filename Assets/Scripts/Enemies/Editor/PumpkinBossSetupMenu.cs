@@ -46,10 +46,14 @@ namespace Game.EditorTools
         };
         private static readonly HashSet<string> Looping = new() { "laugh", "move", "run", "idle_true", "being_hit", "dizzy_true" };
         // Hit spheres on the bones: radius and how far along the bone the middle is, in metres of the model.
+        // The arms and shins too (2026-10-29, so a punch there lands and jiggles that part: Part Jiggle), sized from
+        // their pumpkins in the mesh.
         private static readonly (string bone, float radius, float along)[] Spheres =
         {
             ("Head", 0.24f, 0.20f), ("Chest", 0.22f, 0.0f), ("Waist", 0.15f, 0.12f), ("Hips", 0.20f, 0.10f),
             ("Hand.L", 0.17f, 0.12f), ("Hand.R", 0.17f, 0.12f),
+            ("UpperArm.L", 0.19f, 0.08f), ("UpperArm.R", 0.19f, 0.05f), ("LowerArm.L", 0.13f, 0.10f),
+            ("LowerArm.R", 0.13f, 0.02f), ("Shin.L", 0.18f, 0f), ("Shin.R", 0.18f, 0f),
         };
         // Model units to the bones' own units (the FBX keeps centimetres under an armature scaled 100).
         private const float BoneUnit = 0.01f;
@@ -149,6 +153,26 @@ namespace Game.EditorTools
             finally { Object.DestroyImmediate(root); }
         }
 
+        /// <summary>
+        /// Puts the hit spheres (tagged Enemy) on the boss model's bones that haven't got one yet. Returns how many it
+        /// added.
+        /// </summary>
+        public static int AddHitSpheres(Transform model)
+        {
+            int added = 0;
+            var bones = model.GetComponentsInChildren<Transform>(true).ToDictionary(t => t.name, t => t);
+            foreach (var (bone, radius, along) in Spheres)
+            {
+                if (!bones.TryGetValue(bone, out var t) || t.GetComponent<SphereCollider>() != null) continue;
+                var sphere = t.gameObject.AddComponent<SphereCollider>();
+                sphere.radius = radius * BoneUnit;
+                sphere.center = new Vector3(0f, along * BoneUnit, 0f);
+                t.gameObject.tag = "Enemy";
+                added++;
+            }
+            return added;
+        }
+
         private static void BuildBoss(AnimatorController controller, GameObject bugPumpkin, List<string> notes)
         {
             var fbx = AssetDatabase.LoadAssetAtPath<GameObject>(FbxPath);
@@ -182,14 +206,7 @@ namespace Game.EditorTools
                 if (skin != null) skin.updateWhenOffscreen = true;
 
                 var bones = model.GetComponentsInChildren<Transform>(true).ToDictionary(t => t.name, t => t);
-                foreach (var (bone, radius, along) in Spheres)
-                {
-                    if (!bones.TryGetValue(bone, out var t)) continue;
-                    var sphere = t.gameObject.AddComponent<SphereCollider>();
-                    sphere.radius = radius * BoneUnit;
-                    sphere.center = new Vector3(0f, along * BoneUnit, 0f);
-                    t.gameObject.tag = "Enemy";
-                }
+                AddHitSpheres(model);
 
                 foreach (var fsm in root.GetComponents<PlayMakerFSM>())
                 {

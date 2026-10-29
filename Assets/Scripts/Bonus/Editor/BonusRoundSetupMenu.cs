@@ -34,6 +34,9 @@ namespace Game.EditorTools
     public static class BonusRoundSetupMenu
     {
         private const string StartPumpkinPath = "Assets/Prefabs/Items/Breakable/StartGamePumpkin.prefab";
+        // With every hit counting, how long one fist (or thrown thing) waits before it can hurt the pumpkin again: one
+        // punch counts once, and quick jabs from the same hand still all land.
+        private const float EveryHitCooldown = 0.15f;
         private const string NestingPumpkinPath = "Assets/Prefabs/Items/Breakable/Nesting_Pumpkin_1.prefab";
         private const string SmallerPumpkinPath = "Assets/Prefabs/Items/Breakable/Nesting_Pumpkin_{0}.prefab";
         private const string RoundPath = "Assets/Prefabs/Bases/Bonus_Round.prefab";
@@ -168,6 +171,10 @@ namespace Game.EditorTools
                     any |= Set(so, "hideHitEffect", false);
                     any |= Set(so, "strayToughness", 8f);
                     if (any) { so.ApplyModifiedPropertiesWithoutUndo(); changes.Add("EXP orbs, hit pop on, stray bumps barely count"); }
+                    // Every hit counts (user, 2026-10-29): each fist waits out its own short pause, soft punches take 1.
+                    bool every = Set(so, "everyHitCounts", true);
+                    every |= Set(so, "hitCooldown", EveryHitCooldown);
+                    if (every) { so.ApplyModifiedPropertiesWithoutUndo(); changes.Add("every hit counts"); }
                 }
                 PrefabUtility.SaveAsPrefabAsset(root, NestingPumpkinPath);
             }
@@ -335,6 +342,8 @@ namespace Game.EditorTools
                     filled.Add($"{blasts.arraySize} blast effects");
                 }
                 if (Changed(so, "count", 14, 6)) filled.Add("6 pumpkins");
+                // The time-up blast throws the player half as far and high (user, 2026-10-29: "50% force").
+                if (Changed(so, "blastHeight", 1.6f, 0.8f) | Changed(so, "blastDistance", 4f, 2f)) filled.Add("time-up blast throws half as hard");
                 // 9 pumpkins (user, 2026-10-25), from the giant down to the same smallest, toughest one as the 6 had.
                 if (Changed(so, "count", 6, 9))
                 {

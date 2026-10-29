@@ -414,7 +414,7 @@ Rigidbody:
   m_GameObject: {fileID: 8690403555129543112}
   serializedVersion: 5
   m_Mass: 42000
-  m_LinearDamping: 0
+  m_LinearDamping: 0.08
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: -0.34, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
@@ -2262,7 +2262,7 @@ MonoBehaviour:
         tooltip: 
         showInInspector: 1
         networkSync: 0
-        value: 6
+        value: 5
       intVariables: []
       boolVariables: []
       stringVariables: []
@@ -3627,7 +3627,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  m_ThrowVelocityScale: 1.5
+  m_ThrowVelocityScale: 1.4
   m_ThrowAngularVelocityScale: 1
   m_ForceGravityOnDetach: 0
   m_RetainTransformParent: 1
@@ -3664,10 +3664,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb5c514aa04bf0045aad2d773bf13509, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.PlayGround.RunAwayPumpkin
-  stamina: 150
+  stamina: 90
   staminaUsePerSecond: 10
   regenPerSecond: 3
   restBeforeRegen: 3
+  tiredSeconds: 4
   restedShare: 0.5
   hopSpeed: 3
   hopUp: 2.4
@@ -3686,6 +3687,11 @@ MonoBehaviour:
     type: 3}
   tiredStarsSize: 1
   tiredStarsSound: 0
+  blendWith:
+  - Pumpkin_On_Tree
+  blendBonus: 9
+  blendFleeRange: 1.4
+  cornerPenalty: 3
   healthFsm: Health
   healthVariable: health
 --- !u!114 &3642144111491482432

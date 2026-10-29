@@ -45,6 +45,11 @@ namespace Game.Combat
         [SerializeField] private float maxExtraSpeed = 0.3f;
         [Tooltip("Objects with these tags are targets.")]
         [SerializeField] private string[] targetTags = { "Enemy", "Monster" };
+        [Tooltip("No throw leaves faster than this, in metres per second, whatever the hand, the object's throw boost " +
+                 "and Throw Power add up to (user, 2026-10-29: things flew to the edge of the game from a small flick). " +
+                 "0 = no cap.")]
+        [Min(0f)]
+        [SerializeField] private float maxThrowSpeed = 16f;
 
         private const float MinDistance = 0.75f;
 
@@ -85,6 +90,12 @@ namespace Game.Combat
         }
 
         public Vector3 GetAssistedVelocity(in Vector3 source, in Vector3 thrownAt, float gravity, float maxAngle)
+        {
+            var velocity = Assisted(source, thrownAt, gravity, maxAngle);
+            return maxThrowSpeed > 0f ? Vector3.ClampMagnitude(velocity, maxThrowSpeed) : velocity;
+        }
+
+        private Vector3 Assisted(in Vector3 source, in Vector3 thrownAt, float gravity, float maxAngle)
         {
             var thrown = TakeReleased(source);
             // A real throw (not a drop or a gentle toss) leaves faster with the Throw Power level-up stat, helped or not.
