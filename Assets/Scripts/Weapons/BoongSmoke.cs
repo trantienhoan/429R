@@ -10,7 +10,8 @@ namespace Game.Weapons
     /// Smoking a boong. Hold it the right way up (its bowl facing up: Up Axis within Max Tilt of straight up), with its
     /// mouthpiece (Inhale) at your mouth and a lit candle's flame at its bowl (Burn), all at the same moment: the candle
     /// goes out and the boong catches fire. It plays its Fire animation slowly (the hammer boongs grow their head), or swells and shakes
-    /// (Elon, Bus), keeps its flame on, bubbles and puffs smoke for Fire Seconds, then explodes: a bang that hurts bugs
+    /// (Elon, Bus), keeps its flame on and bubbles for Fire Seconds (no smoke at the lit bowl unless Smoke While Burning),
+    /// then explodes: a bang that hurts bugs
     /// close by (never the player), and the player gets the boong's bonus (Buff) for Buff Seconds. The boong is let go
     /// and breaks into its pieces through its Health FSM (Break Apart), or just vanishes. Once lit, it burns on even if
     /// it's moved away or dropped; the trigger can't stop it. Almost there, it hints without words: held the right way
@@ -72,11 +73,15 @@ namespace Game.Weapons
         [Tooltip("How much Swell Part throbs on top of that by the end, as a share of its size.")]
         [Min(0f)]
         [SerializeField] private float throb = 0.05f;
-        [Tooltip("Puffed out of the bowl a few times a second while it burns, e.g. smoke.")]
+        [Tooltip("A puff of smoke from the bowl, e.g. Smoke_Flash_Small_Puff: the almost-there wisp (Wisp Every), and while " +
+                 "it burns if Smoke While Burning is on.")]
         [SerializeField] private GameObject smoke;
         [Tooltip("Size of each puff at the start (x) and the end (y). The Hyper Casual FX smoke is about 13 m wide, so 0.01 " +
                  "makes it about 13 cm.")]
         [SerializeField] private Vector2 smokeSize = new(0.008f, 0.018f);
+        [Tooltip("Puffs Smoke out of the bowl a few times a second while it burns. Off (user, 2026-10-29: \"when the fire " +
+                 "lit it up, there should be no smoke at the lit part\"): just the flame there.")]
+        [SerializeField] private bool smokeWhileBurning;
         [Tooltip("Played once when it catches fire.")]
         [SerializeField] private AudioClip igniteSound;
         [Tooltip("Played over and over while it burns (higher and higher), e.g. bubbling.")]
@@ -218,7 +223,8 @@ namespace Game.Weapons
             }
             // Ready at load, so the first explosion doesn't stutter.
             Blast.Warm(effects);
-            EffectPool.Warm(smoke, 3);
+            // The wisp needs one copy; smoking while it burns, a few.
+            EffectPool.Warm(smoke, smokeWhileBurning ? 3 : 1);
         }
 
         private void OnDisable()
@@ -367,7 +373,7 @@ namespace Game.Weapons
             // The trigger's let-go switches the flame off on some boongs; it stays on.
             if (flame != null && !flame.activeSelf) flame.SetActive(true);
             if (bubbles != null) bubbles.pitch = Mathf.Lerp(0.85f, 1.35f, progress);
-            if (smoke != null && burned >= nextPuff)
+            if (smokeWhileBurning && smoke != null && burned >= nextPuff)
             {
                 // Smoke Size is the puff's size; the pool scales the prefab's own size.
                 float prefabScale = Mathf.Max(smoke.transform.localScale.x, 0.0001f);

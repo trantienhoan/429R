@@ -3,8 +3,8 @@ using UnityEngine;
 namespace Game.Menus
 {
     /// <summary>
-    /// Shows this object's signs (its canvases and meshes) only the first time the game is played on this install (Show
-    /// Once): after that, switching it on shows nothing. Once it has been shown and is switched off again (e.g. GAMESTAGES
+    /// Shows this object's signs (its canvases and meshes) only the first time the game is played on this install, and
+    /// again for each new save (Show Once): after that, switching it on shows nothing. Once it has been shown and is switched off again (e.g. GAMESTAGES
     /// hides the walk tutorial signs when the player reaches the Fairy), it's remembered; quitting while it's up shows it
     /// again next time. Goes on the root of the signs, e.g. "Walk Tutorial Signs".
     /// </summary>
@@ -36,7 +36,18 @@ namespace Game.Menus
                 signs.showing = false;
         }
 
-        private void OnEnable()
+        /// <summary>
+        /// The tutorials were forgotten (a new save): signs that are switched on but hidden as seen show after all.
+        /// </summary>
+        public static void ShowAgain()
+        {
+            foreach (var signs in FindObjectsByType<OncePerInstall>(FindObjectsSortMode.None))
+                if (!signs.showing) signs.Decide();
+        }
+
+        private void OnEnable() => Decide();
+
+        private void Decide()
         {
             showing = !ShowOnce.WasShown(key);
             // Hidden by switching its parts off (it can't switch itself off while it's being switched on).

@@ -693,7 +693,7 @@ namespace Game.Combat
             if (lift >= 0f && radius > 0f && head != null)
             {
                 if (Settings.StunStars != null && seconds > 0f && !dead)
-                    Game.VFX.StunStars.Show(Settings.StunStars, transform, head, lift, radius * Settings.StunStarsSize, seconds);
+                    Game.VFX.StunStars.Show(Settings.StunStars, transform, head, lift, radius, seconds);
                 return;
             }
             var prefab = Settings.StunStars;

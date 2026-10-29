@@ -1374,6 +1374,12 @@ namespace Game.Enemies
         }
 
         /// <summary>
+        /// Stunned: standing there dizzy (too much damage too fast, or spun dizzy by its own cyclone). Candy Vacuum doesn't
+        /// eat while it is (user, 2026-10-29).
+        /// </summary>
+        public bool IsDizzy => act == Act.Dizzy;
+
+        /// <summary>
         /// Its mouth is busy (munching candy: Candy Vacuum calls this): the laugh stops for this sound and comes back
         /// Laugh Gap after it ends, so the two never play on top of each other. Still munching, a second candy adds no
         /// second sound on top. False when it has no laugh speaker (then the caller plays the sound itself).

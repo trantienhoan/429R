@@ -7,7 +7,9 @@ namespace Game.Enemies
     /// <summary>
     /// Lets an enemy heal by eating candy: candy lying within Radius of it lifts off and flies into its mouth, and each
     /// one eaten adds Health Per Candy to the health in its Health FSM, up to the health it started with. Candy in the
-    /// player's hands is safe. Goes on the enemy's root, next to its "Health" FSM (pumpkin_boss_Z has it).
+    /// player's hands is safe. On the pumpkin boss it doesn't eat while the boss is dizzy (stunned): candy on its way
+    /// drops, and nothing is pulled in until it comes round. Goes on the enemy's root, next to its "Health" FSM
+    /// (pumpkin_boss_Z has it).
     /// </summary>
     [DisallowMultipleComponent]
     public class CandyVacuum : MonoBehaviour
@@ -107,8 +109,8 @@ namespace Game.Enemies
 
         private void FixedUpdate()
         {
-            // Dying: no more snacks.
-            if (health != null && health.Value <= 0f)
+            // Dying, or stunned (the pumpkin boss dizzy): no snacks. Candy on its way drops where it is.
+            if ((health != null && health.Value <= 0f) || (boss != null && boss.IsDizzy))
             {
                 OnDisable();
                 return;

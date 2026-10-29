@@ -3,10 +3,11 @@ using UnityEngine;
 namespace Game.Menus
 {
     /// <summary>
-    /// Remembers which tutorials the player has seen, for this install of the game: a new install shows them again. On a
-    /// PC build it's a small file in the game's folder (it goes when the game is uninstalled; settings in the registry
-    /// stay); on Quest and in the editor it's the app's settings (PlayerPrefs; a Quest uninstall wipes them).
-    /// Tools > 429 Game > Menu > Show Tutorials Again forgets them in the editor.
+    /// Remembers which tutorials the player has seen, for this install of the game: a new install shows them again, and so
+    /// does starting a new save (Forget For New Save). On a PC build it's a small file in the game's folder (it goes when
+    /// the game is uninstalled; settings in the registry stay); on Quest and in the editor it's the app's settings
+    /// (PlayerPrefs; a Quest uninstall wipes them). Tools > 429 Game > Menu > Show Tutorials Again forgets them in the
+    /// editor.
     /// </summary>
     public static class ShowOnce
     {
@@ -51,6 +52,18 @@ namespace Game.Menus
             }
             PlayerPrefs.SetInt(PrefsPrefix + key, 1);
             PlayerPrefs.Save();
+        }
+
+        /// <summary>
+        /// A new save was started (an empty save slot picked; user, 2026-10-29: "everytime Player start a new save, the
+        /// tutorial pop up should on"): every tutorial shows again, the tutorial notices and the walk signs (also if
+        /// they're up already).
+        /// </summary>
+        public static void ForgetForNewSave()
+        {
+            ForgetAll();
+            HutongGames.PlayMaker.Actions.ShowNotice.ForgetShown();
+            OncePerInstall.ShowAgain();
         }
 
         /// <summary>Forgets every tutorial, so they all show again.</summary>

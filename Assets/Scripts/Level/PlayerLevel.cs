@@ -182,6 +182,11 @@ namespace Game.Leveling
         [Tooltip("Move Speed: walking is this share faster (0.04 = 4% more a point).")]
         [Min(0f)]
         [SerializeField] private float speedPerPoint = 0.04f;
+        [Tooltip("Move Speed: a smoked boong's high lasts this share longer a point (0.1 = 10% a point; a full stat " +
+                 "counts as 16 points, so 60 s becomes 156 s). Only the player's own points count, not a boong's or " +
+                 "candies' (user, 2026-10-29).")]
+        [Min(0f)]
+        [SerializeField] private float highTimePerPoint = 0.1f;
 
         [Header("Last point")]
         [Tooltip("The last point of these stats (the one that fills them up) counts as Last Point Worth points: a big " +
@@ -453,6 +458,12 @@ namespace Game.Leveling
         /// <summary>How much faster the player walks (Move Speed): 1 = as always.</summary>
         public static float SpeedScale => Instance != null ? Instance.Gain(Stat.MoveSpeed, Instance.speedPerPoint) : 1f;
 
+        /// <summary>
+        /// How many times longer a smoked boong's high lasts (Move Speed: High Time Per Point for each of the player's own
+        /// points): 1 = as always.
+        /// </summary>
+        public static float HighTimeScale => Instance != null ? 1f + Instance.OwnWorth(Stat.MoveSpeed) * Instance.highTimePerPoint : 1f;
+
         /// <summary>The extra damage of weapons held in the hand (the Weapon Master bonus): 0 = as always.</summary>
         public static int WeaponMasterBonus
         {
@@ -514,12 +525,16 @@ namespace Game.Leveling
         // points for now (Player Buffs: Toughness, Move Speed) and eaten candies' points (Toughness, Move Speed, Throw
         // Power) come on top, never as that last point, and aren't saved. Candies' Fist Size points only add closed
         // punch damage (Candy Punch Bonus), so they aren't counted here.
-        private float Worth(Stat stat)
+        private float Worth(Stat stat) =>
+            OwnWorth(stat) + PlayerBuffs.ExtraPoints(stat) + (stat != Stat.FistSize ? candyPoints[(int)stat] : 0f);
+
+        // The player's own points as they count (the big last point included), without a boong's or candies'.
+        private int OwnWorth(Stat stat)
         {
             int p = Points(stat);
             if (p > 0 && p >= MaxPoints(stat) && bigLastPoint != null && Array.IndexOf(bigLastPoint, stat) >= 0)
                 p += lastPointWorth - 1;
-            return p + PlayerBuffs.ExtraPoints(stat) + (stat != Stat.FistSize ? candyPoints[(int)stat] : 0f);
+            return p;
         }
 
         /// <summary>
@@ -614,7 +629,8 @@ namespace Game.Leveling
                 case Stat.FistSize:
                     return Join($"+{Percent(p * punchSizePerPoint)} size", p > 0 ? $"flying jab +{FlyingJabBonus} damage" : "") + PunchNote();
                 case Stat.ThrowPower: return ThrowNote();
-                case Stat.MoveSpeed: return $"+{Percent(SpeedScale - 1f)} walking speed";
+                case Stat.MoveSpeed:
+                    return Join($"+{Percent(SpeedScale - 1f)} walking speed", p > 0 ? $"+{Percent(HighTimeScale - 1f)} boong time" : "");
                 case Stat.BonusFistSize: return (shown == 1 ? "Punches explode" : $"Punches explode, {shown}x blast") + ", quicker jabs";
                 case Stat.BonusPower: return WeaponMasterNote(shown);
                 default:

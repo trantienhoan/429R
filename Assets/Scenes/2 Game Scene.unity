@@ -51055,6 +51055,7 @@ MonoBehaviour:
   maxBlastRadius: 2
   maxBlastDamage: 5
   speedPerPoint: 0.02
+  highTimePerPoint: 0.1
   bigLastPoint: 0000000001000000020000000400000005000000
   lastPointWorth: 7
   candyMaxPoints: 10
@@ -261062,6 +261063,7 @@ GameObject:
   - component: {fileID: 8317466445825997494}
   - component: {fileID: 8317466445825997495}
   - component: {fileID: 8317466445825997496}
+  - component: {fileID: 8317466445825997497}
   m_Layer: 3
   m_Name: XR Origin
   m_TagString: Player
@@ -264122,6 +264124,9 @@ MonoBehaviour:
   perfectJab: 0.8
   jabPower: 1.8
   jabSound: {fileID: 8300000, guid: 315f143d46539a848b07adf1cbfd5a62, type: 3}
+  moreJabSounds:
+  - {fileID: 8300000, guid: 89ce7804ced9e69418b29f65840033ec, type: 3}
+  jabPitch: {x: 0.94, y: 1.06}
   flySize: 1.3
   maxFlySize: 4
   bigMoveSize: 1.35
@@ -264170,6 +264175,11 @@ MonoBehaviour:
   punchHitSound: {fileID: 8300000, guid: 4c7447597d4959e4296abb074effa21b, type: 3}
   punchHitVolume: {x: 0.45, y: 0.9}
   punchHitPitch: {x: 0.9, y: 1.12}
+  impactEffect: {fileID: 5690854090066188256, guid: b1ad6dcadb8de964482e1075d3208931,
+    type: 3}
+  impactSize: {x: 0.35, y: 1.5}
+  impactTopSpeed: 9
+  hardPunchPitch: 0.85
   boongBlastEffects:
   - {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
   - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}
@@ -265573,6 +265583,20 @@ MonoBehaviour:
   embers: {fileID: 8270062260077519535, guid: be39c4d3a17ad584a8d93e872ccb331b, type: 3}
   startSound: {fileID: 8300000, guid: 97d2e1dfb0c1d454cb1ef3d2f8ce2511, type: 3}
   startVolume: 0.8
+--- !u!114 &8317466445825997497
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4959017627811525935}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b58c75b98fcc5554b9db3754ca3f284e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Locomotion.HeldPassThrough
+  pushStrength: 4
+  strainWear: 0.5
 --- !u!4 &8385630121836801222
 Transform:
   m_ObjectHideFlags: 0
@@ -266071,6 +266095,9 @@ MonoBehaviour:
   perfectJab: 0.8
   jabPower: 1.8
   jabSound: {fileID: 8300000, guid: 315f143d46539a848b07adf1cbfd5a62, type: 3}
+  moreJabSounds:
+  - {fileID: 8300000, guid: 89ce7804ced9e69418b29f65840033ec, type: 3}
+  jabPitch: {x: 0.94, y: 1.06}
   flySize: 1.3
   maxFlySize: 4
   bigMoveSize: 1.35
@@ -266119,6 +266146,11 @@ MonoBehaviour:
   punchHitSound: {fileID: 8300000, guid: 4c7447597d4959e4296abb074effa21b, type: 3}
   punchHitVolume: {x: 0.45, y: 0.9}
   punchHitPitch: {x: 0.9, y: 1.12}
+  impactEffect: {fileID: 5690854090066188256, guid: b1ad6dcadb8de964482e1075d3208931,
+    type: 3}
+  impactSize: {x: 0.35, y: 1.5}
+  impactTopSpeed: 9
+  hardPunchPitch: 0.85
   boongBlastEffects:
   - {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
   - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}

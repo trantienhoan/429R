@@ -131,6 +131,11 @@ namespace Game.Combat
         [SerializeField] private float jabPower = 1.8f;
         [Tooltip("Optional sound when a punch flies, e.g. a whoosh.")]
         [SerializeField] private AudioClip jabSound;
+        [Tooltip("More sounds for a flying punch: each punch plays one of these or Jab Sound at random, never the same " +
+                 "one twice in a row (user, 2026-10-29: \"1 sound is too boring\").")]
+        [SerializeField] private AudioClip[] moreJabSounds;
+        [Tooltip("Its pitch, at random between these, so flying punches don't all sound the same.")]
+        [SerializeField] private Vector2 jabPitch = new(0.94f, 1.06f);
 
         [Header("Flying Punches (grow with the Fist Size level-up stat)")]
         [Tooltip("How big a flying jab is compared with the fist (at Fist Scale), before Fist Size: 1.3 = a third bigger. " +
@@ -219,6 +224,23 @@ namespace Game.Combat
         [SerializeField] private Vector2 punchHitVolume = new(0.45f, 0.9f);
         [Tooltip("Its pitch, at random between these, so punches don't all sound the same.")]
         [SerializeField] private Vector2 punchHitPitch = new(0.9f, 1.12f);
+        [Tooltip("Shown where the closed fist itself lands on anything (not on enemies, which show their own hit pop, nor " +
+                 "on the other fist), the harder the punch the bigger (user, 2026-10-29): Fist_Punch_Impact, the fist " +
+                 "bump's hit laid flat on the surface in front of the knuckles, sparks bursting out of it (Tools > 429 " +
+                 "Game > Player > Build Fist Punch Impact). Its Z axis is turned out of the surface. Flying punches keep " +
+                 "the Good Punch Effect. Empty: the fist shows the Good Punch Effect too.")]
+        [SerializeField] private GameObject impactEffect;
+        [Tooltip("Size of the impact, compared with its prefab: x for the softest punch that counts, y from Impact Top " +
+                 "Speed on (1 = a fist bump's hit).")]
+        [SerializeField] private Vector2 impactSize = new(0.35f, 1.5f);
+        [Tooltip("A punch this hard (metres per second, counting how much harder a jab, a swing or an uppercut lands) " +
+                 "shows the biggest impact.")]
+        [Min(1.5f)]
+        [SerializeField] private float impactTopSpeed = 9f;
+        [Tooltip("Pitch of the Punch Hit Sound at Impact Top Speed, compared with a soft punch: under 1 is deeper, so " +
+                 "hard punches sound heavier.")]
+        [Range(0.5f, 1f)]
+        [SerializeField] private float hardPunchPitch = 0.85f;
 
         [Header("Elon Boong (a smoked boong's buff, see Player Buffs) and Explosive Fist (a bonus stat)")]
         [Tooltip("While the Elon Boong buff is on, or with Explosive Fist points, every punch that hits something explodes " +
@@ -268,6 +290,12 @@ namespace Game.Combat
         private const float EffectBusySeconds = 3f;
         // Most copies of each Elon Boong explosion effect made ready at load.
         private const int MaxBoongBlastCopies = 15;
+        // The fist's impact: over in this many seconds (Fist_Bump_Impact's longest part, the stars, lasts 0.55 s), so a
+        // copy is free again soon; copies made ready at load (two hands punching a wall as fast as they can); this far
+        // off the surface it hit, in metres.
+        private const float ImpactSeconds = 0.8f;
+        private const int ImpactCopies = 6;
+        private const float ImpactOffSurface = 0.015f;
         // Things this close to the hand, in metres, are within its reach (the same as Gentle Far Grab's far distance).
         private const float Reach = 0.4f;
         // A punch starts when the hand moves this fast (metres per second)...
@@ -350,6 +378,9 @@ namespace Game.Combat
         private AudioSource punchSpeaker;
         private float nextPunchSound;
         private const float PunchSoundEvery = 0.08f;
+        // The flying punch sound played last (either hand), so the next one is another.
+        private static AudioClip lastJabSound;
+        private readonly List<AudioClip> jabSounds = new();
         // The Elon Boong's explosion effects: Boong Blast Effects, or the Good Punch Effect when that's empty.
         private GameObject[] boongEffects;
         // The Elon Boong reach: how far out from the knuckles the ball is now (world space, moving out at Reach Out
@@ -499,6 +530,7 @@ namespace Game.Combat
             MakeBall();
             // Ready at load, so the first good punch doesn't stutter.
             Game.EffectPool.Warm(goodPunchEffect);
+            Game.EffectPool.Warm(impactEffect, ImpactCopies);
             // The Elon Boong's explosions too, with enough copies for a hand blasting as often as it may (Boong Blast
             // Every) for as long as a copy stays busy, so the first Elon fight doesn't make them mid-punch. The other
             // hand and the bottles share them, so nothing more is made for those.
@@ -706,9 +738,11 @@ namespace Game.Combat
                     }
                 }
             }
-            // The Elon Boong's explosion has its own smoke, so the good punch's puff isn't shown on top.
+            // The Elon Boong's explosion has its own smoke, so the good punch's puff isn't shown on top. The fist itself
+            // shows the impact, as big as the punch was hard.
             bool blasted = BoongBlast(collision, hitter);
-            if (!blasted && (flying || move != Move.None || punchSpeed >= jabSpeed)) ShowGoodPunch(collision, puff);
+            if (!blasted && !flying && impactEffect != null) ShowImpact(collision, punchSpeed);
+            else if (!blasted && (flying || move != Move.None || punchSpeed >= jabSpeed)) ShowGoodPunch(collision, puff);
             // The hand buzzes only if the punch hurt something, as hard as it hurt (Hit Buzz): enemies and furniture with
             // Enemy Hit Damage report it themselves; PlayMaker breakables are watched for a moment.
             HitBuzz.Watch(collision, hitter);
@@ -728,7 +762,8 @@ namespace Game.Combat
                 punchSpeaker.spatialBlend = 1f;
             }
             punchSpeaker.transform.position = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
-            punchSpeaker.pitch = Random.Range(punchHitPitch.x, punchHitPitch.y);
+            // Harder punches a little deeper (Hard Punch Pitch), so they sound heavier.
+            punchSpeaker.pitch = Random.Range(punchHitPitch.x, punchHitPitch.y) * Mathf.Lerp(1f, hardPunchPitch, Strength(punchSpeed));
             float loud = Mathf.InverseLerp(MinPunchSpeed, jabSpeed, punchSpeed);
             punchSpeaker.PlayOneShot(punchHitSound, Mathf.Lerp(punchHitVolume.x, punchHitVolume.y, loud));
         }
@@ -798,14 +833,41 @@ namespace Game.Combat
         // Ones with Hide Hit Effect ticked (room doors, the start pumpkin) still get the puff.
         private void ShowGoodPunch(Collision collision, float scale)
         {
-            if (goodPunchEffect == null || Time.time < nextPuff) return;
-            var enemy = collision.collider != null ? collision.collider.GetComponentInParent<EnemyHitDamage>() : null;
-            if (enemy != null && enemy.ShowsOwnHitPop) return;
-            // A chase pumpkin shows its own block instead (Touch Only Damage).
-            if (collision.collider != null && collision.collider.GetComponentInParent<TouchOnlyDamage>() != null) return;
+            if (goodPunchEffect == null || Time.time < nextPuff || ShowsOwnHit(collision)) return;
             nextPuff = Time.time + 0.15f;
             var at = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
             Game.EffectPool.Play(goodPunchEffect, at, goodPunchEffectSize * scale);
+        }
+
+        // The fist itself landing: the fist bump's hit (Impact Effect), from small for a soft punch to Impact Size's
+        // biggest at Impact Top Speed. Not where the two fists meet (the Fist Bump shows its own).
+        private void ShowImpact(Collision collision, float punchSpeed)
+        {
+            if (Time.time < nextPuff || IsFistBall(collision.rigidbody) || ShowsOwnHit(collision)) return;
+            nextPuff = Time.time + 0.15f;
+            var at = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
+            float size = Mathf.Lerp(impactSize.x, impactSize.y, Strength(punchSpeed));
+            // Laid flat on the surface it hit, just off it, in front of the knuckles (user: the fist should hide it), so
+            // the wall doesn't cut it off either. Its Z points out of the surface, towards the fist.
+            var outward = body.position - at;
+            var normal = collision.contactCount > 0 ? collision.GetContact(0).normal : outward;
+            if (Vector3.Dot(normal, outward) < 0f) normal = -normal;
+            if (normal.sqrMagnitude < 0.000001f) normal = -transform.forward;
+            normal.Normalize();
+            Game.EffectPool.Play(impactEffect, at + normal * ImpactOffSurface, Quaternion.LookRotation(normal), size, ImpactSeconds);
+        }
+
+        // How hard a punch was, from 0 (the softest that counts) to 1 (Impact Top Speed and up).
+        private float Strength(float punchSpeed) => Mathf.InverseLerp(MinPunchSpeed, impactTopSpeed, punchSpeed);
+
+        // Enemies show their own small pop where a hit hurts them (Enemy Hit Damage; furniture and ones with Hide Hit
+        // Effect don't), and a chase pumpkin its own block (Touch Only Damage).
+        private static bool ShowsOwnHit(Collision collision)
+        {
+            if (collision.collider == null) return false;
+            var enemy = collision.collider.GetComponentInParent<EnemyHitDamage>();
+            if (enemy != null && enemy.ShowsOwnHitPop) return true;
+            return collision.collider.GetComponentInParent<TouchOnlyDamage>() != null;
         }
 
         private void Close()
@@ -1031,7 +1093,39 @@ namespace Game.Combat
             }
 
             HitBuzz.Other(rumbler, move == Move.Jab ? 0.5f : 0.7f, TriplePunch ? 0.1f : 0.06f);
-            if (jabSound != null) AudioSource.PlayClipAtPoint(jabSound, from);
+            var sound = PickJabSound();
+            if (sound != null) PlayJabSound(sound, from);
+        }
+
+        // As AudioSource.PlayClipAtPoint (a speaker of its own, gone when the sound is over), at a pitch picked between
+        // Jab Pitch's two.
+        private void PlayJabSound(AudioClip clip, Vector3 at)
+        {
+            var speaker = new GameObject("Jab Sound").AddComponent<AudioSource>();
+            speaker.transform.position = at;
+            speaker.clip = clip;
+            speaker.spatialBlend = 1f;
+            speaker.pitch = Random.Range(jabPitch.x, jabPitch.y);
+            speaker.Play();
+            Destroy(speaker.gameObject, clip.length / Mathf.Max(0.1f, speaker.pitch) + 0.1f);
+        }
+
+        // Jab Sound or one of More Jab Sounds, at random, but not the one played last.
+        private AudioClip PickJabSound()
+        {
+            jabSounds.Clear();
+            if (jabSound != null) jabSounds.Add(jabSound);
+            if (moreJabSounds != null)
+            {
+                foreach (var clip in moreJabSounds)
+                {
+                    if (clip != null && !jabSounds.Contains(clip)) jabSounds.Add(clip);
+                }
+            }
+            if (jabSounds.Count > 1) jabSounds.Remove(lastJabSound);
+            if (jabSounds.Count == 0) return null;
+            lastJabSound = jabSounds[Random.Range(0, jabSounds.Count)];
+            return lastJabSound;
         }
 
         // How much harder a move hits than a plain punch: a swing and an uppercut more.

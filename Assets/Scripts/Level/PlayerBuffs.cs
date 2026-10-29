@@ -20,8 +20,9 @@ namespace Game.Leveling
     }
 
     /// <summary>
-    /// The timed bonuses a smoked boong gives the player (Boong Smoke calls Give). Each lasts 60 seconds of game time: the
-    /// clock stops while the game is paused (pause menu, notices). Smoking the same boong again starts its time over;
+    /// The timed bonuses a smoked boong gives the player (Boong Smoke calls Give). Each lasts 60 seconds of game time, longer
+    /// with Move Speed points (Player Level: +10% a point, High Time Scale): the clock stops while the game is paused
+    /// (pause menu, notices). Smoking the same boong again starts its time over;
     /// different boongs add up. Nothing is kept in the save, and a new scene (Re-Dream, a reload) starts with none.
     /// - Elon Boong: punches reach 0.5 m further (the fist's own punches and the flying ones), do double damage
     ///   (pumpkins and other PlayMaker breakables feel them twice as hard too), and every punch that hits anything
@@ -108,6 +109,7 @@ namespace Game.Leveling
             int i = (int)buff;
             if (i < 0 || i >= Count || seconds <= 0f || !EnsureRunner()) return;
 
+            if (MakesHigh(buff)) seconds *= PlayerLevel.HighTimeScale;
             bool was = IsActive(buff);
             on[i] = true;
             until[i] = was ? Mathf.Max(until[i], Time.time + seconds) : Time.time + seconds;
@@ -123,6 +125,7 @@ namespace Game.Leveling
             int i = (int)buff;
             if (i < 0 || i >= Count || seconds <= 0f || !EnsureRunner()) return;
 
+            if (MakesHigh(buff)) seconds *= PlayerLevel.HighTimeScale;
             bool was = IsActive(buff);
             on[i] = true;
             until[i] = (was ? until[i] : Time.time) + seconds;
@@ -161,6 +164,10 @@ namespace Game.Leveling
         /// </summary>
         public static bool High =>
             IsActive(Buff.ElonBoong) || IsActive(Buff.BoneBoong) || IsActive(Buff.GreenBoong) || IsActive(Buff.BusBoong);
+
+        /// <summary>A smoked boong's buff (Elon, Bone, Green or Bus), which makes the player high; not the Candy Helmet.</summary>
+        public static bool MakesHigh(Buff buff) =>
+            buff == Buff.ElonBoong || buff == Buff.BoneBoong || buff == Buff.GreenBoong || buff == Buff.BusBoong;
 
         /// <summary>The damage the player takes is multiplied by this: High Damage Taken while high, else 1.</summary>
         public static float DamageTakenScale => High ? HighDamageTaken : 1f;

@@ -113,9 +113,10 @@ namespace Game.Combat
         [Tooltip("Stars circling over the head while a mini boss is knocked back and stunned, or the pumpkin boss is " +
                  "dizzy (Stun_Stars; Tools > 429 Game > Enemies > Build Stun Stars FX makes it). Empty: none.")]
         [SerializeField] private GameObject stunStars;
-        [Tooltip("How big the ring of stars is, compared with the head it's over (1 = the usual).")]
+        [Tooltip("How big a mini boss's ring of stars is, compared with the head it's over (1 = as wide as the head; " +
+                 "0.6 since 2026-10-29). The pumpkin boss's own Dizzy Stars size isn't changed by this.")]
         [Min(0.1f)]
-        [SerializeField] private float stunStarsSize = 1f;
+        [SerializeField] private float stunStarsSize = 0.6f;
 
         [Header("Headshot (thrown things)")]
         [Tooltip("A thrown thing (not a fist, not a weapon in the hand) that hurts an enemy on the head knocks it out for " +

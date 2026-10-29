@@ -60,7 +60,11 @@ namespace Game
 
         /// <summary>Plays the effect at a point, this many times its prefab's size. Returns the copy playing it. Seconds:
         /// how long the effect lasts, after which its copy is hidden and handed out again (0 = the usual 3 s).</summary>
-        public static GameObject Play(GameObject prefab, Vector3 point, float scale = 1f, float seconds = 0f)
+        public static GameObject Play(GameObject prefab, Vector3 point, float scale = 1f, float seconds = 0f) =>
+            Play(prefab, point, Quaternion.identity, scale, seconds);
+
+        /// <summary>The same, turned this way (e.g. an effect laid flat on the surface that was hit).</summary>
+        public static GameObject Play(GameObject prefab, Vector3 point, Quaternion rotation, float scale = 1f, float seconds = 0f)
         {
             if (prefab == null || !EnsureRunner()) return null;
 
@@ -71,7 +75,7 @@ namespace Game
 
             var go = copy.instance;
             go.SetActive(false);
-            go.transform.SetPositionAndRotation(point, Quaternion.identity);
+            go.transform.SetPositionAndRotation(point, rotation);
             go.transform.localScale = copy.scale * scale;
             // Switched on again: its particles and its FSMs (e.g. one that hides it again) start over.
             go.SetActive(true);

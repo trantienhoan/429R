@@ -25,7 +25,11 @@ namespace Game.PlayGround
     /// Hide and seek: it keeps its back to the player, so its face doesn't give it away, until they come within Face
     /// Range (caught) or hit it; then it turns round to face them (its Health FSM's Look At). A hit shows its face until
     /// it runs again.
-    /// Tools > 429 Game > Items > Make Stage Pumpkins Run Away adds it with each pumpkin's stamina.
+    /// Running, it spins round and round (Spin While Running), like it's gone mad.
+    /// Out of breath (Tired) it shows Tired Stars over its top (the mini bosses' stun stars), until it has rested enough
+    /// to run.
+    /// Tools > 429 Game > Items > Make Stage Pumpkins Run Away adds it with each pumpkin's stamina; Tools > 429 Game >
+    /// Items > Add Tired Stars To Runner Pumpkins puts the Tired Stars on every runner (the Chaos ones too).
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
@@ -57,6 +61,10 @@ namespace Game.PlayGround
         [Tooltip("Seconds after it appears before it may run: its Health FSM grows it in first.")]
         [Min(0f)]
         [SerializeField] private float startDelay = 3.2f;
+        [Tooltip("While it runs it spins round on the spot this fast, in degrees per second, like it's gone mad (user, " +
+                 "2026-10-29): each hop a little faster or slower, now and then the other way round. 0: no spin.")]
+        [Min(0f)]
+        [SerializeField] private float spinWhileRunning = 720f;
 
         [Header("Player")]
         [Tooltip("When the player comes this close (metres, along the floor) it starts running.")]
@@ -94,6 +102,17 @@ namespace Game.PlayGround
         [Min(0f)]
         [SerializeField] private float staminaPerDamage = 6f;
 
+        [Header("Tired")]
+        [Tooltip("Circle over its top while it's out of breath (its stamina ran out), until it has rested enough to run " +
+                 "again: the mini bosses' stun stars (Stun_Stars; user, 2026-10-29). Tools > 429 Game > Items > Add Tired " +
+                 "Stars To Runner Pumpkins puts them on. Empty: none.")]
+        [SerializeField] private GameObject tiredStars;
+        [Tooltip("How wide the ring of stars is, compared with the pumpkin (1 = as wide as the pumpkin).")]
+        [Range(0.1f, 1.5f)]
+        [SerializeField] private float tiredStarsSize = 1f;
+        [Tooltip("The stars' dizzy sound too. Off: just the stars (a pumpkin can be out of breath for 10 seconds and more).")]
+        [SerializeField] private bool tiredStarsSound;
+
         [Header("PlayMaker")]
         [Tooltip("The FSM whose float \"health\" breaks it at 0: it stops running for good then.")]
         [SerializeField] private string healthFsm = "Health";
@@ -104,6 +123,8 @@ namespace Game.PlayGround
         private Rigidbody body;
         private XRGrabInteractable grab;
         private Collider[] ownColliders;
+        // Its meshes (the pumpkin, a hat): the stars go over the top of them.
+        private Renderer[] ownRenderers;
         private PlayMakerFSM health;
         private GhostRoamArea arena;
         private NavMeshPath path;
@@ -134,6 +155,9 @@ namespace Game.PlayGround
         private bool easing;
         private float shownYaw;
         private float lastHealth = float.MaxValue;
+        // Running: the way it faces as it spins, and how fast (degrees per second, below 0 the other way round).
+        private float spinYaw;
+        private float spin;
 
         public Mood Current => mood;
         public float StaminaLeft => staminaLeft;
@@ -146,6 +170,12 @@ namespace Game.PlayGround
             body = GetComponent<Rigidbody>();
             grab = GetComponent<XRGrabInteractable>();
             ownColliders = GetComponentsInChildren<Collider>(true);
+            var parts = new List<Renderer>();
+            foreach (var part in GetComponentsInChildren<Renderer>(true))
+            {
+                if (part is MeshRenderer || part is SkinnedMeshRenderer) parts.Add(part);
+            }
+            ownRenderers = parts.ToArray();
             path = new NavMeshPath();
             staminaLeft = stamina;
             foreach (var fsm in GetComponents<PlayMakerFSM>())
@@ -182,6 +212,7 @@ namespace Game.PlayGround
                 hasTarget = false;
                 KeepUpright(false);
                 TurnBack();
+                ShowTired(false);
                 return;
             }
             // Hurt (its Damage FSM took health): it looks at the player again. The first reading is only where it starts.
@@ -196,6 +227,7 @@ namespace Game.PlayGround
                     hasTarget = false;
                     KeepUpright(false);
                     TurnBack();
+                    ShowTired(false);
                 }
                 return;
             }
@@ -251,6 +283,29 @@ namespace Game.PlayGround
                     if (staminaLeft >= stamina * restedShare) mood = Mood.Watching;
                     break;
             }
+            ShowTired(mood == Mood.Tired);
+        }
+
+        // The stars over its top while it's out of breath (kept up a moment at a time), off as soon as it has rested, is
+        // picked up or breaks.
+        private void ShowTired(bool on)
+        {
+            if (tiredStars == null) return;
+            if (!on)
+            {
+                Game.VFX.StunStars.Hide(transform);
+                return;
+            }
+            // As wide as Tired Stars Size says (from its body), over the top of all of it (a hat too).
+            var shape = ownColliders.Length > 0 && ownColliders[0] != null ? ownColliders[0].bounds : new Bounds(body.position, Vector3.one * 0.5f);
+            float top = shape.max.y;
+            foreach (var part in ownRenderers)
+            {
+                if (part != null && part.enabled && part.gameObject.activeInHierarchy) top = Mathf.Max(top, part.bounds.max.y);
+            }
+            float ring = Mathf.Max(shape.extents.x, shape.extents.z) * tiredStarsSize;
+            float lift = top - transform.position.y + ring * 0.35f;
+            Game.VFX.StunStars.Show(tiredStars, transform, transform, lift, ring, 0.25f, tiredStarsSound);
         }
 
         private void FixedUpdate()
@@ -260,6 +315,9 @@ namespace Game.PlayGround
                 KeepUpright(true);
                 body.linearVelocity = NextStep() * hopSpeed + Vector3.up * hopUp;
                 nextHop = Time.time + 0.2f;
+                // Each hop a little faster or slower, now and then the other way round.
+                float turn = Mathf.Sign(spin) * spinWhileRunning * Random.Range(0.75f, 1.25f);
+                spin = Random.value < 0.3f ? -turn : turn;
             }
             speedBefore = body.isKinematic ? 0f : body.linearVelocity.magnitude;
         }
@@ -271,6 +329,9 @@ namespace Game.PlayGround
             TurnBack();
             // Running off to hide again: the face goes back into hiding.
             revealed = false;
+            // Spinning from where it faces now, either way round.
+            spinYaw = transform.eulerAngles.y;
+            spin = (Random.value < 0.5f ? -1f : 1f) * spinWhileRunning;
             PickHidingSpot(head);
         }
 
@@ -290,14 +351,23 @@ namespace Game.PlayGround
             revealed = true;
         }
 
-        // After its FSMs' Look At (Update). Sulking or with the player beyond Face Range (and not hit since its last run),
-        // its back stays to the player: upright, eased round, following them. Close or hit, it eases round to face them,
-        // then the Look At takes over.
+        // After its FSMs' Look At (Update). Running, it spins (Spin While Running). Sulking or with the player beyond Face
+        // Range (and not hit since its last run), its back stays to the player: upright, eased round, following them.
+        // Close or hit, it eases round to face them, then the Look At takes over.
         private void LateUpdate()
         {
             var head = Camera.main != null ? Camera.main.transform : null;
             if (head == null || mood == Mood.Held || mood == Mood.Done)
             {
+                easing = false;
+                return;
+            }
+            if (mood == Mood.Fleeing && spinWhileRunning > 0f)
+            {
+                spinYaw = Mathf.Repeat(spinYaw + spin * Time.deltaTime, 360f);
+                transform.rotation = Quaternion.Euler(0f, spinYaw, 0f);
+                if (!body.isKinematic) body.angularVelocity = Vector3.zero;
+                // Run over: it eases round from wherever the spin left it.
                 easing = false;
                 return;
             }

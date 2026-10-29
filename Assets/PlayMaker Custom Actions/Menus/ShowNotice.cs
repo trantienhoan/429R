@@ -35,8 +35,8 @@ namespace HutongGames.PlayMaker.Actions
         public FsmString onceKey;
 
         [Tooltip("Once Key is remembered for this install of the game, not just until the game is closed: a new install " +
-                 "shows it again (on PC a small file in the game's folder; on Quest the app's settings, wiped when it's " +
-                 "uninstalled). In the editor: Tools > 429 Game > Menu > Show Tutorials Again forgets it.")]
+                 "or a new save shows it again (on PC a small file in the game's folder; on Quest the app's settings, wiped " +
+                 "when it's uninstalled). In the editor: Tools > 429 Game > Menu > Show Tutorials Again forgets it.")]
         public FsmBool oncePerInstall;
 
         [Tooltip("Sent once the tutorial has gone.")]

@@ -542,6 +542,8 @@ namespace Game.Saving
             {
                 Debug.Log($"[SaveManager] Save slot {CurrentSlot} is empty: a new game.", this);
             }
+            // A new game (also one that starts fresh): its player hasn't seen the tutorials yet, so they show again.
+            if (data == null) ShowOnce.ForgetForNewSave();
 
             // Another slot than the one read before this session (after Reset Progress): its unlocks start empty, rather
             // than adding to the other slot's.
