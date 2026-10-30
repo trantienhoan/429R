@@ -10,8 +10,8 @@ namespace Game.EditorTools
 {
     /// <summary>
     /// Tools > 429 Game > Menu > Set Up Start Pumpkin Tutorial. When StartGamePumpkin lands and has laughed once, the game
-    /// pauses and a tutorial in three pages (the scene's Tutorial Notice, through Show Notice; once per game launch)
-    /// teaches the first fight: this is your enemy, throw stuff at it, make a fist (grip + trigger) and punch it. A trigger
+    /// pauses and a tutorial in three pages (the scene's Tutorial Notice, through Show Notice; once per save slot, see
+    /// Show Once) teaches the first fight: this is your enemy, throw stuff at it, make a fist (grip + trigger) and punch it. A trigger
     /// turns the page.
     /// In pumpkin_Start's Health FSM a new state "End 1" comes between the fall (Compare Health) and the laughing
     /// (Loop Punch): it does what Punch does when it lands (removes the landing collider, bounces, looks at the player,
@@ -127,8 +127,7 @@ namespace Game.EditorTools
         {
             notice.titles = Pages.Select(p => new FsmString { Value = p.title }).ToArray();
             notice.bodies = Pages.Select(p => new FsmString { Value = p.body }).ToArray();
-            // The first page floats above the pumpkin (the FSM's owner, pumpkin_Start). Only the first time the game is
-            // played on this device.
+            // The first page floats above the pumpkin (the FSM's owner, pumpkin_Start). Once per save slot (Show Once).
             notice.above = new FsmOwnerDefault();
             notice.pagesAbove = 1;
             notice.oncePerInstall = true;

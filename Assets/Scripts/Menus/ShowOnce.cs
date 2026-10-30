@@ -1,13 +1,16 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Game.Menus
 {
     /// <summary>
-    /// Remembers which tutorials the player has seen, for this install of the game: a new install shows them again, and so
-    /// does starting a new save (Forget For New Save). On a PC build it's a small file in the game's folder (it goes when
-    /// the game is uninstalled; settings in the registry stay); on Quest and in the editor it's the app's settings
-    /// (PlayerPrefs; a Quest uninstall wipes them). Tools > 429 Game > Menu > Show Tutorials Again forgets them in the
-    /// editor.
+    /// Remembers which tutorials the player has seen, for each save slot (user, 2026-10-30: they open every time the
+    /// player starts a NEW save slot, not every time a new game starts): the save keeps them (Save Manager), so a new save
+    /// shows them all, and a slot that has seen one doesn't show it again, also after a new run in it (Re-Dream, beating
+    /// the game, dying with no revive left). Saves from before this are taken to have seen every tutorial. Before any slot
+    /// is read, the install's own memory decides, as before: on a PC build a small file in the game's folder (it goes when
+    /// the game is uninstalled), on Quest and in the editor the app's settings (PlayerPrefs; a Quest uninstall wipes them).
+    /// Tools > 429 Game > Menu > Show Tutorials Again forgets them (in Play mode, also the slot being played).
     /// </summary>
     public static class ShowOnce
     {
@@ -17,10 +20,24 @@ namespace Game.Menus
         /// <summary>Every key used, so they can all be forgotten.</summary>
         public static readonly string[] Keys = { "StartPumpkinTutorial", "WalkTutorialSigns" };
 
-        /// <summary>Whether this tutorial was seen on this install.</summary>
+        /// <summary>Raised when the save slot being played has seen another tutorial (the save writes it).</summary>
+        public static event System.Action Changed;
+
+        // The tutorials the save slot being played has seen; null while no slot has been read.
+        private static HashSet<string> slotSeen;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            slotSeen = null;
+            Changed = null;
+        }
+
+        /// <summary>Whether this tutorial was seen: in the save slot being played (before one is read: on this install).</summary>
         public static bool WasShown(string key)
         {
             if (string.IsNullOrEmpty(key)) return false;
+            if (slotSeen != null) return slotSeen.Contains(key);
             var marker = Marker(key);
             try
             {
@@ -33,10 +50,15 @@ namespace Game.Menus
             return PlayerPrefs.GetInt(PrefsPrefix + key, 0) != 0;
         }
 
-        /// <summary>This tutorial has been seen: not again on this install.</summary>
+        /// <summary>This tutorial has been seen: not again in this save slot (before one is read: on this install).</summary>
         public static void Remember(string key)
         {
             if (string.IsNullOrEmpty(key)) return;
+            if (slotSeen != null)
+            {
+                if (slotSeen.Add(key)) Changed?.Invoke();
+                return;
+            }
             var marker = Marker(key);
             if (marker != null)
             {
@@ -55,20 +77,27 @@ namespace Game.Menus
         }
 
         /// <summary>
-        /// A new save was started (an empty save slot picked; user, 2026-10-29: "everytime Player start a new save, the
-        /// tutorial pop up should on"): every tutorial shows again, the tutorial notices and the walk signs (also if
-        /// they're up already).
+        /// A save slot was read (Save Manager): the tutorials its player has seen, none for a new save, or null for a save
+        /// from before they were kept (every one). Tutorial notices and the walk signs that are up already go by it too.
         /// </summary>
-        public static void ForgetForNewSave()
+        public static void UseSlot(IEnumerable<string> seen)
         {
-            ForgetAll();
+            slotSeen = seen != null ? new HashSet<string>(seen) : new HashSet<string>(Keys);
             HutongGames.PlayMaker.Actions.ShowNotice.ForgetShown();
-            OncePerInstall.ShowAgain();
+            OncePerInstall.Recheck();
         }
 
-        /// <summary>Forgets every tutorial, so they all show again.</summary>
+        /// <summary>The tutorials the save slot being played has seen, for its save.</summary>
+        public static List<string> SlotToSaveData() => slotSeen != null ? new List<string>(slotSeen) : new List<string>();
+
+        /// <summary>Forgets every tutorial, so they all show again (this install, and the save slot being played).</summary>
         public static void ForgetAll()
         {
+            if (slotSeen != null && slotSeen.Count > 0)
+            {
+                slotSeen.Clear();
+                Changed?.Invoke();
+            }
             foreach (var key in Keys)
             {
                 PlayerPrefs.DeleteKey(PrefsPrefix + key);

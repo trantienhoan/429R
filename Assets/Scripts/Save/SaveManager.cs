@@ -15,7 +15,8 @@ namespace Game.Saving
     /// what they carry (e.g. candies), how many of each item they ever collected and spent, what they bought, what they
     /// unlocked for good (e.g. paths opened with seeds), lasting boosts (e.g. the higher health cap from Boss Seeds, see
     /// PlayerBoosts), their level, EXP and stat points (see Player Level), the checkpoint they reached this run (see
-    /// Checkpoints) and the bonus round's leaderboard (see BonusScores). Keep one in the scene.
+    /// Checkpoints), the bonus round's leaderboard (see BonusScores) and the tutorials they've seen (see ShowOnce: a new
+    /// save shows them all). Keep one in the scene.
     /// Nothing is read until a slot is picked: the Save Slot Menu asks as the game starts (ChooseSlot), and the slot is
     /// remembered until the game closes, so Re-Dream (which reloads the scene) goes straight back into it. Picking a slot
     /// with a save goes on from its last checkpoint. After that the game saves at once at every checkpoint (with the
@@ -46,6 +47,10 @@ namespace Game.Saving
             public Checkpoints.SavedCheckpoint checkpoint = new();
             // The bonus round's leaderboard, best first (see BonusScores).
             public List<BonusScores.Entry> bonusScores = new();
+            // The tutorials this save's player has seen (see ShowOnce): a new save has seen none, so they all show.
+            public List<string> tutorialsSeen = new();
+            // False in saves from before Tutorials Seen was kept: their player is taken to have seen every tutorial.
+            public bool tutorialsKept;
         }
 
         /// <summary>What the start menu shows about a save slot.</summary>
@@ -359,6 +364,7 @@ namespace Game.Saving
                 PlayerLevel.Changed -= MarkChanged;
                 Checkpoints.Changed -= MarkChanged;
                 Checkpoints.Reached -= OnCheckpointReached;
+                ShowOnce.Changed -= MarkChanged;
                 PauseMenu.PauseChanged -= OnPauseChanged;
             }
             Instance = null;
@@ -455,6 +461,8 @@ namespace Game.Saving
                 level = PlayerLevel.Save(),
                 checkpoint = Checkpoints.ToSaveData(),
                 bonusScores = BonusScores.ToSaveData(),
+                tutorialsSeen = ShowOnce.SlotToSaveData(),
+                tutorialsKept = true,
             };
 
             string path = SlotPath(CurrentSlot);
@@ -511,6 +519,7 @@ namespace Game.Saving
             Checkpoints.Changed += MarkChanged;
             Checkpoints.Reached += OnCheckpointReached;
             BonusScores.Changed += MarkChanged;
+            ShowOnce.Changed += MarkChanged;
             PauseMenu.PauseChanged += OnPauseChanged;
         }
 
@@ -542,8 +551,9 @@ namespace Game.Saving
             {
                 Debug.Log($"[SaveManager] Save slot {CurrentSlot} is empty: a new game.", this);
             }
-            // A new game (also one that starts fresh): its player hasn't seen the tutorials yet, so they show again.
-            if (data == null) ShowOnce.ForgetForNewSave();
+            // The tutorials this slot has seen: none for a new save (also one that starts fresh), so they show; every one
+            // for a save from before they were kept. A new run in a slot (Re-Dream, beating the game, dying) keeps them.
+            ShowOnce.UseSlot(data == null ? new List<string>() : data.tutorialsKept ? data.tutorialsSeen : null);
 
             // Another slot than the one read before this session (after Reset Progress): its unlocks start empty, rather
             // than adding to the other slot's.

@@ -114,14 +114,16 @@ namespace Game.EditorTools
         private static bool NotPlaying() => !EditorApplication.isPlaying;
 
         /// <summary>
-        /// Forgets which first-time tutorials were seen on this computer (the enemy tutorial and the walk tutorial signs), so
-        /// they show again, e.g. to test them. Editor play mode uses this computer's settings.
+        /// Forgets which first-time tutorials were seen (the enemy tutorial and the walk tutorial signs), so they show again,
+        /// e.g. to test them: on this computer, and in Play mode also in the save slot being played (each save slot keeps
+        /// its own; a new save slot always shows them).
         /// </summary>
         [MenuItem("Tools/429 Game/Menu/Show Tutorials Again")]
         public static void ShowTutorialsAgain()
         {
             ShowOnce.ForgetAll();
-            Debug.Log("[Tutorial Notice] The first-time tutorials (enemy tutorial, walk signs) will show again (on this computer).");
+            Debug.Log("[Tutorial Notice] The first-time tutorials (enemy tutorial, walk signs) will show again" +
+                      (EditorApplication.isPlaying ? " (also in the save slot being played)." : " (on this computer; each save slot keeps its own, so in Play mode use this menu again or start a new slot)."));
         }
     }
 }

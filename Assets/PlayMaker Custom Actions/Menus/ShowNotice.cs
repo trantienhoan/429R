@@ -34,9 +34,9 @@ namespace HutongGames.PlayMaker.Actions
         [Tooltip("Shown only once for each key (e.g. \"StartPumpkinTutorial\"). Empty: every time.")]
         public FsmString onceKey;
 
-        [Tooltip("Once Key is remembered for this install of the game, not just until the game is closed: a new install " +
-                 "or a new save shows it again (on PC a small file in the game's folder; on Quest the app's settings, wiped " +
-                 "when it's uninstalled). In the editor: Tools > 429 Game > Menu > Show Tutorials Again forgets it.")]
+        [Tooltip("Once Key is remembered in the save slot being played, not just until the game is closed: a new save " +
+                 "slot shows it again, a new run in the same slot doesn't (see Show Once). In the editor: Tools > 429 Game > " +
+                 "Menu > Show Tutorials Again forgets it.")]
         public FsmBool oncePerInstall;
 
         [Tooltip("Sent once the tutorial has gone.")]
