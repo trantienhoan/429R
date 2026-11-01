@@ -5,6 +5,7 @@ using System.IO;
 using Game.Inventory;
 using Game.Leveling;
 using Game.Menus;
+using Game.Rooms;
 using Game.Shopping;
 using UnityEngine;
 
@@ -15,8 +16,8 @@ namespace Game.Saving
     /// what they carry (e.g. candies), how many of each item they ever collected and spent, what they bought, what they
     /// unlocked for good (e.g. paths opened with seeds), lasting boosts (e.g. the higher health cap from Boss Seeds, see
     /// PlayerBoosts), their level, EXP and stat points (see Player Level), the checkpoint they reached this run (see
-    /// Checkpoints), the bonus round's leaderboard (see BonusScores) and the tutorials they've seen (see ShowOnce: a new
-    /// save shows them all). Keep one in the scene.
+    /// Checkpoints), the bonus round's leaderboard (see BonusScores), the tutorials they've seen (see ShowOnce: a new
+    /// save shows them all) and how often they played the jigsaw (see PicturePuzzle). Keep one in the scene.
     /// Nothing is read until a slot is picked: the Save Slot Menu asks as the game starts (ChooseSlot), and the slot is
     /// remembered until the game closes, so Re-Dream (which reloads the scene) goes straight back into it. Picking a slot
     /// with a save goes on from its last checkpoint. After that the game saves at once at every checkpoint (with the
@@ -51,6 +52,8 @@ namespace Game.Saving
             public List<string> tutorialsSeen = new();
             // False in saves from before Tutorials Seen was kept: their player is taken to have seen every tutorial.
             public bool tutorialsKept;
+            // How many times the jigsaw mini game was played (see PicturePuzzle: each play makes the next one harder).
+            public int puzzlePlays;
         }
 
         /// <summary>What the start menu shows about a save slot.</summary>
@@ -365,6 +368,7 @@ namespace Game.Saving
                 Checkpoints.Changed -= MarkChanged;
                 Checkpoints.Reached -= OnCheckpointReached;
                 ShowOnce.Changed -= MarkChanged;
+                PicturePuzzle.PlaysChanged -= MarkChanged;
                 PauseMenu.PauseChanged -= OnPauseChanged;
             }
             Instance = null;
@@ -423,6 +427,7 @@ namespace Game.Saving
             PlayerLevel.Load(null);
             Checkpoints.Reset();
             BonusScores.Reset();
+            PicturePuzzle.LoadPlays(0);
 
             int slot = CurrentSlot;
             if (slot > 0)
@@ -463,6 +468,7 @@ namespace Game.Saving
                 bonusScores = BonusScores.ToSaveData(),
                 tutorialsSeen = ShowOnce.SlotToSaveData(),
                 tutorialsKept = true,
+                puzzlePlays = PicturePuzzle.Plays,
             };
 
             string path = SlotPath(CurrentSlot);
@@ -520,6 +526,7 @@ namespace Game.Saving
             Checkpoints.Reached += OnCheckpointReached;
             BonusScores.Changed += MarkChanged;
             ShowOnce.Changed += MarkChanged;
+            PicturePuzzle.PlaysChanged += MarkChanged;
             PauseMenu.PauseChanged += OnPauseChanged;
         }
 
@@ -569,6 +576,7 @@ namespace Game.Saving
             Unlocks.LoadSaveData(data?.unlocks);
             PlayerBoosts.LoadSaveData(data != null ? data.healthCapBonus : 0f);
             BonusScores.LoadSaveData(data?.bonusScores);
+            PicturePuzzle.LoadPlays(data != null ? data.puzzlePlays : 0);
 
             // The health the player had when they picked Get a Rest, once the cap bonuses are in (they heal).
             float rested = Checkpoints.TakeRestHealth();

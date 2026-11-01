@@ -20,7 +20,9 @@ namespace Game.Rooms
     /// <summary>
     /// A broken jigsaw picture on the wall that opens a mini game (Picture_Hang_4_Broken). As it appears, Start Placed
     /// of its pieces stay in the frame, picked at random, and the others (and the whole painting, Complete) are hidden;
-    /// its glow says something's up. Hit it, or touch it and pull a trigger, while it hangs on the wall: the game stops
+    /// its glow says something's up. Each time the mini game was played before in this save, More Per Play more of the
+    /// pieces in the frame fly out too as it starts (Plays, kept by the Save Manager; Reset Progress clears it).
+    /// Hit it, or touch it and pull a trigger, while it hangs on the wall: the game stops
     /// (Pause Menu hold), the room goes dark with stars all round (Space Prefab), the picture comes to float in front of
     /// the player, and the missing pieces fly out and buzz round them like bugs: each darts to a spot round the player,
     /// hovers there a moment and darts off again (never through the player, and round behind them rather than across
@@ -61,6 +63,10 @@ namespace Game.Rooms
         [Tooltip("Pieces left in the frame at the start, picked at random; the rest are the ones to put back.")]
         [Range(0, 8)]
         [SerializeField] private int startPlaced = 3;
+        [Tooltip("For each time the mini game was played before (in this save), this many more of the pieces in the frame " +
+                 "fly out too when it starts: harder every time (user, 2026-10-31).")]
+        [Min(0)]
+        [SerializeField] private int morePerPlay = 1;
 
         [Header("Mini game")]
         [Min(5f)]
@@ -257,6 +263,24 @@ namespace Game.Rooms
         /// <summary>The puzzle is being played right now (the game is stopped for it).</summary>
         public bool IsPlaying => phase == Phase.Playing;
 
+        private static int plays;
+
+        /// <summary>How many times the mini game has been played in this save (the Save Manager keeps it).</summary>
+        public static int Plays => plays;
+
+        /// <summary>Raised when the mini game starts once more (the save writes it).</summary>
+        public static event System.Action PlaysChanged;
+
+        /// <summary>The saved number of plays (0: none, e.g. a new save or Reset Progress).</summary>
+        public static void LoadPlays(int saved) => plays = Mathf.Max(0, saved);
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            plays = 0;
+            PlaysChanged = null;
+        }
+
         private void Awake()
         {
             TryGetComponent(out hung);
@@ -439,6 +463,10 @@ namespace Game.Rooms
         private IEnumerator Run()
         {
             phase = Phase.Playing;
+            // Each play before this one sends More Per Play more of the pieces in the frame flying.
+            int loosen = plays * morePerPlay;
+            plays++;
+            PlaysChanged?.Invoke();
             var eyes = Camera.main.transform;
             PauseMenu.Hold(this);
             PauseMenu.BlockOpening(this);
@@ -488,7 +516,9 @@ namespace Game.Rooms
             var showPos = centre + flat * showDistance + Vector3.down * 0.1f - showRot * Vector3.Scale(middle, showScale);
             yield return Move(wallPos, wallRot, wallScale, showPos, showRot, showScale, 0.7f);
 
-            // The missing pieces fly out of it and off round the player, buzzing, half to each side.
+            // The missing pieces fly out of it and off round the player, buzzing, half to each side; played before, some
+            // of the ones in the frame too.
+            Loosen(loosen);
             float now = Time.unscaledTime;
             int k = 0;
             foreach (var p in all)
@@ -528,6 +558,18 @@ namespace Game.Rooms
                 yield return null;
             }
             running = null;
+        }
+
+        // Count of the pieces in the frame, picked at random, come loose (they fly out with the missing ones).
+        private void Loosen(int count)
+        {
+            var inFrame = all.FindAll(p => p.state == PieceState.Placed);
+            for (int i = 0; i < count && inFrame.Count > 0; i++)
+            {
+                int pick = Random.Range(0, inFrame.Count);
+                inFrame[pick].state = PieceState.Hidden;
+                inFrame.RemoveAt(pick);
+            }
         }
 
         // One frame of play: the clock, the hands, the pieces.

@@ -19,6 +19,7 @@ GameObject:
   - component: {fileID: 6637437316918665176}
   - component: {fileID: 2649731575546762367}
   - component: {fileID: 1924547812721051303}
+  - component: {fileID: 8809142824318091729}
   m_Layer: 0
   m_Name: Jenga_Block.005
   m_TagString: Destroyer
@@ -1509,6 +1510,7 @@ MonoBehaviour:
   settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
   toughness: 7.3333335
   hitCooldown: 0.3
+  everyHitCounts: 0
   knockBack: 0
   knockBackDistance: 2
   knockBackTime: 0.45
@@ -1528,6 +1530,27 @@ MonoBehaviour:
   bumpShare: 1
   wieldedShare: 1
   settleSeconds: 0
+--- !u!114 &8809142824318091729
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 891425667784877490}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbba879382320d641b93ff95f1c7816c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.BugBreakable
+  hitsToBreak: 2
+  hitEvery: 0.8
+  hitEffect: {fileID: 431296081563789977, guid: 7d85674d137626445accce4cef7fe159,
+    type: 3}
+  hitEffectSize: 0.3
+  touchMargin: 0.08
+  scanEvery: 0.2
+  healthFsm: Health
+  healthVariable: health
 --- !u!1 &6251866995826741935
 GameObject:
   m_ObjectHideFlags: 0

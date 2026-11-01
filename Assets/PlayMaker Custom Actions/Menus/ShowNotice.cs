@@ -39,6 +39,10 @@ namespace HutongGames.PlayMaker.Actions
                  "Menu > Show Tutorials Again forgets it.")]
         public FsmBool oncePerInstall;
 
+        [Tooltip("The last page's line telling how to close it, e.g. \"Pull a trigger to play around\". Empty: the " +
+                 "notice's own (\"Pull a trigger to FIGHT!\").")]
+        public FsmString closeLine;
+
         [Tooltip("Sent once the tutorial has gone.")]
         public FsmEvent finishEvent;
 
@@ -65,6 +69,7 @@ namespace HutongGames.PlayMaker.Actions
             showAfter = 0f;
             onceKey = "";
             oncePerInstall = false;
+            closeLine = "";
             finishEvent = null;
         }
 
@@ -125,7 +130,7 @@ namespace HutongGames.PlayMaker.Actions
             }
 
             if (!string.IsNullOrEmpty(key)) shown.Add(key);
-            notice.Show(pages);
+            notice.Show(pages, closeLine != null ? closeLine.Value : null);
             showing = true;
         }
 

@@ -11,7 +11,8 @@ namespace Game.Enemies
     /// <summary>
     /// A tree pumpkin turned bowling ball (Turns Into Bowler makes it): it bursts out where a Pumpkin_On_Tree was, turns
     /// to the player and shakes for Wind Up Seconds (the warning: a laugh, then the Roll Warning's choo-choo, which ends
-    /// as it sets off), then rolls at where they stand in a straight line, faster and faster (Roll Acceleration),
+    /// as it sets off), then rolls at where they stood as it set off, in a straight line it never turns from (user,
+    /// 2026-10-31), faster and faster (Roll Acceleration),
     /// trailing smoke and ploughing through everything like a bulldozer: bugs in its way die, breakables and furniture are
     /// smashed, loose things shoved aside (not candy). It explodes when it reaches the player, runs into a boss, a wall
     /// (the Wall layer, e.g. the rooftop's gates) or the edge of its NavMesh (a Fall Edge), after Max Roll metres, or when
@@ -269,6 +270,9 @@ namespace Game.Enemies
             var moved = transform.position - before;
             moved.y = 0f;
             float progress = Vector3.Dot(moved, direction);
+            // Locked on the line it set off along (aimed at where the player stood): the NavMesh sliding it sideways
+            // along something in its way would turn it, so that stops it like a wall.
+            if ((moved - direction * progress).magnitude > step * 0.25f) { Explode(); return; }
             rolled += Mathf.Max(0f, progress);
 
             // The ball turns as it rolls.

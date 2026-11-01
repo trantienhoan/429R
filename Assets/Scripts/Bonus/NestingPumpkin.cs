@@ -79,6 +79,8 @@ namespace Game.Bonus
         private PlayMakerFSM healthMachine;
         private int exp = -1;
         private float jiggle = 1f;
+        // Its Enemy Hit Damage's Toughness (-1: as on the prefab).
+        private float toughness = -1f;
         private bool setUp;
         private bool burst;
 
@@ -119,10 +121,13 @@ namespace Game.Bonus
 
         /// <summary>
         /// Called by Bonus Round before Setup: its size, health, candies, laugh pitch, EXP (-1: as on its Enemy Hit
-        /// Damage) and how much it jiggles when hit (1 = as its Jiggle is set; the smaller, tougher ones less).
+        /// Damage), how much it jiggles when hit (1 = as its Jiggle is set; the smaller, tougher ones less) and its
+        /// Toughness (-1: as on its Enemy Hit Damage).
         /// </summary>
-        public void Configure(float newSize, float newHealth, int newCandies, float newPitch, int newExp, float newJiggle = 1f)
+        public void Configure(float newSize, float newHealth, int newCandies, float newPitch, int newExp, float newJiggle = 1f,
+            float newToughness = -1f)
         {
+            toughness = newToughness;
             size = Mathf.Max(0.05f, newSize);
             health = Mathf.Max(1f, newHealth);
             candies = Mathf.Max(0, newCandies);
@@ -164,6 +169,7 @@ namespace Game.Bonus
                 if (value != null) value.Value = health;
             }
             if (hits != null && exp >= 0) hits.Exp = exp;
+            if (hits != null && toughness > 0f) hits.Toughness = toughness;
             if (Body.TryGetComponent<AudioSource>(out var voice)) voice.pitch = voicePitch;
             foreach (var wobble in GetComponentsInChildren<Game.VFX.Jiggle>(true)) wobble.Amount = jiggle;
             if (!dropFromTheSky) PopOutInstead();

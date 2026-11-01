@@ -5,25 +5,25 @@ using UnityEngine;
 namespace Game.Combat
 {
     /// <summary>
-    /// Hot hands, a kill combo: killing Kills Needed enemies within Within Seconds overheats the player's hands, so they
-    /// glow bright red with embers coming off them, for Keep Seconds; every kill while hot starts those seconds again.
-    /// While hot, the player's punches (the fist's own and flying ones) and throws do Damage Bonus more (user, 2026-10-28:
-    /// not weapons in the hand, shots or blasts). Once the hands have cooled down it takes Kills Needed kills within Within
-    /// Seconds again.
-    /// A kill is an enemy that gives EXP dying of the player's doing (not furniture, not one a Fall Edge took). The last
-    /// second before it ends, the glow flickers. Goes on the XR Origin (Tools > 429 Game > Player > Hot Hands And Punch
-    /// Shockwave puts it there).
+    /// Hot hands, a punch combo (user, 2026-10-31): Hits Needed punches landing on anything (enemies, furniture, walls,
+    /// props; the fist's own and flying ones) within Within Seconds overheat the player's hands, so they glow bright red
+    /// with embers coming off them. They stay hot while the player keeps hitting: every hit starts Keep Seconds again, and
+    /// Keep Seconds with no hit cools them down. While hot, the player's punches (the fist's own and flying ones) and
+    /// throws do Damage Bonus more (user, 2026-10-28: not weapons in the hand, shots or blasts). Once the hands have cooled
+    /// down it takes Hits Needed hits within Within Seconds again.
+    /// The last second before it ends, the glow flickers. Goes on the XR Origin (Tools > 429 Game > Player > Hot Hands And
+    /// Punch Shockwave puts it there).
     /// </summary>
     public class HotHands : MonoBehaviour
     {
         [Header("The combo")]
-        [Tooltip("Kills it takes...")]
+        [Tooltip("Hits it takes (punches landing on anything)...")]
         [Min(1)]
-        [SerializeField] private int killsNeeded = 5;
+        [SerializeField] private int hitsNeeded = 17;
         [Tooltip("...within this many seconds, to overheat the hands.")]
         [Min(0.1f)]
         [SerializeField] private float withinSeconds = 3f;
-        [Tooltip("How long the hands stay hot after the last kill, in seconds (each kill while hot starts it again).")]
+        [Tooltip("How long the hands stay hot after the last hit, in seconds (each hit while hot starts it again).")]
         [Min(0.1f)]
         [SerializeField] private float keepSeconds = 3f;
         [Tooltip("While hot, the player's punches and throws do this much more damage (whole points: 1 = a punch 2).")]
@@ -65,10 +65,13 @@ namespace Game.Combat
         /// <summary>The hands overheated (true) or cooled down (false).</summary>
         public static event Action<bool> Changed;
 
+        private const float SameBumpSeconds = 0.3f;
         private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
         private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
 
-        private readonly Queue<float> kills = new();
+        private readonly Queue<float> hits = new();
+        // The stroke each thing was last hit by, and when: one hit per thing per swing.
+        private readonly Dictionary<UnityEngine.Object, (int stroke, float at)> lastHitOn = new();
         private readonly List<Renderer> hands = new();
         private readonly Dictionary<Renderer, (Color emission, Color colour)> plain = new();
         private readonly List<ParticleSystem> emberSystems = new();
@@ -90,12 +93,12 @@ namespace Game.Combat
         private void OnEnable()
         {
             instance = this;
-            EnemyHitDamage.Died += OnDied;
+            Fist.Landed += OnLanded;
         }
 
         private void OnDisable()
         {
-            EnemyHitDamage.Died -= OnDied;
+            Fist.Landed -= OnLanded;
             hot = false;
             heat = 0f;
             Untint();
@@ -132,26 +135,45 @@ namespace Game.Combat
             }
         }
 
-        // A kill: hot, it keeps them hot; cold, it counts towards overheating.
-        private void OnDied(EnemyHitDamage enemy)
+        // A hit: hot, it keeps them hot; cold, it counts towards overheating.
+        private void OnLanded(Fist.PunchLanded punch)
         {
-            if (enemy == null || !enemy.CountsAsKill || enemy.noReward) return;
             float now = Time.time;
+            if (!NewHit(punch, now)) return;
             if (hot)
             {
                 until = now + keepSeconds;
                 return;
             }
-            kills.Enqueue(now);
-            while (kills.Count > 0 && now - kills.Peek() > withinSeconds) kills.Dequeue();
-            if (kills.Count >= killsNeeded) HeatUp(now);
+            hits.Enqueue(now);
+            while (hits.Count > 0 && now - hits.Peek() > withinSeconds) hits.Dequeue();
+            if (hits.Count >= hitsNeeded) HeatUp(now);
+        }
+
+        // Each thing a swing hits is a hit (user, 2026-10-31: "if in 1 swing Player hit 5 things then that'd be count as 5
+        // hits"), but a thing only once a swing: not again for its other colliders, the fist bouncing on it or the other
+        // fists of a triple punch. A bump with no swing counts once per Same Bump Seconds on a thing.
+        private bool NewHit(Fist.PunchLanded punch, float now)
+        {
+            if (punch.Hit == null) return true;
+            UnityEngine.Object thing = punch.Hit.attachedRigidbody != null ? punch.Hit.attachedRigidbody : punch.Hit;
+            if (lastHitOn.TryGetValue(thing, out var last) &&
+                (punch.Stroke != 0 ? last.stroke == punch.Stroke : now - last.at < SameBumpSeconds)) return false;
+            if (lastHitOn.Count > 64)
+            {
+                var old = new List<UnityEngine.Object>();
+                foreach (var entry in lastHitOn) if (entry.Key == null || now - entry.Value.at > withinSeconds) old.Add(entry.Key);
+                foreach (var key in old) lastHitOn.Remove(key);
+            }
+            lastHitOn[thing] = (punch.Stroke, now);
+            return true;
         }
 
         private void HeatUp(float now)
         {
             hot = true;
             until = now + keepSeconds;
-            kills.Clear();
+            hits.Clear();
             MakeEmbers();
             foreach (var system in emberSystems) if (system != null) system.Play(true);
             var eyes = Camera.main;
@@ -162,7 +184,7 @@ namespace Game.Combat
         private void CoolDown()
         {
             hot = false;
-            kills.Clear();
+            hits.Clear();
             foreach (var system in emberSystems) if (system != null) system.Stop(true, ParticleSystemStopBehavior.StopEmitting);
             Changed?.Invoke(false);
         }
@@ -208,7 +230,7 @@ namespace Game.Combat
             tinted = false;
         }
 
-        /// <summary>For tests: overheat the hands now, as Kills Needed kills would.</summary>
+        /// <summary>For tests: overheat the hands now, as Hits Needed hits would.</summary>
         public static void HeatUpNow()
         {
             if (instance != null && !instance.hot) instance.HeatUp(Time.time);

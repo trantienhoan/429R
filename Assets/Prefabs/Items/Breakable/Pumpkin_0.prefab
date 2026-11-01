@@ -53,6 +53,7 @@ MonoBehaviour:
   wobblesPerSecond: 4.5
   settleTime: 0.9
   softHitPause: 0.75
+  around: {fileID: 0}
   healthFsm: Health
   healthVariable: health
 --- !u!1 &6718550479359632818
@@ -380,6 +381,8 @@ GameObject:
   - component: {fileID: 1371856308177071628}
   - component: {fileID: 3642144111491482432}
   - component: {fileID: 2987783268461457936}
+  - component: {fileID: 676685470666478176}
+  - component: {fileID: 4629799522997986868}
   m_Layer: 0
   m_Name: Pumpkin_0
   m_TagString: Untagged
@@ -3692,8 +3695,11 @@ MonoBehaviour:
   blendBonus: 9
   blendFleeRange: 1.4
   cornerPenalty: 3
+  laughAfterHidden: {x: 3, y: 4}
   healthFsm: Health
   healthVariable: health
+  laughClip: randomLaughSFX
+  laughClips: randomLaugh
 --- !u!114 &3642144111491482432
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3733,6 +3739,7 @@ MonoBehaviour:
   settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
   toughness: 4
   hitCooldown: 0.3
+  everyHitCounts: 0
   knockBack: 0
   knockBackDistance: 2
   knockBackTime: 0.45
@@ -3752,6 +3759,45 @@ MonoBehaviour:
   bumpShare: 1
   wieldedShare: 1
   settleSeconds: 0
+--- !u!114 &676685470666478176
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8690403555129543112}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ba300123fd9e4f43b19824e71973f2e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.HeldBreakBlast
+  playerEvent: PumpkinBossHit
+  launch: {x: 1.2, y: 3}
+  heldGrace: 0.15
+  radius: 2.5
+  damage: 3
+  push: 6
+  effects:
+  - {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
+  - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}
+  - {fileID: 431296081563789977, guid: 7d85674d137626445accce4cef7fe159, type: 3}
+  effectSize: 1.2
+  sound: {fileID: 8300000, guid: 0c38739de2059ac40ab5b60a42fd1c5f, type: 3}
+  volume: 1
+  healthFsm: Health
+  healthVariable: health
+--- !u!114 &4629799522997986868
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8690403555129543112}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d50fe9783cd54c42a63d942aeab00aa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.HeldStill
 --- !u!1 &8806896829971085038
 GameObject:
   m_ObjectHideFlags: 0

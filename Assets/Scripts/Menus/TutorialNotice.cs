@@ -98,6 +98,8 @@ namespace Game.Menus
         [SerializeField] private float pageVolume = 0.6f;
 
         private readonly List<Page> pages = new();
+        // The last page's line telling how to close it: Last Page Line, or the one Show was given.
+        private string closeLine;
         private int page;
         private float shownAt;
         private float buttonFrom;
@@ -158,10 +160,14 @@ namespace Game.Menus
             if (panel != null) panel.gameObject.SetActive(false);
         }
 
-        /// <summary>Fades the tutorial in at its first page and pauses the game until its last page is closed.</summary>
-        public void Show(IList<Page> newPages)
+        /// <summary>
+        /// Fades the tutorial in at its first page and pauses the game until its last page is closed. Last Line: the last
+        /// page's line telling how to close it (none: Last Page Line, "Pull a trigger to FIGHT!").
+        /// </summary>
+        public void Show(IList<Page> newPages, string lastLine = null)
         {
             if (panel == null || newPages == null || newPages.Count == 0) return;
+            closeLine = string.IsNullOrEmpty(lastLine) ? lastPageLine : lastLine;
             pages.Clear();
             pages.AddRange(newPages);
             page = 0;
@@ -235,7 +241,7 @@ namespace Game.Menus
             if (pageText != null) pageText.text = pages.Count > 1 ? $"{page + 1} / {pages.Count}" : "";
             if (continueText != null)
             {
-                continueText.text = page < pages.Count - 1 ? nextPageLine : lastPageLine;
+                continueText.text = page < pages.Count - 1 ? nextPageLine : closeLine;
                 continueText.enabled = false;
             }
             shownAt = Time.unscaledTime;

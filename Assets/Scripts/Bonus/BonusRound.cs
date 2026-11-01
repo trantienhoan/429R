@@ -46,6 +46,12 @@ namespace Game.Bonus
         [SerializeField] private float giantPushReach = 2f;
         [Tooltip("... this high (x) and at least this far (y), in metres. Their Toughness doesn't cut it.")]
         [SerializeField] private Vector2 giantPush = new(0.7f, 2.5f);
+        [Tooltip("Every pumpkin after the giant pops out and shoves a player near it back a bit (user, 2026-10-30): within " +
+                 "this many metres of its side (inside it: thrown clear as above). 0 = no shove.")]
+        [Min(0f)]
+        [SerializeField] private float popPushReach = 1.5f;
+        [Tooltip("... this high (x) and at least this far (y), in metres. Their Toughness doesn't cut it.")]
+        [SerializeField] private Vector2 popPush = new(0.3f, 1.5f);
 
         [Header("Pumpkins")]
         [Tooltip("The giant, the first one (Nesting_Pumpkin_1): the stage's chest makes it.")]
@@ -69,6 +75,14 @@ namespace Game.Bonus
                  "75 ... 120 for the 9th).")]
         [Range(0f, 1f)]
         [SerializeField] private float tougherPerPumpkin = 0.125f;
+        [Tooltip("The giant's Toughness (its Enemy Hit Damage's: hits count as this many times weaker, so fewer are hard " +
+                 "ones that do double).")]
+        [Min(0.1f)]
+        [SerializeField] private float giantToughness = 1f;
+        [Tooltip("Each pumpkin has this much more Toughness than the one before, on top of its health (user, 2026-10-30): " +
+                 "0.25 = 1, 1.25, 1.5 ... 3 for the 9th.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float toughnessPerPumpkin = 0.25f;
         [Tooltip("How much the giant jiggles when hit (1 = as its Jiggle is set; more = wobblier).")]
         [Min(0f)]
         [SerializeField] private float giantJiggle = 1.6f;
@@ -328,6 +342,9 @@ namespace Game.Bonus
         /// <summary>Pumpkin number 'index''s health: the smaller, the tougher (Tougher Per Pumpkin more each).</summary>
         public float HealthOf(int index) => Mathf.Round(giantHealth * (1f + tougherPerPumpkin * index));
 
+        /// <summary>Pumpkin number 'index''s Toughness: the smaller, the tougher (Toughness Per Pumpkin more each).</summary>
+        public float ToughnessOf(int index) => giantToughness + toughnessPerPumpkin * index;
+
         /// <summary>How much pumpkin number 'index' jiggles when hit: the giant most, the smaller ones stiffer.</summary>
         public float JiggleOf(int index) =>
             Mathf.Max(MinJiggle, giantJiggle * (1f - stifferPerPumpkin * index)) * (index == 0 ? giantExtraJiggle : 1f);
@@ -535,7 +552,8 @@ namespace Game.Bonus
             int total = PumpkinCount;
             bool last = index == total - 1;
             float pitch = total > 1 ? Mathf.Lerp(1f, lastPitch, index / (float)(total - 1)) : 1f;
-            pumpkin.Configure(GiantSize * ShareOf(index), HealthOf(index), last ? lastCandies : candiesEach, pitch, last ? lastExp : expEach, JiggleOf(index));
+            pumpkin.Configure(GiantSize * ShareOf(index), HealthOf(index), last ? lastCandies : candiesEach, pitch, last ? lastExp : expEach, JiggleOf(index),
+                ToughnessOf(index));
         }
 
         // It's the one there now.
@@ -552,8 +570,8 @@ namespace Game.Bonus
 
         // A pumpkin coming where the player stands (it reaches their body) throws them clear of it, landing Launch Margin
         // from its side, so they can walk back up to it and punch. One that comes next to them (each is a little smaller
-        // than the last, which they stood outside of) leaves them be. The giant bursting out also shoves back a player
-        // standing near it (Giant Push Reach), at least Giant Push far.
+        // than the last, which they stood outside of) only shoves them back a bit (Pop Push Reach, Pop Push). The giant
+        // bursting out shoves back a player standing near it harder (Giant Push Reach), at least Giant Push far.
         private void ThrowClear(NestingPumpkin pumpkin)
         {
             var eyes = Head();
@@ -566,6 +584,8 @@ namespace Game.Bonus
             if (giant && (inside || off < radius + BodyRadius() + giantPushReach))
                 StartCoroutine(Throw(pumpkin, middle, inside ? launchHeight : giantPush.x, Mathf.Max(giantPush.y, radius + launchMargin - off)));
             else if (inside) StartCoroutine(Throw(pumpkin, middle, launchHeight, radius + launchMargin - off));
+            else if (!giant && popPushReach > 0f && off < radius + BodyRadius() + popPushReach)
+                StartCoroutine(Throw(pumpkin, middle, popPush.x, Mathf.Max(popPush.y, radius + launchMargin - off)));
         }
 
         // How wide the player's body is (the XR Origin's Character Controller).

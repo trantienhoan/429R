@@ -30,9 +30,10 @@ namespace Game.Leveling
     /// - Bone Boong: +7 Toughness points (less damage and knockback), on top of the level-up points.
     /// - Green Boong: the player stands 0.5 m taller (eased in and out over 1.5 s), flying punches fly 5 m further, and
     ///   fists are 7 Fist Size points bigger (size only; the flying punches 70% bigger, the hand a little).
-    /// - Bus Boong: +7 Move Speed points (faster walking).
+    /// - Bus Boong: walking Bus Walk times as fast (1.5), whatever else is on: being high doesn't slow it (user, 2026-10-30:
+    ///   "I can't feel myself moving faster"; its old +7 Move Speed points, 2% each, came to less than the high's 30% slower).
     /// - Any boong also makes the player high while it's on: they take 1.5x damage, candy heals them 1.5x and they walk
-    ///   30% slower (High; once, however many boongs are on).
+    ///   30% slower (High; once, however many boongs are on; not with the Bus Boong on).
     /// - Candy Helmet (every pumpkin the bonus round's player breaks adds 5 s, Add): every candy around flies to the
     ///   player, over their head and into the top of it, and is eaten, even ones still flying out of the pumpkin
     ///   (Game.Inventory.CandyHelmet does it).
@@ -65,8 +66,8 @@ namespace Game.Leveling
         /// <summary>Green Boong: Fist Size points' worth of bigger fists (size only: no damage, no new punches).</summary>
         public const int GreenFistSize = 7;
 
-        /// <summary>Bus Boong: extra Move Speed points.</summary>
-        public const int BusSpeed = 7;
+        /// <summary>Bus Boong: the walking speed is multiplied by this (and isn't slowed by being high).</summary>
+        public const float BusWalk = 1.5f;
 
         /// <summary>High (any boong buff on): the damage the player takes is multiplied by this.</summary>
         public const float HighDamageTaken = 1.5f;
@@ -175,8 +176,8 @@ namespace Game.Leveling
         /// <summary>Candy heals are multiplied by this: High Heal while high, else 1.</summary>
         public static float HealScale => High ? HighHeal : 1f;
 
-        /// <summary>The walking speed is multiplied by this: High Speed while high, else 1.</summary>
-        public static float SpeedScale => High ? HighSpeed : 1f;
+        /// <summary>The walking speed is multiplied by this: Bus Walk with the Bus Boong on, else High Speed while high, else 1.</summary>
+        public static float SpeedScale => IsActive(Buff.BusBoong) ? BusWalk : High ? HighSpeed : 1f;
 
         /// <summary>Ends every buff now (e.g. for testing); each one that was on raises Ended.</summary>
         public static void EndAll()
@@ -216,13 +217,15 @@ namespace Game.Leveling
         /// </summary>
         public static float FistSizePoints => GreenFistSize * Smooth(eased[(int)Buff.GreenBoong]);
 
-        /// <summary>Points the buffs add to a stat for now (Bone Boong: Toughness, Bus Boong: Move Speed), never saved.</summary>
+        /// <summary>
+        /// Points the buffs add to a stat for now (Bone Boong: Toughness), never saved. The Bus Boong scales the walking
+        /// speed itself (Speed Scale).
+        /// </summary>
         public static int ExtraPoints(Stat stat)
         {
             switch (stat)
             {
                 case Stat.Toughness: return IsActive(Buff.BoneBoong) ? BoneToughness : 0;
-                case Stat.MoveSpeed: return IsActive(Buff.BusBoong) ? BusSpeed : 0;
                 default: return 0;
             }
         }
@@ -252,7 +255,7 @@ namespace Game.Leveling
                 case Buff.BoneBoong: return $"+{BoneToughness} Toughness";
                 case Buff.GreenBoong: return "Taller, big far flying punches";
                 case Buff.CandyHelmet: return "Candies fly to your head";
-                default: return $"+{BusSpeed} Move Speed";
+                default: return $"Walking x{BusWalk}";
             }
         }
 
