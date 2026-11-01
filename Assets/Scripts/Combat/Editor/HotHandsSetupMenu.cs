@@ -15,7 +15,7 @@ namespace Game.EditorTools
     ///   Made in metres; the fists play it at Wrist Smoke Size 1 (bigger flying punches, bigger rings).
     /// - Builds Hot_Hands_Embers: sparks rising off each hand and a faint red heat glow round it, while the hands are hot.
     /// - In the open scene: both fists' Wrist Smoke becomes the shockwave (size 1), and the XR Origin gets Hot Hands
-    ///   (17 punch hits on anything in 3 s overheat the hands; each hit keeps them hot 3 s more) with the embers and the whoosh. The scene is saved if
+    ///   (17 punch hits on anything by one hand in 3 s overheat that hand; each of its hits keeps it hot 3 s more) with the embers and the whoosh. The scene is saved if
     ///   it had nothing else unsaved; otherwise it's left for you to save.
     /// Running it again rebuilds both prefabs and their materials (Assets/Data/Effects/Punch Shockwave *.mat, Hot Hands
     /// *.mat).

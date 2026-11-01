@@ -418,6 +418,8 @@ namespace Game.Combat
             public int Stroke;
             /// <summary>A jab at least Perfect Jab good.</summary>
             public bool Perfect;
+            /// <summary>The hand (its Fist) that threw it.</summary>
+            public Fist By;
         }
 
         /// <summary>Raised for every punch that lands, e.g. for the bonus round's board.</summary>
@@ -467,6 +469,12 @@ namespace Game.Combat
 
         // Power (it used to grow with the old Power bonus stat, which is Weapon Master now: held weapons only).
         private float Power => power;
+
+        /// <summary>The Fist (hand) a punching ball or flying fist belongs to; null for anything else.</summary>
+        public static Fist OwnerOf(Component thing)
+        {
+            return thing != null && thing.TryGetComponent<Punch>(out var punch) ? punch.owner : null;
+        }
 
         /// <summary>Whether this is a fist's punching ball (it has a Weapon Power like a weapon, but it's a hand).</summary>
         public static bool IsFistBall(Component thing)
@@ -708,6 +716,7 @@ namespace Game.Combat
                 Hit = collision.collider,
                 Stroke = flying ? flyer.Stroke : stroke ? strokeId : 0,
                 Perfect = flying ? flyer.Perfect : stroke && strokeJab >= perfectJab,
+                By = this,
             });
             HelpPlayMaker(collision, punchSpeed);
             Push(collision, punchSpeed, flyer, move);
@@ -1519,8 +1528,8 @@ namespace Game.Combat
                 smoke.localScale = Vector3.one * (owner.wristSmokeSize * size);
                 // The star flash only with Explosive Fist points: a plain flying punch just puffs.
                 if (smokeStar != null) smokeStar.enabled = Game.Leveling.PlayerLevel.ExplosiveFist > 0;
-                // Overheated hands (Hot Hands): it burns their red.
-                bool hot = HotHands.Active;
+                // Its hand overheated (Hot Hands): it burns their red.
+                bool hot = HotHands.IsHot(owner);
                 var red = HotHands.GlowColor;
                 red = new Color(Mathf.Min(1f, red.r), Mathf.Min(1f, red.g * 1.6f), Mathf.Min(1f, red.b * 1.6f), 1f);
                 for (int i = 0; i < smokeSystems.Length; i++)

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
+using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 namespace Game.Combat
 {
@@ -15,17 +16,34 @@ namespace Game.Combat
         private const float ThrownSeconds = 2.5f;
 
         private static readonly Dictionary<XRGrabInteractable, float> releasedAt = new();
+        private static readonly Dictionary<XRGrabInteractable, IXRSelectInteractor> releasedBy = new();
         private static readonly List<XRGrabInteractable> stale = new();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics() => releasedAt.Clear();
+        private static void ResetStatics()
+        {
+            releasedAt.Clear();
+            releasedBy.Clear();
+        }
 
-        /// <summary>A hand just let go of this.</summary>
-        public static void Released(XRGrabInteractable thing)
+        /// <summary>A hand (By, the interactor that held it) just let go of this.</summary>
+        public static void Released(XRGrabInteractable thing, IXRSelectInteractor by = null)
         {
             if (thing == null) return;
             if (releasedAt.Count > 200) Forget();
             releasedAt[thing] = Time.time;
+            releasedBy[thing] = by;
+        }
+
+        /// <summary>
+        /// The hand (interactor) that threw this: it let go of it less than a moment ago and nothing holds it now. Null
+        /// if none, e.g. Hot Hands asks which hand a throw came from.
+        /// </summary>
+        public static IXRSelectInteractor ThrownBy(Component thing)
+        {
+            if (thing == null || !thing.TryGetComponent<XRGrabInteractable>(out var grab) || grab.isSelected) return null;
+            return releasedAt.TryGetValue(grab, out float at) && Time.time - at < ThrownSeconds &&
+                   releasedBy.TryGetValue(grab, out var by) ? by : null;
         }
 
         /// <summary>Held, or let go (thrown) less than a moment ago.</summary>
@@ -56,7 +74,11 @@ namespace Game.Combat
             {
                 if (pair.Key == null || Time.time - pair.Value > ThrownSeconds) stale.Add(pair.Key);
             }
-            foreach (var thing in stale) releasedAt.Remove(thing);
+            foreach (var thing in stale)
+            {
+                releasedAt.Remove(thing);
+                releasedBy.Remove(thing);
+            }
         }
     }
 }

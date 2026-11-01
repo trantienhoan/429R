@@ -159,16 +159,16 @@ namespace Game.VFX
 
         private void LateUpdate()
         {
+            // Each of position, turn and size goes back on its own, unless the animation has set it since: an animation
+            // turns the arm bones but never sizes them, and an all-or-nothing check let their squash pile up frame on
+            // frame until the arms stretched across the room (user, 2026-11-01: "the Pumpkin_Boss_Z's mesh is broken").
             for (int i = 0; i < touched.Count; i++)
             {
                 var was = touched[i];
                 if (was.t == null) continue;
-                if (was.t.localPosition == was.wrotePosition && was.t.localRotation == was.wroteRotation && was.t.localScale == was.wroteScale)
-                {
-                    was.t.localPosition = was.position;
-                    was.t.localRotation = was.rotation;
-                    was.t.localScale = was.scale;
-                }
+                if (was.t.localPosition == was.wrotePosition) was.t.localPosition = was.position;
+                if (was.t.localRotation == was.wroteRotation) was.t.localRotation = was.rotation;
+                if (was.t.localScale == was.wroteScale) was.t.localScale = was.scale;
             }
             touched.Clear();
 

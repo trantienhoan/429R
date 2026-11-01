@@ -319,7 +319,7 @@ namespace Game.Combat
             // Every Hit Counts: the player's hit too soft to hurt (but more than a touch) takes its weapon's damage.
             if (everyHitCounts && byPlayer && !furniture && judged.Damage <= 0f && power >= MinFlinchPower)
                 judged = new HitResult(power, Mathf.Max(1f, HitSettings.Whole(WeaponPower.DamageOf(collision))), false);
-            var hit = Taken(judged, byPlayer && HotHandsCount(collision));
+            var hit = Taken(judged, byPlayer ? HotHandsBonus(collision) : 0);
             LastHit = hit;
             // Punches are the last resort (user, 2026-10-27): little damage, but every one shoves the enemy back and stuns
             // it; a flying jab shoves it much farther.
@@ -400,21 +400,22 @@ namespace Game.Combat
             KnockBackFromPlayer();
         }
 
-        // The hit's damage times Damage Taken, plus Hot Hands' bonus when Hot (overheated hands hit harder: the player's
-        // punches and throws). Whole numbers.
-        private HitResult Taken(HitResult hit, bool hot)
+        // The hit's damage times Damage Taken, plus Hot Hands' bonus (an overheated hand hits harder: its punches and
+        // throws). Whole numbers.
+        private HitResult Taken(HitResult hit, int hotBonus)
         {
             if (hit.Damage <= 0f) return hit;
-            float damage = Mathf.Max(1f, HitSettings.Whole(hit.Damage * damageTaken) + (hot ? HotHands.DamageBonus : 0));
+            float damage = Mathf.Max(1f, HitSettings.Whole(hit.Damage * damageTaken) + hotBonus);
             return damage == hit.Damage ? hit : new HitResult(hit.Power, damage, hit.IsBig);
         }
 
         // Hot Hands' bonus is for punches (the fist's own and flying ones) and throws (user, 2026-10-28): not for a weapon
-        // in the hand, a shot, or a blast.
-        private static bool HotHandsCount(Collision collision)
+        // in the hand, a shot, or a blast; and only from the hand that's hot (user, 2026-11-01).
+        private static int HotHandsBonus(Collision collision)
         {
             var source = collision.rigidbody;
-            return Fist.IsFistBall(source) || Fist.IsFlyingFist(source) || IsThrown(collision);
+            if (Fist.IsFistBall(source) || Fist.IsFlyingFist(source)) return HotHands.BonusFor(Fist.OwnerOf(source));
+            return IsThrown(collision) ? HotHands.BonusForThrower(HeldThings.ThrownBy(source)) : 0;
         }
 
         /// <summary>
@@ -431,8 +432,8 @@ namespace Game.Combat
             bool thrown = IsThrown(collision);
             if (thrown) power /= Game.Leveling.PlayerLevel.HardThrowShare;
             var hit = settings.Evaluate(power, WeaponPower.DamageOf(collision), thrown, Fist.IsFlyingFist(collision.rigidbody));
-            if (hit.Damage <= 0f || !byPlayer || !HotHandsCount(collision) || HotHands.DamageBonus == 0) return hit;
-            return new HitResult(hit.Power, hit.Damage + HotHands.DamageBonus, hit.IsBig);
+            int bonus = hit.Damage > 0f && byPlayer ? HotHandsBonus(collision) : 0;
+            return bonus == 0 ? hit : new HitResult(hit.Power, hit.Damage + bonus, hit.IsBig);
         }
 
         /// <summary>
@@ -599,7 +600,7 @@ namespace Game.Combat
             if (health == null || dead || furniture) return false;
 
             // No Hot Hands bonus: the punch that landed it already had it.
-            var hit = Taken(Settings.Evaluate(power / toughness, damageScale), false);
+            var hit = Taken(Settings.Evaluate(power / toughness, damageScale), 0);
             bool hurt = hit.Damage > 0f;
             if (hurt)
             {

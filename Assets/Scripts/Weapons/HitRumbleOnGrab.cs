@@ -43,7 +43,7 @@ namespace Game.Weapons
 
         private static void OnLetGo(SelectExitEventArgs args)
         {
-            if (args.interactableObject is XRGrabInteractable grab) Game.Combat.HeldThings.Released(grab);
+            if (args.interactableObject is XRGrabInteractable grab) Game.Combat.HeldThings.Released(grab, args.interactorObject);
         }
 
         private static void OnGrabbed(SelectEnterEventArgs args)
