@@ -12,7 +12,7 @@ namespace Game.EditorTools
     {
         private const string GiantPath = "Assets/Prefabs/Enemies/Pumpkin_Boss.prefab";
         private const string RooftopPath = "Assets/Prefabs/Bases/Rooftop_Base_Z.prefab";
-        private const string PoundEffectPath = "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Smoke_Blast.prefab";
+        private const string PoundEffectPath = "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab";
 
         private const float SmashHeight = 5f;
         private const string TreeSaveSoundPath = "Assets/Audio/SFX/A_magical_glowing.wav";

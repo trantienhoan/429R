@@ -23,7 +23,7 @@ namespace Game.EditorTools
         // The web shot: a ball made from the web ball model, a puff where it splats, and its sounds.
         private const string WebBallPath = "Assets/Prefabs/Enemies/Enemies_Smarter/Spider_Web_Ball.prefab";
         private const string WebBallModel = "Assets/Prefabs/Items/Breakable/Web_Ball_On_Web.prefab";
-        private const string SplatEffect = "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Smoke_Blast.prefab";
+        private const string SplatEffect = "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab";
         private const string SpitSound = "Assets/Audio/SFX/magic_hat_spit_card.wav";
         // Hitting the player splats with the same sound (no Hit Sound). Bug_Squish_Bedroom is EnemyManager 1's battle
         // music, not a squish: as the hit sound it restarted the music on every web that hit the player.

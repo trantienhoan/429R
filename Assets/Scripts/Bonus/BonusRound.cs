@@ -30,6 +30,11 @@ namespace Game.Bonus
     [DisallowMultipleComponent]
     public class BonusRound : MonoBehaviour
     {
+        [Header("Stage")]
+        [Tooltip("The sky over the field while the round is on (Bonus_Stage_Sky: the picture puzzle's stars, clouds and dust, " +
+                 "for out in the open). Empty: none.")]
+        [SerializeField] private GameObject stageSky;
+
         [Header("Start")]
         [Tooltip("Seconds the giant takes to burst out of the chest (it shoots up, swells past its size and lands wobbling).")]
         [Min(0.05f)]
@@ -70,9 +75,9 @@ namespace Game.Bonus
         [SerializeField] private float shrinkEach = 0.1f;
         [Tooltip("The giant's health. The smaller, the tougher: each one after it has Tougher Per Pumpkin of this more.")]
         [Min(1f)]
-        [SerializeField] private float giantHealth = 60f;
-        [Tooltip("Each pumpkin has this share of the giant's health more than the one before (0.125 = +12.5%: 60, 68, " +
-                 "75 ... 120 for the 9th).")]
+        [SerializeField] private float giantHealth = 70f;
+        [Tooltip("Each pumpkin has this share of the giant's health more than the one before (0.125 = +12.5%: 70, 79, " +
+                 "88 ... 140 for the 9th).")]
         [Range(0f, 1f)]
         [SerializeField] private float tougherPerPumpkin = 0.125f;
         [Tooltip("The giant's Toughness (its Enemy Hit Damage's: hits count as this many times weaker, so fewer are hard " +
@@ -121,7 +126,7 @@ namespace Game.Bonus
         [SerializeField] private float seconds = 30f;
         [Tooltip("Seconds added for every pumpkin broken.")]
         [Min(0f)]
-        [SerializeField] private float bonusSeconds = 6f;
+        [SerializeField] private float bonusSeconds = 3f;
         [Tooltip("Played when seconds are added.")]
         [SerializeField] private AudioClip bonusSound;
         [Tooltip("The countdown blinks red and ticks for this many last seconds.")]
@@ -382,6 +387,8 @@ namespace Game.Bonus
             voice.playOnAwake = false;
             voice.spatialBlend = 0f;
             MakeSign();
+            // It goes with the round.
+            if (stageSky != null) Instantiate(stageSky, transform.position, Quaternion.identity, transform);
             StartCoroutine(Run());
         }
 

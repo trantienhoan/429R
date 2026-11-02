@@ -11,7 +11,7 @@ namespace Game.EditorTools
     {
         private const string BoongGun = "Assets/Prefabs/Weapon/Boong_Gun.prefab";
         private const string WarningSound = "Assets/Audio/SFX/elon_boong_beep_beep.wav";
-        private const string Smoke = "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Smoke_Blast.prefab";
+        private const string Smoke = "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab";
         // The Boong gun's model; with no such child, nothing shakes.
         private const string ShakePart = "Boong_Bone_Gun_Trigger";
 

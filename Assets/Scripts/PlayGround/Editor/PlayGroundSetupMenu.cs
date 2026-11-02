@@ -29,7 +29,7 @@ namespace Game.EditorTools
         private const string GhostPath = "Assets/Prefabs/Enemies/PLAYGROUND/Ghost_Balloon_{0}.prefab";
         private const string IconPath = "Assets/Data/Cooking/Icons/{0}.png";
         private const string CandyPath = "Assets/Data/Inventory/Items/Candy.asset";
-        private const string SmokePath = "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Smoke_Blast.prefab";
+        private const string SmokePath = "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab";
         private const string Sfx = "Assets/Audio/SFX/";
         private static readonly string[] BossPaths =
         {

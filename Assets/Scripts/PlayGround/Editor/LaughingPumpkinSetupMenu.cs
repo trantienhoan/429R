@@ -124,7 +124,7 @@ namespace Game.PlayGround.Editor
             {
                 AssetDatabase.LoadAssetAtPath<GameObject>(Fx + "Flash/Flash_round_yellow.prefab"),
                 AssetDatabase.LoadAssetAtPath<GameObject>(Fx + "Confetti/Hit_Blast.prefab"),
-                AssetDatabase.LoadAssetAtPath<GameObject>(Fx + "Confetti/Smoke_Blast.prefab"),
+                AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab"),
             });
             so.FindProperty("handBlastSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "pumpkin_explode_1.wav");
             SetArray(so.FindProperty("laughs"), laughs);

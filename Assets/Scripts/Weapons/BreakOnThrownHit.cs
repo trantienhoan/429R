@@ -121,7 +121,8 @@ namespace Game.Weapons
         {
             return other.GetComponentInParent<Game.PlayGround.RunAwayPumpkin>() != null ||
                    other.GetComponentInParent<TouchOnlyDamage>() != null ||
-                   other.GetComponentInParent<Game.PlayGround.LaughingPumpkin>() != null;
+                   other.GetComponentInParent<Game.PlayGround.LaughingPumpkin>() != null ||
+                   other.GetComponentInParent<Game.Enemies.FatPumpkin>() != null;
         }
     }
 }

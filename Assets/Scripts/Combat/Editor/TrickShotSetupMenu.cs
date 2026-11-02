@@ -21,7 +21,7 @@ namespace Game.EditorTools
         private static readonly string[] SplatEffects =
         {
             "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Hit_Blast.prefab",
-            "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Smoke_Blast.prefab",
+            "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab",
         };
         private const string SplatSound = "Assets/Audio/SFX/pumpkin_explode_1.wav";
 

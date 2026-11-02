@@ -5,8 +5,8 @@ using UnityEngine.InputSystem;
 namespace Game.Menus
 {
     /// <summary>
-    /// Health and safety notice shown in front of the player when the game starts, once per launch, before anything
-    /// else: the start menu (Save Slot Menu) waits until it has been closed. After a few seconds of reading time a
+    /// Health and safety notice shown in front of the player when the game starts, once per launch, right after the
+    /// opening (Opening Cutscene): the start menu (Save Slot Menu) waits until it has been closed. After a few seconds of reading time a
     /// trigger (or Enter/Space) closes it, and it fades away. If the player looks away it glides back in front of them.
     /// Tools > 429 Game > Menu > Set Up Health Warning builds it.
     /// </summary>
@@ -35,6 +35,7 @@ namespace Game.Menus
         private float shownAt;
         private bool closing;
         private bool gliding;
+        private bool waitingForOpening;
 
         // The scene's notice, so others can wait for it (IsShowing).
         private static HealthWarning current;
@@ -96,6 +97,18 @@ namespace Game.Menus
             }
 
             shownThisLaunch = true;
+            // The opening comes first (the start menu keeps waiting, as this is still on).
+            if (OpeningCutscene.TryStart())
+            {
+                waitingForOpening = true;
+                panel.gameObject.SetActive(false);
+                return;
+            }
+            Show();
+        }
+
+        private void Show()
+        {
             shownAt = Time.unscaledTime;
             // A punch shatters it once it can be closed (after its reading time): gone at once, the shards take its place.
             PunchToShatter.Add((RectTransform)panel.transform, () => { panel.alpha = 0f; closing = true; },
@@ -110,6 +123,12 @@ namespace Game.Menus
 
         private void Update()
         {
+            if (waitingForOpening)
+            {
+                if (OpeningCutscene.IsPlaying) return;
+                waitingForOpening = false;
+                Show();
+            }
             // Unscaled time: the notice works the same if something pauses the game underneath it.
             float step = fadeTime > 0f ? Time.unscaledDeltaTime / fadeTime : 1f;
             bool ready = Time.unscaledTime - shownAt >= readingTime;

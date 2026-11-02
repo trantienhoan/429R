@@ -22,7 +22,7 @@ namespace Game.EditorTools
         {
             "Assets/Lana Studio/Hyper Casual FX/Prefabs/Flash/Flash_round_yellow.prefab",
             "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Hit_Blast.prefab",
-            "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Smoke_Blast.prefab",
+            "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab",
         };
         internal const string Sound = "Assets/Audio/SFX/explosion-312361.wav";
         // A bottle about to go off in the hand warns with the Boong gun's overheat beep; while shaken, it rattles.

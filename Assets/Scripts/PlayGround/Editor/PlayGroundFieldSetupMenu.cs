@@ -26,7 +26,7 @@ namespace Game.PlayGround.Editor
         private const string PlayGroundPath = "Assets/Prefabs/Bases/Play_Ground_Z.prefab";
         private const string Folder = "Assets/Prefabs/PlayGround/";
         private const string Models = "Assets/Models/PlayGround/";
-        private const string Puff = "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Smoke_Blast.prefab";
+        private const string Puff = "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab";
         private const string PopSound = "Assets/Audio/SFX/bubble_pop_1.wav";
         private const string GrowSound = "Assets/Audio/SFX/whoosh.wav";
 

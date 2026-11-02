@@ -133,6 +133,10 @@ namespace Game.Menus
         [Tooltip("In the Editor only: start this save slot at once, without the menu or the loading screen (0: show the menu).")]
         [Range(0, SaveManager.SlotCount)]
         [SerializeField] private int editorStartSlot;
+#if UNITY_EDITOR
+        /// <summary>It starts a slot at once in the Editor (so the opening doesn't play).</summary>
+        public bool StartsSlotInEditor => editorStartSlot > 0;
+#endif
 
         private enum Step { Waiting, Open, Starting, Done }
 

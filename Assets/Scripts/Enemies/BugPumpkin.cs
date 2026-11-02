@@ -23,7 +23,9 @@ namespace Game.Enemies
         [Tooltip("Sent to the player's PlayerHealth FSM when it hits them square on.")]
         [SerializeField] private string playerHitEvent = "PumpkinBossHit";
         [Tooltip("How close to the player's body it has to come to hit them, in metres.")]
-        [Min(0.05f)] [SerializeField] private float hitRadius = 0.45f;
+        [Min(0.05f)] [SerializeField] private float hitRadius = 0.65f;
+        [Tooltip("How big its pieces are.")]
+        [Min(0.01f)] [SerializeField] private float burstSize = 2f;
         [Tooltip("It bursts by itself after this many seconds, landed or not.")]
         [Min(0.5f)] [SerializeField] private float lifeSeconds = 6f;
         [Tooltip("A hit slows the player's walking to this share of their speed (0.5 = half) ...")]
@@ -107,7 +109,7 @@ namespace Game.Enemies
             if (burst) return;
             burst = true;
             Done?.Invoke(hitPlayer);
-            if (burstInto != null) Instantiate(burstInto, at, transform.rotation, transform.parent);
+            if (burstInto != null) Instantiate(burstInto, at, transform.rotation, transform.parent).transform.localScale *= burstSize;
             if (smoke != null) Instantiate(smoke, at, Quaternion.identity, transform.parent);
             for (int i = 0; i < bugCount && bugs.Length > 0; i++)
             {

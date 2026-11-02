@@ -25,8 +25,10 @@ namespace Game.EditorTools
         private const string ControllerPath = "Assets/Prefabs/Enemies/Pumpkin_Boss_Z_Brain.controller";
         private const string BossPath = "Assets/Prefabs/Enemies/pumpkin_boss_Z.prefab";
         private const string BugPumpkinPath = "Assets/Prefabs/Enemies/Enemies_Smarter/Bug_Pumpkin.prefab";
+        // Corner to corner, in metres.
+        private const float BugPumpkinSize = 1.1f;
         private const string PumpkinModelPath = "Assets/Models/Bedroom_Stuffs/pumpkin_0.fbx";
-        private const string SmokePath = "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Smoke_Blast.prefab";
+        private const string SmokePath = "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab";
         private const string SmallBurstPath = "Assets/Prefabs/Items/Broken_Stuffs/pumpkin_0_drop.prefab";
         private const string BigBurstPath = "Assets/Prefabs/Items/Broken_Stuffs/Pumpkin_BOSS_Drop.prefab";
         // A tree pumpkin's break (Pumpkin_On_Tree makes it): each pumpkin of the boss's body bursts into one when it dies.
@@ -133,10 +135,10 @@ namespace Game.EditorTools
                 var bounds = new Bounds(look.transform.position, Vector3.zero);
                 foreach (var r in look.GetComponentsInChildren<Renderer>()) bounds.Encapsulate(r.bounds);
                 float size = Mathf.Max(0.01f, bounds.size.magnitude);
-                look.transform.localScale *= 0.55f / size;
-                look.transform.localPosition = -bounds.center * (0.55f / size);
+                look.transform.localScale *= BugPumpkinSize / size;
+                look.transform.localPosition = -bounds.center * (BugPumpkinSize / size);
                 var sphere = root.AddComponent<SphereCollider>();
-                sphere.radius = 0.2f;
+                sphere.radius = BugPumpkinSize * 0.36f;
                 var body = root.AddComponent<Rigidbody>();
                 body.mass = 3f;
                 body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
@@ -242,7 +244,8 @@ namespace Game.EditorTools
                 so.FindProperty("pumpkinBreak").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(PumpkinBreakPath);
                 so.FindProperty("smoke").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(SmokePath);
                 SetArray(so.FindProperty("bugs"), BugPaths.Select(p => (Object)AssetDatabase.LoadAssetAtPath<GameObject>(p)).ToArray());
-                SetArray(so.FindProperty("laughs"), new[] { "laughing_pumpkin_1", "laughing_pumpkin_2", "laughing_pumpkin_3", "pumpkin_laugh_1", "pumpkin_laugh_2", "pumpkin_laugh_3", "pumpkin_laugh_4" }
+                // Only its own deep laughs: the others are the small pumpkins'.
+                SetArray(so.FindProperty("laughs"), new[] { "pumpkin_boss_laugh", "pumpkin_boss_laugh_2" }
                     .Select(n => (Object)AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + n + ".wav")).ToArray());
                 so.FindProperty("attackSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "pumpkin_boss_attack.wav");
                 so.FindProperty("hurtSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "ouch_pumpkin_2.wav");

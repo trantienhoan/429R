@@ -29,7 +29,7 @@ namespace Game.EditorTools
             ("-Wood_Barrels_Whack_Pumpkin_7-", "GAME-Pumpkin7", "Bee_Normal", "Bee_Boss_PumpkinButt", "whack_7"),
         };
 
-        private const string SmokePath = "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Smoke_Blast.prefab";
+        private const string SmokePath = "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab";
         private const string BeeBuzzPath = "Assets/Audio/SFX/bee_fly.wav";
 
         /// <summary>

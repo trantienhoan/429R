@@ -85,12 +85,12 @@ namespace HutongGames.PlayMaker.Actions
 				squareDistance = lastDistance*lastDistance;
 			}
 		
-			Vector3 newPosition = destination.Value.transform.position;
+			Vector3 newPosition = Game.PlayerAim.PositionOf(destination.Value);
 			Vector3 deltaPosition = newPosition-lastPosition;
 			if (deltaPosition.sqrMagnitude>squareDistance || forceUpdate)
 			{
 				_agent.SetDestination(newPosition);
-				lastPosition = destination.Value.transform.position;
+				lastPosition = newPosition;
 			}
 
 		}

@@ -27,7 +27,7 @@ namespace Game.PlayGround.Editor
         private const string IconPath = "Assets/Data/Cooking/Icons/{0}.png";
         private const string ChestPath = "Assets/Prefabs/Items/Chest/Treasure_Chest_and_Seed_{0}.prefab";
         private const string GreenSeedPath = "Assets/Prefabs/Items/Chest/The_Seed.prefab";
-        private const string SmokePath = "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Smoke_Blast.prefab";
+        private const string SmokePath = "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab";
         private const string Sfx = "Assets/Audio/SFX/";
         private const float CandyLifetime = 60f;
 

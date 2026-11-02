@@ -748,6 +748,7 @@ namespace Game.Leveling
             if (thing == null) return;
             foreach (var reward in thing.GetComponentsInChildren<ExpWhenBroken>(true)) reward.noReward = true;
             foreach (var enemy in thing.GetComponentsInChildren<EnemyHitDamage>(true)) enemy.noReward = true;
+            foreach (var fat in thing.GetComponentsInChildren<Game.Enemies.FatPumpkin>(true)) fat.noReward = true;
             // Not the player's hit either: no damage number when its health is emptied.
             DamageNumbers.Quiet(thing);
         }

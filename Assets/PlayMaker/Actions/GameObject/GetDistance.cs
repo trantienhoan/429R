@@ -54,7 +54,7 @@ namespace HutongGames.PlayMaker.Actions
 		        return;
 		    }
 					
-			storeResult.Value = Vector3.Distance(go.transform.position, target.Value.transform.position);
+			storeResult.Value = Vector3.Distance(go.transform.position, Game.PlayerAim.PositionOf(target.Value));
 		}
 
 	}

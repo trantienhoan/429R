@@ -24,7 +24,7 @@ namespace Game.EditorTools
         private const float Chance = 1f;
         private const float BossChance = 1f;
 
-        private const string PoofEffect = "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Smoke_Blast.prefab";
+        private const string PoofEffect = "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab";
         private const string BlockEffect = "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Hit_Blast.prefab";
         private const string PoofSound = "Assets/Audio/SFX/bubble_pop_1.wav";
         private const string BlockSound = "Assets/Audio/SFX/metal_object_hit_1.wav";

@@ -46,6 +46,9 @@ namespace Game.Inventory
         private const float ArriveSeconds = 0.25f;
 
         private static CandyHelmet instance;
+        // Which of the spawned things are candies: asking a thing's name makes garbage, and Find Loose runs all game long.
+        private static readonly Dictionary<Transform, bool> knownCandy = new();
+        private const int MostKnown = 4096;
 
         private class Seen
         {
@@ -81,6 +84,7 @@ namespace Game.Inventory
         private static void Hook()
         {
             instance = null;
+            knownCandy.Clear();
             // Player Buffs clears its events when play starts (SubsystemRegistration), before this.
             PlayerBuffs.Given += buff =>
             {
@@ -110,6 +114,39 @@ namespace Game.Inventory
                 if (IsCandy(child.gameObject) && (child.position - near).sqrMagnitude <= radius * radius && Takeable(child.gameObject)) count++;
             }
             return count;
+        }
+
+        /// <summary>
+        /// Fills 'into' with the candies lying about (in nobody's hand, not flying), for something that goes after them
+        /// (the Fat Pumpkin). Cheap enough to run all game long, a few times a second.
+        /// </summary>
+        public static void FindLoose(List<GameObject> into)
+        {
+            into.Clear();
+            var stuff = SpawnedStuff();
+            if (stuff == null) return;
+            if (knownCandy.Count > MostKnown) knownCandy.Clear();
+            for (int i = 0; i < stuff.childCount; i++)
+            {
+                var child = stuff.GetChild(i);
+                if (!knownCandy.TryGetValue(child, out bool isCandy))
+                    knownCandy[child] = isCandy = CandyName.IsMatch(Game.PlayGround.CookingIngredient.BaseName(child.name));
+                if (isCandy && child.gameObject.activeInHierarchy && Lying(child.gameObject)) into.Add(child.gameObject);
+            }
+        }
+
+        /// <summary>
+        /// Takes a candy lying about out of play for something that eats it itself (the Fat Pumpkin): it no longer breaks,
+        /// can't be grabbed or eaten by the player, and bumps into nothing. The taker moves and destroys it. False if the
+        /// candy isn't free to take.
+        /// </summary>
+        public static bool Seize(GameObject candy)
+        {
+            if (candy == null || !Takeable(candy)) return false;
+            TakeOutOfPlay(candy);
+            var damage = FsmOf(candy, DamageFsm);
+            if (damage != null) damage.enabled = false;
+            return true;
         }
 
         private void OnDestroy()
@@ -205,20 +242,7 @@ namespace Game.Inventory
         {
             var damage = FsmOf(candy, DamageFsm);
             if (damage == null) return;
-            // It can't break any more (its Health FSM also breaks it by itself 60 s after it appeared) and it isn't
-            // a thing to grab or bump into while it flies.
-            var health = FsmOf(candy, HealthFsm);
-            if (health != null) health.enabled = false;
-            if (candy.TryGetComponent<XRGrabInteractable>(out var grab)) grab.enabled = false;
-            foreach (var part in candy.GetComponentsInChildren<Collider>())
-            {
-                if (!part.isTrigger) part.enabled = false;
-            }
-            if (candy.TryGetComponent<Rigidbody>(out var body))
-            {
-                body.isKinematic = true;
-                body.interpolation = RigidbodyInterpolation.None;
-            }
+            TakeOutOfPlay(candy);
 
             float distance = Vector3.Distance(candy.transform.position, HeadTop());
             flights.Add(new Flight
@@ -231,6 +255,24 @@ namespace Game.Inventory
                 arc = Mathf.Clamp(0.4f + distance * 0.08f, 0.4f, 2f),
                 spin = Random.onUnitSphere * Random.Range(360f, 720f),
             });
+        }
+
+        // It can't break any more (its Health FSM also breaks it by itself 60 s after it appeared) and it isn't a thing to
+        // grab or bump into while it's carried off.
+        private static void TakeOutOfPlay(GameObject candy)
+        {
+            var health = FsmOf(candy, HealthFsm);
+            if (health != null) health.enabled = false;
+            if (candy.TryGetComponent<XRGrabInteractable>(out var grab)) grab.enabled = false;
+            foreach (var part in candy.GetComponentsInChildren<Collider>())
+            {
+                if (!part.isTrigger) part.enabled = false;
+            }
+            if (candy.TryGetComponent<Rigidbody>(out var body))
+            {
+                body.isKinematic = true;
+                body.interpolation = RigidbodyInterpolation.None;
+            }
         }
 
         // Moves it along; true when it's done with (eaten and shrunk away, or gone).
@@ -285,11 +327,17 @@ namespace Game.Inventory
             return Takeable(candy);
         }
 
-        // Lying about: not in a hand, not flying (kinematic) and not busy being hit or eaten.
-        private static bool Takeable(GameObject candy)
+        // Not in a hand and not flying (kinematic).
+        private static bool Lying(GameObject candy)
         {
             if (candy.TryGetComponent<XRGrabInteractable>(out var grab) && (grab.isSelected || !grab.enabled)) return false;
-            if (candy.TryGetComponent<Rigidbody>(out var body) && body.isKinematic) return false;
+            return !candy.TryGetComponent<Rigidbody>(out var body) || !body.isKinematic;
+        }
+
+        // Lying about: not in a hand, not flying and not busy being hit or eaten.
+        private static bool Takeable(GameObject candy)
+        {
+            if (!Lying(candy)) return false;
             var damage = FsmOf(candy, DamageFsm);
             return damage != null && damage.enabled && damage.ActiveStateName == ListeningState;
         }

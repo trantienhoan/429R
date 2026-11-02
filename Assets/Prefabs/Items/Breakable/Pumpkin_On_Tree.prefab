@@ -238,6 +238,7 @@ GameObject:
   - component: {fileID: 6731259867927847557}
   - component: {fileID: 427083803342577044}
   - component: {fileID: 4579088779525671740}
+  - component: {fileID: 2456636594257766406}
   m_Layer: 0
   m_Name: Pumpkin_On_Tree
   m_TagString: Weapon
@@ -2264,6 +2265,7 @@ MonoBehaviour:
   settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
   toughness: 2
   hitCooldown: 0.3
+  everyHitCounts: 0
   knockBack: 0
   knockBackDistance: 2
   knockBackTime: 0.45
@@ -2283,6 +2285,25 @@ MonoBehaviour:
   bumpShare: 1
   wieldedShare: 1
   settleSeconds: 0
+--- !u!114 &2456636594257766406
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8690403555129543112}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0a66359a3dc2c5428e55a100f90027b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Enemies.TurnsIntoFatPumpkin
+  fatPumpkin: {fileID: 78764556477061545, guid: 42edbfdd15e84444893facf0baaea9bc,
+    type: 3}
+  moreThan: 4
+  reach: 2
+  seconds: 3
+  maxAtOnce: 2
+  restSeconds: 10
 --- !u!1001 &2754267303966219221
 PrefabInstance:
   m_ObjectHideFlags: 0

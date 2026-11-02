@@ -27,8 +27,8 @@ Transform:
   m_GameObject: {fileID: 3485908023505446598}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.002256121, y: -0.139781, z: -0.0049944157}
-  m_LocalScale: {x: 0.5968374, y: 0.5968374, z: 0.5968374}
+  m_LocalPosition: {x: 0.004512242, y: -0.279562, z: -0.0099888314}
+  m_LocalScale: {x: 1.1936748, y: 1.1936748, z: 1.1936748}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 904361753731170944}
@@ -144,7 +144,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.2
+  m_Radius: 0.4
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!54 &2062215460138613657
 Rigidbody:
@@ -190,5 +190,6 @@ MonoBehaviour:
     type: 3}
   smoke: {fileID: 431296081563789977, guid: 7d85674d137626445accce4cef7fe159, type: 3}
   playerHitEvent: PumpkinBossHit
-  hitRadius: 0.45
+  hitRadius: 0.65
+  burstSize: 2
   lifeSeconds: 6

@@ -9,7 +9,7 @@ namespace Game.EditorTools
     public static class GhostBalloonSetupMenu
     {
         private const string BalloonPath = "Assets/Prefabs/Enemies/PLAYGROUND/Ghost_Balloon_{0}.prefab";
-        private const string PopEffectPath = "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Smoke_Blast.prefab";
+        private const string PopEffectPath = "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab";
         private const string PopSoundPath = "Assets/Audio/SFX/bubble_pop_1.wav";
         private const string WakeSoundPath = "Assets/Audio/SFX/creepy_laugh_1.wav";
         private const string SpiderPath = "Assets/Prefabs/Enemies/Spider_Small.prefab";

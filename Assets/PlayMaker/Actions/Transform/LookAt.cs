@@ -107,7 +107,7 @@ namespace HutongGames.PlayMaker.Actions
 
             if (goTarget != null)
             {
-                lookAtPos = !targetPosition.IsNone ? goTarget.transform.TransformPoint(targetPosition.Value) : goTarget.transform.position;
+                lookAtPos = !targetPosition.IsNone ? goTarget.transform.TransformPoint(targetPosition.Value) : Game.PlayerAim.PositionOf(goTarget);
             }
             else
             {

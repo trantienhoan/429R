@@ -161,6 +161,11 @@ namespace Game.Enemies
         [Min(0)] [SerializeField] private int bugsPerThrownPumpkin = 1;
         [Tooltip("Seconds from one pumpkin leaving its hand to the next throw starting.")]
         [Min(0.05f)] [SerializeField] private float throwGap = 0.3f;
+        [Tooltip("How far ahead of a moving player it throws: 0 = at where they stand, 1 = where they'll be if they keep going. " +
+                 "They dodge it by changing direction.")]
+        [Range(0f, 1f)] [SerializeField] private float throwLead = 0.85f;
+        [Tooltip("It never aims further ahead of them than this, in metres.")]
+        [Min(0f)] [SerializeField] private float throwLeadMost = 4f;
         [Tooltip("The Animator state for a left-hand throw. Without such a state its left punch throws instead.")]
         [SerializeField] private string leftThrowState = "throw_L";
         [Tooltip("After this many punches, a player who got out of its reach gets pumpkins thrown at them.")]
@@ -309,6 +314,10 @@ namespace Game.Enemies
         private bool throwLeftNext;
         private Transform throwHand;
         private float throwRelease;
+        // How the player is moving on the ground, to throw ahead of them.
+        private Vector3 playerMove;
+        private Vector3 playerWasAt;
+        private bool playerSeen;
         private int pumpkinsOut;
         private bool comboHit;
         private bool waitingForPumpkins;
@@ -340,6 +349,9 @@ namespace Game.Enemies
         private float aimPitch;
         // The fist flies out at this many seconds into a punch clip; it's out until about Punch Hit Until.
         private const float PunchRelease = 0.76f, PunchHitUntil = 1.4f;
+        // Faster than this, in metres a second, the player teleported. Their movement is smoothed over this many seconds.
+        private const float TeleportSpeed = 15f;
+        private const float PlayerMoveSmooth = 0.2f;
         private string playing = "";
         private XROrigin player;
 
@@ -444,6 +456,7 @@ namespace Game.Enemies
         {
             KeepLaughing();
             if (!FindPlayer()) return;
+            TrackPlayerMove();
             TrackHealth();
             UpdateModel();
             switch (phase)
@@ -1033,13 +1046,30 @@ namespace Game.Enemies
             if (bug.TryGetComponent(out SpiderBrain brain)) brain.ComeAtOnce();
         }
 
-        // Thrown from the hand at where the player stands now: they dodge it by moving.
+        private void TrackPlayerMove()
+        {
+            var floor = PlayerFloor();
+            if (playerSeen && Time.deltaTime > 0f)
+            {
+                var moved = floor - playerWasAt;
+                moved.y = 0f;
+                moved /= Time.deltaTime;
+                // A teleport isn't walking: it starts again from standing still.
+                playerMove = moved.sqrMagnitude > TeleportSpeed * TeleportSpeed
+                    ? Vector3.zero
+                    : Vector3.Lerp(playerMove, moved, 1f - Mathf.Exp(-Time.deltaTime / PlayerMoveSmooth));
+            }
+            playerWasAt = floor;
+            playerSeen = true;
+        }
+
+        // Thrown from the hand at where the player will be if they keep moving as they are: they dodge it by changing direction.
         private void ThrowBugPumpkin(Transform hand)
         {
             if (bugPumpkin == null) return;
             var from = hand != null ? hand.position : transform.position + Vector3.up * 3f;
-            var to = PlayerFloor() + Vector3.up * 0.3f;
             const float flight = 1.0f;
+            var to = PlayerFloor() + Vector3.ClampMagnitude(playerMove * (flight * throwLead), throwLeadMost) + Vector3.up * 0.3f;
             var velocity = (to - from) / flight - 0.5f * Physics.gravity * flight;
             var thrown = Instantiate(bugPumpkin, from, Random.rotation, transform.parent);
             if (!thrown.TryGetComponent(out BugPumpkin pumpkin)) return;

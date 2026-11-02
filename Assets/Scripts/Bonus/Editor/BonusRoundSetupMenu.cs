@@ -20,7 +20,8 @@ namespace Game.EditorTools
     ///   the 5 pumpkins inside the giant. The Bonus Round sets each one's size (the giant is 1.5 times the start pumpkin,
     ///   each next one 7% of that smaller), health (120, then tougher: +20% of it each), jiggle (less each), candies, EXP
     ///   and laugh. (Nesting_Pumpkin_3 ... _5, Bonus_Area and Bonus_Chest_Pumpkin from the first versions aren't used.)
-    /// - Bonus_Round (Bases): the Bonus Round (30 s, +6 s per pumpkin, the Candy Helmet when the giant breaks).
+    /// - Bonus_Round (Bases): the Bonus Round (30 s, +3 s per pumpkin, the Candy Helmet when the giant breaks), with
+    ///   Bonus_Stage_Sky (Build Stage Sky).
     /// - The bonus stages: --Bedroom--MiniGame-- (made by hand: Boss_Area and Treasure_Chest_PUMPKIN_EXTRA, whose opening
     ///   makes the giant) and --Playroom--MiniGame-- (a copy of it, made here). Tagged Untagged (EditorOnly isn't in builds).
     /// - GAMESTAGES (rooms: Storage room = EnemyManager 0, Bedroom = 1, Livingroom = 2, Playroom = 3): the bonus is only
@@ -40,6 +41,19 @@ namespace Game.EditorTools
         private const string NestingPumpkinPath = "Assets/Prefabs/Items/Breakable/Nesting_Pumpkin_1.prefab";
         private const string SmallerPumpkinPath = "Assets/Prefabs/Items/Breakable/Nesting_Pumpkin_{0}.prefab";
         private const string RoundPath = "Assets/Prefabs/Bases/Bonus_Round.prefab";
+        private const string SkyPath = "Assets/Prefabs/Bases/Bonus_Stage_Sky.prefab";
+        // The stars and dust it's made from (see Picture Puzzle Setup Menu).
+        private const string SpacePath = "Assets/Prefabs/Items/Deco/Picture_Puzzle_Space.prefab";
+        private const string NoFogShader = "429/Particles/Unlit No Fog";
+        private const string SoftTexture = "Assets/Lana Studio/Hyper Casual FX/Textures/Circle03.png";
+        private const string StarTexture = "Assets/Lana Studio/Hyper Casual FX/Textures/Flare03.png";
+        private const string RingTexture = "Assets/Lana Studio/Hyper Casual FX/Textures/Circle06.png";
+        // The share of its picture's width that Ring Texture's ring takes.
+        private const float RingTextureShare = 0.74f;
+        // How far from the field's middle the sparkles rise and the ring lies, in metres (round its corner flames).
+        private const float SparkleRing = 6.5f;
+        private const float CloudStrength = 0.3f;
+        private const float RingStrength = 0.55f;
         private const string BedroomStageName = "--Bedroom--MiniGame--";
         private const string PlayroomStageName = "--Playroom--MiniGame--";
         // Its name in the first version (the Playroom is the Livingroom base's second room).
@@ -49,7 +63,7 @@ namespace Game.EditorTools
         {
             "Assets/Lana Studio/Hyper Casual FX/Prefabs/Flash/Flash_round_yellow.prefab",
             "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Hit_Blast.prefab",
-            "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Smoke_Blast.prefab",
+            "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab",
         };
 
         // The giant and the one every smaller pumpkin is made from: size (scale), health, candies, EXP, laugh pitch, drops
@@ -65,7 +79,7 @@ namespace Game.EditorTools
         private const string CandyPath = "Assets/Prefabs/Items/Breakable/Candy_{0}.prefab";
         private const string TickPath = "Assets/Audio/Kenney Audio/kenney_interface-sounds/Audio/tick_002.ogg";
         private const string FontPath = "Assets/Fonts/roboto/Roboto-Bold SDF.asset";
-        private const string PuffPath = "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Smoke_Blast.prefab";
+        private const string PuffPath = "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab";
 
         [MenuItem("Tools/429 Game/Bonus/Set Up Nesting Pumpkin Bonus")]
         private static void SetUpMenu()
@@ -76,6 +90,23 @@ namespace Game.EditorTools
 
         [MenuItem("Tools/429 Game/Bonus/Set Up Nesting Pumpkin Bonus", true)]
         private static bool CanSetUp() => !EditorApplication.isPlaying;
+
+        /// <summary>
+        /// Tools > 429 Game > Bonus > Build Stage Sky: makes Bonus_Stage_Sky anew and updates Bonus_Round (its slot, and the
+        /// tougher numbers), without touching the scene.
+        /// </summary>
+        [MenuItem("Tools/429 Game/Bonus/Build Stage Sky")]
+        public static void BuildStageSky()
+        {
+            var stage = PrefabStageUtility.GetCurrentPrefabStage();
+            if (stage != null && stage.assetPath == RoundPath)
+            {
+                Debug.LogError($"[Bonus] Close {RoundPath} in Prefab Mode first. Nothing changed.");
+                return;
+            }
+            MakeStageSky();
+            Debug.Log("[Bonus] " + MakeRound());
+        }
 
         /// <summary>Does the whole set-up; returns what it did.</summary>
         public static List<string> SetUp()
@@ -359,6 +390,10 @@ namespace Game.EditorTools
                 // Whole-number damage (user, 2026-10-27): a punch does 1-2 instead of 1-5, so half the health.
                 if (Changed(so, "giantHealth", 120f, 60f)) filled.Add("giant health 60");
                 if (Changed(so, "bonusSeconds", 5f, 6f)) filled.Add("+6 s per pumpkin");
+                // Too easy (user, 2026-11-02; 9/9 in 47-57 s of 78 s on 2026-11-01): less time, more health.
+                if (Changed(so, "bonusSeconds", 6f, 3f)) filled.Add("+3 s per pumpkin");
+                if (Changed(so, "giantHealth", 60f, 70f)) filled.Add("giant health 70");
+                Fill(so, "stageSky", AssetDatabase.LoadAssetAtPath<GameObject>(SkyPath), filled);
                 var list = so.FindProperty("candies");
                 if (list.arraySize == 0)
                 {
@@ -376,6 +411,162 @@ namespace Game.EditorTools
             }
             finally { PrefabUtility.UnloadPrefabContents(root); }
             return (made ? "Made Bonus_Round" : "Bonus_Round") + (filled.Count > 0 ? ": " + string.Join(", ", filled) : ": already set up");
+        }
+
+        // ---------- Bonus_Stage_Sky ----------
+
+        // The picture puzzle's space (its stars, clouds and dust, round the player's head in the dark) made for out in the
+        // open: a dome over the field instead of a ball, seen from far off (so wider and bigger), there from the first
+        // moment, stopping with the game, free of the fog and drawn in the usual order (the puzzle's are drawn after
+        // everything, over its dark backdrop). Plus the sparkles off the puzzle's frame, rising round the field.
+        private static GameObject MakeStageSky()
+        {
+            var glow = SkyMaterial("Bonus Sky Glow", SoftTexture);
+            var star = SkyMaterial("Bonus Sky Star", StarTexture);
+            var ring = SkyMaterial("Bonus Sky Ring", RingTexture);
+            var root = PrefabUtility.LoadPrefabContents(SpacePath);
+            try
+            {
+                root.name = "Bonus_Stage_Sky";
+                foreach (var ps in root.GetComponentsInChildren<ParticleSystem>(true))
+                {
+                    var main = ps.main;
+                    main.useUnscaledTime = false;
+                    main.prewarm = true;
+                    var emission = ps.emission;
+                    var renderer = ps.GetComponent<ParticleSystemRenderer>();
+                    renderer.sharedMaterial = ps.name == "Bright Stars" ? star : glow;
+                    switch (ps.name)
+                    {
+                        case "Stars":
+                            main.maxParticles = 220;
+                            main.startSize = new ParticleSystem.MinMaxCurve(0.12f, 0.26f);
+                            emission.rateOverTime = 32f;
+                            Dome(ps, 10f);
+                            break;
+                        case "Bright Stars":
+                            main.maxParticles = 26;
+                            main.startSize = new ParticleSystem.MinMaxCurve(0.7f, 1.4f);
+                            emission.rateOverTime = 12f;
+                            Dome(ps, 8.5f);
+                            break;
+                        case "Clouds":
+                            main.maxParticles = 10;
+                            main.startSize = new ParticleSystem.MinMaxCurve(9f, 15f);
+                            main.startColor = new ParticleSystem.MinMaxGradient(new Color(0.55f, 0.2f, 0.85f), new Color(0.15f, 0.5f, 0.75f));
+                            emission.rateOverTime = 0.9f;
+                            Dome(ps, 13f);
+                            FadeInOut(ps, Color.white, Color.white, CloudStrength);
+                            break;
+                        case "Dust":
+                            main.maxParticles = 100;
+                            main.startSize = new ParticleSystem.MinMaxCurve(0.035f, 0.075f);
+                            emission.rateOverTime = 18f;
+                            var shape = ps.shape;
+                            shape.radius = 6f;
+                            ps.transform.localPosition = Vector3.up * 1.5f;
+                            break;
+                    }
+                }
+                AddRisingSparkles(root, glow);
+                AddFloorRing(root, ring);
+                return PrefabUtility.SaveAsPrefabAsset(root, SkyPath);
+            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
+        }
+
+        // Particles on a dome over the floor (the half of a ball under it would never show).
+        private static void Dome(ParticleSystem ps, float radius)
+        {
+            var shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Hemisphere;
+            shape.radius = radius;
+            shape.radiusThickness = 0f;
+            shape.rotation = new Vector3(-90f, 0f, 0f);
+        }
+
+        // Gold sparks rising off a ring round the field (the puzzle frame's Sparkles, as big as the field).
+        private static void AddRisingSparkles(GameObject root, Material material)
+        {
+            var go = new GameObject("Rising Sparkles");
+            go.transform.SetParent(root.transform, false);
+            var ps = go.AddComponent<ParticleSystem>();
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main = ps.main;
+            main.loop = true;
+            main.prewarm = true;
+            main.maxParticles = 170;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.scalingMode = ParticleSystemScalingMode.Shape;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(2.5f, 4.5f);
+            main.startSpeed = 0f;
+            main.startSize = new ParticleSystem.MinMaxCurve(0.09f, 0.2f);
+            var emission = ps.emission;
+            emission.rateOverTime = 46f;
+            var shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Circle;
+            shape.radius = SparkleRing;
+            shape.radiusThickness = 0.08f;
+            shape.rotation = new Vector3(-90f, 0f, 0f);
+            var velocity = ps.velocityOverLifetime;
+            velocity.enabled = true;
+            velocity.space = ParticleSystemSimulationSpace.World;
+            velocity.x = new ParticleSystem.MinMaxCurve(-0.08f, 0.08f);
+            velocity.y = new ParticleSystem.MinMaxCurve(0.3f, 0.9f);
+            velocity.z = new ParticleSystem.MinMaxCurve(-0.08f, 0.08f);
+            FadeInOut(ps, new Color(1f, 0.92f, 0.6f), new Color(1f, 0.55f, 0.15f), 1f);
+            var renderer = go.GetComponent<ParticleSystemRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+        }
+
+        // A glowing purple ring on the floor where the sparks rise, like the start arena's: the field's edge.
+        private static void AddFloorRing(GameObject root, Material material)
+        {
+            var go = new GameObject("Floor Ring");
+            go.transform.SetParent(root.transform, false);
+            go.transform.localPosition = Vector3.up * 0.04f;
+            var ps = go.AddComponent<ParticleSystem>();
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main = ps.main;
+            main.loop = true;
+            main.prewarm = true;
+            main.maxParticles = 3;
+            main.startLifetime = 8f;
+            main.startSpeed = 0f;
+            main.startSize = SparkleRing * 2f / RingTextureShare;
+            main.startColor = new ParticleSystem.MinMaxGradient(new Color(0.62f, 0.2f, 1f), new Color(0.38f, 0.22f, 0.95f));
+            var emission = ps.emission;
+            emission.rateOverTime = 0.3f;
+            var shape = ps.shape;
+            shape.enabled = false;
+            FadeInOut(ps, Color.white, Color.white, RingStrength);
+            var renderer = go.GetComponent<ParticleSystemRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.renderMode = ParticleSystemRenderMode.HorizontalBillboard;
+            // It's far wider than the view when the player stands on it: it mustn't shrink to fit the screen.
+            renderer.maxParticleSize = 100f;
+        }
+
+        private static void FadeInOut(ParticleSystem ps, Color from, Color to, float strength)
+        {
+            var colour = ps.colorOverLifetime;
+            colour.enabled = true;
+            var fade = new Gradient();
+            fade.SetKeys(
+                new[] { new GradientColorKey(from, 0f), new GradientColorKey(to, 1f) },
+                new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(strength, 0.3f), new GradientAlphaKey(strength * 0.8f, 0.7f), new GradientAlphaKey(0f, 1f) });
+            colour.color = fade;
+        }
+
+        // An additive particle material without fog: the sky lies past where the fog starts.
+        private static Material SkyMaterial(string name, string texture)
+        {
+            var material = DangerFlameSetupMenu.MakeMaterial(name, texture, true);
+            var noFog = Shader.Find(NoFogShader);
+            if (noFog != null) material.shader = noFog;
+            EditorUtility.SetDirty(material);
+            return material;
         }
 
         // A number still at the old value gets the new one; one changed by hand is kept.

@@ -28,7 +28,7 @@ namespace Game.EditorTools
         private const string FireState = "Fire";
 
         private const string FlamePrefab = "Assets/XRI_Examples/Props/Prefabs/CandleFlame.prefab";
-        private const string SmokePrefab = "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Smoke_Blast.prefab";
+        private const string SmokePrefab = "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab";
         // A gloopy bubbling loop (4.7 s), and a whoosh when the bowl catches.
         private const string BubbleSound = "Assets/Audio/Kenney Audio/kenney_sci-fi-sounds/Audio/slime_001.ogg";
         private const string IgniteSound = "Assets/Audio/SFX/whoosh.wav";

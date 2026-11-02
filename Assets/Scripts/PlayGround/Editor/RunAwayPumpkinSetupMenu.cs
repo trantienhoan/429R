@@ -36,7 +36,7 @@ namespace Game.PlayGround.Editor
         {
             "Assets/Lana Studio/Hyper Casual FX/Prefabs/Flash/Flash_round_yellow.prefab",
             "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Hit_Blast.prefab",
-            "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Smoke_Blast.prefab",
+            "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab",
         };
         private static readonly string[] BoomSounds = { "Assets/Audio/SFX/pumpkin_explode_1.wav", "Assets/Audio/SFX/pumpkin_explode_2.wav" };
         private static readonly string[] FlipFlops = { "Flip_Flop_L", "Flip_Flop_R", "Flip_Flop2_L", "Flip_Flop2_R" };

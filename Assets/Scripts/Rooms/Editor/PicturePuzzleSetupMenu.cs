@@ -625,7 +625,7 @@ namespace Game.EditorTools
                 for (int n = 0; n < candyList.Count; n++) candies.GetArrayElementAtIndex(n).objectReferenceValue = candyList[n];
                 so.FindProperty("bugPrefab").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(BugPath);
                 var effects = so.FindProperty("breakEffects");
-                var effectPaths = new[] { Lana + "Hit_Blast_BLack.prefab", Lana + "Smoke_Blast.prefab" };
+                var effectPaths = new[] { Lana + "Hit_Blast_BLack.prefab", "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab" };
                 effects.arraySize = effectPaths.Length;
                 for (int n = 0; n < effectPaths.Length; n++)
                     effects.GetArrayElementAtIndex(n).objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(effectPaths[n]);

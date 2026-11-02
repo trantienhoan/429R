@@ -99,14 +99,14 @@ namespace Game.EditorTools
                 var so = new SerializedObject(brain);
                 so.FindProperty("model").objectReferenceValue = pivot;
                 so.FindProperty("radius").floatValue = ModelRadius;
-                SetList(so.FindProperty("breakOutEffects"), Lana + "Confetti/Hit_Blast.prefab", Lana + "Confetti/Smoke_Blast.prefab");
+                SetList(so.FindProperty("breakOutEffects"), Lana + "Confetti/Hit_Blast.prefab", "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab");
                 so.FindProperty("breakOutSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "pumpkin_explode_1.wav");
                 SetList(so.FindProperty("wakeSounds"), Sfx + "laughing_pumpkin_1.wav", Sfx + "laughing_pumpkin_2.wav", Sfx + "laughing_pumpkin_3.wav");
                 // The user's whistle (2026-10-25): it ends as the ball sets off.
                 so.FindProperty("rollWarning").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "choo_choo.wav");
                 so.FindProperty("rollSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "giant_ball_rolling.wav");
                 so.FindProperty("trailPuff").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Enemies/Boss_FX/Boss_Scrape_Dust.prefab");
-                SetList(so.FindProperty("blastEffects"), Lana + "Flash/Flash_round_yellow.prefab", Lana + "Confetti/Hit_Blast.prefab", Lana + "Confetti/Smoke_Blast.prefab");
+                SetList(so.FindProperty("blastEffects"), Lana + "Flash/Flash_round_yellow.prefab", Lana + "Confetti/Hit_Blast.prefab", "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab");
                 so.FindProperty("blastSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "explosion-312361.wav");
                 so.ApplyModifiedPropertiesWithoutUndo();
                 return PrefabUtility.SaveAsPrefabAsset(root, BowlerPath);
@@ -135,7 +135,7 @@ namespace Game.EditorTools
             }
         }
 
-        private static int AgentType(string agentName)
+        internal static int AgentType(string agentName)
         {
             for (int i = 0; i < NavMesh.GetSettingsCount(); i++)
             {
@@ -146,7 +146,7 @@ namespace Game.EditorTools
             return 0;
         }
 
-        private static void SetList(SerializedProperty list, params string[] paths)
+        internal static void SetList(SerializedProperty list, params string[] paths)
         {
             list.arraySize = paths.Length;
             for (int i = 0; i < paths.Length; i++)
