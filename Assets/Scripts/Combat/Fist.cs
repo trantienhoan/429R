@@ -143,7 +143,8 @@ namespace Game.Combat
         [Min(0.5f)]
         [SerializeField] private float flySize = 1.3f;
         [Tooltip("The biggest a flying jab gets compared with the fist (at Fist Scale), however much Fist Size (with the " +
-                 "Green Boong's on top), so it never fills the view. Swings and uppercuts are Big Move Size times this.")]
+                 "Green Boong's on top), so it never fills the view. Swings and uppercuts are Big Move Size times this; a " +
+                 "swollen hot hand's (Hot Hands: Swollen Hand) swell for a while on top of it.")]
         [Min(0.5f)]
         [SerializeField] private float maxFlySize = 4f;
         [Tooltip("A flying swing and a flying uppercut are this many times as big as a flying jab.")]
@@ -824,13 +825,15 @@ namespace Game.Combat
 
         // The Elon Boong buff, and the Explosive Fist bonus stat: a punch (the fist's own or a flying one) that hits anything
         // explodes once more where it hit, a small blast that hurts and pushes what's around it but never the player. Each
-        // Explosive Fist point is one Boong Blast Damage (the buff alone: one). Once per Boong Blast Every per hand, as a hit
-        // can be reported several times in one step. True if it went off.
+        // Explosive Fist point is one Boong Blast Damage (the buff alone: one; its leftover: one, for some punches). Once per
+        // Boong Blast Every per hand, as a hit can be reported several times in one step (so the leftover rolls once a
+        // hit). True if it went off.
         private bool BoongBlast(Collision collision, Rigidbody hitter)
         {
-            int power = Mathf.Max(Game.Leveling.PlayerBuffs.ExplodingPunches ? 1 : 0, Game.Leveling.PlayerLevel.ExplosiveFist);
-            if (power <= 0 || Time.time < nextBoongBlast) return false;
+            if (Time.time < nextBoongBlast) return false;
             nextBoongBlast = Time.time + boongBlastEvery;
+            int power = Mathf.Max(Game.Leveling.PlayerBuffs.PunchExplodes() ? 1 : 0, Game.Leveling.PlayerLevel.ExplosiveFist);
+            if (power <= 0) return false;
             var at = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
             Game.Weapons.Blast.Explode(at, boongBlastRadius, boongBlastDamage * power, boongBlastPush, hitter, boongEffects,
                 boongBlastSound, boongBlastVolume, null, false, boongBlastEffectSize);
@@ -898,10 +901,10 @@ namespace Game.Combat
         }
 
         // The hand swells into a big fist while it's closed, and back after. Fist Size makes it a little bigger (up to
-        // Max Hand Growth); the flying punches grow much more.
+        // Max Hand Growth); the flying punches grow much more. A hot hand with Swollen Hand swells more on top (Hot Hands).
         private void Grow()
         {
-            float target = closed ? fistScale + Mathf.Min(Game.Leveling.PlayerLevel.FistSizeBonus, maxHandGrowth) : 1f;
+            float target = closed ? (fistScale + Mathf.Min(Game.Leveling.PlayerLevel.FistSizeBonus, maxHandGrowth)) * HotHands.SizeOf(this) : 1f;
             if (handModel == null || grown == target) return;
             float rate = growSeconds > 0f ? Mathf.Max(fistScale - 1f, 1f) / growSeconds : float.MaxValue;
             grown = Mathf.MoveTowards(grown, target, rate * Time.deltaTime);
@@ -1148,10 +1151,10 @@ namespace Game.Combat
         private float LandedPower(Move move) => move == Move.Jab ? jabPower : MovePower(move);
 
         // How big a flying punch is, compared with the fist at Fist Scale: Fly Size, bigger with each Fist Size point (up
-        // to Max Fly Size); a swing and an uppercut bigger than a jab.
+        // to Max Fly Size); a swing and an uppercut bigger than a jab; a swollen hot hand's bigger still (Hot Hands).
         private float FlySize(Move move)
         {
-            float size = Mathf.Min(flySize * (1f + Game.Leveling.PlayerLevel.PunchSizeBonus), maxFlySize);
+            float size = Mathf.Min(flySize * (1f + Game.Leveling.PlayerLevel.PunchSizeBonus), maxFlySize) * HotHands.SizeOf(this);
             return move == Move.Jab ? size : size * bigMoveSize;
         }
 

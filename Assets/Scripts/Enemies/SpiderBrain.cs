@@ -155,12 +155,20 @@ namespace Game.Enemies
                      "(at Hit Until); swatted off before that, it doesn't shove.")]
             [Min(0f)]
             public float pushPower = 1f;
+            [Tooltip("How much farther along the floor (not higher) this attack's shove throws the player, on top of Push " +
+                     "Power: 1.75 = 75% farther (user, 2026-11-02: the mini bosses' jump attacks push further). 0 or 1 = " +
+                     "as Push Power says.")]
+            [Min(0f)]
+            public float pushFarther = 1f;
             [Tooltip("For fliers (Flies): Always, only while Flying, or only once Grounded (wings lost). A Flying attack " +
                      "is still used on the ground while no Grounded attack has its animation yet.")]
             public When usedWhen = When.Always;
 
             /// <summary>Push Power as used: 0 (attacks saved before it existed) counts as 1.</summary>
             public float PushPower => pushPower > 0f ? pushPower : 1f;
+
+            /// <summary>Push Farther as used: 0 (attacks saved before it existed) counts as 1.</summary>
+            public float PushFarther => pushFarther > 0f ? pushFarther : 1f;
         }
 
         /// <summary>When a flier uses an attack.</summary>
@@ -2243,8 +2251,9 @@ namespace Game.Enemies
             else SendToPlayer(BiteEvent);
             if (move.slowSeconds > 0f) Game.Locomotion.PlayerSlow.Apply(move.slowPlayerTo, move.slowSeconds);
             if (landSound && move.landSound != null) PlayOne(move.landSound, true);
-            // The size's push, times this attack's Push Power (a jump attack shoves harder).
-            float height = kind.launchHeight * move.PushPower, distance = kind.launchDistance * move.PushPower;
+            // The size's push, times this attack's Push Power (a jump attack shoves harder), and the distance times Push
+            // Farther.
+            float height = kind.launchHeight * move.PushPower, distance = kind.launchDistance * move.PushPower * move.PushFarther;
             if (shove && (height > 0f || distance > 0f))
             {
                 if (move.leapToFace) pendingPush = new Vector2(height, distance);

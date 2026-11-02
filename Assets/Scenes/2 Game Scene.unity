@@ -18808,6 +18808,11 @@ MonoBehaviour:
 
 
     Every flying punch throws 3.'
+  swollenTitle: NEW POWER!
+  swollenText: 'SWOLLEN HAND
+
+
+    Red-hot fists swell bigger.'
   throwsTitle: NEW POWER!
   throwsText: 'EXPLODING THROWS
 
@@ -51281,6 +51286,7 @@ MonoBehaviour:
   swingAtFistSize: 3
   uppercutAtFistSize: 3
   triplePunchAtFistSize: 10
+  swollenHandAtFistSize: 6
   crackShare: 0.3
   crackSound: {fileID: 8300000, guid: 13f91cb6868675c488381166c9aab1f9, type: 3}
   crackVolume: 0.7
@@ -214835,7 +214841,7 @@ GameObject:
   - component: {fileID: 1885891129}
   - component: {fileID: 1885891130}
   m_Layer: 0
-  m_Name: Picture_Hang_Pos_2
+  m_Name: Picture_Hang3_Pos_2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -214889,22 +214895,23 @@ MonoBehaviour:
       transitions: []
       actionData:
         actionNames:
+        - HutongGames.PlayMaker.Actions.ArrayGetRandom
         - HutongGames.PlayMaker.Actions.CreateObject
         customNames:
         - 
-        actionEnabled: 01
-        actionIsOpen: 01
-        actionStartIndex: 00000000
-        actionHashCodes: 60532301
+        - 
+        actionEnabled: 0101
+        actionIsOpen: 0101
+        actionStartIndex: 0000000005000000
+        actionHashCodes: 5978870060532301
         unityObjectParams: []
         fsmGameObjectParams:
-        - useVariable: 0
-          name: 
+        - useVariable: 1
+          name: randomPic
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {fileID: 2390965543976842063, guid: 51b25d8a9754fe843aff03f95a38e540,
-            type: 3}
+          value: {fileID: 0}
         - useVariable: 1
           name: CurrentlySpawnedStuffs
           tooltip: 
@@ -214932,12 +214939,63 @@ MonoBehaviour:
         layoutOptionParams: []
         fsmStringParams: []
         fsmObjectParams: []
-        fsmVarParams: []
-        fsmArrayParams: []
+        fsmVarParams:
+        - variableName: randomPic
+          objectType: UnityEngine.GameObject
+          useVariable: 1
+          type: 3
+          floatValue: 0
+          intValue: 0
+          boolValue: 0
+          stringValue: 
+          vector4Value: {x: 0, y: 0, z: 0, w: 0}
+          objectReference: {fileID: 0}
+          arrayValue:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            type: -1
+            objectTypeName: 
+            floatValues: []
+            intValues: 
+            boolValues: 
+            stringValues: []
+            vector4Values: []
+            objectReferences: []
+        fsmArrayParams:
+        - useVariable: 1
+          name: Picture_Array
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          type: 3
+          objectTypeName: UnityEngine.Object
+          floatValues: []
+          intValues: 
+          boolValues: 
+          stringValues: []
+          vector4Values: []
+          objectReferences:
+          - {fileID: 2390965543976842063, guid: d3f3ace683d85ff4e8e47e4adb67f5fa, type: 3}
+          - {fileID: 2390965543976842063, guid: 2b176d089b417b1499eab1e5ca5dd6bd, type: 3}
         fsmEnumParams: []
         fsmFloatParams: []
-        fsmIntParams: []
-        fsmBoolParams: []
+        fsmIntParams:
+        - useVariable: 1
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
+        fsmBoolParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 0
         fsmVector2Params: []
         fsmVector3Params:
         - useVariable: 1
@@ -214956,21 +215014,26 @@ MonoBehaviour:
         fsmRectParams: []
         fsmQuaternionParams: []
         stringParams: []
-        byteData: 
+        byteData: 00
         arrayParamSizes: 
         arrayParamTypes: []
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 1300000013000000130000001c0000001c00000013000000
+        paramDataType: 29000000270000001000000011000000010000001300000013000000130000001c0000001c00000013000000
         paramName:
+        - array
+        - storeValue
+        - index
+        - noRepeat
+        - everyFrame
         - gameObject
         - parent
         - spawnPoint
         - position
         - rotation
         - storeObject
-        paramDataPos: 000000000100000002000000000000000100000003000000
-        paramByteDataSize: 000000000000000000000000000000000000000000000000
+        paramDataPos: 0000000000000000000000000000000000000000000000000100000002000000000000000100000003000000
+        paramByteDataSize: 0000000000000000000000000000000001000000000000000000000000000000000000000000000000000000
     events: []
     globalTransitions: []
     variables:
@@ -214983,15 +215046,36 @@ MonoBehaviour:
       colorVariables: []
       rectVariables: []
       quaternionVariables: []
-      gameObjectVariables: []
+      gameObjectVariables:
+      - useVariable: 1
+        name: randomPic
+        tooltip: 
+        showInInspector: 0
+        networkSync: 0
+        value: {fileID: 0}
       objectVariables: []
       materialVariables: []
       textureVariables: []
-      arrayVariables: []
+      arrayVariables:
+      - useVariable: 1
+        name: Picture_Array
+        tooltip: 
+        showInInspector: 0
+        networkSync: 0
+        type: 3
+        objectTypeName: UnityEngine.Object
+        floatValues: []
+        intValues: 
+        boolValues: 
+        stringValues: []
+        vector4Values: []
+        objectReferences:
+        - {fileID: 2390965543976842063, guid: 51b25d8a9754fe843aff03f95a38e540, type: 3}
+        - {fileID: 2390965543976842063, guid: cf335a2473fa2a84ba199136f53092d4, type: 3}
       enumVariables: []
       categories:
       - 
-      variableCategoryIDs: 
+      variableCategoryIDs: 0000000000000000
     description: 
     docUrl: 
     showStateLabel: 0
@@ -215002,7 +215086,7 @@ MonoBehaviour:
     manualUpdate: 0
     outVariableIndices: 
     keepDelayedEventsOnStateExit: 0
-    preprocessed: 1
+    preprocessed: 0
     ExposedEvents: []
     OutputEvents: []
     RestartOnEnable: 1
@@ -266854,10 +266938,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 536afb0be34fd234188f3a40231ac916, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.HotHands
-  killsNeeded: 5
+  hitsNeeded: 17
   withinSeconds: 3
   keepSeconds: 3
   damageBonus: 1
+  swollenSize: 0.42
   glow: {r: 4, g: 0.32, b: 0.1, a: 1}
   tint: {r: 1, g: 0.42, b: 0.35, a: 1}
   heatUpSeconds: 0.2

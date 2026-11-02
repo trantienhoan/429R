@@ -53,6 +53,10 @@ namespace Game.Leveling
         [SerializeField] private string swingUppercutText = "SWING + UPPERCUT\n\nSweep sideways or drive up, fast.";
         [TextArea(2, 6)]
         [SerializeField] private string tripleText = "TRIPLE PUNCH\n\nEvery flying punch throws 3.";
+        [Tooltip("The title and text for Swollen Hand (a red-hot hand's fist swells bigger).")]
+        [SerializeField] private string swollenTitle = "NEW POWER!";
+        [TextArea(2, 6)]
+        [SerializeField] private string swollenText = "SWOLLEN HAND\n\nRed-hot fists swell bigger.";
 
         [Header("Exploding throws (the first Throw Power point; shown once the Level Up menu is closed)")]
         [SerializeField] private string throwsTitle = "NEW POWER!";
@@ -114,7 +118,8 @@ namespace Game.Leveling
         private float pendingAt;
         private bool holding;
         private bool showing;
-        // New punches and powers waiting to be told about ("Jab", "Swing", "Uppercut", "Triple", "Throws"), in order.
+        // New punches and powers waiting to be told about ("Jab", "Swing", "Uppercut", "Triple", "Swollen", "Throws"), in
+        // order.
         private const string Throws = "Throws";
         private readonly System.Collections.Generic.List<string> punches = new();
         private bool closing;
@@ -228,13 +233,16 @@ namespace Game.Leveling
             ShowText(punchTitle, text, teachSeconds);
         }
 
-        // The next new punch (or exploding throws); Swing and Uppercut unlocked by the same point get one notice together.
+        // The next new punch (or exploding throws, or Swollen Hand); Swing and Uppercut unlocked by the same point get one
+        // notice together.
         private void ShowNextPunch()
         {
             string punch = punches[0];
             punches.RemoveAt(0);
             if (punch == Throws)
                 ShowText(throwsTitle, throwsText, teachSeconds);
+            else if (punch == "Swollen")
+                ShowText(swollenTitle, swollenText, teachSeconds);
             else if ((punch == "Swing" && punches.Remove("Uppercut")) || (punch == "Uppercut" && punches.Remove("Swing")))
                 ShowText(punchesTitle, swingUppercutText, teachSeconds);
             else

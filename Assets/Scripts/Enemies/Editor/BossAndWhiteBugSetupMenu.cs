@@ -180,10 +180,15 @@ namespace Game.EditorTools
             move.FindPropertyRelative("leapToFace").boolValue = true;
             move.FindPropertyRelative("runAwayAfter").boolValue = false;
             move.FindPropertyRelative("pushPower").floatValue = 2f;
+            // The jumps throw the player farther (user, 2026-11-02).
+            move.FindPropertyRelative("pushFarther").floatValue = JumpPushFarther;
             // Its jump can't be stopped (user, 2026-10-27: only the jumps and charges).
             move.FindPropertyRelative("unstoppable").boolValue = true;
             return "Pounce up to 3 m";
         }
+
+        // How much farther than their Push Power says the bosses' jump attacks throw the player (not higher).
+        private const float JumpPushFarther = 1.75f;
 
         // The cockroach bosses' Face Leap starts from further away.
         private static string LongerFaceLeap(SerializedProperty attacks)
@@ -193,8 +198,13 @@ namespace Game.EditorTools
             leap.FindPropertyRelative("maxDistance").floatValue = 2.8f;
             leap.FindPropertyRelative("lunge").floatValue = 2.6f;
             leap.FindPropertyRelative("unstoppable").boolValue = true;
+            leap.FindPropertyRelative("pushFarther").floatValue = JumpPushFarther;
             var dive = Find(attacks, "Dive Bomb");
-            if (dive != null) dive.FindPropertyRelative("unstoppable").boolValue = true;
+            if (dive != null)
+            {
+                dive.FindPropertyRelative("unstoppable").boolValue = true;
+                dive.FindPropertyRelative("pushFarther").floatValue = JumpPushFarther;
+            }
             return "Face Leap up to 2.8 m";
         }
 

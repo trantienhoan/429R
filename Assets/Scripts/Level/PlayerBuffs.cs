@@ -37,6 +37,12 @@ namespace Game.Leveling
     /// - Candy Helmet (every pumpkin the bonus round's player breaks adds 5 s, Add): every candy around flies to the
     ///   player, over their head and into the top of it, and is eaten, even ones still flying out of the pumpkin
     ///   (Game.Inventory.CandyHelmet does it).
+    /// - Leftovers (user, 2026-11-02): when a boong's buff runs out, Kept Share (15%) of it stays until the player dies
+    ///   (every death, a revived one too: Try Revive calls Lose Leftovers). Elon: punches reach 7.5 cm further, flying
+    ///   ones too, do 1.15x damage, and 15% of them explode; Bone: +1.05 Toughness points; Green: 7.5 cm taller, flying
+    ///   punches 0.75 m further and 1.05 Fist Size points bigger; Bus: walking 1.075x. A leftover doesn't make the player
+    ///   high and has no countdown. Smoking that boong again gives the whole buff; the leftover after it is 15% again
+    ///   (leftovers don't add up). Not the Candy Helmet.
     /// The extra points are never saved and never count as a stat's big last point; the Level Up menu keeps showing the
     /// player's own points. The health HUD shows them: while any is on the heart smokes white and stays in view, with a
     /// countdown under it for each (in the buff's colour, no names). With no buff on, everything is exactly as without this.
@@ -78,6 +84,9 @@ namespace Game.Leveling
         /// <summary>High: the walking speed is multiplied by this (0.7 = 30% slower).</summary>
         public const float HighSpeed = 0.7f;
 
+        /// <summary>The share of a boong's buff that stays after it runs out, until the player dies.</summary>
+        public const float KeptShare = 0.15f;
+
         // Seconds the eased bonuses take to come in and to go: the height (a snap is uncomfortable in VR) and the punch reach.
         private const float HeightEaseSeconds = 1.5f;
         private const float ReachEaseSeconds = 0.5f;
@@ -85,7 +94,12 @@ namespace Game.Leveling
         private static readonly bool[] on = new bool[Count];
         // When each ends, in game time (Time.time).
         private static readonly float[] until = new float[Count];
-        // How far each eased bonus has come in: 0 = none, 1 = all of it.
+        // Ran out since the player last died: Kept Share of it stays.
+        private static readonly bool[] kept = new bool[Count];
+        // Each eased bonus goes from one share of it to another (1 = all of it, Kept Share = the leftover, 0 = none);
+        // eased is how far along it is (0 = just started, 1 = there).
+        private static readonly float[] easeFrom = new float[Count];
+        private static readonly float[] easeTo = new float[Count];
         private static readonly float[] eased = new float[Count];
         private static Runner runner;
 
@@ -146,6 +160,29 @@ namespace Game.Leveling
         /// <summary>Seconds of game time the buff has left (0 when it's off).</summary>
         public static float SecondsLeft(Buff buff) => IsActive(buff) ? until[(int)buff] - Time.time : 0f;
 
+        /// <summary>The boong's buff has run out and its leftover (Kept Share) is on, until the player dies.</summary>
+        public static bool HasLeftover(Buff buff)
+        {
+            int i = (int)buff;
+            return i >= 0 && i < Count && kept[i] && runner != null && !IsActive(buff);
+        }
+
+        /// <summary>The player died: the boongs' leftovers are gone (they ease out).</summary>
+        public static void LoseLeftovers()
+        {
+            bool any = false;
+            for (int i = 0; i < Count; i++)
+            {
+                if (!kept[i]) continue;
+                kept[i] = false;
+                any = true;
+                PointsChanged((Buff)i);
+            }
+            if (!any) return;
+            if (runner != null) runner.enabled = true;
+            Debug.Log("[Player Buffs] Leftovers lost (the player died).");
+        }
+
         /// <summary>Whether any buff is on.</summary>
         public static bool AnyActive
         {
@@ -176,58 +213,85 @@ namespace Game.Leveling
         /// <summary>Candy heals are multiplied by this: High Heal while high, else 1.</summary>
         public static float HealScale => High ? HighHeal : 1f;
 
-        /// <summary>The walking speed is multiplied by this: Bus Walk with the Bus Boong on, else High Speed while high, else 1.</summary>
-        public static float SpeedScale => IsActive(Buff.BusBoong) ? BusWalk : High ? HighSpeed : 1f;
+        /// <summary>
+        /// The walking speed is multiplied by this: Bus Walk with the Bus Boong on, else High Speed while high, else 1; the
+        /// Bus Boong's leftover on top.
+        /// </summary>
+        public static float SpeedScale =>
+            IsActive(Buff.BusBoong) ? BusWalk : (High ? HighSpeed : 1f) * (1f + (BusWalk - 1f) * Share(Buff.BusBoong));
 
-        /// <summary>Ends every buff now (e.g. for testing); each one that was on raises Ended.</summary>
+        /// <summary>Ends every buff now (e.g. for testing), as if it ran out; each one that was on raises Ended.</summary>
         public static void EndAll()
         {
             for (int i = 0; i < Count; i++)
             {
                 if (!on[i]) continue;
-                on[i] = false;
-                PointsChanged((Buff)i);
-                RaiseEnded((Buff)i);
+                RunOut(i);
             }
+        }
+
+        // A buff's time is up: a boong's leaves its leftover.
+        private static void RunOut(int i)
+        {
+            on[i] = false;
+            if (MakesHigh((Buff)i)) kept[i] = true;
+            Debug.Log($"[Player Buffs] {(Buff)i} ended{(kept[i] ? $" ({KeptShare:0%} of it stays until the player dies)" : "")}.");
+            PointsChanged((Buff)i);
+            RaiseEnded((Buff)i);
+            if (runner != null) runner.enabled = true;
         }
 
         internal static void RaiseEnded(Buff buff) => Ended?.Invoke(buff);
 
-        // What the buffs give, read by the things they change. Each is the same as with no buff when none is on.
+        // What the buffs give, read by the things they change. Each is the same as with no buff when none is on and none
+        // has left a leftover.
 
         /// <summary>Metres the fist's own punching ball reaches past the knuckles (Elon Boong, eased in and out).</summary>
-        public static float PunchReach => ElonReach * Smooth(eased[(int)Buff.ElonBoong]);
+        public static float PunchReach => ElonReach * Eased(Buff.ElonBoong);
 
         /// <summary>Metres added to how far every flying punch flies (Elon Boong 0.5, Green Boong 5).</summary>
-        public static float FlyReach =>
-            (IsActive(Buff.ElonBoong) ? ElonReach : 0f) + (IsActive(Buff.GreenBoong) ? GreenFlyReach : 0f);
+        public static float FlyReach => ElonReach * Share(Buff.ElonBoong) + GreenFlyReach * Share(Buff.GreenBoong);
 
-        /// <summary>What punches' damage is multiplied by (Elon Boong: 2, else 1).</summary>
-        public static float PunchDamage => IsActive(Buff.ElonBoong) ? ElonDamage : 1f;
+        /// <summary>What punches' damage is multiplied by (Elon Boong: 2, its leftover 1.15, else 1).</summary>
+        public static float PunchDamage => 1f + (ElonDamage - 1f) * Share(Buff.ElonBoong);
 
-        /// <summary>Whether every punch that hits something explodes once more (Elon Boong).</summary>
-        public static bool ExplodingPunches => IsActive(Buff.ElonBoong);
+        /// <summary>
+        /// Whether this punch, which hit something, explodes once more (Elon Boong: every one; its leftover: Kept Share of
+        /// them, a new roll each time this is asked).
+        /// </summary>
+        public static bool PunchExplodes() =>
+            IsActive(Buff.ElonBoong) || (HasLeftover(Buff.ElonBoong) && UnityEngine.Random.value < KeptShare);
 
         /// <summary>Metres the player stands taller (Green Boong, eased in and out).</summary>
-        public static float Height => GreenHeight * Smooth(eased[(int)Buff.GreenBoong]);
+        public static float Height => GreenHeight * Eased(Buff.GreenBoong);
 
         /// <summary>
         /// Fist Size points' worth of bigger fists for now (Green Boong, eased in and out): the hand a little and the
         /// flying punches a lot bigger. Size only: they don't add damage, reach or unlock punches.
         /// </summary>
-        public static float FistSizePoints => GreenFistSize * Smooth(eased[(int)Buff.GreenBoong]);
+        public static float FistSizePoints => GreenFistSize * Eased(Buff.GreenBoong);
 
         /// <summary>
-        /// Points the buffs add to a stat for now (Bone Boong: Toughness), never saved. The Bus Boong scales the walking
-        /// speed itself (Speed Scale).
+        /// Points the buffs add to a stat for now (Bone Boong: Toughness; its leftover a share of them), never saved. The Bus
+        /// Boong scales the walking speed itself (Speed Scale).
         /// </summary>
-        public static int ExtraPoints(Stat stat)
+        public static float ExtraPoints(Stat stat)
         {
             switch (stat)
             {
-                case Stat.Toughness: return IsActive(Buff.BoneBoong) ? BoneToughness : 0;
-                default: return 0;
+                case Stat.Toughness: return BoneToughness * Share(Buff.BoneBoong);
+                default: return 0f;
             }
+        }
+
+        // How much of a buff counts now: all of it while it's on, Kept Share as a leftover, else none.
+        private static float Share(Buff buff) => IsActive(buff) ? 1f : HasLeftover(buff) ? KeptShare : 0f;
+
+        // The same for the eased bonuses, on the way between them.
+        private static float Eased(Buff buff)
+        {
+            int i = (int)buff;
+            return easeFrom[i] + (easeTo[i] - easeFrom[i]) * Smooth(eased[i]);
         }
 
         /// <summary>Candy Helmet: candies lying around fly into the player's mouth.</summary>
@@ -273,6 +337,9 @@ namespace Game.Leveling
         {
             Array.Clear(on, 0, Count);
             Array.Clear(until, 0, Count);
+            Array.Clear(kept, 0, Count);
+            Array.Clear(easeFrom, 0, Count);
+            Array.Clear(easeTo, 0, Count);
             Array.Clear(eased, 0, Count);
             PlayerHeight.Bonus = 0f;
         }
@@ -294,7 +361,8 @@ namespace Game.Leveling
             return i == (int)Buff.GreenBoong ? HeightEaseSeconds : ReachEaseSeconds;
         }
 
-        // Ends the buffs whose time is up and eases the bonuses in and out; switches itself off once nothing is left.
+        // Ends the buffs whose time is up and eases the bonuses in and out (and down to their leftovers); switches itself
+        // off once nothing is on or on the way.
         private class Runner : MonoBehaviour
         {
             private void Update()
@@ -303,15 +371,16 @@ namespace Game.Leveling
                 float dt = Time.deltaTime;
                 for (int i = 0; i < Count; i++)
                 {
-                    if (on[i] && Time.time >= until[i])
+                    if (on[i] && Time.time >= until[i]) RunOut(i);
+                    float target = on[i] ? 1f : kept[i] ? KeptShare : 0f;
+                    if (target != easeTo[i])
                     {
-                        on[i] = false;
-                        Debug.Log($"[Player Buffs] {(Buff)i} ended.");
-                        PointsChanged((Buff)i);
-                        RaiseEnded((Buff)i);
+                        easeFrom[i] = Eased((Buff)i);
+                        easeTo[i] = target;
+                        eased[i] = 0f;
                     }
-                    eased[i] = Mathf.MoveTowards(eased[i], on[i] ? 1f : 0f, dt / EaseSeconds(i));
-                    if (on[i] || eased[i] > 0f) busy = true;
+                    eased[i] = Mathf.MoveTowards(eased[i], 1f, dt / EaseSeconds(i));
+                    if (on[i] || eased[i] < 1f) busy = true;
                 }
                 PlayerHeight.Bonus = Height;
                 if (!busy) enabled = false;
@@ -320,9 +389,9 @@ namespace Game.Leveling
             private void OnDestroy()
             {
                 if (runner != this) return;
-                // The scene is closing (or this was removed): no buff carries on. The speed is set back if the scene
-                // stays (the Player Level is gone too when the scene closes).
-                bool speed = High;
+                // The scene is closing (or this was removed): no buff or leftover carries on. The speed is set back if the
+                // scene stays (the Player Level is gone too when the scene closes).
+                bool speed = High || HasLeftover(Buff.BusBoong);
                 ClearState();
                 runner = null;
                 if (speed) PlayerLevel.BuffsChanged();

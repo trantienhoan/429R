@@ -12,8 +12,9 @@ namespace Game.Combat
     /// hitting: every hit of its own starts Keep Seconds again, and Keep Seconds with none cools it down. While hot, that
     /// hand's punches (the fist's own and flying ones) and the things it throws do Damage Bonus more (user, 2026-10-28: not
     /// weapons in the hand, shots or blasts). Once it has cooled down it takes Hits Needed hits within Within Seconds again.
-    /// The last second before it ends, its glow flickers. Goes on the XR Origin (Tools > 429 Game > Player > Hot Hands And
-    /// Punch Shockwave puts it there).
+    /// The last second before it ends, its glow flickers. Swollen Hand (user, 2026-11-02; Fist Size unlocks it, Player
+    /// Level): a hot hand's fist also swells Swollen Size bigger as it heats up, its flying punches too, and goes back as
+    /// it cools. Goes on the XR Origin (Tools > 429 Game > Player > Hot Hands And Punch Shockwave puts it there).
     /// </summary>
     public class HotHands : MonoBehaviour
     {
@@ -30,6 +31,10 @@ namespace Game.Combat
         [Tooltip("While hot, that hand's punches and throws do this much more damage (whole points: 1 = a punch 2).")]
         [Min(0)]
         [SerializeField] private int damageBonus = 1;
+        [Tooltip("Swollen Hand (once Fist Size has unlocked it): a hot hand's fist, and its flying punches, are this share " +
+                 "bigger than they are now (0.42 = +42%), on top of everything else.")]
+        [Min(0f)]
+        [SerializeField] private float swollenSize = 0.42f;
 
         [Header("Looks")]
         [Tooltip("A hot hand's glow (bright: an HDR colour).")]
@@ -82,6 +87,18 @@ namespace Game.Combat
         /// <summary>How much more damage this fist's punches do: Damage Bonus while its hand is hot, else 0.</summary>
         public static int BonusFor(Fist fist) => IsHot(fist) ? instance.damageBonus : 0;
 
+        /// <summary>Swollen Hand is unlocked (Player Level sets it from the Fist Size points).</summary>
+        public static bool SwollenHand { get; set; }
+
+        /// <summary>
+        /// How many times its size this fist is for now: with Swollen Hand, 1 + Swollen Size while its hand is hot (in
+        /// between as it heats up and cools down); else 1.
+        /// </summary>
+        public static float SizeOf(Fist fist) =>
+            SwollenHand && instance != null && fist != null && instance.hands.TryGetValue(fist, out var hand)
+                ? 1f + instance.swollenSize * hand.heat
+                : 1f;
+
         /// <summary>How much more damage a thing thrown by this hand (the interactor that let go of it) does.</summary>
         public static int BonusForThrower(IXRSelectInteractor thrower)
         {
@@ -111,6 +128,7 @@ namespace Game.Combat
         {
             instance = null;
             Changed = null;
+            SwollenHand = false;
         }
 
         private void OnEnable()

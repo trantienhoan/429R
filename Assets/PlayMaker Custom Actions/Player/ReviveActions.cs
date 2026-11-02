@@ -8,7 +8,7 @@ namespace HutongGames.PlayMaker.Actions
              "it flips them and waits. A clover sends Revive (one coin used up, the health the clovers won); all skulls, " +
              "or no coin left, sends Game Over. Without Revive Coins: with a revive left it uses one up and sends " +
              "Revive; otherwise Game Over, and the game over goes on as before. A Game Over with no revive left ends " +
-             "the run in the save at once (a new run from the start).")]
+             "the run in the save at once (a new run from the start). Every death takes the boongs' leftover buffs.")]
     public class TryRevive : FsmStateAction
     {
         [RequiredField]
@@ -29,6 +29,8 @@ namespace HutongGames.PlayMaker.Actions
         public override void OnEnter()
         {
             flipping = false;
+            // The share of each run-out boong buff the player kept lasts until they die (user, 2026-11-02).
+            Game.Leveling.PlayerBuffs.LoseLeftovers();
             var coins = ReviveCoins.Instance;
             if (PlayerRevive.Instance != null && coins != null && coins.isActiveAndEnabled)
             {

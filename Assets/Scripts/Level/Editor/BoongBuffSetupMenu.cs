@@ -112,6 +112,10 @@ namespace Game.EditorTools
         [MenuItem("Tools/429 Game/Player/Give Boong Buff (Play Mode)/End All Buffs")]
         private static void EndAll() => PlayerBuffs.EndAll();
 
+        // As a death does: the 15% the run-out boongs left goes.
+        [MenuItem("Tools/429 Game/Player/Give Boong Buff (Play Mode)/Lose Leftovers")]
+        private static void LoseLeftovers() => PlayerBuffs.LoseLeftovers();
+
         [MenuItem("Tools/429 Game/Player/Give Boong Buff (Play Mode)/Elon Boong", true)]
         [MenuItem("Tools/429 Game/Player/Give Boong Buff (Play Mode)/Bone Boong", true)]
         [MenuItem("Tools/429 Game/Player/Give Boong Buff (Play Mode)/Green Boong", true)]
@@ -119,6 +123,7 @@ namespace Game.EditorTools
         [MenuItem("Tools/429 Game/Player/Give Boong Buff (Play Mode)/Candy Helmet", true)]
         [MenuItem("Tools/429 Game/Player/Give Boong Buff (Play Mode)/All", true)]
         [MenuItem("Tools/429 Game/Player/Give Boong Buff (Play Mode)/End All Buffs", true)]
+        [MenuItem("Tools/429 Game/Player/Give Boong Buff (Play Mode)/Lose Leftovers", true)]
         private static bool Playing() => EditorApplication.isPlaying;
     }
 }

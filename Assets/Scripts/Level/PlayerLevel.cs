@@ -229,6 +229,10 @@ namespace Game.Leveling
                  "row. Flying punches also reach their farthest here (they go farther step by step from the Jab's points).")]
         [Min(1)]
         [SerializeField] private int triplePunchAtFistSize = 10;
+        [Tooltip("Fist Size points for Swollen Hand: a red-hot hand's fist (Hot Hands) and its flying punches swell bigger " +
+                 "while it's hot (Swollen Size on Hot Hands).")]
+        [Min(1)]
+        [SerializeField] private int swollenHandAtFistSize = 6;
 
         [Header("Worn weapons")]
         [Tooltip("A weapon the player has held cracks (Crack Sound) when its health first drops to this share of what it " +
@@ -266,7 +270,8 @@ namespace Game.Leveling
         public static event Action<int> LeveledUp;
 
         /// <summary>
-        /// A Fist Size point just unlocked a punch: "Jab", "Swing", "Uppercut" or "Triple" (not when the save is read).
+        /// A Fist Size point just unlocked a punch: "Jab", "Swing", "Uppercut" or "Triple", or "Swollen" (Swollen Hand; not
+        /// when the save is read).
         /// </summary>
         public static event Action<string> PunchUnlocked;
 
@@ -660,7 +665,7 @@ namespace Game.Leveling
             float size = FistSizePoints;
             bool bigMoves = !lockSwingAndUppercut;
             int next = int.MaxValue;
-            foreach (int at in new[] { jabAtFistSize, bigMoves ? swingAtFistSize : -1, bigMoves ? uppercutAtFistSize : -1, triplePunchAtFistSize })
+            foreach (int at in new[] { jabAtFistSize, bigMoves ? swingAtFistSize : -1, bigMoves ? uppercutAtFistSize : -1, swollenHandAtFistSize, triplePunchAtFistSize })
             {
                 if (at > size && at < next) next = at;
             }
@@ -669,6 +674,7 @@ namespace Game.Leveling
             if (jabAtFistSize == next) names.Add("Jab");
             if (bigMoves && swingAtFistSize == next) names.Add("Swing");
             if (bigMoves && uppercutAtFistSize == next) names.Add("Uppercut");
+            if (swollenHandAtFistSize == next) names.Add("Swollen Hand");
             if (triplePunchAtFistSize == next) names.Add("Triple Punch");
             return $", {string.Join(" + ", names)} at {next}";
         }
@@ -701,15 +707,18 @@ namespace Game.Leveling
             bool swing = !lockSwingAndUppercut && size >= swingAtFistSize;
             bool uppercut = !lockSwingAndUppercut && size >= uppercutAtFistSize;
             bool triple = size >= triplePunchAtFistSize;
+            bool swollen = size >= swollenHandAtFistSize;
             var unlocked = new List<string>();
             if (jab && !Fist.JabUnlocked) unlocked.Add("Jab");
             if (swing && !Fist.SwingUnlocked) unlocked.Add("Swing");
             if (uppercut && !Fist.UppercutUnlocked) unlocked.Add("Uppercut");
+            if (swollen && !HotHands.SwollenHand) unlocked.Add("Swollen");
             if (triple && !Fist.TriplePunch) unlocked.Add("Triple");
             Fist.JabUnlocked = jab;
             Fist.SwingUnlocked = swing;
             Fist.UppercutUnlocked = uppercut;
             Fist.TriplePunch = triple;
+            HotHands.SwollenHand = swollen;
             if (!announce) return;
             foreach (var punch in unlocked) PunchUnlocked?.Invoke(punch);
         }
