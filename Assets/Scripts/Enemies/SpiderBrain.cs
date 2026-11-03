@@ -904,7 +904,8 @@ namespace Game.Enemies
         [Tooltip("Squashed flat (a killing hit from above on the ground): one of these, at random and never the same twice in " +
                  "a row, a little higher or lower each time (Squash Pitch).")]
         [SerializeField] private AudioClip[] squashSounds = Array.Empty<AudioClip>();
-        [Tooltip("...and now and then (Squash Extra Chance) one of these on top, e.g. the cartoon pancake.")]
+        [Tooltip("...and now and then (Squash Extra Chance) one of these on top. Not Cartoon_pancake_flat_1/2: despite " +
+                 "the name they're falling whistles (user, 2026-11-03: the flattening used a falling sound).")]
         [SerializeField] private AudioClip[] squashExtras = Array.Empty<AudioClip>();
         [Range(0f, 1f)]
         [SerializeField] private float squashExtraChance = 0.5f;
