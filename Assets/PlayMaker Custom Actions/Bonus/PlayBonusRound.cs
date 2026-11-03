@@ -4,15 +4,16 @@ using UnityEngine;
 namespace HutongGames.PlayMaker.Actions
 {
     [ActionCategory("Bonus")]
-    [Tooltip("Plays the nesting pumpkin bonus round if the player earned it in the stage before (see Watch Bonus Round), " +
-             "then finishes. Not earned: finishes at once, and the bonus stage doesn't come. Earned: switches the bonus " +
-             "stage on (e.g. --Bedroom--MiniGame--: the field and the pumpkin chest) and starts the round there; punching " +
-             "the chest open lets the giant out and the countdown starts. Finishes when the round is over and the " +
-             "candies are eaten (the next state takes the field away: Destroy Object $BOSS_AREA).")]
+    [Tooltip("Plays a bonus round if the player earned it in the stage before (see Watch Bonus Round), then finishes. Not " +
+             "earned: finishes at once, and the bonus stage doesn't come. Earned: switches the bonus stage on (e.g. " +
+             "--Bedroom--MiniGame--: the field and the pumpkin chest) and starts the round there: the nesting pumpkins " +
+             "(Bonus_Round: punching the chest open lets the giant out) or the Paint Bees (Paint_Bees_Round, the Playroom's). " +
+             "Finishes when the round is over and the candies are eaten (the next state takes the field away: Destroy " +
+             "Object $BOSS_AREA).")]
     public class PlayBonusRound : FsmStateAction
     {
         [RequiredField]
-        [Tooltip("The bonus round prefab (Bonus_Round).")]
+        [Tooltip("The bonus round prefab (Bonus_Round, or Paint_Bees_Round).")]
         public FsmGameObject round;
 
         [RequiredField]
@@ -26,7 +27,7 @@ namespace HutongGames.PlayMaker.Actions
         [Tooltip("Sent when the round is over or wasn't earned. Empty: the state just finishes (FINISHED).")]
         public FsmEvent finishEvent;
 
-        private BonusRound running;
+        private IBonusGame running;
 
         public override void Reset()
         {
@@ -50,18 +51,19 @@ namespace HutongGames.PlayMaker.Actions
             var at = stage.Value.transform.position;
             var stuff = FsmVariables.GlobalVariables.FindFsmGameObject("CurrentlySpawnedStuffs");
             var parent = stuff != null && stuff.Value != null ? stuff.Value.transform : null;
-            running = Object.Instantiate(round.Value, at, Quaternion.identity, parent).GetComponentInChildren<BonusRound>();
+            running = Object.Instantiate(round.Value, at, Quaternion.identity, parent).GetComponentInChildren<IBonusGame>();
         }
 
         public override void OnUpdate()
         {
-            if (running == null || running.Finished) Done();
+            // Gone (destroyed: Unity's null), or over.
+            if (running == null || (running is Object game && game == null) || running.Finished) Done();
         }
 
         public override void OnExit()
         {
             // Over, or left early (e.g. game over): the round goes (the field goes with the next state's clean-up).
-            if (running != null) Object.Destroy(running.gameObject);
+            if (running is Component game && game != null) Object.Destroy(game.gameObject);
             running = null;
         }
 

@@ -639,7 +639,9 @@ namespace Game.EditorTools
             yield return Untag(playroom.gameObject);
             yield return RenameState(gs, "Bonus Round LR", "Bonus Round PR");
             yield return BonusState(gs, "Bonus Round BR", "BR_GO", "3 - LivingRoom", round, bedroom.gameObject, "CP LivingRoom");
-            yield return BonusState(gs, "Bonus Round PR", "LR GO 4", "Rooftop_ON", round, playroom.gameObject, "CP Rooftop");
+            // The Playroom's bonus is the Paint Bees once they're built (Paint Bees Setup Menu), not the pumpkins.
+            var playroomRound = AssetDatabase.LoadAssetAtPath<GameObject>(PaintBeesSetupMenu.RoundPath);
+            yield return BonusState(gs, "Bonus Round PR", "LR GO 4", "Rooftop_ON", playroomRound != null ? playroomRound : round, playroom.gameObject, "CP Rooftop");
             foreach (var next in new[] { "3 - LivingRoom", "Rooftop_ON" })
                 yield return ClearField(gs, next);
             EditorUtility.SetDirty(gs);
@@ -719,7 +721,7 @@ namespace Game.EditorTools
                 state.Actions = new FsmStateAction[] { play }.Concat(state.Actions).ToArray();
                 changes.Add("Play Bonus Round added");
             }
-            if (play.round == null || play.round.Value != round) { play.round = new FsmGameObject { Value = round }; changes.Add("round Bonus_Round"); }
+            if (play.round == null || play.round.Value != round) { play.round = new FsmGameObject { Value = round }; changes.Add("round " + round.name); }
             if (play.stage == null || play.stage.Value != stage) { play.stage = new FsmGameObject { Value = stage }; changes.Add("stage " + stage.name); }
             // The room is cleared: a checkpoint from here on is the next room's, so it isn't played again (nor the bonus earned twice).
             if (!state.Actions.OfType<SetCheckpoint>().Any(c => c.checkpoint != null && c.checkpoint.Value == checkpoint))

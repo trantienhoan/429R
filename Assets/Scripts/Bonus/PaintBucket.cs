@@ -6,6 +6,8 @@ namespace Game.Bonus
     /// One of the Paint Bees round's floating paint buckets (Paint_Bucket: the pumpkin bucket, its paint and a glow on
     /// the floor under it). It rises out of the floor, floats there bobbing gently, and can't be moved; a hand dipped in
     /// its paint takes its colour (the round checks the hands, see Dips). The paint wobbles and ripples at each dip.
+    /// It's drippy (user, 2026-11-03): paint runs down its side and drips off, splatting on the floor, into a puddle of
+    /// its colour under it that grows as the round goes on; what's on the floor stays still while the bucket bobs.
     /// </summary>
     public class PaintBucket : MonoBehaviour
     {
@@ -29,6 +31,17 @@ namespace Game.Bonus
         [Tooltip("How much the paint glows (a share of its colour), so it reads in the dark.")]
         [Range(0f, 1f)]
         [SerializeField] private float paintGlow = 0.3f;
+        [Tooltip("Paint running down its side and dripping off, in its colour (its drops splat on the floor). Empty: none.")]
+        [SerializeField] private ParticleSystem drips;
+        [Tooltip("The paint puddle on the floor under it, in its colour. Empty: none.")]
+        [SerializeField] private Renderer puddle;
+        [Tooltip("The puddle grows from this size (x) to this (y), metres across, over Puddle Seconds.")]
+        [SerializeField] private Vector2 puddleSize = new(0.45f, 1.1f);
+        [Min(1f)]
+        [SerializeField] private float puddleSeconds = 30f;
+        [Tooltip("What lies on the floor under it (the glow, the puddle, the floor the drips splat on): kept still there " +
+                 "while the bucket bobs.")]
+        [SerializeField] private Transform[] onFloor = System.Array.Empty<Transform>();
         [Tooltip("Up and down while it floats, in metres, and how many times a second.")]
         [Min(0f)]
         [SerializeField] private float bob = 0.02f;
@@ -46,6 +59,8 @@ namespace Game.Bonus
         private float dippedAt = -10f;
         private Vector3 paintRest;
         private Color colour = Color.white;
+        private Vector3[] floorAt = System.Array.Empty<Vector3>();
+        private Quaternion[] floorTurn = System.Array.Empty<Quaternion>();
         private MaterialPropertyBlock block;
 
         /// <summary>The paint's colour index (see the round's colours).</summary>
@@ -74,12 +89,31 @@ namespace Game.Bonus
             glow.a = 0.6f;
             Tint(floorGlow, glow, Color.black);
             if (ripple != null) ripple.enabled = false;
+            var wet = colour;
+            wet.a = 0.92f;
+            Tint(puddle, wet, Color.black);
+            if (puddle != null) puddle.transform.localScale = Vector3.one * puddleSize.x;
+            if (drips != null)
+            {
+                var main = drips.main;
+                main.startColor = colour;
+            }
+            // The floor under where it'll float.
+            floorAt = new Vector3[onFloor.Length];
+            floorTurn = new Quaternion[onFloor.Length];
+            for (int i = 0; i < onFloor.Length; i++)
+            {
+                if (onFloor[i] == null) continue;
+                floorAt[i] = at + (onFloor[i].position - transform.position);
+                floorTurn[i] = onFloor[i].rotation;
+            }
         }
 
         /// <summary>It sinks back into the floor over 'seconds', and is gone.</summary>
         public void Sink(float seconds)
         {
             sinking = true;
+            if (drips != null) drips.Stop(true, ParticleSystemStopBehavior.StopEmitting);
             riseStarted = Time.time;
             riseSeconds = Mathf.Max(0.05f, seconds);
             Destroy(gameObject, seconds + 0.05f);
@@ -108,6 +142,18 @@ namespace Game.Bonus
             float t = Time.time + phase;
             transform.position = rest + Vector3.up * (lift + bob * Mathf.Sin(t * bobsPerSecond * 2f * Mathf.PI));
             transform.rotation = Quaternion.Euler(2f * Mathf.Sin(t * 0.7f), transform.eulerAngles.y, 2f * Mathf.Cos(t * 0.6f));
+            for (int i = 0; i < onFloor.Length && i < floorAt.Length; i++)
+                if (onFloor[i] != null) onFloor[i].SetPositionAndRotation(floorAt[i], floorTurn[i]);
+
+            // Up and floating, it drips, and its puddle grows; sinking, the puddle shrinks away with it.
+            bool up = !sinking && k >= 1f;
+            if (drips != null && up && !drips.isEmitting) drips.Play(true);
+            if (puddle != null)
+            {
+                float grown = Mathf.Clamp01((Time.time - riseStarted - riseSeconds) / puddleSeconds);
+                float size = sinking ? Mathf.Lerp(puddle.transform.localScale.x, 0f, k) : Mathf.Lerp(puddleSize.x, puddleSize.y, Mathf.Sqrt(grown));
+                puddle.transform.localScale = Vector3.one * size;
+            }
 
             float since = Time.time - dippedAt;
             if (paint != null) paint.transform.localPosition = paintRest + Vector3.up * (0.012f * Mathf.Exp(-since * 6f) * Mathf.Sin(since * 30f));

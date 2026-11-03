@@ -37,16 +37,23 @@ namespace Game.Bonus
         private readonly List<Hand> hands = new();
         private Color[] colours = System.Array.Empty<Color>();
         private Material dropMaterial;
+        private Transform floor;
+        private Material splatMaterial;
         private MaterialPropertyBlock block;
 
         /// <summary>The hands found (two, unless one controller is missing).</summary>
         public IReadOnlyList<Hand> Hands => hands;
 
-        /// <summary>Finds the player's hands (their Fists); the paint colours and the drops' material.</summary>
-        public void Setup(Color[] paintColours, Material drops)
+        /// <summary>
+        /// Finds the player's hands (their Fists); the paint colours, the drops' material, and the floor their drops splat
+        /// on (none: they don't).
+        /// </summary>
+        public void Setup(Color[] paintColours, Material drops, Transform floor = null, Material splats = null)
         {
             colours = paintColours;
             dropMaterial = drops;
+            this.floor = floor;
+            splatMaterial = splats != null ? splats : drops;
             foreach (var fist in FindObjectsByType<Fist>(FindObjectsSortMode.None))
             {
                 var hand = new Hand { fist = fist };
@@ -121,7 +128,7 @@ namespace Game.Bonus
             system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             var main = system.main;
             main.loop = true;
-            main.startLifetime = new ParticleSystem.MinMaxCurve(0.5f, 0.8f);
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.9f, 1.2f);
             main.startSpeed = new ParticleSystem.MinMaxCurve(0f, 0.15f);
             main.startSize = new ParticleSystem.MinMaxCurve(0.012f, 0.022f);
             main.gravityModifier = 1f;
@@ -134,6 +141,8 @@ namespace Game.Bonus
             shape.radius = 0.035f;
             var renderer = go.GetComponent<ParticleSystemRenderer>();
             renderer.sharedMaterial = dropMaterial;
+            // Half of them splat where they land.
+            if (floor != null && splatMaterial != null) PaintSplats.Add(system, floor, splatMaterial, 0.5f, new Vector2(0.04f, 0.08f));
             system.Play();
             return system;
         }
