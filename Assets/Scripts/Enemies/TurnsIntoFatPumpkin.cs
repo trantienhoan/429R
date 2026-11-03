@@ -116,11 +116,11 @@ namespace Game.Enemies
             return false;
         }
 
-        // Lying still on the floor, nobody's using it, no roach in it.
+        // Lying still on the floor, nobody's using it, no roach in it or on its way to hide in it.
         private bool Ready(out Vector3 spot)
         {
             spot = transform.position;
-            if (GetComponent<RottingPumpkin>() != null) return false;
+            if (GetComponent<RottingPumpkin>() != null || RottingPumpkin.IsTaken(gameObject)) return false;
             if (grab != null && (grab.isSelected || HeldThings.InUse(grab))) return false;
             if (body != null && !body.isKinematic && body.linearVelocity.sqrMagnitude > StillSpeed * StillSpeed) return false;
             if (!NavMesh.SamplePosition(transform.position, out var hit, NavMeshReach, NavMesh.AllAreas)) return false;

@@ -27,6 +27,9 @@ namespace Game
             fsm.SendEvent(shake);
         }
 
+        /// <summary>True while one of these shakes is going.</summary>
+        public static bool Shaking => Info() is PlayMakerFSM fsm && Running(fsm) > 0;
+
         /// <summary>
         /// A bang at 'point' shakes the view by how close the player's head is: ShakeMed within 'near' metres, ShakeSmall
         /// within 'far', nothing farther.

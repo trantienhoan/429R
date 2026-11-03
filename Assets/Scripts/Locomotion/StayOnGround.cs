@@ -64,11 +64,13 @@ namespace Game.Locomotion
 
             // The XR Origin stands on the floor (the player's real floor), so its height is the feet. Looked at: a
             // column around the body from the feet to above the head, a little wider than the body, so things are let
-            // through before the body reaches them.
+            // through before the body reaches them. Around the body where it is (under the head, Body Under Head), not
+            // the middle of the play area.
             float feet = transform.position.y;
             float radius = body.radius * Mathf.Abs(transform.lossyScale.x) + lookAround;
             float headTop = Mathf.Max(body.bounds.max.y, feet + BodyHeight);
-            var bottom = new Vector3(transform.position.x, feet + radius - 0.05f, transform.position.z);
+            var middle = transform.TransformPoint(body.center);
+            var bottom = new Vector3(middle.x, feet + radius - 0.05f, middle.z);
             var top = new Vector3(bottom.x, Mathf.Max(bottom.y, headTop - radius), bottom.z);
 
             int count = Physics.OverlapCapsuleNonAlloc(bottom, top, radius, nearby, Physics.AllLayers, QueryTriggerInteraction.Ignore);

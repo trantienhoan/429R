@@ -89,11 +89,12 @@ namespace Game.Enemies
             return false;
         }
 
-        // Lying still on the floor, nobody's using it, no roach in it, the player at the right distance with a clear run.
+        // Lying still on the floor, nobody's using it, no roach in it or on its way to hide in it, the player at the right
+        // distance with a clear run.
         private bool Ready(Vector3 head, out Vector3 spot)
         {
             spot = transform.position;
-            if (bowler == null || GetComponent<RottingPumpkin>() != null) return false;
+            if (bowler == null || GetComponent<RottingPumpkin>() != null || RottingPumpkin.IsTaken(gameObject)) return false;
             if (grab != null && (grab.isSelected || HeldThings.InUse(grab))) return false;
             if (body != null && !body.isKinematic && body.linearVelocity.sqrMagnitude > 0.04f) return false;
             var flat = head - transform.position;

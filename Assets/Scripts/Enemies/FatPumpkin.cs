@@ -11,8 +11,8 @@ namespace Game.Enemies
     /// <summary>
     /// A greedy tree pumpkin (Turns Into Fat Pumpkin makes it): it wakes up where a Pumpkin_On_Tree sat among the candies,
     /// then waddles after every candy lying on the floor, nearest first, sucks each one in and gets fatter and slower. It
-    /// never hurts the player: it only steals their candy. A good punch or throw of theirs breaks it (Health 2: a hard hit
-    /// at once, or two normal ones; the player's blasts too), and it gives back only a few of what it ate (Drop Share).
+    /// never hurts the player: it only steals their candy. The player's hits break it (Health 5, user 2026-11-03: one good
+    /// one, weaker ones add up; their blasts too), and it gives back only a few of what it ate (Drop Share).
     /// Goes on the prefab's root, next to its NavMesh Agent. Its look is under Model > Jiggle: an Animator with a controller
     /// found under it replaces the waddle, and gets the Walking bool, the Walk Speed float and the Eat, Hit and Laugh triggers
     /// if its controller has them (Tools > 429 Game > Enemies > Set Up Fat Pumpkin Animation makes all that).
@@ -82,9 +82,10 @@ namespace Game.Enemies
         [SerializeField] private float eatVolume = 0.8f;
 
         [Header("Breaking")]
-        [Tooltip("Its health, in the game's whole-number damage: a normal punch does 1, a hard punch or most throws 2.")]
+        [Tooltip("Its health, in the game's whole-number damage (a closed-fist punch does 1, hard 2; a flying jab 1 + the " +
+                 "Fist Size points; weapons and throws their own).")]
         [Min(1f)]
-        [SerializeField] private float health = 2f;
+        [SerializeField] private float health = 5f;
         [Tooltip("How hits turn into damage (the enemies' shared Hit Settings asset). Empty: the default numbers.")]
         [SerializeField] private HitSettings hitSettings;
         [Tooltip("Divides the hit power, like an enemy's Toughness.")]

@@ -420,6 +420,17 @@ namespace Game.Enemies
         [Tooltip("At most this many spiders attack at the same time; the others circle and wait.")]
         [Min(1)]
         [SerializeField] private int maxAttackers = 2;
+        [Tooltip("Bravery in numbers (user, 2026-11-03): more than this many of its kind at once (spiders, cockroaches or bees, " +
+                 "any size but the bosses; the white bug doesn't count) and none of them waits for a turn: they may all " +
+                 "charge the player together. (Fliers never wait for one anyway.)")]
+        [Min(1)]
+        [SerializeField] private int braveAbove = 7;
+        [Tooltip("...brave at least this long, in seconds; after that, once fewer than Lose Nerve Below are left, the rest " +
+                 "lose their nerve: they all run off (Flee Seconds), then carry on as usual, waiting for turns again.")]
+        [Min(0f)]
+        [SerializeField] private float braveAtLeast = 3f;
+        [Min(1)]
+        [SerializeField] private int loseNerveBelow = 3;
         [Tooltip("Seconds between its attacks (random between).")]
         [SerializeField] private Vector2 attackCooldown = new(1.2f, 2.4f);
         [Tooltip("How far it backs off after an attack, in metres.")]
@@ -890,6 +901,16 @@ namespace Game.Enemies
         [SerializeField] private AudioClip blockedSound;
         [Range(0f, 1f)]
         [SerializeField] private float volume = 1f;
+        [Tooltip("Squashed flat (a killing hit from above on the ground): one of these, at random and never the same twice in " +
+                 "a row, a little higher or lower each time (Squash Pitch).")]
+        [SerializeField] private AudioClip[] squashSounds = Array.Empty<AudioClip>();
+        [Tooltip("...and now and then (Squash Extra Chance) one of these on top, e.g. the cartoon pancake.")]
+        [SerializeField] private AudioClip[] squashExtras = Array.Empty<AudioClip>();
+        [Range(0f, 1f)]
+        [SerializeField] private float squashExtraChance = 0.5f;
+        [Range(0f, 1f)]
+        [SerializeField] private float squashVolume = 0.9f;
+        [SerializeField] private Vector2 squashPitch = new(0.9f, 1.12f);
         [Tooltip("At most this many alert, attack and web sounds play at once, counting every enemy (a swarm doesn't " +
                  "pile them up). Hit and blocked sounds always play.")]
         [Min(1)]
@@ -934,6 +955,26 @@ namespace Game.Enemies
         private static readonly List<PlayMakerFSM> fsmBuffer = new();
         private static int attackersNow;
         private static int webShootersNow;
+        // Bravery in numbers, for each kind (Spider, Cockroach, Bee): how many are about, and since when they're brave.
+        private sealed class Courage
+        {
+            public int count;
+            public bool brave;
+            public float since;
+        }
+        private static readonly Dictionary<string, Courage> courage = new();
+        private static int courageFrame = -1;
+        // The squash sounds played last (by any bug), so the next isn't the same.
+        private static AudioClip lastSquash;
+        private static AudioClip lastSquashExtra;
+        // Flattened by a killing hit from above (user, 2026-11-03): its height and width as shares of what they were, and how
+        // quickly, in seconds.
+        private const float FlatHeight = 0.15f;
+        private const float FlatWidth = 1.3f;
+        private const float FlatSeconds = 0.06f;
+        // The killing hit has to be this recent, in seconds, to flatten it.
+        private const float FlatHitSeconds = 0.5f;
+        private string kindTag;
         // The one spider on the player's face (Cling To Face), if any.
         private static SpiderBrain clinger;
         // Every enemy's sounds together: when the ones playing end, and when each sound last started.
@@ -1170,6 +1211,10 @@ namespace Game.Enemies
             spiders.Clear();
             attackersNow = 0;
             webShootersNow = 0;
+            courage.Clear();
+            courageFrame = -1;
+            lastSquash = null;
+            lastSquashExtra = null;
             clinger = null;
             voiceEnds.Clear();
             soundStarted.Clear();
@@ -1180,6 +1225,10 @@ namespace Game.Enemies
 
         private void Awake()
         {
+            // Its kind for Bravery in numbers: the prefab's name up to the first '_' (Spider_Small: Spider).
+            var named = gameObject.name;
+            int cut = named.IndexOf('_');
+            kindTag = cut > 0 ? named.Substring(0, cut) : named.Replace("(Clone)", "").Trim();
             agent = GetComponent<NavMeshAgent>();
             TryGetComponent(out speaker);
             anomaly = RollAnomaly();
@@ -1273,6 +1322,7 @@ namespace Game.Enemies
             }
 
             Grow();
+            UpdateCourage();
             if (player == null) player = FindAnyObjectByType<XROrigin>();
             // On the face it never waits on the rest of the brain: no player or no NavMesh under it, it lets go.
             if (state == State.Cling && (player == null || player.Camera == null || !agent.isOnNavMesh)) LetGo(false);
@@ -3851,6 +3901,7 @@ namespace Game.Enemies
             if (state == State.Cling) LetGo(false);
             if (anomaly && state != State.Dead) AnomalyKilled();
             if (kindName == SizeClass.Boss && !anomaly && state != State.Dead) BossKilled();
+            bool flattened = state != State.Dead && FlattenIfStamped();
             // Beaten before its bomb went off: defused.
             if (bombAt >= 0f)
             {
@@ -3862,7 +3913,10 @@ namespace Game.Enemies
             StopShooting();
             Stop();
             if (animator != null) animator.speed = 1f;
-            if (HasAnimationQuiet(deathAnimation)) Play(deathAnimation, true);
+            // Squashed flat it stays as it stood (user, 2026-11-03): its pose is held, so no death animation (its own or
+            // the Health FSM's) turns it over onto its back.
+            if (flattened) HoldPose();
+            else if (HasAnimationQuiet(deathAnimation)) Play(deathAnimation, true);
             if (leapLift > 0f || flyLift > 0f)
             {
                 leapFallSpeed = 0f;
@@ -3893,6 +3947,13 @@ namespace Game.Enemies
                 if (IsFlying) StartDive();
                 return true;
             }
+            // Brave in numbers: no queue, everyone may come.
+            if (Brave)
+            {
+                hasTurn = true;
+                turnCounted = false;
+                return true;
+            }
             if (attackersNow >= maxAttackers) return false;
             hasTurn = true;
             turnCounted = true;
@@ -3906,6 +3967,144 @@ namespace Game.Enemies
             hasTurn = false;
             if (turnCounted) attackersNow = Mathf.Max(0, attackersNow - 1);
             turnCounted = false;
+        }
+
+        // ---- Bravery in numbers ----
+
+        // Its kind are brave now (more than Brave Above of them about): it doesn't wait for a turn.
+        private bool Brave => CountsForCourage && courage.TryGetValue(kindTag, out var kind) && kind.brave;
+
+        // Counted among its kind: alive and about, not a boss, the white bug, hiding in a pumpkin or after something else.
+        private bool CountsForCourage =>
+            !string.IsNullOrEmpty(kindTag) && kindName != SizeClass.Boss && !anomaly && !GoesForObject &&
+            state != State.Dead && state != State.Hide;
+
+        // Once a frame (by whichever bug comes first) every kind is counted: more than Brave Above and they get brave; brave
+        // at least Brave At Least seconds and down to fewer than Lose Nerve Below, the rest lose their nerve.
+        private void UpdateCourage()
+        {
+            if (courageFrame == Time.frameCount) return;
+            courageFrame = Time.frameCount;
+            foreach (var kind in courage.Values) kind.count = 0;
+            foreach (var bug in spiders)
+            {
+                if (bug == null || !bug.CountsForCourage) continue;
+                if (!courage.TryGetValue(bug.kindTag, out var kind)) courage[bug.kindTag] = kind = new Courage();
+                kind.count++;
+            }
+            foreach (var pair in courage)
+            {
+                var kind = pair.Value;
+                if (!kind.brave)
+                {
+                    if (kind.count <= braveAbove) continue;
+                    kind.brave = true;
+                    kind.since = Time.time;
+                    Debug.Log($"[Spider Brain] {pair.Key}: brave in numbers ({kind.count}).");
+                    continue;
+                }
+                if (kind.count == 0)
+                {
+                    kind.brave = false;
+                    continue;
+                }
+                if (Time.time - kind.since < braveAtLeast || kind.count >= loseNerveBelow) continue;
+                kind.brave = false;
+                Debug.Log($"[Spider Brain] {pair.Key}: lost their nerve ({kind.count} left).");
+                LoseNerve(pair.Key);
+            }
+        }
+
+        // The few left of a brave crowd run off, then come back as usual (Flee Seconds), waiting for their turns again.
+        private static void LoseNerve(string kindTag)
+        {
+            foreach (var bug in spiders.ToArray())
+            {
+                if (bug == null || bug.kindTag != kindTag || !bug.CountsForCourage) continue;
+                bug.GiveUpTurn();
+                switch (bug.state)
+                {
+                    case State.Idle:
+                    case State.Wander:
+                    case State.Notice:
+                    case State.Chase:
+                    case State.Circle:
+                    case State.Prepare:
+                    case State.Retreat:
+                        break;
+                    default:
+                        continue;
+                }
+                bug.StopShooting();
+                bug.StartFlee();
+            }
+        }
+
+        // Killed by a hit that came down on it from above (a swing, a stamp) while it was on the ground: it's squashed flat
+        // and wide, and stays so while its death plays out. Its model is squashed, not the whole bug, so the death's own
+        // shrink keeps the shape. True if it was.
+        private bool FlattenIfStamped()
+        {
+            if (IsFlying || leapLift > 0.02f || state == State.Cling || state == State.Hide) return false;
+            if (!TryGetComponent(out EnemyHitDamage hurt) || !hurt.LastHurtFromAbove || Time.time - hurt.LastHurtAt > FlatHitSeconds) return false;
+            var squash = animator != null && animator.transform != transform && animator.transform.IsChildOf(transform) ? animator.transform : transform;
+            StartCoroutine(Flatten(squash));
+            PlaySquash(PickSquash(squashSounds, ref lastSquash), squashVolume);
+            if (squashExtras.Length > 0 && Random.value < squashExtraChance) PlaySquash(PickSquash(squashExtras, ref lastSquashExtra), squashVolume * 0.8f);
+            return true;
+        }
+
+        // One at random, not the one played last (when there's another).
+        private static AudioClip PickSquash(AudioClip[] clips, ref AudioClip last)
+        {
+            if (clips == null || clips.Length == 0) return null;
+            var clip = clips[Random.Range(0, clips.Length)];
+            if (clip == last && clips.Length > 1) clip = clips[(Array.IndexOf(clips, clip) + Random.Range(1, clips.Length)) % clips.Length];
+            last = clip;
+            return clip;
+        }
+
+        // From where it was squashed, heard like its own sounds (its speaker's 3D settings), on a speaker of its own that
+        // outlives the bug: its body is gone before a long squash ends.
+        private void PlaySquash(AudioClip clip, float loudness)
+        {
+            if (clip == null) return;
+            var go = new GameObject("Squash Sound");
+            go.transform.position = transform.position;
+            var source = go.AddComponent<AudioSource>();
+            source.spatialBlend = 1f;
+            if (speaker != null)
+            {
+                source.spatialBlend = speaker.spatialBlend;
+                source.rolloffMode = speaker.rolloffMode;
+                source.minDistance = speaker.minDistance;
+                source.maxDistance = speaker.maxDistance;
+                source.dopplerLevel = speaker.dopplerLevel;
+                source.outputAudioMixerGroup = speaker.outputAudioMixerGroup;
+            }
+            source.clip = clip;
+            source.volume = loudness;
+            source.pitch = Random.Range(squashPitch.x, squashPitch.y);
+            source.Play();
+            Destroy(go, clip.length / Mathf.Max(0.1f, source.pitch) + 0.1f);
+        }
+
+        // Its body stays in the pose it had when it was squashed: every Animator on it stops where it is.
+        private void HoldPose()
+        {
+            foreach (var each in GetComponentsInChildren<Animator>()) each.enabled = false;
+        }
+
+        private static System.Collections.IEnumerator Flatten(Transform squash)
+        {
+            var from = squash.localScale;
+            var to = new Vector3(from.x * FlatWidth, from.y * FlatHeight, from.z * FlatWidth);
+            for (float t = 0f; t < FlatSeconds && squash != null; t += Time.deltaTime)
+            {
+                squash.localScale = Vector3.Lerp(from, to, t / FlatSeconds);
+                yield return null;
+            }
+            if (squash != null) squash.localScale = to;
         }
 
         private AttackMove PickAttack(float distance)

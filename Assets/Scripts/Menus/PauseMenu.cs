@@ -267,14 +267,16 @@ namespace Game.Menus
             else Pause();
         }
 
+        // Not during the opening: its eyelids would hide the menu, its pointers are off and its skip counts game time, so
+        // the player would be stuck in the black with no sound.
         private void OnApplicationFocus(bool hasFocus)
         {
-            if (!hasFocus && pauseOnFocusLoss && !Application.isEditor) Pause();
+            if (!hasFocus && pauseOnFocusLoss && !Application.isEditor && !OpeningCutscene.IsPlaying) Pause();
         }
 
         private void OnApplicationPause(bool paused)
         {
-            if (paused && pauseOnFocusLoss && !Application.isEditor) Pause();
+            if (paused && pauseOnFocusLoss && !Application.isEditor && !OpeningCutscene.IsPlaying) Pause();
         }
 
         public void Pause()

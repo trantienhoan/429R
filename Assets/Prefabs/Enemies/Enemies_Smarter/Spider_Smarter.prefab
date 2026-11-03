@@ -2813,6 +2813,7 @@ MonoBehaviour:
   settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
   toughness: 2
   hitCooldown: 0.3
+  everyHitCounts: 0
   knockBack: 1
   knockBackDistance: 1.5
   knockBackTime: 0.45
@@ -2961,6 +2962,7 @@ MonoBehaviour:
     slowPlayerTo: 1
     slowSeconds: 0
     pushPower: 1
+    pushFarther: 1
     usedWhen: 0
   - name: Claw R
     usedBy: 7
@@ -2988,6 +2990,7 @@ MonoBehaviour:
     slowPlayerTo: 1
     slowSeconds: 0
     pushPower: 1
+    pushFarther: 1
     usedWhen: 0
   - name: Claw L
     usedBy: 7
@@ -3015,8 +3018,12 @@ MonoBehaviour:
     slowPlayerTo: 1
     slowSeconds: 0
     pushPower: 1
+    pushFarther: 1
     usedWhen: 0
   maxAttackers: 3
+  braveAbove: 7
+  braveAtLeast: 3
+  loseNerveBelow: 3
   attackCooldown: {x: 0.8, y: 1.6}
   retreatDistance: 1.2
   walkBackSpeed: 0.7
@@ -3185,6 +3192,16 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 52d4f2b97068c0b4290fffcf4c6154e7, type: 3}
   blockedSound: {fileID: 8300000, guid: 9f33a6c57f37b904caaa68322aa2e0eb, type: 3}
   volume: 1
+  squashSounds:
+  - {fileID: 8300000, guid: 4dd480eebf8e6a543b5583603f58b0e2, type: 3}
+  - {fileID: 8300000, guid: f04905892dc648b4492c434e3da25f80, type: 3}
+  - {fileID: 8300000, guid: e5b7fe06dc497144e9b23329c9953948, type: 3}
+  squashExtras:
+  - {fileID: 8300000, guid: 3358e64fa152195488f438ce5256cc06, type: 3}
+  - {fileID: 8300000, guid: 4a1621518813a244bb355d4b0444a86b, type: 3}
+  squashExtraChance: 0.5
+  squashVolume: 0.9
+  squashPitch: {x: 0.9, y: 1.12}
   maxVoices: 3
   sameSoundGap: 0.3
   warnWhenUnseen: 1

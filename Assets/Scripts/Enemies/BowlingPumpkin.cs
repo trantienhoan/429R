@@ -15,10 +15,12 @@ namespace Game.Enemies
     /// 2026-10-31), faster and faster (Roll Acceleration),
     /// trailing smoke and ploughing through everything like a bulldozer: bugs in its way die, breakables and furniture are
     /// smashed, loose things shoved aside (not candy). It explodes when it reaches the player, runs into a boss, a wall
-    /// (the Wall layer, e.g. the rooftop's gates) or the edge of its NavMesh (a Fall Edge), after Max Roll metres, or when
-    /// the player hits it first (a punch, a weapon they hold or just threw, a shot):
+    /// (the Wall layer, e.g. the rooftop's gates) or the edge of its NavMesh (a Fall Edge), or after Max Roll metres:
     /// the game's explosion (Blast), and the player within Blast Radius is hurt (Player Event) and thrown. A step aside
-    /// or a teleport dodges it. Goes on the prefab's root, next to its NavMesh Agent; Model is the ball that rolls.
+    /// or a teleport dodges it. The player's hits (a punch, a flying punch, a weapon they hold or just threw, a shot; any
+    /// that would hurt an enemy) knock it the other way (user, 2026-11-03): it rolls off away from where it was hit, like a
+    /// ball, a little faster; sent off by the player it no longer goes for them, and what it runs over and its blast are
+    /// theirs. Goes on the prefab's root, next to its NavMesh Agent; Model is the ball that rolls.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(NavMeshAgent))]
@@ -76,6 +78,12 @@ namespace Game.Enemies
         [Min(0f)]
         [SerializeField] private float trailSize = 0.3f;
 
+        [Header("Punched")]
+        [Tooltip("A hit of the player's sends it rolling away from where it was hit, this much faster than it was going, " +
+                 "in metres per second (still up to Max Roll Speed).")]
+        [Min(0f)]
+        [SerializeField] private float punchSpeedUp = 2f;
+
         [Header("Bulldozing")]
         [Tooltip("What's this close to its front, in metres beyond the ball, is in its way: bugs are killed (a boss stops it: " +
                  "it explodes on it), breakables and furniture take Smash Damage, loose things are shoved aside and ahead. " +
@@ -111,10 +119,6 @@ namespace Game.Enemies
         [SerializeField] private float playerDamageShare = 0.5f;
         [Tooltip("The blast throws the player this high (x) and this far (y), in metres (Toughness cuts both).")]
         [SerializeField] private Vector2 playerLaunch = new(1.5f, 3f);
-        [Tooltip("A hit of the player's at least this fast (metres per second: a punch, a weapon, something thrown) sets it " +
-                 "off where it is.")]
-        [Min(0f)]
-        [SerializeField] private float setOffByHit = 3f;
 
         private enum Phase { WindUp, Roll, Gone }
 
@@ -127,6 +131,8 @@ namespace Game.Enemies
         private const float KillDamage = 100000f;
         // The rolling sound's pitch at full speed (1 when it sets off).
         private const float TopPitch = 1.35f;
+        // After a hit knocks it away, more hits are ignored this long, in seconds, so one punch counts once.
+        private const float PunchCooldown = 0.25f;
 
         private static readonly Collider[] inTheWay = new Collider[48];
         private static int wallMask = -1;
@@ -151,6 +157,9 @@ namespace Game.Enemies
         private float rollingFor;
         private float sinceTrail;
         private float stuck;
+        // The player has knocked it away: it's their ball now.
+        private bool sentByPlayer;
+        private float nextPunch;
         // What it has already smashed (each takes its damage once).
         private readonly System.Collections.Generic.HashSet<Object> smashed = new();
 
@@ -222,14 +231,22 @@ namespace Game.Enemies
             WarnBeforeRolling();
             if (Time.time < phaseUntil) return;
 
+            StartRolling(to.sqrMagnitude > 0.0001f ? to.normalized : transform.forward);
+        }
+
+        // Sets off along this way (flat, normalized): from the wind-up, or knocked away by the player.
+        private void StartRolling(Vector3 way)
+        {
+            bool rolling = phase == Phase.Roll;
             if (model != null) model.localPosition = modelHome;
             transform.localScale = fullScale;
-            direction = to.sqrMagnitude > 0.0001f ? to.normalized : transform.forward;
+            direction = way;
             transform.rotation = Quaternion.LookRotation(direction);
             phase = Phase.Roll;
             rolled = 0f;
-            rollingFor = 0f;
             stuck = 0f;
+            if (rolling) return;
+            rollingFor = 0f;
             if (speaker != null && rollSound != null)
             {
                 // What's left of the laugh goes; the rolling sound at full volume.
@@ -288,7 +305,7 @@ namespace Game.Enemies
                 EffectPool.Play(trailPuff, transform.position - direction * (radius * transform.lossyScale.y), trailSize);
             }
 
-            if (ReachesPlayer(before, transform.position)) { Explode(); return; }
+            if (!sentByPlayer && ReachesPlayer(before, transform.position)) { Explode(); return; }
             if (!Bulldoze(speed)) { Explode(); return; }
             // The edge of its NavMesh (a wall, a Fall Edge's hole) stops it: it explodes there.
             if (progress < step * 0.3f) stuck += Time.deltaTime;
@@ -328,8 +345,8 @@ namespace Game.Enemies
                     if (IsBoss(enemy)) return false;
                     if (smashed.Add(enemy))
                     {
-                        // Run over, not the player's kill: no EXP.
-                        Game.Leveling.PlayerLevel.NoRewardFor(enemy.gameObject);
+                        // Run over, not the player's kill: no EXP (unless they knocked it this way).
+                        if (!sentByPlayer) Game.Leveling.PlayerLevel.NoRewardFor(enemy.gameObject);
                         Blast.Damage(hit, hit.ClosestPoint(center), KillDamage);
                         foreach (var effect in breakOutEffects)
                         {
@@ -342,8 +359,8 @@ namespace Game.Enemies
                 Object key = thing != null ? thing : hit;
                 if (smashed.Add(key))
                 {
-                    // Smashed in full (a bulldozer), but not the player's doing: no EXP.
-                    Game.Leveling.PlayerLevel.NoRewardFor(thing != null ? thing.gameObject : hit.gameObject);
+                    // Smashed in full (a bulldozer), but not the player's doing: no EXP (unless they knocked it this way).
+                    if (!sentByPlayer) Game.Leveling.PlayerLevel.NoRewardFor(thing != null ? thing.gameObject : hit.gameObject);
                     Blast.Damage(hit, center, smashDamage);
                 }
                 if (thing != null && !thing.isKinematic && !PushWeight.IsImmovable(thing)) Shove(thing, center, shove);
@@ -385,25 +402,39 @@ namespace Game.Enemies
             return (toPlayer - path * t).magnitude <= (hitRadius + radius) * size;
         }
 
-        // The player's hits set it off where it is: a fist, a weapon, a thrown thing.
+        // The player's hits, by the one rule (a fist, a flying punch, a weapon they hold or just threw, a shot): any that
+        // would hurt an enemy knocks it away from where it was hit, like a ball (hit square on, it goes back the way it
+        // came; on its side, off to the other side), a little faster. A weapon lying in its way is ploughed aside, not a
+        // hit.
         private void OnCollisionEnter(Collision collision)
         {
-            if (phase == Phase.Gone) return;
-            var other = collision.rigidbody;
-            if (other == null || collision.relativeVelocity.magnitude < setOffByHit) return;
-            if (Fist.IsFistBall(other)) { Explode(true); return; }
-            if (!other.TryGetComponent<WeaponPower>(out _) && !other.CompareTag("Weapon")) return;
-            // Only the player's: held or just thrown (or a shot, which can't be held). A weapon lying in its way is
-            // ploughed aside, not a hit.
-            if (other.TryGetComponent<XRGrabInteractable>(out var grab) && !HeldThings.InUse(grab)) return;
-            Explode(true);
+            if (phase == Phase.Gone || Time.time < nextPunch) return;
+            var hit = EnemyHitDamage.Judge(collision, 1f, null, out bool byPlayer);
+            if (!byPlayer || hit.Damage <= 0f) return;
+            var at = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
+            var way = Middle() - at;
+            way.y = 0f;
+            if (way.sqrMagnitude < 0.0001f) way = phase == Phase.Roll ? -direction : -transform.forward;
+            nextPunch = Time.time + PunchCooldown;
+            var settings = HitSettings.Shared;
+            if (settings.ShowsEffect(hit, true)) settings.PlayEffect(at, hit);
+            HitBuzz.Dealt(collision, hit.Damage);
+            bool rolling = phase == Phase.Roll;
+            // Knocked off before its warning was over: the warning stops.
+            if (!rolling && warner != null) warner.Stop();
+            sentByPlayer = true;
+            StartRolling(way.normalized);
+            // On from the speed it had (from Roll Speed after a wind-up), Punch Speed Up faster.
+            if (rollAcceleration > 0f) rollingFor = (rolling ? rollingFor : 0f) + punchSpeedUp / rollAcceleration;
         }
 
-        // By Player: the player's hit set it off, so its blast is theirs (else it counts like a knock they didn't make).
+        // By Player: the player's hit set it off, so its blast is theirs (else it counts like a knock they didn't make);
+        // knocked away by them, it's theirs too.
         private void Explode(bool byPlayer = false)
         {
             if (phase == Phase.Gone) return;
             phase = Phase.Gone;
+            byPlayer |= sentByPlayer;
             var at = Middle();
             if (speaker != null) speaker.Stop();
             if (warner != null) warner.Stop();

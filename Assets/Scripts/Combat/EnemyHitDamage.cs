@@ -161,6 +161,13 @@ namespace Game.Combat
         /// <summary>The most recent hit on this enemy, whether it hurt or not.</summary>
         public HitResult LastHit { get; private set; }
 
+        /// <summary>
+        /// The last of the player's hits that hurt it came down on it from above (a swing or a stamp on its back: touching
+        /// its top, what hit it above), and when (Time.time; -1 before any). A bug killed so is flattened (Spider Brain).
+        /// </summary>
+        public bool LastHurtFromAbove { get; private set; }
+        public float LastHurtAt { get; private set; } = -1f;
+
         /// <summary>True once its health has run out (its body may still be playing the death).</summary>
         public bool IsDead => dead || (health != null && health.Value <= 0f);
 
@@ -339,6 +346,8 @@ namespace Game.Combat
 
             bool wasAlive = health.Value > 0f;
             health.Value -= hit.Damage;
+            LastHurtAt = Time.time;
+            LastHurtFromAbove = byPlayer && FromAbove(collision);
             if (everyHitCounts) WaitOut(hitter);
             else nextHit = Time.time + hitCooldown;
             // The hand behind it (a fist, or a hand holding what hit) buzzes as hard as it hurt.
@@ -516,6 +525,19 @@ namespace Game.Combat
             float front = Vector3.Dot(point - body.center, forward) / Mathf.Max(0.01f, frontExtent);
             float up = (point.y - body.min.y) / Mathf.Max(0.01f, body.size.y);
             return front >= FaceFront && up >= FaceUp;
+        }
+
+        // Came down on it from above: at one of the points where they touch, the surface faces up or down (within 60
+        // degrees; which way Unity's contact normal points doesn't matter), and what hit it is above that point.
+        private static bool FromAbove(Collision collision)
+        {
+            var hitter = collision.rigidbody != null ? collision.rigidbody.worldCenterOfMass : collision.transform.position;
+            for (int i = 0; i < collision.contactCount; i++)
+            {
+                var contact = collision.GetContact(i);
+                if (Mathf.Abs(contact.normal.y) >= 0.5f && hitter.y > contact.point.y) return true;
+            }
+            return false;
         }
 
         // Let go a moment ago and still flying: a throw (not a fist, not a weapon in the hand, not a shot).

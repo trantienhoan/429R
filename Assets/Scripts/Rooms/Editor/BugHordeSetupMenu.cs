@@ -11,8 +11,8 @@ namespace Game.EditorTools
     /// Tools > 429 Game > Rooms > Add Bug Hordes To Furniture: puts Bug Horde on the big furniture bugs could hide in
     /// (beds, shelves and the bookshelf, tables and the work table, sofas, the coffer), so when one breaks, sometimes
     /// (12%) 2-7 small bugs burst out of it. Chairs, stools, the clock, baskets, barrels, boxes, the Jenga blocks, the
-    /// wall shelves and the magic tables don't get it. An empty bug list, puff or pop is filled in (Spider_Small,
-    /// Cockroach_Small, Bee_Small; the dust puff; Bug_Pop); the chance and the numbers already set aren't touched, so
+    /// wall shelves and the magic tables don't get it. An empty bug list, puff or pop is filled in (Spider_Small: only
+    /// spiders come out of furniture; the dust puff; Bug_Pop); the chance and the numbers already set aren't touched, so
     /// running it again keeps changes made in the Inspector.
     /// </summary>
     public static class BugHordeSetupMenu
@@ -41,7 +41,7 @@ namespace Game.EditorTools
             "Livingroom_Table_3",
         };
 
-        private static readonly string[] Bugs = { "Spider_Small", "Cockroach_Small", "Bee_Small" };
+        private static readonly string[] Bugs = { "Spider_Small" };
 
         [MenuItem("Tools/429 Game/Rooms/Add Bug Hordes To Furniture")]
         public static void AddToFurniture()

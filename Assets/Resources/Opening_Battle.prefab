@@ -70772,7 +70772,7 @@ Transform:
   m_GameObject: {fileID: 5025886963436762097}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.04, z: 0}
+  m_LocalPosition: {x: 0, y: 0.005, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -81584,7 +81584,7 @@ MonoBehaviour:
   stunStars: {fileID: 7677325272559620522, guid: 6d1846d9543c33b488672d5292c98e1b,
     type: 3}
   stunStarsRadius: 3
-  laughState: laugh_true
+  clapState: clap
   dizzyState: dizzy_true
   spinHit: 0.9
   punchLeftState: punch_L
@@ -81679,19 +81679,25 @@ MonoBehaviour:
   knightFlung: Flung
   knightGrabThrow: Grab_Throw
   blackSeconds: 3
-  getUpSeconds: 6.4
+  getUpSeconds: 5
   waitForLook: 3.5
   noticeSeconds: 2
   stareSeconds: 0.25
   flightSeconds: 2.2
-  splashSeconds: 0.35
+  splashSeconds: 0
   darkenSeconds: 1.33
   darkSeconds: 2
   wakeVoice: {fileID: 8300000, guid: 46c1958bfdb2de24890403e6c25c5b8d, type: 3}
   wakeVoiceVolume: 1
   muffledHz: 700
   slapSound: {fileID: 8300000, guid: 4c7447597d4959e4296abb074effa21b, type: 3}
+  slapSounds:
+  - {fileID: 8300000, guid: 73ef8b36689f9264f87e91a206ab6ba6, type: 3}
+  - {fileID: 8300000, guid: 9365589577bfbdf4190c3e85a0f6659c, type: 3}
+  - {fileID: 8300000, guid: 42d7c3cc8010b8f4ebb6c5d3ac575388, type: 3}
   slapVolume: 1
+  slapJolt: 0.06
+  slapJoltSeconds: 0.45
   clangs:
   - {fileID: 8300000, guid: 44288e7bdf474ac49b68410c6a357f2e, type: 3}
   - {fileID: 8300000, guid: 9999cf1b85dd65543a241e8009be684f, type: 3}
@@ -81700,23 +81706,41 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 03a9c5408f429a747979fc6dfbdce0c2, type: 3}
   clangVolume: 0.7
   bossLaughs:
-  - {fileID: 8300000, guid: 98cf1aac2cdae9d498f7ca26b41d17b9, type: 3}
-  - {fileID: 8300000, guid: 38c1e7beef9650d40bb3372f80ba5975, type: 3}
-  bossRoar: {fileID: 8300000, guid: 95867a459646868489c87aa8003feba0, type: 3}
+  - {fileID: 8300000, guid: 6f65b9dba2074975a5c602bfcfc46c3a, type: 3}
+  - {fileID: 8300000, guid: 708007e070694938857df01c32ed1a17, type: 3}
+  bossRoar: {fileID: 8300000, guid: 26d5d73179cd4283bc6a2e430dfa24c7, type: 3}
+  roarRumble: 0.02
+  roarRumbleSeconds: 1.2
+  slamRoarAfter: 0.5
   spinSound: {fileID: 8300000, guid: 7655546cf456af942b5c94d157a4d512, type: 3}
   punchSound: {fileID: 8300000, guid: 7655546cf456af942b5c94d157a4d512, type: 3}
   punchVolume: 0.7
+  punchRange: 6
   flySound: {fileID: 8300000, guid: 97d2e1dfb0c1d454cb1ef3d2f8ce2511, type: 3}
+  pumpkinWhistles:
+  - {fileID: 8300000, guid: 49b13f5648ccf4248bb908aaf6ecaf52, type: 3}
+  - {fileID: 8300000, guid: e5eb913471c03b740af834404a3943c4, type: 3}
+  whistleVolume: 1
+  whistleRange: 6
   splatSound: {fileID: 8300000, guid: 9fa3ff2a48ede5a43bc3e1b550e1dc2d, type: 3}
+  splatSounds:
+  - {fileID: 8300000, guid: 9fa3ff2a48ede5a43bc3e1b550e1dc2d, type: 3}
+  - {fileID: 8300000, guid: fa130e6cf4c8cb84eb979ef3ddbaff63, type: 3}
+  splatVolume: 1
+  splatGoo:
+  - {fileID: 8300000, guid: 5e704bdb837d6421f83465bf6b5ed283, type: 3}
+  - {fileID: 8300000, guid: 586eef9b8d39dc5469c76bf13be5d8eb, type: 3}
+  gooVolume: 0.6
+  bossSplatRange: 6
   splatEffect: {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57,
     type: 3}
   hitSounds:
-  - {fileID: 8300000, guid: 9fa3ff2a48ede5a43bc3e1b550e1dc2d, type: 3}
-  - {fileID: 8300000, guid: 9f33a6c57f37b904caaa68322aa2e0eb, type: 3}
-  hintAfter: 1
+  - {fileID: 8300000, guid: e0223e15ca33742104b45bcfdd0445ca, type: 3}
+  faceSplatVolume: 1
+  hintAfter: 0.3
   skipAfter: 2.5
-  skipText: Hold to skip
-  textAt: {x: 1.2, y: 0.42}
+  iconAt: {x: 1.2, y: 0.42}
+  iconSize: 0.15
   lidsMaterial: {fileID: 2100000, guid: 69822064f102c16438e40766be1408eb, type: 2}
 --- !u!1 &6659654864741609093
 GameObject:
@@ -142985,7 +143009,7 @@ AudioSource:
   SpatializePostEffects: 0
   Priority: 128
   DopplerLevel: 1
-  MinDistance: 40
+  MinDistance: 50
   MaxDistance: 120
   Pan2D: 0
   rolloffMode: 1

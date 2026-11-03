@@ -36,7 +36,7 @@ namespace Game.Rooms
         [Tooltip("How many bugs come out: a random number from X to Y (both included).")]
         [SerializeField] private Vector2Int count = new Vector2Int(2, 7);
         [Tooltip("The bugs, one picked at random for each (put one in twice to make it come more often). Small, weak " +
-                 "bugs: Enemies_Smarter/Spider_Small, Cockroach_Small, Bee_Small.")]
+                 "bugs: the furniture has only Enemies_Smarter/Spider_Small.")]
         [SerializeField] private GameObject[] bugs = Array.Empty<GameObject>();
         [Tooltip("They come out one after another over this many seconds.")]
         [Min(0f)]

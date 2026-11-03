@@ -1,10 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using Game.Combat;
-using TMPro;
 using Unity.XR.CoreUtils;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
+using UnityEngine.UI;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 using UnityEngine.XR.Interaction.Toolkit.Locomotion;
 
@@ -18,9 +19,10 @@ namespace Game.Menus
     /// in the ground; on the left one has the boss's fists coming down at it, left and right, and rolls out from under each; a
     /// third runs about grabbing pumpkins off the ground and throwing them at it. The first Knight runs to the boss. As it gets in front of it, the boss spins and
     /// everyone gets flung, and lands head first, stuck in the ground. Then it turns slowly to the player, waits for them to look (a
-    /// moment at most), jolts as it sees they're still alive ("!!!" over its head), laughs at them, and throws pumpkin after pumpkin: all right at them: one bursts just in front, the next flies by their head, one breaks in their face, and
+    /// moment at most), jolts as it sees they're still alive ("!!!" over its head), claps at them, laughing, and throws pumpkin after pumpkin: all right at them: one bursts just in front, the next flies by their head, one breaks in their face, and
     /// the screen goes dark as the boss jumps for its body slam, landing as it's black, and it laughs in the dark. Then the health warning and the
-    /// save slots. Holding any button shows "Hold to skip" after a moment, and skips. Nothing flashes white. Made by Health
+    /// save slots. Holding any button shows a skip icon (no words, user 2026-11-03) whose ring fills up, and skips when it's
+    /// full. Nothing flashes white. Made by Health
     /// Warning from Resources (Opening_Battle: Tools > 429 Game > Menu > Set Up Opening builds it); nothing to put in the scene.
     /// </summary>
     [DisallowMultipleComponent]
@@ -69,8 +71,8 @@ namespace Game.Menus
         [SerializeField] private GameObject stunStars;
         [Min(0.01f)]
         [SerializeField] private float stunStarsRadius = 3f;
-        [Tooltip("Then it laughs at them, standing (its \"laugh\" clip is for its upper body).")]
-        [SerializeField] private string laughState = "laugh_true";
+        [Tooltip("Then it claps at them, laughing, and throws (the clip is for its upper body: its legs stand meanwhile).")]
+        [SerializeField] private string clapState = "clap";
         [Tooltip("After its spin, as in the game, until it sees the player.")]
         [SerializeField] private string dizzyState = "dizzy_true";
         [Tooltip("Seconds into its spin that everyone gets flung.")]
@@ -193,7 +195,7 @@ namespace Game.Menus
         [SerializeField] private float blackSeconds = 3f;
         [Tooltip("How long after its first slap the Knight turns and runs.")]
         [Min(0f)]
-        [SerializeField] private float getUpSeconds = 6.4f;
+        [SerializeField] private float getUpSeconds = 5f;
         [Tooltip("How long the boss waits for the player to look at it, at most.")]
         [Min(0f)]
         [SerializeField] private float waitForLook = 3.5f;
@@ -206,10 +208,10 @@ namespace Game.Menus
         [Tooltip("How long its pumpkin flies.")]
         [Min(0.1f)]
         [SerializeField] private float flightSeconds = 2.2f;
-        [Tooltip("How long the broken pumpkin is seen before it all goes black.")]
+        [Tooltip("How long the broken pumpkin is seen before it starts going black (0 = at once, as it hits).")]
         [Min(0f)]
-        [SerializeField] private float splashSeconds = 0.35f;
-        [Tooltip("How long the screen takes to go dark. The boss jumps for its body slam as it starts, and lands (1.33 s later) as it's black.")]
+        [SerializeField] private float splashSeconds = 0f;
+        [Tooltip("How long the screen takes to go dark: fast at first, from the hit. The boss jumps for its body slam as it starts, and lands (1.33 s later) as it's black.")]
         [Min(0.01f)]
         [SerializeField] private float darkenSeconds = 1.33f;
         [Tooltip("How long it's dark, the boss laughing, before the health warning.")]
@@ -224,46 +226,104 @@ namespace Game.Menus
         [Tooltip("The battle's muffled until the eyes open: how muffled (Hz; 22000 = not at all).")]
         [Min(100f)]
         [SerializeField] private float muffledHz = 700f;
-        [Tooltip("The Knight's hand on the player's face.")]
+        [Tooltip("The Knight's hand on the player's face (when Slap Sounds is empty). Never muffled, unlike the battle.")]
         [SerializeField] private AudioClip slapSound;
+        [Tooltip("One of these for each slap, at random, never the same twice in a row.")]
+        [SerializeField] private AudioClip[] slapSounds = System.Array.Empty<AudioClip>();
         [Range(0f, 1f)]
         [SerializeField] private float slapVolume = 1f;
+        [Tooltip("Each slap knocks the view this far sideways, in metres (away from the Knight), and it wobbles back...")]
+        [Range(0f, 0.15f)]
+        [SerializeField] private float slapJolt = 0.06f;
+        [Tooltip("...over this long, in seconds.")]
+        [Min(0.05f)]
+        [SerializeField] private float slapJoltSeconds = 0.45f;
         [Tooltip("Metal on the ground, as a flung Knight lands.")]
         [SerializeField] private AudioClip[] clangs = System.Array.Empty<AudioClip>();
         [Range(0f, 1f)]
         [SerializeField] private float clangVolume = 0.7f;
         [SerializeField] private AudioClip[] bossLaughs = System.Array.Empty<AudioClip>();
         [SerializeField] private AudioClip bossRoar;
+        [Tooltip("Each roar rumbles the view this far, in metres at most, like the ground shaking...")]
+        [Range(0f, 0.1f)]
+        [SerializeField] private float roarRumble = 0.02f;
+        [Tooltip("...dying away over this long, in seconds.")]
+        [Min(0.05f)]
+        [SerializeField] private float roarRumbleSeconds = 1.2f;
+        [Tooltip("Its roar as it jumps for the body slam waits this long, in seconds, for the splat in the player's face to " +
+                 "die away (0 = with it).")]
+        [Range(0f, 1.3f)]
+        [SerializeField] private float slamRoarAfter = 0.5f;
         [SerializeField] private AudioClip spinSound;
         [Tooltip("As a fist lands.")]
         [SerializeField] private AudioClip punchSound;
         [Range(0f, 1f)]
         [SerializeField] private float punchVolume = 0.7f;
+        [Tooltip("The fists land by the Knight, far off: they're heard at full volume up to this many metres away and fade " +
+                 "beyond (bigger = louder; 1 = a plain sound there).")]
+        [Min(1f)]
+        [SerializeField] private float punchRange = 6f;
+        [Tooltip("A flung Knight flying off (and the boss's pumpkins when Pumpkin Whistles is empty).")]
         [SerializeField] private AudioClip flySound;
-        [Tooltip("Played where a thrown pumpkin bursts on the boss, with the Effect below.")]
+        [Tooltip("Each pumpkin the boss throws at the player whistles down like a cartoon bomb: one of these, at random, " +
+                 "carried with the pumpkin and started part way in so it ends as the pumpkin lands or bursts.")]
+        [SerializeField] private AudioClip[] pumpkinWhistles = System.Array.Empty<AudioClip>();
+        [Range(0f, 1f)]
+        [SerializeField] private float whistleVolume = 1f;
+        [Tooltip("Each whistle is heard at full volume up to this many metres away and fades beyond (bigger = louder from afar).")]
+        [Min(1f)]
+        [SerializeField] private float whistleRange = 6f;
+        [Tooltip("Where a pumpkin bursts on the boss or near the player (when Splat Sounds is empty).")]
         [SerializeField] private AudioClip splatSound;
+        [Tooltip("Where a pumpkin bursts on the boss or near the player: one of these at random, never the same twice " +
+                 "in a row, a little higher or lower each time...")]
+        [SerializeField] private AudioClip[] splatSounds = System.Array.Empty<AudioClip>();
+        [Range(0f, 1f)]
+        [SerializeField] private float splatVolume = 1f;
+        [Tooltip("...with one of these along with it, for the wet goo.")]
+        [SerializeField] private AudioClip[] splatGoo = System.Array.Empty<AudioClip>();
+        [Range(0f, 1f)]
+        [SerializeField] private float gooVolume = 0.6f;
+        [Tooltip("The splats on the boss are about 15 m off: they're heard at full volume up to this many metres away and " +
+                 "fade beyond (bigger = louder; 1 = like the splats near the player).")]
+        [Min(1f)]
+        [SerializeField] private float bossSplatRange = 6f;
         [SerializeField] private GameObject splatEffect;
         [Tooltip("Played as the pumpkin breaks on the player (all of them).")]
         [SerializeField] private AudioClip[] hitSounds = System.Array.Empty<AudioClip>();
+        [Tooltip("How loud they are (1 = as recorded; above 1 is boosted, and too far crackles).")]
+        [Range(0f, 3f)]
+        [SerializeField] private float faceSplatVolume = 1f;
 
         [Header("Skipping")]
-        [Tooltip("Any button held this long, in seconds, shows the text...")]
+        [Tooltip("Any button held this long, in seconds, shows the skip icon (a quick press doesn't)...")]
         [Min(0f)]
-        [SerializeField] private float hintAfter = 1f;
-        [Tooltip("...and this long skips it.")]
+        [SerializeField] private float hintAfter = 0.3f;
+        [Tooltip("...and this long skips it: the ring round the icon fills up in between.")]
         [Min(0.1f)]
         [SerializeField] private float skipAfter = 2.5f;
-        [SerializeField] private string skipText = "Hold to skip";
-        [Tooltip("Where the text sits: how far ahead and how far below the eyes, in metres.")]
-        [SerializeField] private Vector2 textAt = new(1.2f, 0.42f);
+        [Tooltip("Where the skip icon sits: how far ahead and how far below the eyes, in metres.")]
+        [FormerlySerializedAs("textAt")]
+        [SerializeField] private Vector2 iconAt = new(1.2f, 0.42f);
+        [Tooltip("How wide the skip icon is (its ring), in metres.")]
+        [Min(0.01f)]
+        [SerializeField] private float iconSize = 0.15f;
 
         [Header("Eyelids")]
         [SerializeField] private Material lidsMaterial;
 
-        // Drawn after the lids.
-        private const int TextQueue = (int)UnityEngine.Rendering.RenderQueue.Overlay + 3;
-        private const string TextMaterial = "Damage Number";
-        private const string HoldColor = "#FFD040";
+        // The skip icon, drawn after the lids, over everything (the HUD's shader): a jack-o'-lantern on a dark purple disc,
+        // its carved eyes the skip arrows; as it's held the orange ring round it fills and its face lights up from embers
+        // to a candle's glow (user, 2026-11-03: "more halloween, pumpkin vibe").
+        private const int IconQueue = (int)UnityEngine.Rendering.RenderQueue.Overlay + 3;
+        private const string IconShader = "429/UI Overlay";
+        private const int IconPixels = 128;
+        private const float PumpkinShare = 0.72f;
+        private static readonly Color DiscColor = new(0.12f, 0.03f, 0.16f, 0.6f);
+        private static readonly Color RingColor = new(1f, 0.45f, 0.08f, 0.28f);
+        private static readonly Color FillColor = new(1f, 0.52f, 0.08f);
+        private static readonly Color EmberColor = new(0.45f, 0.1f, 0.02f);
+        private static readonly Color CandleColor = new(1f, 0.9f, 0.4f);
         private const float LookAngle = 50f;
         // Where the boss's pumpkin breaks, in metres in front of the eyes, and how high it arcs on its way.
         private const float BreakDistance = 2.2f;
@@ -272,7 +332,7 @@ namespace Game.Menus
         // How fast it turns to the player (degrees a second), and how long its notice clip is.
         private const float NoticeTurn = 35f;
         private const float NoticeClipSeconds = 1.6f;
-        private const float LaughClipSeconds = 1.6f;
+        private const float ClapClipSeconds = 1.5f;
         private const string BossHead = "Head";
         // The stun stars: how far above its head bone (share of its size), and how long at most (it notices the player first).
         private const float StarsAbove = 0.6f;
@@ -282,6 +342,8 @@ namespace Game.Menus
         // Its body slam clip, in its own seconds: it leaves the ground and lands.
         private const float SlamLeaves = 0.55f;
         private const float SlamLands = 1.33f;
+        // How many wobbles a second its roar's rumble makes.
+        private const float RumbleWobbles = 14f;
         // A pumpkin bursting on the ground near the player.
         private const float NearSplatSize = 3f;
         // Those that fly by come down this far behind the player.
@@ -292,9 +354,11 @@ namespace Game.Menus
         private const float ButtOnGround = 1.06f;
         private const float BossSinkSeconds = 0.3f;
         private const float BossRiseSeconds = 0.5f;
-        // The Knight's slaps, in seconds into its clip at the speed the controller plays it (0.6). Its arm stretches for this
+        // Its get-up clip slaps four times; it's started one slap in (frame 50 of 252, as a share of the clip), so it slaps three.
+        private const float GetUpStartsAt = 50f / 252f;
+        // The Knight's slaps, in seconds from there at the speed the controller plays it (0.6). Its arm stretches for this
         // long to each side of them, and stops this far from the player's eyes, in metres.
-        private static readonly float[] SlapAt = { 0.556f, 1.944f, 3.333f, 4.722f };
+        private static readonly float[] SlapAt = { 0.556f, 1.944f, 3.333f };
         private const float SlapSway = 0.2f;
         private const float SlapStopsShort = 0.5f;
         private const string SlapArmRight = "mixamorig:RightArm";
@@ -395,8 +459,21 @@ namespace Game.Menus
         private Material lids;
         private GameObject lidsObject;
         private AudioSource voice;
+        private AudioSource slapper;
         private AudioLowPassFilter muffler;
-        private TextMeshPro hint;
+        private GameObject skipIcon;
+        private CanvasGroup skipLook;
+        private Image skipRing;
+        private Image skipFace;
+        // The skip icon's material, textures and sprites, made here and destroyed with it.
+        private readonly List<Object> skipMade = new();
+        // The slap and whistle played last, so the next isn't the same; the whistles still coming down (a skip stops
+        // their flights, so they're stopped with it).
+        private AudioClip lastSlap;
+        private AudioClip lastWhistle;
+        private AudioClip lastSplat;
+        private AudioClip lastGoo;
+        private readonly List<AudioSource> whistles = new();
         private InputAction anyButton;
         private bool waitingForRelease;
         private float heldFor;
@@ -424,6 +501,10 @@ namespace Game.Menus
         private Vector3 slapArmSize;
         private Vector3 slapShoulderSize;
         private float slapStarted;
+        // The slap jolt going (counted, so a newer one takes over), and where the camera offset goes back to.
+        private int jolts;
+        private Transform joltRig;
+        private Vector3 joltRest;
         // The bone "!!!" follows.
         private Transform marksOver;
         private bool darkening;
@@ -488,6 +569,9 @@ namespace Game.Menus
         private void OnDestroy()
         {
             if (current == this) current = null;
+            DropSkipIcon();
+            StopWhistles();
+            EndJolt();
         }
 
         private void Update()
@@ -540,7 +624,8 @@ namespace Game.Menus
         // Each slap knocks the eyes open a bit more, and they droop again, slowly, until they stay open; the sound clears as they do.
         private IEnumerator Slaps()
         {
-            Play(leadKnight, side > 0f ? knightGetUpOnRight : knightGetUpOnLeft, 0f);
+            // (Still black: no need to blend into it.)
+            leadKnight.Play(side > 0f ? knightGetUpOnRight : knightGetUpOnLeft, 0, GetUpStartsAt);
             var body = leadKnight.transform;
             slapArm = body.FindDeep(side > 0f ? SlapArmRight : SlapArmLeft);
             slapHand = body.FindDeep(side > 0f ? rightHand : leftHand);
@@ -551,8 +636,10 @@ namespace Game.Menus
             for (int i = 0; i < SlapAt.Length; i++)
             {
                 while (Time.time - slapStarted < SlapAt[i]) yield return null;
-                if (slapSound != null) voice.PlayOneShot(slapSound, slapVolume);
-                ViewShake.Send(ViewShake.Small);
+                var slap = PickClip(slapSounds, ref lastSlap);
+                if (slap == null) slap = slapSound;
+                if (slap != null) slapper.PlayOneShot(slap, slapVolume);
+                StartCoroutine(SlapJolt());
                 if (i >= EyesAfterSlap.Length) continue;
                 yield return Lids(EyesAfterSlap[i].opens, EyesKnockedOpen, EyesAfterSlap[i].clear);
                 yield return Lids(EyesAfterSlap[i].droops, EyesDroop, 0f);
@@ -561,6 +648,57 @@ namespace Game.Menus
             slapArm.localScale = slapArmSize;
             slapShoulder.localScale = slapShoulderSize;
             slapArm = null;
+        }
+
+        // The slap knocks the head aside: the view jolts away from the Knight and wobbles back, slow enough to be seen as the
+        // eyes open. It moves the rig's camera offset, as the game's own shakes do, so it waits for none of those to be going,
+        // and puts it back where it was.
+        private IEnumerator SlapJolt()
+        {
+            if (slapJolt <= 0f || player == null || player.CameraFloorOffsetObject == null || ViewShake.Shaking) yield break;
+            EndJolt();
+            int mine = ++jolts;
+            joltRig = player.CameraFloorOffsetObject.transform;
+            joltRest = joltRig.localPosition;
+            var away = Flat(head.position - leadKnight.transform.position).normalized;
+            var push = joltRig.parent != null ? joltRig.parent.InverseTransformVector(away) : away;
+            for (float t = 0f; t < slapJoltSeconds; t += Time.deltaTime)
+            {
+                if (mine != jolts || joltRig == null) yield break;
+                // Out fast, a little way back past the middle, and still: (1 - k)² sin 3πk, which peaks at about 0.72.
+                float k = t / slapJoltSeconds;
+                joltRig.localPosition = joltRest + push * (slapJolt / 0.72f * (1f - k) * (1f - k) * Mathf.Sin(3f * Mathf.PI * k));
+                yield return null;
+            }
+            if (mine == jolts) EndJolt();
+        }
+
+        // Its roar shakes the ground: the view rumbles a little, coming in fast and dying away. Like the slap jolt it moves
+        // the camera offset; the opening's own big shakes end it first.
+        private IEnumerator RoarRumble()
+        {
+            if (roarRumble <= 0f || player == null || player.CameraFloorOffsetObject == null || ViewShake.Shaking) yield break;
+            EndJolt();
+            int mine = ++jolts;
+            joltRig = player.CameraFloorOffsetObject.transform;
+            joltRest = joltRig.localPosition;
+            float seed = Random.value * 100f;
+            for (float t = 0f; t < roarRumbleSeconds; t += Time.deltaTime)
+            {
+                if (mine != jolts || joltRig == null) yield break;
+                float k = t / roarRumbleSeconds;
+                float size = 2f * roarRumble * Mathf.Min(1f, t / 0.1f) * (1f - k) * (1f - k);
+                float n = t * RumbleWobbles;
+                joltRig.localPosition = joltRest + size * new Vector3(Mathf.PerlinNoise(n, seed) - 0.5f, Mathf.PerlinNoise(seed, n) - 0.5f, Mathf.PerlinNoise(n + seed, n) - 0.5f);
+                yield return null;
+            }
+            if (mine == jolts) EndJolt();
+        }
+
+        private void EndJolt()
+        {
+            if (joltRig != null) joltRig.localPosition = joltRest;
+            joltRig = null;
         }
 
         // The clip swings its arm; around each slap the shoulder and arm stretch, rubber-like, to the player's face wherever that is.
@@ -676,7 +814,7 @@ namespace Game.Menus
         private void FistLanded()
         {
             if (fistEffect != null) EffectPool.Play(fistEffect, fistOn, fistEffectSize);
-            if (punchSound != null) AudioSource.PlayClipAtPoint(punchSound, Heard(fistOn), punchVolume);
+            PlayAt(punchSound, Heard(fistOn), punchVolume, punchRange);
         }
 
         // Across in front of the boss, one way and the next the other, and up facing it again.
@@ -780,7 +918,7 @@ namespace Game.Menus
             }
             foreach (var part in pumpkin.GetComponentsInChildren<Renderer>()) part.enabled = false;
             if (splatEffect != null) EffectPool.Play(splatEffect, to, SplatSize);
-            if (splatSound != null) AudioSource.PlayClipAtPoint(splatSound, Heard(to));
+            Splat(Heard(to), bossSplatRange);
         }
 
         // Done getting the player up: it turns round and runs to the front of the boss.
@@ -816,9 +954,10 @@ namespace Game.Menus
             StartCoroutine(LegsLetGo());
             StartCoroutine(BossSinks(0f, ButtOnGround, BossSinkSeconds));
             if (spinEffect != null) EffectPool.Play(spinEffect, bossSpot, spinEffectSize);
-            SayFromBoss(bossRoar);
+            Roar();
             SayFromBoss(spinSound);
             yield return new WaitForSeconds(spinHit);
+            EndJolt();
             ViewShake.Near(bossSpot, 10f, 60f);
             foreach (var knight in new[] { leadKnight, stuckKnight, throwerKnight, fightKnight })
             {
@@ -842,6 +981,17 @@ namespace Game.Menus
                 yield return null;
             }
             boss.transform.position = bossSpot + Vector3.down * (to * bossSize);
+        }
+
+        // Its clap tucks its legs away like the punches: they stand still under it, coming in as the clap fades in.
+        private IEnumerator LegsStand()
+        {
+            for (float t = 0f; t < 0.2f; t += Time.deltaTime)
+            {
+                boss.SetLayerWeight(LegsLayer, t / 0.2f);
+                yield return null;
+            }
+            boss.SetLayerWeight(LegsLayer, 1f);
         }
 
         // Its legs stood still under its punches (those clips tuck them away); once the punch has faded into the next move, the
@@ -906,14 +1056,16 @@ namespace Game.Menus
                 yield return null;
             }
             yield return BossSeesThem();
-            Play(boss, laughState, 0f);
+            Play(boss, clapState, 0f);
+            StartCoroutine(LegsStand());
             SayFromBoss(RandomLaugh());
-            for (float t = 0f; t < LaughClipSeconds; t += Time.deltaTime)
+            for (float t = 0f; t < ClapClipSeconds; t += Time.deltaTime)
             {
                 TurnTo(bossBody, head.position, 70f);
                 yield return null;
             }
             boss.speed = throwSpeed;
+            StartCoroutine(LegsLetGo());
             float release = throwRelease / throwSpeed;
             int way = Random.value < 0.5f ? 1 : -1;
             bool left = Random.value < 0.5f;
@@ -962,7 +1114,7 @@ namespace Game.Menus
                 if (!marked && t >= noticeMarksAt)
                 {
                     marked = true;
-                    SayFromBoss(bossRoar);
+                    Roar();
                     if (noticeMarks != null)
                     {
                         marksOver = body.FindDeep(BossHead);
@@ -991,7 +1143,8 @@ namespace Game.Menus
         // One that only just misses, bursting on the ground there.
         private IEnumerator PumpkinLandsAt(Transform pumpkin, Vector3 to)
         {
-            if (flySound != null) AudioSource.PlayClipAtPoint(flySound, Heard(pumpkin.position));
+            var whistle = Whistle(pumpkin.position, flightSeconds);
+            if (whistle == null && flySound != null) AudioSource.PlayClipAtPoint(flySound, Heard(pumpkin.position));
             var from = pumpkin.position;
             var spin = Random.onUnitSphere * 240f;
             for (float t = 0f; t < flightSeconds; t += Time.deltaTime)
@@ -999,12 +1152,14 @@ namespace Game.Menus
                 float k = t / flightSeconds;
                 pumpkin.position = Vector3.Lerp(from, to, k) + Vector3.up * (4f * k * (1f - k) * ArcHeight);
                 pumpkin.Rotate(spin * Time.deltaTime, Space.World);
+                if (whistle != null) whistle.transform.position = Heard(pumpkin.position);
                 yield return null;
             }
+            if (whistle != null) Destroy(whistle.gameObject);
             Destroy(pumpkin.gameObject);
             // (Not one to be seen flashing on the black.)
             if (splatEffect != null && !darkening) EffectPool.Play(splatEffect, to, NearSplatSize);
-            if (splatSound != null) AudioSource.PlayClipAtPoint(splatSound, to);
+            Splat(to);
         }
 
         // As its Bug Pumpkin flies: an arc, tumbling, at where the player's head is.
@@ -1012,8 +1167,11 @@ namespace Game.Menus
         {
             if (flyingPumpkin == null) yield break;
             Show(flyingPumpkin);
-            if (flySound != null) AudioSource.PlayClipAtPoint(flySound, Heard(flyingPumpkin.position));
             var from = flyingPumpkin.position;
+            // It breaks Break Distance short of the head: the whistle ends then.
+            float reach = (head.position - from).magnitude;
+            var whistle = Whistle(from, flightSeconds * Mathf.Clamp01(1f - BreakDistance / Mathf.Max(reach, 0.01f)));
+            if (whistle == null && flySound != null) AudioSource.PlayClipAtPoint(flySound, Heard(flyingPumpkin.position));
             var spin = Random.onUnitSphere * 240f;
             for (float t = 0f; t < flightSeconds; t += Time.deltaTime)
             {
@@ -1021,9 +1179,77 @@ namespace Game.Menus
                 var at = Vector3.Lerp(from, head.position, k) + Vector3.up * (4f * k * (1f - k) * ArcHeight);
                 flyingPumpkin.position = at;
                 flyingPumpkin.Rotate(spin * Time.deltaTime, Space.World);
+                if (whistle != null) whistle.transform.position = Heard(at);
                 if ((head.position - at).magnitude < BreakDistance) break;
                 yield return null;
             }
+            if (whistle != null) Destroy(whistle.gameObject);
+        }
+
+        // A cartoon bomb's whistle coming down with a pumpkin (moved along by its flight), started part way in so it ends
+        // in Seconds, as the pumpkin gets there. Null with no Pumpkin Whistles.
+        private AudioSource Whistle(Vector3 at, float seconds)
+        {
+            var clip = PickClip(pumpkinWhistles, ref lastWhistle);
+            if (clip == null) return null;
+            var go = new GameObject("Pumpkin Whistle");
+            go.transform.position = Heard(at);
+            var source = go.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.spatialBlend = 1f;
+            source.minDistance = whistleRange;
+            source.maxDistance = 40f;
+            source.clip = clip;
+            source.volume = whistleVolume;
+            source.pitch = Random.Range(0.94f, 1.06f);
+            source.time = Mathf.Clamp(clip.length - seconds * source.pitch, 0f, Mathf.Max(0f, clip.length - 0.05f));
+            source.Play();
+            whistles.RemoveAll(w => w == null);
+            whistles.Add(source);
+            return source;
+        }
+
+        private void StopWhistles()
+        {
+            foreach (var whistle in whistles)
+            {
+                if (whistle != null) Destroy(whistle.gameObject);
+            }
+            whistles.Clear();
+        }
+
+        // A pumpkin bursting: a splat at random and the goo along with it, at full volume up to Near metres away.
+        private void Splat(Vector3 at, float near = 1f)
+        {
+            var clip = PickClip(splatSounds, ref lastSplat);
+            PlayAt(clip != null ? clip : splatSound, at, splatVolume, near);
+            PlayAt(PickClip(splatGoo, ref lastGoo), at, gooVolume, near);
+        }
+
+        // Like PlayClipAtPoint, a little higher or lower each time.
+        private static void PlayAt(AudioClip clip, Vector3 at, float volume, float near)
+        {
+            if (clip == null) return;
+            var go = new GameObject("Opening Sound " + clip.name);
+            go.transform.position = at;
+            var source = go.AddComponent<AudioSource>();
+            source.spatialBlend = 1f;
+            source.minDistance = near;
+            source.clip = clip;
+            source.volume = volume;
+            source.pitch = Random.Range(0.9f, 1.1f);
+            source.Play();
+            Destroy(go, clip.length / source.pitch + 0.1f);
+        }
+
+        // One at random, not the one played last (when there's another). Null with none.
+        private static AudioClip PickClip(AudioClip[] clips, ref AudioClip last)
+        {
+            if (clips == null || clips.Length == 0) return null;
+            var clip = clips[Random.Range(0, clips.Length)];
+            if (clip == last && clips.Length > 1) clip = clips[(System.Array.IndexOf(clips, clip) + Random.Range(1, clips.Length)) % clips.Length];
+            last = clip;
+            return clip;
         }
 
         // Up, at the player, and down with a boom as it's black.
@@ -1031,17 +1257,25 @@ namespace Game.Menus
         {
             boss.speed = 1f;
             Play(boss, slamState, 0f);
-            SayFromBoss(bossRoar);
             var body = boss.transform;
             var from = body.position;
             var to = floorPoint + Flat(from - floorPoint).normalized * slamStopsShort;
+            bool roared = false;
             for (float t = 0f; t < SlamLands; t += Time.deltaTime)
             {
+                // Its roar waits for the splat in their face to die away.
+                if (!roared && t >= slamRoarAfter)
+                {
+                    roared = true;
+                    Roar();
+                }
                 body.position = Vector3.Lerp(from, to, Mathf.InverseLerp(SlamLeaves, SlamLands, t));
                 yield return null;
             }
             body.position = to;
+            if (!roared) Roar();
             if (punchSound != null) AudioSource.PlayClipAtPoint(punchSound, head.position);
+            EndJolt();
             ViewShake.Send(ViewShake.Big);
         }
 
@@ -1054,7 +1288,7 @@ namespace Game.Menus
             if (splashEffect != null) EffectPool.Play(splashEffect, at, splashSize);
             foreach (var clip in hitSounds)
             {
-                if (clip != null) voice.PlayOneShot(clip);
+                if (clip != null) voice.PlayOneShot(clip, faceSplatVolume);
             }
             yield return new WaitForSeconds(splashSeconds);
             StartCoroutine(BossBodySlams());
@@ -1085,6 +1319,11 @@ namespace Game.Menus
             voice = gameObject.AddComponent<AudioSource>();
             voice.playOnAwake = false;
             voice.spatialBlend = 0f;
+            // The slaps aren't muffled with the rest: they're what wakes the player.
+            slapper = gameObject.AddComponent<AudioSource>();
+            slapper.playOnAwake = false;
+            slapper.spatialBlend = 0f;
+            slapper.bypassListenerEffects = true;
             // It only works next to the Audio Listener.
             var ears = FindAnyObjectByType<AudioListener>();
             if (ears != null)
@@ -1259,55 +1498,218 @@ namespace Game.Menus
                 return;
             }
             heldFor = down ? heldFor + Time.unscaledDeltaTime : 0f;
-            ShowHint();
+            ShowSkipIcon();
             if (heldFor < skipAfter) return;
             skipping = true;
             StopAllCoroutines();
             StartCoroutine(SkipOut());
         }
 
-        // Shows while it's held, and fills up with colour, low in the view, following the head.
-        private void ShowHint()
+        // A skip icon (no words) low in the view, following the head, while a button is held; the ring round it fills up
+        // with colour until it's full and the opening is skipped. Let go and it's gone.
+        private void ShowSkipIcon()
         {
             if (heldFor < hintAfter)
             {
-                if (hint != null) hint.gameObject.SetActive(false);
+                if (skipIcon != null && skipIcon.activeSelf)
+                {
+                    skipIcon.SetActive(false);
+                    skipLook.alpha = 0f;
+                }
                 return;
             }
-            if (hint == null) MakeHint();
-            if (hint == null || head == null) return;
-            hint.gameObject.SetActive(true);
-            int done = Mathf.RoundToInt(skipText.Length * Mathf.InverseLerp(hintAfter, skipAfter, heldFor));
-            hint.text = $"<color={HoldColor}>{skipText.Substring(0, done)}</color>{skipText.Substring(done)}";
+            if (skipIcon == null) MakeSkipIcon();
+            if (skipIcon == null || head == null) return;
             var flat = Flat(head.forward);
             if (flat.sqrMagnitude < 0.001f) flat = head.up;
-            var want = head.position + flat.normalized * textAt.x + Vector3.down * textAt.y;
-            hint.transform.position = Vector3.Lerp(hint.transform.position, want, 1f - Mathf.Exp(-10f * Time.unscaledDeltaTime));
-            hint.transform.rotation = Quaternion.LookRotation(hint.transform.position - head.position);
+            var want = head.position + flat.normalized * iconAt.x + Vector3.down * iconAt.y;
+            var place = skipIcon.transform;
+            if (!skipIcon.activeSelf)
+            {
+                skipIcon.SetActive(true);
+                place.position = want;
+            }
+            float dt = Time.unscaledDeltaTime;
+            skipLook.alpha = Mathf.MoveTowards(skipLook.alpha, 1f, dt / 0.15f);
+            float held = Mathf.InverseLerp(hintAfter, skipAfter, heldFor);
+            skipRing.fillAmount = held;
+            // The candle inside catches as it's held, flickering a little.
+            float flicker = 0.9f + 0.1f * Mathf.Sin(Time.unscaledTime * 23f) * Mathf.Sin(Time.unscaledTime * 7f);
+            var glow = Color.Lerp(EmberColor, CandleColor, held * held);
+            skipFace.color = new Color(glow.r * flicker, glow.g * flicker, glow.b * flicker);
+            place.position = Vector3.Lerp(place.position, want, 1f - Mathf.Exp(-10f * dt));
+            place.rotation = Quaternion.LookRotation(place.position - head.position);
         }
 
-        private void MakeHint()
+        // A small world-space canvas: a dark purple disc, a faint ring with the filling one over it, and the jack-o'-lantern
+        // in the middle (its body, and its carved face over it, lit by the hold). Its pictures are drawn here, so nothing
+        // has to be imported.
+        private void MakeSkipIcon()
         {
-            var font = TMP_Settings.defaultFontAsset;
-            if (font == null) return;
-            var go = new GameObject("Hold To Skip");
-            go.transform.localScale = Vector3.one * 0.05f;
-            hint = go.AddComponent<TextMeshPro>();
-            hint.font = font;
-            var look = Resources.Load<Material>(TextMaterial);
-            if (look != null) hint.fontSharedMaterial = look;
-            hint.fontSize = 10f;
-            hint.alignment = TextAlignmentOptions.Center;
-            hint.textWrappingMode = TextWrappingModes.NoWrap;
-            hint.richText = true;
-            hint.color = Color.white;
-            hint.fontMaterial.renderQueue = TextQueue;
-            if (head != null) go.transform.position = head.position + head.forward * textAt.x + Vector3.down * textAt.y;
+            var shader = Shader.Find(IconShader);
+            if (shader == null) shader = Shader.Find("UI/Default");
+            if (shader == null) return;
+            var look = new Material(shader) { name = "Skip Icon", renderQueue = IconQueue };
+            skipMade.Add(look);
+
+            skipIcon = new GameObject("Skip Icon", typeof(RectTransform));
+            var canvas = skipIcon.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.WorldSpace;
+            var rect = (RectTransform)skipIcon.transform;
+            rect.sizeDelta = new Vector2(IconPixels, IconPixels);
+            rect.localScale = Vector3.one * (iconSize / IconPixels);
+            skipLook = skipIcon.AddComponent<CanvasGroup>();
+            skipLook.alpha = 0f;
+            skipLook.interactable = false;
+            skipLook.blocksRaycasts = false;
+
+            var disc = MakeSprite("Skip Disc", 128, p => 1f - p.magnitude);
+            var ring = MakeSprite("Skip Ring", 256, p => 0.09f - Mathf.Abs(p.magnitude - 0.88f));
+            var pumpkin = MakeSprite("Skip Pumpkin", 128, PumpkinShape, PumpkinPaint);
+            var face = MakeSprite("Skip Pumpkin Face", 128, PumpkinFace);
+            IconPart("Disc", rect, disc, DiscColor, look);
+            IconPart("Ring", rect, ring, RingColor, look);
+            skipRing = IconPart("Fill", rect, ring, FillColor, look);
+            skipRing.type = Image.Type.Filled;
+            skipRing.fillMethod = Image.FillMethod.Radial360;
+            skipRing.fillOrigin = (int)Image.Origin360.Top;
+            skipRing.fillClockwise = true;
+            skipRing.fillAmount = 0f;
+            IconPart("Pumpkin", rect, pumpkin, Color.white, look).rectTransform.sizeDelta *= PumpkinShare;
+            skipFace = IconPart("Face", rect, face, EmberColor, look);
+            skipFace.rectTransform.sizeDelta *= PumpkinShare;
+            skipIcon.SetActive(false);
+        }
+
+        private static Image IconPart(string name, RectTransform parent, Sprite sprite, Color colour, Material look)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            var rect = (RectTransform)go.transform;
+            rect.SetParent(parent, false);
+            rect.sizeDelta = parent.sizeDelta;
+            var image = go.AddComponent<Image>();
+            image.sprite = sprite;
+            image.color = colour;
+            image.material = look;
+            image.raycastTarget = false;
+            return image;
+        }
+
+        // A picture, size x size, from a shape: inside(p) for p from (-1, -1) to (1, 1) is how far inside the shape that
+        // point is (negative outside), in the same units; the edge is softened over about a pixel. White, or paint(p).
+        private Sprite MakeSprite(string name, int size, System.Func<Vector2, float> inside, System.Func<Vector2, Color> paint = null)
+        {
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false) { name = name, wrapMode = TextureWrapMode.Clamp };
+            var pixels = new Color32[size * size];
+            float pixel = 2f / size;
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    var p = new Vector2((x + 0.5f) * pixel - 1f, (y + 0.5f) * pixel - 1f);
+                    var colour = paint != null ? paint(p) : Color.white;
+                    colour.a *= Mathf.Clamp01(0.5f + inside(p) / pixel);
+                    pixels[y * size + x] = colour;
+                }
+            }
+            texture.SetPixels32(pixels);
+            texture.Apply(false, true);
+            var sprite = Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), size / 2f);
+            sprite.name = name;
+            skipMade.Add(texture);
+            skipMade.Add(sprite);
+            return sprite;
+        }
+
+        // The pumpkin: three lobes side by side and a stem on top.
+        private static float PumpkinShape(Vector2 p) => Mathf.Max(PumpkinBody(p), PumpkinStem(p));
+
+        private static float PumpkinBody(Vector2 p)
+        {
+            float middle = InEllipse(p, new Vector2(0f, -0.1f), new Vector2(0.46f, 0.6f));
+            float left = InEllipse(p, new Vector2(-0.36f, -0.12f), new Vector2(0.5f, 0.54f));
+            float right = InEllipse(p, new Vector2(0.36f, -0.12f), new Vector2(0.5f, 0.54f));
+            return Mathf.Max(middle, Mathf.Max(left, right));
+        }
+
+        // A short stem leaning right, out of the top.
+        private static float PumpkinStem(Vector2 p)
+        {
+            float x = p.x - 0.25f * (p.y - 0.4f);
+            return Mathf.Min(Mathf.Min(x + 0.08f, 0.08f - x), Mathf.Min(p.y - 0.35f, 0.78f - p.y));
+        }
+
+        // Its colours: orange, darker down its ribs and towards the bottom, a soft shine top left; the stem green-brown.
+        private static Color PumpkinPaint(Vector2 p)
+        {
+            if (PumpkinStem(p) > PumpkinBody(p))
+                return Color.Lerp(new Color(0.28f, 0.33f, 0.1f), new Color(0.46f, 0.5f, 0.2f), Mathf.Clamp01((p.x + 0.05f) * 4f));
+            float shade = Mathf.InverseLerp(0.5f, -0.7f, p.y) * 0.45f;
+            // The ribs: curves bowing out from the stem to the bottom, where the lobes meet.
+            float bow = Mathf.Sqrt(Mathf.Max(0f, 1f - (p.y + 0.1f) * (p.y + 0.1f) / 0.4f));
+            float rib = Mathf.Min(Mathf.Abs(Mathf.Abs(p.x) - 0.2f * bow), Mathf.Abs(Mathf.Abs(p.x) - 0.52f * bow));
+            shade += Mathf.Clamp01(1f - rib / 0.05f) * 0.5f;
+            var colour = Color.Lerp(new Color(1f, 0.48f, 0.1f), new Color(0.7f, 0.24f, 0.03f), Mathf.Clamp01(shade));
+            float shine = Mathf.Clamp01(1f - (p - new Vector2(-0.42f, 0.18f)).magnitude / 0.3f);
+            return Color.Lerp(colour, new Color(1f, 0.72f, 0.38f), shine * 0.5f);
+        }
+
+        // Its carved face: two eyes that are the skip arrows (pointing right, like fast-forward) and a jagged grin with two
+        // teeth hanging down and one standing up.
+        private static float PumpkinFace(Vector2 p)
+        {
+            float left = InTriangle(p, new Vector2(-0.39f, 0.24f), new Vector2(-0.39f, -0.06f), new Vector2(-0.09f, 0.09f));
+            float right = InTriangle(p, new Vector2(0.09f, 0.24f), new Vector2(0.09f, -0.06f), new Vector2(0.39f, 0.09f));
+            float u = p.x / 0.5f;
+            float top = -0.26f + 0.14f * u * u;
+            float bottom = -0.46f + 0.32f * u * u;
+            float grin = Mathf.Min(Mathf.Min(top - p.y, p.y - bottom), 0.5f - Mathf.Abs(p.x));
+            float hanging = Mathf.Min(Mathf.Min(Mathf.Abs(p.x) - 0.12f, 0.24f - Mathf.Abs(p.x)), p.y - (top - 0.08f));
+            float standing = Mathf.Min(0.06f - Mathf.Abs(p.x), bottom + 0.08f - p.y);
+            grin = Mathf.Min(grin, -Mathf.Max(hanging, standing));
+            return Mathf.Max(grin, Mathf.Max(left, right));
+        }
+
+        // Roughly how far p is inside the ellipse (negative outside), scaled by its shorter radius.
+        private static float InEllipse(Vector2 p, Vector2 centre, Vector2 radius)
+        {
+            var d = new Vector2((p.x - centre.x) / radius.x, (p.y - centre.y) / radius.y);
+            return (1f - d.magnitude) * Mathf.Min(radius.x, radius.y);
+        }
+
+        // How far p is inside the triangle a, b, c (negative outside): its distance to the nearest edge, signed.
+        private static float InTriangle(Vector2 p, Vector2 a, Vector2 b, Vector2 c)
+        {
+            float d = Mathf.Min(EdgeDistance(p, a, b), Mathf.Min(EdgeDistance(p, b, c), EdgeDistance(p, c, a)));
+            float side = Cross(b - a, p - a);
+            bool inside = side * Cross(c - b, p - b) >= 0f && side * Cross(a - c, p - c) >= 0f;
+            return inside ? d : -d;
+        }
+
+        private static float EdgeDistance(Vector2 p, Vector2 a, Vector2 b)
+        {
+            var ab = b - a;
+            float t = Mathf.Clamp01(Vector2.Dot(p - a, ab) / ab.sqrMagnitude);
+            return (p - (a + ab * t)).magnitude;
+        }
+
+        private static float Cross(Vector2 a, Vector2 b) => a.x * b.y - a.y * b.x;
+
+        private void DropSkipIcon()
+        {
+            if (skipIcon != null) Destroy(skipIcon);
+            skipIcon = null;
+            foreach (var thing in skipMade)
+            {
+                if (thing != null) Destroy(thing);
+            }
+            skipMade.Clear();
         }
 
         // Black quickly, then on with the game.
         private IEnumerator SkipOut()
         {
+            StopWhistles();
             yield return FadeToBlack(0.25f);
             HideStage();
             Finish();
@@ -1321,9 +1723,11 @@ namespace Game.Menus
             lids.SetFloat(OpenId, 0f);
             lids.SetFloat(FadeId, fade ? 0f : 1f);
             lidsObject.SetActive(true);
+            // Darker straight away, slowing as it gets to black.
             for (float t = 0f; fade && t < seconds; t += Time.deltaTime)
             {
-                lids.SetFloat(FadeId, t * t / (seconds * seconds));
+                float k = t / seconds;
+                lids.SetFloat(FadeId, k * (2f - k));
                 yield return null;
             }
             lids.SetFloat(FadeId, 1f);
@@ -1349,7 +1753,8 @@ namespace Game.Menus
 
         private IEnumerator Lift()
         {
-            if (hint != null) Destroy(hint.gameObject);
+            DropSkipIcon();
+            StopWhistles();
             if (muffler != null) Destroy(muffler);
             if (sceneChanged)
             {
@@ -1425,6 +1830,13 @@ namespace Game.Menus
         private void SayFromBoss(AudioClip clip)
         {
             if (clip != null && boss.TryGetComponent<AudioSource>(out var speaker)) speaker.PlayOneShot(clip);
+        }
+
+        // Its roar, and the ground rumbles with it.
+        private void Roar()
+        {
+            SayFromBoss(bossRoar);
+            if (bossRoar != null) StartCoroutine(RoarRumble());
         }
     }
 
