@@ -34,7 +34,8 @@ namespace Game.EditorTools
         private const float ModelRadius = 0.23f;
         private const float Wider = 1.3f;
         private const float Squat = 0.95f;
-        private const float Scale = 1.4f;
+        // 20% smaller than first made (user, 2026-11-03).
+        private const float Scale = 1.12f;
         private const string BugAgentType = "Spider";
         private const int CandyKinds = 8;
 
