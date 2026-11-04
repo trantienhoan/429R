@@ -4,15 +4,15 @@ using UnityEngine;
 namespace HutongGames.PlayMaker.Actions
 {
     [ActionCategory("Bonus")]
-    [Tooltip("Plays the nesting pumpkin bonus round if the player earned it in the stage before (see Watch Bonus Round), " +
-             "then finishes. Not earned: finishes at once, and the bonus stage doesn't come. Earned: switches the bonus " +
-             "stage on (e.g. --Bedroom--MiniGame--: the field and the pumpkin chest) and starts the round there; punching " +
-             "the chest open lets the giant out and the countdown starts. Finishes when the round is over and the " +
-             "candies are eaten (the next state takes the field away: Destroy Object $BOSS_AREA).")]
+    [Tooltip("Plays a bonus round if the player earned it in the stage before (see Watch Bonus Round), then finishes. " +
+             "Not earned: finishes at once, and the bonus stage doesn't come. Earned: switches the bonus stage on (e.g. " +
+             "--Bedroom--MiniGame--: the field and the pumpkin chest) and starts the round there (the nesting pumpkins: " +
+             "punching the chest open lets the giant out; Paint Bees: standing on the ring in the middle). Finishes when " +
+             "the round is over and the candies are eaten (the next state takes the field away: Destroy Object $BOSS_AREA).")]
     public class PlayBonusRound : FsmStateAction
     {
         [RequiredField]
-        [Tooltip("The bonus round prefab (Bonus_Round).")]
+        [Tooltip("The bonus round prefab (Bonus_Round: the nesting pumpkins; Paint_Bees_Round).")]
         public FsmGameObject round;
 
         [RequiredField]
@@ -26,7 +26,8 @@ namespace HutongGames.PlayMaker.Actions
         [Tooltip("Sent when the round is over or wasn't earned. Empty: the state just finishes (FINISHED).")]
         public FsmEvent finishEvent;
 
-        private BonusRound running;
+        // The round's component (a Bonus Round or a Paint Bees Round: see IBonusGame).
+        private Component running;
 
         public override void Reset()
         {
@@ -50,12 +51,12 @@ namespace HutongGames.PlayMaker.Actions
             var at = stage.Value.transform.position;
             var stuff = FsmVariables.GlobalVariables.FindFsmGameObject("CurrentlySpawnedStuffs");
             var parent = stuff != null && stuff.Value != null ? stuff.Value.transform : null;
-            running = Object.Instantiate(round.Value, at, Quaternion.identity, parent).GetComponentInChildren<BonusRound>();
+            running = Object.Instantiate(round.Value, at, Quaternion.identity, parent).GetComponentInChildren<IBonusGame>() as Component;
         }
 
         public override void OnUpdate()
         {
-            if (running == null || running.Finished) Done();
+            if (running == null || ((IBonusGame)running).Finished) Done();
         }
 
         public override void OnExit()

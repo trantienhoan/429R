@@ -28,7 +28,7 @@ namespace Game.Bonus
     /// (in the stage's enemy-wave state) notes the seeds and the enemies; Play Bonus Round asks Earned.
     /// </summary>
     [DisallowMultipleComponent]
-    public class BonusRound : MonoBehaviour
+    public class BonusRound : MonoBehaviour, IBonusGame
     {
         [Header("Stage")]
         [Tooltip("The sky over the field while the round is on (Bonus_Stage_Sky: the picture puzzle's stars, clouds and dust, " +

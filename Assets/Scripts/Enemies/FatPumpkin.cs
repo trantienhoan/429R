@@ -10,9 +10,11 @@ namespace Game.Enemies
 {
     /// <summary>
     /// A greedy tree pumpkin (Turns Into Fat Pumpkin makes it): it wakes up where a Pumpkin_On_Tree sat among the candies,
-    /// then waddles after every candy lying on the floor, nearest first, sucks each one in and gets fatter and slower. It
-    /// never hurts the player: it only steals their candy. The player's hits break it (Health 5, user 2026-11-03: one good
-    /// one, weaker ones add up; their blasts too), and it gives back only a few of what it ate (Drop Share).
+    /// then waddles after every candy lying on the floor, nearest first, sucks each one in and gets fatter and slower. With
+    /// no candy left that it can get to (Angry After), it gets angry: it goes red and fumes a moment, then waddles after
+    /// the player and bites (it squashes down, then hops at them with a chomp: a bug's bite and a little shove). A candy
+    /// it can get to calms it down, and it goes back to eating. The player's hits break it (Health 5, user 2026-11-03: one
+    /// good one, weaker ones add up; their blasts too), and it gives back only a few of what it ate (Drop Share).
     /// Goes on the prefab's root, next to its NavMesh Agent. Its look is under Model > Jiggle: an Animator with a controller
     /// found under it replaces the waddle, and gets the Walking bool, the Walk Speed float and the Eat, Hit and Laugh triggers
     /// if its controller has them (Tools > 429 Game > Enemies > Set Up Fat Pumpkin Animation makes all that).
@@ -81,6 +83,42 @@ namespace Game.Enemies
         [Range(0f, 1f)]
         [SerializeField] private float eatVolume = 0.8f;
 
+        [Header("Angry (no candy left)")]
+        [Tooltip("With no candy it can get to for this long, in seconds, it gets angry and goes for the player.")]
+        [Min(0f)]
+        [SerializeField] private float angryAfter = 1.5f;
+        [Tooltip("Seconds it stands fuming, going red, before it comes for them.")]
+        [Min(0f)]
+        [SerializeField] private float fumeSeconds = 0.9f;
+        [Tooltip("How red it goes.")]
+        [SerializeField] private Color angryColour = new(1f, 0.3f, 0.2f, 1f);
+        [Tooltip("Played as it gets angry, and now and then while it's angry. Empty: its laugh, low and slow.")]
+        [SerializeField] private AudioClip angrySound;
+        [Tooltip("Played over its head as it gets angry (Effect Pool), e.g. a puff of steam, and their size. Empty: none.")]
+        [SerializeField] private GameObject[] angryEffects = System.Array.Empty<GameObject>();
+        [Min(0f)]
+        [SerializeField] private float angryEffectSize = 0.5f;
+        [Tooltip("How fast it waddles after the player, as a share of its walking speed (still slower the fatter it is).")]
+        [Min(0.1f)]
+        [SerializeField] private float chaseSpeedShare = 1.3f;
+        [Tooltip("It bites from this far, in metres from its side to where the player stands...")]
+        [Min(0.1f)]
+        [SerializeField] private float biteReach = 0.6f;
+        [Tooltip("...squashing down first for this long, in seconds (the warning)...")]
+        [Min(0f)]
+        [SerializeField] private float biteWindUp = 0.45f;
+        [Tooltip("...then hopping at them this far (x, metres) over this long (y, seconds).")]
+        [SerializeField] private Vector2 biteLunge = new(0.7f, 0.25f);
+        [Tooltip("Seconds from one bite to the next.")]
+        [Min(0.2f)]
+        [SerializeField] private float biteEvery = 1.6f;
+        [Tooltip("Sent to the player's Damage FSM when a bite lands: Damage (1-3 health, a bug's bite), DamageHeavy (6-12).")]
+        [SerializeField] private string biteEvent = "Damage";
+        [Tooltip("A bite that lands shoves the player back this high (x) and this far (y), in metres (their Toughness cuts it).")]
+        [SerializeField] private Vector2 biteShove = new(0.15f, 0.6f);
+        [Tooltip("Played as it bites. Empty: its gulp.")]
+        [SerializeField] private AudioClip biteSound;
+
         [Header("Breaking")]
         [Tooltip("Its health, in the game's whole-number damage (a closed-fist punch does 1, hard 2; a flying jab 1 + the " +
                  "Fist Size points; weapons and throws their own).")]
@@ -135,7 +173,10 @@ namespace Game.Enemies
         [Tooltip("Its walking speed as a share of its thin speed: how fast it waddles.")]
         [SerializeField] private string walkSpeedFloat = "WalkSpeed";
 
-        private enum Phase { Waking, Hunting, Gone }
+        private enum Phase { Waking, Hunting, Angry, Gone }
+
+        // While angry: fuming, waddling after the player, squashing down to bite, hopping at them.
+        private enum Rage { Fuming, Chasing, WindingUp, Lunging }
 
         private class Swallow
         {
@@ -174,6 +215,20 @@ namespace Game.Enemies
         private const float CandyHeight = 0.3f;
         private const float CandyOutward = 1f;
         private const string SpawnedStuffVariable = "CurrentlySpawnedStuffs";
+        // Angry: how fast it goes red (and back), how low its angry voice is, how far it looks for the player's floor.
+        private const float FlushPerSecond = 2.5f;
+        private const float AngryPitch = 0.6f;
+        private const float PlayerFloorReach = 1.5f;
+        // The bite's squash (height, width at the deepest), the hop's height, and how close the hop must get.
+        private const float SquashHeight = 0.78f;
+        private const float SquashWidth = 1.15f;
+        private const float LungeHop = 0.15f;
+        private const float LungeStopsShort = 0.15f;
+        private const float BiteContact = 0.35f;
+        private const string PlayerVariable = "Player";
+        private const string PlayerDamageFsm = "Damage";
+        private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
+        private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
 
         // The candies lying about, as seen by the last one who looked.
         private static readonly List<GameObject> loose = new();
@@ -211,6 +266,18 @@ namespace Game.Enemies
         private Vector3 targetWasAt;
         private readonly List<Swallow> swallows = new();
         private readonly Dictionary<GameObject, float> leftAlone = new();
+        // Angry: since when there's been no candy for it, what it's doing, until when, and how red it is (0-1).
+        private float noCandySince = -1f;
+        private Rage rage;
+        private float rageUntil;
+        private float nextBite;
+        private bool bitten;
+        private float flush;
+        private Vector3 modelScale = Vector3.one;
+        private Renderer[] looks = System.Array.Empty<Renderer>();
+        private MaterialPropertyBlock block;
+        private float nextChasePath;
+        private AudioSource growler;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics() => Alive = 0;
@@ -227,7 +294,17 @@ namespace Game.Enemies
             TryGetComponent(out speaker);
             if (speaker != null) speaker.pitch = voicePitch;
             FindAnimation();
-            if (model != null) modelHome = model.localPosition;
+            if (model != null)
+            {
+                modelHome = model.localPosition;
+                modelScale = model.localScale;
+            }
+            var found = new List<Renderer>();
+            foreach (var part in GetComponentsInChildren<Renderer>(true))
+            {
+                if (part is MeshRenderer || part is SkinnedMeshRenderer) found.Add(part);
+            }
+            looks = found.ToArray();
             fullScale = transform.localScale;
             bornAt = Time.time;
             head = Camera.main != null ? Camera.main.transform : null;
@@ -266,13 +343,15 @@ namespace Game.Enemies
             if (phase == Phase.Gone) return;
             FlySwallows();
             Grow();
+            Flush();
             if (phase == Phase.Waking)
             {
                 TurnTo(HeadFlat());
                 if (Time.time - bornAt >= wakeSeconds) phase = Phase.Hunting;
                 return;
             }
-            Hunt();
+            if (phase == Phase.Angry) Rampage();
+            else Hunt();
         }
 
         // ---------- Going after the candy ----------
@@ -283,6 +362,14 @@ namespace Game.Enemies
             {
                 nextLook = Time.time + LookEvery;
                 LookForCandy();
+                // Nothing left that it can get to (and nothing on its way to its mouth): a moment of that, and it's angry.
+                if (target != null || swallows.Count > 0) noCandySince = -1f;
+                else if (noCandySince < 0f) noCandySince = Time.time;
+                else if (Time.time - noCandySince >= angryAfter)
+                {
+                    GetAngry();
+                    return;
+                }
             }
             bool standing = Time.time < pausedUntil || target == null;
             bool knocked = knockback != null && knockback.IsKnockedBack;
@@ -384,6 +471,231 @@ namespace Game.Enemies
 
         private bool LeftAlone(GameObject candy) => leftAlone.TryGetValue(candy, out float until) && Time.time < until;
 
+        // ---------- Angry ----------
+
+        // No candy left for it: it goes red and fumes a moment (shaking, growling), then comes for the player.
+        private void GetAngry()
+        {
+            phase = Phase.Angry;
+            rage = Rage.Fuming;
+            rageUntil = Time.time + fumeSeconds;
+            noCandySince = -1f;
+            GoFor(null);
+            Stand();
+            if (jiggle != null) jiggle.Hit(HitWobble);
+            if (hasHit) animator.SetTrigger(hitTrigger);
+            if (hasWalking) animator.SetBool(walkingBool, false);
+            Growl();
+            var top = transform.position + Vector3.up * (radius * Size * 2f);
+            foreach (var effect in angryEffects)
+            {
+                if (effect != null) EffectPool.Play(effect, top, angryEffectSize * Size);
+            }
+            nextLaugh = Time.time + Random.Range(laughEvery.x, laughEvery.y);
+        }
+
+        // A candy it can get to: it forgets the player and goes for it.
+        private void CalmDown()
+        {
+            phase = Phase.Hunting;
+            noCandySince = -1f;
+            if (model == null) return;
+            model.localScale = modelScale;
+            model.localRotation = Quaternion.identity;
+        }
+
+        private void Rampage()
+        {
+            // Still greedy: a candy it can get to (one in reach is sucked in at once) calms it down.
+            if (Time.time >= nextLook && rage != Rage.Lunging)
+            {
+                nextLook = Time.time + LookEvery;
+                LookForCandy();
+                if (target != null)
+                {
+                    CalmDown();
+                    return;
+                }
+            }
+            var feet = PlayerFeet();
+            var toPlayer = feet - transform.position;
+            toPlayer.y = 0f;
+            float gap = toPlayer.magnitude - radius * Size;
+            bool knocked = knockback != null && knockback.IsKnockedBack && rage != Rage.Lunging;
+            float speed = 0f;
+            switch (rage)
+            {
+                case Rage.Fuming:
+                    Stand();
+                    TurnTo(toPlayer);
+                    // Shaking with rage.
+                    if (model != null) model.localRotation = Quaternion.Euler(0f, 0f, 4f * Mathf.Sin(Time.time * 40f));
+                    if (Time.time < rageUntil) break;
+                    if (model != null) model.localRotation = Quaternion.identity;
+                    rage = Rage.Chasing;
+                    break;
+                case Rage.Chasing:
+                    if (knocked || Time.time < pausedUntil)
+                    {
+                        Stand();
+                        break;
+                    }
+                    // In reach: it stands there, glaring, until it can bite again (it doesn't walk into them).
+                    if (gap <= biteReach)
+                    {
+                        Stand();
+                        TurnTo(toPlayer);
+                        if (Time.time < nextBite) break;
+                        rage = Rage.WindingUp;
+                        rageUntil = Time.time + biteWindUp;
+                        break;
+                    }
+                    Chase(feet);
+                    var velocity = agent.velocity;
+                    velocity.y = 0f;
+                    speed = velocity.magnitude;
+                    TurnTo(speed > 0.1f ? velocity : toPlayer);
+                    break;
+                case Rage.WindingUp:
+                    Stand();
+                    TurnTo(toPlayer);
+                    float k = biteWindUp > 0f ? 1f - Mathf.Clamp01((rageUntil - Time.time) / biteWindUp) : 1f;
+                    Squash(k * k);
+                    if (Time.time >= rageUntil) Lunge(toPlayer, gap);
+                    break;
+                case Rage.Lunging:
+                    Squash(0f);
+                    if (!bitten && gap <= BiteContact) Bite();
+                    if (knockback != null && knockback.IsKnockedBack && Time.time < rageUntil) break;
+                    rage = Rage.Chasing;
+                    nextBite = Time.time + biteEvery;
+                    break;
+            }
+            if (rage != Rage.Fuming) Waddle(speed);
+            if (hasWalking) animator.SetBool(walkingBool, speed > 0.1f);
+            if (hasWalkSpeed) animator.SetFloat(walkSpeedFloat, Mathf.Clamp(speed / walkSpeed, MinWalkAnimation, 1f));
+            if (Time.time >= nextLaugh)
+            {
+                nextLaugh = Time.time + Random.Range(laughEvery.x, laughEvery.y);
+                Growl();
+            }
+        }
+
+        // After the player, a little faster than it walks (still slower the fatter it is): a new path now and then.
+        private void Chase(Vector3 feet)
+        {
+            if (!agent.isOnNavMesh) return;
+            agent.isStopped = false;
+            float fatness = Mathf.InverseLerp(1f, Mathf.Max(1.01f, mostGrowth), Growth);
+            agent.speed = walkSpeed * chaseSpeedShare * Mathf.Lerp(1f, fullSpeedShare, fatness);
+            if (agent.hasPath && Time.time < nextChasePath) return;
+            nextChasePath = Time.time + LookEvery;
+            var filter = new NavMeshQueryFilter { agentTypeID = agent.agentTypeID, areaMask = agent.areaMask };
+            if (NavMesh.SamplePosition(feet, out var spot, PlayerFloorReach, filter) && agent.CalculatePath(spot.position, path) &&
+                path.status != NavMeshPathStatus.PathInvalid)
+                agent.SetPath(path);
+        }
+
+        // Hops at the player with a chomp (its Eat animation), to where they stand at the most.
+        private void Lunge(Vector3 toPlayer, float gap)
+        {
+            rage = Rage.Lunging;
+            rageUntil = Time.time + biteLunge.y + 0.1f;
+            bitten = false;
+            if (knockback == null && !TryGetComponent(out knockback)) knockback = gameObject.AddComponent<Knockback>();
+            var way = toPlayer.sqrMagnitude > 0.0001f ? toPlayer.normalized : transform.forward;
+            // It lands just short of them, not on top of them.
+            knockback.Push(transform.position - way, Mathf.Clamp(gap - LungeStopsShort, 0.1f, biteLunge.x), biteLunge.y, LungeHop, 0f);
+            if (hasEat) animator.SetTrigger(eatTrigger);
+            if (jiggle != null) jiggle.Hit(GulpWobble);
+            var clip = biteSound != null ? biteSound : eatSound;
+            if (clip != null && speaker != null) speaker.PlayOneShot(clip, eatVolume);
+        }
+
+        // The bite lands: a bug's bite, and a little shove back.
+        private void Bite()
+        {
+            bitten = true;
+            SendToPlayer(biteEvent);
+            if (biteShove.y > 0f) PlayerLaunch.Launch(transform.position, biteShove.x, biteShove.y, false);
+        }
+
+        private void Stand()
+        {
+            if (agent.isOnNavMesh) agent.isStopped = true;
+        }
+
+        // Squashes down to bite (0 = its own shape).
+        private void Squash(float k)
+        {
+            if (model == null) return;
+            float wide = Mathf.Lerp(1f, SquashWidth, k);
+            model.localScale = Vector3.Scale(modelScale, new Vector3(wide, Mathf.Lerp(1f, SquashHeight, k), wide));
+        }
+
+        // Goes red while it's angry, and back as it calms down.
+        private void Flush()
+        {
+            float want = phase == Phase.Angry ? 1f : 0f;
+            if (flush == want) return;
+            flush = Mathf.MoveTowards(flush, want, FlushPerSecond * Time.deltaTime);
+            block ??= new MaterialPropertyBlock();
+            foreach (var part in looks)
+            {
+                if (part == null) continue;
+                if (flush <= 0f)
+                {
+                    part.SetPropertyBlock(null);
+                    continue;
+                }
+                var material = part.sharedMaterial;
+                var own = material != null && material.HasProperty(BaseColor) ? material.GetColor(BaseColor) : Color.white;
+                var glow = material != null && material.HasProperty(EmissionColor) ? material.GetColor(EmissionColor) : Color.black;
+                part.GetPropertyBlock(block);
+                block.SetColor(BaseColor, Color.Lerp(own, own * angryColour, flush));
+                block.SetColor(EmissionColor, glow + angryColour * (0.35f * flush));
+                part.SetPropertyBlock(block);
+            }
+        }
+
+        // Its angry voice: Angry Sound, or its laugh, low and slow.
+        private void Growl()
+        {
+            if (speaker == null) return;
+            if (angrySound != null)
+            {
+                speaker.PlayOneShot(angrySound);
+                return;
+            }
+            if (laughs.Length == 0) return;
+            if (growler == null)
+            {
+                growler = gameObject.AddComponent<AudioSource>();
+                growler.playOnAwake = false;
+                growler.spatialBlend = speaker.spatialBlend;
+                growler.minDistance = speaker.minDistance;
+                growler.maxDistance = speaker.maxDistance;
+                growler.rolloffMode = speaker.rolloffMode;
+                growler.volume = speaker.volume;
+                growler.pitch = voicePitch * AngryPitch;
+            }
+            growler.PlayOneShot(laughs[Random.Range(0, laughs.Length)]);
+        }
+
+        private Vector3 PlayerFeet() =>
+            head != null ? new Vector3(head.position.x, transform.position.y, head.position.z) : transform.position + transform.forward;
+
+        private static void SendToPlayer(string eventName)
+        {
+            if (string.IsNullOrEmpty(eventName)) return;
+            var player = FsmVariables.GlobalVariables.FindFsmGameObject(PlayerVariable);
+            if (player == null || player.Value == null) return;
+            foreach (var fsm in player.Value.GetComponents<PlayMakerFSM>())
+            {
+                if (fsm.FsmName == PlayerDamageFsm) fsm.SendEvent(eventName);
+            }
+        }
+
         // ---------- Eating ----------
 
         private void Take(GameObject candy)
@@ -482,6 +794,13 @@ namespace Game.Enemies
             }
             if (jiggle != null) jiggle.Hit(HitWobble);
             pausedUntil = Mathf.Max(pausedUntil, Time.time + KnockSeconds + knock.y);
+            // A hit stops a bite coming (it has to wind up again once it's over the hit).
+            if (phase == Phase.Angry && rage != Rage.Fuming)
+            {
+                rage = Rage.Chasing;
+                Squash(0f);
+                nextBite = Mathf.Max(nextBite, pausedUntil);
+            }
             if (hitSounds.Length > 0 && speaker != null) speaker.PlayOneShot(hitSounds[Random.Range(0, hitSounds.Length)]);
             if (hasHit) animator.SetTrigger(hitTrigger);
             if (head == null) return;

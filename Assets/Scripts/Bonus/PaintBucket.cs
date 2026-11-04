@@ -3,20 +3,24 @@ using UnityEngine;
 namespace Game.Bonus
 {
     /// <summary>
-    /// One of the Paint Bees round's floating paint buckets (Paint_Bucket: the pumpkin bucket, its paint and a glow on
-    /// the floor under it). It rises out of the floor, floats there bobbing gently, and can't be moved; a hand dipped in
-    /// its paint takes its colour (the round checks the hands, see Dips). The paint wobbles and ripples at each dip.
+    /// One of the Paint Bees round's floating paint buckets (Paint_Bucket: the pumpkin bucket, its liquid paint and a glow
+    /// on the floor under it). It rises out of the floor, floats there bobbing gently, and can't be moved; a hand dipped in
+    /// its paint takes its colour (the round checks the hands, see Dips). The paint (429/Paint Liquid) waves gently; it
+    /// wobbles and ripples where a hand goes in, and a hand stirring it makes small ripples.
     /// </summary>
     public class PaintBucket : MonoBehaviour
     {
         private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
         private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
+        // The paint's ripple (429/Paint Liquid): x, z on the paint disc, seconds since, how strong.
+        private static readonly int RippleId = Shader.PropertyToID("_Ripple");
 
         [Tooltip("The paint's surface inside the bucket.")]
         [SerializeField] private Renderer paint;
         [Tooltip("The soft glow on the floor under it, in its colour. Empty: none.")]
         [SerializeField] private Renderer floorGlow;
-        [Tooltip("The ring that spreads over the paint at a dip (a Line Renderer round the paint's middle). Empty: none.")]
+        [Tooltip("A ring that spreads over the paint at a dip (a Line Renderer round the paint's middle). Empty: none (the " +
+                 "liquid paint ripples by itself).")]
         [SerializeField] private LineRenderer ripple;
         [Tooltip("How far from the paint's middle a hand counts as in it, in metres (the bucket's inside).")]
         [Min(0.05f)]
@@ -37,6 +41,9 @@ namespace Game.Bonus
 
         private const float RiseFrom = 0.9f;
         private const float RippleSeconds = 0.5f;
+        // A hand stirring the paint makes a new, smaller ripple this often at the most (and only when it moved 2 cm).
+        private const float StirEvery = 0.35f;
+        private const float StirMove = 0.02f;
 
         private Vector3 rest;
         private float riseStarted = -1f;
@@ -47,6 +54,10 @@ namespace Game.Bonus
         private Vector3 paintRest;
         private Color colour = Color.white;
         private MaterialPropertyBlock block;
+        private Vector2 rippleAt;
+        private float rippleStarted = -100f;
+        private float rippleStrength;
+        private Vector3 lastStir;
 
         /// <summary>The paint's colour index (see the round's colours).</summary>
         public int Colour { get; private set; }
@@ -97,7 +108,31 @@ namespace Game.Bonus
         }
 
         /// <summary>A hand went in: the paint wobbles and a ring spreads over it.</summary>
-        public void Splash() => dippedAt = Time.time;
+        public void Splash() => Splash(PaintMiddle);
+
+        /// <summary>A hand went in here: the paint wobbles and ripples spread from the spot.</summary>
+        public void Splash(Vector3 at)
+        {
+            dippedAt = Time.time;
+            Ripple(at, 1f);
+        }
+
+        /// <summary>A hand held in the paint here: moving, it stirs up small ripples now and then.</summary>
+        public void Stir(Vector3 at)
+        {
+            if (Time.time - rippleStarted < StirEvery || (at - lastStir).sqrMagnitude < StirMove * StirMove) return;
+            Ripple(at, 0.5f);
+        }
+
+        private void Ripple(Vector3 at, float strength)
+        {
+            lastStir = at;
+            if (paint == null) return;
+            var local = paint.transform.InverseTransformPoint(at);
+            rippleAt = new Vector2(Mathf.Clamp(local.x, -0.9f, 0.9f), Mathf.Clamp(local.z, -0.9f, 0.9f));
+            rippleStarted = Time.time;
+            rippleStrength = strength;
+        }
 
         private void Update()
         {
@@ -110,7 +145,14 @@ namespace Game.Bonus
             transform.rotation = Quaternion.Euler(2f * Mathf.Sin(t * 0.7f), transform.eulerAngles.y, 2f * Mathf.Cos(t * 0.6f));
 
             float since = Time.time - dippedAt;
-            if (paint != null) paint.transform.localPosition = paintRest + Vector3.up * (0.012f * Mathf.Exp(-since * 6f) * Mathf.Sin(since * 30f));
+            if (paint != null)
+            {
+                paint.transform.localPosition = paintRest + Vector3.up * (0.006f * Mathf.Exp(-since * 6f) * Mathf.Sin(since * 30f));
+                block ??= new MaterialPropertyBlock();
+                paint.GetPropertyBlock(block);
+                block.SetVector(RippleId, new Vector4(rippleAt.x, rippleAt.y, Time.time - rippleStarted, rippleStrength));
+                paint.SetPropertyBlock(block);
+            }
             if (ripple != null)
             {
                 bool on = since < RippleSeconds;

@@ -63,9 +63,6 @@ namespace Game.Bonus
         [SerializeField] private float riseSeconds = 0.6f;
         [Min(0f)]
         [SerializeField] private float riseGap = 0.15f;
-        [Tooltip("A hand dipped again in the same colour splashes again after this many seconds.")]
-        [Min(0f)]
-        [SerializeField] private float redipSeconds = 0.6f;
 
         [Header("Bees")]
         [SerializeField] private PaintBee bee;
@@ -125,9 +122,9 @@ namespace Game.Bonus
         [SerializeField] private float candyWaitSeconds = 20f;
 
         [Header("Stings")]
-        [Tooltip("A sting does this share of a bee's bite (Damage: 1-3 health), so about 1 health.")]
+        [Tooltip("A sting does this share of a bee's bite (Damage: about 6-9 health), so about 1 health.")]
         [Range(0f, 1f)]
-        [SerializeField] private float stingShare = 0.5f;
+        [SerializeField] private float stingShare = 0.15f;
         [Tooltip("The paint blobs splatted on the view (the round tints them its colour).")]
         [SerializeField] private Material splatMaterial;
         [Min(0.1f)]
@@ -192,6 +189,9 @@ namespace Game.Bonus
         private readonly List<PaintBucket> buckets = new();
         private readonly List<PaintBee> live = new();
         private readonly Dictionary<PaintBee, float> boinged = new();
+        // The bucket each hand was in last frame (a dip splashes as it goes in).
+        private readonly Dictionary<PaintHands.Hand, PaintBucket> dippedIn = new();
+        private int shownCount = -1;
         private Vector3 middle;
         private bool beesOut;
         private int combo;
@@ -289,7 +289,6 @@ namespace Game.Bonus
             // The bees, a few at a time, each lot a little faster.
             total = bees + (rainbowAt > 0f ? 1 : 0);
             int rainbowIndex = rainbowAt > 0f ? Mathf.Clamp(Mathf.RoundToInt(bees * rainbowAt), 0, total - 1) : -1;
-            PlayerBuffs.Add(Buff.CandyHelmet, 90f);
             beesOut = true;
             int spawned = 0;
             float next = Time.time + 0.6f;
@@ -298,6 +297,8 @@ namespace Game.Bonus
             {
                 if (!cleared && Time.time > next - 0.2f) { Say(""); cleared = true; }
                 live.RemoveAll(b => b == null);
+                // The Candy Helmet is on the whole time the bees are out.
+                if (PlayerBuffs.SecondsLeft(Buff.CandyHelmet) < 5f) PlayerBuffs.Give(Buff.CandyHelmet, 10f);
                 if (spawned < total && Time.time >= next && live.Count < mostAtOnce)
                 {
                     float p = total > 1 ? spawned / (float)(total - 1) : 1f;
@@ -379,16 +380,28 @@ namespace Game.Bonus
             {
                 if (hand.fist == null) continue;
                 var point = PaintHands.PointOf(hand);
+                PaintBucket inside = null;
                 foreach (var b in buckets)
                 {
-                    if (b == null || !b.Dips(point)) continue;
-                    if (hand.colour == b.Colour && Time.time - hand.dippedAt < redipSeconds) continue;
-                    bool fresh = hand.colour != b.Colour || Time.time - hand.dippedAt >= redipSeconds;
-                    hands.Paint(hand, b.Colour);
-                    if (!fresh) continue;
-                    b.Splash();
-                    Blobs(b.PaintMiddle, b.PaintColour, 10, 1.6f, true);
-                    PlayAt(Pick(dipSounds), point, 1f);
+                    if (b != null && b.Dips(point)) { inside = b; break; }
+                }
+                dippedIn.TryGetValue(hand, out var was);
+                dippedIn[hand] = inside;
+                if (inside != null)
+                {
+                    // Going in (or into another colour): it takes the colour and splashes; held in, it stays fresh.
+                    if (inside != was || hand.colour != inside.Colour)
+                    {
+                        hands.Paint(hand, inside.Colour);
+                        inside.Splash(point);
+                        Blobs(inside.PaintMiddle, inside.PaintColour, 10, 1.6f, true);
+                        PlayAt(Pick(dipSounds), point, 1f);
+                    }
+                    else
+                    {
+                        hand.dippedAt = Time.time;
+                        inside.Stir(point);
+                    }
                 }
                 if (!beesOut || PaintHands.SpeedOf(hand) < swatSpeed) continue;
                 for (int i = live.Count - 1; i >= 0; i--)
@@ -408,8 +421,12 @@ namespace Game.Bonus
             Swatted++;
             combo++;
             var at = b.transform.position;
-            var colour = b.Rainbow ? hands.ColourOf(hand) : ColourOf(b.Colour);
-            Blobs(at, colour, b.Rainbow ? 40 : 18, 3f, false);
+            // The rainbow bee bursts into every colour.
+            if (b.Rainbow)
+            {
+                for (int k = 0; k < 6; k++) Blobs(at, Color.HSVToRGB(k / 6f, 0.75f, 1f), 7, 3f, false);
+            }
+            else Blobs(at, ColourOf(b.Colour), 18, 3f, false);
             PlayAt(Pick(swatSounds), at, 1f + Mathf.Min(combo, 15) * 0.03f);
             StartCoroutine(Candies(at, b.Rainbow ? rainbowCandies : candiesPerBee));
             PlayerLevel.AddExp(b.Rainbow ? rainbowExp : expPerBee);
@@ -434,10 +451,11 @@ namespace Game.Bonus
             if (b == null || b.Leaving) return;
             Stings++;
             combo = 0;
+            boinged.Remove(b);
             PlayerDamageShare.Next(stingShare);
             HurtPlayer();
             Play(stingSound);
-            StartCoroutine(Splat(b.Rainbow ? Color.HSVToRGB(Random.value, 0.75f, 1f) : ColourOf(b.Colour)));
+            StartCoroutine(Splat(ColourOf(b.Colour), b.Rainbow));
             live.Remove(b);
             b.FlyOff();
         }
@@ -453,11 +471,11 @@ namespace Game.Bonus
             }
         }
 
-        // Paint blobs on the view: a few, in front of the eyes, that slide down and fade.
-        private IEnumerator Splat(Color colour)
+        // Paint blobs on the view: a few, in front of the eyes, that slide down and fade (the rainbow bee's: each its own colour).
+        private IEnumerator Splat(Color colour, bool rainbow)
         {
             if (splatMaterial == null || Head == null) yield break;
-            var made = new List<(Transform blob, Vector3 at, float size)>();
+            var made = new List<(Transform blob, Vector3 at, float size, Color colour)>();
             var block = new MaterialPropertyBlock();
             int count = Random.Range(3, 6);
             for (int i = 0; i < count; i++)
@@ -471,17 +489,17 @@ namespace Game.Bonus
                 blob.transform.localPosition = at;
                 blob.transform.localRotation = Quaternion.Euler(0f, 0f, Random.Range(0f, 360f));
                 blob.GetComponent<Renderer>().sharedMaterial = splatMaterial;
-                made.Add((blob.transform, at, size));
+                made.Add((blob.transform, at, size, rainbow ? Color.HSVToRGB((i / (float)count + Random.value * 0.1f) % 1f, 0.75f, 1f) : colour));
             }
             for (float t = 0f; t < splatSeconds; t += Time.deltaTime)
             {
                 float k = t / splatSeconds;
-                foreach (var (blob, at, size) in made)
+                foreach (var (blob, at, size, tint) in made)
                 {
                     if (blob == null) continue;
                     blob.localPosition = at + Vector3.down * (0.06f * k * k);
                     blob.localScale = new Vector3(size, size * (1f + 0.5f * k), size) * Mathf.Min(1f, t / 0.06f);
-                    var c = colour;
+                    var c = tint;
                     c.a = 0.9f * (1f - k * k);
                     var part = blob.GetComponent<Renderer>();
                     part.GetPropertyBlock(block);
@@ -490,7 +508,7 @@ namespace Game.Bonus
                 }
                 yield return null;
             }
-            foreach (var (blob, _, _) in made) if (blob != null) Destroy(blob.gameObject);
+            foreach (var (blob, _, _, _) in made) if (blob != null) Destroy(blob.gameObject);
         }
 
         // Candies popping out of where a bee burst, one by one (they break if they start inside each other).
@@ -597,17 +615,18 @@ namespace Game.Bonus
             sign.gameObject.SetActive(!string.IsNullOrEmpty(text));
         }
 
+        // How many are swatted, once "GO!" is gone (only when it changes).
         private void ShowCount()
         {
-            if (sign == null || (sign.gameObject.activeSelf && !signText.text.Contains("/") && signText.text.Length > 0)) return;
+            if (sign == null || (sign.gameObject.activeSelf && shownCount < 0) || Swatted == shownCount) return;
+            shownCount = Swatted;
             Say($"{Swatted} / {total}");
         }
 
         private void LateUpdate()
         {
             if (sign == null || !sign.gameObject.activeSelf || Head == null) return;
-            var at = middle == Vector3.zero && !beesOut ? transform.position : middle;
-            sign.position = new Vector3(at.x, Head.position.y + SignOverHead, at.z) + Front * SignAhead;
+            sign.position = new Vector3(middle.x, Head.position.y + SignOverHead, middle.z) + Front * SignAhead;
             WorldUI.Face(sign, Head);
         }
 

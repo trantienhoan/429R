@@ -6,8 +6,8 @@ namespace Game.Bonus
     /// A bee of the Paint Bees round (Paint_Bee: the bee's model, its buzzing wings and buzz, no Spider Brain): it flies
     /// in weaving from far in front of the player, hovers in front of their face a moment (its warning), then dives at
     /// it. The round swats it (a hand of its colour: it bursts) or bounces it off (the wrong colour: it's knocked back
-    /// and comes again); one that reaches the face stings and flies off. A rainbow bee (Colour -1) cycles through the
-    /// colours and any painted hand swats it.
+    /// and comes again); one that reaches the face stings and flies off. A rainbow bee (Colour -1) is painted in every
+    /// colour (its own look, Rainbow Look) and any painted hand swats it. Every bee has an aura in its colour (a glow, sparkles).
     /// </summary>
     public class PaintBee : MonoBehaviour
     {
@@ -27,7 +27,11 @@ namespace Game.Bonus
         [SerializeField] private float radius = 0.13f;
         [Tooltip("How much it glows in its colour (a share of it), so it reads in the dark.")]
         [Range(0f, 1f)]
-        [SerializeField] private float glow = 0.45f;
+        [SerializeField] private float glow = 1f;
+        [Tooltip("The rainbow bee's look: its own rainbow-painted material (not tinted).")]
+        [SerializeField] private Material rainbowLook;
+        [Tooltip("Its aura (a soft glow round it and a trail of sparkles), in its colour; the rainbow bee's in every colour.")]
+        [SerializeField] private ParticleSystem[] auras = System.Array.Empty<ParticleSystem>();
 
         private const float WeaveWidth = 0.35f;
         private const float WeavesPerSecond = 0.9f;
@@ -79,9 +83,7 @@ namespace Game.Bonus
                 int pick = Random.Range(0, looks.Length);
                 for (int i = 0; i < looks.Length; i++) if (looks[i] != null) looks[i].SetActive(i == pick);
             }
-            parts = GetComponentsInChildren<Renderer>(false);
-            block = new MaterialPropertyBlock();
-            Paint(Rainbow ? Color.white : round.ColourOf(colour));
+            Dress(Rainbow, Rainbow ? Color.white : round.ColourOf(colour));
             if (buzz != null)
             {
                 buzz.time = Random.value * Mathf.Max(0.01f, buzz.clip != null ? buzz.clip.length - 0.05f : 0f);
@@ -114,7 +116,6 @@ namespace Game.Bonus
             if (round == null || round.Head == null) return;
             var head = round.Head.position;
             float t = Time.time - stateStarted;
-            if (Rainbow) Paint(Color.HSVToRGB(Mathf.Repeat(Time.time * 0.6f, 1f), 0.75f, 1f));
             switch (state)
             {
                 case State.Arrive:
@@ -185,6 +186,50 @@ namespace Game.Bonus
             state = next;
             stateStarted = Time.time;
             if (animator != null && !string.IsNullOrEmpty(clip)) animator.CrossFadeInFixedTime(clip, 0.12f);
+        }
+
+        /// <summary>
+        /// Takes its look for the active model: the rainbow bee's own rainbow paint (Rainbow Look), or the light bee tinted
+        /// 'colour'; its aura to match (the rainbow bee's sparkles come in every colour).
+        /// </summary>
+        public void Dress(bool rainbow, Color colour)
+        {
+            var bodies = new System.Collections.Generic.List<Renderer>();
+            foreach (var part in GetComponentsInChildren<Renderer>(false))
+            {
+                if (!(part is ParticleSystemRenderer)) bodies.Add(part);
+            }
+            parts = bodies.ToArray();
+            block ??= new MaterialPropertyBlock();
+            if (rainbow && rainbowLook != null)
+            {
+                foreach (var part in parts) part.sharedMaterial = rainbowLook;
+            }
+            Paint(rainbow ? Color.white : colour);
+            foreach (var aura in auras)
+            {
+                if (aura == null) continue;
+                var main = aura.main;
+                float alpha = main.startColor.mode == ParticleSystemGradientMode.Color ? main.startColor.color.a : 1f;
+                main.startColor = rainbow
+                    ? new ParticleSystem.MinMaxGradient(RainbowGradient(alpha)) { mode = ParticleSystemGradientMode.RandomColor }
+                    : new ParticleSystem.MinMaxGradient(new Color(colour.r, colour.g, colour.b, alpha));
+                aura.Clear(true);
+                aura.Play(true);
+            }
+        }
+
+        private static Gradient RainbowGradient(float alpha)
+        {
+            var g = new Gradient();
+            g.SetKeys(new[]
+                {
+                    new GradientColorKey(new Color(1f, 0.2f, 0.2f), 0f), new GradientColorKey(new Color(1f, 0.85f, 0.15f), 0.2f),
+                    new GradientColorKey(new Color(0.25f, 0.95f, 0.3f), 0.4f), new GradientColorKey(new Color(0.2f, 0.9f, 1f), 0.6f),
+                    new GradientColorKey(new Color(0.25f, 0.4f, 1f), 0.8f), new GradientColorKey(new Color(0.8f, 0.3f, 1f), 1f),
+                },
+                new[] { new GradientAlphaKey(alpha, 0f), new GradientAlphaKey(alpha, 1f) });
+            return g;
         }
 
         private void Paint(Color colour)

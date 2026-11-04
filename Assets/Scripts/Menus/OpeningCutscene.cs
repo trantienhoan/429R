@@ -20,7 +20,8 @@ namespace Game.Menus
     /// third runs about grabbing pumpkins off the ground and throwing them at it. The first Knight runs to the boss. As it gets in front of it, the boss spins and
     /// everyone gets flung, and lands head first, stuck in the ground. Then it turns slowly to the player, waits for them to look (a
     /// moment at most), jolts as it sees they're still alive ("!!!" over its head), claps at them, laughing, and throws pumpkin after pumpkin: all right at them: one bursts just in front, the next flies by their head, one breaks in their face, and
-    /// the screen goes dark as the boss jumps for its body slam, landing as it's black, and it laughs in the dark. Then the health warning and the
+    /// their eyes shut and blink open a few times, dazed, less and darker each time, catching the boss jumping for its
+    /// body slam; they shut for good as it lands (user, 2026-11-04), and it laughs in the dark. Then the health warning and the
     /// save slots. Holding any button shows a skip icon (no words, user 2026-11-03) whose ring fills up, and skips when it's
     /// full. Nothing flashes white. Made by Health
     /// Warning from Resources (Opening_Battle: Tools > 429 Game > Menu > Set Up Opening builds it); nothing to put in the scene.
@@ -115,7 +116,7 @@ namespace Game.Menus
         [Tooltip("The bones that hold the pumpkin in those throws.")]
         [SerializeField] private string throwingHand = "Hand.R";
         [SerializeField] private string throwingHandLeft = "Hand.L";
-        [Tooltip("The pumpkin it throws (the look of its Bug Pumpkin).")]
+        [Tooltip("The pumpkin it throws (Pumpkin_On_Tree's look; its bottom on its pivot, which sits on top of the fist).")]
         [SerializeField] private Transform flyingPumpkin;
         [Tooltip("What that pumpkin breaks into in the player's face: pieces, and an effect (Effect Pool).")]
         [SerializeField] private GameObject brokenPumpkin;
@@ -208,12 +209,21 @@ namespace Game.Menus
         [Tooltip("How long its pumpkin flies.")]
         [Min(0.1f)]
         [SerializeField] private float flightSeconds = 2.2f;
-        [Tooltip("How long the broken pumpkin is seen before it starts going black (0 = at once, as it hits).")]
+        [Tooltip("How long the broken pumpkin is seen before the eyes shut (0 = at once, as it hits).")]
         [Min(0f)]
         [SerializeField] private float splashSeconds = 0f;
-        [Tooltip("How long the screen takes to go dark: fast at first, from the hit. The boss jumps for its body slam as it starts, and lands (1.33 s later) as it's black.")]
+        [Tooltip("How fast the eyes shut as the pumpkin hits.")]
         [Min(0.01f)]
-        [SerializeField] private float darkenSeconds = 1.33f;
+        [SerializeField] private float hitShutSeconds = 0.06f;
+        [Tooltip("Then, dazed, they blink open again, once for each of these: each time less, darker and slower. The boss " +
+                 "jumps for its body slam meanwhile (it's caught in the last ones), and lands (1.33 s after it jumps) as " +
+                 "they shut for good: black.")]
+        [SerializeField] private DazedBlink[] dazedBlinks =
+        {
+            new() { shutFor = 0.3f, open = 0.5f, opening = 0.16f, held = 0.12f, closing = 0.1f, dim = 0.1f },
+            new() { shutFor = 0.35f, open = 0.38f, opening = 0.22f, held = 0.2f, closing = 0.16f, dim = 0.25f },
+            new() { shutFor = 0.3f, open = 0.25f, opening = 0.3f, held = 0.3f, closing = 0.45f, dim = 0.4f },
+        };
         [Tooltip("How long it's dark, the boss laughing, before the health warning.")]
         [Min(0f)]
         [SerializeField] private float darkSeconds = 2f;
@@ -424,6 +434,24 @@ namespace Game.Menus
         // ...and none in the first Knight's lane to the boss.
         private const float LaneWidth = 1.5f;
 
+        // A dazed blink after the pumpkin hits: shut a moment, then the eyes open a little, and shut again.
+        [System.Serializable]
+        private struct DazedBlink
+        {
+            [Tooltip("Seconds the eyes stay shut first...")]
+            [Min(0f)] public float shutFor;
+            [Tooltip("...how far they open (0 shut, 0.95 wide open)...")]
+            [Range(0f, 0.95f)] public float open;
+            [Tooltip("...in how many seconds...")]
+            [Min(0.01f)] public float opening;
+            [Tooltip("...how long they stay that open...")]
+            [Min(0f)] public float held;
+            [Tooltip("...and how long they take to shut again.")]
+            [Min(0.01f)] public float closing;
+            [Tooltip("How dark what's seen between the lids is (0 = not at all, 1 = black): darker each time, as they pass out.")]
+            [Range(0f, 1f)] public float dim;
+        }
+
         private static bool playedThisLaunch;
         private static OpeningCutscene current;
 
@@ -508,6 +536,8 @@ namespace Game.Menus
         // The bone "!!!" follows.
         private Transform marksOver;
         private bool darkening;
+        // The boss's body slam has landed (the stage can go).
+        private bool slamLanded;
         private Animator[] shadowed = System.Array.Empty<Animator>();
         private readonly HashSet<Transform> pumpkinsTaken = new();
         // What's switched off while it plays, and how it was.
@@ -523,6 +553,7 @@ namespace Game.Menus
 
         private static readonly int OpenId = Shader.PropertyToID("_Open");
         private static readonly int FadeId = Shader.PropertyToID("_Fade");
+        private static readonly int DimId = Shader.PropertyToID("_Dim");
 
         private void Awake()
         {
@@ -744,6 +775,29 @@ namespace Game.Menus
             }
             lids.SetFloat(OpenId, open);
             if (open >= 1f) lidsObject.SetActive(false);
+        }
+
+        // The pumpkin in the face: the eyes shut at once, then blink open, dazed (Dazed Blinks), and stay shut: black.
+        private IEnumerator Dazed()
+        {
+            lids.SetFloat(FadeId, 1f);
+            lids.SetFloat(DimId, 0f);
+            if (!lidsObject.activeSelf)
+            {
+                lids.SetFloat(OpenId, 1f);
+                lidsObject.SetActive(true);
+            }
+            yield return Lids(0f, hitShutSeconds, 0f);
+            foreach (var blink in dazedBlinks)
+            {
+                yield return new WaitForSeconds(blink.shutFor);
+                // (Changed while they're shut, so it isn't seen.)
+                lids.SetFloat(DimId, blink.dim);
+                yield return Lids(Mathf.Clamp(blink.open, 0f, 0.95f), blink.opening, 0f);
+                yield return new WaitForSeconds(blink.held);
+                yield return Lids(0f, blink.closing, 0f);
+            }
+            lids.SetFloat(OpenId, 0f);
         }
 
         // Out on the field: the stuck Knight kicking; the boss's fists coming down, left and right, on the Knight on the left,
@@ -1277,9 +1331,18 @@ namespace Game.Menus
             if (punchSound != null) AudioSource.PlayClipAtPoint(punchSound, head.position);
             EndJolt();
             ViewShake.Send(ViewShake.Big);
+            slamLanded = true;
         }
 
-        // It breaks in the player's face, and then black; the fight's gone and the boss laughs in the dark.
+        // The body slam, timed to land as the dazed eyes shut for good.
+        private IEnumerator BossBodySlamsAfter(float seconds)
+        {
+            yield return new WaitForSeconds(seconds);
+            yield return BossBodySlams();
+        }
+
+        // It breaks in the player's face: the eyes shut, and blink open a few times, dazed, catching the boss jumping for its
+        // body slam, until they shut for good as it lands. The fight's gone and the boss laughs in the dark.
         private IEnumerator LightsOut()
         {
             var at = flyingPumpkin != null ? flyingPumpkin.position : head.position + head.forward;
@@ -1291,8 +1354,12 @@ namespace Game.Menus
                 if (clip != null) voice.PlayOneShot(clip, faceSplatVolume);
             }
             yield return new WaitForSeconds(splashSeconds);
-            StartCoroutine(BossBodySlams());
-            yield return FadeToBlack(darkenSeconds);
+            darkening = true;
+            float dazed = hitShutSeconds;
+            foreach (var blink in dazedBlinks) dazed += blink.shutFor + blink.opening + blink.held + blink.closing;
+            StartCoroutine(BossBodySlamsAfter(Mathf.Max(0f, dazed - SlamLands)));
+            yield return Dazed();
+            while (!slamLanded) yield return null;
             if (muffler != null) muffler.cutoffFrequency = muffledHz * 2f;
             HideStage();
             yield return new WaitForSeconds(0.5f);

@@ -15,8 +15,8 @@ namespace Game.EditorTools
     /// - The Knights in colour: Knight_Red_Mat, Knight_Blue_Mat, Knight_Purple_Mat (Knight_Mat with the re-coloured paint,
     ///   M_Textures/Knight/X/Knight_Diffuse_*.png), and one in the first green.
     /// - The boss (Pumpkin_Boss_Z.fbx, its materials, no brain; Opening_Boss.controller, with a layer that keeps its legs standing
-    ///   under its punches, whose clips tuck them away), its pumpkin (the look of its Bug Pumpkin:
-    ///   pumpkin_0), Fat_Pumpkin_Drop for what that breaks into, the Pumpkin_On_Tree look on the pumpkins lying everywhere,
+    ///   under its punches, whose clips tuck them away), its pumpkin (Pumpkin_On_Tree's look), Fat_Pumpkin_Drop for what
+    ///   that breaks into, the Pumpkin_On_Tree look on the pumpkins lying everywhere,
     ///   lights, the eyelids' material.
     /// - Exclamation_Marks (Prefabs/Effects): the "!!!" over the boss's head as it notices the player, 3 particles.
     /// - The dream world: Boss_Area's flames only (no FSM, teleport area, colliders, floor or Sky Light), the bonus stage's sky
@@ -35,11 +35,8 @@ namespace Game.EditorTools
         private const string BossPrefab = "Assets/Prefabs/Enemies/pumpkin_boss_Z.prefab";
         private const string BossControllerPath = "Assets/Prefabs/Enemies/Opening_Boss.controller";
         private static readonly string[] BossStates = { "idle_true", "notice", "laugh_true", "cyclone", "dizzy_true", "throw", "throw_L", "punch_L", "punch_R", "jump_slam" };
-        // The look of the boss's Bug Pumpkin.
-        private const string ThrownPumpkinFbx = "Assets/Models/Bedroom_Stuffs/pumpkin_0.fbx";
         private const string BrokenPumpkinPath = "Assets/Prefabs/Items/Broken_Stuffs/Fat_Pumpkin_Drop.prefab";
         private const string TreePumpkinPath = "Assets/Prefabs/Items/Breakable/Pumpkin_On_Tree.prefab";
-        private const string PumpkinMaterialPath = "Assets/Materials/Bedroom_Set_1_Mat.mat";
         private const string ArenaPath = "Assets/Prefabs/Bases/Boss_Area.prefab";
         private const string SoftTexture = "Assets/Lana Studio/Hyper Casual FX/Textures/Circle03.png";
         private const string NoFogShader = "429/Particles/Unlit No Fog";
@@ -77,7 +74,8 @@ namespace Game.EditorTools
         // The pumpkins lying everywhere, and how big they are.
         private const int PumpkinCount = 28;
         private const float PumpkinSize = 2f;
-        private const float ThrownPumpkinSize = 5f;
+        // As wide as the Bug Pumpkin look it had before (pumpkin_0 at x5).
+        private const float ThrownPumpkinSize = 4.5f;
         // The clip's name in the FBX, the state's name, whether it loops, and how fast it plays.
         private static readonly (string clip, string state, bool loop, float speed)[] KnightStates =
         {
@@ -308,7 +306,8 @@ namespace Game.EditorTools
                 var stuck = MakeKnight(root.transform, "Stuck Knight", knights, green);
                 var thrower = MakeKnight(root.transform, "Thrower Knight", knights, blue);
                 var fighter = MakeKnight(root.transform, "Fighting Knight", knights, purple);
-                var thrown = MakeThrownPumpkin(root.transform);
+                var tree = AssetDatabase.LoadAssetAtPath<GameObject>(TreePumpkinPath);
+                var thrown = MakeThrownPumpkin(root.transform, tree);
                 var pumpkinRoot = new GameObject("Pumpkins").transform;
                 pumpkinRoot.SetParent(root.transform, false);
                 var light = MakeLight(root.transform);
@@ -338,7 +337,6 @@ namespace Game.EditorTools
                 }
                 var pumpkins = so.FindProperty("pumpkins");
                 pumpkins.arraySize = PumpkinCount;
-                var tree = AssetDatabase.LoadAssetAtPath<GameObject>(TreePumpkinPath);
                 for (int i = 0; i < PumpkinCount; i++) pumpkins.GetArrayElementAtIndex(i).objectReferenceValue = MakeLyingPumpkin(pumpkinRoot, tree, shadow, i);
                 so.FindProperty("pumpkinLift").floatValue = -tree.GetComponent<MeshFilter>().sharedMesh.bounds.min.y * PumpkinSize;
                 so.FindProperty("flyingPumpkin").objectReferenceValue = thrown;
@@ -476,13 +474,20 @@ namespace Game.EditorTools
             return animator;
         }
 
-        private static Transform MakeThrownPumpkin(Transform parent)
+        // Pumpkin_On_Tree's look (user, 2026-11-04), its bottom on the pivot: it sits on the boss's fist from there.
+        private static Transform MakeThrownPumpkin(Transform parent, GameObject tree)
         {
-            var look = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(ThrownPumpkinFbx), parent);
-            look.name = "Flying Pumpkin";
-            look.transform.localScale = Vector3.one * ThrownPumpkinSize;
-            Dress(look);
-            return look.transform;
+            var pumpkin = new GameObject("Flying Pumpkin").transform;
+            pumpkin.SetParent(parent, false);
+            var model = new GameObject("Model");
+            model.transform.SetParent(pumpkin, false);
+            model.transform.localScale = Vector3.one * ThrownPumpkinSize;
+            var mesh = tree.GetComponent<MeshFilter>().sharedMesh;
+            var b = mesh.bounds;
+            model.transform.localPosition = new Vector3(-b.center.x, -b.min.y, -b.center.z) * ThrownPumpkinSize;
+            model.AddComponent<MeshFilter>().sharedMesh = mesh;
+            model.AddComponent<MeshRenderer>().sharedMaterials = tree.GetComponent<MeshRenderer>().sharedMaterials;
+            return pumpkin;
         }
 
         // Pumpkin_On_Tree's look (no FSMs or physics of its own), and dark on the ground under it.
@@ -616,15 +621,6 @@ namespace Game.EditorTools
             shape.shapeType = ParticleSystemShapeType.Box;
             shape.scale = new Vector3(90f, 1.5f, 70f);
             FadeInOut(ps, 0.14f);
-        }
-
-        // The tree pumpkins' look, nothing to bump into.
-        private static void Dress(GameObject look)
-        {
-            foreach (var c in look.GetComponentsInChildren<Collider>(true)) Object.DestroyImmediate(c);
-            var material = AssetDatabase.LoadAssetAtPath<Material>(PumpkinMaterialPath);
-            if (material == null) return;
-            foreach (var r in look.GetComponentsInChildren<Renderer>(true)) r.sharedMaterial = material;
         }
 
         // Only Boss_Area's flames (Flame Flicker stays). Its Info FSM (it would take the place of the bonus stage's field),

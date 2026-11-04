@@ -1,6 +1,7 @@
 // The player's eyelids in the opening (Opening Cutscene). Drawn on the inside of a sphere that follows the headset, worked
 // out from each eye's own view direction, so the edge of the lids lines up in both eyes. _Open: 0 = shut, black all
-// over; 1 = wide open, nothing drawn. _Fade makes the whole thing see-through.
+// over; 1 = wide open, nothing drawn. _Fade makes the whole thing see-through. _Dim darkens what's seen between the lids
+// (0 = not at all, 1 = black), for the dazed blinks after the pumpkin hits.
 Shader "429/Eye Lids"
 {
     Properties
@@ -8,6 +9,7 @@ Shader "429/Eye Lids"
         _Open("How open", Range(0, 1)) = 0
         _Feather("Softness of the lids' edge", Range(0.01, 1)) = 0.28
         _Fade("How solid", Range(0, 1)) = 1
+        _Dim("How dark between the lids", Range(0, 1)) = 0
     }
     SubShader
     {
@@ -48,6 +50,7 @@ Shader "429/Eye Lids"
             float _Open;
             float _Feather;
             float _Fade;
+            float _Dim;
 
             v2f vert(appdata v)
             {
@@ -73,7 +76,7 @@ Shader "429/Eye Lids"
                 // Shut (_Open 0): the edge goes past the far side of the softness, so it's black everywhere.
                 float shut = smoothstep(edge - _Feather * _Open, edge + _Feather * _Open + 0.0001, up);
                 if (_Open <= 0.001) shut = 1.0;
-                return fixed4(0, 0, 0, shut * _Fade);
+                return fixed4(0, 0, 0, max(shut, _Dim) * _Fade);
             }
             ENDCG
         }

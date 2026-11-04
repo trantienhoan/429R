@@ -1,0 +1,123 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2244910897748994958
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3591547016928683519}
+  - component: {fileID: 654690060103123091}
+  m_Layer: 0
+  m_Name: Paint_Bees_Round
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3591547016928683519
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2244910897748994958}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &654690060103123091
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2244910897748994958}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4dac1936968fa5d4f9868b0ecc24e8af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Bonus.PaintBeesRound
+  stageSky: {fileID: 5936307086787590551, guid: 23c0623fbfde4004ea28b1e0397c399a,
+    type: 3}
+  marker: {fileID: 7384552638928846612, guid: 1b464fefd924a004da62af7f735202fc, type: 3}
+  standRadius: 0.5
+  standSeconds: 0.4
+  bucket: {fileID: 1452372161838848157, guid: 13a412c5d7f5faa449adb6d9fe10baa2, type: 3}
+  colours:
+  - {r: 1, g: 0.2, b: 0.18, a: 1}
+  - {r: 0.2, g: 0.45, b: 1, a: 1}
+  - {r: 1, g: 0.85, b: 0.12, a: 1}
+  - {r: 0.25, g: 0.9, b: 0.3, a: 1}
+  bucketDistance: 0.62
+  bucketAngles:
+  - -105
+  - -35
+  - 35
+  - 105
+  paintHeight: 0.85
+  riseSeconds: 0.6
+  riseGap: 0.15
+  bee: {fileID: 66695465573659488, guid: 9051451659366634a9e76790401f8370, type: 3}
+  bees: 40
+  rainbowAt: 0.7
+  rainbowSize: 1.3
+  spawnEvery: {x: 1.9, y: 1}
+  mostAtOnce: 5
+  spawnDistance: {x: 5.5, y: 7}
+  spawnArc: 60
+  spawnHeight: {x: -0.3, y: 1.2}
+  approachSpeed: {x: 1.8, y: 3.2}
+  hoverSeconds: {x: 0.9, y: 0.45}
+  diveSpeed: {x: 2.2, y: 3.2}
+  hoverDistance: 0.7
+  swatSpeed: 0.9
+  bounceSpeed: 3
+  candies:
+  - {fileID: 8690403555129543112, guid: cdc38a3b62c4ce74599d6cfed8d6c696, type: 3}
+  - {fileID: 8690403555129543112, guid: 69a17a112506bd2499387184d87d5fc2, type: 3}
+  - {fileID: 8690403555129543112, guid: 2fe269950326c7e4ea5270686d9f60f1, type: 3}
+  - {fileID: 8690403555129543112, guid: f4484be4d3c9d8c4298c6f277b0e1307, type: 3}
+  - {fileID: 8690403555129543112, guid: 095b3a6dbb3314a4aa1260a5b1e49c40, type: 3}
+  - {fileID: 8690403555129543112, guid: 676a3126f33c8de41885ed4c0d0b0878, type: 3}
+  - {fileID: 8690403555129543112, guid: ec76c087b6f2f7e449bd46ac0079ccba, type: 3}
+  - {fileID: 8690403555129543112, guid: 423da62656a4eb74a94fb73d5dce640f, type: 3}
+  candiesPerBee: 1
+  rainbowCandies: 10
+  perfectCandies: 10
+  expPerBee: 1
+  rainbowExp: 5
+  candyWaitSeconds: 20
+  stingShare: 0.15
+  splatMaterial: {fileID: 2100000, guid: a12c2cce2ac024240b034106c42c56d6, type: 2}
+  splatSeconds: 1.4
+  dipSounds:
+  - {fileID: 8300000, guid: 586eef9b8d39dc5469c76bf13be5d8eb, type: 3}
+  - {fileID: 8300000, guid: 898328a8c2e9ea548808f6e92363476c, type: 3}
+  - {fileID: 8300000, guid: 5e704bdb837d6421f83465bf6b5ed283, type: 3}
+  bucketSound: {fileID: 8300000, guid: 2a7bd8da8a39cdb40ba90aefa1fff9c8, type: 3}
+  swatSounds:
+  - {fileID: 8300000, guid: 4dd480eebf8e6a543b5583603f58b0e2, type: 3}
+  - {fileID: 8300000, guid: f04905892dc648b4492c434e3da25f80, type: 3}
+  - {fileID: 8300000, guid: e5b7fe06dc497144e9b23329c9953948, type: 3}
+  boingSound: {fileID: 8300000, guid: 6fa44de3780c9c742a8a1b4b6971861c, type: 3}
+  stingSound: {fileID: 8300000, guid: b019b2d89c3814a4d97fc7001ac02603, type: 3}
+  tickSound: {fileID: 8300000, guid: 18b247bf43ebeb6459aa30fee226ba0d, type: 3}
+  goSound: {fileID: 8300000, guid: 580b8b5019ed5124bb152631a92150a3, type: 3}
+  rainbowSound: {fileID: 8300000, guid: 0acdbd19a1f27d249a4a9ff855bacf39, type: 3}
+  perfectSound: {fileID: 8300000, guid: e099ffdff64cfea48992357c5acf46a2, type: 3}
+  volume: 0.8
+  puffEffect: {fileID: 431296081563789977, guid: 7d85674d137626445accce4cef7fe159,
+    type: 3}
+  burstMaterial: {fileID: 2100000, guid: 77bca7d8a0dbe0a488a47912d0f44962, type: 2}
+  winFireworks: {fileID: 4623798490042213957, guid: e1812b1d90f61c94dab0f126b70eb3f3,
+    type: 3}
+  fireworkScale: 1
+  font: {fileID: 11400000, guid: d7a5e2d89139b2940a46b4a7c3289c9e, type: 2}
+  signScale: 0.006

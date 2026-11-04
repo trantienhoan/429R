@@ -719,7 +719,9 @@ namespace Game.EditorTools
                 state.Actions = new FsmStateAction[] { play }.Concat(state.Actions).ToArray();
                 changes.Add("Play Bonus Round added");
             }
-            if (play.round == null || play.round.Value != round) { play.round = new FsmGameObject { Value = round }; changes.Add("round Bonus_Round"); }
+            // Another bonus game put here (the Playroom's Paint Bees, Set Up Paint Bees Bonus) is kept.
+            bool otherGame = play.round != null && play.round.Value != null && play.round.Value != round && play.round.Value.GetComponentInChildren<IBonusGame>(true) != null;
+            if (!otherGame && (play.round == null || play.round.Value != round)) { play.round = new FsmGameObject { Value = round }; changes.Add("round Bonus_Round"); }
             if (play.stage == null || play.stage.Value != stage) { play.stage = new FsmGameObject { Value = stage }; changes.Add("stage " + stage.name); }
             // The room is cleared: a checkpoint from here on is the next room's, so it isn't played again (nor the bonus earned twice).
             if (!state.Actions.OfType<SetCheckpoint>().Any(c => c.checkpoint != null && c.checkpoint.Value == checkpoint))
