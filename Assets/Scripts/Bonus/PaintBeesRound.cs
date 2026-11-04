@@ -14,18 +14,28 @@ namespace Game.Bonus
     /// - a glowing ring with an arrow over it marks the middle; standing on it, four floating paint buckets (red, blue,
     ///   yellow, green, in a random order) pop up round the player at waist height, and a sign says to dip a hand;
     /// - a hand dipped in a bucket takes its colour (see Paint Hands), and keeps it until dipped in another;
-    /// - after a 3-2-1, Bees bees of the four colours (and one rainbow bee, Rainbow At of the way through) fly in from the
-    ///   front, a few at a time and a little faster each, hover in front of the face (the warning) and dive at it;
+    /// - it all goes to a song (user, 2026-11-03: "Player punches flying colored bee that drops candies follow fight
+    ///   song beat", like Vibe Punch; Pumpkin_Pillow_Party, 100 BPM): the song starts as the buckets come up, the 3-2-1
+    ///   ticks on its beats, and bees of the four colours (and one rainbow bee, Rainbow At of the way through) appear on
+    ///   a beat far in front, a few at a time and more often as it goes, reach the face's front on a beat, hover there
+    ///   (the warning) and dive on a beat, at the face on the next; they throb to every beat. They stop coming at Last
+    ///   Bee At seconds into the song, and it fades out once the last one is done;
     /// - a swat with the hand of its colour bursts it into paint: Candies Per Bee candies and Exp Per Bee EXP (the
-    ///   rainbow bee: any painted hand, Rainbow Candies and Rainbow Exp); the wrong colour (or a clean hand) knocks it
-    ///   back with a boing and it comes again; one that reaches the face stings (Sting Share of a bite: about 1 health)
-    ///   and splats its paint on the view;
+    ///   rainbow bee: any painted hand, Rainbow Candies and Rainbow Exp); a swat on a beat (within On Beat Window) gives
+    ///   On Beat Candies more and a gold flash, no words; the wrong colour (or a clean hand) knocks it back with a boing
+    ///   and it comes again; one that reaches the face stings (Sting Share of a bite: about 1 health) and splats its
+    ///   paint on the view;
+    /// - other music playing (a room's radio, the stage's song) is paused while the round's song plays;
+    /// - the bees' road lights up from the 3-2-1 (Road: lanes of runway lights throbbing to the beat, sparkling lights
+    ///   marching in to the player on every half beat, embers, a red danger ring round the feet that flares while a bee
+    ///   dives), and paint that falls to the floor (swatted bees, dripping hands, the buckets' drips) splats there;
     /// - the Candy Helmet is on the whole time (every candy flies to the head); at the end fireworks go up in front, a
     ///   round with no sting gives Perfect Candies more, the helmet eats what's left, the buckets sink, the hands are
     ///   clean again, and the round is over (Finished: Play Bonus Round goes on).
     /// Tools > 429 Game > Bonus > Set Up Paint Bees Bonus builds it and its parts.
     /// </summary>
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(-50)]
     public class PaintBeesRound : MonoBehaviour, IBonusGame
     {
         [Header("Stage")]
@@ -64,22 +74,51 @@ namespace Game.Bonus
         [Min(0f)]
         [SerializeField] private float riseGap = 0.15f;
 
+        [Header("Song")]
+        [Tooltip("The song the bees fly to (Pumpkin_Pillow_Party). It starts as the buckets come up. Empty: no song, the " +
+                 "bees keep the beat anyway.")]
+        [SerializeField] private AudioClip song;
+        [Range(0f, 1f)]
+        [SerializeField] private float songVolume = 0.8f;
+        [Tooltip("Its beats a minute, and where its first beat is, in seconds (measured: 100 and 0.593 for " +
+                 "Pumpkin_Pillow_Party).")]
+        [Min(30f)]
+        [SerializeField] private float bpm = 100f;
+        [Min(0f)]
+        [SerializeField] private float firstBeat = 0.593f;
+        [Tooltip("No more bees after this many seconds into the song (Pumpkin_Pillow_Party's loud part ends at about 97 s).")]
+        [Min(5f)]
+        [SerializeField] private float lastBeeAt = 90f;
+        [Tooltip("Seconds the song fades out over at the end.")]
+        [Min(0f)]
+        [SerializeField] private float fadeSeconds = 2.5f;
+
+        [Header("Road")]
+        [Tooltip("The lit road the bees fly in on (Paint_Bees_Road), laid in front of the player from the 3-2-1. Empty: none.")]
+        [SerializeField] private PaintBeesRoad road;
+
         [Header("Bees")]
         [SerializeField] private PaintBee bee;
-        [Tooltip("How many bees of the four colours come (the rainbow bee on top).")]
-        [Min(1)]
-        [SerializeField] private int bees = 40;
         [Tooltip("The rainbow bee comes this share of the way through. 0 = none.")]
         [Range(0f, 1f)]
         [SerializeField] private float rainbowAt = 0.7f;
         [Tooltip("The rainbow bee is this many times bigger.")]
         [Min(0.5f)]
         [SerializeField] private float rainbowSize = 1.3f;
-        [Tooltip("Seconds between one lot of bees and the next, at the start (x) and the end (y).")]
-        [SerializeField] private Vector2 spawnEvery = new(1.9f, 1.0f);
-        [Tooltip("Never more bees about than this.")]
+        [Tooltip("Beats between one lot of bees and the next, at the start (x) and the end (y); a lot of two or three " +
+                 "takes a beat more for each bee after the first.")]
+        [SerializeField] private Vector2 everyBeats = new(4f, 2f);
+        [Tooltip("Beats a bee takes to fly in, at the start (x) and the end (y).")]
+        [SerializeField] private Vector2 flyBeats = new(4f, 3f);
+        [Tooltip("Beats it hovers in front of the face before it dives, at the start (x) and the end (y); the bees of a " +
+                 "lot dive one beat after another.")]
+        [SerializeField] private Vector2 hoverBeats = new(2f, 1f);
+        [Tooltip("Beats its dive takes: it's at the face on the beat after it dives.")]
+        [Min(0.25f)]
+        [SerializeField] private float diveBeats = 1f;
+        [Tooltip("Never more bees about than this (a lot that would go over it comes a beat later).")]
         [Min(1)]
-        [SerializeField] private int mostAtOnce = 5;
+        [SerializeField] private int mostAtOnce = 6;
         [Tooltip("They come from this far away (x to y metres)...")]
         [SerializeField] private Vector2 spawnDistance = new(5.5f, 7f);
         [Tooltip("...within this many degrees either side of the front...")]
@@ -87,12 +126,6 @@ namespace Game.Bonus
         [SerializeField] private float spawnArc = 60f;
         [Tooltip("...and this high over the head (x to y metres).")]
         [SerializeField] private Vector2 spawnHeight = new(-0.3f, 1.2f);
-        [Tooltip("How fast they fly in, at the start (x) and the end (y), metres a second.")]
-        [SerializeField] private Vector2 approachSpeed = new(1.8f, 3.2f);
-        [Tooltip("How long they hover in front of the face before diving, at the start (x) and the end (y), seconds.")]
-        [SerializeField] private Vector2 hoverSeconds = new(0.9f, 0.45f);
-        [Tooltip("How fast they dive, at the start (x) and the end (y), metres a second.")]
-        [SerializeField] private Vector2 diveSpeed = new(2.2f, 3.2f);
         [Tooltip("How far in front of the face they hover, in metres (about arm's reach).")]
         [Min(0.3f)]
         [SerializeField] private float hoverDistance = 0.7f;
@@ -113,6 +146,16 @@ namespace Game.Bonus
         [Tooltip("More candies for a round with no sting.")]
         [Min(0)]
         [SerializeField] private int perfectCandies = 10;
+        [Tooltip("A swat this close to a beat (seconds either side) is on the beat...")]
+        [Range(0f, 0.3f)]
+        [SerializeField] private float onBeatWindow = 0.12f;
+        [Tooltip("...and gives this many candies more...")]
+        [Min(0)]
+        [SerializeField] private int onBeatCandies = 1;
+        [Tooltip("...and this flash where it burst (Flash_round_yellow), this big. Empty: none.")]
+        [SerializeField] private GameObject onBeatFlash;
+        [Min(0.01f)]
+        [SerializeField] private float onBeatFlashSize = 0.35f;
         [Min(0)]
         [SerializeField] private int expPerBee = 1;
         [Min(0)]
@@ -127,6 +170,8 @@ namespace Game.Bonus
         [SerializeField] private float stingShare = 0.15f;
         [Tooltip("The paint blobs splatted on the view (the round tints them its colour).")]
         [SerializeField] private Material splatMaterial;
+        [Tooltip("The paint splats on the floor (swatted bees, dripping hands). Empty: the view's splat above.")]
+        [SerializeField] private Material floorSplatMaterial;
         [Min(0.1f)]
         [SerializeField] private float splatSeconds = 1.4f;
 
@@ -181,9 +226,38 @@ namespace Game.Bonus
         /// <summary>The flat way the player faced when they stepped on the ring: the bees come from there.</summary>
         public Vector3 Front { get; private set; } = Vector3.forward;
 
-        /// <summary>Bees swatted, and stings taken.</summary>
+        /// <summary>Bees swatted, stings taken, and swats on a beat.</summary>
         public int Swatted { get; private set; }
         public int Stings { get; private set; }
+        public int OnBeat { get; private set; }
+
+        /// <summary>The song's clock: seconds into the song (it stops while the game is paused, as the song does).</summary>
+        public float SongTime { get; private set; }
+
+        /// <summary>1 on each beat, falling off fast before the next (for things that throb to it).</summary>
+        public float BeatPulse { get; private set; }
+
+        // Music this long or longer that's playing when the song starts (a radio, the stage's song) is hushed meanwhile.
+        private const float OtherMusicLength = 30f;
+
+        // One bee to come: its song time (on a beat), colour (-1: the rainbow bee), place in its lot, the lot's size, and
+        // how far through the round it comes (0-1).
+        private struct Planned
+        {
+            public float at;
+            public int colour;
+            public int slot;
+            public int lot;
+            public float progress;
+        }
+
+        private AudioSource music;
+        private bool clockRunning;
+        private Transform paintFloor;
+        private PaintBeesRoad roadMade;
+        private int lastHalfBeat = int.MinValue;
+        private float nextHush;
+        private readonly List<AudioSource> hushed = new();
 
         private PaintHands hands;
         private readonly List<PaintBucket> buckets = new();
@@ -202,6 +276,8 @@ namespace Game.Bonus
         private TMP_Text signText;
         private int fountains;
 
+        private Material FloorSplat => floorSplatMaterial != null ? floorSplatMaterial : splatMaterial != null ? splatMaterial : burstMaterial;
+
         /// <summary>A paint colour (index into Colours).</summary>
         public Color ColourOf(int index) => index >= 0 && index < colours.Length ? colours[index] : Color.white;
 
@@ -211,6 +287,9 @@ namespace Game.Bonus
             voice = gameObject.AddComponent<AudioSource>();
             voice.playOnAwake = false;
             voice.spatialBlend = 0f;
+            // The floor paint splats on (the round stands on it).
+            paintFloor = new GameObject("Paint Floor").transform;
+            paintFloor.SetParent(transform, false);
             blobs = MakeBlobs();
             MakeSign();
             if (stageSky != null) Instantiate(stageSky, transform.position, Quaternion.identity, transform);
@@ -222,6 +301,129 @@ namespace Game.Bonus
         {
             foreach (var b in live) if (b != null) Destroy(b.gameObject);
             if (sign != null) Destroy(sign.gameObject);
+            Unhush();
+        }
+
+        // ---------- The song and its beat ----------
+
+        private float BeatSeconds => 60f / Mathf.Max(1f, bpm);
+
+        // The song time of a beat (0 = the first).
+        private float BeatTime(int beat) => firstBeat + beat * BeatSeconds;
+
+        // The first beat at or after this song time.
+        private int BeatAtOrAfter(float time) => Mathf.CeilToInt((time - firstBeat) / BeatSeconds - 0.001f);
+
+        // The song from the top, the clock with it; other music hushed meanwhile.
+        private void StartSong()
+        {
+            SongTime = 0f;
+            clockRunning = true;
+            if (song == null) return;
+            music = gameObject.AddComponent<AudioSource>();
+            music.playOnAwake = false;
+            music.spatialBlend = 0f;
+            music.priority = 16;
+            music.clip = song;
+            music.volume = songVolume;
+            Hush();
+            music.Play();
+        }
+
+        // Other music playing is muted (not paused: a radio's FSM would take a paused song for finished and play the next).
+        private void Hush()
+        {
+            nextHush = Time.unscaledTime + 1f;
+            foreach (var source in FindObjectsByType<AudioSource>(FindObjectsSortMode.None))
+            {
+                if (source == null || source == music || source.mute || !source.isPlaying || source.clip == null ||
+                    source.clip.length < OtherMusicLength) continue;
+                source.mute = true;
+                hushed.Add(source);
+            }
+        }
+
+        private void Unhush()
+        {
+            foreach (var source in hushed) if (source != null) source.mute = false;
+            hushed.Clear();
+        }
+
+        // The song's clock: frame time, kept in step with where the song is heard (paused with the game: both stop).
+        private void Tick()
+        {
+            if (!clockRunning) return;
+            SongTime += Time.deltaTime;
+            if (music != null && music.isPlaying && music.clip != null)
+            {
+                float heard = music.timeSamples / (float)music.clip.frequency;
+                SongTime = Mathf.Abs(heard - SongTime) > 0.08f ? heard : Mathf.Lerp(SongTime, heard, 0.15f);
+                // Music started meanwhile (a radio's next song) is hushed too.
+                if (Time.unscaledTime >= nextHush) Hush();
+            }
+            float sinceBeat = Mathf.Repeat(SongTime - firstBeat, BeatSeconds);
+            BeatPulse = SongTime >= firstBeat - 0.01f ? Mathf.Exp(-sinceBeat * 9f) : 0f;
+            // The road's lights set off on every half beat.
+            int half = Mathf.FloorToInt((SongTime - firstBeat) / (BeatSeconds * 0.5f));
+            if (roadMade != null && half != lastHalfBeat && SongTime >= firstBeat)
+            {
+                lastHalfBeat = half;
+                roadMade.HalfBeat(half % 2 == 0, BeatSeconds);
+            }
+        }
+
+        // The song fades out and stops; the other music comes back.
+        private IEnumerator FadeSong()
+        {
+            if (music != null)
+            {
+                float from = music.volume;
+                for (float t = 0f; t < fadeSeconds && music != null; t += Time.deltaTime)
+                {
+                    music.volume = from * (1f - t / fadeSeconds);
+                    yield return null;
+                }
+                if (music != null) music.Stop();
+            }
+            Unhush();
+        }
+
+        /// <summary>
+        /// A bee knocked back comes again: the song times it's back in front of the face, dives and reaches it, on beats.
+        /// </summary>
+        public void ComeAgain(out float arrive, out float dive, out float hit)
+        {
+            int beat = BeatAtOrAfter(SongTime + BeatSeconds * 0.5f) + 1;
+            arrive = BeatTime(beat);
+            dive = BeatTime(beat + 1);
+            hit = dive + diveBeats * BeatSeconds;
+        }
+
+        // The bees from this beat to Last Bee At: a lot every few beats (more often as it goes), lots of two or three
+        // from a quarter of the way through, the rainbow bee Rainbow At of the way.
+        private List<Planned> Plan(int startBeat)
+        {
+            var plan = new List<Planned>();
+            float start = BeatTime(startBeat);
+            float end = Mathf.Max(start + BeatSeconds, lastBeeAt);
+            for (int beat = startBeat; BeatTime(beat) <= end;)
+            {
+                float p = Mathf.InverseLerp(start, end, BeatTime(beat));
+                int lot = 1;
+                if (p >= 0.25f && Random.value < (p < 0.6f ? 0.4f : 0.55f)) lot = p >= 0.6f && Random.value < 0.45f ? 3 : 2;
+                lot = Mathf.Min(lot, mostAtOnce);
+                for (int i = 0; i < lot; i++)
+                    plan.Add(new Planned { at = BeatTime(beat), colour = Random.Range(0, colours.Length), slot = i, lot = lot, progress = p });
+                beat += Mathf.Max(1, Mathf.RoundToInt(Mathf.Lerp(everyBeats.x, everyBeats.y, p))) + (lot - 1);
+            }
+            if (rainbowAt > 0f && plan.Count > 0)
+            {
+                int r = Mathf.Clamp(Mathf.RoundToInt((plan.Count - 1) * rainbowAt), 0, plan.Count - 1);
+                var e = plan[r];
+                e.colour = -1;
+                plan[r] = e;
+            }
+            return plan;
         }
 
         private IEnumerator Run()
@@ -254,9 +456,10 @@ namespace Game.Bonus
                 Destroy(mark);
             }
 
-            // The buckets pop up round them, in a random order of colours; the hands can be painted.
+            // The song starts; the buckets pop up round them, in a random order of colours; the hands can be painted.
+            StartSong();
             hands = gameObject.AddComponent<PaintHands>();
-            hands.Setup(colours, burstMaterial);
+            hands.Setup(colours, burstMaterial, paintFloor, FloorSplat);
             var order = new List<int>();
             for (int i = 0; i < colours.Length; i++) order.Add(i);
             for (int i = order.Count - 1; i > 0; i--) { int j = Random.Range(0, i + 1); (order[i], order[j]) = (order[j], order[i]); }
@@ -273,59 +476,74 @@ namespace Game.Bonus
             }
             yield return new WaitForSeconds(riseSeconds);
 
-            // Dip a hand, then 3-2-1.
+            // Dip a hand, then 3-2-1 on the song's beats, from the next bar.
             Say("Dip your hands in the paint!");
             for (float t = 0f; t < 6f && !AnyPainted(); t += Time.deltaTime) yield return null;
             yield return new WaitForSeconds(1.2f);
+            int beat = BeatAtOrAfter(SongTime + 0.3f);
+            beat += (4 - beat % 4) % 4;
+            // The road lights up, its lights marching in to the 3-2-1.
+            if (road != null)
+            {
+                roadMade = Instantiate(road, middle, Quaternion.LookRotation(Front), transform);
+                roadMade.Setup(this);
+            }
             foreach (var n in new[] { "3", "2", "1" })
             {
+                while (SongTime < BeatTime(beat)) yield return null;
                 Say(n);
                 Play(tickSound);
-                yield return new WaitForSeconds(0.8f);
+                beat++;
             }
+            while (SongTime < BeatTime(beat)) yield return null;
             Say("GO!");
             Play(goSound);
 
-            // The bees, a few at a time, each lot a little faster.
-            total = bees + (rainbowAt > 0f ? 1 : 0);
-            int rainbowIndex = rainbowAt > 0f ? Mathf.Clamp(Mathf.RoundToInt(bees * rainbowAt), 0, total - 1) : -1;
+            // The bees, each lot on a beat, more often as it goes; a lot that would make too many waits a beat.
+            var plan = Plan(beat + 1);
+            total = plan.Count;
+            PlayerBuffs.Add(Buff.CandyHelmet, lastBeeAt - SongTime + 15f);
             beesOut = true;
-            int spawned = 0;
-            float next = Time.time + 0.6f;
+            int next = 0;
             bool cleared = false;
-            while (spawned < total || live.Count > 0)
+            while (next < plan.Count || live.Count > 0)
             {
-                if (!cleared && Time.time > next - 0.2f) { Say(""); cleared = true; }
+                if (!cleared && SongTime > BeatTime(beat) + 0.4f) { Say(""); cleared = true; }
                 live.RemoveAll(b => b == null);
-                // The Candy Helmet is on the whole time the bees are out.
-                if (PlayerBuffs.SecondsLeft(Buff.CandyHelmet) < 5f) PlayerBuffs.Give(Buff.CandyHelmet, 10f);
-                if (spawned < total && Time.time >= next && live.Count < mostAtOnce)
+                if (next < plan.Count && SongTime >= plan[next].at)
                 {
-                    float p = total > 1 ? spawned / (float)(total - 1) : 1f;
-                    int lot = 1;
-                    if (p >= 0.25f && Random.value < (p < 0.6f ? 0.4f : 0.55f)) lot = p >= 0.6f && Random.value < 0.45f ? 3 : 2;
-                    lot = Mathf.Min(lot, total - spawned, mostAtOnce - live.Count);
-                    for (int i = 0; i < lot; i++)
+                    int lot = plan[next].lot - plan[next].slot;
+                    if (live.Count + lot <= mostAtOnce)
                     {
-                        bool rainbow = spawned == rainbowIndex;
-                        SendBee(rainbow ? -1 : Random.Range(0, colours.Length), p, i, lot);
-                        spawned++;
+                        for (int i = 0; i < lot && next < plan.Count; i++, next++) SendBee(plan[next]);
                     }
-                    next = Time.time + Mathf.Lerp(spawnEvery.x, spawnEvery.y, p) + 0.35f * (lot - 1);
+                    else
+                    {
+                        // The rest move on so this lot comes on the next beat.
+                        float later = BeatTime(BeatAtOrAfter(SongTime) + 1) - plan[next].at;
+                        for (int i = next; i < plan.Count; i++)
+                        {
+                            var e = plan[i];
+                            e.at += later;
+                            plan[i] = e;
+                        }
+                    }
                 }
                 ShowCount();
                 yield return null;
             }
             beesOut = false;
+            if (roadMade != null) roadMade.Stop();
 
-            // The end: fireworks, the perfect round's candies, the helmet eats the rest.
+            // The end: the song fades, fireworks, the perfect round's candies (no words), the helmet eats the rest.
             bool perfect = Stings == 0;
-            Say(perfect ? "PERFECT!" : $"{Swatted} / {total} bees!");
+            Say($"{Swatted} / {total}");
             if (perfect)
             {
                 Play(perfectSound);
                 StartCoroutine(Candies(middle + Front * 1.2f + Vector3.up * 1.4f, perfectCandies));
             }
+            StartCoroutine(FadeSong());
             StartCoroutine(Fireworks());
             yield return new WaitForSeconds(1.5f);
             for (float waited = 0f; waited < candyWaitSeconds; waited += Time.deltaTime)
@@ -348,25 +566,27 @@ namespace Game.Bonus
             return false;
         }
 
-        // One bee off: from far in front, to hover in front of the face on its side (a lot spread side by side, and
-        // diving one after the other).
-        private void SendBee(int colour, float progress, int slot, int lot)
+        // One bee off, on its beat: from far in front, to hover in front of the face on its side, on a beat Fly Beats on
+        // (a lot spread side by side, and diving one beat after another), diving Hover Beats later, at the face Dive
+        // Beats after that.
+        private void SendBee(Planned e)
         {
             if (bee == null || Head == null) return;
             float angle = Random.Range(-spawnArc, spawnArc);
             var way = Quaternion.Euler(0f, angle, 0f) * Front;
             var from = new Vector3(middle.x, Head.position.y, middle.z) + way * Random.Range(spawnDistance.x, spawnDistance.y) +
                        Vector3.up * Random.Range(spawnHeight.x, spawnHeight.y);
-            float side = Mathf.Sin(angle * Mathf.Deg2Rad) * 0.25f + Random.Range(-0.1f, 0.1f) + (slot - (lot - 1) * 0.5f) * 0.32f;
+            float side = Mathf.Sin(angle * Mathf.Deg2Rad) * 0.25f + Random.Range(-0.1f, 0.1f) + (e.slot - (e.lot - 1) * 0.5f) * 0.32f;
             var hover = new Vector3(Mathf.Clamp(side, -0.55f, 0.55f), Random.Range(-0.15f, 0.08f), hoverDistance);
             var made = Instantiate(bee, from, Quaternion.LookRotation(Head.position - from), SpawnedStuff());
-            if (colour < 0)
+            if (e.colour < 0)
             {
                 made.transform.localScale *= rainbowSize;
                 Play(rainbowSound);
             }
-            made.Launch(this, colour, Mathf.Lerp(approachSpeed.x, approachSpeed.y, progress),
-                Mathf.Lerp(hoverSeconds.x, hoverSeconds.y, progress) + slot * 0.35f, Mathf.Lerp(diveSpeed.x, diveSpeed.y, progress), hover);
+            float arrive = e.at + Mathf.Round(Mathf.Lerp(flyBeats.x, flyBeats.y, e.progress)) * BeatSeconds;
+            float dive = arrive + (Mathf.Round(Mathf.Lerp(hoverBeats.x, hoverBeats.y, e.progress)) + e.slot) * BeatSeconds;
+            made.Launch(this, e.colour, hover, arrive, dive, dive + diveBeats * BeatSeconds);
             live.Add(made);
             Puff(from, 0.4f);
         }
@@ -375,6 +595,8 @@ namespace Game.Bonus
         // it back (the wrong one).
         private void Update()
         {
+            Tick();
+            if (roadMade != null) roadMade.Diving = live.Exists(b => b != null && b.Diving);
             if (hands == null) return;
             foreach (var hand in hands.Hands)
             {
@@ -421,14 +643,22 @@ namespace Game.Bonus
             Swatted++;
             combo++;
             var at = b.transform.position;
+            // On a beat: a gold flash and more candies (no words).
+            float sinceBeat = Mathf.Repeat(SongTime - firstBeat, BeatSeconds);
+            bool onBeat = Mathf.Min(sinceBeat, BeatSeconds - sinceBeat) <= onBeatWindow;
+            if (onBeat)
+            {
+                OnBeat++;
+                if (onBeatFlash != null) EffectPool.Play(onBeatFlash, at, onBeatFlashSize);
+            }
             // The rainbow bee bursts into every colour.
             if (b.Rainbow)
             {
                 for (int k = 0; k < 6; k++) Blobs(at, Color.HSVToRGB(k / 6f, 0.75f, 1f), 7, 3f, false);
             }
             else Blobs(at, ColourOf(b.Colour), 18, 3f, false);
-            PlayAt(Pick(swatSounds), at, 1f + Mathf.Min(combo, 15) * 0.03f);
-            StartCoroutine(Candies(at, b.Rainbow ? rainbowCandies : candiesPerBee));
+            PlayAt(Pick(swatSounds), at, 1f + Mathf.Min(combo, 15) * 0.03f + (onBeat ? 0.08f : 0f));
+            StartCoroutine(Candies(at, (b.Rainbow ? rainbowCandies : candiesPerBee) + (onBeat ? onBeatCandies : 0)));
             PlayerLevel.AddExp(b.Rainbow ? rainbowExp : expPerBee);
             live.Remove(b);
             boinged.Remove(b);
@@ -562,7 +792,8 @@ namespace Game.Bonus
             var main = system.main;
             main.loop = false;
             main.playOnAwake = false;
-            main.startLifetime = new ParticleSystem.MinMaxCurve(0.5f, 0.9f);
+            // Long enough to reach the floor and splat there.
+            main.startLifetime = new ParticleSystem.MinMaxCurve(1.1f, 1.6f);
             main.startSize = new ParticleSystem.MinMaxCurve(0.025f, 0.07f);
             main.gravityModifier = 1.2f;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
@@ -575,6 +806,8 @@ namespace Game.Bonus
             size.enabled = true;
             size.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(0.7f, 0.8f), new Keyframe(1f, 0f)));
             go.GetComponent<ParticleSystemRenderer>().sharedMaterial = burstMaterial;
+            var floorSplat = FloorSplat;
+            if (floorSplat != null) PaintSplats.Add(system, paintFloor, floorSplat, 0.7f);
             return system;
         }
 
