@@ -27,6 +27,8 @@ namespace Game.EditorTools
         // The ball's size: the model is 0.46 m across at scale 1.
         private const float Scale = 1.1f;
         private const float ModelRadius = 0.23f;
+        // The hit sphere as a share of the ball's own size.
+        private const float HitSphere = 1.3f;
         // The NavMesh agent type the bugs (and the game's NavMesh) use.
         private const string BugAgentType = "Spider";
 
@@ -71,7 +73,8 @@ namespace Game.EditorTools
                 body.isKinematic = true;
                 body.useGravity = false;
                 var ball = root.AddComponent<SphereCollider>();
-                ball.radius = ModelRadius;
+                // A bigger target than the ball itself, so a punch connects (user, 2026-11-04: easier to punch away).
+                ball.radius = ModelRadius * HitSphere;
                 ball.center = new Vector3(0f, ModelRadius, 0f);
                 var speaker = root.AddComponent<AudioSource>();
                 speaker.playOnAwake = false;

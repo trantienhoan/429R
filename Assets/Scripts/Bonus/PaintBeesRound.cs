@@ -16,7 +16,7 @@ namespace Game.Bonus
     /// - a hand dipped in a bucket takes its colour (see Paint Hands), and keeps it until dipped in another;
     /// - it all goes to a song (user, 2026-11-03: "Player punches flying colored bee that drops candies follow fight
     ///   song beat", like Vibe Punch; Pumpkin_Pillow_Party, 100 BPM): the song starts as the buckets come up, the 3-2-1
-    ///   ticks on its beats, and bees of the four colours (and one rainbow bee, Rainbow At of the way through) appear on
+    ///   ticks on its beats, and bees (two colours at first; all of them and one rainbow bee once All Colours After are swatted) appear on
     ///   a beat far in front, a few at a time and more often as it goes, reach the face's front on a beat, hover there
     ///   (the warning) and dive on a beat, at the face on the next; they throb to every beat. They stop coming at Last
     ///   Bee At seconds into the song, and it fades out once the last one is done;
@@ -58,16 +58,16 @@ namespace Game.Bonus
         [Tooltip("The paint colours, one bucket each.")]
         [SerializeField] private Color[] colours =
         {
-            new(1f, 0.2f, 0.18f), new(0.2f, 0.45f, 1f), new(1f, 0.85f, 0.12f), new(0.25f, 0.9f, 0.3f),
+            new(1f, 0.2f, 0.18f), new(0.2f, 0.45f, 1f), new(1f, 0.85f, 0.12f),
         };
         [Tooltip("How far from the player the buckets float, in metres...")]
         [Min(0.2f)]
-        [SerializeField] private float bucketDistance = 0.62f;
+        [SerializeField] private float bucketDistance = 0.7f;
         [Tooltip("...at these angles from where they face when they step on the ring (degrees; one per colour).")]
-        [SerializeField] private float[] bucketAngles = { -105f, -35f, 35f, 105f };
+        [SerializeField] private float[] bucketAngles = { -60f, 0f, 60f };
         [Tooltip("How high over the floor their paint is, in metres (waist height).")]
         [Min(0.2f)]
-        [SerializeField] private float paintHeight = 0.85f;
+        [SerializeField] private float paintHeight = 0.175f;
         [Tooltip("Seconds each takes to pop up, and between one and the next.")]
         [Min(0.05f)]
         [SerializeField] private float riseSeconds = 0.6f;
@@ -99,9 +99,19 @@ namespace Game.Bonus
 
         [Header("Bees")]
         [SerializeField] private PaintBee bee;
-        [Tooltip("The rainbow bee comes this share of the way through. 0 = none.")]
-        [Range(0f, 1f)]
-        [SerializeField] private float rainbowAt = 0.7f;
+        [Tooltip("The bees fly out of the stage's fire columns (user, 2026-11-04: \"Spawn bee where 4 column of Fire is " +
+                 "burning. Bee flys out of fire\"): the objects with this name (Boss_Area's Danger_Flames) within Fire Reach of " +
+                 "the round. None found: they come from in front of the player, as before.")]
+        [SerializeField] private string fireName = "Danger_Flame";
+        [Min(1f)]
+        [SerializeField] private float fireReach = 25f;
+        [Tooltip("How high in the fire they come out, in metres over its foot (x to y), times its size.")]
+        [SerializeField] private Vector2 fireHeight = new(0.8f, 1.5f);
+        [Tooltip("The bees come in only two of the paint colours (two picked at random each round) until the player has " +
+                 "swatted more than this many; then in all of them, and the next one is the rainbow bee (user, 2026-11-04). " +
+                 "0 = all colours and the rainbow bee from the start.")]
+        [Min(0)]
+        [SerializeField] private int allColoursAfter = 30;
         [Tooltip("The rainbow bee is this many times bigger.")]
         [Min(0.5f)]
         [SerializeField] private float rainbowSize = 1.3f;
@@ -123,7 +133,7 @@ namespace Game.Bonus
         [SerializeField] private Vector2 spawnDistance = new(5.5f, 7f);
         [Tooltip("...within this many degrees either side of the front...")]
         [Range(0f, 120f)]
-        [SerializeField] private float spawnArc = 60f;
+        [SerializeField] private float spawnArc = 35f;
         [Tooltip("...and this high over the head (x to y metres).")]
         [SerializeField] private Vector2 spawnHeight = new(-0.3f, 1.2f);
         [Tooltip("How far in front of the face they hover, in metres (about arm's reach).")]
@@ -226,8 +236,20 @@ namespace Game.Bonus
         /// <summary>The flat way the player faced when they stepped on the ring: the bees come from there.</summary>
         public Vector3 Front { get; private set; } = Vector3.forward;
 
+        /// <summary>The flat way the player looks now (smoothed): the bees come from there and hover in front of it.</summary>
+        public Vector3 Looking { get; private set; } = Vector3.forward;
+
         /// <summary>Bees swatted, stings taken, and swats on a beat.</summary>
         public int Swatted { get; private set; }
+
+        // The fire columns the bees fly out of, and the one used last.
+        private readonly List<Transform> fires = new();
+        private int lastFire = -1;
+
+        // The two colours the bees come in at first, whether all of them come now, and the rainbow bee's turn.
+        private int[] startColours;
+        private bool allColours;
+        private bool rainbowDue;
         public int Stings { get; private set; }
         public int OnBeat { get; private set; }
 
@@ -308,6 +330,9 @@ namespace Game.Bonus
 
         private float BeatSeconds => 60f / Mathf.Max(1f, bpm);
 
+        /// <summary>One beat of the song, in seconds.</summary>
+        public float BeatLength => BeatSeconds;
+
         // The song time of a beat (0 = the first).
         private float BeatTime(int beat) => firstBeat + beat * BeatSeconds;
 
@@ -352,6 +377,13 @@ namespace Game.Bonus
         // The song's clock: frame time, kept in step with where the song is heard (paused with the game: both stop).
         private void Tick()
         {
+            // The way the player looks, flat and smoothed (a glance doesn't swing the bees about).
+            if (Head != null)
+            {
+                var look = Head.forward;
+                look.y = 0f;
+                if (look.sqrMagnitude > 0.001f) Looking = Vector3.Slerp(Looking, look.normalized, 1f - Mathf.Exp(-3f * Time.deltaTime));
+            }
             if (!clockRunning) return;
             SongTime += Time.deltaTime;
             if (music != null && music.isPlaying && music.clip != null)
@@ -400,7 +432,7 @@ namespace Game.Bonus
         }
 
         // The bees from this beat to Last Bee At: a lot every few beats (more often as it goes), lots of two or three
-        // from a quarter of the way through, the rainbow bee Rainbow At of the way.
+        // from a quarter of the way through. Their colours are picked as they're sent (see Colour For Next Bee).
         private List<Planned> Plan(int startBeat)
         {
             var plan = new List<Planned>();
@@ -413,17 +445,36 @@ namespace Game.Bonus
                 if (p >= 0.25f && Random.value < (p < 0.6f ? 0.4f : 0.55f)) lot = p >= 0.6f && Random.value < 0.45f ? 3 : 2;
                 lot = Mathf.Min(lot, mostAtOnce);
                 for (int i = 0; i < lot; i++)
-                    plan.Add(new Planned { at = BeatTime(beat), colour = Random.Range(0, colours.Length), slot = i, lot = lot, progress = p });
+                    plan.Add(new Planned { at = BeatTime(beat), slot = i, lot = lot, progress = p });
                 beat += Mathf.Max(1, Mathf.RoundToInt(Mathf.Lerp(everyBeats.x, everyBeats.y, p))) + (lot - 1);
             }
-            if (rainbowAt > 0f && plan.Count > 0)
-            {
-                int r = Mathf.Clamp(Mathf.RoundToInt((plan.Count - 1) * rainbowAt), 0, plan.Count - 1);
-                var e = plan[r];
-                e.colour = -1;
-                plan[r] = e;
-            }
             return plan;
+        }
+
+        // Two colours at first; once more than All Colours After bees are swatted, every colour, and the next bee is the
+        // rainbow bee (only that one).
+        private int ColourForNextBee()
+        {
+            if (startColours == null)
+            {
+                var order = new List<int>();
+                for (int i = 0; i < colours.Length; i++) order.Add(i);
+                for (int i = order.Count - 1; i > 0; i--) { int j = Random.Range(0, i + 1); (order[i], order[j]) = (order[j], order[i]); }
+                startColours = order.GetRange(0, Mathf.Min(2, order.Count)).ToArray();
+                allColours = allColoursAfter <= 0;
+                rainbowDue = allColours;
+            }
+            if (!allColours && Swatted > allColoursAfter)
+            {
+                allColours = true;
+                rainbowDue = true;
+            }
+            if (rainbowDue)
+            {
+                rainbowDue = false;
+                return -1;
+            }
+            return allColours || startColours.Length == 0 ? Random.Range(0, colours.Length) : startColours[Random.Range(0, startColours.Length)];
         }
 
         private IEnumerator Run()
@@ -449,6 +500,7 @@ namespace Game.Bonus
             }
             var facing = Flat(Head.forward);
             Front = facing.sqrMagnitude > 0.001f ? facing.normalized : Vector3.forward;
+            Looking = Front;
             middle = new Vector3(Head.position.x, floor.y, Head.position.z);
             if (mark != null)
             {
@@ -486,6 +538,9 @@ namespace Game.Bonus
             if (road != null)
             {
                 roadMade = Instantiate(road, middle, Quaternion.LookRotation(Front), transform);
+                // Its lanes lead from the fires the bees fly out of.
+                FindFires();
+                if (fires.Count > 0) roadMade.LeadFrom(fires);
                 roadMade.Setup(this);
             }
             foreach (var n in new[] { "3", "2", "1" })
@@ -566,17 +621,53 @@ namespace Game.Bonus
             return false;
         }
 
+        // The stage's fire columns near the round (Boss_Area's Danger_Flames).
+        private void FindFires()
+        {
+            fires.Clear();
+            if (string.IsNullOrEmpty(fireName)) return;
+            foreach (var t in FindObjectsByType<Transform>(FindObjectsSortMode.None))
+            {
+                if (!t.gameObject.activeInHierarchy || !t.name.StartsWith(fireName)) continue;
+                // Its own top object, not the parts inside it.
+                if (t.parent != null && t.parent.name.StartsWith(fireName)) continue;
+                var gap = t.position - middle;
+                gap.y = 0f;
+                if (gap.magnitude <= fireReach) fires.Add(t);
+            }
+        }
+
         // One bee off, on its beat: from far in front, to hover in front of the face on its side, on a beat Fly Beats on
         // (a lot spread side by side, and diving one beat after another), diving Hover Beats later, at the face Dive
         // Beats after that.
         private void SendBee(Planned e)
         {
             if (bee == null || Head == null) return;
+            e.colour = ColourForNextBee();
             float angle = Random.Range(-spawnArc, spawnArc);
-            var way = Quaternion.Euler(0f, angle, 0f) * Front;
-            var from = new Vector3(middle.x, Head.position.y, middle.z) + way * Random.Range(spawnDistance.x, spawnDistance.y) +
+            // Out of one of the fire columns (not the one used last); with none, around where the player looks now.
+            fires.RemoveAll(f => f == null || !f.gameObject.activeInHierarchy);
+            Vector3 from;
+            if (fires.Count > 0)
+            {
+                int pick = Random.Range(0, fires.Count);
+                if (pick == lastFire && fires.Count > 1) pick = (pick + 1 + Random.Range(0, fires.Count - 1)) % fires.Count;
+                lastFire = pick;
+                var fire = fires[pick];
+                from = fire.position + Vector3.up * (Random.Range(fireHeight.x, fireHeight.y) * Mathf.Abs(fire.lossyScale.y));
+                // Which side of the face it hovers on: the side its fire is on.
+                var flat = from - Head.position;
+                flat.y = 0f;
+                angle = Vector3.SignedAngle(Looking, flat, Vector3.up);
+                if (puffEffect != null) EffectPool.Play(puffEffect, from, 0.8f);
+            }
+            else
+            {
+                var way = Quaternion.Euler(0f, angle, 0f) * Looking;
+                from = new Vector3(middle.x, Head.position.y, middle.z) + way * Random.Range(spawnDistance.x, spawnDistance.y) +
                        Vector3.up * Random.Range(spawnHeight.x, spawnHeight.y);
-            float side = Mathf.Sin(angle * Mathf.Deg2Rad) * 0.25f + Random.Range(-0.1f, 0.1f) + (e.slot - (e.lot - 1) * 0.5f) * 0.32f;
+            }
+            float side = Mathf.Sin(Mathf.Clamp(angle, -90f, 90f) * Mathf.Deg2Rad) * 0.25f + Random.Range(-0.1f, 0.1f) + (e.slot - (e.lot - 1) * 0.5f) * 0.32f;
             var hover = new Vector3(Mathf.Clamp(side, -0.55f, 0.55f), Random.Range(-0.15f, 0.08f), hoverDistance);
             var made = Instantiate(bee, from, Quaternion.LookRotation(Head.position - from), SpawnedStuff());
             if (e.colour < 0)

@@ -34,6 +34,15 @@ namespace Game.Bonus
         [Tooltip("How much bigger it throbs on each beat (0.12 = 12%).")]
         [Range(0f, 0.5f)]
         [SerializeField] private float beatThrob = 0.12f;
+        [Tooltip("It dives only once the player has seen it this long, in seconds (within Seen Angle of where they look); " +
+                 "till then it hovers on, a beat at a time, Most Waits beats at the most (user, 2026-11-04: \"I want Player to " +
+                 "see them first before them start diving\").")]
+        [Min(0f)]
+        [SerializeField] private float seenSeconds = 0.4f;
+        [Range(10f, 90f)]
+        [SerializeField] private float seenAngle = 40f;
+        [Min(0)]
+        [SerializeField] private int mostWaits = 4;
         [Tooltip("The light trail it leaves, in its colour; red hot while it dives. Empty: none.")]
         [SerializeField] private TrailRenderer trail;
         [Tooltip("The rainbow bee's look: its own rainbow-painted material (not tinted).")]
@@ -61,6 +70,9 @@ namespace Game.Bonus
         private Renderer[] parts = System.Array.Empty<Renderer>();
         private MaterialPropertyBlock block;
         private Color shownColour = Color.white;
+        // How long the player has had it in view, and how many beats it has waited for that.
+        private float seenFor;
+        private int waited;
 
         /// <summary>Its colour index; -1 = the rainbow bee.</summary>
         public int Colour { get; private set; }
@@ -153,6 +165,7 @@ namespace Game.Bonus
                     transform.position = Vector3.Lerp(from, spot, eased) + side * weave;
                     Face(head);
                     pitch = 1f;
+                    if (InView()) seenFor += Time.deltaTime;
                     if (u >= 1f) Enter(State.Hover, "alert");
                     break;
                 }
@@ -163,6 +176,15 @@ namespace Game.Bonus
                     transform.position = HoverSpot(head) + Random.insideUnitSphere * (0.012f * k);
                     Face(head);
                     pitch = Mathf.Lerp(1.1f, 1.4f, k);
+                    if (InView()) seenFor += Time.deltaTime;
+                    // Not seen long enough yet: it waits a beat more (still on the beat).
+                    if (now >= diveAt && seenFor < seenSeconds && waited < mostWaits)
+                    {
+                        waited++;
+                        float beat = round.BeatLength;
+                        diveAt += beat;
+                        hitAt += beat;
+                    }
                     if (now >= diveAt)
                     {
                         from = transform.position;
@@ -215,9 +237,17 @@ namespace Game.Bonus
         // Where it hovers: in front of the face, on the side it came from, wherever the head goes.
         private Vector3 HoverSpot(Vector3 head)
         {
-            var toward = round.Front;
+            var toward = round.Looking;
             var right = Vector3.Cross(Vector3.up, toward);
             return head + right * hoverOffset.x + Vector3.up * hoverOffset.y + toward * hoverOffset.z;
+        }
+
+        // In the player's view: within Seen Angle of where they look.
+        private bool InView()
+        {
+            var eyes = round.Head;
+            var to = transform.position - eyes.position;
+            return to.sqrMagnitude > 0.0001f && Vector3.Angle(eyes.forward, to) <= seenAngle;
         }
 
         private void Face(Vector3 head)

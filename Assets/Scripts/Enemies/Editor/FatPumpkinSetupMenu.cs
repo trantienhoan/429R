@@ -128,7 +128,8 @@ namespace Game.EditorTools
                 var pop = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "pumpkin_explode_1.wav");
                 so.FindProperty("breakOutSound").objectReferenceValue = pop;
                 so.FindProperty("burstSound").objectReferenceValue = pop;
-                BowlingPumpkinSetupMenu.SetList(so.FindProperty("laughs"), Sfx + "laughing_pumpkin_1.wav", Sfx + "laughing_pumpkin_2.wav", Sfx + "laughing_pumpkin_3.wav");
+                // No laughing (user, 2026-11-04: "remove laughing sound of Fat Pumpkin"): its angry growl was its laugh too.
+                so.FindProperty("laughs").arraySize = 0;
                 // The user's own clips, standing in until it has its own.
                 so.FindProperty("eatSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "om_nom_nom.wav");
                 BowlingPumpkinSetupMenu.SetList(so.FindProperty("hitSounds"), Sfx + "bone_bonk_1.wav", Sfx + "bone_bonk_2.wav");

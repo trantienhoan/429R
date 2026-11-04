@@ -349,8 +349,23 @@ namespace Game.EditorTools
                 so.FindProperty("stunStars").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(StunStarsPath);
                 so.FindProperty("fistEffect").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(FistEffectPath);
                 so.FindProperty("lidsMaterial").objectReferenceValue = lids;
-                // A stand-in of the user's own voice, until the real line is recorded.
+                // The stand-in voice, used only if the user's own lines below are missing.
                 so.FindProperty("wakeVoice").objectReferenceValue = Clip("welcome_back_1.wav");
+                // The user's own voice (2026-11-04): "hey hey, hurry up" in the black (its words start 1 s in), "oh good, you
+                // are here" once the eyes are open, "let us go, we need your hands" as the Knight turns to run (Get Up
+                // Seconds 6.4, so it runs as its nods end, after the line).
+                var lines = so.FindProperty("voiceLines");
+                so.FindProperty("getUpSeconds").floatValue = 6.4f;
+                var said = new[] { ("hey_hey_hurry_up.wav", 0f), ("oh_good_you_are_here.wav", 6f), ("let_us_go_we_need_your_hands.wav", 8.45f) }
+                    .Where(l => Clip(l.Item1) != null).ToArray();
+                lines.arraySize = said.Length;
+                for (int i = 0; i < said.Length; i++)
+                {
+                    var line = lines.GetArrayElementAtIndex(i);
+                    line.FindPropertyRelative("clip").objectReferenceValue = Clip(said[i].Item1);
+                    line.FindPropertyRelative("at").floatValue = said[i].Item2;
+                    line.FindPropertyRelative("volume").floatValue = 1f;
+                }
                 so.FindProperty("bossRoar").objectReferenceValue = Clip("pumpkin_roar.wav");
                 so.FindProperty("spinSound").objectReferenceValue = Clip("pumpkin_boss_attack.wav");
                 so.FindProperty("slapSound").objectReferenceValue = Clip("fist_bump_punch.wav");

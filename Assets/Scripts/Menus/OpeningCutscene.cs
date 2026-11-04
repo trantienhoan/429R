@@ -229,10 +229,34 @@ namespace Game.Menus
         [SerializeField] private float darkSeconds = 2f;
 
         [Header("Sounds")]
-        [Tooltip("The voice calling the player to wake up (from the Knight's own speaker, so it says which side it's on).")]
+        [Tooltip("The voice calling the player to wake up (from the Knight's own speaker, so it says which side it's on). " +
+                 "Only when Voice Lines is empty.")]
         [SerializeField] private AudioClip wakeVoice;
         [Range(0f, 1f)]
         [SerializeField] private float wakeVoiceVolume = 1f;
+        [Tooltip("The Knight's lines (the user's own voice, 2026-11-04: hey hey hurry up in the black, oh good you are here " +
+                 "once the eyes are open, let us go we need your hands as it turns to run), each from its own speaker at its " +
+                 "time: seconds from the start of the opening (the black lasts Black Seconds, its slaps land then and 1.4 and " +
+                 "2.8 s after, it runs Get Up Seconds after the first). A clip's own silence at its start counts too.")]
+        [SerializeField] private VoiceLine[] voiceLines = System.Array.Empty<VoiceLine>();
+        [Tooltip("How much the Knight's voice comes from where it stands (0 = in the player's head at full volume, played " +
+                 "on both ears whole; above 0 = partly a 3D sound that fades with distance, and quieter).")]
+        [Range(0f, 1f)]
+        [SerializeField] private float voiceSpatial = 0f;
+        [Tooltip("While the Knight is speaking, the battle's sounds (the boss's punches, splats: already playing ones too) " +
+                 "fade down to this loud, so its voice is heard over them, and back up after (user, 2026-11-04: the boss's " +
+                 "punch sound, 2.6 s long every 1.05 s, buried the voice).")]
+        [Range(0f, 1f)]
+        [SerializeField] private float battleUnderVoice = 0.25f;
+
+        /// <summary>One of the Knight's lines: what, when (seconds from the start), how loud.</summary>
+        [System.Serializable]
+        public struct VoiceLine
+        {
+            public AudioClip clip;
+            [Min(0f)] public float at;
+            [Range(0f, 1f)] public float volume;
+        }
         [Tooltip("The battle's muffled until the eyes open: how muffled (Hz; 22000 = not at all).")]
         [Min(100f)]
         [SerializeField] private float muffledHz = 700f;
@@ -507,6 +531,13 @@ namespace Game.Menus
         private float heldFor;
         private bool skipping;
         private bool over;
+        // When the Knight's lines end (all of them, and the one playing now), and how loud the battle is meanwhile.
+        private float voiceEndsAt;
+        private float speakingUntil;
+        private static float battleLoudness = 1f;
+        // The battle's sounds playing now, each with its own loudness (they follow Battle Loudness while they play).
+        private static readonly List<(AudioSource source, float volume)> battleSounds = new();
+        private const float DuckSeconds = 0.15f;
         private Vector3 floorPoint;
         private Vector3 facing;
         private Vector3 right;
@@ -600,6 +631,8 @@ namespace Game.Menus
         private void OnDestroy()
         {
             if (current == this) current = null;
+            battleLoudness = 1f;
+            battleSounds.Clear();
             DropSkipIcon();
             StopWhistles();
             EndJolt();
@@ -607,6 +640,15 @@ namespace Game.Menus
 
         private void Update()
         {
+            // The battle under the Knight's voice while it speaks.
+            float target = Time.time < speakingUntil ? battleUnderVoice : 1f;
+            battleLoudness = Mathf.MoveTowards(battleLoudness, target, Time.deltaTime / DuckSeconds);
+            for (int i = battleSounds.Count - 1; i >= 0; i--)
+            {
+                var (source, loud) = battleSounds[i];
+                if (source == null) battleSounds.RemoveAt(i);
+                else source.volume = loud * battleLoudness;
+            }
             if (over) return;
             WatchSkip();
         }
@@ -636,7 +678,8 @@ namespace Game.Menus
             SetUp();
             if (over) yield break;
 
-            if (leadKnight.TryGetComponent<AudioSource>(out var speaker) && wakeVoice != null) speaker.PlayOneShot(wakeVoice, wakeVoiceVolume);
+            if (voiceLines.Length > 0) StartCoroutine(KnightSpeaks());
+            else if (leadKnight.TryGetComponent<AudioSource>(out var speaker) && wakeVoice != null) speaker.PlayOneShot(wakeVoice, wakeVoiceVolume);
             StartCoroutine(FightGoesOn());
             // Its first slap lands as the black ends.
             yield return new WaitForSeconds(Mathf.Max(0f, blackSeconds - SlapAt[0]));
@@ -644,12 +687,63 @@ namespace Game.Menus
             yield return new WaitForSeconds(SlapAt[0]);
             StartCoroutine(ThrowerKnight());
             yield return new WaitForSeconds(getUpSeconds);
+            // It finishes what it's saying first.
+            while (Time.time < voiceEndsAt && !over) yield return null;
             StartCoroutine(LeadCharges());
             while (!leadThere) yield return null;
             yield return BossSpins();
             yield return BossNoticesAndThrows();
             yield return LightsOut();
             Finish();
+        }
+
+        // The Knight's lines, each at its time, from its own speaker (it moves with the Knight, so the last ones go with it as
+        // it runs off). Never muffled, unlike the battle: the player must hear them, also in the black.
+        private IEnumerator KnightSpeaks()
+        {
+            float started = Time.time;
+            var lines = new List<VoiceLine>(voiceLines);
+            // Loaded now, not on their first play (their import doesn't preload them); and when the last one ends, so the
+            // Knight doesn't run off before it's finished speaking.
+            foreach (var line in lines)
+            {
+                if (line.clip == null) continue;
+                line.clip.LoadAudioData();
+                voiceEndsAt = Mathf.Max(voiceEndsAt, started + line.at + line.clip.length);
+            }
+            lines.Sort((a, b) => a.at.CompareTo(b.at));
+            foreach (var line in lines)
+            {
+                while (Time.time - started < line.at && !over) yield return null;
+                if (over) yield break;
+                if (line.clip == null) continue;
+                Say(line.clip, line.volume);
+                speakingUntil = Mathf.Max(speakingUntil, Time.time + line.clip.length);
+            }
+        }
+
+        // One line, at full loudness (user, 2026-11-04: "my voice can hear so loud in other music player, why in unity it's
+        // getting so small"): Unity plays a mono clip in the middle 3 dB quieter in each ear than a music player does, so it
+        // plays on two speakers at once, one all the way left and one all the way right, started on the same audio sample:
+        // each ear gets the voice whole. Voice Spatial above 0 leans it to the Knight's side instead (3D, quieter).
+        private void Say(AudioClip clip, float loud)
+        {
+            double at = AudioSettings.dspTime + 0.03;
+            foreach (float pan in voiceSpatial > 0f || clip.channels > 1 ? new[] { 0f } : new[] { -1f, 1f })
+            {
+                var speaker = leadKnight.gameObject.AddComponent<AudioSource>();
+                speaker.playOnAwake = false;
+                speaker.clip = clip;
+                speaker.volume = loud;
+                speaker.panStereo = pan;
+                speaker.spatialBlend = voiceSpatial;
+                speaker.priority = 0;
+                speaker.dopplerLevel = 0f;
+                speaker.bypassListenerEffects = true;
+                speaker.ignoreListenerPause = true;
+                speaker.PlayScheduled(at);
+                Destroy(speaker, clip.length + 0.2f);
+            }
         }
 
         // Each slap knocks the eyes open a bit more, and they droop again, slowly, until they stay open; the sound clears as they do.
@@ -1290,7 +1384,8 @@ namespace Game.Menus
             source.spatialBlend = 1f;
             source.minDistance = near;
             source.clip = clip;
-            source.volume = volume;
+            source.volume = volume * battleLoudness;
+            battleSounds.Add((source, volume));
             source.pitch = Random.Range(0.9f, 1.1f);
             source.Play();
             Destroy(go, clip.length / source.pitch + 0.1f);

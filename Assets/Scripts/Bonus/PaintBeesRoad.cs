@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Game.Bonus
@@ -48,6 +49,8 @@ namespace Game.Bonus
         [SerializeField] private float fadeSeconds = 1.5f;
 
         // Over the floor: the arena's floor past its middle circle is a few centimetres higher.
+        // Lanes from fires stop this far short of them, in metres.
+        private const float FireClear = 1f;
         private const float OverFloor = 0.07f;
         private const float MarchOverFloor = 0.12f;
 
@@ -59,6 +62,28 @@ namespace Game.Bonus
 
         /// <summary>A bee is diving at the player right now: the danger ring flares.</summary>
         public bool Diving { get; set; }
+
+        /// <summary>
+        /// Its lanes lead from these (the fire columns the bees fly out of), out to just short of each, instead of its own
+        /// fan in front. Before Setup.
+        /// </summary>
+        public void LeadFrom(List<Transform> from)
+        {
+            var angles = new List<float>();
+            float far = 0f;
+            foreach (var t in from)
+            {
+                if (t == null) continue;
+                var flat = t.position - transform.position;
+                flat.y = 0f;
+                if (flat.sqrMagnitude < 1f) continue;
+                angles.Add(Vector3.SignedAngle(transform.forward, flat, Vector3.up));
+                far = Mathf.Max(far, flat.magnitude - FireClear);
+            }
+            if (angles.Count == 0) return;
+            lanes = angles.ToArray();
+            reach = new Vector2(far, reach.y);
+        }
 
         /// <summary>Lays the road for this round (it throbs to its beat).</summary>
         public void Setup(PaintBeesRound owner)

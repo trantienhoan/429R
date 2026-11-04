@@ -82,7 +82,11 @@ namespace Game.Enemies
         [Tooltip("A hit of the player's sends it rolling away from where it was hit, this much faster than it was going, " +
                  "in metres per second (still up to Max Roll Speed).")]
         [Min(0f)]
-        [SerializeField] private float punchSpeedUp = 2f;
+        [SerializeField] private float punchSpeedUp = 4f;
+        [Tooltip("How hard a hit of the player's must be to knock it away (hit speed x the weapon's Power): 1 = a light " +
+                 "punch does it (user, 2026-11-04: easier to punch away; it used to take a hit hard enough to hurt, 3).")]
+        [Min(0f)]
+        [SerializeField] private float knockAwayPower = 1f;
 
         [Header("Bulldozing")]
         [Tooltip("What's this close to its front, in metres beyond the ball, is in its way: bugs are killed (a boss stops it: " +
@@ -410,7 +414,7 @@ namespace Game.Enemies
         {
             if (phase == Phase.Gone || Time.time < nextPunch) return;
             var hit = EnemyHitDamage.Judge(collision, 1f, null, out bool byPlayer);
-            if (!byPlayer || hit.Damage <= 0f) return;
+            if (!byPlayer || hit.Power < knockAwayPower) return;
             var at = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
             var way = Middle() - at;
             way.y = 0f;

@@ -53,7 +53,8 @@ namespace Game.EditorTools
         // The paint's surface, a share of the way up the bucket's inside (its floor to its rim).
         private const float PaintLevel = 0.72f;
         // How high the round floats the paint (Paint Bees Round's Paint Height): where the floor glow goes under it.
-        private const float PaintHeight = 0.85f;
+        // The buckets stand on the floor (user, 2026-11-04: "set those bucket on the ground"): their paint is this high.
+        private const float PaintHeight = 0.175f;
 
         private const string BeeSource = "Assets/Prefabs/Enemies/Enemies_Smarter/Bee_Small.prefab";
         private const string BeeMaterialSource = "Assets/Materials/Bee_Smol_Mat.mat";
@@ -630,6 +631,10 @@ namespace Game.EditorTools
                 so.FindProperty("floorGlow").objectReferenceValue = glowRenderer;
                 so.FindProperty("ripple").objectReferenceValue = null;
                 so.FindProperty("reach").floatValue = r * 1.05f;
+                // On the floor: still, no bob or rocking, and dipped from a little higher (hands reach down to it).
+                so.FindProperty("bob").floatValue = 0f;
+                so.FindProperty("tilt").floatValue = 0f;
+                so.FindProperty("abovePaint").floatValue = 0.12f;
                 so.ApplyModifiedPropertiesWithoutUndo();
                 PrefabUtility.SaveAsPrefabAsset(root, BucketPath);
             }

@@ -15,6 +15,12 @@ namespace Game.Enemies
     /// the player and bites (it squashes down, then hops at them with a chomp: a bug's bite and a little shove). A candy
     /// it can get to calms it down, and it goes back to eating. The player's hits break it (Health 5, user 2026-11-03: one
     /// good one, weaker ones add up; their blasts too), and it gives back only a few of what it ate (Drop Share).
+    /// Two of them that meet fight (user, 2026-11-04: "make fat pumpkin eat each other, the 1st to bite win and get bonus
+    /// stat"): within Duel Range they forget the candy and go for each other, each winds up a bite (a little sooner or
+    /// later, by chance) and lunges; the first bite that lands wins: it sucks the other into its mouth and gets Winner
+    /// Speed times as fast, Winner Health times the health, Winner Size times as big and Winner Candies times the candies
+    /// when it bursts (again for each one it eats);
+    /// what the eaten one had eaten comes out of the winner when it bursts.
     /// Goes on the prefab's root, next to its NavMesh Agent. Its look is under Model > Jiggle: an Animator with a controller
     /// found under it replaces the waddle, and gets the Walking bool, the Walk Speed float and the Eat, Hit and Laugh triggers
     /// if its controller has them (Tools > 429 Game > Enemies > Set Up Fat Pumpkin Animation makes all that).
@@ -119,6 +125,32 @@ namespace Game.Enemies
         [Tooltip("Played as it bites. Empty: its gulp.")]
         [SerializeField] private AudioClip biteSound;
 
+        [Header("Eating each other")]
+        [Tooltip("Two that come this close (metres between their sides) fight: the first to bite eats the other.")]
+        [Min(0f)]
+        [SerializeField] private float duelRange = 2.5f;
+        [Tooltip("Each waits up to this many seconds more before it winds up its bite (by chance): who bites first.")]
+        [Min(0f)]
+        [SerializeField] private float duelHeadStart = 0.5f;
+        [Tooltip("A fight that goes on this long (they can't reach each other) is given up.")]
+        [Min(1f)]
+        [SerializeField] private float duelGiveUp = 8f;
+        [Tooltip("Seconds the eaten one takes to go into the winner's mouth.")]
+        [Min(0.05f)]
+        [SerializeField] private float eatEachOtherSeconds = 0.5f;
+        [Tooltip("The winner is this many times as fast...")]
+        [Min(1f)]
+        [SerializeField] private float winnerSpeed = 1.75f;
+        [Tooltip("...has this many times the health...")]
+        [Min(1f)]
+        [SerializeField] private float winnerHealth = 2f;
+        [Tooltip("...and is this many times as big, for each one it eats...")]
+        [Min(1f)]
+        [SerializeField] private float winnerSize = 1.5f;
+        [Tooltip("...and gives this many times the candies when it bursts (user, 2026-11-04: \"3x reward candy also\").")]
+        [Min(1f)]
+        [SerializeField] private float winnerCandies = 3f;
+
         [Header("Breaking")]
         [Tooltip("Its health, in the game's whole-number damage (a closed-fist punch does 1, hard 2; a flying jab 1 + the " +
                  "Fist Size points; weapons and throws their own).")]
@@ -174,6 +206,10 @@ namespace Game.Enemies
         [SerializeField] private string walkSpeedFloat = "WalkSpeed";
 
         private enum Phase { Waking, Hunting, Angry, Gone }
+        private enum Duel { None, Closing, WindingUp, Lunging }
+
+        // Every one that's out, to find the others.
+        private static readonly List<FatPumpkin> everyone = new();
 
         // While angry: fuming, waddling after the player, squashing down to bite, hopping at them.
         private enum Rage { Fuming, Chasing, WindingUp, Lunging }
@@ -278,12 +314,36 @@ namespace Game.Enemies
         private MaterialPropertyBlock block;
         private float nextChasePath;
         private AudioSource growler;
+        // Fighting another one: who, how far along, until when; its size from the ones it ate, the candies they had
+        // eaten, and whether it's being eaten itself.
+        private FatPumpkin rival;
+        private Duel duel;
+        private float duelUntil;
+        private float duelStarted;
+        private float sizeBoost = 1f;
+        private float candyBoost = 1f;
+        private float shownSizeBoost = 1f;
+        private int eatenWithThem;
+        private bool beingEaten;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics() => Alive = 0;
+        private static void ResetStatics()
+        {
+            Alive = 0;
+            everyone.Clear();
+        }
 
-        private void OnEnable() => Alive++;
-        private void OnDisable() => Alive--;
+        private void OnEnable()
+        {
+            Alive++;
+            everyone.Add(this);
+        }
+
+        private void OnDisable()
+        {
+            Alive--;
+            everyone.Remove(this);
+        }
 
         private void Start()
         {
@@ -340,7 +400,7 @@ namespace Game.Enemies
 
         private void Update()
         {
-            if (phase == Phase.Gone) return;
+            if (phase == Phase.Gone || beingEaten) return;
             FlySwallows();
             Grow();
             Flush();
@@ -348,6 +408,12 @@ namespace Game.Enemies
             {
                 TurnTo(HeadFlat());
                 if (Time.time - bornAt >= wakeSeconds) phase = Phase.Hunting;
+                return;
+            }
+            if (rival == null) LookForRival();
+            if (rival != null)
+            {
+                Fight();
                 return;
             }
             if (phase == Phase.Angry) Rampage();
@@ -470,6 +536,140 @@ namespace Game.Enemies
         }
 
         private bool LeftAlone(GameObject candy) => leftAlone.TryGetValue(candy, out float until) && Time.time < until;
+
+        // ---------- Eating each other ----------
+
+        // Another one close by, not fighting yet: the two of them fight.
+        private void LookForRival()
+        {
+            if (Time.time < nextLook) return;
+            foreach (var other in everyone)
+            {
+                if (other == this || other == null || other.rival != null || other.beingEaten || other.phase == Phase.Gone ||
+                    other.phase == Phase.Waking) continue;
+                var gap = other.transform.position - transform.position;
+                gap.y = 0f;
+                if (gap.magnitude - radius * Size - other.radius * other.Size > duelRange) continue;
+                StartFight(other);
+                other.StartFight(this);
+                return;
+            }
+        }
+
+        private void StartFight(FatPumpkin other)
+        {
+            rival = other;
+            duel = Duel.Closing;
+            duelStarted = Time.time;
+            GoFor(null);
+            if (model != null) model.localRotation = Quaternion.identity;
+            Squash(0f);
+        }
+
+        private void StopFight()
+        {
+            rival = null;
+            duel = Duel.None;
+            Squash(0f);
+            if (phase == Phase.Angry) rage = Rage.Chasing;
+        }
+
+        // Up to the rival, wind up (sooner or later, by chance), lunge: the first bite that lands wins.
+        private void Fight()
+        {
+            if (rival == null || rival.beingEaten || rival.phase == Phase.Gone || Time.time - duelStarted > duelGiveUp)
+            {
+                StopFight();
+                return;
+            }
+            var toRival = rival.transform.position - transform.position;
+            toRival.y = 0f;
+            float gap = toRival.magnitude - radius * Size - rival.radius * rival.Size;
+            float speed = 0f;
+            switch (duel)
+            {
+                case Duel.Closing:
+                    if (gap <= biteReach)
+                    {
+                        Stand();
+                        duel = Duel.WindingUp;
+                        duelUntil = Time.time + Random.Range(0f, duelHeadStart) + biteWindUp;
+                        break;
+                    }
+                    if (agent.isOnNavMesh && Time.time >= nextChasePath)
+                    {
+                        nextChasePath = Time.time + LookEvery;
+                        agent.isStopped = false;
+                        agent.speed = walkSpeed * chaseSpeedShare;
+                        agent.SetDestination(rival.transform.position);
+                    }
+                    var velocity = agent.velocity;
+                    velocity.y = 0f;
+                    speed = velocity.magnitude;
+                    TurnTo(speed > 0.1f ? velocity : toRival);
+                    break;
+                case Duel.WindingUp:
+                    Stand();
+                    TurnTo(toRival);
+                    float k = biteWindUp > 0f ? 1f - Mathf.Clamp01((duelUntil - Time.time) / biteWindUp) : 1f;
+                    Squash(k * k);
+                    if (gap > biteReach * 1.5f) duel = Duel.Closing;
+                    else if (Time.time >= duelUntil) Lunge(toRival, gap, Duel.Lunging);
+                    break;
+                case Duel.Lunging:
+                    Squash(0f);
+                    if (gap <= BiteContact)
+                    {
+                        Eat(rival);
+                        return;
+                    }
+                    if (knockback != null && knockback.IsKnockedBack && Time.time < rageUntil) break;
+                    // Missed: again.
+                    duel = Duel.Closing;
+                    break;
+            }
+            Waddle(speed);
+            if (hasWalking) animator.SetBool(walkingBool, speed > 0.1f);
+            if (hasWalkSpeed) animator.SetFloat(walkSpeedFloat, Mathf.Clamp(speed / walkSpeed, MinWalkAnimation, 1f));
+        }
+
+        // It sucks the other one into its mouth, and is faster, tougher and bigger for it.
+        private void Eat(FatPumpkin other)
+        {
+            other.beingEaten = true;
+            other.phase = Phase.Gone;
+            other.Stand();
+            eatenWithThem += other.Eaten + other.eatenWithThem;
+            foreach (var swallow in other.swallows) if (swallow.candy != null) eatenWithThem++;
+            walkSpeed *= winnerSpeed;
+            health *= winnerHealth;
+            sizeBoost *= winnerSize;
+            candyBoost *= winnerCandies;
+            StopFight();
+            pausedUntil = Mathf.Max(pausedUntil, Time.time + eatEachOtherSeconds);
+            if (hasEat) animator.SetTrigger(eatTrigger);
+            if (jiggle != null) jiggle.Hit(HitWobble);
+            if (eatSound != null && speaker != null) speaker.PlayOneShot(eatSound, eatVolume);
+            StartCoroutine(Swallowing(other));
+        }
+
+        private System.Collections.IEnumerator Swallowing(FatPumpkin other)
+        {
+            foreach (var part in other.GetComponentsInChildren<Collider>()) part.enabled = false;
+            if (other.agent != null) other.agent.enabled = false;
+            var from = other.transform.position;
+            var size = other.transform.localScale;
+            for (float t = 0f; t < eatEachOtherSeconds && other != null; t += Time.deltaTime)
+            {
+                float k = t / eatEachOtherSeconds;
+                k *= k;
+                other.transform.position = Vector3.Lerp(from, Mouth() - Vector3.up * (other.radius * other.Size * 0.5f), k);
+                other.transform.localScale = size * Mathf.Lerp(1f, 0.05f, k);
+                yield return null;
+            }
+            if (other != null) Destroy(other.gameObject);
+            if (jiggle != null) jiggle.Hit(HitWobble);
+        }
 
         // ---------- Angry ----------
 
@@ -597,9 +797,10 @@ namespace Game.Enemies
         }
 
         // Hops at the player with a chomp (its Eat animation), to where they stand at the most.
-        private void Lunge(Vector3 toPlayer, float gap)
+        private void Lunge(Vector3 toPlayer, float gap, Duel atRival = Duel.None)
         {
-            rage = Rage.Lunging;
+            if (atRival != Duel.None) duel = atRival;
+            else rage = Rage.Lunging;
             rageUntil = Time.time + biteLunge.y + 0.1f;
             bitten = false;
             if (knockback == null && !TryGetComponent(out knockback)) knockback = gameObject.AddComponent<Knockback>();
@@ -745,8 +946,9 @@ namespace Game.Enemies
         private void Grow()
         {
             shownGrowth = Mathf.MoveTowards(shownGrowth, Growth, GrowPerSecond * Time.deltaTime);
+            shownSizeBoost = Mathf.MoveTowards(shownSizeBoost, sizeBoost, GrowPerSecond * 2f * Time.deltaTime);
             float popped = Mathf.Clamp01((Time.time - bornAt) / PopSeconds);
-            transform.localScale = fullScale * (shownGrowth * Mathf.Lerp(PopFrom, 1f, 1f - (1f - popped) * (1f - popped)));
+            transform.localScale = fullScale * (shownGrowth * shownSizeBoost * Mathf.Lerp(PopFrom, 1f, 1f - (1f - popped) * (1f - popped)));
         }
 
         // ---------- Being hit ----------
@@ -754,7 +956,7 @@ namespace Game.Enemies
         // The player's hits, by the one rule: a fist, a thing they hold or just threw, a shot.
         private void OnCollisionEnter(Collision collision)
         {
-            if (phase == Phase.Gone || Time.time < nextHurt) return;
+            if (phase == Phase.Gone || beingEaten || Time.time < nextHurt) return;
             var hit = EnemyHitDamage.Judge(collision, toughness, hitSettings, out bool byPlayer);
             if (!byPlayer) return;
             if (hit.Damage <= 0f)
@@ -846,7 +1048,9 @@ namespace Game.Enemies
         private void DropCandies(Transform stuff, Collider[] parts)
         {
             if (candies.Length == 0) return;
-            int amount = Mathf.Clamp(Mathf.FloorToInt(Eaten * dropShare), fewestCandies, Mathf.Max(fewestCandies, mostCandies));
+            int amount = Mathf.Clamp(Mathf.FloorToInt((Eaten + eatenWithThem) * dropShare), fewestCandies, Mathf.Max(fewestCandies, mostCandies));
+            // A winner of a fight gives Winner Candies times as many.
+            amount = Mathf.RoundToInt(amount * candyBoost);
             float ring = radius * Size + CandyRingGap;
             float turn = Random.Range(0f, 360f);
             for (int i = 0; i < amount; i++)

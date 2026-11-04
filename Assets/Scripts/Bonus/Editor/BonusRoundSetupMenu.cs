@@ -469,7 +469,8 @@ namespace Game.EditorTools
                     }
                 }
                 AddRisingSparkles(root, glow);
-                AddFloorRing(root, ring);
+                // No purple ring on the floor (user, 2026-11-04: "the special stage have an purple ring on the floor, help me
+                // remove it"). AddFloorRing is kept, unused, in case it's wanted back.
                 return PrefabUtility.SaveAsPrefabAsset(root, SkyPath);
             }
             finally { PrefabUtility.UnloadPrefabContents(root); }

@@ -51,6 +51,9 @@ namespace Game.Bonus
         [SerializeField] private float bob = 0.02f;
         [Min(0.01f)]
         [SerializeField] private float bobsPerSecond = 0.45f;
+        [Tooltip("How far it rocks while it floats, in degrees (0 = still: a bucket standing on the floor).")]
+        [Min(0f)]
+        [SerializeField] private float tilt = 2f;
 
         private const float RiseFrom = 0.9f;
         private const float RippleSeconds = 0.5f;
@@ -176,7 +179,7 @@ namespace Game.Bonus
             float lift = sinking ? -RiseFrom * k * k : -RiseFrom * (1f - Overshoot(k));
             float t = Time.time + phase;
             transform.position = rest + Vector3.up * (lift + bob * Mathf.Sin(t * bobsPerSecond * 2f * Mathf.PI));
-            transform.rotation = Quaternion.Euler(2f * Mathf.Sin(t * 0.7f), transform.eulerAngles.y, 2f * Mathf.Cos(t * 0.6f));
+            transform.rotation = Quaternion.Euler(tilt * Mathf.Sin(t * 0.7f), transform.eulerAngles.y, tilt * Mathf.Cos(t * 0.6f));
             for (int i = 0; i < onFloor.Length && i < floorAt.Length; i++)
                 if (onFloor[i] != null) onFloor[i].SetPositionAndRotation(floorAt[i], floorTurn[i]);
 

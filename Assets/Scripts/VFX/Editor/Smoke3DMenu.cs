@@ -612,13 +612,16 @@ namespace Game.EditorTools
             var dark = IsBlack(system) ? AssetDatabase.LoadAssetAtPath<Material>(DarkMaterialPath) : null;
             Make3D(system, meshes, dark != null ? dark : look.sharedMaterial);
             EvenGrowth(system);
+            // Never shrinking back into the middle at the end; it fades out instead (user, 2026-11-04).
+            SmokeNeverShrinkMenu.Fix(system);
             return true;
         }
 
         /// <summary>
         /// A puff grows evenly: a card stretched one way as it lives (Hit_Blast's clouds streak out long and thin, then
         /// round off) would make a puff a long slab, so it takes the smaller of its widths at each moment (small as it
-        /// streaks out, its round size once it settles), only growing until its biggest, then shrinking (no pulsing).
+        /// streaks out, its round size once it settles), only growing until its biggest (no pulsing); Smoke Never Shrinks
+        /// then keeps it growing and fades it out.
         /// </summary>
         public static void EvenGrowth(ParticleSystem system)
         {
