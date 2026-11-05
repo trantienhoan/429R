@@ -21,6 +21,10 @@ namespace Game.Enemies
     /// Speed times as fast, Winner Health times the health, Winner Size times as big and Winner Candies times the candies
     /// when it bursts (again for each one it eats);
     /// what the eaten one had eaten comes out of the winner when it bursts.
+    /// Once it's Danger Height tall (user, 2026-11-05: "when it gets to a certain size, like bigger than the Player, it
+    /// will come and start jump on Player to push Player to fall edge") it's a giant for good: it roars, stays red, forgets
+    /// the candy and comes for the player; in Stomp Range it squashes down and leaps onto where they stand, and landing on
+    /// them it hurts (Stomp Event) and throws them towards the nearest Fall Edge (away from it if there's none near).
     /// Goes on the prefab's root, next to its NavMesh Agent. Its look is under Model > Jiggle: an Animator with a controller
     /// found under it replaces the waddle, and gets the Walking bool, the Walk Speed float and the Eat, Hit and Laugh triggers
     /// if its controller has them (Tools > 429 Game > Enemies > Set Up Fat Pumpkin Animation makes all that).
@@ -151,6 +155,46 @@ namespace Game.Enemies
         [Min(1f)]
         [SerializeField] private float winnerCandies = 3f;
 
+        [Header("Giant (user, 2026-11-05)")]
+        [Tooltip("Once it's this tall, in metres (its body: twice Radius times its size), it's a giant: it comes for the " +
+                 "player and stomps. It starts about 0.72 m tall; candies make it up to Most Growth times that, each fight it " +
+                 "wins Winner Size times.")]
+        [Min(0.1f)]
+        [SerializeField] private float dangerHeight = 1.4f;
+        [Tooltip("Its roar as it turns giant.")]
+        [SerializeField] private AudioClip giantSound;
+        [Tooltip("A giant walks at this share of Walk Speed (not slowed by how fat it is).")]
+        [Min(0.1f)]
+        [SerializeField] private float giantSpeedShare = 1f;
+        [Tooltip("It leaps at a player this close, in metres (flat), onto where they stand...")]
+        [Min(0.5f)]
+        [SerializeField] private float stompRange = 4.5f;
+        [Tooltip("...after squashing down for this long, in seconds...")]
+        [Min(0.05f)]
+        [SerializeField] private float stompWindUp = 0.6f;
+        [Tooltip("...in a leap this long, in seconds, this high, in metres...")]
+        [Min(0.1f)]
+        [SerializeField] private float stompSeconds = 0.7f;
+        [Min(0f)]
+        [SerializeField] private float stompHop = 0.9f;
+        [Tooltip("...and again after this many seconds (x to y) once it's landed.")]
+        [SerializeField] private Vector2 stompEvery = new(1.6f, 2.6f);
+        [Tooltip("It lands on the player if they're within its body plus this, in metres.")]
+        [Min(0f)]
+        [SerializeField] private float stompReach = 0.4f;
+        [Tooltip("Sent to the player's Damage FSM when it lands on them: Damage (6-9), DamageHeavy (40-50).")]
+        [SerializeField] private string stompEvent = "DamageHeavy";
+        [Tooltip("How it throws a player it landed on: x = how high, y = how far, in metres, towards the nearest Fall Edge " +
+                 "within Edge Search metres (away from it with none).")]
+        [SerializeField] private Vector2 stompPush = new(1f, 3.5f);
+        [Min(0f)]
+        [SerializeField] private float edgeSearch = 12f;
+        [Tooltip("Its landing thud, and the dust it kicks up (none: Break Out Effects), this big times its size.")]
+        [SerializeField] private AudioClip stompSound;
+        [SerializeField] private GameObject[] stompEffects = System.Array.Empty<GameObject>();
+        [Min(0f)]
+        [SerializeField] private float stompEffectSize = 0.8f;
+
         [Header("Breaking")]
         [Tooltip("Its health, in the game's whole-number damage (a closed-fist punch does 1, hard 2; a flying jab 1 + the " +
                  "Fist Size points; weapons and throws their own).")]
@@ -205,7 +249,9 @@ namespace Game.Enemies
         [Tooltip("Its walking speed as a share of its thin speed: how fast it waddles.")]
         [SerializeField] private string walkSpeedFloat = "WalkSpeed";
 
-        private enum Phase { Waking, Hunting, Angry, Gone }
+        private enum Phase { Waking, Hunting, Angry, Giant, Gone }
+        // A giant: coming for the player, squashing down to leap, in the air.
+        private enum StompStep { Coming, WindingUp, Flying }
         private enum Duel { None, Closing, WindingUp, Lunging }
 
         // Every one that's out, to find the others.
@@ -325,6 +371,9 @@ namespace Game.Enemies
         private float shownSizeBoost = 1f;
         private int eatenWithThem;
         private bool beingEaten;
+        // A giant: what it's doing, and when it may leap again.
+        private StompStep stomp;
+        private float nextStomp;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
@@ -408,6 +457,13 @@ namespace Game.Enemies
             {
                 TurnTo(HeadFlat());
                 if (Time.time - bornAt >= wakeSeconds) phase = Phase.Hunting;
+                return;
+            }
+            // Big enough: a giant for good, and it only cares about the player.
+            if (phase != Phase.Giant && rival == null && Height >= dangerHeight) BecomeGiant();
+            if (phase == Phase.Giant)
+            {
+                Stomp();
                 return;
             }
             if (rival == null) LookForRival();
@@ -546,7 +602,7 @@ namespace Game.Enemies
             foreach (var other in everyone)
             {
                 if (other == this || other == null || other.rival != null || other.beingEaten || other.phase == Phase.Gone ||
-                    other.phase == Phase.Waking) continue;
+                    other.phase == Phase.Waking || other.phase == Phase.Giant) continue;
                 var gap = other.transform.position - transform.position;
                 gap.y = 0f;
                 if (gap.magnitude - radius * Size - other.radius * other.Size > duelRange) continue;
@@ -837,7 +893,7 @@ namespace Game.Enemies
         // Goes red while it's angry, and back as it calms down.
         private void Flush()
         {
-            float want = phase == Phase.Angry ? 1f : 0f;
+            float want = phase == Phase.Angry || phase == Phase.Giant ? 1f : 0f;
             if (flush == want) return;
             flush = Mathf.MoveTowards(flush, want, FlushPerSecond * Time.deltaTime);
             block ??= new MaterialPropertyBlock();
@@ -894,6 +950,149 @@ namespace Game.Enemies
             foreach (var fsm in player.Value.GetComponents<PlayMakerFSM>())
             {
                 if (fsm.FsmName == PlayerDamageFsm) fsm.SendEvent(eventName);
+            }
+        }
+
+        // ---------- Giant ----------
+
+        // Its body's height, in metres.
+        private float Height => 2f * radius * Size;
+
+        // Tall enough: it roars, goes red for good and forgets the candy.
+        private void BecomeGiant()
+        {
+            phase = Phase.Giant;
+            stomp = StompStep.Coming;
+            nextStomp = Time.time + 1.2f;
+            noCandySince = -1f;
+            GoFor(null);
+            Stand();
+            if (model != null)
+            {
+                model.localScale = modelScale;
+                model.localRotation = Quaternion.identity;
+            }
+            if (jiggle != null) jiggle.Hit(HitWobble);
+            if (giantSound != null && speaker != null) speaker.PlayOneShot(giantSound);
+            else Growl();
+            var top = transform.position + Vector3.up * Height;
+            foreach (var effect in angryEffects)
+            {
+                if (effect != null) EffectPool.Play(effect, top, angryEffectSize * Size);
+            }
+        }
+
+        // After the player; in Stomp Range it squashes down and leaps onto where they stand.
+        private void Stomp()
+        {
+            var feet = PlayerFeet();
+            var toPlayer = feet - transform.position;
+            toPlayer.y = 0f;
+            float distance = toPlayer.magnitude;
+            float speed = 0f;
+            switch (stomp)
+            {
+                case StompStep.Coming:
+                    if (knockback != null && knockback.IsKnockedBack)
+                    {
+                        Stand();
+                        break;
+                    }
+                    if (distance <= stompRange && Time.time >= nextStomp)
+                    {
+                        Stand();
+                        stomp = StompStep.WindingUp;
+                        rageUntil = Time.time + stompWindUp;
+                        break;
+                    }
+                    if (distance > radius * Size + stompReach)
+                    {
+                        Chase(feet);
+                        if (agent.isOnNavMesh) agent.speed = walkSpeed * giantSpeedShare;
+                        var velocity = agent.velocity;
+                        velocity.y = 0f;
+                        speed = velocity.magnitude;
+                        TurnTo(speed > 0.1f ? velocity : toPlayer);
+                    }
+                    else
+                    {
+                        Stand();
+                        TurnTo(toPlayer);
+                    }
+                    break;
+                case StompStep.WindingUp:
+                    Stand();
+                    TurnTo(toPlayer);
+                    float k = 1f - Mathf.Clamp01((rageUntil - Time.time) / stompWindUp);
+                    Squash(k * k);
+                    if (Time.time >= rageUntil) Leap(toPlayer, distance);
+                    break;
+                case StompStep.Flying:
+                    Squash(0f);
+                    if ((knockback == null || !knockback.IsKnockedBack) || Time.time >= rageUntil) Land();
+                    break;
+            }
+            if (stomp == StompStep.Coming) Waddle(speed);
+            if (hasWalking) animator.SetBool(walkingBool, speed > 0.1f);
+            if (hasWalkSpeed) animator.SetFloat(walkSpeedFloat, Mathf.Clamp(speed / walkSpeed, MinWalkAnimation, 1f));
+        }
+
+        // Up and onto where the player stands.
+        private void Leap(Vector3 toPlayer, float distance)
+        {
+            stomp = StompStep.Flying;
+            rageUntil = Time.time + stompSeconds + 0.3f;
+            if (knockback == null && !TryGetComponent(out knockback)) knockback = gameObject.AddComponent<Knockback>();
+            var way = toPlayer.sqrMagnitude > 0.0001f ? toPlayer.normalized : transform.forward;
+            knockback.Push(transform.position - way, Mathf.Clamp(distance, 0.2f, stompRange), stompSeconds, stompHop, 0f);
+            if (hasEat) animator.SetTrigger(eatTrigger);
+            if (jiggle != null) jiggle.Hit(GulpWobble);
+            Growl();
+        }
+
+        // Down with a thud and dust; on the player, it hurts and throws them towards the nearest edge.
+        private void Land()
+        {
+            stomp = StompStep.Coming;
+            nextStomp = Time.time + Random.Range(stompEvery.x, Mathf.Max(stompEvery.x, stompEvery.y));
+            Squash(0f);
+            var effects = stompEffects.Length > 0 ? stompEffects : breakOutEffects;
+            foreach (var effect in effects)
+            {
+                if (effect != null) EffectPool.Play(effect, transform.position + Vector3.up * 0.1f, stompEffectSize * Size);
+            }
+            if (stompSound != null && speaker != null) speaker.PlayOneShot(stompSound);
+            if (jiggle != null) jiggle.Hit(HitWobble);
+            var feet = PlayerFeet();
+            var gap = feet - transform.position;
+            gap.y = 0f;
+            if (gap.magnitude <= radius * Size + stompReach)
+            {
+                SendToPlayer(stompEvent);
+                ThrowToEdge(feet);
+            }
+            else if (gap.magnitude <= stompRange) ShakeView("ShakeSmall");
+        }
+
+        // Towards the nearest Fall Edge (away from it with none near).
+        private void ThrowToEdge(Vector3 feet)
+        {
+            Vector3 way;
+            if (Game.Locomotion.FallEdge.Nearest(feet, edgeSearch, out var edge)) way = edge - feet;
+            else way = feet - transform.position;
+            way.y = 0f;
+            way = way.sqrMagnitude > 0.0001f ? way.normalized : transform.forward;
+            PlayerLaunch.Launch(feet - way, stompPush.x, stompPush.y, true, true, 0.6f);
+        }
+
+        // A camera shake event sent to the main camera's Info FSM (ShakeSmall, ShakeMed, ShakeBigger).
+        private static void ShakeView(string eventName)
+        {
+            var cam = FsmVariables.GlobalVariables.FindFsmGameObject("MainCam");
+            if (cam == null || cam.Value == null) return;
+            foreach (var fsm in cam.Value.GetComponents<PlayMakerFSM>())
+            {
+                if (fsm.FsmName == "Info") fsm.SendEvent(eventName);
             }
         }
 
@@ -1002,6 +1201,13 @@ namespace Game.Enemies
                 rage = Rage.Chasing;
                 Squash(0f);
                 nextBite = Mathf.Max(nextBite, pausedUntil);
+            }
+            // A giant hit while it squashes down to leap: no leap this time.
+            if (phase == Phase.Giant && stomp == StompStep.WindingUp)
+            {
+                stomp = StompStep.Coming;
+                Squash(0f);
+                nextStomp = Mathf.Max(nextStomp, pausedUntil);
             }
             if (hitSounds.Length > 0 && speaker != null) speaker.PlayOneShot(hitSounds[Random.Range(0, hitSounds.Length)]);
             if (hasHit) animator.SetTrigger(hitTrigger);

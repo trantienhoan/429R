@@ -319,6 +319,7 @@ namespace Game.EditorTools
                 serialized.FindProperty("size").enumValueIndex = (int)SpiderBrain.SizeClass.Small;
                 serialized.FindProperty("target").enumValueIndex = (int)SpiderBrain.TargetKind.TaggedObject;
                 serialized.FindProperty("targetTag").stringValue = "PumpkinTree";
+                serialized.FindProperty("targetStandOff").floatValue = 1.9f;    // outside the tree's roots
                 serialized.FindProperty("targetFsm").stringValue = "Damage";
                 serialized.FindProperty("targetEvent").stringValue = "Damage";
                 serialized.ApplyModifiedPropertiesWithoutUndo();

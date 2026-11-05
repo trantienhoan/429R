@@ -15,7 +15,10 @@ namespace Game.Enemies
     /// splats it. It has no collider of its own and
     /// finds what it hits by sweeping
     /// along its flight, so it never knocks things over, hurts other enemies, or sets off other objects' trigger FSMs.
-    /// A boss's giant web (MakeGiant) goes straight through fists and held weapons.
+    /// A boss's giant web (MakeGiant) goes straight through fists and held weapons, and smashes through what's in its way
+    /// (user, 2026-11-05: "strong enough to break almost everything that block its path"): furniture, props and loose
+    /// things break (Smash Damage, not the player's kill) and are flung ahead; walls, the floor, the Pumpkin Tree and the
+    /// heaviest blocks still stop it.
     /// Goes on the web ball prefab's root, next to its Rigidbody.
     /// </summary>
     [DisallowMultipleComponent]
@@ -35,6 +38,15 @@ namespace Game.Enemies
         [Min(0.5f)]
         [SerializeField] private float lifetime = 4f;
 
+        [Header("Giant web")]
+        [Tooltip("A boss's giant web breaks what's in its way with this much damage (furniture, props, loose things) and " +
+                 "flies on. Walls, the floor, the Pumpkin Tree and the heaviest blocks still stop it.")]
+        [Min(0f)]
+        [SerializeField] private float smashDamage = 1000f;
+        [Tooltip("How fast what it smashes is flung along its flight, in metres per second.")]
+        [Min(0f)]
+        [SerializeField] private float smashShove = 4f;
+
         [Header("Effects")]
         [Tooltip("Appears where it splats, e.g. a puff.")]
         [SerializeField] private GameObject splatEffect;
@@ -51,8 +63,13 @@ namespace Game.Enemies
         private const string PlayerVariable = "Player";
         private const string PlayerDamageFsm = "Damage";
         private static readonly RaycastHit[] hits = new RaycastHit[16];
+        private static readonly NearestFirst nearestFirst = new();
+        private static int wallLayer = -2;
 
         private Rigidbody body;
+        // A giant web smashes through things; each is smashed once.
+        private bool smashes;
+        private readonly System.Collections.Generic.HashSet<Object> smashed = new();
         private Transform shooter;
         // The player's FSM its hit goes to, and whether fists and held weapons stop it (not a giant web).
         private string playerFsm = PlayerDamageFsm;
@@ -111,6 +128,7 @@ namespace Game.Enemies
             webAdded = 1f;
             splatScale *= size;
             swattable = false;
+            smashes = smashDamage > 0f;
         }
 
         /// <summary>Bursts where it is, e.g. a half-made ball when its spider is interrupted.</summary>
@@ -145,18 +163,21 @@ namespace Game.Enemies
             if (step.sqrMagnitude > 0.000001f)
             {
                 int count = Physics.SphereCastNonAlloc(lastPosition, radius * size, step.normalized, hits, step.magnitude, Physics.AllLayers, QueryTriggerInteraction.Collide);
-                RaycastHit? first = null;
+                // Nearest first: a giant web smashes through things until something stops it.
+                System.Array.Sort(hits, 0, count, nearestFirst);
                 for (int i = 0; i < count; i++)
                 {
-                    if (!Counts(hits[i].collider)) continue;
+                    var other = hits[i].collider;
+                    if (!Counts(other)) continue;
+                    var point = hits[i].distance > 0f ? hits[i].point : now;
+                    if (smashes && Smashable(other))
+                    {
+                        Smash(other, point);
+                        continue;
+                    }
                     // Scenery it already touches as it sets off (a big ball made near the floor) doesn't splat it.
-                    if (hits[i].distance <= 0f && !IsPlayer(hits[i].collider) && !IsHeldOrFist(hits[i].collider)) continue;
-                    if (first == null || hits[i].distance < first.Value.distance) first = hits[i];
-                }
-                if (first != null)
-                {
-                    var hit = first.Value;
-                    HitSomething(hit.collider, hit.distance > 0f ? hit.point : now);
+                    if (hits[i].distance <= 0f && !IsPlayer(other) && !IsHeldOrFist(other)) continue;
+                    HitSomething(other, point);
                     return;
                 }
             }
@@ -173,6 +194,50 @@ namespace Game.Enemies
             if (IsPlayer(other)) return true;
             if (other.isTrigger || other.GetComponentInParent<NavMeshAgent>() != null || other.GetComponentInParent<WebBall>() != null) return false;
             return true;
+        }
+
+        // What a giant web breaks and flies on through: furniture and props (Enemy Hit Damage in Furniture mode, or a
+        // health FSM) and loose things. Not the player, walls (the Wall layer), the floor and other fixed scenery, the
+        // Pumpkin Tree, the heaviest blocks, enemies, or candy (it just passes those).
+        private bool Smashable(Collider other)
+        {
+            if (IsPlayer(other) || IsHeldOrFist(other)) return false;
+            if (wallLayer == -2) wallLayer = LayerMask.NameToLayer("Wall");
+            if (wallLayer >= 0 && other.gameObject.layer == wallLayer) return false;
+            for (var t = other.transform; t != null; t = t.parent)
+            {
+                if (t.CompareTag("PumpkinTree")) return false;
+            }
+            var thing = other.attachedRigidbody;
+            if (thing != null && Game.Combat.PushWeight.IsImmovable(thing)) return false;
+            var breakable = other.GetComponentInParent<EnemyHitDamage>();
+            if (breakable != null) return breakable.IsFurniture;
+            if (thing != null && Game.Weapons.Blast.HasHealth(thing.gameObject, out _, out _)) return true;
+            if (Game.Weapons.Blast.HasHealth(other.gameObject, out _, out _)) return true;
+            return thing != null && !thing.isKinematic;
+        }
+
+        private void Smash(Collider other, Vector3 point)
+        {
+            var thing = other.attachedRigidbody;
+            // Candy is the player's: passed, not smashed.
+            if ((thing != null ? thing.name : other.name).StartsWith("Candy")) return;
+            if (!smashed.Add(thing != null ? thing : other)) return;
+            Game.Weapons.Blast.Damage(other, point, smashDamage, false);
+            if (thing != null && !thing.isKinematic)
+                thing.AddForce(body.linearVelocity.normalized * smashShove + Vector3.up * (smashShove * 0.3f), ForceMode.VelocityChange);
+            if (splatEffect != null)
+            {
+                var effect = Instantiate(splatEffect, point, Quaternion.identity);
+                effect.transform.localScale = Vector3.one * (splatScale * 0.5f);
+                Destroy(effect, 3f);
+            }
+            if (splatSound != null) AudioSource.PlayClipAtPoint(splatSound, point, volume);
+        }
+
+        private sealed class NearestFirst : System.Collections.Generic.IComparer<RaycastHit>
+        {
+            public int Compare(RaycastHit a, RaycastHit b) => a.distance.CompareTo(b.distance);
         }
 
         private void HitSomething(Collider other, Vector3 point)

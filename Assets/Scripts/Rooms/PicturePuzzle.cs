@@ -35,8 +35,9 @@ namespace Game.Rooms
     /// the right stick snap-turns; they're put back where they were when it's over. Time Limit seconds to do it.
     /// - Done: the pieces give way to the whole painting, fireworks go up behind it (Win Fireworks), the picture goes
     ///   back on the wall, Reward Candies burst out of it and the Candy Helmet pulls them in (Helmet Seconds).
-    /// - Time's up: the picture goes back, breaks (its pieces fly, the frame drops) and Bug Count small cockroaches
-    ///   pour out of it.
+    /// - Time's up: the picture goes back and breaks: a burst, the frame drops off the wall, and every piece (in the frame
+    ///   or still floating) pops and turns into a small cockroach on the floor under it (Pieces Turn Into Bugs, user
+    ///   2026-11-05; at most Most Bugs). Off: the pieces fly as debris and Bug Count cockroaches pour out instead.
     /// Once the walls go and it drops (Wall Hung Prop) it's only a picture. Tools > 429 Game > Rooms > Set Up Picture
     /// Puzzle puts it on the prefab and fills it in.
     /// </summary>
@@ -139,6 +140,12 @@ namespace Game.Rooms
 
         [Header("Time's up")]
         [SerializeField] private GameObject bugPrefab;
+        [Tooltip("Every piece turns into a Bug Prefab cockroach as the picture breaks (user, 2026-11-05: \"break the frame " +
+                 "and turn all the pieces into cockroaches\"). Off: the pieces fly off and Bug Count cockroaches pour out.")]
+        [SerializeField] private bool piecesTurnIntoBugs = true;
+        [Tooltip("With Pieces Turn Into Bugs: never more cockroaches than this (the rest of the pieces just pop).")]
+        [Min(1)]
+        [SerializeField] private int mostBugs = 24;
         [Min(0)]
         [SerializeField] private int bugCount = 12;
         [Tooltip("Played where the picture breaks (Effect Pool); the first is also the puff each bug comes out of.")]
@@ -1233,6 +1240,12 @@ namespace Game.Rooms
             var at = board.TransformPoint(new Vector3(0f, 0f, 0.1f));
             foreach (var effect in breakEffects) if (effect != null) EffectPool.Play(effect, at, 1f);
             Say(breakSound, 1f);
+            if (piecesTurnIntoBugs && bugPrefab != null)
+            {
+                if (hung != null) hung.Drop();
+                StartCoroutine(PiecesToBugs(stuff));
+                return;
+            }
             foreach (var p in all)
             {
                 if (!p.t.gameObject.activeSelf) continue;
@@ -1260,6 +1273,38 @@ namespace Game.Rooms
             body.interpolation = RigidbodyInterpolation.Interpolate;
             Destroy(p.t.gameObject, debrisSeconds + Random.Range(0f, 1.5f));
             return body;
+        }
+
+        // Every piece that shows (in the frame or floating) pops in a puff, one after another, and a cockroach comes out
+        // of the floor under it, after the player at once.
+        private IEnumerator PiecesToBugs(Transform stuff)
+        {
+            var puff = breakEffects.Length > 0 ? breakEffects[0] : null;
+            var pieces = all.FindAll(p => p.t != null && p.t.gameObject.activeInHierarchy);
+            for (int i = pieces.Count - 1; i > 0; i--)
+            {
+                int j = Random.Range(0, i + 1);
+                (pieces[i], pieces[j]) = (pieces[j], pieces[i]);
+            }
+            int made = 0;
+            foreach (var p in pieces)
+            {
+                if (p.t == null) continue;
+                StopBuzz(p);
+                var at = p.t.TransformPoint(p.bounds.center);
+                p.t.gameObject.SetActive(false);
+                if (puff != null) EffectPool.Play(puff, at, 0.3f);
+                if (made >= mostBugs) continue;
+                made++;
+                var spot = at;
+                if (Physics.Raycast(at + Vector3.up * 0.1f, Vector3.down, out var floor, 6f, Physics.DefaultRaycastLayers,
+                        QueryTriggerInteraction.Ignore)) spot = floor.point;
+                if (NavMesh.SamplePosition(spot, out var hit, 2f, NavMesh.AllAreas)) spot = hit.position;
+                if (puff != null) EffectPool.Play(puff, spot + Vector3.up * 0.1f, 0.35f);
+                var bug = Instantiate(bugPrefab, spot, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f), stuff);
+                if (bug.TryGetComponent(out SpiderBrain brain)) brain.ComeAtOnce();
+                yield return new WaitForSeconds(0.06f);
+            }
         }
 
         private IEnumerator Bugs(Transform stuff)

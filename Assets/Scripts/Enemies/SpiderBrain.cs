@@ -324,6 +324,11 @@ namespace Game.Enemies
         [SerializeField] private TargetKind target = TargetKind.Player;
         [Tooltip("With Target on Tagged Object: the tag of what it goes for.")]
         [SerializeField] private string targetTag = "PumpkinTree";
+        [Tooltip("With Target on Tagged Object: how far from the object's middle it stops and bites, in metres at the " +
+                 "object's scale 1. The Pumpkin_Tree's thick roots reach ~1.9 m, so Spider_Tree stops outside them " +
+                 "(not hidden between them). 0 = from the object's collider, as before.")]
+        [Min(0f)]
+        [SerializeField] private float targetStandOff;
         [Tooltip("When its bite lands on that object, Target Event is sent to the object's FSM called Target Fsm (the " +
                  "tree's Damage FSM takes 1 health per Damage). Empty Target Fsm: every FSM on it.")]
         [SerializeField] private string targetFsm = "Damage";
@@ -1001,6 +1006,10 @@ namespace Game.Enemies
         private bool noticed;
         private Transform targetObject;
         private float targetRadius;
+        // The stuck watchdog: when it last looked, since when it hasn't moved, and from where.
+        private float nextStuckCheck;
+        private float stuckSince = -1f;
+        private Vector3 stuckFrom;
         private float nextTargetSearch;
         private bool hasTurn;
         private bool turnCounted;
@@ -1334,6 +1343,7 @@ namespace Game.Enemies
             Grow();
             UpdateCourage();
             if (player == null) player = FindAnyObjectByType<XROrigin>();
+            UpdateStuck();
             // On the face it never waits on the rest of the brain: no player or no NavMesh under it, it lets go.
             if (state == State.Cling && (player == null || player.Camera == null || !agent.isOnNavMesh)) LetGo(false);
             if (player == null || player.Camera == null || !agent.isOnNavMesh) return;
@@ -1481,7 +1491,9 @@ namespace Game.Enemies
             // How far from its middle its surface is: its sphere's radius (most of it: the tree's sphere is generous),
             // otherwise its bounds.
             var scale = targetObject.lossyScale;
-            if (targetObject.TryGetComponent(out SphereCollider sphere))
+            if (targetStandOff > 0f)
+                targetRadius = targetStandOff * Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.z));
+            else if (targetObject.TryGetComponent(out SphereCollider sphere))
                 targetRadius = sphere.radius * Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.z)) * 0.7f;
             else if (targetObject.TryGetComponent(out Collider any))
                 targetRadius = Mathf.Max(any.bounds.extents.x, any.bounds.extents.z) * 0.8f;
@@ -3050,6 +3062,69 @@ namespace Game.Enemies
             return Vector3.Distance(a, b);
         }
 
+        // ---- Stuck watchdog (user, 2026-11-05: roaches stood still at the Living Room's floor edge for a minute) ----
+
+        // Checked every second. One that should be coming for the player (Chase) but is still far from them and hasn't
+        // moved for 6 s, or one whose agent is off the NavMesh (its brain can't do anything then) for 3 s, is put back on
+        // the NavMesh and comes again. Each time it says why in the Console, so a playtest shows the cause.
+        private void UpdateStuck()
+        {
+            if (Time.time < nextStuckCheck) return;
+            nextStuckCheck = Time.time + 1f;
+            if (player == null || player.Camera == null || !agent.enabled || state == State.Dead || state == State.Appear ||
+                state == State.Cling)
+            {
+                stuckSince = -1f;
+                return;
+            }
+            bool offMesh = !agent.isOnNavMesh;
+            bool shouldCome = !offMesh && noticed && state == State.Chase && PlayerDistance() > WindUpDistance() + 1.5f;
+            var here = transform.position;
+            if (!offMesh && !shouldCome)
+            {
+                stuckSince = -1f;
+                return;
+            }
+            if (stuckSince < 0f || (here - stuckFrom).sqrMagnitude > 0.09f)
+            {
+                stuckSince = Time.time;
+                stuckFrom = here;
+                return;
+            }
+            if (Time.time - stuckSince < (offMesh ? 3f : 6f)) return;
+            stuckSince = -1f;
+            Unstick(offMesh);
+        }
+
+        // Back onto the NavMesh: next to where it is, or, if it can't walk to the player from there (a NavMesh island),
+        // on the player's side a few metres from them; then it comes for the player.
+        private void Unstick(bool offMesh)
+        {
+            var target = PlayerFloor();
+            var from = transform.position;
+            var filter = new NavMeshQueryFilter { agentTypeID = agent.agentTypeID, areaMask = agent.areaMask };
+            string why = $"[Spider Brain] {name} was stuck {(offMesh ? "off the NavMesh" : "in " + state)} at {from:F2}";
+            bool cutOff = false;
+            if (!offMesh)
+            {
+                var path = new NavMeshPath();
+                NavMesh.CalculatePath(agent.nextPosition, target, filter, path);
+                cutOff = path.status != NavMeshPathStatus.PathComplete;
+                why += $" (path to the player {path.status}, stopped {agent.isStopped}, speed {agent.speed:0.0})";
+            }
+            var away = from - target;
+            away.y = 0f;
+            var spot = cutOff ? target + (away.sqrMagnitude > 0.01f ? away.normalized : -transform.forward) * Mathf.Min(away.magnitude, 3f) : from;
+            if (NavMesh.SamplePosition(spot, out var hit, 6f, filter) && agent.Warp(hit.position))
+                why += $": put back on the NavMesh at {hit.position:F2}";
+            else why += ": no NavMesh near";
+            Debug.LogWarning(why, this);
+            if (!agent.isOnNavMesh) return;
+            agent.isStopped = false;
+            if (noticed) Enter(State.Chase, 0f);
+            else Notice(false);
+        }
+
         // ---- Hiding in a tree pumpkin ----
 
         // Off to the closest (or a random) tree pumpkin lying on the floor within reach. False if there's none.
@@ -3177,7 +3252,10 @@ namespace Game.Enemies
                 var flat = t.position - transform.position;
                 flat.y = 0f;
                 float d = flat.magnitude;
-                if (d > range || !NavMesh.SamplePosition(t.position, out _, 1f, NavMesh.AllAreas)) continue;
+                // Only one it can dive into from the NavMesh (user, 2026-11-05: roaches stood at the Living Room's floor
+                // edge, waiting by a pumpkin just past it that they could never reach, again and again).
+                if (d > range || !NavMesh.SamplePosition(t.position, out var near, 1f, NavMesh.AllAreas) ||
+                    FlatDistance(near.position, t.position) > 0.45f + 0.2f * Size()) continue;
                 // The white one keeps away from the player: none near them, or past them.
                 if (anomaly && !KeepsAway(t.position)) continue;
                 if (closest)

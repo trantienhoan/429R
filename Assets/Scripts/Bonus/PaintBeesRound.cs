@@ -11,10 +11,12 @@ namespace Game.Bonus
     /// <summary>
     /// The Paint Bees bonus round (Paint_Bees_Round), the Playroom's bonus before the rooftop's bees. Play Bonus Round
     /// makes it when the player earned it, on the bonus stage (--Playroom--MiniGame--: the field):
-    /// - a glowing ring with an arrow over it marks the middle; standing on it, four floating paint buckets (red, blue,
-    ///   yellow, green, in a random order) pop up round the player at waist height, without a word; only if no hand is
-    ///   dipped for Sign After seconds does a sign say to dip one and stay in the ring (user, 2026-11-05). The ring
-    ///   stays on the floor for the round;
+    /// - a glowing ring with an arrow over it marks the middle; stepping on it, the giant slime (Giant: the user's model,
+    ///   like the Fat Pumpkin) drops onto the player's head and stuns them (no walking or teleporting for Stun Seconds,
+    ///   dizzy stars), the ring goes, the paint buckets (red, blue, yellow, in a random order) pop up round them on the
+    ///   floor, and the giant hops off and runs Run Distance away; once it's there and the stun is over, the song starts
+    ///   (a sign says to dip a hand if none is) and the flying slimes come out of the giant's mouth (user, 2026-11-05).
+    ///   The player needn't stay anywhere (the old leave-the-ring rule is gone);
     /// - a hand dipped in a bucket takes its colour (see Paint Hands), and keeps it until dipped in another;
     /// - it all goes to a song (user, 2026-11-03: "Player punches flying colored bee that drops candies follow fight
     ///   song beat", like Vibe Punch; Pumpkin_Pillow_Party, 100 BPM): the song starts Song Delay seconds after the first
@@ -26,10 +28,8 @@ namespace Game.Bonus
     ///   rainbow bee: any painted hand, Rainbow Candies and Rainbow Exp); a swat on a beat (within On Beat Window) gives
     ///   On Beat Candies and On Beat Exp more and a gold flash, no words; the wrong colour (or a clean hand) knocks it back with a boing
     ///   and it comes again; one that reaches the face stings (Sting Share of a bite: about 1 health), splats its
-    ///   paint on the view and flies off out of sight, gone; they come out of the fires in front of where the player
-    ///   looks (Front Arc), so they needn't turn round;
-    /// - once the song is on, stepping out of the ring (Leave Radius, for Leave Seconds) ends it: the song stops, the
-    ///   bees fly off, the round is over (no fireworks, no perfect candies; the candies won so far are kept);
+    ///   paint on the view and flies off out of sight, gone; they come out of the giant's mouth (it opens half a beat
+    ///   before each lot; with no giant, out of the fires in front of where the player looks, Front Arc);
     /// - other music playing (a room's radio, the stage's song) is paused while the round's song plays;
     /// - paint that falls to the floor (swatted bees, dripping hands, the buckets' drips) splats there;
     /// - the Candy Helmet is on the whole time (every candy flies to the head); at the end fireworks go up in front, a
@@ -60,17 +60,27 @@ namespace Game.Bonus
         [Min(0f)]
         [SerializeField] private float signAfter = 7f;
         [TextArea]
-        [SerializeField] private string dipText = "Dip your hands in the paint\nand don't get out of the ring!";
-        [Tooltip("The song starts this many seconds after the first hand is dipped.")]
+        [SerializeField] private string dipText = "Dip your hands in the paint!";
+        [Tooltip("With no hand dipped when the giant is ready, the sign shows Dip Text this long (plus 1 s) at most before " +
+                 "the song starts.")]
         [Min(0f)]
         [SerializeField] private float songDelay = 1.5f;
-        [Tooltip("Once the song is on, the player's head further than this (metres, flat) from the ring's middle for Leave " +
-                 "Seconds has left the ring: the song ends and so does the round. More than the ring (and the buckets' " +
-                 "reach), so leaning out to dip a hand doesn't count.")]
-        [Min(0.3f)]
-        [SerializeField] private float leaveRadius = 0.9f;
+        [Header("Giant slime (user, 2026-11-05)")]
+        [Tooltip("The giant slime (Paint_Giant_Slime): stepping on the ring, it drops onto the player's head and stuns " +
+                 "them, runs away, and once it's far enough and they can move again it opens its mouth and the flying " +
+                 "slimes come out of it. Empty: no giant, they come out of the fires.")]
+        [SerializeField] private GiantSlime giant;
+        [Tooltip("How big it is (its scale; the model is 0.7 m across at 1).")]
+        [Min(0.1f)]
+        [SerializeField] private float giantSize = 2.2f;
+        [Tooltip("The player can't walk or teleport this long after it lands on their head, in seconds.")]
         [Min(0f)]
-        [SerializeField] private float leaveSeconds = 0.75f;
+        [SerializeField] private float stunSeconds = 3.5f;
+        [Tooltip("It runs this far away, in metres (flat), the way the player looked as it landed (less if the floor ends).")]
+        [Min(1f)]
+        [SerializeField] private float runDistance = 6f;
+        [Tooltip("The paint it splats on the view as it lands.")]
+        [SerializeField] private Color giantColour = new(0.5f, 0.31f, 0.17f);
         [Tooltip("The bees come out of the fires within this many degrees of where the player looks (user, 2026-11-05: " +
                  "\"no matter where the Player is heading, them Flying Slime should come forward Player's face\"); with " +
                  "none there, the fire nearest to it.")]
@@ -216,6 +226,9 @@ namespace Game.Bonus
         [SerializeField] private Material floorSplatMaterial;
         [Min(0.1f)]
         [SerializeField] private float splatSeconds = 1.4f;
+        [Tooltip("The paint on a dipped hand, only on the part that went in (Paint_Coat_Mat, the 429/Paint Coat shader; " +
+                 "user, 2026-11-05). Empty: the whole hand is tinted, as before.")]
+        [SerializeField] private Material coatMaterial;
 
         [Header("Sounds")]
         [SerializeField] private AudioClip[] dipSounds = System.Array.Empty<AudioClip>();
@@ -363,10 +376,10 @@ namespace Game.Bonus
         private int shownSeconds = -1;
         private Vector3 middle;
         private bool beesOut;
-        // The ring's middle, how long the player has been out of it, and whether they left it (the round ends).
+        // The ring's middle; the giant slime made for the round and when the player can move again.
         private Vector3 ringMiddle;
-        private float outFor;
-        private bool quit;
+        private GiantSlime giantMade;
+        private float stunEnds;
         private int combo;
         private int total;
         private AudioSource voice;
@@ -581,57 +594,62 @@ namespace Game.Bonus
             Looking = Front;
             middle = new Vector3(Head.position.x, floor.y, Head.position.z);
             ringMiddle = floor;
-            // The ring stays (the player must stay in it); its arrow goes.
-            Puff(floor + Vector3.up * 0.3f, 1f);
+            // The player needn't stay in the ring any more (user, 2026-11-05: "remove that force Player to stand in the
+            // circle"): its arrow goes now, the ring once the giant has landed.
             if (arrow != null) arrow.gameObject.SetActive(false);
-
-            // The buckets pop up round them, in a random order of colours, without a word; the hands can be painted.
             hands = gameObject.AddComponent<PaintHands>();
-            hands.Setup(colours, burstMaterial, paintFloor, FloorSplat);
-            var order = new List<int>();
-            for (int i = 0; i < colours.Length; i++) order.Add(i);
-            for (int i = order.Count - 1; i > 0; i--) { int j = Random.Range(0, i + 1); (order[i], order[j]) = (order[j], order[i]); }
-            for (int i = 0; i < order.Count && i < bucketAngles.Length && bucket != null; i++)
-            {
-                var way = Quaternion.Euler(0f, bucketAngles[i], 0f) * Front;
-                var at = middle + way * bucketDistance + Vector3.up * paintHeight;
-                var made = Instantiate(bucket, at, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f), transform);
-                made.Setup(order[i], colours[order[i]], at, riseSeconds);
-                buckets.Add(made);
-                Puff(new Vector3(at.x, floor.y + 0.1f, at.z), 0.7f);
-                Play(bucketSound);
-                yield return new WaitForSeconds(riseGap);
-            }
-            yield return new WaitForSeconds(riseSeconds);
+            hands.Setup(colours, burstMaterial, paintFloor, FloorSplat, coatMaterial);
 
-            // A hand dipped (the sign tells them only after Sign After seconds without one); the song starts Song Delay
-            // later; then 3-2-1 on its beats, from the next bar.
-            for (float t = 0f; !AnyPainted(); t += Time.deltaTime)
+            // The giant slime drops onto their head (user, 2026-11-05): they're stunned (can't walk or teleport) while
+            // the buckets pop up round them, and it hops off and runs away. Without one, the buckets come at once.
+            Coroutine running = null;
+            if (giant != null)
             {
-                if (t >= signAfter && sign != null && !sign.gameObject.activeSelf) Say(dipText);
-                yield return null;
+                giantMade = Instantiate(giant, Head.position + Vector3.up * 6f, Quaternion.identity, transform);
+                giantMade.transform.localScale = Vector3.one * giantSize;
+                giantMade.Round = this;
+                yield return StartCoroutine(giantMade.DropOn(Head, () =>
+                {
+                    Stun();
+                    if (mark != null)
+                    {
+                        Puff(floor + Vector3.up * 0.3f, 1f);
+                        Destroy(mark);
+                    }
+                }));
+                StartCoroutine(PopBuckets(floor));
+                running = StartCoroutine(giantMade.RunTo(RunSpot(floor)));
+                yield return running;
+                giantMade.FaceTarget = Head;
+                while (Time.time < stunEnds) yield return null;
+            }
+            else
+            {
+                Puff(floor + Vector3.up * 0.3f, 1f);
+                yield return StartCoroutine(PopBuckets(floor));
+            }
+
+            // Far enough and they can move: the song (the flying slimes start coming with it, user 2026-11-05). No hand
+            // dipped yet: the sign says to, a moment at most; then 3-2-1 on its beats, from the next bar.
+            if (!AnyPainted())
+            {
+                Say(dipText);
+                for (float t = 0f; t < songDelay + 1f && !AnyPainted(); t += Time.deltaTime) yield return null;
             }
             Say("");
-            yield return new WaitForSeconds(songDelay);
             StartSong();
             int beat = BeatAtOrAfter(SongTime + 0.3f);
             beat += (4 - beat % 4) % 4;
-            // The fires the bees fly out of (user 2026-11-05: they come from every side now, so no lit road).
+            // The fires the bees fly out of with no giant (user 2026-11-05: they come from every side now, so no lit road).
             FindFires();
             foreach (var n in new[] { "3", "2", "1" })
             {
-                while (SongTime < BeatTime(beat) && !LeftRing()) yield return null;
-                if (quit) break;
+                while (SongTime < BeatTime(beat)) yield return null;
                 Say(n);
                 Play(tickSound);
                 beat++;
             }
-            while (!quit && SongTime < BeatTime(beat) && !LeftRing()) yield return null;
-            if (quit)
-            {
-                yield return StartCoroutine(EndEarly(mark));
-                yield break;
-            }
+            while (SongTime < BeatTime(beat)) yield return null;
             Say("GO!");
             Play(goSound);
 
@@ -644,11 +662,9 @@ namespace Game.Bonus
             bool cleared = false;
             while (next < plan.Count || live.Count > 0)
             {
-                if (LeftRing())
-                {
-                    yield return StartCoroutine(EndEarly(mark));
-                    yield break;
-                }
+                // The giant opens its mouth half a beat before each lot comes out of it.
+                if (giantMade != null && next < plan.Count && SongTime >= plan[next].at - BeatSeconds * 0.5f)
+                    giantMade.OpenFor(0.35f);
                 // The helmet stays on while they come (split-off ones make the round longer).
                 if (!PlayerBuffs.CandyHelmet) PlayerBuffs.Give(Buff.CandyHelmet, 10f);
                 if (!cleared && SongTime > BeatTime(beat) + 0.4f) { Say(""); cleared = true; }
@@ -687,38 +703,70 @@ namespace Game.Bonus
             }
             StartCoroutine(FadeSong());
             StartCoroutine(Fireworks());
+            // The giant jumps off out of sight.
+            if (giantMade != null) StartCoroutine(giantMade.Leave());
             yield return new WaitForSeconds(1.5f);
             yield return StartCoroutine(WrapUp(mark));
         }
 
-        // Once the song is on: out of the ring (Leave Radius) for Leave Seconds = they left it.
-        private bool LeftRing()
+        // The buckets pop up round where the player stepped on the ring, in a random order of colours, without a word.
+        private IEnumerator PopBuckets(Vector3 floor)
         {
-            if (quit) return true;
-            if (Head == null || !clockRunning) return false;
-            if (Flat(Head.position - ringMiddle).magnitude > leaveRadius) outFor += Time.deltaTime;
-            else outFor = 0f;
-            if (outFor < leaveSeconds) return false;
-            quit = true;
-            return true;
+            var order = new List<int>();
+            for (int i = 0; i < colours.Length; i++) order.Add(i);
+            for (int i = order.Count - 1; i > 0; i--) { int j = Random.Range(0, i + 1); (order[i], order[j]) = (order[j], order[i]); }
+            for (int i = 0; i < order.Count && i < bucketAngles.Length && bucket != null; i++)
+            {
+                var way = Quaternion.Euler(0f, bucketAngles[i], 0f) * Front;
+                var at = middle + way * bucketDistance + Vector3.up * paintHeight;
+                var made = Instantiate(bucket, at, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f), transform);
+                made.Setup(order[i], colours[order[i]], at, riseSeconds);
+                buckets.Add(made);
+                Puff(new Vector3(at.x, floor.y + 0.1f, at.z), 0.7f);
+                Play(bucketSound);
+                yield return new WaitForSeconds(riseGap);
+            }
+            yield return new WaitForSeconds(riseSeconds);
         }
 
-        // They left the ring: the song ends, the bees fly off and are gone, the round is over (no fireworks, no perfect
-        // candies; the candies won so far still fly to the helmet).
-        private IEnumerator EndEarly(GameObject mark)
+        // The giant landed on their head: no walking or teleporting for Stun Seconds, dizzy stars over the head, the view
+        // shakes and gets its paint.
+        private void Stun()
         {
-            quit = true;
-            beesOut = false;
-            foreach (var b in live) if (b != null) b.FlyOff();
-            live.Clear();
-            Say("");
-            // A quick fade: the song ends.
-            StartCoroutine(FadeSong(Mathf.Min(fadeSeconds, 0.8f)));
-            yield return new WaitForSeconds(1f);
-            yield return StartCoroutine(WrapUp(mark));
+            stunEnds = Time.time + stunSeconds;
+            Game.Locomotion.PlayerSlow.Apply(0f, stunSeconds, true);
+            var stars = HitSettings.Shared != null ? HitSettings.Shared.StunStars : null;
+            if (stars != null && Head != null) Game.VFX.StunStars.Show(stars, Head, Head, 0.14f, 0.22f, stunSeconds);
+            ShakeView("ShakeMed");
+            StartCoroutine(Splat(giantColour, false));
         }
 
-        // The end of either: the helmet eats what's left lying, the buckets sink, the ring goes, the hands are clean.
+        // Where the giant runs to: Run Distance the way the player looked, or nearer where the floor ends there.
+        private Vector3 RunSpot(Vector3 floor)
+        {
+            var way = Looking.sqrMagnitude > 0.001f ? Looking.normalized : Front;
+            for (float d = runDistance; d >= 1.5f; d -= 0.5f)
+            {
+                var over = middle + way * d + Vector3.up * 3f;
+                if (Physics.Raycast(over, Vector3.down, out var hit, 6f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore) &&
+                    hit.normal.y > 0.7f && Mathf.Abs(hit.point.y - floor.y) < 0.5f)
+                    return hit.point;
+            }
+            return middle + way * runDistance;
+        }
+
+        // A camera shake event sent to the main camera's Info FSM (ShakeSmall, ShakeMed, ShakeBigger).
+        private static void ShakeView(string eventName)
+        {
+            var cam = HutongGames.PlayMaker.FsmVariables.GlobalVariables.FindFsmGameObject("MainCam");
+            if (cam == null || cam.Value == null) return;
+            foreach (var fsm in cam.Value.GetComponents<PlayMakerFSM>())
+            {
+                if (fsm.FsmName == "Info") fsm.SendEvent(eventName);
+            }
+        }
+
+        // The end: the helmet eats what's left lying, the buckets sink, the ring goes, the hands are clean.
         private IEnumerator WrapUp(GameObject mark)
         {
             for (float waited = 0f; waited < candyWaitSeconds; waited += Time.deltaTime)
@@ -773,7 +821,16 @@ namespace Game.Bonus
             // Out of one of the fire columns (not the one used last); with none, around where the player looks now.
             fires.RemoveAll(f => f == null || !f.gameObject.activeInHierarchy);
             Vector3 from;
-            if (fires.Count > 0)
+            if (giantMade != null)
+            {
+                // Out of the giant slime's mouth (user, 2026-11-05), hovering on the side it's on.
+                from = giantMade.Mouth;
+                giantMade.Spit();
+                var flat = from - Head.position;
+                flat.y = 0f;
+                angle = Vector3.SignedAngle(Looking, flat, Vector3.up);
+            }
+            else if (fires.Count > 0)
             {
                 // A fire in front of where the player looks (not the one used last, if there's another); none in front:
                 // the nearest to it.
@@ -850,6 +907,8 @@ namespace Game.Bonus
                         hand.dippedAt = Time.time;
                         inside.Stir(point);
                     }
+                    // The part of the hand under the paint takes its colour (the deepest dip counts).
+                    hands.Dip(hand, inside);
                 }
                 if (!beesOut || PaintHands.SpeedOf(hand) < swatSpeed) continue;
                 for (int i = live.Count - 1; i >= 0; i--)
@@ -906,7 +965,7 @@ namespace Game.Bonus
         // on the beat, one after another, hovering either side of where it did.
         private void SplitOff(int colour, Vector3 at, Vector3 way, Vector3 hover)
         {
-            if (bee == null || Head == null || quit) return;
+            if (bee == null || Head == null || !beesOut) return;
             var right = Vector3.Cross(Vector3.up, Front).normalized;
             for (int i = 0; i < splitInto; i++)
             {
@@ -1301,7 +1360,8 @@ namespace Game.Bonus
         private void LateUpdate()
         {
             if (sign == null || !sign.gameObject.activeSelf || Head == null) return;
-            sign.position = new Vector3(middle.x, Head.position.y + SignOverHead, middle.z) + Front * SignAhead;
+            // In front of where they look (they needn't stay in the ring any more).
+            sign.position = Head.position + Vector3.up * SignOverHead + Looking * SignAhead;
             WorldUI.Face(sign, Head);
         }
 

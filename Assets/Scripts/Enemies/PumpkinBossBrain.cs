@@ -102,10 +102,11 @@ namespace Game.Enemies
         [SerializeField] private float upperSpeed = 0.6f;
 
         [Header("Getting dizzy (upper body)")]
-        [Tooltip("It's stunned once it loses this share of its health in quick succession (0.0294 of 429 = about 13 " +
-                 "health). What it has lost fades away by Dizzy Fade Per Second, so slow hits never add up.")]
+        [Tooltip("It's stunned once it loses this share of its health in quick succession (0.06 of 729 = about 44 " +
+                 "health; was 0.0294, raised 2026-11-05 so punch spam gets its answer, see Punch Spam, before it reels). " +
+                 "What it has lost fades away by Dizzy Fade Per Second, so slow hits never add up.")]
         [Range(0.02f, 1f)]
-        [SerializeField] private float dizzyAfterDamage = 0.0294f;
+        [SerializeField] private float dizzyAfterDamage = 0.06f;
         [Range(0f, 0.5f)]
         [SerializeField] private float dizzyFadePerSecond = 0.0029f;
         [Tooltip("How long it stands there dizzy (being_hit), in seconds.")]
@@ -118,9 +119,21 @@ namespace Game.Enemies
                  "ring this wide from the middle (y): just over the top of the big pumpkin head.")]
         [SerializeField] private Vector2 dizzyStars = new(1f, 0.5f);
 
+        [Header("Punch spam (user, 2026-11-05: \"when he gets spammed by Player's punches, he should start spinning or body slamming Player\")")]
+        [Tooltip("Hit this many times within Spam Seconds, it answers at once: the upper body spins its cyclone, the true " +
+                 "form spins or leaps into its body slam (Spam Slam Chance). It cuts short a punch, clap, throw or vomit, " +
+                 "never a body slam, a cyclone or a dizzy spell (it answers as soon as that's over if the hits kept coming).")]
+        [Min(2)] [SerializeField] private int spamHits = 4;
+        [Min(0.2f)] [SerializeField] private float spamSeconds = 2f;
+        [Tooltip("True form: the chance its answer is the body slam instead of the cyclone.")]
+        [Range(0f, 1f)] [SerializeField] private float spamSlamChance = 0.5f;
+        [Tooltip("After its answer is over, it doesn't answer again for this many seconds.")]
+        [Min(0f)] [SerializeField] private float spamCooldown = 6f;
+
         [Header("Hitting the player")]
         [Tooltip("Sent to the player's PlayerHealth FSM when an upper-body hit or the true form's body slam lands " +
-                 "(70-90 damage) / any other true-form hit (110-140).")]
+                 "(95-122 damage, before the player's Toughness) / any other true-form hit (149-189). Raised 35% on " +
+                 "2026-11-05; the numbers live in the PlayerHealth states Subtract Health Boss (Heavy) in 2 Game Scene.")]
         [SerializeField] private string upperHitEvent = "PumpkinBossHit";
         [SerializeField] private string trueHitEvent = "PumpkinBossHitHeavy";
         [SerializeField] private string playerHealthFsm = "PlayerHealth";
@@ -274,6 +287,9 @@ namespace Game.Enemies
         private const float CycloneSpinFrom = 0.5f, CycloneSpinTo = 2.5f;
 
         private readonly List<GameObject> drops = new();
+        // When the player's recent hits landed, and when it may answer punch spam again.
+        private readonly List<float> recentHits = new();
+        private float nextSpamAnswer;
         private readonly Dictionary<Transform, Vector3> fistTracked = new();
         private readonly List<PlayMakerFSM> fsmBuffer = new();
         private NavMeshAgent agent;
@@ -444,6 +460,8 @@ namespace Game.Enemies
                 if (hitsTaken >= revealHits) StartRising();
                 return;
             }
+            // Counted for punch spam (Try Answer Spam).
+            recentHits.Add(Time.time);
             // Hits never stop it: between bigger moves it only yelps now and then. It reels only when dizzy (the upper
             // body from too much damage, see TrackHealth; the true form after its own cyclone).
             if (act != Act.None && act != Act.Taunt && act != Act.Dizzy) return;
@@ -458,6 +476,7 @@ namespace Game.Enemies
             if (!FindPlayer()) return;
             TrackPlayerMove();
             TrackHealth();
+            if (phase == Phase.Upper || phase == Phase.True) TryAnswerSpam();
             UpdateModel();
             switch (phase)
             {
@@ -489,6 +508,22 @@ namespace Game.Enemies
             if (now <= maxHealth * trueFormBelow && act == Act.None) StartTransform();
             // Too much damage too fast makes it dizzy, but only between moves: a punch or slam under way always finishes.
             else if (daze >= dizzyAfterDamage && act == Act.None) StartDizzy(BeingHit, dizzySeconds);
+        }
+
+        // Spam Hits of the player's hits within Spam Seconds: it answers at once with its cyclone, or in its true form
+        // maybe its body slam, cutting short whatever smaller move it was making.
+        private void TryAnswerSpam()
+        {
+            recentHits.RemoveAll(t => Time.time - t > spamSeconds);
+            if (recentHits.Count < spamHits || Time.time < nextSpamAnswer) return;
+            if (act == Act.JumpSlam || act == Act.Cyclone || act == Act.Dizzy) return;
+            recentHits.Clear();
+            if (act == Act.Vomit) EndVomit(true);
+            throwsLeft = 0;
+            waitingForPumpkins = false;
+            if (phase == Phase.True && Random.value < spamSlamChance) StartJumpSlam();
+            else StartCyclone();
+            nextSpamAnswer = actUntil + spamCooldown;
         }
 
         // Whatever it was doing, it stands there swaying, arms hanging, for a few seconds: being_hit for the upper body

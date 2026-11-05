@@ -237,7 +237,7 @@ MonoBehaviour:
   eatReach: 0.35
   eatSeconds: 0.25
   growPerCandy: 0.02
-  mostGrowth: 1.6
+  mostGrowth: 2.2
   eatSound: {fileID: 8300000, guid: 6fdf6f77440580b4c9cebaffaef7b0a0, type: 3}
   eatVolume: 0.8
   angryAfter: 1.5
@@ -263,6 +263,21 @@ MonoBehaviour:
   winnerHealth: 2
   winnerSize: 1.5
   winnerCandies: 3
+  dangerHeight: 1.4
+  giantSound: {fileID: 8300000, guid: 95867a459646868489c87aa8003feba0, type: 3}
+  giantSpeedShare: 1
+  stompRange: 4.5
+  stompWindUp: 0.6
+  stompSeconds: 0.7
+  stompHop: 0.9
+  stompEvery: {x: 1.6, y: 2.6}
+  stompReach: 0.4
+  stompEvent: DamageHeavy
+  stompPush: {x: 1, y: 3.5}
+  edgeSearch: 12
+  stompSound: {fileID: 8300000, guid: 1d7455106ecf9a146ab9b558857d9f2f, type: 3}
+  stompEffects: []
+  stompEffectSize: 0.8
   health: 5
   hitSettings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
   toughness: 1
@@ -404,6 +419,8 @@ MonoBehaviour:
   tilt: 16
   wobblesPerSecond: 4.5
   settleTime: 0.9
+  perExtraDamage: 0
+  mostHurtStrength: 2.5
   softHitPause: 0.75
   around: {fileID: 0}
   healthFsm: Health

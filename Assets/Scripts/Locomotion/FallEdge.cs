@@ -67,6 +67,29 @@ namespace Game.Locomotion
         /// <summary>Whether this point is over any Fall Edge.</summary>
         public static bool Covers(Vector3 point) => At(point) != null;
 
+        /// <summary>
+        /// The nearest point of any Fall Edge that counts right now to this point (measured flat), if one is within
+        /// Within metres; e.g. where a giant fat pumpkin's stomp throws the player.
+        /// </summary>
+        public static bool Nearest(Vector3 point, float within, out Vector3 nearest)
+        {
+            nearest = default;
+            float best = within * within;
+            bool found = false;
+            foreach (var edge in all)
+            {
+                if (edge == null || !edge.working || edge.box == null || !edge.box.enabled) continue;
+                var p = edge.box.ClosestPoint(point);
+                var gap = p - point;
+                gap.y = 0f;
+                if (gap.sqrMagnitude >= best) continue;
+                best = gap.sqrMagnitude;
+                nearest = p;
+                found = true;
+            }
+            return found;
+        }
+
         /// <summary>The Fall Edge over this point (the newest, if several), or null.</summary>
         public static FallEdge At(Vector3 point)
         {

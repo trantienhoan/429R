@@ -5,10 +5,14 @@ using UnityEngine;
 namespace Game.Bonus
 {
     /// <summary>
-    /// The player's two hands in the Paint Bees round: each takes the colour of the paint bucket it was last dipped in.
-    /// The hand's model is tinted that colour (after Hot Hands, which tints it too, so both show) and drips paint for a
-    /// moment after the dip, then now and then while it's painted. The round makes it and takes it away with it, and the
-    /// hands are clean again.
+    /// The player's two hands in the Paint Bees round: each takes the colour of the paint bucket it was last dipped in,
+    /// and drips paint for a moment after the dip, then now and then while it's painted. The round makes it and takes it
+    /// away with it, and the hands are clean again.
+    /// With a Coat Material (user, 2026-11-05: "make part of my palm that put in the bucket that colour") only the part
+    /// of the hand that went into the paint takes its colour: a copy of the hand's skinned renderer (same mesh, same bones)
+    /// draws the paint below the paint line, kept in the hand's own space (the deepest dip of that colour; at least Coat
+    /// Above Knuckles over the knuckles, so a shallow dip shows too). Without one, the whole hand is tinted (after Hot
+    /// Hands, which tints it too, so both show).
     /// </summary>
     public class PaintHands : MonoBehaviour
     {
@@ -23,6 +27,10 @@ namespace Game.Bonus
         private const float LateDrips = 1.5f;
 
         private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
+        private static readonly int CoatToLocal = Shader.PropertyToID("_CoatToLocal");
+        private static readonly int CoatPlane = Shader.PropertyToID("_CoatPlane");
+        // A dip paints at least this far over the knuckles (metres), even when they only got near the paint.
+        private const float CoatAboveKnuckles = 0.03f;
 
         /// <summary>One of the player's hands.</summary>
         public class Hand
@@ -32,6 +40,13 @@ namespace Game.Bonus
             public float dippedAt = -10f;
             public readonly List<Renderer> renderers = new();
             public ParticleSystem drips;
+            // The paint coat: its renderer, the hand renderer it copies, the paint line (hand space: into the paint xyz,
+            // its distance w), how deep the deepest dip of its colour went, and that colour.
+            public SkinnedMeshRenderer coat;
+            public SkinnedMeshRenderer coatOf;
+            public Vector4 line = new(0f, -1f, 0f, 1000f);
+            public float coatDepth = float.NegativeInfinity;
+            public int coatColour = None;
         }
 
         private readonly List<Hand> hands = new();
@@ -40,6 +55,8 @@ namespace Game.Bonus
         private Transform floor;
         private Material splatMaterial;
         private MaterialPropertyBlock block;
+        private MaterialPropertyBlock coatBlock;
+        private Material coatMaterial;
 
         /// <summary>The hands found (two, unless one controller is missing).</summary>
         public IReadOnlyList<Hand> Hands => hands;
@@ -48,9 +65,10 @@ namespace Game.Bonus
         /// Finds the player's hands (their Fists); the paint colours, the drops' material, and the floor their drops splat
         /// on (none: they don't).
         /// </summary>
-        public void Setup(Color[] paintColours, Material drops, Transform floor = null, Material splats = null)
+        public void Setup(Color[] paintColours, Material drops, Transform floor = null, Material splats = null, Material coat = null)
         {
             colours = paintColours;
+            coatMaterial = coat;
             dropMaterial = drops;
             this.floor = floor;
             splatMaterial = splats != null ? splats : drops;
@@ -77,6 +95,97 @@ namespace Game.Bonus
             main.startColor = colours[colour];
         }
 
+        /// <summary>
+        /// The hand is in this bucket's paint (call it every frame it is): the part of it below the paint line takes the
+        /// colour. The deepest dip of a colour is kept; a new colour starts again.
+        /// </summary>
+        public void Dip(Hand hand, PaintBucket bucket)
+        {
+            if (coatMaterial == null || hand.fist == null || bucket == null || hand.colour == None) return;
+            var skin = SkinOf(hand);
+            if (skin == null) return;
+            var knuckles = PointOf(hand);
+            float line = Mathf.Max(bucket.PaintMiddle.y, knuckles.y + CoatAboveKnuckles);
+            float depth = line - knuckles.y;
+            if (hand.coatColour != hand.colour)
+            {
+                hand.coatColour = hand.colour;
+                hand.coatDepth = float.NegativeInfinity;
+            }
+            if (depth <= hand.coatDepth) return;
+            hand.coatDepth = depth;
+            var toHand = HandFrame(skin).inverse;
+            var into = toHand.MultiplyVector(Vector3.down).normalized;
+            var onLine = toHand.MultiplyPoint3x4(new Vector3(knuckles.x, line, knuckles.z));
+            hand.line = new Vector4(into.x, into.y, into.z, Vector3.Dot(into, onLine));
+        }
+
+        // The hand's model (its skinned renderer), and its own space: where its root bone is and how it's turned, no scale.
+        private static SkinnedMeshRenderer SkinOf(Hand hand)
+        {
+            hand.renderers.Clear();
+            hand.fist.CollectHandRenderers(hand.renderers);
+            foreach (var part in hand.renderers)
+            {
+                if (part is SkinnedMeshRenderer skin && skin.sharedMesh != null) return skin;
+            }
+            return null;
+        }
+
+        private static Matrix4x4 HandFrame(SkinnedMeshRenderer skin)
+        {
+            var root = skin.rootBone != null ? skin.rootBone : skin.transform;
+            return Matrix4x4.TRS(root.position, root.rotation, Vector3.one);
+        }
+
+        // The coat: the hand's skinned renderer copied (same mesh and bones, the coat material on every part of it).
+        private SkinnedMeshRenderer MakeCoat(SkinnedMeshRenderer skin)
+        {
+            var go = new GameObject("Paint Coat");
+            go.layer = skin.gameObject.layer;
+            go.transform.SetParent(skin.transform, false);
+            var coat = go.AddComponent<SkinnedMeshRenderer>();
+            coat.sharedMesh = skin.sharedMesh;
+            coat.bones = skin.bones;
+            coat.rootBone = skin.rootBone;
+            coat.localBounds = skin.localBounds;
+            coat.updateWhenOffscreen = skin.updateWhenOffscreen;
+            coat.quality = skin.quality;
+            coat.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            coat.receiveShadows = false;
+            var materials = new Material[Mathf.Max(1, skin.sharedMesh.subMeshCount)];
+            for (int i = 0; i < materials.Length; i++) materials[i] = coatMaterial;
+            coat.sharedMaterials = materials;
+            return coat;
+        }
+
+        private void UpdateCoat(Hand hand, bool painted)
+        {
+            var skin = painted ? SkinOf(hand) : null;
+            bool show = skin != null && hand.coatColour == hand.colour && !float.IsNegativeInfinity(hand.coatDepth) &&
+                        skin.enabled && skin.gameObject.activeInHierarchy;
+            if (!show)
+            {
+                if (hand.coat != null) hand.coat.enabled = false;
+                return;
+            }
+            if (hand.coat == null || hand.coatOf != skin)
+            {
+                if (hand.coat != null) Destroy(hand.coat.gameObject);
+                hand.coat = MakeCoat(skin);
+                hand.coatOf = skin;
+            }
+            hand.coat.enabled = true;
+            // A hand that bends by blend shapes bends the coat the same way.
+            for (int i = 0; i < skin.sharedMesh.blendShapeCount; i++) hand.coat.SetBlendShapeWeight(i, skin.GetBlendShapeWeight(i));
+            coatBlock ??= new MaterialPropertyBlock();
+            hand.coat.GetPropertyBlock(coatBlock);
+            coatBlock.SetColor(BaseColor, colours[hand.colour]);
+            coatBlock.SetVector(CoatPlane, hand.line);
+            coatBlock.SetMatrix(CoatToLocal, HandFrame(skin).inverse);
+            hand.coat.SetPropertyBlock(coatBlock);
+        }
+
         /// <summary>The colour the hand shows (white when clean).</summary>
         public Color ColourOf(Hand hand) => hand.colour >= 0 && hand.colour < colours.Length ? colours[hand.colour] : Color.white;
 
@@ -89,6 +198,12 @@ namespace Game.Bonus
                 bool painted = hand.colour != None;
                 var emission = hand.drips.emission;
                 emission.rateOverTime = !painted ? 0f : Time.time - hand.dippedAt < FreshSeconds ? FreshDrips : LateDrips;
+                // With a coat only the dipped part shows the paint: the hand itself isn't tinted.
+                if (coatMaterial != null)
+                {
+                    UpdateCoat(hand, painted);
+                    continue;
+                }
                 if (!painted) continue;
                 // Hot Hands sets its glow on the same renderers in its Update: the colour goes over it here.
                 hand.renderers.Clear();
@@ -111,7 +226,8 @@ namespace Game.Bonus
             foreach (var hand in hands)
             {
                 if (hand.drips != null) Destroy(hand.drips.gameObject);
-                if (hand.colour == None) continue;
+                if (hand.coat != null) Destroy(hand.coat.gameObject);
+                if (hand.colour == None || coatMaterial != null) continue;
                 foreach (var part in hand.renderers)
                 {
                     if (part != null) part.SetPropertyBlock(null);
