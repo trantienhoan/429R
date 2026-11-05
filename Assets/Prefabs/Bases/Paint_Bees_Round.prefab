@@ -49,6 +49,14 @@ MonoBehaviour:
   marker: {fileID: 7384552638928846612, guid: 1b464fefd924a004da62af7f735202fc, type: 3}
   standRadius: 0.5
   standSeconds: 0.4
+  signAfter: 7
+  dipText: 'Dip your hands in the paint
+
+    and don''t get out of the ring!'
+  songDelay: 1.5
+  leaveRadius: 0.9
+  leaveSeconds: 0.75
+  frontArc: 60
   bucket: {fileID: 1452372161838848157, guid: 13a412c5d7f5faa449adb6d9fe10baa2, type: 3}
   colours:
   - {r: 1, g: 0.2, b: 0.18, a: 1}
@@ -68,10 +76,14 @@ MonoBehaviour:
   firstBeat: 0.593
   lastBeeAt: 90
   fadeSeconds: 2.5
-  road: {fileID: 6634847629809194640, guid: cbad7eb8a47b6754caec551833dbf104, type: 3}
-  bee: {fileID: 66695465573659488, guid: 9051451659366634a9e76790401f8370, type: 3}
+  bee: {fileID: 2377261653841454949, guid: d04be9adde07de449b7b02cae91c98f1, type: 3}
+  fireName: Danger_Flame
+  fireReach: 25
+  fireHeight: {x: 0.8, y: 1.5}
   allColoursAfter: 30
   rainbowSize: 1.3
+  splitInto: 0
+  splitSize: 0.55
   everyBeats: {x: 4, y: 2}
   flyBeats: {x: 4, y: 3}
   hoverBeats: {x: 2, y: 1}
@@ -96,7 +108,8 @@ MonoBehaviour:
   rainbowCandies: 10
   perfectCandies: 10
   onBeatWindow: 0.12
-  onBeatCandies: 1
+  onBeatCandies: 2
+  onBeatExp: 1
   onBeatFlash: {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c,
     type: 3}
   onBeatFlashSize: 0.35
@@ -127,6 +140,22 @@ MonoBehaviour:
   burstMaterial: {fileID: 2100000, guid: 77bca7d8a0dbe0a488a47912d0f44962, type: 2}
   winFireworks: {fileID: 4623798490042213957, guid: e1812b1d90f61c94dab0f126b70eb3f3,
     type: 3}
+  popSeconds: 0.07
+  popSwell: 1.35
+  globs: 10
+  droplets: 14
+  followPunch: 0.55
+  popSplashSize: 0.45
+  fleckReach: 0.55
+  fleckChance: 0.5
+  floorSplatSeconds: 8
+  onBeatSparkMaterial: {fileID: 2100000, guid: c091ab511e9cc7a44bb5d7a5db30c440, type: 2}
+  onBeatSparks: 12
+  candiesAfter: 0.25
+  popSounds:
+  - {fileID: 8300000, guid: 9fa3ff2a48ede5a43bc3e1b550e1dc2d, type: 3}
+  - {fileID: 8300000, guid: fa130e6cf4c8cb84eb979ef3ddbaff63, type: 3}
+  popVolume: 0.7
   fireworkScale: 1
-  font: {fileID: 11400000, guid: d7a5e2d89139b2940a46b4a7c3289c9e, type: 2}
+  font: {fileID: 11400000, guid: cb4516ac98eb5854ea4d7a8f558eb4da, type: 2}
   signScale: 0.006

@@ -27,13 +27,13 @@ namespace HutongGames.PlayMaker.Actions
         public FsmFloat maxValue;
 
         [Tooltip("Optional: above this, e.g. DefautPlayerHealth, only Above Share of the amount is added. Up to it the " +
-                 "amount counts in full, so from 118 a roll of 7 adds 2 + 70% of 5.")]
+                 "amount counts in full, so from 118 a roll of 7 adds 2 + 50% of 5.")]
         public FsmFloat reducedAbove = new FsmFloat { UseVariable = true };
 
         [HasFloatSlider(0f, 1f)]
-        [Tooltip("The share of the amount that's added above Reduced Above, e.g. 0.7 = 70%. With Whole Numbers it's " +
+        [Tooltip("The share of the amount that's added above Reduced Above, e.g. 0.5 = 50% (user, 2026-11-05: candies above max health heal half). With Whole Numbers it's " +
                  "rounded up: 1.3 becomes 2, and a roll of 1 still adds 1.")]
-        public FsmFloat aboveShare = 0.7f;
+        public FsmFloat aboveShare = 0.5f;
 
         [UIHint(UIHint.Variable)]
         [Tooltip("Optional: store the amount that was actually added.")]
@@ -51,7 +51,7 @@ namespace HutongGames.PlayMaker.Actions
             wholeNumbers = true;
             maxValue = new FsmFloat { UseVariable = true };
             reducedAbove = new FsmFloat { UseVariable = true };
-            aboveShare = 0.7f;
+            aboveShare = 0.5f;
             storeAmount = null;
             candyHealBonus = false;
         }

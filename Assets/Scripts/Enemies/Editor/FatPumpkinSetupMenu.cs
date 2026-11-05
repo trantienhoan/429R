@@ -34,8 +34,9 @@ namespace Game.EditorTools
         private const float ModelRadius = 0.23f;
         private const float Wider = 1.3f;
         private const float Squat = 0.95f;
-        // 20% smaller than first made (user, 2026-11-03).
-        private const float Scale = 1.12f;
+        // 20% smaller than first made (user, 2026-11-03), then just a little bigger than the bowling pumpkin (1.1) when it
+        // comes out (user, 2026-11-05: "a little too big right at start").
+        private const float Scale = 1.06f;
         private const string BugAgentType = "Spider";
         private const int CandyKinds = 8;
 

@@ -42,6 +42,13 @@ namespace Game.Locomotion
         [Tooltip("A Fall Edge younger than this (seconds) didn't get stepped into: it appeared round the player.")]
         [Min(0f)]
         [SerializeField] private float newEdgeSeconds = 1f;
+        [Tooltip("Stepping over a Fall Edge: one of these plays as the view drops (never the same twice in a row), a " +
+                 "little higher or lower each time (Fall Pitch). The Cartoon_fall_1/2 falling whistles (user, 2026-11-05: " +
+                 "they're fall sounds, not flattening ones).")]
+        [SerializeField] private AudioClip[] fallSounds = System.Array.Empty<AudioClip>();
+        [Range(0f, 1f)]
+        [SerializeField] private float fallVolume = 0.9f;
+        [SerializeField] private Vector2 fallPitch = new(0.95f, 1.08f);
 
         // Where they stood: the floor under the head, and when.
         private readonly List<(Vector3 spot, float time)> stood = new();
@@ -66,6 +73,8 @@ namespace Game.Locomotion
         private bool hasLast;
         private Vector3 lastUnder;
         private float teleportedAt = -10f;
+        private AudioSource fallVoice;
+        private int lastFallSound = -1;
 
         private void Awake()
         {
@@ -147,9 +156,29 @@ namespace Game.Locomotion
             {
                 dropFrom = transform.position;
                 Hold(true);
+                PlayFallSound();
             }
             var fade = HeadsetFade.Find();
             if (fade != null) fade.FadeOut(drop ? edgeDropSeconds : fadeOutSeconds);
+        }
+
+        // The falling whistle, in the player's ears (not placed in the world: they're the one falling).
+        private void PlayFallSound()
+        {
+            if (fallSounds.Length == 0) return;
+            int pick = Random.Range(0, fallSounds.Length);
+            if (pick == lastFallSound && fallSounds.Length > 1) pick = (pick + 1 + Random.Range(0, fallSounds.Length - 1)) % fallSounds.Length;
+            lastFallSound = pick;
+            var clip = fallSounds[pick];
+            if (clip == null) return;
+            if (fallVoice == null)
+            {
+                fallVoice = gameObject.AddComponent<AudioSource>();
+                fallVoice.playOnAwake = false;
+                fallVoice.spatialBlend = 0f;
+            }
+            fallVoice.pitch = Random.Range(fallPitch.x, fallPitch.y);
+            fallVoice.PlayOneShot(clip, fallVolume);
         }
 
         private void PutBack()

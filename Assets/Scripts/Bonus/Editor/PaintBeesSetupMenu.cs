@@ -17,7 +17,7 @@ namespace Game.EditorTools
     /// Tools > 429 Game > Bonus > Set Up Paint Bees Bonus: builds the Paint Bees bonus round ("Special Stage Type 2") and
     /// puts it after the Playroom (GAMESTAGES "Bonus Round PR"; the Bedroom keeps the nesting pumpkins). The bees fly to
     /// Pumpkin_Pillow_Party's beat (100 BPM). Safe to run again: it makes the parts anew (meshes, materials, textures and
-    /// the five prefabs) and keeps what was tuned on Paint_Bees_Round. (One menu for the two versions built on the two
+    /// the prefabs) and keeps what was tuned on Paint_Bees_Round. (One menu for the two versions built on the two
     /// PCs on 2026-11-03/04: the song, road, drips, puddles, floor splats and trails from the one, the liquid paint, the
     /// light and rainbow bees and their auras from the other.)
     /// - Paint_Bucket (Prefabs/Bonus): the pumpkin bucket (pumpkin_bucket.fbx at Bucket Size), its root at the paint's
@@ -28,8 +28,6 @@ namespace Game.EditorTools
     ///   _Emission: a light bee the round tints its colour; the rainbow bee: Bee_Rainbow_Base_Color / _Emission), an aura
     ///   (a soft glow and sparkles in its colour), a light trail, its buzzing wings (Wing Buzz) and a looping buzz.
     /// - Paint_Bees_Start: the glowing ring on the floor in the middle, the arrow over it and sparkles.
-    /// - Paint_Bees_Road: the lit road the bees fly in on (runway lights, lights marching in on the beat, embers, a red
-    ///   danger ring round the feet).
     /// - Paint_Bees_Round (Prefabs/Bases): the Paint Bees Round with all of the above, the song, Bonus_Stage_Sky, the
     ///   candies, the user's sounds, puff, on-beat flash, paint blobs, splats and Firework_Big.
     /// - The scene: "Bonus Round PR" plays Paint_Bees_Round; --Playroom--MiniGame--'s chest spot is switched off (no
@@ -44,8 +42,10 @@ namespace Game.EditorTools
         private const string RoundPath = "Assets/Prefabs/Bases/Paint_Bees_Round.prefab";
         private const string BucketPath = PartsFolder + "Paint_Bucket.prefab";
         private const string BeePath = PartsFolder + "Paint_Bee.prefab";
+        // The stage's flyers since 2026-11-05: the flying paint slimes (Tools > 429 Game > Enemies > Set Up Flying Slime
+        // makes Paint_Slime); without it, the bees.
+        private const string SlimePath = PartsFolder + "Paint_Slime.prefab";
         private const string StartPath = PartsFolder + "Paint_Bees_Start.prefab";
-        private const string RoadPath = PartsFolder + "Paint_Bees_Road.prefab";
 
         private const string BucketModel = "Assets/Models/Bedroom_Stuffs/pumpkin_bucket.fbx";
         // The bucket is 67 cm across as modelled: this makes it about 44 cm, so four fit round the player.
@@ -75,7 +75,6 @@ namespace Game.EditorTools
         private const string SoftTexture = "Assets/Lana Studio/Hyper Casual FX/Textures/Circle03.png";
         private const string RingTexture = "Assets/Lana Studio/Hyper Casual FX/Textures/Circle06.png";
         private const string StarTexture = "Assets/Lana Studio/Hyper Casual FX/Textures/Flare03.png";
-        private const string LightTexture = "Assets/Lana Studio/Hyper Casual FX/Textures/Circle01.png";
         private const string NoFogShader = "429/Particles/Unlit No Fog";
         // The splat with droplets for the floor (splats, puddles); the view's splat (with runs) is Paint_Splat.
         private const string FloorSplatTexture = TextureFolder + "Paint_Floor_Splat.png";
@@ -84,7 +83,9 @@ namespace Game.EditorTools
         private const string CandyPath = "Assets/Prefabs/Items/Breakable/Candy_{0}.prefab";
         private const string PuffPath = "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab";
         private const string FireworksPath = "Assets/Prefabs/Light/Firework_Big.prefab";
-        private const string FontPath = "Assets/Fonts/roboto/Roboto-Bold SDF.asset";
+        // The sign's font (user 2026-11-05: "the default font looks boring"): Socake, round and blobby like the slimes,
+        // free for commercial use (its More Info.txt).
+        private const string FontPath = "Assets/Fonts/socake/Socake SDF.asset";
         private const string SongPath = "Assets/Audio/SFX/Pumpkin_Pillow_Party.wav";
         private const string FlashPath = "Assets/Lana Studio/Hyper Casual FX/Prefabs/Flash/Flash_round_yellow.prefab";
         // The user's sounds (picked on the other PC, 2026-11-03).
@@ -153,7 +154,6 @@ namespace Game.EditorTools
                 notes.Add(MakeBucket(meshes, mats, innerRadius, paintY, bucketBounds));
                 notes.Add(MakeBee(mats));
                 notes.Add(MakeStart(meshes, mats));
-                notes.Add(MakeRoad(mats));
             }
             finally { EditorSceneManager.ClosePreviewScene(build); }
             notes.Add(MakeRound(mats));
@@ -419,8 +419,7 @@ namespace Game.EditorTools
 
         private class Materials
         {
-            public Material paint, glow, ripple, drop, splat, floorSplat, bee, rainbowBee, ring, sparkle, arrow, aura, trail,
-                roadLight, lane, orb, danger;
+            public Material paint, glow, ripple, drop, splat, floorSplat, bee, rainbowBee, ring, sparkle, arrow, aura, trail;
         }
 
         private static Materials MakeMaterials(Textures textures)
@@ -439,11 +438,6 @@ namespace Game.EditorTools
             mats.trail = ParticleMaterial("Paint_Bee_Trail_Mat", null, true, true);
             mats.floorSplat = AssetDatabase.LoadAssetAtPath<Texture2D>(FloorSplatTexture) != null
                 ? ParticleMaterial("Paint_Floor_Splat_Mat", FloorSplatTexture, false, false) : mats.splat;
-            // The road reaches past where the fog starts: no fog.
-            mats.roadLight = ParticleMaterial("Paint_Road_Light_Mat", LightTexture, true, true);
-            mats.lane = ParticleMaterial("Paint_Road_Lane_Mat", null, true, true);
-            mats.orb = ParticleMaterial("Paint_Road_Orb_Mat", SoftTexture, true, true);
-            mats.danger = ParticleMaterial("Paint_Road_Danger_Ring_Mat", RingTexture, true, true);
             mats.drop = ParticleMaterial("Paint_Drop_Mat", AssetDatabase.GetAssetPath(textures.drop), false, false);
             mats.splat = ParticleMaterial("Paint_Splat_Mat", AssetDatabase.GetAssetPath(textures.splat), false, false);
             mats.splat.renderQueue = (int)RenderQueue.Transparent + 50;
@@ -900,112 +894,6 @@ namespace Game.EditorTools
             return drips;
         }
 
-        // ---------- Paint_Bees_Road ----------
-
-        // The lit road the bees fly in on (the round lays it in front of the player from the 3-2-1 and drives it).
-        private static string MakeRoad(Materials mats)
-        {
-            var root = NewRoot("Paint_Bees_Road");
-            try
-            {
-                // Lights marching in along the lanes: gold far off, hot red close by, sparkling as they come.
-                var marchers = Lights(root, "Marching Lights", mats.orb, 160);
-                var march = marchers.colorOverLifetime;
-                march.enabled = true;
-                var gradient = new Gradient();
-                gradient.SetKeys(
-                    new[] { new GradientColorKey(new Color(1f, 0.85f, 0.4f), 0f), new GradientColorKey(new Color(1f, 0.45f, 0.1f), 0.6f), new GradientColorKey(new Color(1f, 0.12f, 0.05f), 0.95f) },
-                    new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.1f), new GradientAlphaKey(1f, 0.88f), new GradientAlphaKey(0f, 1f) });
-                march.color = gradient;
-                var grow = marchers.sizeOverLifetime;
-                grow.enabled = true;
-                grow.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 0.7f, 1f, 1.4f));
-                var spin = marchers.rotationOverLifetime;
-                spin.enabled = true;
-                spin.z = new ParticleSystem.MinMaxCurve(Mathf.PI);
-
-                // The still runway lights along the lanes, and a glow at the far end of each.
-                var runway = Lights(root, "Runway Lights", mats.roadLight, 160);
-                var ends = Lights(root, "Lane Ends", mats.orb, 16);
-
-                // Embers rising off the floor all over the road.
-                var embers = new GameObject("Embers").AddComponent<ParticleSystem>();
-                embers.transform.SetParent(root.transform, false);
-                embers.transform.localPosition = new Vector3(0f, 0.02f, 3.8f);
-                embers.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-                var main = embers.main;
-                main.loop = true;
-                main.playOnAwake = false;
-                main.startLifetime = new ParticleSystem.MinMaxCurve(1.8f, 3.2f);
-                main.startSpeed = new ParticleSystem.MinMaxCurve(0.15f, 0.5f);
-                main.startSize = new ParticleSystem.MinMaxCurve(0.03f, 0.07f);
-                main.gravityModifier = -0.04f;
-                main.simulationSpace = ParticleSystemSimulationSpace.World;
-                main.maxParticles = 100;
-                var emission = embers.emission;
-                emission.rateOverTime = 24f;
-                var shape = embers.shape;
-                shape.shapeType = ParticleSystemShapeType.Box;
-                shape.scale = new Vector3(8.5f, 6.5f, 0.05f);
-                shape.rotation = new Vector3(-90f, 0f, 0f);
-                var noise = embers.noise;
-                noise.enabled = true;
-                noise.strength = 0.25f;
-                noise.frequency = 0.6f;
-                var burn = embers.colorOverLifetime;
-                burn.enabled = true;
-                var fire = new Gradient();
-                fire.SetKeys(
-                    new[] { new GradientColorKey(new Color(1f, 0.75f, 0.3f), 0f), new GradientColorKey(new Color(1f, 0.25f, 0.05f), 0.5f), new GradientColorKey(new Color(0.6f, 0.05f, 0.02f), 1f) },
-                    new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.15f), new GradientAlphaKey(0.8f, 0.6f), new GradientAlphaKey(0f, 1f) });
-                burn.color = fire;
-                var emberRenderer = embers.GetComponent<ParticleSystemRenderer>();
-                emberRenderer.sharedMaterial = mats.roadLight;
-                emberRenderer.shadowCastingMode = ShadowCastingMode.Off;
-
-                // The danger ring round the player's feet.
-                var danger = Flat(root, "Danger Ring", mats.danger, 1.7f);
-                danger.transform.localPosition = new Vector3(0f, 0.02f, 0f);
-
-                var road = root.AddComponent<PaintBeesRoad>();
-                var so = new SerializedObject(road);
-                so.FindProperty("marchers").objectReferenceValue = marchers;
-                so.FindProperty("runway").objectReferenceValue = runway;
-                so.FindProperty("laneEnds").objectReferenceValue = ends;
-                so.FindProperty("embers").objectReferenceValue = embers;
-                so.FindProperty("dangerRing").objectReferenceValue = danger.GetComponent<Renderer>();
-                so.FindProperty("laneMaterial").objectReferenceValue = mats.lane;
-                so.ApplyModifiedPropertiesWithoutUndo();
-                PrefabUtility.SaveAsPrefabAsset(root, RoadPath);
-            }
-            finally { Object.DestroyImmediate(root); }
-            return "Paint_Bees_Road: lanes, runway and marching lights, embers, danger ring";
-        }
-
-        // A particle system the road emits into itself (playing, with no emission of its own), in world space.
-        private static ParticleSystem Lights(GameObject parent, string name, Material material, int most)
-        {
-            var system = new GameObject(name).AddComponent<ParticleSystem>();
-            system.transform.SetParent(parent.transform, false);
-            var main = system.main;
-            main.loop = true;
-            main.playOnAwake = true;
-            main.startLifetime = 2f;
-            main.startSpeed = 0f;
-            main.startSize = 0.1f;
-            main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.maxParticles = most;
-            var emission = system.emission;
-            emission.rateOverTime = 0f;
-            var shape = system.shape;
-            shape.enabled = false;
-            var renderer = system.GetComponent<ParticleSystemRenderer>();
-            renderer.sharedMaterial = material;
-            renderer.shadowCastingMode = ShadowCastingMode.Off;
-            renderer.receiveShadows = false;
-            return system;
-        }
-
         // A flat quad lying on the floor (facing up), this many metres across, with no collider.
         private static GameObject Flat(GameObject parent, string name, Material material, float size)
         {
@@ -1046,12 +934,13 @@ namespace Game.EditorTools
                 Set(so, "marker", AssetDatabase.LoadAssetAtPath<GameObject>(StartPath), filled);
                 var bucket = AssetDatabase.LoadAssetAtPath<GameObject>(BucketPath);
                 Set(so, "bucket", bucket != null ? bucket.GetComponent<PaintBucket>() : null, filled);
-                var bee = AssetDatabase.LoadAssetAtPath<GameObject>(BeePath);
+                var bee = AssetDatabase.LoadAssetAtPath<GameObject>(SlimePath);
+                if (bee == null || bee.GetComponent<PaintBee>() == null) bee = AssetDatabase.LoadAssetAtPath<GameObject>(BeePath);
                 Set(so, "bee", bee != null ? bee.GetComponent<PaintBee>() : null, filled);
-                var road = AssetDatabase.LoadAssetAtPath<GameObject>(RoadPath);
-                Set(so, "road", road != null ? road.GetComponent<PaintBeesRoad>() : null, filled);
                 Set(so, "song", AssetDatabase.LoadAssetAtPath<AudioClip>(SongPath), filled);
                 Set(so, "onBeatFlash", AssetDatabase.LoadAssetAtPath<GameObject>(FlashPath), filled);
+                // Gold sparks for a swat on the beat (the flash prefab became a big 3D smoke that hid the splash).
+                Set(so, "onBeatSparkMaterial", mats.sparkle, filled);
                 Set(so, "floorSplatMaterial", mats.floorSplat, filled);
                 var candies = Enumerable.Range(1, 8).Select(i => AssetDatabase.LoadAssetAtPath<GameObject>(string.Format(CandyPath, i))).Where(c => c != null).ToArray();
                 SetList(so, "candies", candies, filled);
@@ -1069,6 +958,9 @@ namespace Game.EditorTools
                 }
                 SetList(so, "dipSounds", DipSounds.Select(AssetDatabase.LoadAssetAtPath<AudioClip>).Where(c => c != null).ToArray(), filled);
                 SetList(so, "swatSounds", SwatSounds.Select(AssetDatabase.LoadAssetAtPath<AudioClip>).Where(c => c != null).ToArray(), filled);
+                // A swatted bee's wet pop (the opening's pumpkin splats, pitched up by the round).
+                SetList(so, "popSounds", new[] { "Assets/Audio/SFX/pumpkin_explode_1.wav", "Assets/Audio/SFX/pumpkin_explode_2.wav" }
+                    .Select(AssetDatabase.LoadAssetAtPath<AudioClip>).Where(c => c != null).ToArray(), filled);
                 Set(so, "bucketSound", AssetDatabase.LoadAssetAtPath<AudioClip>(BucketSound), filled);
                 Set(so, "boingSound", AssetDatabase.LoadAssetAtPath<AudioClip>(BoingSound), filled);
                 Set(so, "stingSound", AssetDatabase.LoadAssetAtPath<AudioClip>(StingSound), filled);

@@ -888,6 +888,10 @@ namespace Game.Enemies
         [Tooltip("The white bug is always a small white cockroach: a bug of another kind (a spider, a bee) that turns " +
                  "out white becomes one of these instead, where it appeared. Empty: it stays its own kind (the roaches).")]
         [SerializeField] private GameObject anomalyBody;
+        [Tooltip("The rare one is THIS instead, for every kind (user 2026-11-05: the white cockroach swapped for the " +
+                 "rainbow flying slime, Rainbow_Slime): made where the bug appeared, and the bug is gone. Empty: the " +
+                 "white bug as above.")]
+        [SerializeField] private GameObject anomalySwap;
         [Tooltip("Seconds it runs about (random between) before it dives into the closest tree pumpkin and is gone.")]
         [SerializeField] private Vector2 anomalyLifetime = new(25f, 40f);
         [Tooltip("Its health. It takes hits like a normal bug (Toughness 1): 2 = one good throw of a tree pumpkin kills " +
@@ -1233,6 +1237,11 @@ namespace Game.Enemies
             agent = GetComponent<NavMeshAgent>();
             TryGetComponent(out speaker);
             anomaly = RollAnomaly();
+            if (anomaly && anomalySwap != null && !makingWhite)
+            {
+                BecomeSwap();
+                return;
+            }
             if (anomaly && anomalyBody != null && !makingWhite)
             {
                 BecomeWhiteRoach();
@@ -3225,6 +3234,15 @@ namespace Game.Enemies
                 makingWhite = false;
                 ForceNextAnomaly = false;
             }
+            state = State.Dead;
+            gameObject.SetActive(false);
+            Destroy(gameObject);
+        }
+
+        // The rare one is something else (Anomaly Swap: the rainbow slime), made where it appeared; this bug is gone.
+        private void BecomeSwap()
+        {
+            Instantiate(anomalySwap, transform.position + Vector3.up * 0.3f, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f), transform.parent);
             state = State.Dead;
             gameObject.SetActive(false);
             Destroy(gameObject);

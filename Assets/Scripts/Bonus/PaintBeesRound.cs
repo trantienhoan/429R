@@ -12,23 +12,26 @@ namespace Game.Bonus
     /// The Paint Bees bonus round (Paint_Bees_Round), the Playroom's bonus before the rooftop's bees. Play Bonus Round
     /// makes it when the player earned it, on the bonus stage (--Playroom--MiniGame--: the field):
     /// - a glowing ring with an arrow over it marks the middle; standing on it, four floating paint buckets (red, blue,
-    ///   yellow, green, in a random order) pop up round the player at waist height, and a sign says to dip a hand;
+    ///   yellow, green, in a random order) pop up round the player at waist height, without a word; only if no hand is
+    ///   dipped for Sign After seconds does a sign say to dip one and stay in the ring (user, 2026-11-05). The ring
+    ///   stays on the floor for the round;
     /// - a hand dipped in a bucket takes its colour (see Paint Hands), and keeps it until dipped in another;
     /// - it all goes to a song (user, 2026-11-03: "Player punches flying colored bee that drops candies follow fight
-    ///   song beat", like Vibe Punch; Pumpkin_Pillow_Party, 100 BPM): the song starts as the buckets come up, the 3-2-1
-    ///   ticks on its beats, and bees (two colours at first; all of them and one rainbow bee once All Colours After are swatted) appear on
+    ///   song beat", like Vibe Punch; Pumpkin_Pillow_Party, 100 BPM): the song starts Song Delay seconds after the first
+    ///   dip, the 3-2-1 ticks on its beats, and bees (two colours at first; all of them and one rainbow bee once All Colours After are swatted) appear on
     ///   a beat far in front, a few at a time and more often as it goes, reach the face's front on a beat, hover there
     ///   (the warning) and dive on a beat, at the face on the next; they throb to every beat. They stop coming at Last
     ///   Bee At seconds into the song, and it fades out once the last one is done;
     /// - a swat with the hand of its colour bursts it into paint: Candies Per Bee candies and Exp Per Bee EXP (the
     ///   rainbow bee: any painted hand, Rainbow Candies and Rainbow Exp); a swat on a beat (within On Beat Window) gives
-    ///   On Beat Candies more and a gold flash, no words; the wrong colour (or a clean hand) knocks it back with a boing
-    ///   and it comes again; one that reaches the face stings (Sting Share of a bite: about 1 health) and splats its
-    ///   paint on the view;
+    ///   On Beat Candies and On Beat Exp more and a gold flash, no words; the wrong colour (or a clean hand) knocks it back with a boing
+    ///   and it comes again; one that reaches the face stings (Sting Share of a bite: about 1 health), splats its
+    ///   paint on the view and flies off out of sight, gone; they come out of the fires in front of where the player
+    ///   looks (Front Arc), so they needn't turn round;
+    /// - once the song is on, stepping out of the ring (Leave Radius, for Leave Seconds) ends it: the song stops, the
+    ///   bees fly off, the round is over (no fireworks, no perfect candies; the candies won so far are kept);
     /// - other music playing (a room's radio, the stage's song) is paused while the round's song plays;
-    /// - the bees' road lights up from the 3-2-1 (Road: lanes of runway lights throbbing to the beat, sparkling lights
-    ///   marching in to the player on every half beat, embers, a red danger ring round the feet that flares while a bee
-    ///   dives), and paint that falls to the floor (swatted bees, dripping hands, the buckets' drips) splats there;
+    /// - paint that falls to the floor (swatted bees, dripping hands, the buckets' drips) splats there;
     /// - the Candy Helmet is on the whole time (every candy flies to the head); at the end fireworks go up in front, a
     ///   round with no sting gives Perfect Candies more, the helmet eats what's left, the buckets sink, the hands are
     ///   clean again, and the round is over (Finished: Play Bonus Round goes on).
@@ -52,6 +55,27 @@ namespace Game.Bonus
         [Tooltip("...for this long, in seconds.")]
         [Min(0f)]
         [SerializeField] private float standSeconds = 0.4f;
+        [Tooltip("With the buckets up, no hand dipped for this many seconds: the sign shows Dip Text (user, 2026-11-05: " +
+                 "nothing is said before that).")]
+        [Min(0f)]
+        [SerializeField] private float signAfter = 7f;
+        [TextArea]
+        [SerializeField] private string dipText = "Dip your hands in the paint\nand don't get out of the ring!";
+        [Tooltip("The song starts this many seconds after the first hand is dipped.")]
+        [Min(0f)]
+        [SerializeField] private float songDelay = 1.5f;
+        [Tooltip("Once the song is on, the player's head further than this (metres, flat) from the ring's middle for Leave " +
+                 "Seconds has left the ring: the song ends and so does the round. More than the ring (and the buckets' " +
+                 "reach), so leaning out to dip a hand doesn't count.")]
+        [Min(0.3f)]
+        [SerializeField] private float leaveRadius = 0.9f;
+        [Min(0f)]
+        [SerializeField] private float leaveSeconds = 0.75f;
+        [Tooltip("The bees come out of the fires within this many degrees of where the player looks (user, 2026-11-05: " +
+                 "\"no matter where the Player is heading, them Flying Slime should come forward Player's face\"); with " +
+                 "none there, the fire nearest to it.")]
+        [Range(10f, 180f)]
+        [SerializeField] private float frontArc = 60f;
 
         [Header("Buckets")]
         [SerializeField] private PaintBucket bucket;
@@ -93,10 +117,6 @@ namespace Game.Bonus
         [Min(0f)]
         [SerializeField] private float fadeSeconds = 2.5f;
 
-        [Header("Road")]
-        [Tooltip("The lit road the bees fly in on (Paint_Bees_Road), laid in front of the player from the 3-2-1. Empty: none.")]
-        [SerializeField] private PaintBeesRoad road;
-
         [Header("Bees")]
         [SerializeField] private PaintBee bee;
         [Tooltip("The bees fly out of the stage's fire columns (user, 2026-11-04: \"Spawn bee where 4 column of Fire is " +
@@ -115,6 +135,15 @@ namespace Game.Bonus
         [Tooltip("The rainbow bee is this many times bigger.")]
         [Min(0.5f)]
         [SerializeField] private float rainbowSize = 1.3f;
+        [Tooltip("A swatted big one splits into this many small ones of its colour: flung out of its splash, they come " +
+                 "again on the beat (one after another) and need swatting too; small ones don't split. Each counts in the " +
+                 "round's total. 0: no splitting (user 2026-11-05: off, \"we don't need more flying slime\"; a swat on the " +
+                 "beat gives more rewards instead: On Beat Candies, On Beat Exp).")]
+        [Min(0)]
+        [SerializeField] private int splitInto;
+        [Tooltip("The small ones' size (times the big one's).")]
+        [Range(0.2f, 1f)]
+        [SerializeField] private float splitSize = 0.55f;
         [Tooltip("Beats between one lot of bees and the next, at the start (x) and the end (y); a lot of two or three " +
                  "takes a beat more for each bee after the first.")]
         [SerializeField] private Vector2 everyBeats = new(4f, 2f);
@@ -161,7 +190,10 @@ namespace Game.Bonus
         [SerializeField] private float onBeatWindow = 0.12f;
         [Tooltip("...and gives this many candies more...")]
         [Min(0)]
-        [SerializeField] private int onBeatCandies = 1;
+        [SerializeField] private int onBeatCandies = 2;
+        [Tooltip("A swat on a beat gives this much more EXP too (user 2026-11-05: more rewards for the beat).")]
+        [Min(0)]
+        [SerializeField] private int onBeatExp = 1;
         [Tooltip("...and this flash where it burst (Flash_round_yellow), this big. Empty: none.")]
         [SerializeField] private GameObject onBeatFlash;
         [Min(0.01f)]
@@ -212,6 +244,47 @@ namespace Game.Bonus
         [SerializeField] private Material burstMaterial;
         [Tooltip("Fireworks at the end (Firework_Big).")]
         [SerializeField] private GameObject winFireworks;
+
+        [Header("A swatted bee bursts like a balloon of paint (user, 2026-11-05)")]
+        [Tooltip("It holds still this long first, squashed by the fist and then swelling like a balloon (the hit-stop), seconds.")]
+        [Range(0f, 0.2f)]
+        [SerializeField] private float popSeconds = 0.07f;
+        [Tooltip("How big it swells just before it bursts (times its size).")]
+        [Range(1f, 2f)]
+        [SerializeField] private float popSwell = 1.35f;
+        [Tooltip("Fat paint globs it bursts into: they fall and splat on the floor.")]
+        [Range(0, 30)]
+        [SerializeField] private int globs = 10;
+        [Tooltip("Fast thin droplets thrown out with them, streaking.")]
+        [Range(0, 40)]
+        [SerializeField] private int droplets = 14;
+        [Tooltip("How much of the splash flies the way the punch went (0: all round, 1: all along it).")]
+        [Range(0f, 1f)]
+        [SerializeField] private float followPunch = 0.55f;
+        [Tooltip("The splash shape that flashes out where it burst, metres across at its biggest. 0: none.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float popSplashSize = 0.45f;
+        [Tooltip("A burst this close to the face (metres) may fleck the view with a drop or two of its paint...")]
+        [Min(0f)]
+        [SerializeField] private float fleckReach = 0.55f;
+        [Tooltip("...this often.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float fleckChance = 0.5f;
+        [Tooltip("Paint on the floor (from bursts and drips) stays this long, seconds.")]
+        [Min(1f)]
+        [SerializeField] private float floorSplatSeconds = 8f;
+        [Tooltip("Gold star sparks a swat on the beat throws out (an additive star material, e.g. Paint_Bees_Sparkle_Mat): " +
+                 "sharp and quick, so the splash still shows. Empty: the On Beat Flash effect instead.")]
+        [SerializeField] private Material onBeatSparkMaterial;
+        [Range(0, 30)]
+        [SerializeField] private int onBeatSparks = 12;
+        [Tooltip("Its candies come out this long after the splash (so the splash shows first), seconds.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float candiesAfter = 0.25f;
+        [Tooltip("The wet pop it bursts with, on top of the swat sound (one at random, pitched up a little).")]
+        [SerializeField] private AudioClip[] popSounds = System.Array.Empty<AudioClip>();
+        [Range(0f, 1f)]
+        [SerializeField] private float popVolume = 0.7f;
         [Min(0.1f)]
         [SerializeField] private float fireworkScale = 1f;
 
@@ -223,6 +296,8 @@ namespace Game.Bonus
         private static readonly Color SignColor = new(1f, 0.82f, 0.25f, 1f);
         private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
         private const float CandyReach = 15f;
+        // How much room a candy needs where it comes out (metres round its middle).
+        private const float CandyRoom = 0.09f;
         private const float BoingWait = 0.4f;
         private const float SignAhead = 2.2f;
         private const float SignOverHead = 0.45f;
@@ -276,8 +351,6 @@ namespace Game.Bonus
         private AudioSource music;
         private bool clockRunning;
         private Transform paintFloor;
-        private PaintBeesRoad roadMade;
-        private int lastHalfBeat = int.MinValue;
         private float nextHush;
         private readonly List<AudioSource> hushed = new();
 
@@ -287,13 +360,21 @@ namespace Game.Bonus
         private readonly Dictionary<PaintBee, float> boinged = new();
         // The bucket each hand was in last frame (a dip splashes as it goes in).
         private readonly Dictionary<PaintHands.Hand, PaintBucket> dippedIn = new();
-        private int shownCount = -1;
+        private int shownSeconds = -1;
         private Vector3 middle;
         private bool beesOut;
+        // The ring's middle, how long the player has been out of it, and whether they left it (the round ends).
+        private Vector3 ringMiddle;
+        private float outFor;
+        private bool quit;
         private int combo;
         private int total;
         private AudioSource voice;
         private ParticleSystem blobs;
+        // A swatted bee's burst: thin fast droplets, and the splash shape where it was.
+        private ParticleSystem streaks;
+        private ParticleSystem popSplash;
+        private ParticleSystem sparks;
         private RectTransform sign;
         private TMP_Text signText;
         private int fountains;
@@ -313,6 +394,9 @@ namespace Game.Bonus
             paintFloor = new GameObject("Paint Floor").transform;
             paintFloor.SetParent(transform, false);
             blobs = MakeBlobs();
+            streaks = MakeStreaks();
+            popSplash = MakePopSplash();
+            sparks = MakeSparks();
             MakeSign();
             if (stageSky != null) Instantiate(stageSky, transform.position, Quaternion.identity, transform);
             if (puffEffect != null) EffectPool.Warm(puffEffect, 3);
@@ -395,24 +479,18 @@ namespace Game.Bonus
             }
             float sinceBeat = Mathf.Repeat(SongTime - firstBeat, BeatSeconds);
             BeatPulse = SongTime >= firstBeat - 0.01f ? Mathf.Exp(-sinceBeat * 9f) : 0f;
-            // The road's lights set off on every half beat.
-            int half = Mathf.FloorToInt((SongTime - firstBeat) / (BeatSeconds * 0.5f));
-            if (roadMade != null && half != lastHalfBeat && SongTime >= firstBeat)
-            {
-                lastHalfBeat = half;
-                roadMade.HalfBeat(half % 2 == 0, BeatSeconds);
-            }
         }
 
-        // The song fades out and stops; the other music comes back.
-        private IEnumerator FadeSong()
+        // The song fades out (over Fade Seconds, or this many) and stops; the other music comes back.
+        private IEnumerator FadeSong(float seconds = -1f)
         {
             if (music != null)
             {
                 float from = music.volume;
-                for (float t = 0f; t < fadeSeconds && music != null; t += Time.deltaTime)
+                float length = seconds > 0f ? seconds : fadeSeconds;
+                for (float t = 0f; t < length && music != null; t += Time.deltaTime)
                 {
-                    music.volume = from * (1f - t / fadeSeconds);
+                    music.volume = from * (1f - t / length);
                     yield return null;
                 }
                 if (music != null) music.Stop();
@@ -502,14 +580,12 @@ namespace Game.Bonus
             Front = facing.sqrMagnitude > 0.001f ? facing.normalized : Vector3.forward;
             Looking = Front;
             middle = new Vector3(Head.position.x, floor.y, Head.position.z);
-            if (mark != null)
-            {
-                Puff(floor + Vector3.up * 0.3f, 1f);
-                Destroy(mark);
-            }
+            ringMiddle = floor;
+            // The ring stays (the player must stay in it); its arrow goes.
+            Puff(floor + Vector3.up * 0.3f, 1f);
+            if (arrow != null) arrow.gameObject.SetActive(false);
 
-            // The song starts; the buckets pop up round them, in a random order of colours; the hands can be painted.
-            StartSong();
+            // The buckets pop up round them, in a random order of colours, without a word; the hands can be painted.
             hands = gameObject.AddComponent<PaintHands>();
             hands.Setup(colours, burstMaterial, paintFloor, FloorSplat);
             var order = new List<int>();
@@ -528,29 +604,34 @@ namespace Game.Bonus
             }
             yield return new WaitForSeconds(riseSeconds);
 
-            // Dip a hand, then 3-2-1 on the song's beats, from the next bar.
-            Say("Dip your hands in the paint!");
-            for (float t = 0f; t < 6f && !AnyPainted(); t += Time.deltaTime) yield return null;
-            yield return new WaitForSeconds(1.2f);
+            // A hand dipped (the sign tells them only after Sign After seconds without one); the song starts Song Delay
+            // later; then 3-2-1 on its beats, from the next bar.
+            for (float t = 0f; !AnyPainted(); t += Time.deltaTime)
+            {
+                if (t >= signAfter && sign != null && !sign.gameObject.activeSelf) Say(dipText);
+                yield return null;
+            }
+            Say("");
+            yield return new WaitForSeconds(songDelay);
+            StartSong();
             int beat = BeatAtOrAfter(SongTime + 0.3f);
             beat += (4 - beat % 4) % 4;
-            // The road lights up, its lights marching in to the 3-2-1.
-            if (road != null)
-            {
-                roadMade = Instantiate(road, middle, Quaternion.LookRotation(Front), transform);
-                // Its lanes lead from the fires the bees fly out of.
-                FindFires();
-                if (fires.Count > 0) roadMade.LeadFrom(fires);
-                roadMade.Setup(this);
-            }
+            // The fires the bees fly out of (user 2026-11-05: they come from every side now, so no lit road).
+            FindFires();
             foreach (var n in new[] { "3", "2", "1" })
             {
-                while (SongTime < BeatTime(beat)) yield return null;
+                while (SongTime < BeatTime(beat) && !LeftRing()) yield return null;
+                if (quit) break;
                 Say(n);
                 Play(tickSound);
                 beat++;
             }
-            while (SongTime < BeatTime(beat)) yield return null;
+            while (!quit && SongTime < BeatTime(beat) && !LeftRing()) yield return null;
+            if (quit)
+            {
+                yield return StartCoroutine(EndEarly(mark));
+                yield break;
+            }
             Say("GO!");
             Play(goSound);
 
@@ -563,6 +644,13 @@ namespace Game.Bonus
             bool cleared = false;
             while (next < plan.Count || live.Count > 0)
             {
+                if (LeftRing())
+                {
+                    yield return StartCoroutine(EndEarly(mark));
+                    yield break;
+                }
+                // The helmet stays on while they come (split-off ones make the round longer).
+                if (!PlayerBuffs.CandyHelmet) PlayerBuffs.Give(Buff.CandyHelmet, 10f);
                 if (!cleared && SongTime > BeatTime(beat) + 0.4f) { Say(""); cleared = true; }
                 live.RemoveAll(b => b == null);
                 if (next < plan.Count && SongTime >= plan[next].at)
@@ -584,15 +672,14 @@ namespace Game.Bonus
                         }
                     }
                 }
-                ShowCount();
+                if (cleared) ShowTimer();
                 yield return null;
             }
             beesOut = false;
-            if (roadMade != null) roadMade.Stop();
 
             // The end: the song fades, fireworks, the perfect round's candies (no words), the helmet eats the rest.
             bool perfect = Stings == 0;
-            Say($"{Swatted} / {total}");
+            Say("");
             if (perfect)
             {
                 Play(perfectSound);
@@ -601,6 +688,39 @@ namespace Game.Bonus
             StartCoroutine(FadeSong());
             StartCoroutine(Fireworks());
             yield return new WaitForSeconds(1.5f);
+            yield return StartCoroutine(WrapUp(mark));
+        }
+
+        // Once the song is on: out of the ring (Leave Radius) for Leave Seconds = they left it.
+        private bool LeftRing()
+        {
+            if (quit) return true;
+            if (Head == null || !clockRunning) return false;
+            if (Flat(Head.position - ringMiddle).magnitude > leaveRadius) outFor += Time.deltaTime;
+            else outFor = 0f;
+            if (outFor < leaveSeconds) return false;
+            quit = true;
+            return true;
+        }
+
+        // They left the ring: the song ends, the bees fly off and are gone, the round is over (no fireworks, no perfect
+        // candies; the candies won so far still fly to the helmet).
+        private IEnumerator EndEarly(GameObject mark)
+        {
+            quit = true;
+            beesOut = false;
+            foreach (var b in live) if (b != null) b.FlyOff();
+            live.Clear();
+            Say("");
+            // A quick fade: the song ends.
+            StartCoroutine(FadeSong(Mathf.Min(fadeSeconds, 0.8f)));
+            yield return new WaitForSeconds(1f);
+            yield return StartCoroutine(WrapUp(mark));
+        }
+
+        // The end of either: the helmet eats what's left lying, the buckets sink, the ring goes, the hands are clean.
+        private IEnumerator WrapUp(GameObject mark)
+        {
             for (float waited = 0f; waited < candyWaitSeconds; waited += Time.deltaTime)
             {
                 if (fountains == 0 && CandyHelmet.Flying == 0 && CandyHelmet.LyingAround(middle, CandyReach) == 0) break;
@@ -608,6 +728,11 @@ namespace Game.Bonus
                 yield return null;
             }
             foreach (var b in buckets) if (b != null) b.Sink(0.5f);
+            if (mark != null)
+            {
+                Puff(ringMiddle + Vector3.up * 0.3f, 1f);
+                Destroy(mark);
+            }
             yield return new WaitForSeconds(0.6f);
             Say("");
             if (hands != null) Destroy(hands);
@@ -650,8 +775,19 @@ namespace Game.Bonus
             Vector3 from;
             if (fires.Count > 0)
             {
-                int pick = Random.Range(0, fires.Count);
-                if (pick == lastFire && fires.Count > 1) pick = (pick + 1 + Random.Range(0, fires.Count - 1)) % fires.Count;
+                // A fire in front of where the player looks (not the one used last, if there's another); none in front:
+                // the nearest to it.
+                int pick = -1;
+                float nearest = float.MaxValue;
+                var inFront = new List<int>();
+                for (int i = 0; i < fires.Count; i++)
+                {
+                    float off = Vector3.Angle(Looking, Flat(fires[i].position - Head.position));
+                    if (off <= frontArc) inFront.Add(i);
+                    if (off < nearest) { nearest = off; pick = i; }
+                }
+                if (inFront.Count > 1) inFront.Remove(lastFire);
+                if (inFront.Count > 0) pick = inFront[Random.Range(0, inFront.Count)];
                 lastFire = pick;
                 var fire = fires[pick];
                 from = fire.position + Vector3.up * (Random.Range(fireHeight.x, fireHeight.y) * Mathf.Abs(fire.lossyScale.y));
@@ -687,7 +823,6 @@ namespace Game.Bonus
         private void Update()
         {
             Tick();
-            if (roadMade != null) roadMade.Diving = live.Exists(b => b != null && b.Diving);
             if (hands == null) return;
             foreach (var hand in hands.Hands)
             {
@@ -740,20 +875,102 @@ namespace Game.Bonus
             if (onBeat)
             {
                 OnBeat++;
-                if (onBeatFlash != null) EffectPool.Play(onBeatFlash, at, onBeatFlashSize);
+                if (sparks != null) Sparks(at);
+                else if (onBeatFlash != null) EffectPool.Play(onBeatFlash, at, onBeatFlashSize);
             }
-            // The rainbow bee bursts into every colour.
-            if (b.Rainbow)
-            {
-                for (int k = 0; k < 6; k++) Blobs(at, Color.HSVToRGB(k / 6f, 0.75f, 1f), 7, 3f, false);
-            }
-            else Blobs(at, ColourOf(b.Colour), 18, 3f, false);
+            // The hit lands now (its sound, the EXP, fresh paint dripping off the hand)...
             PlayAt(Pick(swatSounds), at, 1f + Mathf.Min(combo, 15) * 0.03f + (onBeat ? 0.08f : 0f));
-            StartCoroutine(Candies(at, (b.Rainbow ? rainbowCandies : candiesPerBee) + (onBeat ? onBeatCandies : 0)));
-            PlayerLevel.AddExp(b.Rainbow ? rainbowExp : expPerBee);
+            PlayerLevel.AddExp((b.Rainbow ? rainbowExp : expPerBee) + (onBeat ? onBeatExp : 0));
+            hand.dippedAt = Time.time;
             live.Remove(b);
             boinged.Remove(b);
-            Destroy(b.gameObject);
+            // ...and it bursts a moment later, like a balloon of paint, the splash thrown the way the punch went.
+            var punch = hand.fist.HandVelocity;
+            var way = punch.sqrMagnitude > 0.04f ? punch.normalized : Head != null ? (at - Head.position).normalized : -Front;
+            int colour = b.Rainbow ? -1 : b.Colour;
+            int candiesOut = (b.Rainbow ? rainbowCandies : candiesPerBee) + (onBeat ? onBeatCandies : 0);
+            // A small one: half the candies.
+            if (b.Small) candiesOut = Mathf.Max(1, candiesOut / 2);
+            var bee = b;
+            bool split = !b.Small && splitInto > 0;
+            var hover = b.HoverOffset;
+            b.Pop(popSeconds, popSwell, () =>
+            {
+                var where = bee != null ? bee.transform.position : at;
+                Burst(where, colour, way, candiesOut);
+                if (split) SplitOff(colour, where, way, hover);
+            });
+        }
+
+        // A big one splits into Split Into small ones of its colour, flung sideways out of its splash; they come again
+        // on the beat, one after another, hovering either side of where it did.
+        private void SplitOff(int colour, Vector3 at, Vector3 way, Vector3 hover)
+        {
+            if (bee == null || Head == null || quit) return;
+            var right = Vector3.Cross(Vector3.up, Front).normalized;
+            for (int i = 0; i < splitInto; i++)
+            {
+                float side = splitInto == 1 ? 0f : Mathf.Lerp(-1f, 1f, i / (float)(splitInto - 1));
+                var from = at + right * (side * 0.06f);
+                var made = Instantiate(bee, from, Quaternion.LookRotation(Head.position - from), SpawnedStuff());
+                made.transform.localScale *= (colour < 0 ? rainbowSize : 1f) * splitSize;
+                made.MakeSmall();
+                ComeAgain(out float arrive, out float dive, out float hit);
+                var spot = new Vector3(Mathf.Clamp(hover.x + side * 0.22f, -0.6f, 0.6f), hover.y + 0.04f, hover.z);
+                made.Launch(this, colour, spot, arrive, dive, hit);
+                // Flung out of the splash (to its side, up, a little back), then it comes again (the second a beat later).
+                made.LaterBeats = i;
+                made.Bounce(right * (side * 1.5f) + Vector3.up * 1f - way * 0.4f);
+                live.Add(made);
+                total++;
+            }
+        }
+
+        // A swatted bee bursts: fat globs that fall and splat on the floor, fast droplets streaking out, a splash shape
+        // flashing out where it was, a wet pop; close to the face, a fleck or two of paint on the view.
+        private void Burst(Vector3 at, int colour, Vector3 way, int candiesOut)
+        {
+            bool rainbow = colour < 0;
+            System.Func<Color> tint = () => rainbow ? Color.HSVToRGB(Random.value, 0.8f, 1f) : ColourOf(colour);
+            if (blobs != null && burstMaterial != null)
+            {
+                var emit = new ParticleSystem.EmitParams { applyShapeToPosition = false };
+                for (int i = 0; i < globs; i++)
+                {
+                    var dir = Vector3.Slerp(Random.onUnitSphere, way, followPunch * Random.Range(0.5f, 1f)).normalized;
+                    emit.position = at + Random.insideUnitSphere * 0.04f;
+                    emit.velocity = dir * Random.Range(1.3f, 3.4f) + Vector3.up * 0.7f;
+                    emit.startSize = Random.Range(0.05f, 0.1f);
+                    emit.startColor = tint();
+                    blobs.Emit(emit, 1);
+                }
+            }
+            if (streaks != null)
+            {
+                var emit = new ParticleSystem.EmitParams { applyShapeToPosition = false };
+                for (int i = 0; i < droplets; i++)
+                {
+                    var dir = Vector3.Slerp(Random.onUnitSphere, way, followPunch).normalized;
+                    emit.position = at;
+                    emit.velocity = dir * Random.Range(2.8f, 6f);
+                    emit.startSize = Random.Range(0.016f, 0.032f);
+                    emit.startColor = tint();
+                    streaks.Emit(emit, 1);
+                }
+            }
+            if (popSplash != null && popSplashSize > 0f)
+            {
+                var emit = new ParticleSystem.EmitParams
+                {
+                    applyShapeToPosition = false, position = at, velocity = way * 0.3f, startSize = popSplashSize,
+                    rotation = Random.Range(0f, 360f), startColor = rainbow ? Color.white : ColourOf(colour),
+                };
+                popSplash.Emit(emit, 1);
+            }
+            PlayAt(Pick(popSounds), at, Random.Range(1.15f, 1.4f), popVolume);
+            StartCoroutine(CandiesLater(at + Vector3.down * 0.12f, candiesOut, candiesAfter));
+            if (Head != null && (Head.position - at).magnitude <= fleckReach && Random.value < fleckChance)
+                StartCoroutine(Splat(rainbow ? Color.white : ColourOf(colour), rainbow, true));
         }
 
         private void Boing(PaintBee b, PaintHands.Hand hand, Vector3 point)
@@ -793,12 +1010,13 @@ namespace Game.Bonus
         }
 
         // Paint blobs on the view: a few, in front of the eyes, that slide down and fade (the rainbow bee's: each its own colour).
-        private IEnumerator Splat(Color colour, bool rainbow)
+        private IEnumerator Splat(Color colour, bool rainbow, bool fleck = false)
         {
             if (splatMaterial == null || Head == null) yield break;
             var made = new List<(Transform blob, Vector3 at, float size, Color colour)>();
             var block = new MaterialPropertyBlock();
-            int count = Random.Range(3, 6);
+            int count = fleck ? Random.Range(1, 3) : Random.Range(3, 6);
+            float seconds = fleck ? splatSeconds * 0.6f : splatSeconds;
             for (int i = 0; i < count; i++)
             {
                 var blob = GameObject.CreatePrimitive(PrimitiveType.Quad);
@@ -806,15 +1024,15 @@ namespace Game.Bonus
                 blob.name = "Paint Splat";
                 blob.transform.SetParent(Head, false);
                 var at = new Vector3(Random.Range(-0.12f, 0.12f), Random.Range(-0.08f, 0.1f), 0.3f);
-                float size = Random.Range(0.06f, 0.14f) * (i == 0 ? 1.6f : 1f);
+                float size = fleck ? Random.Range(0.03f, 0.055f) : Random.Range(0.06f, 0.14f) * (i == 0 ? 1.6f : 1f);
                 blob.transform.localPosition = at;
                 blob.transform.localRotation = Quaternion.Euler(0f, 0f, Random.Range(0f, 360f));
                 blob.GetComponent<Renderer>().sharedMaterial = splatMaterial;
                 made.Add((blob.transform, at, size, rainbow ? Color.HSVToRGB((i / (float)count + Random.value * 0.1f) % 1f, 0.75f, 1f) : colour));
             }
-            for (float t = 0f; t < splatSeconds; t += Time.deltaTime)
+            for (float t = 0f; t < seconds; t += Time.deltaTime)
             {
-                float k = t / splatSeconds;
+                float k = t / seconds;
                 foreach (var (blob, at, size, tint) in made)
                 {
                     if (blob == null) continue;
@@ -843,8 +1061,16 @@ namespace Game.Bonus
                 {
                     var prefab = candies[Random.Range(0, candies.Length)];
                     if (prefab == null) continue;
+                    // A spot with nothing in it (two bees burst together, or a bonus candy, put candies inside each
+                    // other: they broke at once, and their smoke clouded the view).
                     var out_ = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f) * Vector3.forward;
-                    var candy = Instantiate(prefab, at + out_ * 0.12f, Random.rotation, SpawnedStuff());
+                    var spot = at + out_ * 0.12f;
+                    for (int tries = 0; tries < 6 && Physics.CheckSphere(spot, CandyRoom, ~0, QueryTriggerInteraction.Ignore); tries++)
+                    {
+                        out_ = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f) * Vector3.forward;
+                        spot = at + out_ * Random.Range(0.18f, 0.4f) + Vector3.up * Random.Range(-0.1f, 0.15f);
+                    }
+                    var candy = Instantiate(prefab, spot, Random.rotation, SpawnedStuff());
                     if (candy.TryGetComponent<Rigidbody>(out var body)) body.linearVelocity = out_ * 0.6f + Vector3.up * 1.6f;
                     yield return new WaitForSeconds(0.07f);
                 }
@@ -898,7 +1124,128 @@ namespace Game.Bonus
             size.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(0.7f, 0.8f), new Keyframe(1f, 0f)));
             go.GetComponent<ParticleSystemRenderer>().sharedMaterial = burstMaterial;
             var floorSplat = FloorSplat;
-            if (floorSplat != null) PaintSplats.Add(system, paintFloor, floorSplat, 0.7f);
+            if (floorSplat != null) PaintSplats.Add(system, paintFloor, floorSplat, 0.7f, new Vector2(0.07f, 0.16f), floorSplatSeconds);
+            return system;
+        }
+
+        // Candies a moment after the splash (counted as on their way from now, so the round waits for them).
+        private IEnumerator CandiesLater(Vector3 at, int amount, float wait)
+        {
+            if (amount <= 0) yield break;
+            fountains++;
+            try { if (wait > 0f) yield return new WaitForSeconds(wait); }
+            finally { fountains--; }
+            yield return Candies(at, amount);
+        }
+
+        // Gold star sparks off a swat on the beat.
+        private void Sparks(Vector3 at)
+        {
+            var emit = new ParticleSystem.EmitParams { applyShapeToPosition = false, position = at };
+            for (int i = 0; i < onBeatSparks; i++)
+            {
+                emit.velocity = Random.onUnitSphere * Random.Range(1.2f, 2.8f);
+                emit.startSize = Random.Range(0.07f, 0.14f);
+                emit.rotation = Random.Range(0f, 360f);
+                emit.startColor = Color.Lerp(new Color(1f, 0.85f, 0.3f), new Color(1f, 0.98f, 0.8f), Random.value);
+                sparks.Emit(emit, 1);
+            }
+        }
+
+        private ParticleSystem MakeSparks()
+        {
+            if (onBeatSparkMaterial == null) return null;
+            var go = new GameObject("Paint On Beat Sparks");
+            go.transform.SetParent(transform, false);
+            var system = go.AddComponent<ParticleSystem>();
+            system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main = system.main;
+            main.loop = false;
+            main.playOnAwake = false;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.3f, 0.5f);
+            main.gravityModifier = 0.2f;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.maxParticles = 120;
+            var emission = system.emission;
+            emission.enabled = false;
+            var shape = system.shape;
+            shape.enabled = false;
+            var drag = system.limitVelocityOverLifetime;
+            drag.enabled = true;
+            drag.drag = 3f;
+            var size = system.sizeOverLifetime;
+            size.enabled = true;
+            size.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0f, 0.6f), new Keyframe(0.2f, 1f), new Keyframe(1f, 0f)));
+            var renderer = go.GetComponent<ParticleSystemRenderer>();
+            renderer.sharedMaterial = onBeatSparkMaterial;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            return system;
+        }
+
+        // Thin fast droplets thrown out of a burst, stretched along the way they fly (paint flying, not dots).
+        private ParticleSystem MakeStreaks()
+        {
+            var go = new GameObject("Paint Streaks");
+            go.transform.SetParent(transform, false);
+            var system = go.AddComponent<ParticleSystem>();
+            system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main = system.main;
+            main.loop = false;
+            main.playOnAwake = false;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.25f, 0.45f);
+            main.gravityModifier = 1.6f;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.maxParticles = 240;
+            var emission = system.emission;
+            emission.enabled = false;
+            var shape = system.shape;
+            shape.enabled = false;
+            var size = system.sizeOverLifetime;
+            size.enabled = true;
+            size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 1f, 1f, 0.3f));
+            var renderer = go.GetComponent<ParticleSystemRenderer>();
+            renderer.renderMode = ParticleSystemRenderMode.Stretch;
+            renderer.velocityScale = 0.035f;
+            renderer.lengthScale = 1.2f;
+            renderer.sharedMaterial = burstMaterial;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            return system;
+        }
+
+        // The splash shape that flashes out where a bee burst: out fast, then gone.
+        private ParticleSystem MakePopSplash()
+        {
+            var material = FloorSplat;
+            if (material == null) return null;
+            var go = new GameObject("Paint Pop Splash");
+            go.transform.SetParent(transform, false);
+            var system = go.AddComponent<ParticleSystem>();
+            system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main = system.main;
+            main.loop = false;
+            main.playOnAwake = false;
+            main.startLifetime = 0.22f;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.maxParticles = 24;
+            var emission = system.emission;
+            emission.enabled = false;
+            var shape = system.shape;
+            shape.enabled = false;
+            var size = system.sizeOverLifetime;
+            size.enabled = true;
+            size.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0f, 0.35f), new Keyframe(0.35f, 0.95f), new Keyframe(1f, 1.1f)));
+            var fade = system.colorOverLifetime;
+            fade.enabled = true;
+            var gradient = new Gradient();
+            gradient.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0.9f, 0.45f), new GradientAlphaKey(0f, 1f) });
+            fade.color = gradient;
+            var renderer = go.GetComponent<ParticleSystemRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
             return system;
         }
 
@@ -922,7 +1269,8 @@ namespace Game.Bonus
         {
             sign = WorldUI.CreatePanel("Paint Bees Sign", 520f, 120f, signScale, new Color(0.08f, 0.05f, 0.12f, 0.7f));
             var face = font != null ? font : TMP_Settings.defaultFontAsset;
-            signText = WorldUI.CreateText("Text", sign, "", 64f, FontStyles.Bold, TextAlignmentOptions.Center, SignColor, face);
+            // A heavy, rounded font already (Socake): no faux bold on top.
+            signText = WorldUI.CreateText("Text", sign, "", 64f, FontStyles.Normal, TextAlignmentOptions.Center, SignColor, face);
             WorldUI.Stretch(signText.rectTransform);
             signText.textWrappingMode = TextWrappingModes.NoWrap;
             signText.enableAutoSizing = true;
@@ -939,12 +1287,15 @@ namespace Game.Bonus
             sign.gameObject.SetActive(!string.IsNullOrEmpty(text));
         }
 
-        // How many are swatted, once "GO!" is gone (only when it changes).
-        private void ShowCount()
+        // Once "GO!" is gone: the time left until the last bee (user 2026-11-05: a countdown, not how many were swatted),
+        // as m:ss, changed only when the second changes.
+        private void ShowTimer()
         {
-            if (sign == null || (sign.gameObject.activeSelf && shownCount < 0) || Swatted == shownCount) return;
-            shownCount = Swatted;
-            Say($"{Swatted} / {total}");
+            if (sign == null) return;
+            int left = Mathf.Max(0, Mathf.CeilToInt(lastBeeAt - SongTime));
+            if (left == shownSeconds) return;
+            shownSeconds = left;
+            Say($"{left / 60}:{left % 60:00}");
         }
 
         private void LateUpdate()
@@ -961,7 +1312,7 @@ namespace Game.Bonus
             if (clip != null) voice.PlayOneShot(clip, volume);
         }
 
-        private void PlayAt(AudioClip clip, Vector3 at, float pitch)
+        private void PlayAt(AudioClip clip, Vector3 at, float pitch, float share = 1f)
         {
             if (clip == null) return;
             var go = new GameObject("Paint Bees Sound");
@@ -970,7 +1321,7 @@ namespace Game.Bonus
             source.spatialBlend = 1f;
             source.minDistance = 1.5f;
             source.clip = clip;
-            source.volume = volume;
+            source.volume = volume * share;
             source.pitch = pitch;
             source.Play();
             Destroy(go, clip.length / Mathf.Max(0.1f, pitch) + 0.1f);

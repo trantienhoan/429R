@@ -33,6 +33,12 @@ namespace Game.VFX
         [Tooltip("Seconds until it has (almost) settled.")]
         [Range(0.2f, 3f)]
         [SerializeField] private float settleTime = 0.9f;
+        [Tooltip("A hurting hit that takes more than 1 health jiggles this much more per extra point (0.6: a 2-damage hit " +
+                 "jiggles 1.6 times as hard), up to Most Hurt Strength. 0: every hurting hit the same.")]
+        [Range(0f, 2f)]
+        [SerializeField] private float perExtraDamage;
+        [Min(1f)]
+        [SerializeField] private float mostHurtStrength = 2.5f;
         [Tooltip("A soft jiggle (strength below 1, e.g. a touch too weak to hurt) is skipped while it's still jiggling " +
                  "and for this many seconds after the last one, so a hand resting against it can't keep it wobbling.")]
         [Min(0f)]
@@ -131,7 +137,11 @@ namespace Game.VFX
             if (health == null) return;
 
             float now = health.Value;
-            if (now < lastHealth - 0.01f) Hit(hurtStrength);
+            if (now < lastHealth - 0.01f)
+            {
+                float extra = Mathf.Max(0f, lastHealth - now - 1f);
+                Hit(Mathf.Min(hurtStrength * (1f + perExtraDamage * extra), Mathf.Max(hurtStrength, mostHurtStrength)));
+            }
             lastHealth = now;
         }
 

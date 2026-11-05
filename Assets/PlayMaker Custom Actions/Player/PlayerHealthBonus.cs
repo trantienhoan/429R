@@ -21,7 +21,7 @@ namespace HutongGames.PlayMaker.Actions
         public FsmFloat candyMax;
 
         [HasFloatSlider(0f, 1f)]
-        [Tooltip("Share of a candy's heal that counts above the starting health, e.g. 0.7 = 70% (rounded up).")]
+        [Tooltip("Share of a candy's heal that counts above the starting health, e.g. 0.5 = 50% (user, 2026-11-05: candies above max health heal half) (rounded up).")]
         public FsmFloat aboveShare;
 
         [Tooltip("Raise the starting health (the health cap) by this much, e.g. 30. It's saved, and lasts until the save is reset or lost.")]
@@ -39,7 +39,7 @@ namespace HutongGames.PlayMaker.Actions
             extraCandies = 6;
             candyMin = 1f;
             candyMax = 7f;
-            aboveShare = 0.7f;
+            aboveShare = 0.5f;
             raiseCap = 0f;
             healTheRaise = true;
         }

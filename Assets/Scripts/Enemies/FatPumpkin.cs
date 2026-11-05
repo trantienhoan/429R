@@ -78,9 +78,9 @@ namespace Game.Enemies
         [Tooltip("Seconds a candy takes to fly into its mouth, and how long it stands still for each gulp.")]
         [Min(0.05f)]
         [SerializeField] private float eatSeconds = 0.25f;
-        [Tooltip("It gets this much bigger for every candy (0.03 = 3%)...")]
+        [Tooltip("It gets this much bigger for every candy (0.02 = 2%; user, 2026-11-05: a little too big at the start)...")]
         [Min(0f)]
-        [SerializeField] private float growPerCandy = 0.03f;
+        [SerializeField] private float growPerCandy = 0.02f;
         [Tooltip("...up to this many times its first size.")]
         [Min(1f)]
         [SerializeField] private float mostGrowth = 1.6f;

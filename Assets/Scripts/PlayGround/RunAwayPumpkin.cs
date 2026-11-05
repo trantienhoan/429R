@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Game.Bonus;
 using Game.Combat;
 using Game.Enemies;
 using HutongGames.PlayMaker.Actions;
@@ -37,6 +38,12 @@ namespace Game.PlayGround
     /// Hidden, and never while they can see it.
     /// Out of breath (Tired) it shows Tired Stars over its top (the mini bosses' stun stars), until it has rested enough
     /// to run.
+    /// Hurt (user, 2026-11-05: "more squishy", "something visually show that they are hurt"): every hit that takes health
+    /// flashes it white then red, bursts orange pulp and pale seeds off it (they splat on the floor), cuts its laugh short
+    /// with a yelp (Ouch Sounds), and a running one stumbles (no hop for Stumble Seconds); the more it's hurt, the more
+    /// bruised its body looks. Tired, it takes Tired Damage Times the damage: the reward for catching it. Broken, it
+    /// bursts into pulp and Extra Candies more (Caught Candies Times over if it was tired: caught after a chase); its
+    /// EXP is its Enemy Hit Damage's.
     /// Tools > 429 Game > Items > Make Stage Pumpkins Run Away adds it with each pumpkin's stamina; Tools > 429 Game >
     /// Items > Add Tired Stars To Runner Pumpkins puts the Tired Stars on every runner (the Chaos ones too).
     /// </summary>
@@ -111,9 +118,45 @@ namespace Game.PlayGround
         [Tooltip("Divides the hit power, like an enemy's toughness.")]
         [Min(0.1f)]
         [SerializeField] private float toughness = 1f;
-        [Tooltip("Stamina lost per point of damage a hit does. A punch does about 2-3, so 6 makes it about 12-18 stamina.")]
+        [Tooltip("Stamina lost per point of damage a hit does (a punch does 1, a hard one 2).")]
         [Min(0f)]
         [SerializeField] private float staminaPerDamage = 6f;
+
+        [Header("Hurt (user, 2026-11-05)")]
+        [Tooltip("While it's tired (stars up), hits do this many times the damage: the reward for catching it.")]
+        [Min(1f)]
+        [SerializeField] private float tiredDamageTimes = 2f;
+        [Tooltip("A hit that hurts it while it runs makes it stumble: no hop for this long, seconds.")]
+        [Min(0f)]
+        [SerializeField] private float stumbleSeconds = 0.4f;
+        [Tooltip("Every hit that hurts it flashes it white, then red, for this long (seconds)...")]
+        [Min(0f)]
+        [SerializeField] private float flashSeconds = 0.2f;
+        [Tooltip("...and the more it's hurt, the more bruised its body looks: this tint with no health left.")]
+        [SerializeField] private Color bruised = new(0.6f, 0.42f, 0.38f, 1f);
+        [Tooltip("Pumpkin guts flying off at a hit (orange pulp and pale seeds, splatting on the floor): a round drop " +
+                 "material (e.g. Paint_Drop_Mat) and the floor splat's (e.g. Paint_Floor_Splat_Mat). Empty: none.")]
+        [SerializeField] private Material pulpMaterial;
+        [SerializeField] private Material pulpSplatMaterial;
+        [Range(0, 30)]
+        [SerializeField] private int pulpPerHit = 10;
+        [Range(0, 60)]
+        [SerializeField] private int pulpWhenBroken = 26;
+        [SerializeField] private Color pulpColour = new(1f, 0.5f, 0.08f, 1f);
+        [SerializeField] private Color seedColour = new(0.96f, 0.9f, 0.7f, 1f);
+        [Tooltip("A yelp at each hit that hurts it (one at random; its laugh stops).")]
+        [SerializeField] private AudioClip[] ouchSounds = Array.Empty<AudioClip>();
+        [Range(0f, 1f)]
+        [SerializeField] private float ouchVolume = 0.8f;
+
+        [Header("Reward (user, 2026-11-05)")]
+        [Tooltip("What makes one more candy (Random_Breakable_Candy), for Extra Candies on top of its drop's own two.")]
+        [SerializeField] private GameObject extraCandy;
+        [Min(0)]
+        [SerializeField] private int extraCandies;
+        [Tooltip("Broken while it's tired (caught after a chase): all its candies come this many times over.")]
+        [Min(1)]
+        [SerializeField] private int caughtCandiesTimes = 2;
 
         [Header("Tired")]
         [Tooltip("Circle over its top while it's out of breath (its stamina ran out), until it has rested enough to run " +
@@ -195,6 +238,22 @@ namespace Game.PlayGround
         private bool easing;
         private float shownYaw;
         private float lastHealth = float.MaxValue;
+        // Hurt: its health at the start (for the bruising), the hit flash, the Enemy Hit Damage it takes damage through
+        // (and its own Damage Taken), its body (bruised) and all its meshes (flashed) with their own colours.
+        private float startHealth = -1f;
+        private float flashStarted = -10f;
+        private float shownBruise = -1f;
+        private EnemyHitDamage hitDamage;
+        private float ownDamageTaken = 1f;
+        private Renderer[] bodyParts = Array.Empty<Renderer>();
+        private Color[] ownColours = Array.Empty<Color>();
+        private MaterialPropertyBlock look;
+        private float drainedAt = -10f;
+        private ParticleSystem pulp;
+        private Transform pulpFloor;
+        private const float SplatSeconds = 6f;
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private const float CandyRoom = 0.09f;
         // Running: the way it faces as it spins, and how fast (degrees per second, below 0 the other way round).
         private float spinYaw;
         private float spin;
@@ -247,6 +306,20 @@ namespace Game.PlayGround
                 if (part is MeshRenderer || part is SkinnedMeshRenderer) parts.Add(part);
             }
             ownRenderers = parts.ToArray();
+            var body_ = new List<Renderer>();
+            foreach (var part in ownRenderers)
+            {
+                if (part.gameObject.name.StartsWith("pumpkin", StringComparison.OrdinalIgnoreCase)) body_.Add(part);
+            }
+            bodyParts = body_.ToArray();
+            ownColours = new Color[ownRenderers.Length];
+            for (int i = 0; i < ownRenderers.Length; i++)
+            {
+                var material = ownRenderers[i].sharedMaterial;
+                ownColours[i] = material != null && material.HasProperty(BaseColorId) ? material.GetColor(BaseColorId) : Color.white;
+            }
+            hitDamage = GetComponent<EnemyHitDamage>();
+            if (hitDamage != null) ownDamageTaken = hitDamage.damageTaken;
             path = new NavMeshPath();
             staminaLeft = stamina;
             foreach (var fsm in GetComponents<PlayMakerFSM>())
@@ -265,6 +338,12 @@ namespace Game.PlayGround
 
         private void OnDisable() => KeepUpright(false);
 
+        // Its guts on the floor stay a while after it's gone.
+        private void OnDestroy()
+        {
+            if (pulp != null) Destroy(pulp.gameObject, SplatSeconds + 1.5f);
+        }
+
         // Its Health FSM's health (looked up each time: the FSM may only be switched on after this starts).
         private float Health()
         {
@@ -278,9 +357,13 @@ namespace Game.PlayGround
             // Before its FSM's first laugh (straight after it grows in).
             TakeOverLaugh();
             float healthNow = Health();
+            if (startHealth < 0f && healthNow < float.MaxValue) startHealth = healthNow;
             if (healthNow <= 0f)
             {
-                // Broken: its FSM plays the crack and the drop.
+                // Broken: its FSM plays the crack and the drop; it bursts into guts and its extra candies.
+                bool caught = mood == Mood.Tired;
+                Hurt(lastHealth != float.MaxValue ? lastHealth - healthNow : 1f, true);
+                Burst(caught);
                 mood = Mood.Done;
                 hasTarget = false;
                 KeepUpright(false);
@@ -288,9 +371,16 @@ namespace Game.PlayGround
                 ShowTired(false);
                 return;
             }
-            // Hurt (its Damage FSM took health): it looks at the player again. The first reading is only where it starts.
-            if (lastHealth != float.MaxValue && healthNow < lastHealth - 0.01f) Reveal();
+            // Hurt: it looks at the player again, and shows it hurts. The first reading is only where it starts.
+            if (lastHealth != float.MaxValue && healthNow < lastHealth - 0.01f)
+            {
+                Reveal();
+                Hurt(lastHealth - healthNow, false);
+            }
             lastHealth = healthNow;
+            // Tired: it takes more damage (caught).
+            if (hitDamage != null) hitDamage.damageTaken = ownDamageTaken * (mood == Mood.Tired ? tiredDamageTimes : 1f);
+            ShowHurt(healthNow);
 
             if (grab != null && grab.isSelected)
             {
@@ -623,9 +713,142 @@ namespace Game.PlayGround
             if (!byPlayer || hit.Damage <= 0f) return;
             nextHurt = Time.time + HurtCooldown;
             LoseStamina(hit.Damage * staminaPerDamage);
+            drainedAt = Time.time;
             // Hit: it looks at the player again.
             Reveal();
         }
+
+        // ------------------------------------------------------------------ hurt
+
+        // A hit took health: it flashes, its guts fly, it yelps, a running one stumbles and loses breath (unless the hit
+        // already took its breath: a thrown thing, see On Collision Enter).
+        private void Hurt(float damage, bool broken)
+        {
+            flashStarted = Time.time;
+            var head = Camera.main != null ? Camera.main.transform : null;
+            var middle = Middle();
+            var toPlayer = head != null ? Flat(head.position - middle) : transform.forward;
+            var at = middle + (toPlayer.sqrMagnitude > 0.0001f ? toPlayer.normalized * Radius() * 0.8f : Vector3.zero);
+            Pulp(broken ? pulpWhenBroken : pulpPerHit, broken ? middle : at, -toPlayer);
+            if (ouchSounds.Length > 0)
+            {
+                var clip = ouchSounds[Random.Range(0, ouchSounds.Length)];
+                if (clip != null)
+                {
+                    if (voice != null)
+                    {
+                        voice.Stop();
+                        laughingUntil = 0f;
+                        voice.PlayOneShot(clip, ouchVolume);
+                    }
+                    else AudioSource.PlayClipAtPoint(clip, middle, ouchVolume);
+                }
+            }
+            if (broken) return;
+            if (mood == Mood.Fleeing) nextHop = Mathf.Max(nextHop, Time.time + stumbleSeconds);
+            if (Time.time - drainedAt > 0.2f) LoseStamina(damage * staminaPerDamage);
+        }
+
+        // The flash after a hit (white, then red, back to its own colour), and its body bruised by how hurt it is.
+        private void ShowHurt(float healthNow)
+        {
+            if (ownRenderers.Length == 0) return;
+            float hurt = startHealth > 0f && healthNow < float.MaxValue ? Mathf.Clamp01(1f - healthNow / startHealth) : 0f;
+            float k = flashSeconds > 0f ? (Time.time - flashStarted) / flashSeconds : 1f;
+            bool flashing = k < 1f;
+            if (!flashing && Mathf.Abs(hurt - shownBruise) < 0.001f) return;
+            shownBruise = flashing ? -1f : hurt;
+            look ??= new MaterialPropertyBlock();
+            var flash = k < 0.35f ? new Color(3f, 3f, 3f, 1f) : Color.Lerp(new Color(2.4f, 0.55f, 0.45f, 1f), Color.white, (k - 0.35f) / 0.65f);
+            for (int i = 0; i < ownRenderers.Length; i++)
+            {
+                var part = ownRenderers[i];
+                if (part == null) continue;
+                var colour = ownColours[i];
+                if (Array.IndexOf(bodyParts, part) >= 0) colour *= Color.Lerp(Color.white, bruised, hurt);
+                if (flashing) colour *= flash;
+                part.GetPropertyBlock(look);
+                look.SetColor(BaseColorId, colour);
+                part.SetPropertyBlock(look);
+            }
+        }
+
+        // Orange pulp and pale seeds off it, flying away from the player and splatting on the floor.
+        private void Pulp(int count, Vector3 at, Vector3 away)
+        {
+            if (count <= 0 || pulpMaterial == null) return;
+            if (pulp == null) MakePulp();
+            pulpFloor.position = new Vector3(at.x, Floor(), at.z);
+            var emit = new ParticleSystem.EmitParams { applyShapeToPosition = false };
+            var out_ = away.sqrMagnitude > 0.0001f ? away.normalized : Vector3.zero;
+            for (int i = 0; i < count; i++)
+            {
+                bool seed = Random.value < 0.3f;
+                var dir = Vector3.Slerp(Random.onUnitSphere, (out_ + Vector3.up * 0.6f).normalized, 0.45f).normalized;
+                emit.position = at + Random.insideUnitSphere * 0.03f;
+                emit.velocity = dir * Random.Range(0.8f, 2.4f) + Vector3.up * 0.6f;
+                emit.startSize = seed ? Random.Range(0.014f, 0.024f) : Random.Range(0.03f, 0.07f);
+                emit.startColor = seed ? seedColour : Color.Lerp(pulpColour, pulpColour * 0.8f, Random.value);
+                pulp.Emit(emit, 1);
+            }
+        }
+
+        private void MakePulp()
+        {
+            // Not under the pumpkin: it spins and goes; its guts don't.
+            var go = new GameObject(name + " Pulp");
+            pulp = go.AddComponent<ParticleSystem>();
+            pulp.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main = pulp.main;
+            main.loop = false;
+            main.playOnAwake = false;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.9f, 1.4f);
+            main.gravityModifier = 1.3f;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.maxParticles = 150;
+            var emission = pulp.emission;
+            emission.enabled = false;
+            var shape = pulp.shape;
+            shape.enabled = false;
+            var size = pulp.sizeOverLifetime;
+            size.enabled = true;
+            size.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(0.8f, 0.85f), new Keyframe(1f, 0f)));
+            var renderer = go.GetComponent<ParticleSystemRenderer>();
+            renderer.sharedMaterial = pulpMaterial;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            pulpFloor = new GameObject("Floor").transform;
+            pulpFloor.SetParent(go.transform, false);
+            pulpFloor.position = new Vector3(transform.position.x, Floor(), transform.position.z);
+            if (pulpSplatMaterial != null) PaintSplats.Add(pulp, pulpFloor, pulpSplatMaterial, 0.6f, new Vector2(0.05f, 0.12f), SplatSeconds);
+        }
+
+        // Broken: a big burst of guts, and its extra candies (twice over and more if it was caught tired).
+        private void Burst(bool caught)
+        {
+            if (extraCandy == null) return;
+            // Its drop brings two of its own: caught, those come again as well.
+            int count = extraCandies + (caught ? (2 + extraCandies) * (caughtCandiesTimes - 1) : 0);
+            var middle = Middle();
+            var parent = transform.parent;
+            for (int i = 0; i < count; i++)
+            {
+                // Round it, a spot with nothing in it (candies started inside each other break, and smoke).
+                Vector3 spot = middle;
+                for (int tries = 0; tries < 8; tries++)
+                {
+                    var way = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f) * Vector3.forward;
+                    spot = middle + way * Random.Range(0.3f, 0.6f) + Vector3.up * Random.Range(0.05f, 0.3f);
+                    if (!Physics.CheckSphere(spot, CandyRoom, ~0, QueryTriggerInteraction.Ignore)) break;
+                }
+                Instantiate(extraCandy, spot, Quaternion.identity, parent);
+            }
+        }
+
+        // Its middle and size (its first collider), and the floor under it.
+        private Vector3 Middle() => ownColliders.Length > 0 && ownColliders[0] != null ? ownColliders[0].bounds.center : transform.position + Vector3.up * 0.25f;
+        private float Radius() => ownColliders.Length > 0 && ownColliders[0] != null ? Mathf.Max(ownColliders[0].bounds.extents.x, ownColliders[0].bounds.extents.z) : 0.25f;
+        private float Floor() => ownColliders.Length > 0 && ownColliders[0] != null ? ownColliders[0].bounds.min.y : transform.position.y;
 
         // Hurt: out of breath sooner. At 0 it's tired.
         // Out of breath: stunned from now (the Tired Seconds count from the moment it gets tired, not each frame).

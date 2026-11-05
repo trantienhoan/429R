@@ -39,6 +39,36 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2961248440311886393, guid: 21f57a545ee5c4d4c829a11a32e07189,
+        type: 3}
+      propertyPath: InitialModule.startSizeY.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2961248440311886393, guid: 21f57a545ee5c4d4c829a11a32e07189,
+        type: 3}
+      propertyPath: InitialModule.startSizeZ.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4832511858597210402, guid: 21f57a545ee5c4d4c829a11a32e07189,
+        type: 3}
+      propertyPath: InitialModule.startSizeY.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4832511858597210402, guid: 21f57a545ee5c4d4c829a11a32e07189,
+        type: 3}
+      propertyPath: InitialModule.startSizeZ.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4832511858597210402, guid: 21f57a545ee5c4d4c829a11a32e07189,
+        type: 3}
+      propertyPath: InitialModule.startRotationX.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4832511858597210402, guid: 21f57a545ee5c4d4c829a11a32e07189,
+        type: 3}
+      propertyPath: InitialModule.startRotationY.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 7530567627609544314, guid: 21f57a545ee5c4d4c829a11a32e07189,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -106,7 +136,46 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1796120878902897015}
+    - targetCorrespondingSourceObject: {fileID: 5237860848517352963, guid: 21f57a545ee5c4d4c829a11a32e07189,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1658146006048789965}
   m_SourcePrefab: {fileID: 100100000, guid: 21f57a545ee5c4d4c829a11a32e07189, type: 3}
+--- !u!1 &26803201213675604 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5237860848517352963, guid: 21f57a545ee5c4d4c829a11a32e07189,
+    type: 3}
+  m_PrefabInstance: {fileID: 5255603931578545751}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1658146006048789965
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 26803201213675604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
 --- !u!4 &2336898397268320301 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7530567627609544314, guid: 21f57a545ee5c4d4c829a11a32e07189,
@@ -131,11 +200,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae61cf9da2c6e6047bbb8bf544057ded, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Bonus.BonusRound
+  stageSky: {fileID: 0}
   growSeconds: 1.2
   launchHeight: 1.2
   launchMargin: 1
   giantPushReach: 2
   giantPush: {x: 0.7, y: 2.5}
+  popPushReach: 1.5
+  popPush: {x: 0.3, y: 1.5}
   giant: {fileID: 7751877861004765832, guid: 11e48e2876d24c4438d02f7350b444db, type: 3}
   smaller: {fileID: 7943707614584160551, guid: d2351c656a2a8f04888d0146c0df7b1e, type: 3}
   startPumpkin: {fileID: 4871850987860103417, guid: 477e502e5e0f1ad4d84839fd93efc08d,
@@ -145,6 +217,8 @@ MonoBehaviour:
   shrinkEach: 0.1
   giantHealth: 30
   tougherPerPumpkin: 0.2
+  giantToughness: 1
+  toughnessPerPumpkin: 0.25
   giantJiggle: 1.6
   giantExtraJiggle: 1.5
   stifferPerPumpkin: 0.15
@@ -172,7 +246,7 @@ MonoBehaviour:
   tickVolume: 0.6
   helmetSeconds: 60
   helmetSound: {fileID: 8300000, guid: 580b8b5019ed5124bb152631a92150a3, type: 3}
-  font: {fileID: 11400000, guid: d7a5e2d89139b2940a46b4a7c3289c9e, type: 2}
+  font: {fileID: 11400000, guid: cb4516ac98eb5854ea4d7a8f558eb4da, type: 2}
   signAbove: 0.9
   signLowest: 2.6
   signScale: 0.007

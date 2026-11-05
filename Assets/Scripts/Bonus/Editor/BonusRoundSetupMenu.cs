@@ -78,7 +78,7 @@ namespace Game.EditorTools
         private const string HelmetSoundPath = "Assets/Audio/Kenney Audio/kenney_digital-audio/Audio/powerUp2.ogg";
         private const string CandyPath = "Assets/Prefabs/Items/Breakable/Candy_{0}.prefab";
         private const string TickPath = "Assets/Audio/Kenney Audio/kenney_interface-sounds/Audio/tick_002.ogg";
-        private const string FontPath = "Assets/Fonts/roboto/Roboto-Bold SDF.asset";
+        private const string FontPath = "Assets/Fonts/socake/Socake SDF.asset";   // user 2026-11-05: Socake everywhere
         private const string PuffPath = "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab";
 
         [MenuItem("Tools/429 Game/Bonus/Set Up Nesting Pumpkin Bonus")]
