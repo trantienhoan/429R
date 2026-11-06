@@ -79,7 +79,7 @@ MonoBehaviour:
           tooltip: 
           showInInspector: 0
           networkSync: 0
-          value: {fileID: 1446287800235364800, guid: be68572c6063e3b4786999549ba2f982,
+          value: {fileID: 825044878368177420, guid: ab1253a5665b2714095e2f3cddf36de9,
             type: 3}
         - useVariable: 1
           name: CurrentlySpawnedStuffs
@@ -19694,6 +19694,16 @@ PrefabInstance:
       propertyPath: m_CastShadows
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6791355458143478680, guid: cf3f3f379d46ae844aedb99fa2b7073c,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: f0bdc58639686464bbd20a70dbd59ae8, type: 2}
+    - target: {fileID: 6791355458143478680, guid: cf3f3f379d46ae844aedb99fa2b7073c,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[1]'
+      value: 
+      objectReference: {fileID: 2100000, guid: f2ef742e16ad3f645af1b07b6e254841, type: 2}
     - target: {fileID: 6796040769174555279, guid: cf3f3f379d46ae844aedb99fa2b7073c,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -20737,6 +20747,8 @@ MonoBehaviour:
   tilt: 8
   wobblesPerSecond: 5
   settleTime: 0.7
+  perExtraDamage: 0
+  mostHurtStrength: 2.5
   softHitPause: 0.75
   around: {fileID: 0}
   healthFsm: Health

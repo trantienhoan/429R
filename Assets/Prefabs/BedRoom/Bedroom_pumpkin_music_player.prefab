@@ -11012,7 +11012,7 @@ MonoBehaviour:
         tooltip: 
         showInInspector: 1
         networkSync: 0
-        value: 5
+        value: 25
       intVariables: []
       boolVariables: []
       stringVariables: []
@@ -12163,7 +12163,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.EnemyHitDamage
   settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
-  toughness: 5
+  toughness: 10
   hitCooldown: 0.3
   everyHitCounts: 0
   knockBack: 0
@@ -12180,10 +12180,10 @@ MonoBehaviour:
   healthVariable: health
   hitEvent: Damage
   weakHitEvent: ShakeSmall
-  oldDamageFsm: 
+  oldDamageFsm: Damage
   furniture: 1
-  bumpShare: 1
-  wieldedShare: 1
+  bumpShare: 0.15
+  wieldedShare: 0.15
   settleSeconds: 0
 --- !u!114 &2295823363254428520
 MonoBehaviour:

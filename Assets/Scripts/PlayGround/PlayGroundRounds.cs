@@ -103,6 +103,12 @@ namespace Game.PlayGround
         public static event Action<PlayGroundRounds, int> WaveStarted;
         /// <summary>The round's pumpkin was caught and its wave ended.</summary>
         public static event Action<PlayGroundRounds, int> RoundWon;
+
+        /// <summary>
+        /// Whether the round just won had its whole wave beaten first: every bug and boss sent and none left alive when the
+        /// pumpkin was caught (read in Round Won; Special Stage 3 is earned this way on the 2nd pumpkin).
+        /// </summary>
+        public bool LastWaveCleared { get; private set; }
         /// <summary>The round's seed was taken from its chest (round index from 0): the PlayGround moves on.</summary>
         public static event Action<PlayGroundRounds, int> SeedTaken;
 
@@ -203,6 +209,7 @@ namespace Game.PlayGround
             if (pumpkins.Count > 0) return;
 
             int round = cauldron.WaitingForNextRound ? cauldron.RoundIndex : waveRound;
+            LastWaveCleared = waveRound >= 0 && spawning == null && EnemyWave.Alive(this) == 0;
             // The EnemyManager ends; the Fairy Shield sweeps up what's left (or, without it, the wave's bugs die).
             bool swept = cleanWithFairyShield && FireFairyShield();
             EndWave(!swept);

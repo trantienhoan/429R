@@ -55,14 +55,13 @@ namespace Game.Bonus
         [Tooltip("...for this long, in seconds.")]
         [Min(0f)]
         [SerializeField] private float standSeconds = 0.4f;
-        [Tooltip("With the buckets up, no hand dipped for this many seconds: the sign shows Dip Text (user, 2026-11-05: " +
-                 "nothing is said before that).")]
-        [Min(0f)]
-        [SerializeField] private float signAfter = 7f;
+        [Tooltip("A pop-up tip, like a tutorial (user, 2026-11-06): it shows only when the first flying slime comes at the " +
+                 "player and no hand is dipped yet, and goes as soon as one is. A hand dipped before that: never shown.")]
         [TextArea]
         [SerializeField] private string dipText = "Dip your hands in the paint!";
-        [Tooltip("With no hand dipped when the giant is ready, the sign shows Dip Text this long (plus 1 s) at most before " +
-                 "the song starts.")]
+        [Tooltip("Played as the tip pops up (none: the bucket's sound).")]
+        [SerializeField] private AudioClip tipSound;
+        [Tooltip("Once the giant is ready, the song starts when a hand is dipped, or this long (plus 1 s) later at most.")]
         [Min(0f)]
         [SerializeField] private float songDelay = 1.5f;
         [Header("Giant slime (user, 2026-11-05)")]
@@ -314,6 +313,12 @@ namespace Game.Bonus
         private const float BoingWait = 0.4f;
         private const float SignAhead = 2.2f;
         private const float SignOverHead = 0.45f;
+        // The pop-up tip: this far in front, this far under the eyes (metres): its top edge under the giant's feet,
+        // so it never hides the mouth the slimes come out of.
+        private const float TipAhead = 1.6f;
+        private const float TipUnderEyes = -0.75f;
+        // Smaller than the timer's sign, being nearer: about 1.5 m across.
+        private float TipScale => signScale * 0.4f;
 
         /// <summary>The round is over and the candies eaten: Play Bonus Round goes on.</summary>
         public bool Finished { get; private set; }
@@ -390,6 +395,11 @@ namespace Game.Bonus
         private ParticleSystem sparks;
         private RectTransform sign;
         private TMP_Text signText;
+        // The pop-up tip (Dip Text): whether it's up, whether it had its chance this round, and its pop.
+        private RectTransform tip;
+        private bool tipShown;
+        private bool tipDone;
+        private float tipPop;
         private int fountains;
 
         private Material FloorSplat => floorSplatMaterial != null ? floorSplatMaterial : splatMaterial != null ? splatMaterial : burstMaterial;
@@ -420,6 +430,7 @@ namespace Game.Bonus
         {
             foreach (var b in live) if (b != null) Destroy(b.gameObject);
             if (sign != null) Destroy(sign.gameObject);
+            if (tip != null) Destroy(tip.gameObject);
             Unhush();
         }
 
@@ -629,13 +640,10 @@ namespace Game.Bonus
                 yield return StartCoroutine(PopBuckets(floor));
             }
 
-            // Far enough and they can move: the song (the flying slimes start coming with it, user 2026-11-05). No hand
-            // dipped yet: the sign says to, a moment at most; then 3-2-1 on its beats, from the next bar.
-            if (!AnyPainted())
-            {
-                Say(dipText);
-                for (float t = 0f; t < songDelay + 1f && !AnyPainted(); t += Time.deltaTime) yield return null;
-            }
+            // Far enough and they can move: the song (the flying slimes start coming with it, user 2026-11-05), once a
+            // hand is dipped or a moment later at most; then 3-2-1 on its beats, from the next bar. Nothing is said about
+            // dipping yet: the tip pops up only if the first slime comes at clean hands (user, 2026-11-06).
+            for (float t = 0f; t < songDelay + 1f && !AnyPainted(); t += Time.deltaTime) yield return null;
             Say("");
             StartSong();
             int beat = BeatAtOrAfter(SongTime + 0.3f);
@@ -675,6 +683,9 @@ namespace Game.Bonus
                     if (live.Count + lot <= mostAtOnce)
                     {
                         for (int i = 0; i < lot && next < plan.Count; i++, next++) SendBee(plan[next]);
+                        // The first slime coming at clean hands: the tip pops up (once a round).
+                        if (!tipDone && !AnyPainted()) ShowTip(true);
+                        tipDone = true;
                     }
                     else
                     {
@@ -689,9 +700,11 @@ namespace Game.Bonus
                     }
                 }
                 if (cleared) ShowTimer();
+                if (tipShown && AnyPainted()) ShowTip(false);
                 yield return null;
             }
             beesOut = false;
+            ShowTip(false);
 
             // The end: the song fades, fireworks, the perfect round's candies (no words), the helmet eats the rest.
             bool perfect = Stings == 0;
@@ -1337,6 +1350,31 @@ namespace Game.Bonus
             signText.fontSizeMax = 64f;
             signText.margin = new Vector4(12f, 0f, 12f, 0f);
             sign.gameObject.SetActive(false);
+
+            // The tip: its own panel, lower down, where the buckets are (the timer stays up top).
+            tip = WorldUI.CreatePanel("Paint Bees Tip", 640f, 120f, TipScale, new Color(0.08f, 0.05f, 0.12f, 0.8f));
+            var words = WorldUI.CreateText("Text", tip, dipText, 56f, FontStyles.Normal, TextAlignmentOptions.Center, SignColor, face);
+            WorldUI.Stretch(words.rectTransform);
+            words.textWrappingMode = TextWrappingModes.NoWrap;
+            words.enableAutoSizing = true;
+            words.fontSizeMin = 24f;
+            words.fontSizeMax = 56f;
+            words.margin = new Vector4(16f, 0f, 16f, 0f);
+            tip.gameObject.SetActive(false);
+        }
+
+        // The tip pops up (with its sound), or shrinks away.
+        private void ShowTip(bool show)
+        {
+            if (tip == null || show == tipShown) return;
+            tipShown = show;
+            if (show)
+            {
+                tipPop = 0f;
+                tip.localScale = Vector3.zero;
+                tip.gameObject.SetActive(true);
+                Play(tipSound != null ? tipSound : bucketSound);
+            }
         }
 
         private void Say(string text)
@@ -1359,10 +1397,32 @@ namespace Game.Bonus
 
         private void LateUpdate()
         {
-            if (sign == null || !sign.gameObject.activeSelf || Head == null) return;
+            if (Head == null) return;
+            if (tip != null && tip.gameObject.activeSelf)
+            {
+                // It pops in (a little over size, then settles) and shrinks away; under the eyes, where the buckets are.
+                tipPop = Mathf.MoveTowards(tipPop, tipShown ? 1f : 0f, Time.deltaTime / (tipShown ? 0.3f : 0.15f));
+                float k = tipShown ? 1f + 0.18f * Mathf.Sin(tipPop * Mathf.PI) * (1f - tipPop * 0.5f) : tipPop;
+                tip.localScale = Vector3.one * (TipScale * Mathf.Min(tipPop * 1.6f, 1f) * k);
+                if (!tipShown && tipPop <= 0f) tip.gameObject.SetActive(false);
+                tip.position = Head.position + Vector3.up * TipUnderEyes + Looking * TipAhead;
+                WorldUI.Face(tip, Head);
+            }
+            if (sign == null || !sign.gameObject.activeSelf) return;
             // In front of where they look (they needn't stay in the ring any more).
             sign.position = Head.position + Vector3.up * SignOverHead + Looking * SignAhead;
             WorldUI.Face(sign, Head);
+        }
+
+        /// <summary>
+        /// The giant slime burst (punched to death, user 2026-11-06): a big burst of its paint that falls and splats round
+        /// it; Close: they were near, its paint is on their view too.
+        /// </summary>
+        public void GiantBurst(Vector3 at, float size, bool close)
+        {
+            Blobs(at, giantColour, 60, 3.2f * Mathf.Max(1f, size * 0.6f), true);
+            Blobs(at, Color.Lerp(giantColour, Color.white, 0.25f), 25, 2.2f, false);
+            if (close) StartCoroutine(Splat(giantColour, false));
         }
 
         // ---------- Helpers ----------

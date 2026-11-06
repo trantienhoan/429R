@@ -81,6 +81,8 @@ namespace Game.Leveling
             public List<int> points = new();
             // Part of an EXP point gathered so far (e.g. 0.75 after three tree pumpkins at 0.25 each). Older saves: 0.
             public float expPart;
+            // Extra stat points given as rewards, kept for good (e.g. the cooking game's first clear). Older saves: 0.
+            public int giftPoints;
         }
 
         [Header("Levels")]
@@ -318,8 +320,22 @@ namespace Game.Leveling
                 {
                     if (!IsBonus((Stat)i)) spent += points[i];
                 }
-                return Mathf.Max(0, level * pointsPerLevel - spent);
+                return Mathf.Max(0, level * pointsPerLevel + giftPoints - spent);
             }
+        }
+
+        /// <summary>Extra stat points given as rewards (spent like a level's; saved).</summary>
+        public int GiftPoints => giftPoints;
+
+        /// <summary>
+        /// Gives stat points for good, as a reward (user, 2026-11-06: the cooking game's first clear): they're spent in the
+        /// Level Up menu like a level's points and kept in the save.
+        /// </summary>
+        public static void GiveStatPoints(int count)
+        {
+            if (Instance == null || count <= 0) return;
+            Instance.giftPoints += count;
+            Changed?.Invoke();
         }
 
         /// <summary>Bonus points the levels reached so far gave (one at each Bonus Level).</summary>
@@ -803,7 +819,7 @@ namespace Game.Leveling
 
         public SavedLevel ToSaveData()
         {
-            return new SavedLevel { level = level, exp = exp, points = new List<int>(points), expPart = expPart };
+            return new SavedLevel { level = level, exp = exp, points = new List<int>(points), expPart = expPart, giftPoints = giftPoints };
         }
 
         /// <summary>The saved level, from the Save Manager when the save is read (null with no save: level 0).</summary>
@@ -813,7 +829,8 @@ namespace Game.Leveling
             level = saved != null ? Mathf.Clamp(saved.level, 0, MaxLevel) : 0;
             exp = saved != null && !IsMaxLevel ? Mathf.Clamp(saved.exp, 0, ExpNeeded - 1) : 0;
             expPart = saved != null && !IsMaxLevel ? Mathf.Clamp(saved.expPart, 0f, 0.999f) : 0f;
-            int left = level * pointsPerLevel;
+            giftPoints = saved != null ? Mathf.Max(0, saved.giftPoints) : 0;
+            int left = level * pointsPerLevel + giftPoints;
             int bonusLeft = BonusPoints;
             for (int i = 0; i < StatCount; i++)
             {
@@ -851,6 +868,7 @@ namespace Game.Leveling
         // The level as the Save Manager last read it, for a Player Level that turns up later (or never).
         private static SavedLevel lastRead;
         private bool read;
+        private int giftPoints;
 
         private void Awake()
         {

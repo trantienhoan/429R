@@ -50,6 +50,23 @@ namespace Game.Locomotion
         [SerializeField] private float fallVolume = 0.9f;
         [SerializeField] private Vector2 fallPitch = new(0.95f, 1.08f);
 
+        /// <summary>
+        /// While set (Special Stage 3, user 2026-11-06), a fall puts the player back here (the floor point their head goes
+        /// over), facing Return Yaw, instead of where they stood: the stage's start. It still costs the fall's health.
+        /// </summary>
+        public static Vector3? ReturnSpot;
+        public static float ReturnYaw;
+
+        /// <summary>Raised when a fall of the player's own (not one the game moved them into) has put them back.</summary>
+        public static event System.Action Fell;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            ReturnSpot = null;
+            Fell = null;
+        }
+
         // Where they stood: the floor under the head, and when.
         private readonly List<(Vector3 spot, float time)> stood = new();
         private const float Every = 0.2f;
@@ -192,13 +209,20 @@ namespace Game.Locomotion
                 if (fade != null) fade.FadeIn(fadeInSeconds);
                 return;
             }
-            var spot = SpotBeforeFall();
+            bool toStart = hurts && ReturnSpot.HasValue;
+            var spot = toStart ? ReturnSpot.Value : SpotBeforeFall();
             stood.Clear();
 
             // A throw that started during the fade-out doesn't carry on from the spot either.
             StopLaunch();
             // The head ends up over the spot, the feet on its floor (they keep facing the way they face).
             Hold(true);
+            if (toStart && origin != null)
+            {
+                var look = origin.Camera != null ? origin.Camera.transform.forward : transform.forward;
+                look.y = 0f;
+                if (look.sqrMagnitude > 0.0001f) origin.RotateAroundCameraUsingOriginUp(Mathf.DeltaAngle(Quaternion.LookRotation(look).eulerAngles.y, ReturnYaw));
+            }
             var head = HeadOnFloor(transform.position.y);
             var to = transform.position + new Vector3(spot.x - head.x, 0f, spot.z - head.z);
             to.y = spot.y;
@@ -207,6 +231,7 @@ namespace Game.Locomotion
             hasLast = false;
 
             if (fade != null) fade.FadeIn(fadeInSeconds);
+            if (hurts) Fell?.Invoke();
             // Already dead: no second death.
             if (hurts && health != null && health.ActiveStateName != "DEAD") health.SendEvent(damageEvent);
         }

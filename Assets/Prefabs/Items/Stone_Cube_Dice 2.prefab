@@ -146,7 +146,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 0
+  m_Constraints: 126
   m_CollisionDetection: 0
 --- !u!114 &5883465919827096224
 MonoBehaviour:
@@ -1238,7 +1238,7 @@ MonoBehaviour:
   subtitle: Pick a seed to pay with
   cubeBool: Cube_2
   gateBool: Gate_2
-  gateEffect: {fileID: 6331275906715107345, guid: 690951f4781b19649bc5c7892414ff37,
+  gateEffect: {fileID: 1038442784399609431, guid: 8cdc65e6dd6f12342aaf4e55a8b00010,
     type: 3}
   gateEffectScale: 0.32
   gateRadius: 0.85
@@ -1248,6 +1248,19 @@ MonoBehaviour:
   gateOffset: {x: 0, y: 0.04, z: 0}
   healthFsm: Health
   healthVariable: health
+  rocketAway: 1
+  rumbleSound: {fileID: 8300000, guid: 66f2cc9112289f94caf4de5330633e10, type: 3}
+  launchSound: {fileID: 8300000, guid: 87cf47d1a1f62ab44998611c0b5558ac, type: 3}
+  thrustSound: {fileID: 8300000, guid: 18de0d8766cccc04c90bdd3c882321d9, type: 3}
+  flameMaterial: {fileID: 2100000, guid: 7ae4c194aa8ff0f4888400cd2b3488a7, type: 2}
+  smokeMaterial: {fileID: 2100000, guid: 9d0f78ca8fe618d4dbbb6e3277fe2651, type: 2}
+  smokeLook: {fileID: 2099841002273733115, guid: a47daad1ccbf2de439cd134aebe0afe5,
+    type: 3}
+  rumbleEffects:
+  - {fileID: 7579848864301241554, guid: b2390e65e13dc75488f18a5583a5e9bd, type: 3}
+  launchEffects:
+  - {fileID: 421144408235083133, guid: 913bb894fe090e64c9bfd651ae29a658, type: 3}
+  launchEffectSize: 1
   font: {fileID: 11400000, guid: cb4516ac98eb5854ea4d7a8f558eb4da, type: 2}
   showSpeed: 0.5
   boardHeight: 0.2

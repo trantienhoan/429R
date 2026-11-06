@@ -136,14 +136,30 @@ namespace Game.Leveling
             }
         }
 
+        // The one that's on, for Burst.
+        private static ExpOrbs active;
+
         private void OnEnable()
         {
             EnemyHitDamage.Died += OnDied;
+            active = this;
+        }
+
+        /// <summary>
+        /// Count orbs out of a point into the player, as a kill's (e.g. the end chest's EXP jackpot); Spread is how far
+        /// apart they rise, in metres. False if there's no EXP Orbs on or no player; orbs over what fits are skipped.
+        /// </summary>
+        public static bool Burst(Vector3 from, int count, float spread = 0.12f)
+        {
+            if (active == null || !active.isActiveAndEnabled || count <= 0 || !active.FindHead()) return false;
+            active.Launch(from, count, spread);
+            return true;
         }
 
         private void OnDisable()
         {
             EnemyHitDamage.Died -= OnDied;
+            if (active == this) active = null;
             for (int i = 0; i < orbs.Length; i++) orbs[i].on = false;
             if (dots != null) dots.Clear();
             if (tail != null) tail.Clear();
@@ -153,8 +169,11 @@ namespace Game.Leveling
         {
             if (enemy == null || !enemy.ShowsExpOrbs || maxOrbs <= 0 || !FindHead()) return;
 
-            int count = Mathf.Clamp(enemy.Exp, 1, maxOrbs);
-            var from = enemy.BodyCenter;
+            Launch(enemy.BodyCenter, Mathf.Clamp(enemy.Exp, 1, maxOrbs), 0.12f);
+        }
+
+        private void Launch(Vector3 from, int count, float spreadMetres)
+        {
             float flyTime = flySeconds + secondsPerMetre * Vector3.Distance(from, Chest());
             int slot = 0;
             for (int i = 0; i < count; i++)
@@ -163,7 +182,7 @@ namespace Game.Leveling
                 // All in the air: the rest of this kill's orbs are skipped.
                 if (slot >= PoolSize) return;
 
-                var spread = Random.insideUnitCircle * 0.12f;
+                var spread = Random.insideUnitCircle * spreadMetres;
                 var start = from + Random.insideUnitSphere * 0.04f;
                 orbs[slot] = new Orb
                 {

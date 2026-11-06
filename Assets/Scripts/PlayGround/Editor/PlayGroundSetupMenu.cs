@@ -313,6 +313,9 @@ namespace Game.EditorTools
         private static List<GameObject> LoadGhosts()
         {
             var ghosts = new List<GameObject>();
+            // The ghost balloons were swapped for the white slimes (user 2026-11-06).
+            var slime = Load<GameObject>("Assets/Prefabs/Enemies/PLAYGROUND/PG_White_Slime.prefab");
+            if (slime != null) { ghosts.Add(slime); return ghosts; }
             for (int n = 1; n <= 3; n++)
             {
                 var ghost = Load<GameObject>(string.Format(GhostPath, n));

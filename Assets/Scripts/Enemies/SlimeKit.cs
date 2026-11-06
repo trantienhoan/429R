@@ -70,5 +70,30 @@ namespace Game.Enemies
             source.Play();
             Object.Destroy(go, clip.length / Mathf.Max(0.1f, source.pitch) + 0.1f);
         }
+
+        /// <summary>
+        /// One of these clips, riding along on Parent (it moves with it and goes with it), gone by itself when done; the
+        /// source, so it can be stopped sooner (destroy its object). Null when there's nothing to play.
+        /// </summary>
+        public static AudioSource PlayOn(AudioClip[] clips, Transform parent, float volume, Vector2 pitch)
+        {
+            if (clips == null || clips.Length == 0 || parent == null) return null;
+            var clip = clips[Random.Range(0, clips.Length)];
+            if (clip == null) return null;
+            var go = new GameObject("Slime Sound");
+            go.transform.SetParent(parent, false);
+            var source = go.AddComponent<AudioSource>();
+            source.clip = clip;
+            source.volume = volume;
+            source.pitch = Random.Range(pitch.x, pitch.y);
+            source.spatialBlend = 1f;
+            source.minDistance = 1.5f;
+            source.rolloffMode = AudioRolloffMode.Linear;
+            source.maxDistance = 25f;
+            source.dopplerLevel = 0f;
+            source.Play();
+            Object.Destroy(go, clip.length / Mathf.Max(0.1f, source.pitch) + 0.1f);
+            return source;
+        }
     }
 }

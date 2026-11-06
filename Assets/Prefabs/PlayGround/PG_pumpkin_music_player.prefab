@@ -11066,7 +11066,7 @@ MonoBehaviour:
         tooltip: 
         showInInspector: 1
         networkSync: 0
-        value: 5
+        value: 25
       intVariables: []
       boolVariables: []
       stringVariables: []
@@ -12176,7 +12176,7 @@ MonoBehaviour:
       enumVariables: []
       categories:
       - 
-      variableCategoryIDs: 
+      variableCategoryIDs: 0000000000000000
     description: Plays the radio's songs one after another in random order (never
       the same one twice in a row) until the radio breaks. Add or remove songs in
       the 'songs' variable.
@@ -12239,8 +12239,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.EnemyHitDamage
   settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
-  toughness: 6.6666665
+  toughness: 10
   hitCooldown: 0.3
+  everyHitCounts: 0
   knockBack: 0
   knockBackDistance: 2
   knockBackTime: 0.45
@@ -12255,10 +12256,10 @@ MonoBehaviour:
   healthVariable: health
   hitEvent: Damage
   weakHitEvent: ShakeSmall
-  oldDamageFsm: 
+  oldDamageFsm: Damage
   furniture: 1
-  bumpShare: 1
-  wieldedShare: 1
+  bumpShare: 0.15
+  wieldedShare: 0.15
   settleSeconds: 0
 --- !u!114 &8058712842191328247
 MonoBehaviour:

@@ -3066,7 +3066,8 @@ namespace Game.Enemies
 
         // Checked every second. One that should be coming for the player (Chase) but is still far from them and hasn't
         // moved for 6 s, or one whose agent is off the NavMesh (its brain can't do anything then) for 3 s, is put back on
-        // the NavMesh and comes again. Each time it says why in the Console, so a playtest shows the cause.
+        // the NavMesh and comes again. Each time it says why in the Console, in the Editor only (user, 2026-11-06), so a
+        // playtest shows the cause and Quest builds stay quiet.
         private void UpdateStuck()
         {
             if (Time.time < nextStuckCheck) return;
@@ -3103,22 +3104,28 @@ namespace Game.Enemies
             var target = PlayerFloor();
             var from = transform.position;
             var filter = new NavMeshQueryFilter { agentTypeID = agent.agentTypeID, areaMask = agent.areaMask };
+#if UNITY_EDITOR
+            // Why, for the Console (Editor only).
             string why = $"[Spider Brain] {name} was stuck {(offMesh ? "off the NavMesh" : "in " + state)} at {from:F2}";
+#endif
             bool cutOff = false;
             if (!offMesh)
             {
                 var path = new NavMeshPath();
                 NavMesh.CalculatePath(agent.nextPosition, target, filter, path);
                 cutOff = path.status != NavMeshPathStatus.PathComplete;
+#if UNITY_EDITOR
                 why += $" (path to the player {path.status}, stopped {agent.isStopped}, speed {agent.speed:0.0})";
+#endif
             }
             var away = from - target;
             away.y = 0f;
             var spot = cutOff ? target + (away.sqrMagnitude > 0.01f ? away.normalized : -transform.forward) * Mathf.Min(away.magnitude, 3f) : from;
-            if (NavMesh.SamplePosition(spot, out var hit, 6f, filter) && agent.Warp(hit.position))
-                why += $": put back on the NavMesh at {hit.position:F2}";
-            else why += ": no NavMesh near";
+            bool placed = NavMesh.SamplePosition(spot, out var hit, 6f, filter) && agent.Warp(hit.position);
+#if UNITY_EDITOR
+            why += placed ? $": put back on the NavMesh at {hit.position:F2}" : ": no NavMesh near";
             Debug.LogWarning(why, this);
+#endif
             if (!agent.isOnNavMesh) return;
             agent.isStopped = false;
             if (noticed) Enter(State.Chase, 0f);

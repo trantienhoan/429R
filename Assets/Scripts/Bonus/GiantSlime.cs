@@ -1,4 +1,5 @@
 using System.Collections;
+using Game.Combat;
 using UnityEngine;
 
 namespace Game.Bonus
@@ -10,6 +11,10 @@ namespace Game.Bonus
     /// and runs away (Run To), turns to face them, then opens its mouth for each lot of flying slimes (Open For, Spit);
     /// at the end it jumps off out of sight (Leave). By itself it breathes, wobbles like jelly after every landing,
     /// throbs to the song's beat and keeps its face on the player.
+    /// Standing at its spot it can be hit (user, 2026-11-06): health like the special stage's pumpkins (Enemy Hit Damage
+    /// on its health FSM), super tanky; every hit squashes its jelly and leans it away from the player; punched to death
+    /// it bursts in a strong explosion (smoke, a big bang, its paint everywhere, the player near it hurt, blown back and
+    /// painted: user, 2026-11-06), no EXP, no reward. The round then sends the flying slimes out of the fires.
     /// Tools > 429 Game > Bonus > Set Up Giant Slime builds the prefab (Prefabs/Bonus/Paint_Giant_Slime).
     /// </summary>
     [DisallowMultipleComponent]
@@ -69,6 +74,39 @@ namespace Game.Bonus
         [Min(0f)]
         [SerializeField] private float damping = 7f;
 
+        [Header("Getting hit (user, 2026-11-06)")]
+        [Tooltip("The PlayMaker FSM holding its \"health\", which Enemy Hit Damage takes the hits off (like the special " +
+                 "stage's pumpkins; Set Up Giant Slime makes it, super tanky, no EXP). It can be hit only standing at its " +
+                 "spot: not on the player's head, not while it hops.")]
+        [SerializeField] private string healthFsm = "GiantHealth";
+        [Tooltip("How much a hit squashes its jelly, per point of the hit's damage...")]
+        [Min(0f)]
+        [SerializeField] private float hitSquash = 0.12f;
+        [Tooltip("...and how far it leans away from the player, in degrees per point of damage...")]
+        [Min(0f)]
+        [SerializeField] private float hitLean = 5f;
+        [Tooltip("...counting at most this much damage (a weak hit counts 0.4).")]
+        [Min(0.5f)]
+        [SerializeField] private float hitWobbleCap = 4f;
+        [Tooltip("A hit's squelch (one at random).")]
+        [SerializeField] private AudioClip[] hitSounds = System.Array.Empty<AudioClip>();
+
+        [Header("Bursting (punched to death)")]
+        [Tooltip("Played where it bursts (Effect Pool), this big times its size.")]
+        [SerializeField] private GameObject[] burstEffects = System.Array.Empty<GameObject>();
+        [Min(0f)]
+        [SerializeField] private float burstEffectSize = 1f;
+        [Tooltip("All played together as it bursts (a bang and a wet pop).")]
+        [SerializeField] private AudioClip[] burstSounds = System.Array.Empty<AudioClip>();
+        [Tooltip("The player this close (metres times its size, flat) is hurt (Burst Event), blown back (x = how high, " +
+                 "y = how far, in metres) and gets its paint on the view.")]
+        [Min(0f)]
+        [SerializeField] private float burstReach = 1.6f;
+        [SerializeField] private Vector2 burstPush = new(0.5f, 2.2f);
+        [Tooltip("Sent to the player's Damage FSM when the burst catches them (user, 2026-11-06: it hurts too): Damage " +
+                 "(6-9 health), DamageHeavy (40-50), before their Toughness. Empty: it doesn't hurt.")]
+        [SerializeField] private string burstEvent = "DamageHeavy";
+
         [Header("Sounds")]
         [Tooltip("While it falls (a falling whistle).")]
         [SerializeField] private AudioClip fallSound;
@@ -86,6 +124,13 @@ namespace Game.Bonus
 
         /// <summary>What it keeps its face on (the player's head). Null: it faces where it goes.</summary>
         public Transform FaceTarget { get; set; }
+
+        /// <summary>Degrees a second it turns (to face its Face Target); e.g. Special Stage 3 whips it round to look.</summary>
+        public float TurnSpeed
+        {
+            get => turnSpeed;
+            set => turnSpeed = Mathf.Max(1f, value);
+        }
 
         /// <summary>Where the flying slimes come out.</summary>
         public Vector3 Mouth => mouth != null ? mouth.position : transform.position + Vector3.up * Size * 0.4f;
@@ -105,6 +150,16 @@ namespace Game.Bonus
         private float stretch;
         // While it moves, it turns towards where it goes, not the player.
         private Vector3? heading;
+        // Getting hit: what takes the hits, its hit box, its health, and whether it burst.
+        private EnemyHitDamage hits;
+        private Collider hitBox;
+        private HutongGames.PlayMaker.FsmFloat health;
+        private bool burst;
+        // The lean away from a hit: degrees, how fast, round which axis (the root's space).
+        private float lean;
+        private float leanSpeed;
+        private Vector3 leanAxis = Vector3.right;
+        private Quaternion bodyRest = Quaternion.identity;
 
         private void Awake()
         {
@@ -114,8 +169,96 @@ namespace Game.Bonus
             speaker.rolloffMode = AudioRolloffMode.Linear;
             speaker.minDistance = 2f;
             speaker.maxDistance = 30f;
-            if (body != null) bodyScale = body.localScale;
+            if (body != null)
+            {
+                bodyScale = body.localScale;
+                bodyRest = body.localRotation;
+            }
             if (head != null) headRest = head.localRotation;
+            // No reward for it, ever (user, 2026-11-06): no EXP, no orbs.
+            hits = GetComponent<EnemyHitDamage>();
+            if (hits != null) hits.noReward = true;
+            hitBox = GetComponent<Collider>();
+            foreach (var fsm in GetComponents<PlayMakerFSM>())
+            {
+                if (fsm.FsmName == healthFsm) health = fsm.FsmVariables.FindFsmFloat("health");
+            }
+            Hittable(false);
+        }
+
+        private void OnEnable()
+        {
+            EnemyHitDamage.AnyHit += OnAnyHit;
+            EnemyHitDamage.WeakHit += OnWeakHit;
+        }
+
+        private void OnDisable()
+        {
+            EnemyHitDamage.AnyHit -= OnAnyHit;
+            EnemyHitDamage.WeakHit -= OnWeakHit;
+        }
+
+        private void OnAnyHit(EnemyHitDamage enemy, HitResult hit)
+        {
+            if (enemy == null || enemy != hits || burst) return;
+            Jiggle(Mathf.Clamp(hit.Damage, 0.5f, hitWobbleCap));
+        }
+
+        private void OnWeakHit(EnemyHitDamage enemy)
+        {
+            if (enemy != null && enemy == hits && !burst) Jiggle(0.4f);
+        }
+
+        // A hit: the jelly squashes and it leans away from the player, with a squelch.
+        private void Jiggle(float strength)
+        {
+            Kick(hitSquash * strength);
+            var from = FaceTarget != null ? FaceTarget.position : Camera.main != null ? Camera.main.transform.position : transform.position - transform.forward;
+            var away = Flat(transform.position - from);
+            if (away.sqrMagnitude < 0.0001f) away = -transform.forward;
+            leanAxis = Quaternion.Inverse(transform.rotation) * Vector3.Cross(Vector3.up, away.normalized);
+            leanSpeed += hitLean * strength * Mathf.Sqrt(stiffness);
+            PlayAt(Pick(hitSounds), Mouth, Random.Range(0.95f, 1.2f));
+        }
+
+        // It can be hit only standing at its spot (its hit box on), and never once it burst.
+        private void Hittable(bool on)
+        {
+            if (hitBox != null) hitBox.enabled = on && !burst;
+        }
+
+        // Punched to death: a strong explosion, its paint everywhere, the player near it blown back; then it's gone.
+        private void Burst()
+        {
+            burst = true;
+            var at = hitBox != null && hitBox.enabled ? hitBox.bounds.center : transform.position + Vector3.up * (0.35f * Size);
+            Hittable(false);
+            foreach (var effect in burstEffects)
+            {
+                if (effect != null) EffectPool.Play(effect, at, burstEffectSize * Size);
+            }
+            foreach (var clip in burstSounds) PlayAt(clip, at, Random.Range(0.92f, 1.05f));
+            ShakeView("ShakeBigger");
+            var player = FaceTarget != null ? FaceTarget : Camera.main != null ? Camera.main.transform : null;
+            bool close = player != null && Flat(player.position - at).magnitude <= burstReach * Size;
+            if (close)
+            {
+                if (!string.IsNullOrEmpty(burstEvent)) Game.Weapons.Blast.SendToPlayer(burstEvent);
+                PlayerLaunch.Launch(at, burstPush.x, burstPush.y);
+            }
+            if (Round != null) Round.GiantBurst(at, Size, close);
+            Destroy(gameObject);
+        }
+
+        // A camera shake event sent to the main camera's Info FSM (ShakeSmall, ShakeMed, ShakeBigger).
+        private static void ShakeView(string eventName)
+        {
+            var cam = HutongGames.PlayMaker.FsmVariables.GlobalVariables.FindFsmGameObject("MainCam");
+            if (cam == null || cam.Value == null) return;
+            foreach (var fsm in cam.Value.GetComponents<PlayMakerFSM>())
+            {
+                if (fsm.FsmName == "Info") fsm.SendEvent(eventName);
+            }
         }
 
         /// <summary>Gives its jelly a shove: + squashes it, - stretches it.</summary>
@@ -139,6 +282,7 @@ namespace Game.Bonus
         public IEnumerator DropOn(Transform target, System.Action onLand)
         {
             if (target == null) yield break;
+            Hittable(false);
             var look = Flat(target.forward);
             transform.rotation = Quaternion.LookRotation(look.sqrMagnitude > 0.001f ? look : Vector3.forward);
             transform.position = OnHead(target) + Vector3.up * dropHeight;
@@ -168,6 +312,7 @@ namespace Game.Bonus
         public IEnumerator RunTo(Vector3 spot)
         {
             float size = Size;
+            Hittable(false);
             int guard = 0;
             while (guard++ < 40)
             {
@@ -182,12 +327,15 @@ namespace Game.Bonus
                 yield return Hop(from, to, hopHeight * size + Mathf.Max(0f, from.y - to.y) * 0.3f);
             }
             heading = null;
+            // At its spot: it can be hit now.
+            Hittable(true);
         }
 
         /// <summary>Jumps up and away out of sight, then it's gone.</summary>
         public IEnumerator Leave()
         {
             heading = null;
+            Hittable(false);
             Kick(0.6f);
             yield return new WaitForSeconds(0.25f);
             var from = transform.position;
@@ -234,6 +382,15 @@ namespace Game.Bonus
                 float wide = 1f + s * 0.5f + pulse + breath * 0.5f;
                 float tall = Mathf.Max(0.2f, 1f - s + pulse * 0.5f - breath * 0.3f);
                 body.localScale = new Vector3(bodyScale.x * wide, bodyScale.y * tall, bodyScale.z * wide);
+                // The lean away from a hit, wobbling back like jelly.
+                leanSpeed += (-stiffness * lean - damping * leanSpeed) * dt;
+                lean = Mathf.Clamp(lean + leanSpeed * dt, -35f, 35f);
+                body.localRotation = Quaternion.AngleAxis(lean, leanAxis) * bodyRest;
+            }
+            if (!burst && health != null && health.Value <= 0f)
+            {
+                Burst();
+                return;
             }
 
             // The mouth: the head tips back round its hinge.

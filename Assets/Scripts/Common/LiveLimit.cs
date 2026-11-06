@@ -36,18 +36,36 @@ namespace Game
         private LinkedListNode<LiveLimit> node;
         private string key;
 
+        // A higher limit for a group for a while (Raise Limit), e.g. a pumpkin room full of Pumpkin_On_Tree.
+        private static readonly Dictionary<string, int> raised = new();
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics() => alive.Clear();
+        private static void ResetStatics()
+        {
+            alive.Clear();
+            raised.Clear();
+        }
 
         /// <summary>How many of a group are alive right now.</summary>
         public static int Count(string group) => alive.TryGetValue(group, out var list) ? list.Count : 0;
+
+        /// <summary>
+        /// Lets a group go up to this many alive at once (if that's more than its own limit), until Lower Limit; e.g. the
+        /// pumpkin rooms (user, 2026-11-06: "break the pumpkin limit in those rooms").
+        /// </summary>
+        public static void RaiseLimit(string group, int most) => raised[group] = most;
+
+        /// <summary>The group's own limit again.</summary>
+        public static void LowerLimit(string group) => raised.Remove(group);
+
+        private int Limit => raised.TryGetValue(key, out var most) ? Mathf.Max(limit, most) : limit;
 
         private void OnEnable()
         {
             key = string.IsNullOrEmpty(group) ? name.Replace("(Clone)", "").Trim() : group;
             if (!alive.TryGetValue(key, out var list)) alive[key] = list = new LinkedList<LiveLimit>();
             node = list.AddLast(this);
-            while (list.Count > limit)
+            while (list.Count > Limit)
             {
                 var oldest = OldestNotHeld(list);
                 if (oldest == null || oldest == this) break;

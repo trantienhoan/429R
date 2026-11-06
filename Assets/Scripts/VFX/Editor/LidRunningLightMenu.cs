@@ -184,9 +184,10 @@ namespace Game.EditorTools
             material.shader = shader;
             // Steady: dim, under the bloom threshold, so it doesn't call attention long before the lid can break.
             // Running: HDR so the head blooms, with the glow all round low enough that the head stands out.
-            float brightness = Running ? 2.6f : 1f;
+            // Steady: dimmer again (user, 2026-11-06: "make it less shine, make the light dimmer"): ~40% of before.
+            float brightness = Running ? 2.6f : 0.75f;
             material.SetColor("_Color", new Color(Purple.r * brightness, Purple.g * brightness, Purple.b * brightness, 1f));
-            material.SetFloat("_BaseGlow", Running ? 0.12f : 0.22f);
+            material.SetFloat("_BaseGlow", Running ? 0.12f : 0.12f);
             material.SetFloat("_Comet", Running ? 1f : 0f);
             material.renderQueue = (int)RenderQueue.Transparent;
             EditorUtility.SetDirty(material);

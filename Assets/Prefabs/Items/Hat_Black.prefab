@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 5441288402516794537}
   - component: {fileID: 2691409770322315911}
   - component: {fileID: 5778434914952221343}
+  - component: {fileID: 4222548572467037140}
   m_Layer: 0
   m_Name: Hat_Black
   m_TagString: Untagged
@@ -584,6 +585,21 @@ MonoBehaviour:
   power: 1
   damage: 1
   thrownBonus: 1
+--- !u!114 &4222548572467037140
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 183694068647765797}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbe3b6a0569a40f49acfff122dfb7d4f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Rooms.MagicHatAura
+  aura: {fileID: 0}
+  moveAway: 0.12
+  settleSeconds: 0.5
 --- !u!1 &6881461743378936521
 GameObject:
   m_ObjectHideFlags: 0

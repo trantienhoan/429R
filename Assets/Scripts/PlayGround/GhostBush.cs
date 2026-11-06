@@ -17,7 +17,7 @@ namespace Game.PlayGround
     public class GhostBush : MonoBehaviour, IHittable
     {
         [Header("Ghosts")]
-        [Tooltip("Ghost balloons that fly out; one at random each.")]
+        [Tooltip("Ghosts that fly out, one at random each: ghost balloons, or anything else (PG_White_Slime) made at its top.")]
         [SerializeField] private GameObject[] ghosts = System.Array.Empty<GameObject>();
         [Tooltip("Hits slower than this, in metres per second, don't let any out.")]
         [Min(0f)] [SerializeField] private float minHitSpeed = 1f;
@@ -123,8 +123,8 @@ namespace Game.PlayGround
             var top = Top();
             var spread = Random.insideUnitCircle * ghostSpread;
             var home = top + new Vector3(spread.x, ghostHeight + Random.Range(0f, 1f), spread.y);
-            var ghost = GhostBalloon.Spawn(prefab, top, home, SpawnedStuff());
-            if (ghost != null) alive.Add(ghost.gameObject);
+            var ghost = GhostTree.LetOut(prefab, top, home, SpawnedStuff());
+            if (ghost != null) alive.Add(ghost);
         }
 
         // Whether the player is near, or could see the bush or the tree that would grow there.

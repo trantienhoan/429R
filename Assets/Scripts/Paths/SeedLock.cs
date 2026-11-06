@@ -64,6 +64,28 @@ namespace Game.Paths
         [SerializeField] private string healthFsm = "Health";
         [SerializeField] private string healthVariable = "health";
 
+        [Header("Flying off (user, 2026-11-06)")]
+        [Tooltip("Paid: instead of breaking, it rumbles and shoots up into the sky like a rocket (Rocket Away), gone once " +
+                 "it's past the skydome. Off: it breaks through its Health FSM, as before.")]
+        [SerializeField] private bool rocketAway = true;
+        [SerializeField] private AudioClip rumbleSound;
+        [SerializeField] private AudioClip launchSound;
+        [Tooltip("The roar that flies with it.")]
+        [SerializeField] private AudioClip thrustSound;
+        [Tooltip("The flame jet's and the smoke trail's materials (e.g. Danger_Flame's).")]
+        [SerializeField] private Material flameMaterial;
+        [SerializeField] private Material smokeMaterial;
+        [Tooltip("The trail's puffs look like this effect's (the shared 3D Smoke_Puff: chunky see-through puffs). Empty: " +
+                 "flat puffs in Smoke Material.")]
+        [SerializeField] private GameObject smokeLook;
+        [Tooltip("Played at its foot as it starts shaking (Effect Pool): a little dust.")]
+        [SerializeField] private GameObject[] rumbleEffects = System.Array.Empty<GameObject>();
+        [Tooltip("Played at its foot as it lifts off (Effect Pool): the launch cloud.")]
+        [SerializeField] private GameObject[] launchEffects = System.Array.Empty<GameObject>();
+        [Tooltip("The size the launch effects are played at (1 = as made). The shared smoke puffs are made for big hits, so " +
+                 "at 1 the cloud swallows the view from a few metres away.")]
+        [SerializeField] private float launchEffectSize = 0.45f;
+
         [Header("Price board")]
         [SerializeField] private TMP_FontAsset font;
         [Tooltip("Hits slower than this, in metres per second, don't bring up the board (e.g. something just leaning on it).")]
@@ -204,7 +226,8 @@ namespace Game.Paths
             Unlocks.Add(cubeBool);
             GameStages.SetBool(cubeBool, true, this);
             OpenGate();
-            Break();
+            if (rocketAway) RocketAway.Launch(gameObject, rumbleSound, launchSound, thrustSound, flameMaterial, smokeMaterial, rumbleEffects, launchEffects, launchEffectSize, smokeLook);
+            else Break();
         }
 
         private void Update()

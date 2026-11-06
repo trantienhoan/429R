@@ -77,7 +77,8 @@ namespace Game.EditorTools
                 var brain = Keep<SlimeBomber>(root, BomberPath);
                 var so = new SerializedObject(brain);
                 so.FindProperty("splatMaterial").objectReferenceValue = splat;
-                Clips(so, "diveSounds", "Assets/Audio/SFX/Cartoon_falling-bomb_1.wav", "Assets/Audio/SFX/Cartoon_falling-bomb_2.wav");
+                // A short swoosh (user, 2026-11-06: the 3 s falling-bomb whistle was wrong and outlived the slime).
+                Clips(so, "diveSounds", "Assets/Audio/SFX/whoosh.wav");
                 Clips(so, "faceSounds", "Assets/Audio/SFX/pumpkin_face_splat.wav");
                 Clips(so, "popSounds", "Assets/Audio/SFX/Balloon_Pop.wav", "Assets/Audio/SFX/bubble_pop_1.wav");
                 so.ApplyModifiedPropertiesWithoutUndo();

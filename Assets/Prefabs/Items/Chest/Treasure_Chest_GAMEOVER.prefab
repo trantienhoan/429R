@@ -20489,16 +20489,18 @@ MonoBehaviour:
         - HutongGames.PlayMaker.Actions.AudioPlay
         - HutongGames.PlayMaker.Actions.SetAnimatorTrigger
         - HutongGames.PlayMaker.Actions.Wait
+        - HutongGames.PlayMaker.Actions.PlayEndGameJackpot
         customNames:
         - 
         - 
         - 
         - 
         - 
-        actionEnabled: 0101010101
-        actionIsOpen: 0101010101
-        actionStartIndex: 0000000003000000080000000d0000000f000000
-        actionHashCodes: b8ffb200b2cf100081294e049bd6f80148c01101
+        - 
+        actionEnabled: 010101010101
+        actionIsOpen: 010101010101
+        actionStartIndex: 0000000003000000080000000d0000000f00000012000000
+        actionHashCodes: b8ffb200b2cf100081294e049bd6f80148c0110161291600
         unityObjectParams: []
         fsmGameObjectParams:
         - useVariable: 1
@@ -20507,6 +20509,13 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: {fileID: 0}
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: {fileID: 4623798490042213957, guid: e1812b1d90f61c94dab0f126b70eb3f3,
+            type: 3}
         fsmOwnerDefaultParams:
         - ownerOption: 0
           gameObject:
@@ -20524,6 +20533,14 @@ MonoBehaviour:
             showInInspector: 0
             networkSync: 0
             value: {fileID: 1767267281814563027}
+        - ownerOption: 0
+          gameObject:
+            useVariable: 0
+            name: 
+            tooltip: 
+            showInInspector: 0
+            networkSync: 0
+            value: {fileID: 0}
         - ownerOption: 0
           gameObject:
             useVariable: 0
@@ -20561,6 +20578,13 @@ MonoBehaviour:
           networkSync: 0
           typeName: UnityEngine.AudioClip
           value: {fileID: 8300000, guid: c8326ffa63738a546ab5e913a1e84d28, type: 3}
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          typeName: 
+          value: {fileID: 8300000, guid: e099ffdff64cfea48992357c5acf46a2, type: 3}
         fsmVarParams: []
         fsmArrayParams: []
         fsmEnumParams: []
@@ -20583,7 +20607,25 @@ MonoBehaviour:
           showInInspector: 0
           networkSync: 0
           value: 0.8
-        fsmIntParams: []
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 3
+        fsmIntParams:
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 500
+        - useVariable: 0
+          name: 
+          tooltip: 
+          showInInspector: 0
+          networkSync: 0
+          value: 4
         fsmBoolParams:
         - useVariable: 0
           name: 
@@ -20612,11 +20654,12 @@ MonoBehaviour:
         - 
         - FINISHED
         byteData: 000001
-        arrayParamSizes: 
-        arrayParamTypes: []
+        arrayParamSizes: 01000000
+        arrayParamTypes:
+        - HutongGames.PlayMaker.FsmGameObject
         customTypeSizes: 
         customTypeNames: []
-        paramDataType: 140000000f000000130000001400000011000000110000000100000001000000140000000f00000018000000110000001700000014000000120000000f0000001700000001000000
+        paramDataType: 140000000f000000130000001400000011000000110000000100000001000000140000000f00000018000000110000001700000014000000120000000f000000170000000100000014000000100000000f00000010000000180000000c00000013000000
         paramName:
         - gameObject
         - strength
@@ -20636,8 +20679,15 @@ MonoBehaviour:
         - time
         - finishEvent
         - realTime
-        paramDataPos: 000000000000000000000000010000000000000001000000000000000100000002000000010000000000000002000000000000000300000000000000020000000100000002000000
-        paramByteDataSize: 000000000000000000000000000000000000000000000000010000000100000000000000000000000000000000000000000000000000000000000000000000000000000001000000
+        - gameObject
+        - exp
+        - seconds
+        - orbsPerBurst
+        - sound
+        - effects
+        - 
+        paramDataPos: 00000000000000000000000001000000000000000100000000000000010000000200000001000000000000000200000000000000030000000000000002000000010000000200000004000000000000000300000001000000010000000000000001000000
+        paramByteDataSize: 00000000000000000000000000000000000000000000000001000000010000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000
     - name: Break
       description: 
       colorIndex: 6
@@ -20953,6 +21003,8 @@ MonoBehaviour:
   tilt: 8
   wobblesPerSecond: 5
   settleTime: 0.7
+  perExtraDamage: 0
+  mostHurtStrength: 2.5
   softHitPause: 0.75
   around: {fileID: 0}
   healthFsm: Health

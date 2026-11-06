@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using Game.Bonus;
+using Game.Combat;
+using HutongGames.PlayMaker;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -11,6 +13,9 @@ namespace Game.EditorTools
     /// user's Giant_Slime model (Models/Enemies/Giant_Slime.fbx: the head Giant_Slime_Below, hinged at the back on the jaw
     /// Giant_Slime_Upper), with its own material (Flying_Slime_Mat's look on the user's Flying_Slime_Base texture), and
     /// puts it in Paint_Bees_Round's Giant. The model stays a nested model, so a new export of the FBX shows up by itself.
+    /// It can be hit (user, 2026-11-06): a sphere hit box on a kinematic Rigidbody, a GiantHealth FSM holding Health
+    /// (super tanky) and Enemy Hit Damage copied from Bee_Smarter (its hit settings and sounds; no EXP, no knock-back),
+    /// like the special stage's pumpkins; punched to death it bursts (Burst Effects / Burst Sounds), no reward.
     /// Running it again rebuilds the prefab. Never touches the scene.
     /// </summary>
     public static class GiantSlimeSetupMenu
@@ -26,6 +31,21 @@ namespace Game.EditorTools
         private const string FallSound = "Assets/Audio/SFX/Cartoon_fall_1.wav";
         private const string LandSound = "Assets/Audio/SFX/pumpkin_face_splat.wav";
         private const string SpitSound = "Assets/Audio/SFX/magic_hat_spit_card.wav";
+        private const string BeePath = "Assets/Prefabs/Enemies/Enemies_Smarter/Bee_Smarter.prefab";
+        private const string HealthFsmName = "GiantHealth";
+        // Super tanky (user): the special stage's pumpkins have 120; a closed-fist punch does 1-2.
+        private const float Health = 400f;
+        private static readonly string[] BurstEffects =
+        {
+            "Assets/Prefabs/Effects/Smoke/Smoke_Puff_Burst_Out.prefab",
+            "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Five_Puffs.prefab",
+            "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Hit_Blast.prefab",
+        };
+        private static readonly string[] BurstSounds =
+        {
+            "Assets/Audio/SFX/explosion-312361.wav",
+            "Assets/Audio/SFX/balloon_explode_1.wav",
+        };
         private static readonly string[] HopSounds =
         {
             "Assets/Audio/Kenney Audio/kenney_sci-fi-sounds/Audio/slime_000.ogg",
@@ -104,6 +124,31 @@ namespace Game.EditorTools
                 }
                 else mouth.position = new Vector3(0f, all.size.y * 0.3f, all.extents.z * 0.3f);
 
+                // The hit box: a sphere round its blob (bottom middle on the root), on a kinematic Rigidbody (it's moved by
+                // code); Giant Slime turns it on only while it stands at its spot.
+                var rigid = root.AddComponent<Rigidbody>();
+                rigid.isKinematic = true;
+                rigid.useGravity = false;
+                var ball = root.AddComponent<SphereCollider>();
+                float tall = all.size.y, wide = Mathf.Max(all.size.x, all.size.z);
+                ball.center = new Vector3(0f, tall * 0.5f, 0f);
+                ball.radius = (tall + wide) * 0.25f * 0.9f;
+                AddHealthFsm(root, Health);
+                var bee = AssetDatabase.LoadAssetAtPath<GameObject>(BeePath);
+                var hits = root.AddComponent<EnemyHitDamage>();
+                if (bee != null && bee.TryGetComponent(out EnemyHitDamage beeHits))
+                    EditorJsonUtility.FromJsonOverwrite(EditorJsonUtility.ToJson(beeHits), hits);
+                else notes.Add($"WARNING: no Enemy Hit Damage on {BeePath}: hit settings left empty");
+                var hso = new SerializedObject(hits);
+                hso.FindProperty("toughness").floatValue = 1f;
+                hso.FindProperty("exp").intValue = 0;
+                hso.FindProperty("expOrbs").boolValue = false;
+                hso.FindProperty("healthFsm").stringValue = HealthFsmName;
+                hso.FindProperty("healthVariable").stringValue = "health";
+                hso.FindProperty("oldDamageFsm").stringValue = "";
+                hso.FindProperty("knockBack").boolValue = false;
+                hso.ApplyModifiedPropertiesWithoutUndo();
+
                 var slime = root.AddComponent<GiantSlime>();
                 var so = new SerializedObject(slime);
                 so.FindProperty("body").objectReferenceValue = body;
@@ -112,14 +157,15 @@ namespace Game.EditorTools
                 so.FindProperty("fallSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(FallSound);
                 so.FindProperty("landSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(LandSound);
                 so.FindProperty("spitSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(SpitSound);
-                var hops = so.FindProperty("hopSounds");
-                hops.arraySize = HopSounds.Length;
-                for (int i = 0; i < HopSounds.Length; i++)
-                    hops.GetArrayElementAtIndex(i).objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(HopSounds[i]);
+                SetList<AudioClip>(so.FindProperty("hopSounds"), HopSounds);
+                SetList<AudioClip>(so.FindProperty("hitSounds"), HopSounds);
+                SetList<GameObject>(so.FindProperty("burstEffects"), BurstEffects);
+                SetList<AudioClip>(so.FindProperty("burstSounds"), BurstSounds);
+                so.FindProperty("healthFsm").stringValue = HealthFsmName;
                 so.ApplyModifiedPropertiesWithoutUndo();
 
                 var saved = PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
-                notes.Add($"made {PrefabPath} ({all.size.x:0.00} m across at scale 1)");
+                notes.Add($"made {PrefabPath} ({all.size.x:0.00} m across at scale 1; hit box r {ball.radius:0.00}, health {Health})");
                 HookRound(saved.GetComponent<GiantSlime>(), notes);
             }
             finally
@@ -170,6 +216,33 @@ namespace Game.EditorTools
             {
                 PrefabUtility.UnloadPrefabContents(round);
             }
+        }
+
+        // A tiny health FSM: just the "health" Enemy Hit Damage takes the hits off (Giant Slime does the rest).
+        private static void AddHealthFsm(GameObject root, float health)
+        {
+            var component = root.AddComponent<PlayMakerFSM>();
+            component.FsmName = HealthFsmName;
+            var fsm = component.Fsm;
+            fsm.Variables.FloatVariables = new[] { new FsmFloat("health") { Value = health } };
+            fsm.Events = new[] { FsmEvent.GetFsmEvent("Damage"), FsmEvent.GetFsmEvent("ShakeSmall") };
+            var alive = new FsmState(fsm)
+            {
+                Name = "Alive",
+                Position = new Rect(60f, 120f, 120f, 32f),
+                Actions = new FsmStateAction[0],
+                Transitions = new FsmTransition[0],
+            };
+            fsm.States = new[] { alive };
+            fsm.StartState = alive.Name;
+            alive.SaveActions();
+        }
+
+        private static void SetList<T>(SerializedProperty list, string[] paths) where T : Object
+        {
+            list.arraySize = paths.Length;
+            for (int i = 0; i < paths.Length; i++)
+                list.GetArrayElementAtIndex(i).objectReferenceValue = AssetDatabase.LoadAssetAtPath<T>(paths[i]);
         }
 
         private static Bounds Bounds(GameObject thing)

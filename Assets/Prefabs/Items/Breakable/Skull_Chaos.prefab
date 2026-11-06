@@ -581,6 +581,7 @@ GameObject:
   - component: {fileID: 2515655765920709551}
   - component: {fileID: 8529673103472462751}
   - component: {fileID: 7544828851276127128}
+  - component: {fileID: 348786633460544196}
   m_Layer: 0
   m_Name: Skull_Chaos
   m_TagString: Weapon
@@ -1365,6 +1366,28 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &348786633460544196
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8690403555129543112}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c11e4b6bc78083646ae7bfaf08f00dc7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Rooms.SkullReveal
+  popSeconds: 0.45
+  overshoot: 1.25
+  spinDegrees: 360
+  effects: []
+  effectSize: 0.5
+  sound: {fileID: 8300000, guid: 3b726b2cac4693747bbae56f01b234e5, type: 3}
+  volume: 0.9
+  touch: {fileID: 8069303427665715890}
+  nearReach: 0.6
+  nearAfter: 0.6
 --- !u!1001 &990268271144387494
 PrefabInstance:
   m_ObjectHideFlags: 0

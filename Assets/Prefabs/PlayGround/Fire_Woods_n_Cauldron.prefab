@@ -15948,6 +15948,8 @@ GameObject:
   - component: {fileID: 2501887117614838059}
   - component: {fileID: 6869284728103510418}
   - component: {fileID: 8827829908399273245}
+  - component: {fileID: 2191865971262014776}
+  - component: {fileID: 8063553352153741508}
   m_Layer: 0
   m_Name: Fire_Woods_n_Cauldron
   m_TagString: Untagged
@@ -16787,7 +16789,7 @@ MonoBehaviour:
     boss: {fileID: 8737675529452535309, guid: 2dc3a50fdaa9b6f49a54e2b71aff4733, type: 3}
     bosses: 2
     bossWhenLeft: 2
-    chest: {fileID: 1466195575395978692, guid: 695727d522e2c0745821a45b81c78163, type: 3}
+    chest: {fileID: 5004806074365477220, guid: 0d672aeee51ec0f4384a940ebac911cb, type: 3}
   - label: 'Round 2: Spider_Normal x24, 2x Spider_Boss_PumpkinButt'
     enemies:
     - {fileID: 2515223889021974101, guid: 3f36e39c26e449b448cf35bde06ec618, type: 3}
@@ -16797,7 +16799,7 @@ MonoBehaviour:
     boss: {fileID: 2127008026668659143, guid: 6349495089300b0418865a3798db7edc, type: 3}
     bosses: 2
     bossWhenLeft: 2
-    chest: {fileID: 1466195575395978692, guid: fb0904e1f04acf14cb62e47c0b095b9d, type: 3}
+    chest: {fileID: 8518339275496821638, guid: 1cfdbf71c85721e4daaa8295b4b11fab, type: 3}
   - label: 'Round 3: Cockroach_Small x20, 2x Cockroach_Boss'
     enemies:
     - {fileID: 8879391879696220359, guid: 05da503bb47783844a68712d2fd9719c, type: 3}
@@ -16807,7 +16809,7 @@ MonoBehaviour:
     boss: {fileID: 5720646805313591138, guid: ac753d69e579d974d93034fae15d06d4, type: 3}
     bosses: 2
     bossWhenLeft: 2
-    chest: {fileID: 1466195575395978692, guid: af8841f997004e84dbcdf5e38c75fcc8, type: 3}
+    chest: {fileID: 1076085778901865882, guid: 671fc05d320fdd0478535c70a7973b98, type: 3}
   - label: 'Round 4: Cockroach_Normal x24, 2x Cockroach_Boss_PumpkinButt'
     enemies:
     - {fileID: 3397754568903227887, guid: 9d68f40626cd378448edce75bb037da3, type: 3}
@@ -16817,7 +16819,7 @@ MonoBehaviour:
     boss: {fileID: 586764779664862803, guid: f58ed6f82075fcc42b834290bed4b7b4, type: 3}
     bosses: 2
     bossWhenLeft: 2
-    chest: {fileID: 1466195575395978692, guid: 085fe5debbfecb947b1eff9cec31736c, type: 3}
+    chest: {fileID: 4731583912152915849, guid: 980d34184b273ed4e9d3a266b073bf44, type: 3}
   spawnEffect: {fileID: 431296081563789977, guid: 7d85674d137626445accce4cef7fe159,
     type: 3}
   spawnEffectScale: 0.08
@@ -16837,6 +16839,43 @@ MonoBehaviour:
   - Pumpkin_10
   seedItem: Yellow_Seed
   seedWaitSeconds: 320
+--- !u!114 &2191865971262014776
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7200057240857087366}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1fdfcd5e30dab2a46be0819a2d0a6b07, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.PlayGround.CookingRewards
+  firstClearKey: CookingGameFirstClear
+  statPoints: 1
+  effect: {fileID: 4623798490042213957, guid: e1812b1d90f61c94dab0f126b70eb3f3, type: 3}
+  sound: {fileID: 8300000, guid: e099ffdff64cfea48992357c5acf46a2, type: 3}
+  noticeDelay: 2.5
+  title: COOKING MASTER!
+  body: +1 stat point, yours to keep.
+  closeLine: Bump your fists to spend it
+--- !u!114 &8063553352153741508
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7200057240857087366}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c673df35bfc2dce43899bf2b2465734a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.PlayGround.SpecialStage3Trigger
+  stage: {fileID: 823152357294025558, guid: f4e4af37ef1eccc458850183f147cfba, type: 3}
+  round: 1
+  stageAt: {x: 0, y: 0, z: 400}
+  delay: 3
+  always: 0
 --- !u!1 &7245688906410322813
 GameObject:
   m_ObjectHideFlags: 0

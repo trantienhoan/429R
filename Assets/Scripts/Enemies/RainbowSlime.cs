@@ -13,6 +13,8 @@ namespace Game.Enemies
     /// and poops out a Slime Bomber of a random paint colour, which dive-bombs their face. Killing it (2 health: a good
     /// throw, a lucky punch) gives the Candy Helmet, as the white cockroach did; left alone, after its Lifetime it
     /// laughs and flies off, gone. Set Up Slime Enemies builds Prefabs/Enemies/Rainbow_Slime and sets it on the bugs.
+    /// The PlayGround's white slimes (PG_White_Slime, user 2026-11-06: they take the ghost balloons' place, let out by
+    /// the haunted trees, bushes and skulls) are the same slime with Helmet Seconds 0 and Prizes: normal candies.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(FlyingSlime))]
@@ -67,6 +69,10 @@ namespace Game.Enemies
         [SerializeField] private GameObject rewardPop;
         [SerializeField] private AudioClip rewardSound;
         [SerializeField] private AudioClip[] popSounds = System.Array.Empty<AudioClip>();
+        [Tooltip("Killing it also drops this many (random between) of these, one picked at random each (e.g. the normal " +
+                 "candies, Candy_1-8). Empty: nothing.")]
+        [SerializeField] private GameObject[] prizes = System.Array.Empty<GameObject>();
+        [SerializeField] private Vector2Int prizeCount = new(1, 2);
         [Tooltip("Seconds it stays (random between) before it laughs and flies off, gone (no reward).")]
         [SerializeField] private Vector2 lifetime = new(25f, 40f);
 
@@ -452,10 +458,28 @@ namespace Game.Enemies
                 if (rewardPop != null) EffectPool.Play(rewardPop, at);
                 if (rewardSound != null) AudioSource.PlayClipAtPoint(rewardSound, at);
                 if (helmetSeconds > 0f) Game.Leveling.PlayerBuffs.Give(Game.Leveling.Buff.CandyHelmet, helmetSeconds);
+                DropPrizes(at);
             }
             SlimeKit.Play(popSounds, at, 0.9f, new Vector2(1f, 1.2f));
             var head = SlimeKit.Head;
             look.Pop(head != null ? head.position : (Vector3?)null);
+        }
+
+        // Its prizes fall from where it burst, tossed a little (into CurrentlySpawnedStuffs, cleared with the stage).
+        private void DropPrizes(Vector3 at)
+        {
+            if (prizes == null || prizes.Length == 0 || prizeCount.y <= 0) return;
+            var holder = HutongGames.PlayMaker.FsmVariables.GlobalVariables.FindFsmGameObject("CurrentlySpawnedStuffs");
+            var parent = holder != null && holder.Value != null ? holder.Value.transform : null;
+            int count = Random.Range(Mathf.Min(prizeCount.x, prizeCount.y), prizeCount.y + 1);
+            for (int i = 0; i < count; i++)
+            {
+                var prefab = prizes[Random.Range(0, prizes.Length)];
+                if (prefab == null) continue;
+                var made = Instantiate(prefab, at + Random.insideUnitSphere * 0.2f, Random.rotation, parent);
+                if (made.TryGetComponent<Rigidbody>(out var prize) && !prize.isKinematic)
+                    prize.linearVelocity = new Vector3(Random.Range(-1f, 1f), Random.Range(0.5f, 1.5f), Random.Range(-1f, 1f));
+            }
         }
     }
 }

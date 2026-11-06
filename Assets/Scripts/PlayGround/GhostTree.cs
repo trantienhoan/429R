@@ -24,7 +24,8 @@ namespace Game.PlayGround
     public class GhostTree : MonoBehaviour, IHittable
     {
         [Header("Ghosts")]
-        [Tooltip("Ghost balloons it lets out; one at random each time.")]
+        [Tooltip("Ghosts it lets out, one at random each time: ghost balloons, or anything else (the PlayGround's white " +
+                 "slimes, PG_White_Slime) made at its crown.")]
         [SerializeField] private GameObject[] ghosts = System.Array.Empty<GameObject>();
         [Tooltip("Seconds between ghosts, picked at random between these.")]
         [Min(1f)] [SerializeField] private float minSeconds = 20f;
@@ -193,8 +194,22 @@ namespace Game.PlayGround
             var crown = Crown();
             var spread = Random.insideUnitCircle * ghostSpread;
             var home = crown + new Vector3(spread.x, ghostHeight + Random.Range(0f, 1f), spread.y);
-            var ghost = GhostBalloon.Spawn(prefab, crown, home, SpawnedStuff());
-            if (ghost != null) alive.Add(ghost.gameObject);
+            var ghost = LetOut(prefab, crown, home, SpawnedStuff());
+            if (ghost != null) alive.Add(ghost);
+        }
+
+        /// <summary>
+        /// Lets one of a tree's or bush's ghosts out at From: a ghost balloon floats up to Home; anything else (the
+        /// PlayGround's white slimes) is just made there, facing a random way, and goes about its own business.
+        /// </summary>
+        internal static GameObject LetOut(GameObject prefab, Vector3 from, Vector3 home, Transform parent)
+        {
+            if (prefab.GetComponent<GhostBalloon>() != null)
+            {
+                var balloon = GhostBalloon.Spawn(prefab, from, home, parent);
+                return balloon != null ? balloon.gameObject : null;
+            }
+            return Instantiate(prefab, from, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f), parent);
         }
 
         // Logs tumble down around the trunk; a bush stays where it stood. Its own Health FSM, if it has one, breaks it

@@ -6,7 +6,7 @@ namespace Game.Enemies
     /// <summary>
     /// A small flying slime the Rainbow Slime poops out (user 2026-11-05: "sometime poop out a colored flying slime that
     /// dive bomb into Player's face"). It plops out and drops a little, flies up in front of the player's face, hovers a
-    /// moment, winds up and dive-bombs the face (a falling whistle). On the face: a bite (Face Share of a bee's), its
+    /// moment, winds up and dive-bombs the face (a short swoosh). On the face: a bite (Face Share of a bee's), its
     /// paint splatted on the view, and it's gone. Dodged: it overshoots, turns and comes again (Dives times at most, then
     /// it pops by itself). One good punch (or anything that hurts it) pops it. Its Flying Slime is its look; Enemy Hit
     /// Damage and its SlimeHealth FSM take the hits. Set Up Slime Enemies builds Prefabs/Enemies/Slime_Bomber.
@@ -40,7 +40,10 @@ namespace Game.Enemies
         [Header("Look and sound")]
         [Tooltip("Paint splatted on the view when it hits the face (the paint stage's splat blob).")]
         [SerializeField] private Material splatMaterial;
+        [Tooltip("Its dive's swoosh (user, 2026-11-06: not the long falling-bomb whistle): it rides along with the slime and " +
+                 "stops the moment it's hit, knocked back, splats on the face or pops.")]
         [SerializeField] private AudioClip[] diveSounds = System.Array.Empty<AudioClip>();
+        [SerializeField] private Vector2 divePitch = new(1.15f, 1.35f);
         [SerializeField] private AudioClip[] faceSounds = System.Array.Empty<AudioClip>();
         [SerializeField] private AudioClip[] popSounds = System.Array.Empty<AudioClip>();
         [Range(0f, 1f)]
@@ -57,6 +60,11 @@ namespace Game.Enemies
         private int divesLeft;
         private float sideOffset;
         private bool gone;
+        // The dive's swoosh while it plays (on the slime, so it can be stopped).
+        private AudioSource diveVoice;
+
+        /// <summary>Raised when one splats on the player's face (e.g. Special Stage 3 pushes them off the bridge).</summary>
+        public static event System.Action<SlimeBomber> FaceHit;
 
         /// <summary>Its paint colour (it's pooped out in this one).</summary>
         public Color Colour => look != null ? look.Colour : Color.white;
@@ -89,6 +97,13 @@ namespace Game.Enemies
         {
             EnemyHitDamage.AnyHit -= OnHit;
             EnemyHitDamage.WeakHit -= OnWeakHit;
+            StopDiveSound();
+        }
+
+        private void StopDiveSound()
+        {
+            if (diveVoice != null) Destroy(diveVoice.gameObject);
+            diveVoice = null;
         }
 
         private void Enter(State next)
@@ -158,7 +173,8 @@ namespace Game.Enemies
                     {
                         diveFrom = pos;
                         diveTo = eyes;
-                        SlimeKit.Play(diveSounds, pos, volume, new Vector2(1f, 1.15f));
+                        StopDiveSound();
+                        diveVoice = SlimeKit.PlayOn(diveSounds, transform, volume, divePitch);
                         Enter(State.Dive);
                     }
                     break;
@@ -224,6 +240,7 @@ namespace Game.Enemies
             Game.VFX.PaintOnView.Splat(splatMaterial, Colour);
             SlimeKit.Play(faceSounds, transform.position, volume, new Vector2(0.95f, 1.1f));
             if (hits != null) hits.noReward = true;
+            FaceHit?.Invoke(this);
             Pop(false);
         }
 
@@ -242,6 +259,7 @@ namespace Game.Enemies
 
         private void Knocked(float strength)
         {
+            StopDiveSound();
             var head = SlimeKit.Head;
             var from = head != null ? head.position : transform.position - transform.forward;
             look.Bonk(from, strength);
@@ -261,6 +279,8 @@ namespace Game.Enemies
             if (gone) return;
             gone = true;
             state = State.Gone;
+            // Popped however (a punch, a blast, the face): its swoosh stops with it.
+            StopDiveSound();
             var head = SlimeKit.Head;
             look.Pop(byPlayer && head != null ? head.position : (Vector3?)null);
         }

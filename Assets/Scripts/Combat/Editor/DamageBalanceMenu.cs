@@ -59,7 +59,6 @@ namespace Game.EditorTools
             ("BedRoom/Bedroom_Candy_Basket_Metal", ThrowHeavy, 0f),
             ("BedRoom/Bedroom_Candy_Basket_P", ThrowHeavy, 0f),
             ("BedRoom/Livingroom_Cloth_Hanger_Tree", ThrowHeavy, 0f),
-            ("PlayGround/Lolipop_Basket", ThrowHeavy, 0f),
             ("Items/Metal_Block/Jenga_Block.003", ThrowHeavy, 0f),
 
             // Medium throws. Pumpkins too: the tree keeps growing them, and they last a few throws.
@@ -119,13 +118,6 @@ namespace Game.EditorTools
             ("Items/Breakable/Skull_3", Small, 0f),
             ("Items/Breakable/Web_Ball_On_Web", Small, 0f),
             ("Items/Breakable/Pumpkin_00", Small, 0f),
-            ("PlayGround/Lolipop_1", Small, 0f),
-            ("PlayGround/Lolipop_2", Small, 0f),
-            ("PlayGround/Lolipop_3", Small, 0f),
-            ("PlayGround/Lolipop_4", Small, 0f),
-            ("PlayGround/Lolipop_5", Small, 0f),
-            ("PlayGround/Lolipop_6", Small, 0f),
-            ("PlayGround/Lolipop_7", Small, 0f),
             ("PlayGround/Dropped_Bone_Fuel", Small, 0f),
             ("PlayGround/Dropped_Wood_Fuel", Small, 0f),
             ("Light/Candle_Fat", Small, 0f),
