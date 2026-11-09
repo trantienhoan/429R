@@ -8,8 +8,9 @@ using UnityEngine.XR.Interaction.Toolkit.Interactables;
 namespace Game.PlayGround
 {
     /// <summary>
-    /// The upside-down magic hat on the table that knows the cauldron's recipe. Hit it (with something you hold or
-    /// throw, or slap it) and it shakes and spits out its recipe card (Recipe_Card): the card flies up out of it,
+    /// The magician's hat that knows the cauldron's recipe (user, 2026-11-07). It lies any way up, its hole pointing
+    /// anywhere. Hit it (with something you hold or throw, or slap it) and it shakes, hops and turns its hole to the
+    /// sky, landing on its crown, and spits out its recipe card (Recipe_Card): the card shoots up out of the hole,
     /// growing from a fifth of its size to full size, and hangs above it with the recipe (each ingredient's picture and
     /// how many) on its blank side, turned to the player. After a few seconds, or once the player walks off, it flies
     /// back into the hat; another hit brings it out again. Once the card has been out, the cauldron shows the recipe
@@ -76,6 +77,25 @@ namespace Game.PlayGround
         [Tooltip("Played when it shakes after a wrong recipe.")]
         [SerializeField] private AudioClip shakeSound;
 
+        [Header("Magician's hat")]
+        [Tooltip("It starts (and lands after being hidden) lying any way up, its hole pointing anywhere.")]
+        [SerializeField] private bool lieAnyWay = true;
+        [Tooltip("Seconds it takes, after the shake, to hop and turn its hole to the sky.")]
+        [Min(0.05f)]
+        [SerializeField] private float flipSeconds = 0.4f;
+        [Tooltip("How high it hops as it turns over, in metres.")]
+        [Min(0f)]
+        [SerializeField] private float flipHop = 0.3f;
+        [Tooltip("Its hole counts as already pointing up within this many degrees (then it only shakes).")]
+        [Range(0f, 60f)]
+        [SerializeField] private float uprightWithin = 20f;
+        [Tooltip("How far into the hole the card starts, in metres below the brim.")]
+        [Min(0f)]
+        [SerializeField] private float holeDepth = 0.25f;
+        [Tooltip("How high the card shoots above where it then hangs, in metres (it falls back a little to hang).")]
+        [Min(0f)]
+        [SerializeField] private float launchHeight = 0.8f;
+
         // The recipe is written this many pixels wide, over this much of the card's side (its border stays clear).
         private const float CanvasWidth = 300f;
         private const float FaceUse = 0.74f;
@@ -105,6 +125,11 @@ namespace Game.PlayGround
         private bool shaking;
         private Vector3 restPosition;
         private Quaternion restRotation;
+        // Shaking and turning its hole up after a hit: the card waits for it.
+        private bool tricking;
+        private bool trickWasKinematic;
+        // Turned hole up by a hit and held there (kinematic) until it's hidden again.
+        private bool standing;
 
         private void Awake()
         {
@@ -129,6 +154,32 @@ namespace Game.PlayGround
             hands = new[] { left, right };
             lastHand = new Vector3[hands.Length];
             for (int i = 0; i < hands.Length; i++) lastHand[i] = hands[i] != null ? hands[i].position : Vector3.zero;
+
+            LieAnyWay();
+        }
+
+        /// <summary>
+        /// Drops it a little, lying any way up (its hole pointing anywhere), where it stands: its start, and wherever it
+        /// was hidden. Only a hat that falls by itself (not kinematic); off with Lie Any Way.
+        /// </summary>
+        public void LieAnyWay()
+        {
+            if (!lieAnyWay || body == null || tricking) return;
+            if (standing)
+            {
+                body.isKinematic = false;
+                standing = false;
+            }
+            if (body.isKinematic) return;
+            // The hole sideways most of the time, sometimes face down or up.
+            float tilt = Random.value < 0.7f ? Random.Range(70f, 110f) : (Random.value < 0.5f ? 180f : 0f);
+            var turn = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f) * Quaternion.Euler(tilt, 0f, 0f);
+            var at = transform.position + Vector3.up * 0.4f;
+            transform.SetPositionAndRotation(at, turn);
+            body.position = at;
+            body.rotation = turn;
+            body.linearVelocity = Vector3.zero;
+            body.angularVelocity = Vector3.zero;
         }
 
         private void OnEnable()
@@ -141,6 +192,7 @@ namespace Game.PlayGround
         {
             Cauldron.CookFailed -= OnCookFailed;
             Cauldron.RecipeChanged -= OnRecipeChanged;
+            EndTrick();
             if (cardShown != null) cardShown.gameObject.SetActive(false);
             state = CardState.Inside;
         }
@@ -153,11 +205,12 @@ namespace Game.PlayGround
         /// <summary>Shakes and spits out the recipe card, or keeps it out longer if it's out already.</summary>
         public void ShowRecipe()
         {
-            Shake(hitShakeSeconds, null);
             switch (state)
             {
                 case CardState.Inside:
+                    // Shakes, turns its hole to the sky, then the card comes out.
                     SetState(CardState.Spitting);
+                    StartCoroutine(HatTrick());
                     break;
                 case CardState.Out:
                     // Stays out longer.
@@ -168,6 +221,8 @@ namespace Game.PlayGround
                     FlyFromHere(CardState.FlyingOut);
                     break;
             }
+            // Every hit shakes it, the card out or not.
+            if (state != CardState.Spitting && !tricking) StartCoroutine(HatTrick());
         }
 
         /// <summary>Rocks and hops the hat with a giggle, so the player notices it.</summary>
@@ -194,7 +249,7 @@ namespace Game.PlayGround
             switch (state)
             {
                 case CardState.Spitting:
-                    if (since >= hitShakeSeconds) SpitCard();
+                    if (!tricking) SpitCard();
                     break;
                 case CardState.FlyingOut:
                     if (since >= flySeconds) SetState(CardState.Out);
@@ -221,7 +276,7 @@ namespace Game.PlayGround
                     // Shoots up past its spot and settles back into it, growing, and spins round to face the player.
                     float u = Mathf.Clamp01(since / flySeconds);
                     float eased = 1f - (1f - u) * (1f - u) * (1f - u);
-                    var over = hover + Vector3.up * (0.25f * Vector3.Distance(flyFrom, hover));
+                    var over = hover + Vector3.up * Mathf.Max(launchHeight, 0.25f * Vector3.Distance(flyFrom, hover));
                     var at = Bezier(flyFrom, over, hover, eased);
                     Pose(at, Quaternion.AngleAxis(360f * (1f - eased), Vector3.up) * Facing(at), Mathf.LerpUnclamped(flyFromSize, 1f, Overshoot(u)));
                     break;
@@ -264,7 +319,8 @@ namespace Game.PlayGround
             // The player has seen it now, so the cauldron shows it too.
             if (cauldron != null) cauldron.RevealRecipe();
             hatTop = Top();
-            flyFrom = hatTop;
+            // From down in the hole, straight up out of it.
+            flyFrom = hatTop - Vector3.up * holeDepth;
             flyFromSize = startSize;
             Pose(flyFrom, Facing(flyFrom), startSize);
             cardShown.gameObject.SetActive(true);
@@ -402,6 +458,95 @@ namespace Game.PlayGround
                 body.AddForce(Vector3.up * 2.5f, ForceMode.VelocityChange);
                 body.AddTorque(Random.onUnitSphere * 4f, ForceMode.VelocityChange);
             }
+        }
+
+        // Hit: it shakes where it lies, then hops and turns over so its hole points at the sky, landing on its crown.
+        // It's held by this (kinematic) meanwhile and falls by itself again after.
+        private System.Collections.IEnumerator HatTrick()
+        {
+            tricking = true;
+            trickWasKinematic = body != null && body.isKinematic;
+            if (body != null && !trickWasKinematic)
+            {
+                body.linearVelocity = Vector3.zero;
+                body.angularVelocity = Vector3.zero;
+                body.isKinematic = true;
+            }
+            var startAt = transform.position;
+            var startTurn = transform.rotation;
+
+            // A short shake.
+            for (float t = 0f; t < hitShakeSeconds; t += Time.deltaTime)
+            {
+                float fade = 1f - t / hitShakeSeconds;
+                float rock = Mathf.Sin(t * Mathf.PI * 2f * 4f) * shakeAngle * fade;
+                float hop = Mathf.Abs(Mathf.Sin(t * Mathf.PI * 2f * 2f)) * shakeHop * fade;
+                transform.SetPositionAndRotation(startAt + Vector3.up * hop, startTurn * Quaternion.Euler(rock, 0f, rock * 0.6f));
+                yield return null;
+            }
+            transform.SetPositionAndRotation(startAt, startTurn);
+
+            // The hole (its up) to the sky, keeping which way it faces; it lands on its crown (its pivot) on the floor.
+            if (Vector3.Angle(transform.up, Vector3.up) > uprightWithin)
+            {
+                var facing = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+                if (facing.sqrMagnitude < 0.01f) facing = Vector3.ProjectOnPlane(-transform.up, Vector3.up);
+                if (facing.sqrMagnitude < 0.01f) facing = Vector3.forward;
+                var endTurn = Quaternion.LookRotation(facing.normalized, Vector3.up);
+                // It stands on what it lay on: its crown (pivot) goes where its lowest point is now, a hair above.
+                var middle = Middle();
+                var endAt = new Vector3(middle.x, Bottom() + 0.01f, middle.z);
+                for (float t = 0f; t < flipSeconds; t += Time.deltaTime)
+                {
+                    float u = t / flipSeconds;
+                    float eased = u * u * (3f - 2f * u);
+                    var at = Vector3.Lerp(startAt, endAt, eased) + Vector3.up * (Mathf.Sin(u * Mathf.PI) * flipHop);
+                    transform.SetPositionAndRotation(at, Quaternion.Slerp(startTurn, endTurn, eased));
+                    yield return null;
+                }
+                transform.SetPositionAndRotation(endAt, endTurn);
+            }
+            EndTrick();
+        }
+
+        // It stays standing there, hole up, held still (so nothing it stands against can knock it flying), until it's
+        // hidden again and lies any way up.
+        private void EndTrick()
+        {
+            if (!tricking) return;
+            tricking = false;
+            if (body != null)
+            {
+                body.position = transform.position;
+                body.rotation = transform.rotation;
+                body.isKinematic = true;
+                if (!trickWasKinematic) standing = true;
+            }
+            restPosition = transform.localPosition;
+            restRotation = transform.localRotation;
+        }
+
+        // The middle of its colliders.
+        private Vector3 Middle()
+        {
+            if (colliders.Count == 0) return transform.position;
+            var bounds = colliders[0].bounds;
+            foreach (var c in colliders)
+            {
+                if (c != null) bounds.Encapsulate(c.bounds);
+            }
+            return bounds.center;
+        }
+
+        // Its lowest point now (what it rests on).
+        private float Bottom()
+        {
+            float bottom = transform.position.y;
+            foreach (var c in colliders)
+            {
+                if (c != null) bottom = Mathf.Min(bottom, c.bounds.min.y);
+            }
+            return bottom;
         }
 
         // A slapping hand counts as a hit too (hands don't bump into things the way held items do).

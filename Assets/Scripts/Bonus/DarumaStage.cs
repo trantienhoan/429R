@@ -17,9 +17,13 @@ namespace Game.Bonus
     /// right after it turns) and it's caught: its mouth opens and a stream of bomber slimes flies out, and the first one
     /// to splat on the face throws the player off the bridge (if none does, it pushes them anyway). A fall puts them back
     /// at the start with the usual fall damage, and the clock keeps running (60 s). Touch the slime in time: a big
-    /// firework, EXP in gold orbs and a fountain of candies, a few seconds to grab them, then back where they were. No
-    /// teleport on the bridge. The PlayGround's own creatures and music wait meanwhile.
-    /// Made by Special Stage 3 Trigger (on the cauldron) when the 2nd pumpkin is caught with its whole wave beaten.
+    /// firework, EXP in gold orbs and a fountain of candies, a few seconds to grab them. No teleport on the bridge. The
+    /// PlayGround's own creatures and music wait meanwhile.
+    /// The PlayGround's finale (user, 2026-11-07): made by Special Stage 3 Trigger (on the cauldron) when the mystery pot
+    /// breaks. A win leaves the Green Seed (The_Seed) on the slime's platform; once it's eaten (or after 20 s) GAMESTAGES
+    /// ends the PlayGround, and the player, in the black, is put on the rooftop near the Lid, facing it. Time running out
+    /// is the end of the run: no lucky coins, a death and a new run. A pause (the menu, a notice, the coins) is like
+    /// being knocked down: nothing counts, and a short grace after it.
     /// Tools > 429 Game > Bonus > Set Up Special Stage 3 builds it (Prefabs/Bonus/Special_Stage_3).
     /// </summary>
     public class DarumaStage : MonoBehaviour
@@ -45,6 +49,19 @@ namespace Game.Bonus
         [SerializeField] private float noteSeconds = 0.42f;
         [Range(0f, 1f)]
         [SerializeField] private float songVolume = 1f;
+        [Tooltip("The whole song is never longer than this, in seconds (user, 2026-11-06: \"a short song <10 seconds and " +
+                 "can be fast and slow randomly while being played\").")]
+        [Min(1f)]
+        [SerializeField] private float maxSongSeconds = 9.5f;
+        [Tooltip("Its speeds: slow stretches go this slow (x to y times normal), fast ones this fast (x to y; the top grows " +
+                 "towards Fast Near as the player gets close).")]
+        [SerializeField] private Vector2 slowTempo = new(0.45f, 0.8f);
+        [SerializeField] private Vector2 fastTempo = new(1.4f, 2.6f);
+        [Min(1f)]
+        [SerializeField] private float fastNear = 3.5f;
+        [Tooltip("How much a note's pitch follows its speed (0 = never, 1 = fully: twice as fast, an octave up).")]
+        [Range(0f, 1f)]
+        [SerializeField] private float pitchFollowsTempo = 0.25f;
         [Tooltip("Shown on it while it sings (the music notes).")]
         [SerializeField] private GameObject singEffect;
 
@@ -90,8 +107,39 @@ namespace Game.Bonus
         [SerializeField] private AudioClip winSound;
         [SerializeField] private AudioClip laughSound;
         [SerializeField] private AudioClip tickSound;
-        [Tooltip("Seconds to grab the candies before going back.")]
+        [Tooltip("Seconds to grab the candies before the seed shows.")]
         [SerializeField] private float collectSeconds = 15f;
+
+        [Header("After a win: the seed and the rooftop")]
+        [Tooltip("Not eaten after this many seconds: it's eaten for them (as if touched).")]
+        [Min(1f)]
+        [SerializeField] private float seedSeconds = 20f;
+        [Tooltip("The seed shows this far to the player's side, kept this close to the slime's centre (its platform is " +
+                 "7 x 7 m), this high over the floor (metres).")]
+        [SerializeField] private float seedBeside = 1f;
+        [SerializeField] private float seedArea = 3f;
+        [SerializeField] private float seedHeight = 0.5f;
+        [Tooltip("Seconds in the black waiting for the rooftop before the view comes back (with a warning; it keeps " +
+                 "waiting on the stage, never back to the PlayGround).")]
+        [Min(1f)]
+        [SerializeField] private float roofWaitSeconds = 20f;
+        [Tooltip("The player is put this far from the Lid (metres), facing it.")]
+        [Min(0.5f)]
+        [SerializeField] private float lidStandOff = 4f;
+
+        [Header("Pause")]
+        [Tooltip("Seconds after a pause or getting up before moving counts again.")]
+        [Min(0f)]
+        [SerializeField] private float resumeGrace = 1f;
+
+        [Header("Host colour (a clear cue)")]
+        [Tooltip("The host's skin while the stage runs: the flying slime's paint texture (Flying_Slime_Paint: white where it " +
+                 "takes the colour, the stem, eyes and mouth as they are), so the colours below show clean. Empty: its own.")]
+        [SerializeField] private Texture hostPaint;
+        [Tooltip("Its colour while it sings (walk!), while it looks (freeze!), and once it's over.")]
+        [SerializeField] private Color singColour = new(0.25f, 0.95f, 0.35f);
+        [SerializeField] private Color lookColour = new(1f, 0.15f, 0.12f);
+        [SerializeField] private Color restColour = new(1f, 0.8f, 0.3f);
 
         [Header("Signs and look")]
         [SerializeField] private TMP_Text timerText;
@@ -105,7 +153,11 @@ namespace Game.Bonus
         /// <summary>Raised when it's over: won or not.</summary>
         public static event System.Action<DarumaStage, bool> Ended;
 
-        /// <summary>Over, the player back where they were (Play tests read it).</summary>
+        /// <summary>The seed a win leaves on the slime's platform (Items/Chest/The_Seed; Special Stage 3 Trigger hands it
+        /// over). Empty: a win sets GAMESTAGES The_Seed itself (no item, no heal).</summary>
+        public GameObject SeedPrefab { get; set; }
+
+        /// <summary>Over: the player back where they were, on the rooftop, or dying (Play tests read it).</summary>
         public bool Finished { get; private set; }
         public bool Won { get; private set; }
         public bool Caught { get; private set; }
@@ -131,13 +183,30 @@ namespace Game.Bonus
         private bool fogSet;
         private float caughtAt, pushedAt;
         private int lastTick = -1;
+        // Where the player came from is known (they were taken in), and the host's colour override.
+        private bool tookPlayer;
+        private MaterialPropertyBlock hostBlock;
+        private Renderer[] hostLooks;
+        private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        // The player's health (PlayerHealth FSM), for "knocked down".
+        private HutongGames.PlayMaker.FsmFloat playerHealth;
+        // Moving doesn't count until then (just back from a pause or from being down).
+        private float excusedUntil;
+        // GAMESTAGES' bool the seed sets, and its seed FSM's state and event.
+        private const string SeedBool = "The_Seed";
+        private const string SeedWaitState = "Rotate and Wait";
+        private const string SeedEatenEvent = "next";
 
-        /// <summary>Takes the player in (fade, the PlayGround waits, onto the bridge) and starts the game.</summary>
-        public void Begin()
+        /// <summary>
+        /// Takes the player in (fade, the PlayGround waits, onto the bridge) and starts the game. Running is set at once;
+        /// the player is taken after Start Delay seconds, and never while down or paused.
+        /// </summary>
+        public void Begin(float startDelay = 0f)
         {
             if (Running != null && Running != this) { Destroy(gameObject); return; }
             Running = this;
-            StartCoroutine(Play());
+            StartCoroutine(Play(startDelay));
         }
 
         private void Awake()
@@ -169,19 +238,26 @@ namespace Game.Bonus
 
         private void OnDestroy()
         {
-            // Cleared away mid-game (e.g. Game Over): give everything back.
+            // Cleared away mid-game (e.g. Game Over): give everything back, and a player still out here (within 60 m of the
+            // stage) goes back where they came from instead of standing in the empty void.
             Restore();
+            if (tookPlayer && !Finished && origin != null && head != null &&
+                (HeadFloor() - transform.position).sqrMagnitude < 60f * 60f)
+                MovePlayer(returnSpot, returnYaw);
             if (Running == this) Running = null;
         }
 
         // ------------------------------------------------------------------ the game
 
-        private IEnumerator Play()
+        private IEnumerator Play(float startDelay)
         {
             origin = FindAnyObjectByType<XROrigin>();
             head = origin != null && origin.Camera != null ? origin.Camera.transform : (Camera.main != null ? Camera.main.transform : null);
             leftHand = Find(origin, "Left Controller");
             rightHand = Find(origin, "Right Controller");
+            // The pot's smoke first; never mid coin flip, mid revive or while paused (the rig isn't moved then).
+            if (startDelay > 0f) yield return new WaitForSeconds(startDelay);
+            while (PlayerDown() || Paused()) yield return null;
             var fade = HeadsetFade.Find();
             if (fade != null) fade.FadeOut(0.5f);
             yield return new WaitForSeconds(0.6f);
@@ -189,6 +265,7 @@ namespace Game.Bonus
             // The PlayGround waits; the bridge takes the player in, no teleport here.
             returnSpot = HeadFloor();
             returnYaw = HeadYaw();
+            tookPlayer = true;
             Freeze(true);
             Teleporting(false);
             Fog(true);
@@ -204,6 +281,7 @@ namespace Game.Bonus
                 host.TurnSpeed = turnSpeed;
                 host.FaceTarget = away;
             }
+            HostColour(restColour);
             if (fade != null) fade.FadeIn(0.8f);
             Status("SPECIAL STAGE 3");
             yield return new WaitForSeconds(introSeconds);
@@ -236,21 +314,26 @@ namespace Game.Bonus
             Singing = true;
             Looking = false;
             if (host != null) host.FaceTarget = away;
+            HostColour(singColour);
             if (singEffect != null) singEffect.SetActive(true);
             var plan = PlanSong(Progress());
             for (int i = 0; i < plan.Count && !over; i++)
             {
-                if (notes.Length > 0 && notes[i % notes.Length] != null)
+                var note = plan[i];
+                if (notes.Length > 0 && notes[note.index % notes.Length] != null)
                 {
                     voice.Stop();
-                    voice.clip = notes[i % notes.Length];
+                    voice.clip = notes[note.index % notes.Length];
                     voice.volume = songVolume;
+                    // Fast stretches sound a little higher, slow ones a little lower.
+                    voice.pitch = Mathf.Clamp(Mathf.Pow(note.tempo, pitchFollowsTempo), 0.75f, 1.45f);
                     voice.Play();
                 }
                 if (host != null) host.Kick(0.12f);
-                float until = Time.time + plan[i];
+                float until = Time.time + note.seconds;
                 while (Time.time < until && !over) yield return null;
             }
+            voice.pitch = 1f;
             if (singEffect != null) singEffect.SetActive(false);
             Singing = false;
         }
@@ -258,6 +341,7 @@ namespace Game.Bonus
         private IEnumerator Look()
         {
             if (host != null) host.FaceTarget = head;
+            HostColour(lookColour);
             PlayAt(turnSound, host != null ? host.transform.position : transform.position, 1f);
             if (lookLight != null) lookLight.enabled = true;
             // The turn, then a moment to stop.
@@ -274,6 +358,17 @@ namespace Game.Bonus
             var rightAt = Local(rightHand);
             while (Time.time < until && !over && !Caught)
             {
+                // Knocked down (health out, the lucky coins, getting back up) or paused (the menu, a notice), or only just
+                // back from either: nothing counts, and getting up (or the punch that closes a notice) isn't moving.
+                if (Excused())
+                {
+                    rigAt = origin != null ? origin.transform.position : rigAt;
+                    headAt = Local(head);
+                    leftAt = Local(leftHand);
+                    rightAt = Local(rightHand);
+                    yield return null;
+                    continue;
+                }
                 var rigNow = origin != null ? origin.transform.position : rigAt;
                 var walk = rigNow - rigAt;
                 walk.y = 0f;
@@ -300,16 +395,20 @@ namespace Game.Bonus
             Status("CAUGHT!");
             PlayAt(caughtSound, host != null ? host.Mouth : transform.position, 1f);
             int falls = Falls;
-            // A stream of bomber slimes out of its mouth, straight at the player.
+            // A stream of bomber slimes out of its mouth, straight at the player (it holds its fire while they're down or
+            // the game is paused).
             for (int i = 0; i < bombers && Falls == falls && !over; i++)
             {
+                while (Excused() && !over) yield return null;
                 Spit(i);
                 yield return new WaitForSeconds(bomberEvery);
             }
-            // Until they fall: none splatted in time, it pushes them itself.
+            // Until they fall: none splatted in time, it pushes them itself (never while they're down; the wait starts
+            // again once they're up).
             while (Falls == falls && !over)
             {
-                if (Time.time - caughtAt > forceAfter && Time.time - pushedAt > 1.5f) Push();
+                if (Excused()) caughtAt = Time.time;
+                else if (Time.time - caughtAt > forceAfter && Time.time - pushedAt > 1.5f) Push();
                 yield return null;
             }
             Caught = false;
@@ -336,7 +435,7 @@ namespace Game.Bonus
 
         private void OnFaceHit(SlimeBomber who)
         {
-            if (!Caught || !sent.Contains(who)) return;
+            if (!Caught || !sent.Contains(who) || Excused()) return;
             if (Time.time - pushedAt < 1f) return;
             Push();
         }
@@ -375,7 +474,8 @@ namespace Game.Bonus
                     PlayAt(tickSound, head != null ? head.position : transform.position, 0.8f);
                 }
             }
-            if (!Caught && Touching())
+            // No win while down or paused (walking in real life during a pause doesn't count).
+            if (!Caught && !Excused() && Touching())
             {
                 StartCoroutine(WinGame());
                 return;
@@ -383,16 +483,22 @@ namespace Game.Bonus
             if (left <= 0f) StartCoroutine(LoseGame());
         }
 
-        private bool Touching()
+        // The host's body (its mesh renderers' bounds); false if there's none.
+        private bool HostBody(out Bounds body)
         {
+            body = new Bounds(host != null ? host.transform.position : transform.position, Vector3.zero);
             if (host == null) return false;
-            var body = new Bounds(host.transform.position, Vector3.zero);
             bool any = false;
             foreach (var r in host.GetComponentsInChildren<MeshRenderer>())
             {
                 if (!any) { body = r.bounds; any = true; } else body.Encapsulate(r.bounds);
             }
-            if (!any) return false;
+            return any;
+        }
+
+        private bool Touching()
+        {
+            if (!HostBody(out var body)) return false;
             float radius = Mathf.Max(body.extents.x, body.extents.z) + touchReach;
             var centre = body.center;
             foreach (var t in new[] { leftHand, rightHand, head })
@@ -425,19 +531,231 @@ namespace Game.Bonus
                 Status("YOU WIN!\n<size=50%>Grab your candies! " + Mathf.CeilToInt(until - Time.time) + "</size>");
                 yield return null;
             }
-            yield return Leave();
+            yield return ToTheRooftop();
         }
 
+        // After a win (user, 2026-11-07): the Green Seed on the slime's platform. Eating it (or Seed Seconds) sets
+        // GAMESTAGES' The_Seed, the last bool the PlayGround waits for: GAMESTAGES sinks the PlayGround, clears what it
+        // spawned and brings up the rooftop. This stage stands alone from then on (so it isn't cleared from under the
+        // player), fades to black, waits for the rooftop, puts the player near the Lid facing it and fades back in.
+        private IEnumerator ToTheRooftop()
+        {
+            if (GameStages.Fsm() == null)
+            {
+                // No GAMESTAGES (a test scene): back where they came from, as before.
+                Debug.LogWarning("[Daruma Stage] No GAMESTAGES: back to where the player came from.", this);
+                yield return Leave();
+                yield break;
+            }
+            var seed = SpawnSeed();
+            Status("YOU WIN!\n<size=50%>Eat the seed!</size>");
+            float autoAt = Time.time + seedSeconds;
+            bool given = false;
+            while (!GameStages.GetBool(SeedBool))
+            {
+                if (seed == null && !given)
+                {
+                    // No seed (none handed over, or gone): the bool is set for them.
+                    if (SeedPrefab == null) Debug.LogWarning("[Daruma Stage] No seed prefab: GAMESTAGES The_Seed set directly.", this);
+                    GameStages.SetBool(SeedBool, true, this);
+                    given = true;
+                }
+                else if (seed != null && !given && Time.time >= autoAt)
+                {
+                    // Not eaten in time: eaten for them (its Activate Stuffs: the item, the heal, The_Seed).
+                    foreach (var seedFsm in seed.GetComponentsInChildren<PlayMakerFSM>())
+                    {
+                        if (seedFsm.ActiveStateName != SeedWaitState) continue;
+                        seedFsm.SendEvent(SeedEatenEvent);
+                        given = true;
+                        break;
+                    }
+                }
+                yield return null;
+            }
+
+            // GAMESTAGES' Clear Spawned Stuffs only takes what's under Currently Spawned Stuffs: the bridge stays.
+            transform.SetParent(null, true);
+            var oldRoof = Global("Rooftop_Base");
+            Status("");
+            // The seed's sound and shrink, then the black (not over a notice: it would hide it).
+            yield return new WaitForSeconds(1f);
+            while (Paused()) yield return null;
+            var fade = HeadsetFade.Find();
+            if (fade != null) fade.FadeOut(0.8f);
+            yield return new WaitForSeconds(0.9f);
+
+            // In the black until the new rooftop is there (Rooftop_Base changes, about 5 s after the seed).
+            GameObject roof;
+            float waited = 0f;
+            bool warned = false;
+            while (true)
+            {
+                if (GameStages.ActiveState() == "Game Over")
+                {
+                    // Died meanwhile: Game Over has the player; this stage just goes (no pull back).
+                    Finished = true;
+                    Destroy(gameObject);
+                    yield break;
+                }
+                bool down = PlayerDown();
+                roof = Global("Rooftop_Base");
+                if (!down && roof != null && roof != oldRoof) break;
+                if (!down && Paused())
+                {
+                    // A notice or the menu: shown, not hidden in the black; black again after.
+                    if (fade != null) fade.FadeIn(0.3f);
+                    while (Paused()) yield return null;
+                    if (fade != null && !warned) fade.FadeOut(0.5f);
+                }
+                else if (!down && !warned && (waited += Time.deltaTime) > roofWaitSeconds)
+                {
+                    // GAMESTAGES didn't go on (a gear bool missing?): the view back, still waiting here. Never back into
+                    // the PlayGround: its pot is gone, nothing is left to do there.
+                    Debug.LogWarning("[Daruma Stage] The rooftop hasn't come " + roofWaitSeconds + " s after the seed (GAMESTAGES is in '" +
+                                     GameStages.ActiveState() + "'): waiting on the stage.", this);
+                    if (fade != null) fade.FadeIn(0.8f);
+                    warned = true;
+                }
+                yield return null;
+            }
+            // A moment for the rooftop's animator to place its Lid.
+            yield return new WaitForSeconds(0.3f);
+            // Not while down, flying from a push, or stepping off the platform in the black: Fall Out Of World would
+            // pull them back onto this stage after the move. A fall's put-back (or a notice) shows the view: black again.
+            var launch = origin != null ? origin.GetComponent<Game.Combat.PlayerLaunch>() : null;
+            for (float until = Time.time + 6f; Time.time < until;)
+            {
+                if (GameStages.ActiveState() == "Game Over")
+                {
+                    Finished = true;
+                    Destroy(gameObject);
+                    yield break;
+                }
+                if (!PlayerDown() && Paused())
+                {
+                    if (fade != null) fade.FadeIn(0.3f);
+                    while (Paused()) yield return null;
+                    continue;
+                }
+                if (PlayerDown() || (launch != null && launch.Flying) || !OverStage())
+                {
+                    yield return null;
+                    continue;
+                }
+                if (fade == null || fade.Alpha >= 0.99f) break;
+                fade.FadeOut(0.5f);
+                yield return new WaitForSeconds(0.6f);
+            }
+            roof = Global("Rooftop_Base");
+            var (spot, yaw) = RooftopSpot(roof);
+
+            ClearCandies();
+            Restore();
+            MovePlayer(spot, yaw);
+            Finished = true;
+            Ended?.Invoke(this, true);
+            if (Running == this) Running = null;
+            if (fade != null) fade.FadeIn(0.8f);
+            Destroy(gameObject, 0.2f);
+        }
+
+        // The seed on the slime's platform: beside the player, clear of the slime's body, a little over the floor. A child
+        // of the stage, so it goes with it. Not on the player: it only notices them after its 1.5 s grow.
+        private GameObject SpawnSeed()
+        {
+            if (SeedPrefab == null) return null;
+            var feet = HeadFloor();
+            var centre = host != null ? host.transform.position : transform.position;
+            var away = feet - centre;
+            away.y = 0f;
+            if (away.sqrMagnitude < 0.0001f) away = -transform.forward;
+            away.Normalize();
+            var side = head != null ? Vector3.ProjectOnPlane(head.right, Vector3.up) : Vector3.zero;
+            if (side.sqrMagnitude < 0.0001f) side = Vector3.Cross(away, Vector3.up);
+            var off = feet + side.normalized * seedBeside - centre;
+            off.y = 0f;
+            float clear = (HostBody(out var body) ? Mathf.Max(body.extents.x, body.extents.z) : 0f) + 0.6f;
+            if (off.magnitude < clear) off = (off.sqrMagnitude > 0.0001f ? off.normalized : away) * clear;
+            var local = transform.InverseTransformPoint(centre + off);
+            var middle = transform.InverseTransformPoint(centre);
+            local.x = Mathf.Clamp(local.x, middle.x - seedArea, middle.x + seedArea);
+            local.z = Mathf.Clamp(local.z, middle.z - seedArea, middle.z + seedArea);
+            local.y = seedHeight;
+            return Instantiate(SeedPrefab, transform.TransformPoint(local), Quaternion.identity, transform);
+        }
+
+        // Lid Stand Off metres from the rooftop's Lid (or its middle), towards the south gate, on its floor, facing it.
+        private (Vector3 spot, float yaw) RooftopSpot(GameObject roof)
+        {
+            var roofAt = roof != null ? roof.transform.position : Vector3.zero;
+            var lid = Global("Lid");
+            var centre = lid != null && roof != null && lid.transform.IsChildOf(roof.transform) ? lid.transform.position : roofAt;
+            var back = roof != null ? -roof.transform.forward : Vector3.back;
+            back.y = 0f;
+            if (back.sqrMagnitude < 0.0001f) back = Vector3.back;
+            var spot = centre + back.normalized * lidStandOff;
+            spot.y = roofAt.y + 0.03f;
+            if (Physics.Raycast(spot + Vector3.up * 3f, Vector3.down, out var hit, 6f, ~0, QueryTriggerInteraction.Ignore) &&
+                Mathf.Abs(hit.point.y - roofAt.y) < 1.5f)
+                spot.y = hit.point.y;
+            var look = centre - spot;
+            look.y = 0f;
+            float yaw = look.sqrMagnitude > 0.0001f ? Quaternion.LookRotation(look).eulerAngles.y : 0f;
+            return (spot, yaw);
+        }
+
+        // Time's up (user, 2026-11-07): the end of the run. The slime laughs, then the player dies with no lucky coins
+        // (Checkpoints: no revives left), so the Game Over starts a new run; it also clears this stage.
         private IEnumerator LoseGame()
         {
             over = true;
             StopSinging();
+            HostColour(lookColour);
             Status("TIME'S UP!");
             if (timerText != null) timerText.text = "0";
             if (host != null) { host.FaceTarget = head; host.OpenFor(0.8f); host.Kick(0.4f); }
             PlayAt(laughSound, host != null ? host.Mouth : transform.position, 1f);
-            yield return new WaitForSeconds(3.5f);
-            yield return Leave();
+            yield return new WaitForSeconds(2.5f);
+            // Not while down (the coins after a fall, getting up), paused, flying from a push or mid fall (its fade): then.
+            var launch = origin != null ? origin.GetComponent<Game.Combat.PlayerLaunch>() : null;
+            var fade = HeadsetFade.Find();
+            float fadeWaitUntil = Time.unscaledTime + 6f;
+            while (PlayerDown() || Paused() || (launch != null && launch.Flying) ||
+                   (fade != null && (fade.IsFading || fade.Alpha > 0.01f) && Time.unscaledTime < fadeWaitUntil))
+                yield return null;
+            // Finished first: the Game Over clears this stage, and it must not pull the player back.
+            Finished = true;
+            if (!KillPlayer())
+            {
+                Debug.LogWarning("[Daruma Stage] No PlayerHealth FSM on the XR Origin: back to where the player came from instead.", this);
+                yield return Leave();
+                yield break;
+            }
+            // The PlayGround's creatures stay asleep: the Game Over takes them.
+            frozen.Clear();
+            Ended?.Invoke(this, false);
+        }
+
+        // Dead at once, the way the FIREKILL kill does it (PlayerHealth's global DamageToPlayer: DEAD), with no revive left.
+        private bool KillPlayer()
+        {
+            if (origin == null) return false;
+            PlayMakerFSM health = null;
+            foreach (var fsm in origin.GetComponents<PlayMakerFSM>())
+            {
+                if (fsm.FsmName != "PlayerHealth") continue;
+                health = fsm;
+                break;
+            }
+            if (health == null) return false;
+            var launch = origin.GetComponent<Game.Combat.PlayerLaunch>();
+            if (launch != null) launch.Stop();
+            Game.Saving.Checkpoints.UseAllRevives();
+            var hp = health.FsmVariables.FindFsmFloat("PlayerHealth");
+            if (hp != null) hp.Value = 0f;
+            health.SendEvent("DamageToPlayer");
+            return true;
         }
 
         private void StopSinging()
@@ -445,6 +763,7 @@ namespace Game.Bonus
             voice.Stop();
             Singing = false;
             Looking = false;
+            HostColour(restColour);
             if (singEffect != null) singEffect.SetActive(false);
             if (lookLight != null) lookLight.enabled = false;
             ClearBombers();
@@ -455,11 +774,7 @@ namespace Game.Bonus
             var fade = HeadsetFade.Find();
             if (fade != null) fade.FadeOut(0.5f);
             yield return new WaitForSeconds(0.6f);
-            // Candies left lying on the stage go with it.
-            foreach (var t in FindObjectsByType<Transform>(FindObjectsSortMode.None))
-            {
-                if (t != null && t.name.StartsWith("Candy_") && t.name.EndsWith("(Clone)") && (t.position - transform.position).sqrMagnitude < 60f * 60f) Destroy(t.gameObject);
-            }
+            ClearCandies();
             Restore();
             MovePlayer(returnSpot, returnYaw);
             if (fade != null) fade.FadeIn(0.8f);
@@ -479,41 +794,67 @@ namespace Game.Bonus
             return Mathf.Clamp01(Vector3.Dot(head.position - pathStart.position, path) / Mathf.Max(0.01f, path.sqrMagnitude));
         }
 
-        // Seconds each note lasts this time: steady while far; random speeds (sometimes changing mid-song) in the middle;
-        // near the slime: slow, then suddenly very fast (or a long held note, then a rush), sometimes a short fast song.
-        private List<float> PlanSong(float p)
+        // One note of a song: which one, how long until the next (seconds), and the speed it's sung at.
+        private struct Note
+        {
+            public int index;
+            public float seconds;
+            public float tempo;
+        }
+
+        // This time's song (user, 2026-11-06): always under Max Song Seconds, its speed changing at random while it's sung:
+        // cut into 2 to 4 stretches, each slow or fast (mostly swapping), now and then a held note before a fast stretch.
+        // The nearer the player (P: 0 at the start of the bridge, 1 at the slime), the faster its fast stretches can get,
+        // the more stretches and the more held notes; now and then near it, only the song's end, very fast.
+        private List<Note> PlanSong(float p)
         {
             int count = Mathf.Max(1, notes.Length > 0 ? notes.Length : 9);
-            var plan = new List<float>(count);
-            if (p < 0.3f)
+            var plan = new List<Note>(count);
+            int first = 0;
+            if (p > 0.66f && Random.value < 0.15f) first = Mathf.Max(0, count - 4);
+            int length = count - first;
+            int stretches = Mathf.Clamp(Random.Range(2, p > 0.5f ? 5 : 4), 1, length);
+            // Where each stretch starts (the first at 0), different notes, in order.
+            var starts = new List<int> { 0 };
+            while (starts.Count < stretches)
             {
-                float tempo = Random.Range(0.85f, 1.15f);
-                for (int i = 0; i < count; i++) plan.Add(Beat(i, count) / tempo);
-                return plan;
+                int at = Random.Range(1, length);
+                if (!starts.Contains(at)) starts.Add(at);
             }
-            if (p < 0.66f)
+            starts.Sort();
+            float fastTop = Mathf.Lerp(fastTempo.y, Mathf.Max(fastTempo.y, fastNear), p);
+            bool fast = Random.value < 0.5f;
+            float tempo = 1f;
+            float holdChance = Mathf.Lerp(0.15f, 0.45f, p);
+            int stretch = -1;
+            for (int i = 0; i < length; i++)
             {
-                float tempo = Random.Range(0.7f, 1.8f);
-                int change = Random.value < 0.4f ? Random.Range(2, count - 1) : count;
-                float tempo2 = Random.Range(0.7f, 2.2f);
-                for (int i = 0; i < count; i++) plan.Add(Beat(i, count) / (i < change ? tempo : tempo2));
-                return plan;
+                if (stretch + 1 < starts.Count && starts[stretch + 1] == i)
+                {
+                    stretch++;
+                    // Mostly the other kind than the last stretch, so the speed really changes.
+                    if (i > 0 && Random.value < 0.75f) fast = !fast;
+                    tempo = fast ? Random.Range(fastTempo.x, fastTop) : Random.Range(slowTempo.x, slowTempo.y);
+                }
+                float d = Beat(first + i, count) / tempo;
+                // A fake-out: a held note right before a fast stretch starts.
+                bool nextIsNewStretch = stretch + 1 < starts.Count && starts[stretch + 1] == i + 1;
+                if (nextIsNewStretch && !fast && Random.value < holdChance) d += Random.Range(0.5f, 1.2f);
+                plan.Add(new Note { index = first + i, seconds = d, tempo = tempo });
             }
-            float roll = Random.value;
-            if (roll < 0.15f)
+            // Never longer than Max Song Seconds.
+            float total = 0f;
+            foreach (var n in plan) total += n.seconds;
+            if (total > maxSongSeconds)
             {
-                // Short and fast: only the end of the song.
-                for (int i = count - 4; i < count; i++) plan.Add(Beat(i, count) / Random.Range(2.5f, 3.5f));
-                return plan;
-            }
-            int slow = Random.Range(3, 7);
-            float slowTempo = Random.Range(0.45f, 0.7f), fastTempo = Random.Range(2.5f, 4f);
-            for (int i = 0; i < count; i++)
-            {
-                float d = Beat(i, count) / (i < slow ? slowTempo : fastTempo);
-                // A fake-out: one long held note right before the rush.
-                if (roll < 0.4f && i == slow - 1) d += Random.Range(0.6f, 1.4f);
-                plan.Add(d);
+                float k = maxSongSeconds / total;
+                for (int i = 0; i < plan.Count; i++)
+                {
+                    var n = plan[i];
+                    n.seconds *= k;
+                    n.tempo /= k;
+                    plan[i] = n;
+                }
             }
             return plan;
         }
@@ -554,6 +895,82 @@ namespace Game.Bonus
         }
 
         private Vector3 Local(Transform t) => t == null || origin == null ? Vector3.zero : origin.transform.InverseTransformPoint(t.position);
+
+        // The player is down: health out, the lucky coins under way, or getting back up from a revive (as Player Launch).
+        private bool PlayerDown()
+        {
+            if (playerHealth == null && origin != null)
+            {
+                foreach (var fsm in origin.GetComponents<PlayMakerFSM>())
+                {
+                    if (fsm.FsmName == "PlayerHealth") playerHealth = fsm.FsmVariables.FindFsmFloat("PlayerHealth");
+                }
+            }
+            return Game.Saving.Checkpoints.IsDying ||
+                   (Game.Combat.PlayerRevive.Instance != null && Game.Combat.PlayerRevive.Instance.IsReviving) ||
+                   (playerHealth != null && playerHealth.Value <= 0f);
+        }
+
+        private static readonly RaycastHit[] floorHits = new RaycastHit[8];
+
+        // The head is over this stage's floor (a platform or the bridge), not off its edge or mid fall.
+        private bool OverStage()
+        {
+            if (head == null) return true;
+            int count = Physics.RaycastNonAlloc(head.position, Vector3.down, floorHits, 6f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < count; i++)
+            {
+                if (floorHits[i].collider != null && floorHits[i].collider.transform.IsChildOf(transform)) return true;
+            }
+            return false;
+        }
+
+        // The game is stopped: the pause menu, a level-up or other notice, the lucky coins (Pause Menu holds), lost focus.
+        private static bool Paused() => Time.timeScale <= 0f || Game.Menus.PauseMenu.IsPaused || Game.Menus.PauseMenu.IsHeld;
+
+        // Down or paused (user, 2026-11-07: a pause is like being knocked down), or only just back from either (Resume
+        // Grace, real seconds): moving doesn't count, it holds its fire and there's no win.
+        private bool Excused()
+        {
+            if (PlayerDown() || Paused())
+            {
+                excusedUntil = Time.unscaledTime + resumeGrace;
+                return true;
+            }
+            return Time.unscaledTime < excusedUntil;
+        }
+
+        // A PlayMaker global GameObject's object (null if it's empty or gone).
+        private static GameObject Global(string name)
+        {
+            var global = HutongGames.PlayMaker.FsmVariables.GlobalVariables.FindFsmGameObject(name);
+            return global != null ? global.Value : null;
+        }
+
+        // Candies left lying on the stage go with it.
+        private void ClearCandies()
+        {
+            foreach (var t in FindObjectsByType<Transform>(FindObjectsSortMode.None))
+            {
+                if (t != null && t.name.StartsWith("Candy_") && t.name.EndsWith("(Clone)") && (t.position - transform.position).sqrMagnitude < 60f * 60f) Destroy(t.gameObject);
+            }
+        }
+
+        // The host's skin: the paint texture in this colour (green sings, red looks), on its renderers only.
+        private void HostColour(Color colour)
+        {
+            if (host == null) return;
+            hostLooks ??= host.GetComponentsInChildren<Renderer>(true);
+            hostBlock ??= new MaterialPropertyBlock();
+            foreach (var r in hostLooks)
+            {
+                if (r == null || r is ParticleSystemRenderer) continue;
+                r.GetPropertyBlock(hostBlock);
+                if (hostPaint != null) hostBlock.SetTexture(BaseMapId, hostPaint);
+                hostBlock.SetColor(BaseColorId, colour);
+                r.SetPropertyBlock(hostBlock);
+            }
+        }
 
         private static Transform Find(XROrigin rig, string name)
         {

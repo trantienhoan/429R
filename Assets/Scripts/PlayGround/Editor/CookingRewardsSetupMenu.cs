@@ -10,7 +10,7 @@ namespace Game.EditorTools
 {
     /// <summary>
     /// Tools > 429 Game > PlayGround > Set Up Cooking Rewards (user, 2026-11-06):
-    /// - each cooking round's chest (PG_Wood/PG_Treasure_Chest_and_Seed_Chest / Head / Shield / Boot, rounds 1-4) bursts
+    /// - each cooking round's chest (PG_Wood/PG_Treasure_Chest_and_Seed_Chest / Head / Shield, rounds 1-3) bursts
     ///   candies and gold EXP orbs as it opens, more each round (Open_Chest: Play End Game Jackpot + Spill Candies, with a
     ///   small firework and the miracle sound);
     /// - the cauldron (Fire_Woods_n_Cauldron) gets Cooking Rewards: the first clear per save slot gives a stat point for
@@ -31,7 +31,6 @@ namespace Game.EditorTools
             ("PG_Treasure_Chest_and_Seed_Chest", 8, 40, 1.5f),
             ("PG_Treasure_Chest_and_Seed_Head", 12, 60, 1.8f),
             ("PG_Treasure_Chest_and_Seed_Shield", 16, 80, 2.1f),
-            ("PG_Treasure_Chest_and_Seed_Boot", 20, 120, 2.5f),
         };
 
         [MenuItem("Tools/429 Game/PlayGround/Set Up Cooking Rewards")]

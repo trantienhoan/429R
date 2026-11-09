@@ -4233,10 +4233,12 @@ namespace Game.Enemies
         private bool Fits(AttackMove attack, float distance)
         {
             // An attack whose animation isn't in the Animator yet is left out (a face leap without its animation would
-            // just float up in whatever pose it's in).
+            // just float up in whatever pose it's in). A brain with no Animator at all (a puppet moved by code, e.g. the
+            // PlayGround's slimes: Slime Body) uses every attack.
             float extra = attack != null && !attack.leapToFace ? HomingExtra : 0f;
             return attack != null && attack.weight > 0f && distance >= attack.minDistance && distance <= attack.maxDistance + extra &&
-                   distance <= Reachable(attack) + extra && UsedByMe(attack) && UsedNow(attack) && HasAnimationQuiet(attack.animation);
+                   distance <= Reachable(attack) + extra && UsedByMe(attack) && UsedNow(attack) &&
+                   (animator == null || HasAnimationQuiet(attack.animation));
         }
 
         private bool UsedNow(AttackMove attack)

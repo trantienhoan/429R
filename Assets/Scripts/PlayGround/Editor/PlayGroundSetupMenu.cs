@@ -25,17 +25,15 @@ namespace Game.EditorTools
         private const string SkullPath = PlayGroundFolder + "Giant_Skull.prefab";
         private const string SkullBushPath = PlayGroundFolder + "bushes_01_Skull.prefab";
         private const string PumpkinOnTreePath = "Assets/Prefabs/Items/Breakable/Pumpkin_On_Tree.prefab";
-        private const string ResultPath = "Assets/Prefabs/Items/Breakable/Pumpkin_{0}.prefab";
         private const string GhostPath = "Assets/Prefabs/Enemies/PLAYGROUND/Ghost_Balloon_{0}.prefab";
         private const string IconPath = "Assets/Data/Cooking/Icons/{0}.png";
         private const string CandyPath = "Assets/Data/Inventory/Items/Candy.asset";
         private const string SmokePath = "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab";
         private const string Sfx = "Assets/Audio/SFX/";
+        // What a black pumpkin bursts into: the plain Big Slime (user, 2026-11-07; the old FSM bugs are no longer spawned).
         private static readonly string[] BossPaths =
         {
-            "Assets/Prefabs/Enemies/TheSpider.prefab", "Assets/Prefabs/Enemies/TheSpider 1.prefab",
-            "Assets/Prefabs/Enemies/TheCockroach.prefab", "Assets/Prefabs/Enemies/TheCockroach 1.prefab",
-            "Assets/Prefabs/Enemies/TheBee.prefab", "Assets/Prefabs/Enemies/TheBee 1.prefab",
+            "Assets/Prefabs/Enemies/PLAYGROUND/Slime_Big.prefab",
         };
 
         /// <summary>
@@ -156,12 +154,12 @@ namespace Game.EditorTools
 
             Edit(CauldronPath, notes, root =>
             {
+                // Only a brand-new Cauldron gets its basics here; its rounds, wrong result and finale are set by its own
+                // setup menu (CauldronSetupMenu), never here.
                 var cauldron = GetOrAdd<Cauldron>(root, out bool added);
-                SetIfEmpty(cauldron, "badPumpkin", Load<GameObject>(BlackPumpkinPath));
-                SetIfEmpty(cauldron, "addEffect", smoke);
-                SetRoundResults(cauldron);
                 if (!added) return;
 
+                Set(cauldron, "addEffect", smoke);
                 Set(cauldron, "pot", Find(root, "Magical_Pot"));
                 var surface = Find(root, "Cauldron_Surface");
                 Set(cauldron, "surface", surface != null ? surface.GetComponent<ParticleSystem>() : null);
@@ -390,22 +388,6 @@ namespace Game.EditorTools
             var property = serialized.FindProperty(field);
             if (property == null) return;
             property.objectReferenceValue = value;
-            serialized.ApplyModifiedPropertiesWithoutUndo();
-        }
-
-        // Rounds with no result yet make Pumpkin_8, the last one Pumpkin_9.
-        private static void SetRoundResults(Cauldron cauldron)
-        {
-            var serialized = new SerializedObject(cauldron);
-            var rounds = serialized.FindProperty("rounds");
-            if (rounds == null) return;
-            for (int i = 0; i < rounds.arraySize; i++)
-            {
-                var result = rounds.GetArrayElementAtIndex(i).FindPropertyRelative("result");
-                if (result.objectReferenceValue != null) continue;
-                bool last = i == rounds.arraySize - 1;
-                result.objectReferenceValue = Load<GameObject>(string.Format(ResultPath, last ? 9 : 8));
-            }
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 

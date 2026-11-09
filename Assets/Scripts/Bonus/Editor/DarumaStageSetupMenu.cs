@@ -19,8 +19,12 @@ namespace Game.EditorTools
     ///   with the Giant Slime (x3.5) at the far end, Fall Edges all round, lamps, the timer and sign texts, the music notes
     ///   it shows while singing, and the Darume Stage with its sounds (Audio/SFX/Special_Stage_3: synthesized song notes,
     ///   look, gotcha; whoosh, the miracle sound, cute_laugh, count_down) and prizes (200 EXP, 30 candies, Firework_Big);
-    /// - Fire_Woods_n_Cauldron: Special Stage 3 Trigger (the 2nd pumpkin caught with its wave beaten).
-    /// Safe to run again (it builds the stage anew and keeps the bomber's and the trigger's tuned values).
+    /// - Fire_Woods_n_Cauldron: Special Stage 3 Trigger (the mystery pot's break starts it; the stage, the seed a win
+    ///   hands over, Items/Chest/The_Seed, and 1.2 s for the smoke).
+    /// Safe to run again (it builds the stage anew and keeps the bomber's tuned values; the trigger's stage, seed and
+    /// start delay are set again, its other values kept).
+    /// Tools > 429 Game > Bonus > Hook Special Stage 3 To Cauldron (Hook) does only the last step, on the stage as it is
+    /// (it never rebuilds Special_Stage_3).
     /// </summary>
     public static class DarumaStageSetupMenu
     {
@@ -28,6 +32,8 @@ namespace Game.EditorTools
         private const string BomberPath = "Assets/Prefabs/Enemies/Daruma_Bomber.prefab";
         private const string MatFolder = "Assets/Materials/Special_Stage_3";
         private const string Cauldron = "Assets/Prefabs/PlayGround/Fire_Woods_n_Cauldron.prefab";
+        private const string SeedPath = "Assets/Prefabs/Items/Chest/The_Seed.prefab";
+        private const float StartDelay = 1.2f;
         private const string Sfx = "Assets/Audio/SFX/";
 
         private const float BridgeWidth = 1.4f;
@@ -52,6 +58,28 @@ namespace Game.EditorTools
             HookCauldron(stage, notes);
             AssetDatabase.SaveAssets();
             return notes;
+        }
+
+        [MenuItem("Tools/429 Game/Bonus/Hook Special Stage 3 To Cauldron")]
+        public static void HookMenu()
+        {
+            if (EditorApplication.isPlaying) { Debug.LogError("[Hook Special Stage 3 To Cauldron] Stop play mode first."); return; }
+            Hook();
+        }
+
+        /// <summary>
+        /// Only the cauldron's Special Stage 3 Trigger: the stage (Special_Stage_3 as it is, never rebuilt), the seed
+        /// (Items/Chest/The_Seed) and the 1.2 s start delay. Safe to run again.
+        /// </summary>
+        public static void Hook()
+        {
+            var notes = new List<string>();
+            var prefab = Load<GameObject>(StagePath);
+            var stage = prefab != null ? prefab.GetComponent<DarumaStage>() : null;
+            if (stage == null) Debug.LogWarning("[Hook Special Stage 3 To Cauldron] No Daruma Stage at " + StagePath + " (run Set Up Special Stage 3 first): the trigger's stage is left as it is.");
+            HookCauldron(stage, notes);
+            AssetDatabase.SaveAssets();
+            Debug.Log("[Hook Special Stage 3 To Cauldron] " + string.Join("; ", notes));
         }
 
         private static T Load<T>(string path) where T : Object => AssetDatabase.LoadAssetAtPath<T>(path);
@@ -217,12 +245,13 @@ namespace Game.EditorTools
                 var pathStart = new GameObject("Path Start").transform; pathStart.SetParent(t, false); pathStart.localPosition = new Vector3(0f, 0f, BridgeStart);
                 var pathEnd = new GameObject("Path End").transform; pathEnd.SetParent(t, false); pathEnd.localPosition = new Vector3(0f, 0f, BridgeEnd);
 
-                // Signs: the timer and the big status over the host; the rules on the left of the start.
+                // Signs: the timer and the big status over the host; the rules ahead on the left of the start (about 3 m
+                // away, turned to face it, so it doesn't fill the left of the view; 2026-11-06 note).
                 var timer = Text(t, "Timer", new Vector3(0f, 5.4f, HostZ), Vector3.zero, "60", 24f, new Vector2(6f, 3f));
                 var status = Text(t, "Status", new Vector3(0f, 7.4f, HostZ), Vector3.zero, "", 16f, new Vector2(14f, 4f));
-                Text(t, "Rules", new Vector3(-1.45f, 1.55f, 1.1f), new Vector3(0f, -55f, 0f),
+                Text(t, "Rules", new Vector3(-2.1f, 1.7f, 2.6f), new Vector3(0f, -41.2f, 0f),
                     "<size=140%><color=#FF9EE5>SPECIAL STAGE 3</color></size>\nWalk while it <color=#7FFFD4>SINGS</color>.\n<color=#FF6B5E>FREEZE</color> when it LOOKS!\nTouch the Giant Slime\nbefore time runs out.",
-                    2.2f, new Vector2(2.4f, 2f));
+                    3f, new Vector2(3.2f, 2.7f));
 
                 var game = root.AddComponent<DarumaStage>();
                 var so = new SerializedObject(game);
@@ -250,6 +279,8 @@ namespace Game.EditorTools
                 so.FindProperty("tickSound").objectReferenceValue = Load<AudioClip>(Sfx + "count_down.wav");
                 so.FindProperty("timerText").objectReferenceValue = timer;
                 so.FindProperty("statusText").objectReferenceValue = status;
+                // Its skin: the flying slime's paint texture, so the green (sings) and red (looks) show clean.
+                so.FindProperty("hostPaint").objectReferenceValue = Load<Texture2D>("Assets/M_Textures/Flying_Slime/Flying_Slime_Paint.png");
                 so.ApplyModifiedPropertiesWithoutUndo();
                 PrefabUtility.SaveAsPrefabAsset(root, StagePath);
                 notes.Add("Special_Stage_3: bridge 1.4 x " + bridgeLength + " m, Giant Slime x" + HostScale + " at " + HostZ + " m, 8 Fall Edges, " + clips.Length + " song notes, " + candy.Length + " candy kinds");
@@ -258,18 +289,31 @@ namespace Game.EditorTools
             return Load<GameObject>(StagePath).GetComponent<DarumaStage>();
         }
 
+        // The cauldron's trigger: the stage (kept as it is when none is given), the seed a win hands over, the start delay.
         private static void HookCauldron(DarumaStage stage, List<string> notes)
         {
+            if (Load<GameObject>(Cauldron) == null)
+            {
+                Debug.LogWarning("[Special Stage 3] No cauldron prefab at " + Cauldron + ": not hooked.");
+                notes.Add("Fire_Woods_n_Cauldron: missing, not hooked");
+                return;
+            }
+            var seed = Load<GameObject>(SeedPath);
+            if (seed == null) Debug.LogWarning("[Special Stage 3] No seed prefab at " + SeedPath + ": a win sets GAMESTAGES The_Seed itself (no item, no heal).");
             var root = PrefabUtility.LoadPrefabContents(Cauldron);
             try
             {
                 var trigger = root.GetComponent<SpecialStage3Trigger>();
                 if (trigger == null) trigger = root.AddComponent<SpecialStage3Trigger>();
                 var so = new SerializedObject(trigger);
-                so.FindProperty("stage").objectReferenceValue = stage;
+                if (stage != null) so.FindProperty("stage").objectReferenceValue = stage;
+                so.FindProperty("seed").objectReferenceValue = seed;
+                so.FindProperty("delay").floatValue = StartDelay;
                 so.ApplyModifiedPropertiesWithoutUndo();
                 PrefabUtility.SaveAsPrefabAsset(root, Cauldron);
-                notes.Add("Fire_Woods_n_Cauldron: Special Stage 3 Trigger (2nd pumpkin, wave beaten)");
+                var hooked = so.FindProperty("stage").objectReferenceValue;
+                notes.Add("Fire_Woods_n_Cauldron: Special Stage 3 Trigger (pot break) stage " + (hooked != null ? hooked.name : "NONE") +
+                          ", seed " + (seed != null ? seed.name : "NONE") + ", delay " + StartDelay + " s");
             }
             finally { PrefabUtility.UnloadPrefabContents(root); }
         }

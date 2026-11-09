@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Game.Enemies;
+using Game.Leveling;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
@@ -11,19 +12,23 @@ using Random = UnityEngine.Random;
 namespace Game.PlayGround
 {
     /// <summary>
-    /// Lays the PlayGround out anew each time a round's seed is taken from its chest (endgame+ cooking game):
-    /// 1. Clean: everything on the field pops away (trees, bushes, the skull, barrels, boxes, pipes, broken pieces, the
-    ///    opened chest...: what Clean Names matches, and what this laid out before). The cauldron stays, and so do recipe
-    ///    ingredients (candies, Pumpkin_On_Tree), anything the player holds and the magic hat (it's moved, see 4).
-    /// 2. The PlayGround's own FSM plays its grow animation meanwhile (PlayGround_Manager, on the seed bools); after Grow
+    /// Drives the PlayGround's walls and lays it out anew each time a round's seed is taken from its chest (endgame+
+    /// cooking game, user 2026-11-07):
+    /// 0. When a round starts cooking (its wave starts), the walls go down (Go States: GO, GO2, GO3).
+    /// 1. Clean: everything on the field pops away (trees, bushes, the skull, barrels, baskets, boxes, pipes, broken
+    ///    pieces, the opened chest...: what Clean Names matches, and what this laid out before), and so does every
+    ///    creature left (slimes, flying slimes, slime bombers, fat and bowling pumpkins), wherever it is. The cauldron
+    ///    stays, and so do recipe ingredients (candies, Pumpkin_On_Tree), anything the player holds and the magic hat.
+    /// 2. The walls come up again further out at once (Come States: COME_2 after seed 1, COME3 after seed 2); after Grow
     ///    Seconds the field is measured again from the fence, and the ghost/bug area (Ghost Roam Area) and the teleport
     ///    floor are fitted to it. (This is also done once when the PlayGround has come up, before round 1.)
-    /// 3. Scatter: each Kind is put down at random spots inside the fence, Count of them plus More Per Seed for every seed
-    ///    after the first, kept clear of the cauldron, the middle (where the pumpkin and the chests land), the player and
-    ///    each other. They grow in with a puff. Trees, bushes, the skull and tall grass (Hideout) are where laughing
-    ///    pumpkins hide.
-    /// 4. The magic hat hides next to one of the things marked Hat Cover.
-    /// Goes on the PlayGround's root (Play_Ground_Z). Tools > 429 Game > PlayGround > Set Up PlayGround Field adds it.
+    /// 3. The next phase's own layout is switched on (Phases: PlayGround_Phase_2, _3, children of the PlayGround). Not
+    ///    built yet, or Scatter on: each Kind is put down at random spots inside the fence instead, Count of them plus
+    ///    More Per Seed for every seed after the first, kept clear of the cauldron, the middle, the player and each other.
+    /// 4. The magic hat hides next to a tree, bush or tall grass.
+    /// After the last round's seed only 1 happens: the walls stay down for the finale.
+    /// Goes on the PlayGround's root (Play_Ground_Z). Tools > 429 Game > PlayGround > Set Up PlayGround Field adds it;
+    /// Set Up PlayGround Walls fills in the walls and phases.
     /// </summary>
     [DisallowMultipleComponent]
     public class PlayGroundField : MonoBehaviour
@@ -48,6 +53,22 @@ namespace Game.PlayGround
             public bool hatCover;
         }
 
+        [Header("Walls and phases")]
+        [Tooltip("The PlayGround's Animator (its walls). Empty: the one on this object.")]
+        [SerializeField] private Animator walls;
+        [Tooltip("Played when round 1, 2, 3 starts cooking: the walls go down.")]
+        [SerializeField] private string[] goStates = { "Play_Ground_Z_GO", "Play_Ground_Z_GO2", "Play_Ground_Z_GO3" };
+        [Tooltip("Played when round 1's, 2's seed is taken: the walls come up again, further out.")]
+        [SerializeField] private string[] comeStates = { "Play_Ground_Z_COME_2", "Play_Ground_Z_COME3" };
+        [Tooltip("Switched on once the walls are up after round 1's, 2's seed: the next phase's own layout (an inactive " +
+                 "child of the PlayGround, like PlayGround_Phase_1). Not built yet: the random layout (Kinds) instead.")]
+        [SerializeField] private string[] phases = { "PlayGround_Phase_2", "PlayGround_Phase_3" };
+        [Tooltip("Also put the random layout (Kinds) down on top of the phase's own layout.")]
+        [SerializeField] private bool scatter;
+        [Tooltip("Seconds after a phase is switched on before the hat hides (its things are put down meanwhile).")]
+        [Min(0f)]
+        [SerializeField] private float phaseSettleSeconds = 1.5f;
+
         [Header("Field")]
         [SerializeField] private Kind[] kinds = Array.Empty<Kind>();
 
@@ -57,7 +78,7 @@ namespace Game.PlayGround
         {
             "Big_Tree", "bushes_", "Giant_Skull", "Skull_Mini", "Cement_Pipe", "Wood_Barrel", "Wood_Box", "Table_2_small",
             "PG_Bench", "PG_pumpkin_music_player", "Paper_Box", "Treasure_Chest", "Ghost_Balloon", "Dropped_", "_Drop",
-            "PG_Grass", "PG_Concrete", "Random_Breakable_Box", "beehive",
+            "PG_Grass", "PG_Concrete", "Random_Breakable_Box", "beehive", "PG_Candy_Basket",
         };
         [Tooltip("How far past the fence things still count as on the field, in metres.")]
         [Min(0f)]
@@ -134,14 +155,21 @@ namespace Game.PlayGround
         }
 #endif
 
+        private void Awake()
+        {
+            if (walls == null) walls = GetComponent<Animator>();
+        }
+
         private void OnEnable()
         {
+            PlayGroundRounds.WaveStarted += OnWaveStarted;
             PlayGroundRounds.SeedTaken += OnSeedTaken;
             StartCoroutine(FirstFit());
         }
 
         private void OnDisable()
         {
+            PlayGroundRounds.WaveStarted -= OnWaveStarted;
             PlayGroundRounds.SeedTaken -= OnSeedTaken;
         }
 
@@ -151,21 +179,86 @@ namespace Game.PlayGround
             if (!measured) FitArena();
         }
 
+        // A round started cooking: the walls go down.
+        private void OnWaveStarted(PlayGroundRounds rounds, int round)
+        {
+            PlayState(goStates, round);
+        }
+
         private void OnSeedTaken(PlayGroundRounds rounds, int round)
         {
             if (running != null) StopCoroutine(running);
-            running = StartCoroutine(Rebuild(round + 1));
+            // Is there a round after this one? (After the last seed the cauldron wants the finale: nothing new is put down.)
+            var cauldron = rounds != null ? rounds.GetComponent<Cauldron>() : null;
+            bool more = cauldron == null || round + 1 < cauldron.RoundCount;
+            running = StartCoroutine(Rebuild(round + 1, more));
         }
 
-        private IEnumerator Rebuild(int seeds)
+        private IEnumerator Rebuild(int seeds, bool more)
         {
             if (!measured) FitArena();
             Clean();
+            if (!more)
+            {
+                running = null;
+                yield break;
+            }
+            // The walls come up again at once, further out; measured and filled once they're up.
+            PlayState(comeStates, seeds - 1);
             yield return new WaitForSeconds(growSeconds);
             FitArena();
-            yield return LayOut(seeds);
+            int step = seeds - 1;
+            bool shown = step >= 0 && step < phases.Length && ShowPhase(phases[step]);
+            if (!shown)
+            {
+                string phase = step >= 0 && step < phases.Length ? phases[step] : "(none)";
+                Debug.Log($"[PlayGround Field] No phase '{phase}' under the PlayGround yet: the random layout is put down instead.", this);
+            }
+            if (scatter || !shown)
+            {
+                yield return LayOut(seeds);
+            }
+            else
+            {
+                // The phase's spawners put their things down meanwhile; then the hat hides by one of them.
+                if (phaseSettleSeconds > 0f) yield return new WaitForSeconds(phaseSettleSeconds);
+                HideHat(Covers(), Taken());
+            }
             running = null;
             LaidOut?.Invoke(this);
+        }
+
+        // ------------------------------------------------------------------ walls and phases
+
+        // Plays one of the walls' animator states (from its start); a state the controller doesn't have is skipped with a warning.
+        private void PlayState(string[] states, int index)
+        {
+            if (walls == null || states == null || index < 0 || index >= states.Length || string.IsNullOrEmpty(states[index])) return;
+            string state = states[index];
+            int hash = Animator.StringToHash(state);
+            if (!walls.HasState(0, hash))
+            {
+                hash = Animator.StringToHash("Base Layer." + state);
+                if (!walls.HasState(0, hash))
+                {
+                    Debug.LogWarning($"[PlayGround Field] The walls' Animator has no state '{state}' (run Tools > 429 Game > PlayGround > Set Up PlayGround Walls).", this);
+                    return;
+                }
+            }
+            walls.Play(hash, 0, 0f);
+        }
+
+        // Switches on the PlayGround's child of this name (anywhere under it). False if there's none.
+        private bool ShowPhase(string phase)
+        {
+            if (string.IsNullOrEmpty(phase)) return false;
+            foreach (var part in GetComponentsInChildren<Transform>(true))
+            {
+                if (part.name != phase) continue;
+                if (!part.gameObject.activeSelf) part.gameObject.SetActive(true);
+                return true;
+            }
+            return false;
         }
 
         // ------------------------------------------------------------------ the arena
@@ -229,12 +322,45 @@ namespace Game.PlayGround
             foreach (var thing in laidOut) if (thing != null) found.Add(thing);
             laidOut.Clear();
 
+            // The creatures the Fairy Shield misses go wherever they are (the walls were down, they may have strayed):
+            // every ground slime (no split, no candy), then the flying slimes, slime bombers, fat and bowling pumpkins.
+            SlimeBody.ClearAll();
+            var popped = new HashSet<GameObject>();
+            if (spawned != null)
+            {
+                foreach (Transform child in spawned)
+                {
+                    var creature = child.gameObject;
+                    if (!IsCreature(creature) || creature == gameObject || Held(creature)) continue;
+                    PlayerLevel.NoRewardFor(creature);
+                    popped.Add(creature);
+                    StartCoroutine(Pop(creature));
+                }
+            }
+
             float margin = fenceInset + cleanMargin;
             foreach (var thing in found)
             {
-                if (thing == null || !OnField(thing.transform.position, margin) || Kept(thing) || !Cleanable(thing)) continue;
+                if (thing == null || popped.Contains(thing) || !OnField(thing.transform.position, margin) || Kept(thing) || !Cleanable(thing)) continue;
                 StartCoroutine(Pop(thing));
             }
+        }
+
+        // A creature of the PlayGround the Fairy Shield doesn't pop (the bugs it does; the ground slimes go by SlimeBody).
+        private static bool IsCreature(GameObject thing)
+        {
+            if (thing.GetComponentInChildren<SlimeBody>(true) != null || thing.GetComponentInChildren<Cauldron>(true) != null) return false;
+            return thing.GetComponentInChildren<RainbowSlime>(true) != null || thing.GetComponentInChildren<SlimeBomber>(true) != null ||
+                   thing.GetComponentInChildren<FatPumpkin>(true) != null || thing.GetComponentInChildren<BowlingPumpkin>(true) != null;
+        }
+
+        private static bool Held(GameObject thing)
+        {
+            foreach (var grab in thing.GetComponentsInChildren<XRGrabInteractable>())
+            {
+                if (grab.isSelected) return true;
+            }
+            return false;
         }
 
         private bool Cleanable(GameObject thing)
@@ -256,11 +382,7 @@ namespace Game.PlayGround
             if (thing.GetComponentInChildren<MagicHat>(true) != null) return true;
             var pumpkin = thing.GetComponentInChildren<LaughingPumpkin>(true);
             if (pumpkin != null && !pumpkin.IsBroken) return true;
-            foreach (var grab in thing.GetComponentsInChildren<XRGrabInteractable>())
-            {
-                if (grab.isSelected) return true;
-            }
-            return false;
+            return Held(thing);
         }
 
         // Shrinks away with a puff (nothing bumps into it meanwhile), then it's gone.
@@ -291,12 +413,7 @@ namespace Game.PlayGround
         {
             if (!measured) yield break;
             var parent = SpawnedStuff();
-            var taken = new List<(Vector2 at, float radius)>();
-            var cauldron = FindAnyObjectByType<Cauldron>();
-            if (cauldron != null) taken.Add((Flat(cauldron.transform.position), keepFromCauldron));
-            taken.Add((field.center, keepFromMiddle));
-            var eyes = Camera.main != null ? Camera.main.transform : null;
-            if (eyes != null) taken.Add((Flat(eyes.position), keepFromPlayer));
+            var taken = Taken();
 
             var covers = new List<(Vector3 at, float radius)>();
             foreach (var kind in kinds)
@@ -324,6 +441,38 @@ namespace Game.PlayGround
                 }
             }
             HideHat(covers, taken);
+        }
+
+        // The spots kept clear: the cauldron, the middle (where the pumpkin and the chests land) and the player.
+        private List<(Vector2 at, float radius)> Taken()
+        {
+            var taken = new List<(Vector2 at, float radius)>();
+            var cauldron = FindAnyObjectByType<Cauldron>();
+            if (cauldron != null) taken.Add((Flat(cauldron.transform.position), keepFromCauldron));
+            taken.Add((field.center, keepFromMiddle));
+            var eyes = Camera.main != null ? Camera.main.transform : null;
+            if (eyes != null) taken.Add((Flat(eyes.position), keepFromPlayer));
+            return taken;
+        }
+
+        // What the hat can hide by in a phase's own layout: the trees, bushes and tall grass on the field.
+        private List<(Vector3 at, float radius)> Covers()
+        {
+            var covers = new List<(Vector3 at, float radius)>();
+            var things = new List<GameObject>();
+            foreach (var tree in FindObjectsByType<GhostTree>(FindObjectsSortMode.None)) things.Add(tree.gameObject);
+            foreach (var bush in FindObjectsByType<GhostBush>(FindObjectsSortMode.None)) things.Add(bush.gameObject);
+            foreach (var hideout in Hideout.All) if (hideout != null) things.Add(hideout.gameObject);
+            foreach (var thing in things)
+            {
+                if (thing == null || !thing.activeInHierarchy || thing.GetComponentInParent<Cauldron>() != null) continue;
+                var at = thing.transform.position;
+                if (!field.Contains(Flat(at))) continue;
+                var shown = thing.GetComponentInChildren<Renderer>();
+                float radius = shown != null ? Mathf.Clamp(Mathf.Max(shown.bounds.extents.x, shown.bounds.extents.z) * 0.5f, 0.3f, 1.5f) : 0.5f;
+                covers.Add((at, radius));
+            }
+            return covers;
         }
 
         // A random free spot on the field's floor (on the NavMesh), this far from everything taken.
@@ -500,6 +649,8 @@ namespace Game.PlayGround
                     body.angularVelocity = Vector3.zero;
                 }
             }
+            // A magician's hat: it lands any way up, its hole pointing anywhere, until a hit turns it to the sky.
+            hat.LieAnyWay();
             Puff(spot + Vector3.up * 0.3f, 1f);
             Sound(growSound, spot);
         }

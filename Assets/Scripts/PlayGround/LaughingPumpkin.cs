@@ -16,49 +16,55 @@ using Random = UnityEngine.Random;
 namespace Game.PlayGround
 {
     /// <summary>
-    /// The laughing pumpkin the cauldron spits out: a catch-me game.
+    /// The laughing pumpkin the cauldron spits out: a catch-me game (user, 2026-11-07).
     /// - Fresh out of the pot it just sits there laughing. Get close (Catch Range) and it loses 1 health and hops away.
-    /// - From then on it runs and hides once the player comes within Flee Range: inside a bush (its own, or the bushes
-    ///   round a tree's trunk), behind a tree or the giant skull, or anywhere out of the player's sight, dropping candy
-    ///   (its Candy Trail) as it goes. Running uses Stamina (Stamina Use per second, e.g. 60 = 6 s).
-    /// - Out of stamina it stops and laughs weakly (tired): get close again and it breaks. It gets its breath back
-    ///   (Regen per second) only after staying still for Rest Before Regen seconds, and only runs again once it's
-    ///   Rested Share full.
+    /// - From then on it runs once the player comes within Flee Range, but only a few metres (Run Metres, or Run Seconds
+    ///   of running): to a hiding place close by (Hide Radius: inside a bush, in tall grass, behind a tree or the giant
+    ///   skull, or just out of sight), always inside the PlayGround and never at the cauldron, dropping candy (its Candy
+    ///   Trail) as it goes.
+    /// - Out of breath it's stunned for Stun Seconds: stars over it and not a sound. Get close then and it breaks. After
+    ///   that its breath is back at once. Keeping still (Rest Before Regen) also brings its breath back slowly.
+    /// - The rest of the time it laughs non-stop, one laugh right after the other.
+    /// - Out of the PlayGround for Leash Seconds, or fallen through its floor: it puffs back to the middle.
+    /// - Not caught in Transform After seconds (game time), it turns into the real Pumpkin Boss (the runner pumpkins'
+    ///   Wait and Transform): over the last Warn Last seconds it wobbles more and more and its laugh gets deeper, over
+    ///   the last Rumble Last seconds it trembles and growls. Never while held; in the air it waits (Overdue Seconds at
+    ///   most). Turned Into Boss fires, never Caught.
     /// - Cornering it within Catch Range for a while breaks it. Holding it (close range only, see Near Grab Only) for a
     ///   while makes it go off in the hand: an explosion that costs the player a lot of health.
     /// - Every break is a small explosion, just big enough to reach the hand holding it: only a player holding it is hurt.
     /// - Hitting it or throwing things at it never breaks it: it hops away, and the hit's damage (worked out as for an
-    ///   enemy, see Hit Settings) comes off its stamina instead, so beating on it tires it out. Blasts too.
+    ///   enemy, see Hit Settings) comes off its breath instead (Metres Per Damage), so beating on it stuns it. Blasts too.
     /// With Can Run off it's the big tanky one: it stays put, laughs, takes damage from hits (Enemy Hit Damage lowers its
     /// Health FSM) and throws out a candy for every Candy Every Health it loses.
     /// Breaking is left to its Health FSM (health 0 -> crack, drop, destroy); Caught / On Caught fire when it breaks.
-    /// Tools > 429 Game > PlayGround > Set Up Laughing Pumpkins adds it.
+    /// Tools > 429 Game > PlayGround > Set Up Laughing Pumpkins sets it up.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
     public class LaughingPumpkin : MonoBehaviour, IHittable
     {
-        public enum Mood { Fresh, Watching, Fleeing, Tired, Held, Broken }
+        public enum Mood { Fresh, Watching, Fleeing, Stunned, Held, Broken }
 
         private const string SpawnedStuffVariable = "CurrentlySpawnedStuffs";
+        private const float LeashCheckEvery = 0.25f;
+        private static readonly Vector3[] Sides = { Vector3.forward, Vector3.back, Vector3.left, Vector3.right };
 
-        [Header("Running")]
+        [Header("Running (user, 2026-11-07: a few metres, then stunned)")]
         [Tooltip("Off = the big tanky pumpkin: it never runs, it takes damage from hits instead.")]
         [SerializeField] private bool canRun = true;
-        [Tooltip("Full stamina. Running uses Stamina Use per second, so 60 = 6 seconds of running.")]
+        [Tooltip("How far it can run, in metres along the floor, before it's out of breath and stunned.")]
+        [Min(0.5f)]
+        [SerializeField] private float runMetres = 4f;
+        [Tooltip("...or this many seconds of running, whichever comes first (so a run that gets nowhere still ends).")]
+        [Min(0.5f)]
+        [SerializeField] private float runSeconds = 3f;
+        [Tooltip("Breath back, in metres per second, while it keeps still.")]
         [Min(0f)]
-        [SerializeField] private float stamina = 60f;
-        [Min(0.1f)]
-        [SerializeField] private float staminaUsePerSecond = 10f;
-        [Tooltip("Stamina back per second while resting.")]
-        [Min(0f)]
-        [SerializeField] private float regenPerSecond = 1f;
-        [Tooltip("It has to stay still this long, in seconds, before it gets any stamina back.")]
+        [SerializeField] private float regenPerSecond = 0.5f;
+        [Tooltip("It has to stay still this long, in seconds, before it gets any breath back.")]
         [Min(0f)]
         [SerializeField] private float restBeforeRegen = 3f;
-        [Tooltip("Once tired, it only runs again when its stamina is back up to this share of full.")]
-        [Range(0f, 1f)]
-        [SerializeField] private float restedShare = 0.5f;
         [Tooltip("Sideways speed of each hop, in metres per second.")]
         [Min(0.1f)]
         [SerializeField] private float hopSpeed = 3f;
@@ -66,16 +72,27 @@ namespace Game.PlayGround
         [Min(0.1f)]
         [SerializeField] private float hopUp = 2.4f;
 
+        [Header("Stunned (out of breath)")]
+        [Tooltip("Out of breath: stunned this long, in seconds (stars over it, not a sound; get close and it breaks). " +
+                 "Then its breath is back at once.")]
+        [Min(0f)]
+        [SerializeField] private float stunSeconds = 4f;
+        [Tooltip("The stun stars (Prefabs/Enemies/Hit_FX/Stun_Stars), over it while it's stunned. Empty: none.")]
+        [SerializeField] private GameObject stunStars;
+        [Tooltip("How wide the stars' ring is, from its own width.")]
+        [Range(0.1f, 1.5f)]
+        [SerializeField] private float stunStarsSize = 1f;
+
         [Header("Player")]
         [Tooltip("This close (metres, along the floor) counts as catching it.")]
         [Min(0.1f)]
         [SerializeField] private float catchRange = 1.3f;
         [Tooltip("When the player comes this close it starts running (more than Catch Range).")]
         [Min(0.1f)]
-        [SerializeField] private float fleeRange = 4f;
-        [Tooltip("Once at its hiding spot with the player at least this far, it stops running to save its breath.")]
+        [SerializeField] private float fleeRange = 3f;
+        [Tooltip("Hidden at its spot with the player at least this far, it stops running to save its breath.")]
         [Min(0.1f)]
-        [SerializeField] private float calmRange = 7f;
+        [SerializeField] private float calmRange = 5f;
         [Tooltip("Cornered within Catch Range this long (seconds) while it can still run: it breaks anyway.")]
         [Min(0f)]
         [SerializeField] private float cornerSeconds = 1.5f;
@@ -83,25 +100,43 @@ namespace Game.PlayGround
         [Min(0f)]
         [SerializeField] private float holdSeconds = 1.5f;
 
+        [Header("Hiding (close by, inside the PlayGround)")]
+        [Tooltip("Only hiding places this close, in metres.")]
+        [Min(1f)]
+        [SerializeField] private float hideRadius = 5f;
+        [Tooltip("Spots at least this far in from the PlayGround's edge (its Ghost Roam Area), in metres.")]
+        [Min(0f)]
+        [SerializeField] private float arenaMargin = 0.6f;
+        [Tooltip("Never a spot this close to the cauldron, in metres.")]
+        [Min(0f)]
+        [SerializeField] private float keepFromCauldron = 1.8f;
+        [Tooltip("Outside the PlayGround this long (seconds), or below its floor at all: back to the middle with a puff.")]
+        [Min(0.5f)]
+        [SerializeField] private float leashSeconds = 2f;
+        [Tooltip("The puff where it goes and where it comes back (Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff). Empty: none.")]
+        [SerializeField] private GameObject leashPuff;
+        [Tooltip("Size of the puff, times the effect's own size.")]
+        [Min(0.01f)]
+        [SerializeField] private float leashPuffScale = 0.5f;
+
         [Header("Hits")]
         [Tooltip("Something hitting it at least this fast (metres per second) makes it hop away.")]
         [Min(0f)]
         [SerializeField] private float hitSpeed = 1.5f;
         [Tooltip("How hard a hit knocks it away: sideways and upward speed, in metres per second.")]
         [SerializeField] private Vector2 knock = new(3.5f, 3f);
-        [Tooltip("How hits turn into damage (the enemies' shared Hit Settings asset); the damage comes off its stamina. " +
+        [Tooltip("How hits turn into damage (the enemies' shared Hit Settings asset); the damage comes off its breath. " +
                  "Empty: the default numbers.")]
         [SerializeField] private HitSettings hitSettings;
         [Tooltip("Divides the hit power, like an enemy's toughness.")]
         [Min(0.1f)]
         [SerializeField] private float toughness = 1f;
-        [Tooltip("Stamina lost per point of damage a hit (or a blast: grenade, bottle) does. Enemy damage is about 1-8 a " +
-                 "hit, so 6 makes a punch take about 12-18 stamina and a big hammer hit about 48.")]
+        [Tooltip("Breath (metres) lost per point of damage a hit or a blast does: a punch is 1, a hard one 2.")]
         [Min(0f)]
-        [SerializeField] private float staminaPerDamage = 6f;
+        [SerializeField] private float metresPerDamage = 1.5f;
 
         [Header("Exploding")]
-        [Tooltip("It explodes whenever it breaks (caught, cornered, tired out, its health gone, or held too long). Only a " +
+        [Tooltip("It explodes whenever it breaks (caught, cornered, stunned, its health gone, or held too long). Only a " +
                  "player holding it is hurt (Hand Blast Event to their Damage FSM); things close by are hurt and pushed.")]
         [SerializeField] private GameObject[] handBlastEffects = Array.Empty<GameObject>();
         [SerializeField] private AudioClip handBlastSound;
@@ -126,24 +161,50 @@ namespace Game.PlayGround
         [SerializeField] private float candyLaunchSpeed = 3.5f;
 
         [Header("Reward")]
-        [Tooltip("EXP the player gets when it breaks: caught, cornered, tired out, its health gone, or going off in their hand.")]
+        [Tooltip("EXP the player gets when it breaks: caught, cornered, stunned, its health gone, or going off in their hand.")]
         [Min(0)]
         [SerializeField] private int exp = 5;
 
         [Header("Sounds")]
+        [Tooltip("Its laughs, one right after another (never while stunned).")]
         [SerializeField] private AudioClip[] laughs = Array.Empty<AudioClip>();
-        [Tooltip("Played when it's caught the first time, hit, or grabbed.")]
+        [Tooltip("Played when it's caught the first time, hit, or grabbed (never while stunned).")]
         [SerializeField] private AudioClip[] hitSounds = Array.Empty<AudioClip>();
-        [Tooltip("Seconds between laughs (min, max).")]
-        [SerializeField] private Vector2 laughEvery = new(1.4f, 2.8f);
-        [Tooltip("Seconds between laughs when it's tired (min, max): slower, lower and quieter.")]
-        [SerializeField] private Vector2 tiredLaughEvery = new(2.8f, 4.5f);
-        [Range(0.3f, 2f)]
-        [SerializeField] private float tiredPitch = 0.78f;
-        [Range(0f, 1f)]
-        [SerializeField] private float tiredVolume = 0.5f;
+        [Tooltip("Seconds of quiet between one laugh ending and the next starting (min, max).")]
+        [SerializeField] private Vector2 laughGap = new(0.1f, 0.4f);
+        [Tooltip("Pitch of its laugh while it runs or is held.")]
         [Range(0.3f, 2f)]
         [SerializeField] private float runPitch = 1.15f;
+
+        [Header("Turning into the Pumpkin Boss (the runner pumpkins' Wait and Transform)")]
+        [Tooltip("The real Pumpkin Boss (Prefabs/Enemies/pumpkin_boss_Z). Empty: it never turns.")]
+        [SerializeField] private GameObject bossPrefab;
+        [Tooltip("Seconds (game time, from when it appears) until it turns into the boss if it isn't broken first. 0 = never.")]
+        [Min(0f)]
+        [SerializeField] private float transformAfter = 300f;
+        [Tooltip("The warning starts this many seconds before it turns.")]
+        [Min(0f)]
+        [SerializeField] private float warnLast = 60f;
+        [Tooltip("Seconds between wobbles as the warning starts, and at the end.")]
+        [SerializeField] private Vector2 wobbleEvery = new(8f, 1.2f);
+        [Tooltip("How hard it wobbles as the warning starts, and at the end (1 = a full hit's jiggle).")]
+        [SerializeField] private Vector2 wobble = new(0.3f, 0.8f);
+        [Tooltip("Its laugh gets deeper over the warning, down to this pitch.")]
+        [Range(0.3f, 1f)]
+        [SerializeField] private float lowestPitch = 0.7f;
+        [Tooltip("Over the last this many seconds it trembles with a growl.")]
+        [Min(0f)]
+        [SerializeField] private float rumbleLast = 10f;
+        [Tooltip("The growl (Audio/SFX/Low,_rumbling_hmmmm). Empty: none.")]
+        [SerializeField] private AudioClip rumbleSound;
+        [Range(0f, 1f)]
+        [SerializeField] private float rumbleVolume = 1f;
+        [Tooltip("Seconds between trembles (a full wobble and the growl).")]
+        [Min(0.1f)]
+        [SerializeField] private float trembleEvery = 0.6f;
+        [Tooltip("Held, it never turns; in the air it waits at most this many seconds more.")]
+        [Min(0f)]
+        [SerializeField] private float overdueSeconds = 5f;
 
         [Header("PlayMaker")]
         [Tooltip("The FSM that breaks it when its float \"health\" reaches 0.")]
@@ -158,23 +219,33 @@ namespace Game.PlayGround
         /// <summary>Fired when any laughing pumpkin breaks (caught, held, or its health ran out).</summary>
         public static event Action<LaughingPumpkin> Caught;
 
+        /// <summary>Fired once when a pumpkin that was never caught turns into the boss (the boss made, the pumpkin about to go). Never together with Caught.</summary>
+        public static event Action<LaughingPumpkin, GameObject> TurnedIntoBoss;
+
         private static readonly List<LaughingPumpkin> all = new();
         public static IReadOnlyList<LaughingPumpkin> All => all;
 
         private Rigidbody body;
         private XRGrabInteractable grab;
         private AudioSource voice;
+        private AudioSource laughVoice;
+        private AudioSource rumbleVoice;
+        private Game.VFX.Jiggle jiggle;
         private Collider[] ownColliders;
         private FsmFloat health;
         private GhostRoamArea arena;
+        private Cauldron pot;
         private NavMeshPath path;
 
         private Mood mood = Mood.Fresh;
         private float staminaLeft;
+        // It has come to rest on the ground once since it was made (spat out of the pot).
+        private bool landedOnce;
         private float stillFor;
         private float cornered;
         private float held;
         private float nextLaugh;
+        private int lastLaugh = -1;
         private float nextHop;
         private float nextPick;
         private float nextPath;
@@ -182,6 +253,17 @@ namespace Game.PlayGround
         private float lostForCandy;
         private float nextHurt;
         private const float HurtCooldown = 0.3f;
+        private float stunnedAt;
+        private bool starsOn;
+        private Vector3 lastPos;
+        private float outsideFor;
+        private float nextLeash;
+        private float aliveFor;
+        private float nextWobble;
+        private float nextTremble;
+        private int bossAgentType;
+        private bool turned;
+        private bool warnedNoSpot;
         private readonly List<(Vector3 point, Collider[] passThrough, float bonus)> hideSpots = new();
         private bool hasTarget;
         private Vector3 target;
@@ -189,10 +271,20 @@ namespace Game.PlayGround
         private readonly List<Vector3> corners = new();
 
         public Mood Current => mood;
+        /// <summary>Breath left, in metres of running.</summary>
         public float StaminaLeft => staminaLeft;
-        public float MaxStamina => stamina;
+        /// <summary>Full breath, in metres of running (Run Metres).</summary>
+        public float MaxStamina => runMetres;
         public bool CanRun => canRun;
         public bool IsBroken => mood == Mood.Broken;
+        public bool IsStunned => mood == Mood.Stunned;
+        /// <summary>It has turned into the Pumpkin Boss (it's about to be gone).</summary>
+        public bool HasTurned => turned;
+        /// <summary>Seconds (game time) until it turns into the boss; infinity if it never will.</summary>
+        public float SecondsUntilBoss => transformAfter > 0f && bossPrefab != null ? Mathf.Max(0f, transformAfter - aliveFor) : float.PositiveInfinity;
+
+        // Stunned, or held while stunned: not a laugh, not a hit sound (user: "when stunned, it can't laugh").
+        private bool Silent => mood == Mood.Stunned || (mood == Mood.Held && staminaLeft <= 0f);
 
         private void Awake()
         {
@@ -200,8 +292,16 @@ namespace Game.PlayGround
             grab = GetComponent<XRGrabInteractable>();
             voice = GetComponent<AudioSource>();
             ownColliders = GetComponentsInChildren<Collider>(true);
+            jiggle = GetComponentInChildren<Game.VFX.Jiggle>(true);
             path = new NavMeshPath();
-            staminaLeft = stamina;
+            staminaLeft = runMetres;
+            // Its laugh and its growl have their own speakers: a stun stops the laugh at once without cutting a hit
+            // sound, and the Health FSM's break laugh still plays on the first one.
+            if (voice != null)
+            {
+                laughVoice = ExtraVoice();
+                rumbleVoice = ExtraVoice();
+            }
 
             foreach (var fsm in GetComponents<PlayMakerFSM>())
             {
@@ -224,28 +324,37 @@ namespace Game.PlayGround
             // The small ones: 2 health = caught once (hops away), then caught again (breaks).
             if (canRun && health != null) health.Value = 2f;
             lastHealth = health != null ? health.Value : 0f;
+            pot = FindAnyObjectByType<Cauldron>();
             arena = GhostRoamArea.Around(body.position);
+            if (arena == null && pot != null) arena = GhostRoamArea.Around(pot.transform.position);
             if (!canRun) mood = Mood.Watching;
             nextLaugh = Time.time + Random.Range(0.2f, 0.8f);
             faceDirection = transform.forward;
+            lastPos = body.position;
+            bossAgentType = bossPrefab != null && bossPrefab.TryGetComponent<NavMeshAgent>(out var agent) ? agent.agentTypeID : 0;
+            // The first wobble comes as the warning starts.
+            nextWobble = Mathf.Max(0f, transformAfter - warnLast);
             // So the first blast doesn't stutter.
             Blast.Warm(handBlastEffects);
         }
 
         private void Update()
         {
-            if (mood == Mood.Broken) return;
+            if (mood == Mood.Broken || turned) return;
             WatchHealth();
             if (mood == Mood.Broken) return;
+            if (TickTransform()) return;
+            Leash();
 
             var head = Camera.main != null ? Camera.main.transform : null;
             float distance = head != null ? Flat(head.position - body.position).magnitude : float.MaxValue;
             if (head != null && mood != Mood.Fleeing) faceDirection = Flat(head.position - body.position);
 
             bool moving = Flat(body.linearVelocity).sqrMagnitude > 0.09f || !Grounded();
+            if (!landedOnce && !moving) landedOnce = true;
             stillFor = moving || mood == Mood.Fleeing ? 0f : stillFor + Time.deltaTime;
-            if (canRun && mood != Mood.Fleeing && stillFor >= restBeforeRegen)
-                staminaLeft = Mathf.Min(stamina, staminaLeft + regenPerSecond * Time.deltaTime);
+            if (canRun && mood == Mood.Watching && stillFor >= restBeforeRegen)
+                staminaLeft = Mathf.Min(runMetres, staminaLeft + regenPerSecond * Time.deltaTime);
 
             switch (mood)
             {
@@ -256,36 +365,41 @@ namespace Game.PlayGround
                 case Mood.Watching:
                     if (!canRun) break;
                     if (CorneredTooLong(distance)) { Break(); return; }
-                    if (distance <= fleeRange)
+                    // Still flying out of the pot: it runs off only once it has landed (the spit costs no breath).
+                    if (distance <= fleeRange && landedOnce)
                     {
-                        if (staminaLeft >= Mathf.Max(1f, stamina * 0.1f)) StartFleeing(head);
-                        else mood = Mood.Tired;
+                        if (staminaLeft >= runMetres * 0.25f) StartFleeing(head);
+                        else Stun();
                     }
                     break;
 
                 case Mood.Fleeing:
-                    staminaLeft -= staminaUsePerSecond * Time.deltaTime;
-                    if (staminaLeft <= 0f)
-                    {
-                        staminaLeft = 0f;
-                        mood = Mood.Tired;
-                        hasTarget = false;
-                        Laugh();
-                        break;
-                    }
+                {
+                    // Breath is the ground it really covers, and at least Run Metres over Run Seconds.
+                    float moved = Flat(body.position - lastPos).magnitude;
+                    lastPos = body.position;
+                    staminaLeft -= Mathf.Max(moved, Time.deltaTime * runMetres / Mathf.Max(0.1f, runSeconds));
+                    if (staminaLeft <= 0f) { Stun(); break; }
                     if (CorneredTooLong(distance)) { Break(); return; }
                     bool arrived = hasTarget && Flat(target - body.position).magnitude < 0.9f;
                     bool hidden = head != null && Hidden(head.position, body.position);
-                    // Very far, far and out of sight, or at its hiding spot (in a bush, behind a tree) out of sight with
-                    // the player not right on it: stop and hide there, saving its breath.
+                    // Very far, far and out of sight, or at its hiding spot out of sight with the player not right on it:
+                    // stop and hide there, saving its breath. At its spot with the player a little way off, it stays too.
                     bool safe = distance > calmRange + 3f || (distance > calmRange && hidden) || (arrived && hidden && distance > fleeRange);
-                    if (safe || (arrived && distance > calmRange)) { mood = Mood.Watching; hasTarget = false; break; }
+                    bool settled = arrived && distance > fleeRange + 1f;
+                    if (safe || settled) { mood = Mood.Watching; hasTarget = false; break; }
                     if (!hasTarget || arrived || Time.time >= nextPick) PickHidingSpot(head);
                     break;
+                }
 
-                case Mood.Tired:
+                case Mood.Stunned:
                     if (distance <= catchRange) { Break(); return; }
-                    if (staminaLeft >= stamina * restedShare) mood = Mood.Watching;
+                    if (Time.time - stunnedAt >= stunSeconds)
+                    {
+                        staminaLeft = runMetres;
+                        stillFor = 0f;
+                        mood = Mood.Watching;
+                    }
                     break;
 
                 case Mood.Held:
@@ -294,12 +408,13 @@ namespace Game.PlayGround
                     break;
             }
 
-            if (Time.time >= nextLaugh) Laugh();
+            ShowStars(mood == Mood.Stunned);
+            KeepLaughing();
         }
 
         private void FixedUpdate()
         {
-            if (mood == Mood.Broken || mood == Mood.Held || body.isKinematic) return;
+            if (mood == Mood.Broken || mood == Mood.Held || turned || body.isKinematic) return;
 
             if (mood == Mood.Fleeing && Time.time >= nextHop && Grounded())
             {
@@ -309,8 +424,8 @@ namespace Game.PlayGround
                 nextHop = Time.time + 0.2f;
             }
 
-            // Stay upright, turned to face the player (or where it's running).
-            if (faceDirection.sqrMagnitude > 0.001f)
+            // Stay upright, turned to face the player (or where it's running); stunned, it just sits there dazed.
+            if (mood != Mood.Stunned && faceDirection.sqrMagnitude > 0.001f)
             {
                 var want = Quaternion.LookRotation(faceDirection.normalized, Vector3.up);
                 body.MoveRotation(Quaternion.RotateTowards(body.rotation, want, 540f * Time.fixedDeltaTime));
@@ -332,8 +447,19 @@ namespace Game.PlayGround
         {
             mood = Mood.Fleeing;
             cornered = 0f;
+            lastPos = body.position;
             PickHidingSpot(head);
-            Laugh();
+        }
+
+        // Out of breath: stunned from now, its laugh cut at once.
+        private void Stun()
+        {
+            staminaLeft = 0f;
+            if (mood != Mood.Stunned) stunnedAt = Time.time;
+            mood = Mood.Stunned;
+            hasTarget = false;
+            cornered = 0f;
+            if (laughVoice != null) laughVoice.Stop();
         }
 
         private bool CorneredTooLong(float distance)
@@ -345,7 +471,7 @@ namespace Game.PlayGround
         /// <summary>Breaks it: it explodes, and its Health FSM plays the crack and the drop.</summary>
         public void Break()
         {
-            if (mood == Mood.Broken) return;
+            if (mood == Mood.Broken || turned) return;
             bool inHand = LetGo();
             // Caught, not hit: no damage number.
             DamageNumbers.Quiet(gameObject);
@@ -359,7 +485,7 @@ namespace Game.PlayGround
         /// </summary>
         public void ExplodeInHand()
         {
-            if (mood == Mood.Broken) return;
+            if (mood == Mood.Broken || turned) return;
             LetGo();
             Broke(true);
 
@@ -384,10 +510,14 @@ namespace Game.PlayGround
         // It breaks, exploding: only a player holding it ('inHand') is hurt; things close by are hurt and pushed.
         private void Broke(bool inHand)
         {
-            if (mood == Mood.Broken) return;
+            if (mood == Mood.Broken || turned) return;
             var center = ownColliders.Length > 0 && ownColliders[0] != null && ownColliders[0].enabled ? ownColliders[0].bounds.center : body.position;
             mood = Mood.Broken;
             hasTarget = false;
+            // Its own laugh stops, so the Health FSM's break laugh plays clean.
+            if (laughVoice != null) laughVoice.Stop();
+            if (rumbleVoice != null) rumbleVoice.Stop();
+            Game.VFX.StunStars.Hide(transform);
             if (!body.isKinematic) body.linearVelocity = new Vector3(0f, Mathf.Min(0f, body.linearVelocity.y), 0f);
             Blast.Explode(center, handBlastRadius, handBlastDamage, handBlastPush, body, handBlastEffects, handBlastSound,
                 1f, inHand ? handBlastEvent : null, held: inHand, effectScale: handBlastEffectScale, byPlayer: false);
@@ -422,11 +552,133 @@ namespace Game.PlayGround
             if (now <= 0f) Broke(LetGo());
         }
 
+        // ------------------------------------------------------------------ turning into the Pumpkin Boss
+
+        // The runner pumpkins' FSM 'Wait and Transform' (Wait 300 + Warn Before Transform), in C#: game time, so it pauses
+        // with the game (and while Daruma has it switched off). Over the last Warn Last seconds it wobbles more and more
+        // often and harder and its laugh deepens; over the last Rumble Last seconds it trembles with a growl. Never while
+        // held, nor in the air (unless Overdue Seconds late). Returns true when it has just turned (it's going).
+        private bool TickTransform()
+        {
+            if (transformAfter <= 0f || bossPrefab == null) return false;
+            aliveFor += Time.deltaTime;
+            float left = transformAfter - aliveFor;
+            if (warnLast > 0f && left <= warnLast)
+            {
+                float anger = Anger();
+                if (aliveFor >= nextWobble)
+                {
+                    nextWobble = aliveFor + Mathf.Max(0.1f, Mathf.Lerp(wobbleEvery.x, wobbleEvery.y, anger));
+                    Wobble(Mathf.Lerp(wobble.x, wobble.y, anger));
+                }
+                if (rumbleLast > 0f && left <= rumbleLast && aliveFor >= nextTremble)
+                {
+                    nextTremble = aliveFor + Mathf.Max(0.1f, trembleEvery);
+                    Wobble(1f);
+                    Rumble();
+                }
+            }
+            if (left > 0f) return false;
+
+            if (mood == Mood.Held || (grab != null && grab.isSelected)) return false;
+            bool settled = body.isKinematic || Grounded() || body.linearVelocity.sqrMagnitude < 0.04f;
+            if (!settled && -left < overdueSeconds) return false;
+            return TurnIntoBoss();
+        }
+
+        // 0 until the warning starts, then up to 1 when it turns.
+        private float Anger() => transformAfter > 0f && warnLast > 0f && bossPrefab != null
+            ? 1f - Mathf.Clamp01((transformAfter - aliveFor) / warnLast)
+            : 0f;
+
+        private void Wobble(float strength)
+        {
+            if (jiggle != null && strength > 0f) jiggle.Hit(strength);
+        }
+
+        private void Rumble()
+        {
+            if (rumbleVoice == null || rumbleSound == null || rumbleVolume <= 0f || rumbleVoice.isPlaying) return;
+            // Play, not PlayOneShot, so Is Playing tells when it's done.
+            rumbleVoice.clip = rumbleSound;
+            rumbleVoice.volume = rumbleVolume;
+            rumbleVoice.pitch = 1f;
+            rumbleVoice.Play();
+        }
+
+        private bool TurnIntoBoss()
+        {
+            if (!BossSpot(out var at))
+            {
+                // No floor for the boss near here yet: again in a second.
+                if (!warnedNoSpot) Debug.LogWarning($"[Laughing Pumpkin] '{name}' found no NavMesh for the Pumpkin Boss near {body.position}; trying again.", this);
+                warnedNoSpot = true;
+                aliveFor = transformAfter - 1f;
+                return false;
+            }
+            turned = true;
+            LetGo();
+            // Its Health FSM can't break it now (the runner FSM switched Health off as it turned).
+            foreach (var fsm in GetComponents<PlayMakerFSM>()) fsm.enabled = false;
+            if (TryGetComponent<Game.Inventory.CandyTrail>(out var trail)) trail.enabled = false;
+            if (laughVoice != null) laughVoice.Stop();
+            if (rumbleVoice != null) rumbleVoice.Stop();
+            Game.VFX.StunStars.Hide(transform);
+            if (leashPuff != null) EffectPool.Play(leashPuff, body.position + Vector3.up * 0.3f, leashPuffScale * 2f);
+
+            var head = Camera.main != null ? Camera.main.transform.position : at + transform.forward;
+            var look = Flat(head - at);
+            var boss = Instantiate(bossPrefab, at, look.sqrMagnitude > 0.01f ? Quaternion.LookRotation(look) : Quaternion.identity, SpawnedStuff());
+            Debug.Log($"[Laughing Pumpkin] '{name}' wasn't caught in {transformAfter:0} s and turned into the Pumpkin Boss.", this);
+            TurnedIntoBoss?.Invoke(this, boss);
+            foreach (var shown in GetComponentsInChildren<Renderer>()) shown.enabled = false;
+            foreach (var part in ownColliders) if (part != null) part.enabled = false;
+            Destroy(gameObject);
+            return true;
+        }
+
+        // On the boss's NavMesh (its agent type), where the pumpkin is: inside the PlayGround, clear of the cauldron and
+        // not right on the player.
+        private bool BossSpot(out Vector3 at)
+        {
+            at = body.position;
+            if (arena != null && !arena.ContainsFlat(at)) at = ArenaMiddleFloor();
+            if (pot != null)
+            {
+                var potAt = pot.transform.position;
+                var fromPot = Flat(at - potAt);
+                float clear = keepFromCauldron + 0.5f;
+                if (fromPot.magnitude < clear)
+                {
+                    var dir = fromPot.sqrMagnitude > 0.01f ? fromPot.normalized : Flat(ArenaMiddleFloor() - potAt).normalized;
+                    if (dir.sqrMagnitude < 0.01f) dir = Vector3.forward;
+                    at = new Vector3(potAt.x, at.y, potAt.z) + dir * clear;
+                }
+            }
+            if (Camera.main != null)
+            {
+                var head = Camera.main.transform.position;
+                var away = Flat(at - head);
+                if (away.magnitude < 2f)
+                {
+                    var dir = away.sqrMagnitude > 0.01f ? away.normalized : Flat(ArenaMiddleFloor() - head).normalized;
+                    if (dir.sqrMagnitude < 0.01f) dir = Vector3.forward;
+                    at = new Vector3(head.x, at.y, head.z) + dir * 2.5f;
+                }
+            }
+            if (arena != null && !arena.ContainsFlat(at)) at = ArenaMiddleFloor();
+
+            var filter = new NavMeshQueryFilter { agentTypeID = bossAgentType, areaMask = NavMesh.AllAreas };
+            if (!NavMesh.SamplePosition(at, out var hit, 3f, filter)) return false;
+            at = hit.position;
+            return true;
+        }
+
         // ------------------------------------------------------------------ grabbing
 
         private void OnGrabbed(SelectEnterEventArgs args)
         {
-            if (mood == Mood.Broken) return;
+            if (mood == Mood.Broken || turned) return;
             if (mood == Mood.Fresh && health != null) health.Value = Mathf.Max(1f, health.Value - 1f);
             mood = Mood.Held;
             held = 0f;
@@ -437,14 +689,15 @@ namespace Game.PlayGround
         private void OnReleased(SelectExitEventArgs args)
         {
             if (mood != Mood.Held) return;
-            mood = staminaLeft >= stamina * restedShare ? Mood.Watching : Mood.Tired;
+            // Still out of breath: stunned again (it wakes as soon as its stun time is up).
+            mood = staminaLeft > 0f ? Mood.Watching : Mood.Stunned;
         }
 
         // ------------------------------------------------------------------ hits
 
         private void OnCollisionEnter(Collision collision)
         {
-            if (mood == Mood.Broken || mood == Mood.Held || !canRun) return;
+            if (mood == Mood.Broken || mood == Mood.Held || turned || !canRun) return;
             if (collision.relativeVelocity.magnitude < hitSpeed) return;
             var other = collision.collider;
             if (IsPlayerBody(other)) return;
@@ -454,13 +707,13 @@ namespace Game.PlayGround
             bool thrownOrSwung = (otherBody != null && !otherBody.isKinematic) || other.CompareTag("Weapon");
             if (!thrownOrSwung) return;
 
-            // The hit's damage, worked out as for an enemy (the one rule), comes off its stamina: only the player's hits.
+            // The hit's damage, worked out as for an enemy (the one rule), comes off its breath: only the player's hits.
             if (Time.time >= nextHurt)
             {
                 var hit = EnemyHitDamage.Judge(collision, toughness, hitSettings, out bool byPlayer);
                 if (byPlayer && hit.Damage > 0f)
                 {
-                    LoseStamina(hit.Damage * staminaPerDamage);
+                    LoseStamina(hit.Damage * metresPerDamage);
                     nextHurt = Time.time + HurtCooldown;
                     // The hand holding what hit it buzzes as hard as it hurt.
                     HitBuzz.Dealt(collision, hit.Damage);
@@ -475,30 +728,25 @@ namespace Game.PlayGround
         }
 
         /// <summary>
-        /// The player's blast (grenade, bottle): its damage over the Toughness, whole (the one rule), times Stamina Per
-        /// Damage comes off its stamina, and it's knocked away.
+        /// The player's blast (grenade, bottle): its damage over the Toughness, whole (the one rule), times Metres Per
+        /// Damage comes off its breath, and it's knocked away.
         /// </summary>
         public void Hit(float strength, Vector3 point)
         {
-            if (mood == Mood.Broken || mood == Mood.Held || !canRun) return;
-            LoseStamina(HitSettings.Whole(strength / Mathf.Max(0.1f, toughness)) * staminaPerDamage);
+            if (mood == Mood.Broken || mood == Mood.Held || turned || !canRun) return;
+            LoseStamina(HitSettings.Whole(strength / Mathf.Max(0.1f, toughness)) * metresPerDamage);
             Knock(Flat(body.position - point));
             Play(hitSounds, 1f, 1f);
             if (mood == Mood.Fresh) mood = Mood.Watching;
         }
 
-        // Hurt: out of breath sooner. At 0 it's tired (never broken by this).
+        // Hurt: out of breath sooner. At 0 it's stunned (never broken by this).
         private void LoseStamina(float amount)
         {
             if (!canRun || amount <= 0f) return;
             staminaLeft = Mathf.Max(0f, staminaLeft - amount);
             stillFor = 0f;
-            if (staminaLeft <= 0f && (mood == Mood.Fleeing || mood == Mood.Watching))
-            {
-                mood = Mood.Tired;
-                hasTarget = false;
-                nextLaugh = Time.time + 0.6f;
-            }
+            if (staminaLeft <= 0f && (mood == Mood.Fleeing || mood == Mood.Watching || mood == Mood.Fresh)) Stun();
         }
 
         private static bool IsPlayerBody(Collider other)
@@ -518,6 +766,77 @@ namespace Game.PlayGround
         {
             if (body.isKinematic || !Grounded()) return;
             body.linearVelocity = sideways + Vector3.up * up;
+        }
+
+        // ------------------------------------------------------------------ the PlayGround
+
+        // Out of the PlayGround for Leash Seconds, or below its floor at all: back to the middle with a puff. Never while
+        // held (a hand can take it anywhere).
+        private void Leash()
+        {
+            if (arena == null || Time.time < nextLeash) return;
+            nextLeash = Time.time + LeashCheckEvery;
+            if (mood == Mood.Held || (grab != null && grab.isSelected)) { outsideFor = 0f; return; }
+            var middle = ArenaMiddleFloor();
+            bool below = body.position.y < middle.y - 2f;
+            outsideFor = arena.ContainsFlat(body.position) ? 0f : outsideFor + LeashCheckEvery;
+            if (below || outsideFor >= leashSeconds) BackInside(middle);
+        }
+
+        private void BackInside(Vector3 middle)
+        {
+            outsideFor = 0f;
+            var head = Camera.main != null ? Camera.main.transform.position : middle + Vector3.forward * 10f;
+            var spot = middle;
+            for (int i = 0; i < 12; i++)
+            {
+                var tryAt = middle + Random.insideUnitCircle.X0Y() * 2.5f;
+                if (Flat(tryAt - head).magnitude < 2.5f) continue;
+                if (pot != null && Flat(tryAt - pot.transform.position).magnitude < keepFromCauldron) continue;
+                if (NavMesh.SamplePosition(tryAt, out var onMesh, 1.5f, NavMesh.AllAreas)) { spot = onMesh.position; break; }
+            }
+            // Sitting on the floor, not in it.
+            float bottom = ownColliders.Length > 0 && ownColliders[0] != null && ownColliders[0].enabled ? ownColliders[0].bounds.min.y : body.position.y;
+            spot += Vector3.up * (body.position.y - bottom + 0.05f);
+            if (leashPuff != null)
+            {
+                EffectPool.Play(leashPuff, body.position + Vector3.up * 0.3f, leashPuffScale);
+                EffectPool.Play(leashPuff, spot + Vector3.up * 0.3f, leashPuffScale);
+            }
+            body.position = spot;
+            transform.position = spot;
+            if (!body.isKinematic)
+            {
+                body.linearVelocity = Vector3.zero;
+                body.angularVelocity = Vector3.zero;
+            }
+            hasTarget = false;
+            lastPos = spot;
+            if (mood == Mood.Fleeing) mood = Mood.Watching;
+        }
+
+        // Inside the PlayGround by Arena Margin (the four points round it are inside too), and never at the cauldron.
+        private bool InArena(Vector3 point)
+        {
+            if (pot != null && Flat(point - pot.transform.position).magnitude < keepFromCauldron) return false;
+            if (arena == null) return true;
+            if (!arena.ContainsFlat(point)) return false;
+            if (arenaMargin <= 0f) return true;
+            foreach (var side in Sides)
+            {
+                if (!arena.ContainsFlat(point + side * arenaMargin)) return false;
+            }
+            return true;
+        }
+
+        // The floor in the PlayGround's middle (as PlayGroundRounds finds it for the spit).
+        private Vector3 ArenaMiddleFloor()
+        {
+            var middle = arena != null ? arena.Middle : body.position;
+            if (Physics.Raycast(middle + Vector3.up * 2f, Vector3.down, out var hit, 30f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+                middle = hit.point;
+            if (NavMesh.SamplePosition(middle, out var onMesh, 3f, NavMesh.AllAreas)) middle = onMesh.position;
+            return middle;
         }
 
         // ------------------------------------------------------------------ running and hiding
@@ -560,20 +879,21 @@ namespace Game.PlayGround
             awayFromPlayer.Normalize();
 
             float bestScore = float.MinValue;
-            Vector3 best = here + awayFromPlayer * 4f;
+            Vector3 best = here + awayFromPlayer * 2f;
             Collider[] bestPassThrough = null;
             bool found = false;
 
-            // Its favourite spots first: inside a bush, behind a tree trunk or the giant skull (the things that grow back).
+            // Its favourite spots first: inside a bush or tall grass, behind a tree trunk or the giant skull. Only close
+            // ones: near and well hidden beats far.
             var toPlayerNow = Flat(player - here).normalized;
             foreach (var (point, passThrough, bonus) in HideSpots(player))
             {
                 float far = Flat(point - here).magnitude;
-                if (far > 12f) continue;
-                if (arena != null && !arena.ContainsFlat(point)) continue;
+                if (far > hideRadius) continue;
+                if (!InArena(point)) continue;
                 float fromPlayer = Flat(point - player).magnitude;
                 if (fromPlayer < fleeRange) continue;                                   // not right next to the player
-                float score = fromPlayer + bonus;
+                float score = Mathf.Min(fromPlayer, calmRange + 2f) + bonus - 0.5f * far;
                 if (Vector3.Dot(Flat(point - here).normalized, toPlayerNow) > 0.3f && far > 1f) score -= 8f;   // don't run past the player
                 score += Random.Range(0f, 1.5f);
                 if (score > bestScore)
@@ -587,19 +907,19 @@ namespace Game.PlayGround
 
             for (int i = 0; i < 20; i++)
             {
-                // Mostly away from the player, sometimes off to the side.
+                // Mostly away from the player, sometimes off to the side; no further than one run.
                 float angle = Random.Range(-120f, 120f);
                 var direction = Quaternion.Euler(0f, angle, 0f) * awayFromPlayer;
-                var spot = here + direction * Random.Range(3f, 9f);
-                if (arena != null && !arena.ContainsFlat(spot)) continue;
+                var spot = here + direction * Random.Range(1.5f, Mathf.Max(2f, runMetres));
+                if (!InArena(spot)) continue;
                 if (NavMesh.SamplePosition(spot, out var onMesh, 1.5f, NavMesh.AllAreas)) spot = onMesh.position;
                 else if (NavMesh.SamplePosition(here, out _, 1.5f, NavMesh.AllAreas)) continue;   // there is a NavMesh, just not there
 
-                float score = Flat(spot - player).magnitude;                       // far from the player
-                if (Hidden(player, spot)) score += 5f;                            // out of sight
+                float score = Mathf.Min(Flat(spot - player).magnitude, calmRange + 2f);   // away from the player
+                if (Hidden(player, spot)) score += 5f;                                    // out of sight
                 var toSpot = Flat(spot - here).normalized;
                 var toPlayer = Flat(player - here).normalized;
-                if (Vector3.Dot(toSpot, toPlayer) > 0.3f) score -= 8f;            // don't run past the player
+                if (Vector3.Dot(toSpot, toPlayer) > 0.3f) score -= 8f;                    // don't run past the player
                 score += Random.Range(0f, 1.5f);
                 if (score > bestScore)
                 {
@@ -609,7 +929,8 @@ namespace Game.PlayGround
                     found = true;
                 }
             }
-            target = found ? best : here + awayFromPlayer * 3f;
+            if (!found) best = InArena(best) ? best : ArenaMiddleFloor();
+            target = best;
             hasTarget = true;
             nextPath = 0f;
 
@@ -648,6 +969,8 @@ namespace Game.PlayGround
             }
             foreach (var tree in FindObjectsByType<GhostTree>(FindObjectsSortMode.None))
             {
+                // Never the cauldron, even if it lets things out like a tree.
+                if (tree.GetComponentInParent<Cauldron>() != null || tree.GetComponentInChildren<Cauldron>() != null) continue;
                 var trunk = Solid(tree.GetComponents<Collider>());
                 if (trunk.Length > 0)
                 {
@@ -728,7 +1051,7 @@ namespace Game.PlayGround
             return false;
         }
 
-        // ------------------------------------------------------------------ candy and sound
+        // ------------------------------------------------------------------ candy, stars and sound
 
         private void LaunchCandy()
         {
@@ -749,22 +1072,74 @@ namespace Game.PlayGround
                 candyBody.linearVelocity = Random.insideUnitCircle.normalized.X0Y() * Random.Range(0.8f, 1.6f) + Vector3.up * candyLaunchSpeed;
         }
 
-        private void Laugh()
+        // The runner pumpkins' tired stars (RunAwayPumpkin.ShowTired) over its top while it's stunned, without the dizzy
+        // sound; gone as soon as it wakes, is picked up or breaks.
+        private void ShowStars(bool on)
         {
-            bool tired = mood == Mood.Tired;
-            var every = tired ? tiredLaughEvery : laughEvery;
-            nextLaugh = Time.time + Random.Range(every.x, every.y);
-            float pitch = tired ? tiredPitch : mood == Mood.Fleeing || mood == Mood.Held ? runPitch : 1f;
-            Play(laughs, tired ? tiredVolume : 1f, pitch * Random.Range(0.95f, 1.05f));
+            if (stunStars == null) return;
+            if (!on)
+            {
+                if (starsOn) Game.VFX.StunStars.Hide(transform);
+                starsOn = false;
+                return;
+            }
+            starsOn = true;
+            var shape = ownColliders.Length > 0 && ownColliders[0] != null && ownColliders[0].enabled ? ownColliders[0].bounds : new Bounds(body.position, Vector3.one * 0.5f);
+            float ring = Mathf.Max(shape.extents.x, shape.extents.z) * stunStarsSize;
+            float lift = shape.max.y - transform.position.y + ring * 0.35f;
+            Game.VFX.StunStars.Show(stunStars, transform, transform, lift, ring, 0.25f, false);
+        }
+
+        // Non-stop, one laugh right after the other on its own speaker (the Pumpkin Boss's one-mouth laugh), never the same
+        // clip twice in a row; quicker while it runs or is held, deeper as it's about to turn. Never while stunned.
+        private void KeepLaughing()
+        {
+            if (laughVoice == null || laughs.Length == 0) return;
+            if (Silent)
+            {
+                if (laughVoice.isPlaying) laughVoice.Stop();
+                return;
+            }
+            if (laughVoice.isPlaying || Time.time < nextLaugh) return;
+            int i = Random.Range(0, laughs.Length);
+            if (laughs.Length > 1 && i == lastLaugh) i = (i + 1 + Random.Range(0, laughs.Length - 1)) % laughs.Length;
+            lastLaugh = i;
+            var clip = laughs[i];
+            if (clip == null) return;
+            float pitch = (mood == Mood.Fleeing || mood == Mood.Held ? runPitch : 1f) * Mathf.Lerp(1f, lowestPitch, Anger()) * Random.Range(0.97f, 1.03f);
+            laughVoice.clip = clip;
+            laughVoice.pitch = pitch;
+            laughVoice.Play();
+            nextLaugh = Time.time + clip.length / Mathf.Max(0.1f, pitch) + Random.Range(laughGap.x, laughGap.y);
         }
 
         private void Play(AudioClip[] clips, float volume, float pitch)
         {
-            if (voice == null || clips.Length == 0) return;
+            if (voice == null || clips.Length == 0 || Silent) return;
             var clip = clips[Random.Range(0, clips.Length)];
             if (clip == null) return;
             voice.pitch = pitch;
             voice.PlayOneShot(clip, volume);
+        }
+
+        // One more speaker like its own (the Pumpkin Boss's laugh speaker).
+        private AudioSource ExtraVoice()
+        {
+            var extra = gameObject.AddComponent<AudioSource>();
+            extra.playOnAwake = false;
+            extra.loop = false;
+            extra.outputAudioMixerGroup = voice.outputAudioMixerGroup;
+            extra.volume = voice.volume;
+            extra.spatialBlend = voice.spatialBlend;
+            extra.rolloffMode = voice.rolloffMode;
+            if (voice.rolloffMode == AudioRolloffMode.Custom)
+                extra.SetCustomCurve(AudioSourceCurveType.CustomRolloff, voice.GetCustomCurve(AudioSourceCurveType.CustomRolloff));
+            extra.minDistance = voice.minDistance;
+            extra.maxDistance = voice.maxDistance;
+            extra.priority = voice.priority;
+            extra.dopplerLevel = voice.dopplerLevel;
+            extra.spread = voice.spread;
+            return extra;
         }
 
         private static Vector3 Flat(Vector3 v) => new(v.x, 0f, v.z);
@@ -782,6 +1157,8 @@ namespace Game.PlayGround
             DrawCircle(transform.position, catchRange);
             Gizmos.color = Color.yellow;
             DrawCircle(transform.position, fleeRange);
+            Gizmos.color = Color.cyan;
+            DrawCircle(transform.position, hideRadius);
             if (hasTarget)
             {
                 Gizmos.color = Color.green;

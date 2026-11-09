@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using Game.Combat;
-using Game.Inventory;
+using HutongGames.PlayMaker.Actions;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
@@ -9,49 +9,88 @@ namespace Game.PlayGround.Editor
 {
     /// <summary>
     /// Tools > 429 Game > PlayGround > Set Up Laughing Pumpkins.
-    /// The cauldron's laughing pumpkins (Prefabs/Items/Breakable) get the catch-me game (Laughing Pumpkin):
-    /// Pumpkin_8 60 stamina, Pumpkin_9 and Pumpkin_9 1 90, Pumpkin_10 120 (10 used per second of running). They become
-    /// grabbable from close range only (Near Grab Only), drop a candy every metre they run, and get a sane mass.
-    /// Also makes Pumpkin_Big (a variant of Pumpkin_10, 2.5x size): it never runs, has 100 health that hits take away
-    /// (Enemy Hit Damage) and throws out a candy for every 10 it loses. Safe to run again.
+    /// The cauldron's laughing pumpkins (Prefabs/Items/Breakable: Pumpkin_8, 9, 10 for rounds 1, 2, 3) get the catch-me
+    /// game (Laughing Pumpkin, user 2026-11-07): they run only a few metres (3 / 4 / 5 m), then are stunned with stars
+    /// (4 / 3.5 / 3 s), hide close by (4.5 / 5.5 / 6.5 m) inside the PlayGround, are pulled back in if they leave it, and
+    /// turn into the real Pumpkin Boss after 300 s uncaught. They become grabbable from close range only (Near Grab
+    /// Only), drop a candy every metre they run, and get a sane mass.
+    /// Pumpkin_9 and Pumpkin_10's Health FSM no longer sets PlayGround_Manager's Pumpkin_09 / Pumpkin_10 when they break
+    /// (state Drop_Crack): the seeds grow the PlayGround now. Pumpkin_Big (the old round 4) is left alone. Safe to run again.
     /// </summary>
     public static class LaughingPumpkinSetupMenu
     {
         private const string Folder = "Assets/Prefabs/Items/Breakable/";
-        private const string BigPath = Folder + "Pumpkin_Big.prefab";
         private const string Sfx = "Assets/Audio/SFX/";
         private const string Fx = "Assets/Lana Studio/Hyper Casual FX/Prefabs/";
         private const string HitSettingsPath = "Assets/Data/Combat/Hit Settings.asset";
+        private const string BossPath = "Assets/Prefabs/Enemies/pumpkin_boss_Z.prefab";
+        private const string StunStarsPath = "Assets/Prefabs/Enemies/Hit_FX/Stun_Stars.prefab";
+        private const string RumblePath = Sfx + "Low,_rumbling_hmmmm.wav";
+        private const string PuffPath = "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab";
         private static readonly string[] CloseGrabPumpkins = { "Pumpkin_0", "Pumpkin_1", "Pumpkin_2", "Pumpkin_4", "Pumpkin_6" };
+        private static readonly string[] OldSeedBools = { "Pumpkin_09", "Pumpkin_10" };
 
-        private static readonly (string name, float stamina)[] Runners =
+        // Round 1, 2, 3 (user, 2026-11-07).
+        private static readonly (string name, float runMetres, float runSeconds, float stunSeconds, float hideRadius, float calmRange)[] Runners =
         {
-            ("Pumpkin_8", 60f), ("Pumpkin_9", 90f), ("Pumpkin_9 1", 90f), ("Pumpkin_10", 120f),
+            ("Pumpkin_8", 3f, 2.5f, 4f, 4.5f, 5f),
+            ("Pumpkin_9", 4f, 2.5f, 3.5f, 5.5f, 5f),
+            ("Pumpkin_10", 5f, 3f, 3f, 6.5f, 5.5f),
         };
+
+        private struct Refs
+        {
+            public GameObject boss;
+            public GameObject stars;
+            public AudioClip rumble;
+            public GameObject puff;
+            public HitSettings hitSettings;
+            public Object[] blastEffects;
+            public AudioClip blastSound;
+            public Object[] laughs;
+            public Object[] hits;
+        }
 
         [MenuItem("Tools/429 Game/PlayGround/Set Up Laughing Pumpkins")]
         public static void Run()
         {
-            var laughs = Clips("laughing_pumpkin_1", "laughing_pumpkin_2", "laughing_pumpkin_3", "laughing_pumpkin_4");
-            var hits = Clips("pumpkin_laugh_1", "pumpkin_laugh_2", "pumpkin_laugh_3", "pumpkin_laugh_4", "laughing_pumpkin_5");
-            var candies = new List<Object>();
-            for (int i = 1; i <= 8; i++)
+            var missing = new List<string>();
+            var refs = new Refs
             {
-                var candy = AssetDatabase.LoadAssetAtPath<GameObject>(Folder + "Candy_" + i + ".prefab");
-                if (candy != null) candies.Add(candy);
-            }
+                boss = Load<GameObject>(BossPath, missing),
+                stars = Load<GameObject>(StunStarsPath, missing),
+                rumble = Load<AudioClip>(RumblePath, missing),
+                puff = Load<GameObject>(PuffPath, missing),
+                hitSettings = Load<HitSettings>(HitSettingsPath, missing),
+                blastEffects = new Object[]
+                {
+                    Load<GameObject>(Fx + "Flash/Flash_round_yellow.prefab", missing),
+                    Load<GameObject>(Fx + "Confetti/Hit_Blast.prefab", missing),
+                    Load<GameObject>(PuffPath, missing),
+                },
+                blastSound = Load<AudioClip>(Sfx + "pumpkin_explode_1.wav", missing),
+                laughs = Clips(missing, "laughing_pumpkin_1", "laughing_pumpkin_2", "laughing_pumpkin_3", "laughing_pumpkin_4"),
+                hits = Clips(missing, "pumpkin_laugh_1", "pumpkin_laugh_2", "pumpkin_laugh_3", "pumpkin_laugh_4", "laughing_pumpkin_5"),
+            };
+            refs.blastEffects = System.Array.FindAll(refs.blastEffects, e => e != null);
 
             var log = new List<string>();
-            foreach (var (name, stamina) in Runners)
+            foreach (var row in Runners)
             {
-                string path = Folder + name + ".prefab";
-                if (AssetDatabase.LoadAssetAtPath<GameObject>(path) == null) { log.Add(name + " missing"); continue; }
+                string path = Folder + row.name + ".prefab";
+                if (AssetDatabase.LoadAssetAtPath<GameObject>(path) == null)
+                {
+                    Debug.LogWarning($"[Laughing Pumpkins] no '{path}', skipped.");
+                    log.Add(row.name + " missing");
+                    continue;
+                }
                 var root = PrefabUtility.LoadPrefabContents(path);
                 try
                 {
-                    SetUpRunner(root, stamina, laughs, hits);
+                    SetUpRunner(root, row, refs, missing);
+                    int off = StopSeedBools(root);
                     PrefabUtility.SaveAsPrefabAsset(root, path);
-                    log.Add($"{name} {stamina}");
+                    log.Add($"{row.name} {row.runMetres} m / {row.stunSeconds} s" + (off > 0 ? $" ({off} seed bool off)" : ""));
                 }
                 finally
                 {
@@ -59,10 +98,9 @@ namespace Game.PlayGround.Editor
                 }
             }
 
-            MakeBig(candies, laughs, hits);
-            log.Add("Pumpkin_Big (100 health)");
             AssetDatabase.SaveAssets();
-            Debug.Log("[Laughing Pumpkins] set up: " + string.Join(", ", log));
+            foreach (var what in missing) Debug.LogWarning("[Laughing Pumpkins] missing: " + what);
+            Debug.Log("[Laughing Pumpkins] set up: " + string.Join(", ", log) + (missing.Count > 0 ? $"; {missing.Count} missing (see warnings)" : ""));
         }
 
         /// <summary>
@@ -100,7 +138,9 @@ namespace Game.PlayGround.Editor
             Debug.Log("[Close Grab] " + string.Join(", ", done));
         }
 
-        private static void SetUpRunner(GameObject root, float stamina, Object[] laughs, Object[] hits)
+        private static void SetUpRunner(GameObject root,
+            (string name, float runMetres, float runSeconds, float stunSeconds, float hideRadius, float calmRange) row,
+            Refs refs, List<string> missing)
         {
             var body = root.GetComponent<Rigidbody>();
             body.mass = 25f;
@@ -117,110 +157,128 @@ namespace Game.PlayGround.Editor
 
             if (!root.TryGetComponent<LaughingPumpkin>(out var pumpkin)) pumpkin = root.AddComponent<LaughingPumpkin>();
             var so = new SerializedObject(pumpkin);
-            so.FindProperty("canRun").boolValue = true;
-            so.FindProperty("stamina").floatValue = stamina;
-            so.FindProperty("hitSettings").objectReferenceValue = AssetDatabase.LoadAssetAtPath<HitSettings>(HitSettingsPath);
-            SetArray(so.FindProperty("handBlastEffects"), new Object[]
-            {
-                AssetDatabase.LoadAssetAtPath<GameObject>(Fx + "Flash/Flash_round_yellow.prefab"),
-                AssetDatabase.LoadAssetAtPath<GameObject>(Fx + "Confetti/Hit_Blast.prefab"),
-                AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab"),
-            });
-            so.FindProperty("handBlastSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "pumpkin_explode_1.wav");
-            SetArray(so.FindProperty("laughs"), laughs);
-            SetArray(so.FindProperty("hitSounds"), hits);
+            string where = row.name + ".LaughingPumpkin.";
+            SetBool(so, "canRun", true, where, missing);
+            // Running: a few metres, then stunned.
+            SetFloat(so, "runMetres", row.runMetres, where, missing);
+            SetFloat(so, "runSeconds", row.runSeconds, where, missing);
+            SetFloat(so, "regenPerSecond", 0.5f, where, missing);
+            SetFloat(so, "restBeforeRegen", 3f, where, missing);
+            SetFloat(so, "stunSeconds", row.stunSeconds, where, missing);
+            SetObject(so, "stunStars", refs.stars, where, missing);
+            SetFloat(so, "stunStarsSize", 1f, where, missing);
+            // The player.
+            SetFloat(so, "fleeRange", 3f, where, missing);
+            SetFloat(so, "calmRange", row.calmRange, where, missing);
+            // Hiding close by, inside the PlayGround.
+            SetFloat(so, "hideRadius", row.hideRadius, where, missing);
+            SetFloat(so, "arenaMargin", 0.6f, where, missing);
+            SetFloat(so, "keepFromCauldron", 1.8f, where, missing);
+            SetFloat(so, "leashSeconds", 2f, where, missing);
+            SetObject(so, "leashPuff", refs.puff, where, missing);
+            SetFloat(so, "leashPuffScale", 0.5f, where, missing);
+            // Hits.
+            SetObject(so, "hitSettings", refs.hitSettings, where, missing);
+            SetFloat(so, "metresPerDamage", 1.5f, where, missing);
+            // Exploding and sounds.
+            SetArray(so, "handBlastEffects", refs.blastEffects, where, missing);
+            SetObject(so, "handBlastSound", refs.blastSound, where, missing);
+            SetArray(so, "laughs", refs.laughs, where, missing);
+            SetArray(so, "hitSounds", refs.hits, where, missing);
+            // Turning into the Pumpkin Boss (the runner pumpkins' Wait and Transform + Warn Before Transform).
+            SetObject(so, "bossPrefab", refs.boss, where, missing);
+            SetFloat(so, "transformAfter", 300f, where, missing);
+            SetFloat(so, "warnLast", 60f, where, missing);
+            SetFloat(so, "lowestPitch", 0.7f, where, missing);
+            SetFloat(so, "rumbleLast", 10f, where, missing);
+            SetObject(so, "rumbleSound", refs.rumble, where, missing);
+            SetFloat(so, "rumbleVolume", 1f, where, missing);
+            SetFloat(so, "trembleEvery", 0.6f, where, missing);
+            SetFloat(so, "overdueSeconds", 5f, where, missing);
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            if (root.TryGetComponent<CandyTrail>(out var trail))
+            if (root.TryGetComponent<Game.Inventory.CandyTrail>(out var trail))
             {
                 var t = new SerializedObject(trail);
-                t.FindProperty("spacing").floatValue = 1f;
-                t.FindProperty("maxCandies").intValue = 60;
+                SetFloat(t, "spacing", 1f, row.name + ".CandyTrail.", missing);
+                var max = t.FindProperty("maxCandies");
+                if (max != null) max.intValue = 60;
+                else missing.Add(row.name + ".CandyTrail.maxCandies");
                 t.ApplyModifiedPropertiesWithoutUndo();
             }
         }
 
-        private static void MakeBig(List<Object> candies, Object[] laughs, Object[] hits)
+        // Switches off the leftover Set Fsm Bool (PlayGround_Manager Pumpkin_09 / Pumpkin_10) in the Health FSM's
+        // Drop_Crack state: the second driver of the PlayGround's growing. Returns how many it switched off.
+        private static int StopSeedBools(GameObject root)
         {
-            var basePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(Folder + "Pumpkin_10.prefab");
-            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(BigPath);
-            GameObject root;
-            var preview = default(UnityEngine.SceneManagement.Scene);
-            if (existing != null) root = PrefabUtility.LoadPrefabContents(BigPath);
-            else
+            int off = 0;
+            foreach (var fsm in root.GetComponents<PlayMakerFSM>())
             {
-                // Built in a preview scene so the open scene isn't touched.
-                preview = UnityEditor.SceneManagement.EditorSceneManager.NewPreviewScene();
-                root = (GameObject)PrefabUtility.InstantiatePrefab(basePrefab, preview);
-            }
-            try
-            {
-                root.name = "Pumpkin_Big";
-                root.transform.localScale = Vector3.one * 3f;
-
-                var body = root.GetComponent<Rigidbody>();
-                body.mass = 5000f;
-                body.constraints = RigidbodyConstraints.FreezePositionX | RigidbodyConstraints.FreezePositionZ |
-                                   RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
-
-                if (root.TryGetComponent<XRGrabInteractable>(out var grab)) grab.enabled = false;
-                if (root.TryGetComponent<NearGrabOnly>(out var near)) near.enabled = false;
-
-                if (!root.TryGetComponent<LaughingPumpkin>(out var pumpkin)) pumpkin = root.AddComponent<LaughingPumpkin>();
-                var so = new SerializedObject(pumpkin);
-                so.FindProperty("canRun").boolValue = false;
-                so.FindProperty("candyEveryHealth").floatValue = 5f;
-                so.FindProperty("candyLaunchSpeed").floatValue = 3.5f;
-                SetArray(so.FindProperty("candies"), candies.ToArray());
-                SetArray(so.FindProperty("laughs"), Clips("pumpkin_boss_laugh", "pumpkin_boss_laugh_2", "laughing_pumpkin_1", "laughing_pumpkin_3"));
-                SetArray(so.FindProperty("hitSounds"), hits);
-                so.ApplyModifiedPropertiesWithoutUndo();
-
-                if (root.TryGetComponent<CandyTrail>(out var trail))
+                if (fsm.FsmName != "Health") continue;
+                var state = fsm.Fsm.GetState("Drop_Crack");
+                if (state == null) continue;
+                bool changed = false;
+                foreach (var action in state.Actions)
                 {
-                    var t = new SerializedObject(trail);
-                    t.FindProperty("maxCandies").intValue = 0;
-                    t.ApplyModifiedPropertiesWithoutUndo();
+                    if (!(action is SetFsmBool set) || !set.Enabled || set.variableName == null) continue;
+                    if (System.Array.IndexOf(OldSeedBools, set.variableName.Value) < 0) continue;
+                    set.Enabled = false;
+                    changed = true;
+                    off++;
                 }
-
-                if (!root.TryGetComponent<EnemyHitDamage>(out var hitsTaken)) hitsTaken = root.AddComponent<EnemyHitDamage>();
-                var h = new SerializedObject(hitsTaken);
-                h.FindProperty("toughness").floatValue = 1f;
-                h.FindProperty("knockBack").boolValue = false;
-                h.FindProperty("exp").intValue = 10;
-                h.FindProperty("healthFsm").stringValue = "Health";
-                h.ApplyModifiedPropertiesWithoutUndo();
-
-                foreach (var fsm in root.GetComponents<PlayMakerFSM>())
-                {
-                    if (fsm.FsmName != "Health") continue;
-                    var health = fsm.FsmVariables.FindFsmFloat("health");
-                    if (health != null) health.Value = 50f; // halved for whole-number damage (2026-10-27)
-                    EditorUtility.SetDirty(fsm);
-                }
-
-                PrefabUtility.SaveAsPrefabAsset(root, BigPath);
+                if (!changed) continue;
+                state.SaveActions();
+                EditorUtility.SetDirty(fsm);
             }
-            finally
-            {
-                if (existing != null) PrefabUtility.UnloadPrefabContents(root);
-                else UnityEditor.SceneManagement.EditorSceneManager.ClosePreviewScene(preview);
-            }
+            return off;
         }
 
-        private static Object[] Clips(params string[] names)
+        private static T Load<T>(string path, List<string> missing) where T : Object
+        {
+            var asset = AssetDatabase.LoadAssetAtPath<T>(path);
+            if (asset == null) missing.Add(path);
+            return asset;
+        }
+
+        private static Object[] Clips(List<string> missing, params string[] names)
         {
             var list = new List<Object>();
             foreach (var name in names)
             {
-                var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + name + ".wav");
+                var clip = Load<AudioClip>(Sfx + name + ".wav", missing);
                 if (clip != null) list.Add(clip);
             }
             return list.ToArray();
         }
 
-        private static void SetArray(SerializedProperty array, Object[] values)
+        private static void SetFloat(SerializedObject so, string field, float value, string where, List<string> missing)
         {
+            var property = so.FindProperty(field);
+            if (property != null) property.floatValue = value;
+            else missing.Add(where + field);
+        }
+
+        private static void SetBool(SerializedObject so, string field, bool value, string where, List<string> missing)
+        {
+            var property = so.FindProperty(field);
+            if (property != null) property.boolValue = value;
+            else missing.Add(where + field);
+        }
+
+        // Only when there's something to set: a missing asset never empties a field that's already filled.
+        private static void SetObject(SerializedObject so, string field, Object value, string where, List<string> missing)
+        {
+            var property = so.FindProperty(field);
+            if (property == null) { missing.Add(where + field); return; }
+            if (value != null) property.objectReferenceValue = value;
+        }
+
+        private static void SetArray(SerializedObject so, string field, Object[] values, string where, List<string> missing)
+        {
+            var array = so.FindProperty(field);
+            if (array == null) { missing.Add(where + field); return; }
+            if (values.Length == 0) return;
             array.arraySize = values.Length;
             for (int i = 0; i < values.Length; i++) array.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
         }

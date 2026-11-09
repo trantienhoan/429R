@@ -553,7 +553,7 @@ namespace Game.Combat
         {
             var head = FindHeadPoint();
             Settings.PlayHeadshot(head);
-            if (Settings.HeadshotExp > 0f && !noReward) Game.Leveling.PlayerLevel.AddExp(Settings.HeadshotExp);
+            if (Settings.HeadshotExp > 0f && exp > 0 && !noReward) Game.Leveling.PlayerLevel.AddExp(Settings.HeadshotExp);
             var push = Settings.HeadshotPush;
             if (dead) KnockBack(push.x, push.y);
             else KnockOut(0f, push.x, push.y, Settings.HeadshotStunSeconds);

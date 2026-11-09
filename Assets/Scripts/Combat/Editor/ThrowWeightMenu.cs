@@ -36,7 +36,7 @@ namespace Game.EditorTools
         private const float HeavySmoothing = 6f;
         // A thin thing: its thinnest side under this share of its longest.
         private const float FlatShare = 0.3f;
-        private static readonly string[] Skip = { "pumpkin_bowling" };
+        private static readonly string[] Skip = { "pumpkin_bowling", "Bowling_Ball" };
         // Their own throw boost and drag, whatever their size, by name start (user, 2026-10-29, from the headset): the
         // rooftop's throwing pumpkin and the flip-flops 3.5; the books and bottles lighter and easier still, 4.29.
         private static readonly (string name, float boost, float drag)[] Own =

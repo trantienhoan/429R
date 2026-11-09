@@ -8,16 +8,18 @@ using UnityEngine;
 namespace Game.PlayGround.Editor
 {
     /// <summary>
-    /// Tools > 429 Game > PlayGround > Set Up PlayGround Rounds. The endgame+ PlayGround loop:
-    /// - Candy_1 ... 8 become the cauldron's ingredients (Cooking Ingredient + a recipe picture in
-    ///   Assets/Data/Cooking/Icons) and last Candy Lifetime seconds on the floor instead of 20.
-    /// - The cauldron (Fire_Woods_n_Cauldron): recipes of 3 / 4 / 5 / 5 candies (+ Pumpkin_On_Tree), making Pumpkin_8,
-    ///   Pumpkin_9, Pumpkin_10 and Pumpkin_Big, then the mystery pot (5 x ???) that bursts into candy and The_Seed (the
-    ///   Green Seed). It gets a PlayGround Rounds director with one wave per round: EnemyManager 0-3's bugs, twice as
-    ///   many, two bosses each, and a Yellow Seed chest (read from the open scene's EnemyManager FSMs).
-    /// - The laughing pumpkins no longer drop a seed themselves (the director's chest does).
-    /// - The ghost balloons drop candy when popped, and no spiders when they pop in the player's face.
-    /// Run Set Up Laughing Pumpkins first. Safe to run again; save and close those prefabs first.
+    /// Tools > 429 Game > PlayGround > Set Up PlayGround Rounds. The endgame+ PlayGround's three cooking rounds (user,
+    /// 2026-11-07):
+    /// - Candy_1 ... 8 become cooking ingredients (Cooking Ingredient + a recipe picture in Assets/Data/Cooking/Icons) and
+    ///   last Candy Lifetime seconds on the floor instead of 20.
+    /// - The laughing pumpkins (Pumpkin_8, 9, 10) no longer drop a seed themselves (the round's chest does).
+    /// - The ghost balloons drop candy when popped, and no spiders.
+    /// - The cauldron (Fire_Woods_n_Cauldron) gets a PlayGround Rounds director with the three Waves below: the bugs that
+    ///   come non-stop from the start of cooking until the round's pumpkin is caught, the round's coloured slime mini boss,
+    ///   the PG_ chest with the Yellow Seed, and the GAMESTAGES gear bool set if that seed is never taken. Its Fairy Shield
+    ///   trigger events are switched off (the pot stays when the shield sweeps).
+    /// The cauldron's own settings (recipes, cook times, the finale) are its own menu's, never set here.
+    /// Run the slimes menu first (it makes the mini bosses). Safe to run again; save and close those prefabs first.
     /// </summary>
     public static class PlayGroundRoundsSetupMenu
     {
@@ -25,36 +27,42 @@ namespace Game.PlayGround.Editor
         private const string CauldronPath = "Assets/Prefabs/PlayGround/Fire_Woods_n_Cauldron.prefab";
         private const string GhostPath = "Assets/Prefabs/Enemies/PLAYGROUND/Ghost_Balloon_{0}.prefab";
         private const string IconPath = "Assets/Data/Cooking/Icons/{0}.png";
-        private const string ChestPath = "Assets/Prefabs/Items/Chest/Treasure_Chest_and_Seed_{0}.prefab";
-        private const string GreenSeedPath = "Assets/Prefabs/Items/Chest/The_Seed.prefab";
+        private const string BugFolder = "Assets/Prefabs/Enemies/Enemies_Smarter/";
+        private const string SlimeFolder = "Assets/Prefabs/Enemies/PLAYGROUND/";
+        private const string ChestFolder = "Assets/Prefabs/PlayGround/PG_Wood/";
         private const string SmokePath = "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab";
-        private const string Sfx = "Assets/Audio/SFX/";
         private const float CandyLifetime = 60f;
 
-        private static readonly string[] Results = { "Pumpkin_8", "Pumpkin_9", "Pumpkin_10", "Pumpkin_Big" };
-        private static readonly int[] RecipeCandies = { 3, 4, 5, 5 };
-        private static readonly int[] RecipePumpkins = { 1, 1, 1, 2 };
-        // EnemyManager 0-3 x2: bugs in all, most alive at once.
-        private static readonly int[] WaveSizes = { 12, 24, 20, 24 };
-        private static readonly int[] MaxAlive = { 5, 8, 6, 8 };
-        private static readonly string[] Chests = { "Chest", "Head", "Shield", "Boot" };
+        // The laughing pumpkins the cauldron makes (rounds 1-3).
+        private static readonly string[] Pumpkins = { "Pumpkin_8", "Pumpkin_9", "Pumpkin_9 1", "Pumpkin_10" };
+
+        // One wave per round: label, the bug (Enemies_Smarter), most alive at once, the mini boss (PLAYGROUND), the
+        // chest (PG_Wood) and the GAMESTAGES bool of its gear.
+        private static readonly (string label, string bug, int maxAlive, string boss, string chest, string gearBool)[] Waves =
+        {
+            ("Round 1: Spider_Small, Slime_Big_Blue (Sticky)", "Spider_Small", 5, "Slime_Big_Blue", "PG_Treasure_Chest_and_Seed_Chest", "Chest_Gear"),
+            ("Round 2: Spider_Normal, Slime_Big_Red (Bull)", "Spider_Normal", 8, "Slime_Big_Red", "PG_Treasure_Chest_and_Seed_Head", "Head_Gear"),
+            ("Round 3: Cockroach_Small, Slime_Big_Yellow (Bomb)", "Cockroach_Small", 6, "Slime_Big_Yellow", "PG_Treasure_Chest_and_Seed_Shield", "Shield_Gear"),
+        };
+        private static readonly Vector2 SpawnWait = new(1.2f, 3f);
 
         [MenuItem("Tools/429 Game/PlayGround/Set Up PlayGround Rounds")]
         public static void Run()
         {
+            if (EditorApplication.isPlaying) { Debug.LogError("[PlayGround Rounds] Stop play mode first."); return; }
             var notes = new List<string>();
-            var smoke = Load<GameObject>(SmokePath);
+            var smoke = Load<GameObject>(SmokePath, notes);
 
             // 1. Candies: ingredients with a picture, and they stay a while.
             var candies = new List<GameObject>();
             for (int n = 1; n <= 8; n++)
             {
                 string path = Breakable + "Candy_" + n + ".prefab";
-                var asset = Load<GameObject>(path);
+                var asset = Load<GameObject>(path, notes);
                 if (asset == null) continue;
                 candies.Add(asset);
                 string iconPath = string.Format(IconPath, "Candy_" + n);
-                var icon = Load<Sprite>(iconPath) ?? PrefabIconMaker.MakeSprite(asset, iconPath);
+                var icon = AssetDatabase.LoadAssetAtPath<Sprite>(iconPath) ?? PrefabIconMaker.MakeSprite(asset, iconPath);
                 string id = "Candy_" + n;
                 Edit(path, notes, root =>
                 {
@@ -67,9 +75,8 @@ namespace Game.PlayGround.Editor
                 });
             }
 
-            // 2. Laughing pumpkins: the director's chest gives the seed now.
-            foreach (var name in new[] { "Pumpkin_8", "Pumpkin_9", "Pumpkin_9 1", "Pumpkin_10", "Pumpkin_Big" })
-                Edit(Breakable + name + ".prefab", notes, StopSeedDrop);
+            // 2. Laughing pumpkins: the round's chest gives the seed now.
+            foreach (var name in Pumpkins) Edit(Breakable + name + ".prefab", notes, StopSeedDrop);
 
             // 3. Ghost balloons: candy prizes, no spiders.
             for (int n = 1; n <= 3; n++)
@@ -87,56 +94,28 @@ namespace Game.PlayGround.Editor
                 });
             }
 
-            // 4. The cauldron and its rounds.
-            var waves = ReadEnemyManagers(notes);
+            // 4. The cauldron's rounds director (not the Cauldron itself: its own menu sets that).
             Edit(CauldronPath, notes, root =>
             {
-                // The Fairy Shield sweeps the PlayGround after each round; the cauldron has to stay (its Damage FSM
-                // used to pop it on the shield).
+                // The Fairy Shield sweeps the PlayGround after each round; the cauldron has to stay.
                 IgnoreFairyShield(root);
-                var cauldron = root.GetComponent<Cauldron>();
-                if (cauldron == null) { notes.Add("no Cauldron on the cauldron prefab"); return; }
-                var so = new SerializedObject(cauldron);
-                SetArray(so.FindProperty("candies"), candies.ToArray());
-                var rounds = so.FindProperty("rounds");
-                rounds.arraySize = Results.Length;
-                for (int i = 0; i < Results.Length; i++)
-                {
-                    var round = rounds.GetArrayElementAtIndex(i);
-                    round.FindPropertyRelative("pumpkins").intValue = RecipePumpkins[i];
-                    round.FindPropertyRelative("candies").intValue = RecipeCandies[i];
-                    round.FindPropertyRelative("result").objectReferenceValue = Load<GameObject>(Breakable + Results[i] + ".prefab");
-                    round.FindPropertyRelative("results").intValue = 1;
-                }
-                so.FindProperty("maxKinds").intValue = 3;
-                so.FindProperty("spitToMiddle").boolValue = true;
-                so.FindProperty("mysteryCount").intValue = 5;
-                so.FindProperty("finalSeed").objectReferenceValue = Load<GameObject>(GreenSeedPath);
-                so.FindProperty("finalCandies").intValue = 24;
-                so.FindProperty("breakEffect").objectReferenceValue = smoke;
-                so.FindProperty("swellSound").objectReferenceValue = Load<AudioClip>(Sfx + "earth_rumble.wav");
-                so.FindProperty("breakSound").objectReferenceValue = Load<AudioClip>(Sfx + "pumpkin_explode_2.wav");
-                so.ApplyModifiedPropertiesWithoutUndo();
-
                 if (!root.TryGetComponent<PlayGroundRounds>(out var director)) director = root.AddComponent<PlayGroundRounds>();
                 var d = new SerializedObject(director);
                 var list = d.FindProperty("waves");
-                list.arraySize = waves.Count;
-                for (int i = 0; i < waves.Count; i++)
+                list.arraySize = Waves.Length;
+                for (int i = 0; i < Waves.Length; i++)
                 {
-                    var (enemy, boss, label) = waves[i];
+                    var (label, bug, maxAlive, boss, chest, gearBool) = Waves[i];
                     var wave = list.GetArrayElementAtIndex(i);
                     wave.FindPropertyRelative("label").stringValue = label;
                     var enemies = wave.FindPropertyRelative("enemies");
                     enemies.arraySize = 1;
-                    enemies.GetArrayElementAtIndex(0).objectReferenceValue = enemy;
-                    wave.FindPropertyRelative("waveSize").intValue = WaveSizes[i];
-                    wave.FindPropertyRelative("maxAlive").intValue = MaxAlive[i];
-                    wave.FindPropertyRelative("spawnWait").vector2Value = new Vector2(1.2f, 3f);
-                    wave.FindPropertyRelative("boss").objectReferenceValue = boss;
-                    wave.FindPropertyRelative("bosses").intValue = 2;
-                    wave.FindPropertyRelative("bossWhenLeft").intValue = 2;
-                    wave.FindPropertyRelative("chest").objectReferenceValue = Load<GameObject>(string.Format(ChestPath, Chests[i]));
+                    enemies.GetArrayElementAtIndex(0).objectReferenceValue = Load<GameObject>(BugFolder + bug + ".prefab", notes);
+                    wave.FindPropertyRelative("maxAlive").intValue = maxAlive;
+                    wave.FindPropertyRelative("spawnWait").vector2Value = SpawnWait;
+                    wave.FindPropertyRelative("boss").objectReferenceValue = Load<GameObject>(SlimeFolder + boss + ".prefab", notes);
+                    wave.FindPropertyRelative("chest").objectReferenceValue = Load<GameObject>(ChestFolder + chest + ".prefab", notes);
+                    wave.FindPropertyRelative("gearBool").stringValue = gearBool;
                 }
                 d.FindProperty("spawnEffect").objectReferenceValue = smoke;
                 d.FindProperty("chestEffect").objectReferenceValue = smoke;
@@ -147,44 +126,8 @@ namespace Game.PlayGround.Editor
             Debug.Log("[PlayGround Rounds] " + string.Join("; ", notes));
         }
 
-        // Each wave from the open scene's -EnemyManager 0 ... 3: what it spawns and its boss.
-        private static List<(GameObject enemy, GameObject boss, string label)> ReadEnemyManagers(List<string> notes)
-        {
-            var found = new List<(GameObject, GameObject, string)>();
-            for (int i = 0; i < 4; i++)
-            {
-                GameObject enemy = null, boss = null;
-                var manager = FindSceneObject("-EnemyManager " + i);
-                if (manager != null)
-                {
-                    foreach (var fsm in manager.GetComponents<PlayMakerFSM>())
-                    {
-                        if (fsm.FsmName != "EnemyManager") continue;
-                        foreach (var state in fsm.Fsm.States)
-                        {
-                            foreach (var action in state.Actions)
-                            {
-                                if (action is not CreateObject create || create.gameObject.Value == null) continue;
-                                if (state.Name.Contains("Spawn") && enemy == null) enemy = create.gameObject.Value;
-                                else if ((state.Name.Contains("COMPLETE") || state.Name.Contains("Boss")) && boss == null) boss = create.gameObject.Value;
-                            }
-                        }
-                    }
-                }
-                if (enemy == null) notes.Add($"EnemyManager {i}: no enemy found (open 2 Game Scene)");
-                found.Add((enemy, boss, $"Round {i + 1}: {(enemy != null ? enemy.name : "?")} x{WaveSizes[i]}, 2x {(boss != null ? boss.name : "?")}"));
-            }
-            return found;
-        }
-
-        private static GameObject FindSceneObject(string name)
-        {
-            foreach (var go in Resources.FindObjectsOfTypeAll<GameObject>())
-            {
-                if (go.name == name && go.scene.IsValid() && !EditorUtility.IsPersistent(go)) return go;
-            }
-            return null;
-        }
+        [MenuItem("Tools/429 Game/PlayGround/Set Up PlayGround Rounds", true)]
+        private static bool NotPlaying() => !EditorApplication.isPlaying;
 
         // The candy's Health FSM breaks it after a while on the floor (its Wait): make that longer.
         private static void SetCandyLifetime(GameObject root)
@@ -264,6 +207,7 @@ namespace Game.PlayGround.Editor
         {
             if (AssetDatabase.LoadAssetAtPath<GameObject>(path) == null)
             {
+                Debug.LogWarning($"[PlayGround Rounds] No '{path}': skipped.");
                 notes.Add($"no '{path}'");
                 return;
             }
@@ -280,7 +224,17 @@ namespace Game.PlayGround.Editor
             }
         }
 
-        private static T Load<T>(string path) where T : Object => AssetDatabase.LoadAssetAtPath<T>(path);
+        // Loads an asset; a missing one is warned about (and noted) and comes back null.
+        private static T Load<T>(string path, List<string> notes) where T : Object
+        {
+            var asset = AssetDatabase.LoadAssetAtPath<T>(path);
+            if (asset == null)
+            {
+                Debug.LogWarning($"[PlayGround Rounds] Missing '{path}' (left empty; make it, then run this again).");
+                notes.Add($"MISSING {path}");
+            }
+            return asset;
+        }
 
         private static void SetArray(SerializedProperty array, Object[] values)
         {

@@ -2219,23 +2219,31 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.PlayGround.LaughingPumpkin
   canRun: 1
-  stamina: 300
-  staminaUsePerSecond: 10
+  runMetres: 4
+  runSeconds: 3
   regenPerSecond: 1
   restBeforeRegen: 3
-  restedShare: 0.5
   hopSpeed: 3
   hopUp: 2.4
+  stunSeconds: 4
+  stunStars: {fileID: 0}
+  stunStarsSize: 1
   catchRange: 1.3
   fleeRange: 4
   calmRange: 7
   cornerSeconds: 1.5
   holdSeconds: 1.5
+  hideRadius: 5
+  arenaMargin: 0.6
+  keepFromCauldron: 1.8
+  leashSeconds: 2
+  leashPuff: {fileID: 0}
+  leashPuffScale: 0.5
   hitSpeed: 1.5
   knock: {x: 3.5, y: 3}
   hitSettings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
   toughness: 1
-  staminaPerDamage: 6
+  metresPerDamage: 1.5
   handBlastEffects:
   - {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
   - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}
@@ -2261,11 +2269,19 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 9e9e1a6f68461564fa43a78d3e0e1c51, type: 3}
   - {fileID: 8300000, guid: d40ed08980898f448b69f7c5fe4dc5da, type: 3}
   - {fileID: 8300000, guid: 96e4dfb4d3f38c14f8da3bfea8b0c4d1, type: 3}
-  laughEvery: {x: 1.4, y: 2.8}
-  tiredLaughEvery: {x: 2.8, y: 4.5}
-  tiredPitch: 0.78
-  tiredVolume: 0.5
+  laughGap: {x: 0.1, y: 0.4}
   runPitch: 1.15
+  bossPrefab: {fileID: 0}
+  transformAfter: 300
+  warnLast: 60
+  wobbleEvery: {x: 8, y: 1.2}
+  wobble: {x: 0.3, y: 0.8}
+  lowestPitch: 0.7
+  rumbleLast: 10
+  rumbleSound: {fileID: 0}
+  rumbleVolume: 1
+  trembleEvery: 0.6
+  overdueSeconds: 5
   healthFsm: Health
   healthVariable: health
   oldDamageFsm: Damage

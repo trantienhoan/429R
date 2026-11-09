@@ -34,6 +34,14 @@ namespace Game.Enemies
             if (!list.Contains(enemy)) list.Add(enemy);
         }
 
+        /// <summary>The spawners whose current wave counts this enemy (so what it turns into, e.g. a slime's split, can join the same waves).</summary>
+        public static void SpawnersOf(GameObject enemy, List<object> into)
+        {
+            into.Clear();
+            if (enemy == null) return;
+            foreach (var pair in waves) if (pair.Value.Contains(enemy)) into.Add(pair.Key);
+        }
+
         /// <summary>How many of the spawner's wave are still alive.</summary>
         public static int Alive(object spawner)
         {

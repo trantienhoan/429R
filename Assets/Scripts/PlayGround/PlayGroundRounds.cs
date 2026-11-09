@@ -11,21 +11,22 @@ using Random = UnityEngine.Random;
 namespace Game.PlayGround
 {
     /// <summary>
-    /// Runs the PlayGround's rounds around the cauldron (goes next to the Cauldron):
-    /// 1. The cauldron starts cooking: its smell calls this round's bugs (Waves, one per round, like EnemyManager
-    ///    0-3 but endgame+: twice the bugs and two bosses). They come in from the edges of the PlayGround (its Ghost
-    ///    Roam Area) and go for the player, a few alive at a time, the bosses once most of the wave is beaten.
-    ///    A wrong recipe doesn't stop them: they keep coming until this round's pumpkin is caught.
-    /// 2. The right recipe spits out the laughing pumpkin. When it's caught (it breaks), the wave stops and the Fairy
-    ///    Shield sweeps the PlayGround (the bugs and bosses left pop; the cauldron doesn't), then the round's Chest drops
-    ///    in the middle of the PlayGround.
-    /// 3. Taking the chest's Yellow Seed ends the round: the PlayGround FSM hears about it (below) and the cauldron
-    ///    moves on to the next recipe (the magic hat has to be hit again).
-    /// After the last round the cauldron wants the mystery pot (? ? ? ? ?); when it bursts it leaves the Green Seed.
+    /// Runs the PlayGround's three cooking rounds around the cauldron (goes next to the Cauldron; user, 2026-11-07):
+    /// 1. A right recipe starts cooking: this round's wave starts (Waves, one per round). Its bugs come in from the edges
+    ///    of the PlayGround (its Ghost Roam Area) non-stop, a few alive at a time, until the round's laughing pumpkin is
+    ///    caught. The PlayGround Field drops the walls (GO) at the same moment. A wrong recipe starts nothing (the
+    ///    cauldron spits a Big Slime by itself).
+    /// 2. Cooked: the pot spits the laughing pumpkin, and the round's one mini boss (Boss) comes in with the wave.
+    /// 3. Caught: the bugs stop coming (the ones alive stay), the pot's bubble tower goes off and the round's Chest drops
+    ///    in the middle at once. Not caught in time, the pumpkin turns into the Pumpkin Boss instead: the bugs stop
+    ///    coming, and there's no chest.
+    /// 4. Taking the chest's Yellow Seed ends the round: the Fairy Shield sweeps the PlayGround, the wave's bugs left die,
+    ///    the PlayGround Field clears the field and grows it, and the cauldron moves on to the next recipe (the magic hat
+    ///    has to be hit again). If the seed isn't taken in Seed Wait Seconds, the round ends anyway and its Gear Bool is
+    ///    set on GAMESTAGES.
+    /// After the last round the cauldron wants the mystery pot (the finale).
     /// PlayGround FSM (global PlayGround_Z, FSM PlayGround_Manager): it's sent the events PG_COOKING, PG_PUMPKIN,
-    /// PG_CAUGHT, PG_SEED_1 ... PG_SEED_4 (the seed of round N was taken: grow the PlayGround), PG_MYSTERY and
-    /// PG_POT_BROKEN; add them to its Events and use them as global transitions. For the old phase states, Seed
-    /// Bools are also set true on it (round 1 -> Pumpkin_09, round 2 -> Pumpkin_10).
+    /// PG_CAUGHT, PG_BOSS, PG_SEED_1 ... PG_SEED_3, PG_MYSTERY and PG_POT_BROKEN (add them to its Events to use them).
     /// Tools > 429 Game > PlayGround > Set Up PlayGround Rounds adds it and fills in the waves.
     /// </summary>
     [DisallowMultipleComponent]
@@ -37,23 +38,21 @@ namespace Game.PlayGround
         [Serializable]
         public class Wave
         {
-            [Tooltip("Just a name for the Inspector, e.g. 'Round 1: small spiders'.")]
+            [Tooltip("Just a name for the Inspector, e.g. 'Round 1: Spider_Small, Slime_Big_Blue'.")]
             public string label;
-            [Tooltip("The bugs it sends; each pick is at random.")]
+            [Tooltip("The bugs it sends, non-stop from the start of cooking until the pumpkin is caught; each pick is at random.")]
             public GameObject[] enemies = Array.Empty<GameObject>();
-            [Tooltip("How many bugs it sends in all (after that only the bosses come).")]
-            [Min(0)] public int waveSize = 12;
-            [Tooltip("Most of its bugs alive at once (the game's enemy limit also applies).")]
+            [Tooltip("Most of its bugs alive at once (the mini boss doesn't count; the game's enemy limit also applies).")]
             [Min(1)] public int maxAlive = 5;
             [Tooltip("Seconds between two bugs (min, max).")]
             public Vector2 spawnWait = new(1.5f, 3.5f);
-            [Tooltip("The boss it sends once the wave is (almost) beaten.")]
+            [Tooltip("The round's one mini boss: it comes in when the pot spits the pumpkin, and joins the wave.")]
             public GameObject boss;
-            [Min(0)] public int bosses = 2;
-            [Tooltip("The bosses come once this few of the wave are left alive.")]
-            [Min(0)] public int bossWhenLeft = 2;
             [Tooltip("The chest that drops in the middle when the pumpkin is caught, with a Yellow Seed inside.")]
             public GameObject chest;
+            [Tooltip("The GAMESTAGES bool of the chest's gear (e.g. Chest_Gear): set true if the seed is never taken and " +
+                     "the round ends by itself, so the game can still go on.")]
+            public string gearBool;
         }
 
         [Tooltip("One per cauldron round, in order.")]
@@ -72,49 +71,39 @@ namespace Game.PlayGround
         [Min(0.01f)] [SerializeField] private float chestEffectScale = 0.12f;
 
         [Header("Clean-up: the Fairy Shield")]
-        [Tooltip("When the pumpkin is caught, the Fairy Shield (the GAMESTAGES Shield_Sphere that 'clean it' uses) " +
-                 "sweeps the PlayGround: the bugs and bosses left pop, and so does anything else it pops (the " +
-                 "cauldron, candies and chests don't). Off, or no shield found: just the wave's bugs die.")]
+        [Tooltip("When the seed is taken, the Fairy Shield (the GAMESTAGES Shield_Sphere that 'clean it' uses) sweeps " +
+                 "the PlayGround: the bugs and bosses left pop, and so does anything else it pops (the cauldron, candies " +
+                 "and chests don't). The wave's bugs left die either way.")]
         [SerializeField] private bool cleanWithFairyShield = true;
         [Tooltip("The shield object's name in the scene.")]
         [SerializeField] private string shieldName = "Shield_Sphere";
         [Tooltip("The smoke that goes off with the shield, as everywhere the shield is used (user, 2026-10-28): its name in " +
                  "the scene. Empty: none.")]
         [SerializeField] private string shieldSmokeName = "Smoke_Blast_Green";
-        [Tooltip("The chest drops this many seconds after the shield goes off (it grows over 3 s).")]
-        [Min(0f)] [SerializeField] private float chestAfterShield = 3.2f;
 
         [Header("PlayGround FSM")]
         [Tooltip("The PlayMaker global holding the PlayGround.")]
         [SerializeField] private string playGroundVariable = "PlayGround_Z";
         [Tooltip("Its FSM that's sent the PG_ events.")]
         [SerializeField] private string managerFsm = "PlayGround_Manager";
-        [Tooltip("Bools set true on that FSM when round 1, 2 ... 's seed is taken (for the old phase states).")]
-        [SerializeField] private string[] seedBools = { "Pumpkin_09", "Pumpkin_10" };
         [Tooltip("The inventory item a chest's seed gives; taking one ends the round.")]
         [SerializeField] private string seedItem = "Yellow_Seed";
         [Tooltip("If the seed isn't taken this many seconds after the pumpkin is caught (it rolled out of reach, or the " +
-                 "chest can't be got at), the round goes on anyway. A seed left alone gives its gear by itself after 300 s, " +
-                 "but no Yellow Seed, so without this the PlayGround would stop there.")]
+                 "chest can't be got at), the round goes on anyway and the wave's Gear Bool is set.")]
         [Min(1f)]
         [SerializeField] private float seedWaitSeconds = 320f;
 
-        /// <summary>The round's wave started (round index from 0).</summary>
+        /// <summary>The round's wave started (round index from 0): the cauldron started cooking a right recipe.</summary>
         public static event Action<PlayGroundRounds, int> WaveStarted;
-        /// <summary>The round's pumpkin was caught and its wave ended.</summary>
-        public static event Action<PlayGroundRounds, int> RoundWon;
-
-        /// <summary>
-        /// Whether the round just won had its whole wave beaten first: every bug and boss sent and none left alive when the
-        /// pumpkin was caught (read in Round Won; Special Stage 3 is earned this way on the 2nd pumpkin).
-        /// </summary>
-        public bool LastWaveCleared { get; private set; }
         /// <summary>The round's seed was taken from its chest (round index from 0): the PlayGround moves on.</summary>
         public static event Action<PlayGroundRounds, int> SeedTaken;
 
         private Cauldron cauldron;
         private readonly HashSet<LaughingPumpkin> pumpkins = new();
         private Coroutine spawning;
+        private Coroutine bossing;
+        private GameObject bossMade;
+        private bool bossSent;
         private int waveRound = -1;
         private int seedRound = -1;
         private float seedSince;
@@ -136,6 +125,7 @@ namespace Game.PlayGround
             Cauldron.RecipeChanged += OnRecipeChanged;
             Cauldron.PotBroken += OnPotBroken;
             LaughingPumpkin.Caught += OnCaught;
+            LaughingPumpkin.TurnedIntoBoss += OnPumpkinTurned;
             BlackPumpkin.BossSpawned += OnMiniBoss;
         }
 
@@ -146,6 +136,7 @@ namespace Game.PlayGround
             Cauldron.RecipeChanged -= OnRecipeChanged;
             Cauldron.PotBroken -= OnPotBroken;
             LaughingPumpkin.Caught -= OnCaught;
+            LaughingPumpkin.TurnedIntoBoss -= OnPumpkinTurned;
             BlackPumpkin.BossSpawned -= OnMiniBoss;
             if (subscribedInventory && PlayerInventory.Instance != null) PlayerInventory.Instance.Changed -= OnInventory;
             subscribedInventory = false;
@@ -159,18 +150,24 @@ namespace Game.PlayGround
                 PlayerInventory.Instance.Changed += OnInventory;
                 subscribedInventory = true;
             }
-            // The seed was never taken: the PlayGround mustn't stop here.
-            if (seedRound >= 0 && Time.time - seedSince > seedWaitSeconds) FinishRound(seedRound);
+            // The seed was never taken: the PlayGround mustn't stop here, and GAMESTAGES still needs the round's gear.
+            if (seedRound >= 0 && Time.time - seedSince > seedWaitSeconds)
+            {
+                var wave = WaveOf(seedRound);
+                if (wave != null && !string.IsNullOrEmpty(wave.gearBool)) GameStages.SetBool(wave.gearBool, true, this);
+                FinishRound(seedRound);
+            }
         }
 
         // ------------------------------------------------------------------ cauldron
 
+        // Only a right recipe starts cooking now (rounds 1-3), so the wave and the walls' GO start with it.
         private void OnCookingStarted(Cauldron who)
         {
             if (who != cauldron) return;
             Tell("PG_COOKING");
             int round = cauldron.RoundIndex;
-            if (cauldron.InMystery || round >= waves.Length || waveRound == round) return;
+            if (cauldron.InMystery || round < 0 || round >= waves.Length || waveRound == round) return;
             StartWave(round);
         }
 
@@ -179,9 +176,14 @@ namespace Game.PlayGround
             if (who != cauldron || made == null) return;
             if (made.TryGetComponent<LaughingPumpkin>(out var pumpkin)) pumpkins.Add(pumpkin);
             Tell("PG_PUMPKIN");
+            // The round's one mini boss comes in as the pumpkin is spat out; it's part of the wave.
+            var wave = WaveOf(waveRound);
+            if (wave == null || wave.boss == null || bossSent) return;
+            bossSent = true;
+            bossing = StartCoroutine(SpawnBoss(wave.boss));
         }
 
-        // A wrong recipe's mini boss joins the running wave, so it dies with it when the pumpkin is caught.
+        // A black pumpkin's boss joins the running wave, so it dies with it when the seed is taken.
         private void OnMiniBoss(GameObject boss)
         {
             if (waveRound >= 0 && boss != null) EnemyWave.Add(this, boss);
@@ -209,19 +211,17 @@ namespace Game.PlayGround
             if (pumpkins.Count > 0) return;
 
             int round = cauldron.WaitingForNextRound ? cauldron.RoundIndex : waveRound;
-            LastWaveCleared = waveRound >= 0 && spawning == null && EnemyWave.Alive(this) == 0;
-            // The EnemyManager ends; the Fairy Shield sweeps up what's left (or, without it, the wave's bugs die).
-            bool swept = cleanWithFairyShield && FireFairyShield();
-            EndWave(!swept);
+            // The bugs stop coming at once; the ones alive (and the mini boss) stay until the seed is taken.
+            EndWave(false);
+            cauldron.PumpkinCaught();
             Tell("PG_CAUGHT");
-            RoundWon?.Invoke(this, round);
 
-            var wave = round >= 0 && round < waves.Length ? waves[round] : null;
+            var wave = WaveOf(round);
             if (wave != null && wave.chest != null)
             {
                 seedRound = round;
                 seedSince = Time.time;
-                StartCoroutine(DropChestLater(wave.chest, swept ? chestAfterShield : 0f));
+                DropChest(wave.chest);
             }
             else
             {
@@ -229,10 +229,17 @@ namespace Game.PlayGround
             }
         }
 
-        private IEnumerator DropChestLater(GameObject chest, float delay)
+        // The pumpkin wasn't caught in time and turned into the Pumpkin Boss (user, 2026-11-07: killing it wins the game,
+        // as on the runner path). No chest, no seed: the bugs stop coming (the boss's own bug pumpkins need the enemy
+        // slots); the ones alive and the mini boss stay. The boss isn't part of the wave, so nothing here removes it.
+        private void OnPumpkinTurned(LaughingPumpkin pumpkin, GameObject boss)
         {
-            if (delay > 0f) yield return new WaitForSeconds(delay);
-            DropChest(chest);
+            if (!pumpkins.Remove(pumpkin)) return;
+            pumpkins.RemoveWhere(p => p == null || p.IsBroken);
+            if (pumpkins.Count > 0) return;
+            EndWave(false);
+            cauldron.PumpkinCaught();
+            Tell("PG_BOSS");
         }
 
         // Switches the GAMESTAGES Fairy Shield on, and its green smoke with it: the shield grows over the stage by itself and
@@ -263,14 +270,17 @@ namespace Game.PlayGround
             FinishRound(seedRound);
         }
 
+        // The round is over: the Fairy Shield sweeps the PlayGround, the wave's bugs left die, the cauldron moves on and
+        // the PlayGround Field clears the field (its creatures too) and grows it.
         private void FinishRound(int round)
         {
             seedRound = -1;
-            if (round >= 0)
-            {
-                Tell("PG_SEED_" + (round + 1));
-                if (round < seedBools.Length && !string.IsNullOrEmpty(seedBools[round])) SetManagerBool(seedBools[round], true);
-            }
+            if (cleanWithFairyShield) FireFairyShield();
+            EnemyWave.KillAll(this);
+            // In the same frame: no slime the player hit a moment ago splits as the wave dies, and every other slime pops.
+            SlimeBody.ClearAll();
+            bossMade = null;
+            if (round >= 0) Tell("PG_SEED_" + (round + 1));
             cauldron.Continue();
             if (round >= 0) SeedTaken?.Invoke(this, round);
         }
@@ -289,36 +299,52 @@ namespace Game.PlayGround
         {
             EndWave(false);
             waveRound = round;
+            bossSent = false;
+            bossMade = null;
             EnemyWave.Start(this);
             spawning = StartCoroutine(RunWave(waves[round]));
             WaveStarted?.Invoke(this, round);
         }
 
+        // Non-stop: a bug whenever there's room, until EndWave (the pumpkin caught or turned, the pot broken).
         private IEnumerator RunWave(Wave wave)
         {
             yield return new WaitForSeconds(1f);
-            int sent = 0;
-            while (sent < wave.waveSize)
+            while (true)
             {
-                while (EnemyWave.Alive(this) >= wave.maxAlive || !EnemyLimit.TryTakeSlot()) yield return new WaitForSeconds(0.25f);
-                if (Spawn(Pick(wave.enemies)) != null) sent++;
+                while (Minions() >= wave.maxAlive || !EnemyLimit.TryTakeSlot()) yield return new WaitForSeconds(0.25f);
+                Spawn(Pick(wave.enemies));
                 yield return new WaitForSeconds(Random.Range(wave.spawnWait.x, Mathf.Max(wave.spawnWait.x, wave.spawnWait.y)));
             }
-            while (EnemyWave.Alive(this) > wave.bossWhenLeft) yield return new WaitForSeconds(0.5f);
-            yield return new WaitForSeconds(Random.Range(2f, 4f));
-            for (int i = 0; i < wave.bosses && wave.boss != null; i++)
-            {
-                Spawn(wave.boss);
-                yield return new WaitForSeconds(1.5f);
-            }
-            spawning = null;
         }
 
-        /// <summary>Stops the wave; with 'killAll' every bug and boss of it still alive dies.</summary>
+        // The mini boss comes in even when the enemy limit is full; if there's no spot yet it tries again until it's in
+        // or the wave has ended.
+        private IEnumerator SpawnBoss(GameObject prefab)
+        {
+            while (waveRound >= 0)
+            {
+                bossMade = Spawn(prefab);
+                if (bossMade != null) break;
+                yield return new WaitForSeconds(0.5f);
+            }
+            bossing = null;
+        }
+
+        // The wave's bugs alive, not counting the mini boss.
+        private int Minions()
+        {
+            int alive = EnemyWave.Alive(this);
+            return bossMade != null && EnemyWave.IsAlive(bossMade) ? alive - 1 : alive;
+        }
+
+        /// <summary>Stops the wave (no more bugs, no mini boss yet to come); with 'killAll' every bug and boss of it still alive dies.</summary>
         public void EndWave(bool killAll)
         {
             if (spawning != null) StopCoroutine(spawning);
             spawning = null;
+            if (bossing != null) StopCoroutine(bossing);
+            bossing = null;
             if (killAll) EnemyWave.KillAll(this);
             waveRound = -1;
         }
@@ -366,6 +392,8 @@ namespace Game.PlayGround
 
         // ------------------------------------------------------------------ helpers
 
+        private Wave WaveOf(int round) => round >= 0 && round < waves.Length ? waves[round] : null;
+
         private Vector3 Middle()
         {
             var area = GhostRoamArea.Around(transform.position);
@@ -380,13 +408,6 @@ namespace Game.PlayGround
         {
             var fsm = ManagerFsm();
             if (fsm != null) fsm.SendEvent(eventName);
-        }
-
-        private void SetManagerBool(string variable, bool value)
-        {
-            var fsm = ManagerFsm();
-            var flag = fsm != null ? fsm.FsmVariables.FindFsmBool(variable) : null;
-            if (flag != null) flag.Value = value;
         }
 
         private PlayMakerFSM ManagerFsm()
