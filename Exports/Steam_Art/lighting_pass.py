@@ -7,8 +7,9 @@ The first run backs the unlit file up to variants/Steam_Art_before_lighting.blen
 import bpy, bmesh, math, os, shutil, random
 from mathutils import Vector, Matrix, Euler
 
-SRC = r"C:/Github_Repository/429R/Exports/Steam_Art/Steam_Art.blend"
-BACKUP = r"C:/Github_Repository/429R/Exports/Steam_Art/variants/Steam_Art_before_lighting.blend"
+_HERE = os.path.dirname(os.path.abspath(__file__))   # this folder, on whichever PC (was C:/Github_Repository/...)
+SRC = os.path.join(_HERE, "Steam_Art.blend")
+BACKUP = os.path.join(_HERE, "variants", "Steam_Art_before_lighting.blend")
 if os.path.normcase(os.path.abspath(bpy.data.filepath or "")) != os.path.normcase(os.path.abspath(SRC)):
     bpy.ops.wm.open_mainfile(filepath=SRC)
 sc = bpy.context.scene
@@ -222,7 +223,9 @@ cam_euler("CAM_Library_Header_920x430", (0.861, 2.586, 0.43), (87.9, 0, YAW), 50
 cam_euler("CAM_Main_Capsule_1232x706", (0.861, 2.586, 0.43), (86.6, 0, YAW), 50.0)
 cam_euler("CAM_Small_Capsule_462x174", (0.861, 2.586, 0.43), (85.9, 0, YAW), 50.0)   # tilted down: pumpkin not cut, moon mostly out
 cam_euler("CAM_Page_BG_1438x810", (1.119, 3.255, 0.494), (86.6, 0, YAW), 50.0)
-cam_euler("CAM_Library_Hero_3840x1240", (0.861, 2.586, 0.43), (88.6, 0, YAW), 35.0)
+# v5 story: the hero is aimed at the knight (yaw 155.3 puts him in the middle) and pulled back, so he and the tree's
+# trunk sit in Steam's 860x380 centre safe area; the library logo is laid over it by Steam (pick "left bottom corner").
+cam_euler("CAM_Library_Hero_3840x1240", (1.11, 3.13, 0.45), (88.6, 0, 155.8), 35.0)
 cam_euler("CAM_Library_Logo_1280x720", (0.677, 2.109, 0.384), (85.85, 0, YAW), 50.0)
 # tall shots: closer, nearly level, characters low in the frame, logo high on dark sky
 VIEW = Vector((0.2003, 0.9797, 0.0))           # horizontal direction from the set toward the cameras (yaw 168.45)
@@ -230,16 +233,36 @@ T_TALL = Vector((-0.002, 0.21, 0.0))
 cam_look("CAM_Library_Capsule_600x900", T_TALL + Vector((0.035, 0, 0)) + VIEW * 2.2 + Vector((0, 0, 0.64)), T_TALL + Vector((0.035, 0, 0.58)), 50.0)
 cam_look("CAM_Vertical_Capsule_748x896", T_TALL + Vector((0.03, 0, 0)) + VIEW * 1.95 + Vector((0, 0, 0.61)), T_TALL + Vector((0.03, 0, 0.56)), 50.0)
 
+# v5 promo pictures (story_pass.py makes them): closer than the Main capsule, so the knight, the big pumpkin beside him,
+# the Tree of Light and the boss fill the frame; logo top-left (key art) / on top (portrait)
+P_T = Vector((0.0, 0.2, 0.0))                  # between the pumpkin and the knight, on the floor
+P_DIR = Vector((0.339, 0.940, 0.0))            # from there toward the Main camera
+if "CAM_Promo_KeyArt_1920x1080" in OB:
+    cam_euler("CAM_Promo_KeyArt_1920x1080", tuple(P_T + P_DIR * 2.0 + Vector((0, 0, 0.40))), (88.0, 0, 165.2), 45.0)
+# YouTube banner: the Header capsule's view (logo | pumpkin | knight) shrunk into the middle 1235 x 338 that phones show
+# (24 mm instead of 50 mm), level so the boss, the Tree of Light and the sky fill the rest for desktop and TV
+if "CAM_Promo_YouTube_Banner_2560x1440" in OB:
+    cam_euler("CAM_Promo_YouTube_Banner_2560x1440", (0.861, 2.586, 0.43), (85.2, 0, YAW), 24.0)   # tilted so the
+    # pumpkin and the knight sit in the middle of the phone-safe box
+if "CAM_Promo_Portrait_1080x1350" in OB:
+    cam_look("CAM_Promo_Portrait_1080x1350", P_T + P_DIR * 1.95 + Vector((0, 0, 0.60)), P_T + Vector((0, 0, 0.53)), 50.0)
+
 # logo per camera: camera-local (x, y, -1) and its WIDTH in camera units at distance 1 (scale = width / mesh width)
 LOGOS = {
     "Header_Capsule_920x430": ((-0.175, 0.005, -1.0), 0.28),
     "Library_Header_920x430": ((-0.175, 0.005, -1.0), 0.28),
     "Main_Capsule_1232x706": ((-0.185, 0.03, -1.0), 0.27),
-    "Small_Capsule_462x174": ((-0.17, 0.0, -1.0), 0.33),
+    "Small_Capsule_462x174": ((0.0, -0.004, -1.0), 0.50),     # v5: Steam wants the logo to nearly fill it (shown down to 120x45)
     "Vertical_Capsule_748x896": ((0.0, 0.215, -1.0), 0.37),
     "Library_Capsule_600x900": ((0.0, 0.215, -1.0), 0.35),
     "Library_Logo_1280x720": ((0.0, -0.01, -1.0), 0.50),
 }
+for _shot, _v in (("Promo_KeyArt_1920x1080", ((-0.245, -0.125, -1.0), 0.27)),    # 45 mm: frame is +-0.4 x +-0.225;
+                                                                                  # bottom-left on the floor: the boss looms top-left
+                  ("Promo_Portrait_1080x1350", ((0.0, 0.225, -1.0), 0.40)),     # 50 mm, tall: +-0.288 x +-0.36
+                  ("Promo_YouTube_Banner_2560x1440", ((-0.235, 0.01, -1.0), 0.235))):  # 24 mm: +-0.75 x +-0.42; phone-safe +-0.36 x +-0.10
+    if "CAM_" + _shot in OB and "LOGO_" + _shot in OB:
+        LOGOS[_shot] = _v
 # v3: every logo is turned a little (right end toward the camera, top tipped forward) so its deep gold side walls show
 LOGO_YAW, LOGO_PITCH = -8.0, 5.0
 LOGO_ROT = (Euler((math.radians(LOGO_PITCH), math.radians(LOGO_YAW), 0.0), "XYZ").to_matrix()
@@ -298,6 +321,7 @@ sun_o.rotation_euler = d_moon.to_track_quat("-Z", "Y").to_euler()
 bg_coll = bpy.data.collections.get("Background_v2")
 # Nor the floor: the old castle hill used to shadow the whole set, and a grazing moon on the glossy floor is a pale wash.
 FLOOR = [OB[n] for n in ("Rooftop_Base_Z", "Rooftop_Base_Z_Lid") if n in OB]
+FLOOR += [o for o in OB if o.name.startswith("ST_Roof_")]      # v5: the Unity rooftop added by story_pass.py
 if bg_coll:
     sun_o.light_linking.receiver_collection = coll_of("LP_Not_Background", list(bg_coll.all_objects) + FLOOR, "EXCLUDE")
 
@@ -342,6 +366,7 @@ rims = [OB["Rim_Cool"],
         new_light("LP_Rim_Small_R", "AREA", (-1.5, -0.3, 0.6), RIM, 14.0 * RIM_GAIN, 0.4, (-0.9, 0.7, 0.1), 80)]
 PUMPKIN_MESHES = [o for o in OB if o.type == "MESH" and o.name.startswith("Menace_Pumpkin")
                   and any(c.name in ("Menace_Pumpkin", "V2_Small_Pumpkins") for c in o.users_collection)]
+PUMPKIN_MESHES += [o for o in OB if o.type == "MESH" and o.name == "ST_Hero_Pumpkin"]   # v5: the user's own pumpkin face
 recv = coll_of("LP_Rim_Receivers", [o for o in OB if o.type == "MESH" and o.name.startswith(("Pie_Knight", "Candles_"))]
                + PUMPKIN_MESHES)
 recv_no_knight = coll_of("LP_Rim_Receivers_No_Knight", [o for o in OB if o.type == "MESH" and o.name.startswith("Candles_")] + PUMPKIN_MESHES)
@@ -676,8 +701,22 @@ HIDES = {      # v4: small pumpkin 7 sat in the gap between the menace pumpkin a
     "Library_Hero_3840x1240": "Menace_Pumpkin_Small_0_,Menace_Pumpkin_Small_1_,Menace_Pumpkin_Small_7_",
     "Page_BG_1438x810": "Menace_Pumpkin_Small_7_",
 }
+# v5 story: the page background is ambient (Steam: "not too bright", must not compete with the page): no characters,
+# darker; the small capsule is mostly logo; the icons are the knight's helmet on the dark
+STORY_CHARS = "Pie_Knight,Menace_Pumpkin,ST_Pumpkin_Boss,ST_Boss_,ST_Tree_Pumpkin_,ST_Spider_,ST_Hero_"
+HIDES["Page_BG_1438x810"] = STORY_CHARS
+HIDES["Small_Capsule_462x174"] += ",ST_Pumpkin_Boss,ST_Boss_,Menace_Pumpkin_Small_3_,Menace_Pumpkin_Small_4_,Menace_Pumpkin_Small_5_"
+HIDES["Icon_Shortcut_512x512"] = "Menace_Pumpkin,ST_Pumpkin_Boss,ST_Boss_"
+HIDES["Icon_App_184x184"] = HIDES["Icon_Shortcut_512x512"]
+HIDES["Promo_KeyArt_1920x1080"] = "Menace_Pumpkin_Small_1_,Menace_Pumpkin_Small_2_,Menace_Pumpkin_Small_6_,Menace_Pumpkin_Small_7_"
+HIDES["Promo_Portrait_1080x1350"] = "Menace_Pumpkin_Small_7_"
+HIDES["Promo_YouTube_Banner_2560x1440"] = HIDES["Header_Capsule_920x430"]
+HIDES["Promo_YouTube_Profile_800x800"] = HIDES["Icon_Shortcut_512x512"]
+HIDES["Promo_YouTube_Profile_Clean_800x800"] = HIDES["Icon_Shortcut_512x512"]
+EXPOSURE = {"Page_BG_1438x810": -1.3}          # render_all.py adds this to the exposure for that picture
 for c_ in [o for o in OB if o.type == "CAMERA" and o.name.startswith("CAM_")]:
     c_["hide_objs"] = HIDES.get(c_.name[4:], "")
+    c_["exposure"] = EXPOSURE.get(c_.name[4:], 0.0)
 
 sc.camera = OB["CAM_Header_Capsule_920x430"]
 sc["lighting_pass"] = 1

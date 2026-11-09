@@ -1,38 +1,84 @@
 # Next time: where we stopped (2026-11-09)
 
-## 2026-11-09: Steam store art in Blender (PAUSED here: the user stopped all work to move)
+## 2026-11-09 (late): the 3D Steam icon. Paused ("okay for now"), NOT uploaded.
 
-**Where it lives:** `Exports/Steam_Art/` (outside Assets). `README.md` there explains everything.
-- **Pipeline:**
-  1. `build_steam_art.py` (start over only)
-  2. `assemble_v2.py`
-  3. `knight_pass.py`
-  4. `lighting_pass.py`
-  5. `render_all.py` (all 9 Steam sizes into `renders/`; `-- preview` for quick ones)
-- **Blender:** `E:/Steam/steamapps/common/Blender/blender.exe -b <file> --python <script>`. The user's own `Assets/Blender/Knight_429.blend` is never edited.
-- **Assets:** `Exports/Steam_Art/assets/`, with their build scripts and test renders.
-  - `Logo_429.blend` (`logo_build.py`): custom "429" digits, faceted gold, cracked green enamel, green fire. The stem on the 9 is removed (`stem=1` brings it back).
-  - `Menace_Pumpkin.blend` (`menace_pumpkin_build.py`): the user's own pumpkin_0 with only the eyes and mouth reshaped to look menacing (texture copies in `menace_pumpkin/`).
-  - `Background.blend` (`background_build.py`): castle, graveyard, dead trees, mountains, clouds, moon.
-  - `Hero_Pumpkin.blend`: a sculpted pumpkin the user REJECTED ("can't be recognised as part of my game"). Not used.
-- **Current renders** in `Exports/Steam_Art/renders/` are round 3: plain 429 logo, menace pumpkin, knight with smiley eyes and the OLD broken stretched wave.
-- **Knight arm FIXED but NOT rendered yet:** the new `knight_pass.py` gives a clean wave (no stretch, upper body leaning 12 deg to his left, head tilted 15 deg, helmet follows the head). Switches are at the top: `POSE = "wave"/"normal"`, `LEAN_DEGREES`, `HEAD_TILT_DEGREES`. Tests are in `assets/knight/tests/fix_*.png`. To use it, run `knight_pass.py` → `lighting_pass.py` → `render_all.py` on `Steam_Art.blend`.
+**Status:**
+- The uploaded Steam icon is still the user's painted badge (`Exports/Steam_Art/renders/`).
+- The 3D remake is `Exports/Steam_Art/assets/icon/Icon_Scene.blend`, which the USER HAND-EDITED:
+  - arms removed, so the paws peek over the digits;
+  - Subdivision on;
+  - digits tilted like the badge.
+- **NEVER re-run `icon_scene_build.py`**: it rebuilds the scene and would wipe those edits. To render, run:
+  `blender -b assets/icon/Icon_Scene.blend --python assets/icon/icon_render.py -- full`
+- The colours, the eyes, the subtle weed leaf in the knight's LEFT eye and the gold come from `grade_icon.py`, applied after the render. They don't show in Blender.
 
-**NEXT (user decisions 2026-11-09, not started; the workflow was stopped before it changed anything):**
-- **Title:** "429" ONLY.
-- **"The green":** CLOVER only (no cannabis leaf).
-- **Story = the knight GUARDS THE GREEN:**
-  - The knight stands in front of the game's glowing green Tree of Light (Knight.blend Tree_Of_Light or Pumpkin_Tree_Drop.blend).
-  - Menace pumpkins close in from the dark, and the Pumpkin Boss (Pumpkin_Boss_Z.blend) looms in the back.
-- **Logo story idea:** 4-2-9 = Four-Twenty-Knight, so the 9 becomes the knight's helmet (eye slit, glowing eyes, clover), with a sword worked into the lettering.
-- **Steam rules (checked online):**
-  - Every capsule needs a readable logo or name.
-  - The Library Hero has no text.
-  - No calls to action, awards or review scores.
-  - It must read at the Small capsule size, even about 231x87.
-- The stopped workflow script (story version) can be re-run: it is saved in the session folder as `steam-art-story-wf_7a7d41a5-211.js`.
+**Files:**
+- Latest render: `assets/icon/icon_render_1024.png`.
+- Steam sizes: `assets/icon/3d/` (512 PNG, 184 JPG, 800 YouTube).
+- Side-by-side with the badge: `story_tests/icon_colour_final.png`.
 
-**Still pending from 2026-11-08:** SAVE `2 Game Scene` after **Use Bowling For Gate 2**. The Gate 2 GAMESTAGES states exist only in the open editor.
+**Reviews:** v8 got 6.5 and 7 from independent reviewers. The last v9 review was cancelled when the user paused.
+
+**Open ideas** (not done):
+- give the paws 3 toe pads;
+- fix the 2 and the 9 crossing rims;
+- level the head (it's tilted about 6 degrees);
+- bigger ears.
+
+Details are in the README, sections "v4" to "v7-v8".
+
+## 2026-11-09 (other PC, afternoon): Steam store art v5 "the knight guards the Tree of Light" (RENDERED)
+
+**Where it lives:** `Exports/Steam_Art/`. `README.md` there has the v5 section, every switch and the Steam upload list.
+
+**Pipeline:**
+1. `knight_pass.py`
+2. `story_pass.py` (NEW)
+3. `lighting_pass.py`
+4. `render_all.py`
+
+Notes on running it:
+- The scripts now find their own folder, so they run on both PCs.
+- `fix_paths.py` (new) points texture paths of the other PC at this checkout.
+- Blender is at `E:/Steam/...` on one PC and `G:/steam/...` on the other.
+
+**User decisions 2026-11-09:**
+- Title "429" only (the Steam page will be named "429").
+- Keep the current fiery logo.
+- **The Tree of Light** is the game's Pumpkin_Tree (the rooftop tree), **as in the game**: orange maple leaves, pumpkins on it. The Tree-of-Light POT in Knight.blend is NOT used in the game any more.
+- **The knight:** right fist pushed toward the viewer, sword across his body pointing to HIS left, the blade's flat side facing the camera, shield on. Smiley eyes kept.
+
+**In the art:**
+- The Pumpkin Boss looms over the back wall with raised fists (its transform animation, frame 100), face glowing.
+- The menace pumpkins turn toward the knight.
+
+**Steam rule fixes:**
+- The Library Hero puts the knight in the 860x380 safe area. Put the library logo at "centered top" in Steamworks.
+- The Small capsule is mostly logo.
+- The Page Background has no characters and is darker.
+- The Library Logo is trimmed to the logo (about 1214x720).
+- New icons: 512x512 PNG shortcut and 184x184 JPG app icon, of the knight's helmet.
+
+**Renders:** `Exports/Steam_Art/renders/` (11 files). The previous round is in `variants/renders_v4/`.
+- **Later (same day):** the user edited the .blend: the tree turned and the boss moved back. Those edits are copied into `story_pass.py`.
+- **The rooftop is now the game's current one** from Unity: the cursed-stone floor with glowing cracks, the new walls and the rebuilt Lid. It is re-rendered.
+- The renders before that update are in `variants/renders_v5a/`.
+- **Evening:**
+  - The user posed the knight by hand. `knight_pass.py` is now `POSE = "keep"`, so it never overwrites that pose.
+  - The pumpkin moved next to the knight.
+  - **2 promo pictures for Reddit:** `Promo_KeyArt_1920x1080` and `Promo_Portrait_1080x1350`, in `Exports/Steam_Art/renders/`.
+  - If the .blend is open in Blender while the scripts run, saving from Blender overwrites the scripts' work. Close it first, or rerun `story_pass.py` + `lighting_pass.py`, which is safe.
+  - **Night:**
+    - 4 spiders in the user's chosen poses stand in front of the boss (smaller, as asked).
+    - The big pumpkin glows.
+    - The user's knight pose is kept in `Exports/Steam_Art/knight_pose_user.json`. `story_pass.py` restores it every run; if the knight is re-posed by hand, update that file.
+  - **Late:** the big pumpkin now has the user's ORIGINAL game face (`pumpkin_0`), with black charred eye and mouth rims and fire burning deep inside.
+
+**Still to do:**
+- The user reviews the renders.
+- At least 5 real gameplay screenshots (1920x1080+, 16:9; 4 marked all-ages).
+
+**Done from 2026-11-08:** `2 Game Scene` was saved with Use Bowling For Gate 2. The Bowling_Arena prefab is in the scene in commit da31bc37.
 
 # Earlier: 2026-11-07 / 11-08
 

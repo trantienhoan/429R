@@ -42,7 +42,15 @@ ARM = "Pie_Knight_Armature"
 BODY = "Pie_Knight"
 
 # ---- THE SWITCHES
-POSE = "wave"                       # "wave" = friendly right-hand wave, "normal" = the user's Pie_Knight_Pose (arms down)
+POSE = "keep"                       # "keep" (default since 2026-11-09): the USER posed the knight by hand in Blender (arm,
+                                    # fist round the grip, sword angle): leave the pose, the sword and the shield as they
+                                    # are; only the eyes and the hand light are (re)made. Any other value REBUILDS the pose.
+# POSE = "fist_forward"             # "fist_forward" = right fist pushed out toward the viewer, the sword in it pointing
+                                    # across to HIS left (user, 2026-11-09: "no fist bump, fist go to audience, sword
+                                    # point to his left"),
+                                    # "wave" = friendly right-hand wave, "normal" = the user's Pie_Knight_Pose (arms down)
+SHOW_SWORD = None                   # None = shown with "fist_forward", hidden with the other poses; True / False forces it
+SHOW_SHIELD = None                  # same for the shield on his left hand
 LEAN_DEGREES = 12.0                 # the whole upper body leans to HIS left (screen-right), spread over the 3 spine bones;
                                     # the legs and feet do not move. 0 = upright.
 HEAD_TILT_DEGREES = 15.0            # the head (and the helmet with it) tilts a bit more to his left, on the neck. This lifts
@@ -68,6 +76,22 @@ FINGER_OPEN = True                  # straighten the index chain + thumb (open h
 UPPER_STRETCH = 0.0                 # upper arm longer by this much (0 = real length)
 FORE_STRETCH = 0.0                  # forearm longer by this much (0 = real length)
 HAND_SCALE = 1.0                    # glove size (1 = real size)
+
+# ---- fist forward targets (POSE = "fist_forward"), in the CHEST frame after the lean: (his right, up, forward).
+# The right arm reaches out toward the viewer (FP_AIM_CAM: toward that camera) with the fist at the front, a little
+# bent at the elbow; the hand keeps Pie_Knight_Pose's grip and turns so the sword BLADE points FP_SWORD_DIR: across
+# his body to HIS left (screen-right).
+FP_LEAN_DEGREES = 3.0               # replaces LEAN_DEGREES for this pose (None = use LEAN_DEGREES)
+FP_HEAD_TILT_DEGREES = 3.0          # replaces HEAD_TILT_DEGREES for this pose (None = use HEAD_TILT_DEGREES)
+FP_CLAVICLE = 4.0                   # degrees the right shoulder lifts
+FP_AIM_CAM = "CAM_Main_Capsule_1232x706"   # the arm reaches toward this camera (None = straight ahead, FP_*_DIR only)
+FP_AIM_MIX = 0.6                    # 0 = FP_*_DIR only, 1 = straight at the camera
+FP_ARM_DIR = (0.30, -0.05, 1.0)     # upper arm: forward, a little out
+FP_FORE_DIR = (0.0, 0.25, 1.0)      # forearm: forward (the fist toward the viewer, at chest height), a touch up
+FP_SWORD_DIR = (-1.0, 0.18, 0.10)   # the blade (hilt -> tip): to HIS left (screen-right), a touch up and toward us
+FP_BLADE_FACE_CAM = True            # roll the fist about the blade so the blade's FLAT side faces FP_AIM_CAM (user,
+                                    # 2026-11-09: "make the blade's surface face the camera"); False = natural wrist
+FP_GRIP_TWIST = 0.0                 # extra roll of the fist about the blade, degrees (turns the blade's flat face)
 
 # ---- eyes
 FACE_DARK = 0.15                    # the dome around the arc = face colour x this (the domes catch a lot of light)
@@ -220,6 +244,124 @@ def pose_wave(arm):
     bpy.context.view_layer.update()
 
 
+def sword_axis(arm, hand):
+    """The sword blade's direction (hilt -> tip) in the hand bone's own frame, read from the sword mesh (parented to
+    the RightHand bone): its longest bounding-box axis, the end farther from the hand being the tip."""
+    # Worked out in the bone's own frame from the mesh's vertices: the sword is hidden in the viewport, so Blender
+    # leaves its bound_box / matrix_world unevaluated (they read as zero) in a background run.
+    sw = bpy.data.objects.get("Pie_Knight_Sword")
+    if sw is None or sw.type != "MESH" or not sw.data.vertices:
+        return None
+    if sw.parent_type == "BONE":
+        to_bone = Matrix.Translation((0.0, hand.length, 0.0)) @ sw.matrix_parent_inverse @ sw.matrix_basis
+    else:                                # not on the bone: use its world matrix (evaluated or not)
+        to_bone = (arm.matrix_world @ hand.matrix).inverted() @ sw.matrix_world
+    # the blade is the longest axis of the sword's OWN bounding box (its mesh space); its two ends go to the bone frame
+    pts = [v.co for v in sw.data.vertices]
+    lo = Vector([min(p[i] for p in pts) for i in range(3)])
+    hi = Vector([max(p[i] for p in pts) for i in range(3)])
+    ax = max(range(3), key=lambda i: hi[i] - lo[i])
+    a = (lo + hi) * 0.5
+    b = a.copy()
+    a[ax], b[ax] = lo[ax], hi[ax]
+    a, b = to_bone @ a, to_bone @ b
+    # the hand's head is the bone frame's origin: the end farther from it is the tip
+    hilt, tip = (a, b) if a.length < b.length else (b, a)
+    return (tip - hilt).normalized()
+
+
+def sword_face(arm, hand):
+    """The normal of the blade's flat side (the sword's thinnest bounding-box axis), in the hand bone's frame."""
+    sw = bpy.data.objects.get("Pie_Knight_Sword")
+    if sw is None or sw.type != "MESH" or not sw.data.vertices:
+        return None
+    if sw.parent_type == "BONE":
+        to_bone = Matrix.Translation((0.0, hand.length, 0.0)) @ sw.matrix_parent_inverse @ sw.matrix_basis
+    else:
+        to_bone = (arm.matrix_world @ hand.matrix).inverted() @ sw.matrix_world
+    pts = [v.co for v in sw.data.vertices]
+    ext = [max(p[i] for p in pts) - min(p[i] for p in pts) for i in range(3)]
+    ax = min(range(3), key=lambda i: ext[i])
+    n = Vector((0.0, 0.0, 0.0))
+    n[ax] = 1.0
+    return (to_bone.to_3x3() @ n).normalized()
+
+
+def pose_fist_forward(arm):
+    fr = chest_frame(arm)
+    R, U, F = fr
+    P = arm.pose.bones
+    if FP_CLAVICLE:
+        rotate_bone(P["mixamorig:RightShoulder"], F, -FP_CLAVICLE, arm)
+    cam = bpy.data.objects.get(FP_AIM_CAM) if FP_AIM_CAM else None
+
+    def toward_cam(v, bone):
+        d = kdir(fr, v)
+        if cam is None or not FP_AIM_MIX:
+            return d
+        c = (cam.matrix_world.translation - arm.matrix_world @ P[bone].head).normalized()
+        return d.lerp(c, FP_AIM_MIX).normalized()
+    aim_bone(arm, P["mixamorig:RightArm"], toward_cam(FP_ARM_DIR, "mixamorig:RightArm"))
+    fa = P["mixamorig:RightForeArm"]
+    aim_bone(arm, fa, toward_cam(FP_FORE_DIR, "mixamorig:RightForeArm"))
+    arm.data.bones["mixamorig:RightHand"].inherit_scale = "FULL"
+    fa.scale = (1.0, 1.0, 1.0)
+    hand = P["mixamorig:RightHand"]
+    hand.scale = (1.0, 1.0, 1.0)
+    bpy.context.view_layer.update()
+    local = sword_axis(arm, hand)
+    if local is None:
+        log("no Pie_Knight_Sword: the fist just follows the forearm")
+        aim_bone(arm, hand, kdir(fr, FP_FORE_DIR))
+        return
+    a3i = arm.matrix_world.to_3x3().inverted()
+    M = hand.matrix.copy()
+    R3 = M.to_3x3()
+    d = (a3i @ kdir(fr, FP_SWORD_DIR)).normalized()
+    R3 = (R3 @ local).normalized().rotation_difference(d).to_matrix() @ R3
+    # roll about the blade so the hand's own axis stays as close as it can to the forearm line (a natural wrist)
+    y = R3 @ Vector((0, 1, 0))
+    f = fa.matrix.to_3x3() @ Vector((0, 1, 0))
+    yp = y - d * y.dot(d)
+    fp = f - d * f.dot(d)
+    if yp.length > 1e-4 and fp.length > 1e-4:
+        yp.normalize()
+        fp.normalize()
+        ang = yp.angle(fp)
+        if yp.cross(fp).dot(d) < 0:
+            ang = -ang
+        R3 = Matrix.Rotation(ang, 3, d) @ R3
+    face = sword_face(arm, hand) if FP_BLADE_FACE_CAM else None
+    if face is not None and cam is not None:
+        # roll about the blade so its flat side (either side) turns to the camera
+        hp = arm.matrix_world @ hand.head
+        to_cam = a3i @ (cam.matrix_world.translation - hp).normalized()
+        n = R3 @ face
+        n_p = n - d * n.dot(d)
+        c_p = to_cam - d * to_cam.dot(d)
+        if n_p.length > 1e-4 and c_p.length > 1e-4:
+            n_p.normalize()
+            c_p.normalize()
+            if n_p.dot(c_p) < 0:          # the other flat side is the nearer one
+                n_p = -n_p
+            ang = n_p.angle(c_p)
+            if n_p.cross(c_p).dot(d) < 0:
+                ang = -ang
+            R3 = Matrix.Rotation(ang, 3, d) @ R3
+    if FP_GRIP_TWIST:
+        R3 = Matrix.Rotation(math.radians(FP_GRIP_TWIST), 3, d) @ R3
+    N = R3.to_4x4()
+    N.translation = M.translation
+    hand.matrix = N
+    bpy.context.view_layer.update()
+    if face is not None and cam is not None:
+        n = (arm.matrix_world.to_3x3() @ (hand.matrix.to_3x3() @ face)).normalized()
+        c = (cam.matrix_world.translation - arm.matrix_world @ hand.head).normalized()
+        log("blade's flat side vs camera: %.0f deg off" % math.degrees(min(n.angle(c), (-n).angle(c))))
+    got = (arm.matrix_world.to_3x3() @ (hand.matrix.to_3x3() @ local)).normalized()   # the rig is scaled 0.01
+    log("fist forward: blade points right %.2f up %.2f fwd %.2f (wanted %s)" % (got.dot(R), got.dot(U), got.dot(F), FP_SWORD_DIR))
+
+
 def joint_report(arm):
     """Right-arm joint angles vs the rest pose: bend (swing) and twist about the bone, degrees; plus scale."""
     P = arm.pose.bones
@@ -254,10 +396,18 @@ def helmet_follow(arm):
 
 
 def pose_knight(arm):
+    global LEAN_DEGREES, HEAD_TILT_DEGREES
+    if POSE == "fist_forward":
+        if FP_LEAN_DEGREES is not None:
+            LEAN_DEGREES = FP_LEAN_DEGREES
+        if FP_HEAD_TILT_DEGREES is not None:
+            HEAD_TILT_DEGREES = FP_HEAD_TILT_DEGREES
     helmet_follow(arm)
     pose_lean(arm)
     if POSE == "wave":
         pose_wave(arm)
+    elif POSE == "fist_forward":
+        pose_fist_forward(arm)
     else:                                # normal: the user's pose; only undo what the old stretch did to the rig
         arm.data.bones["mixamorig:RightHand"].inherit_scale = "FULL"
     bpy.context.view_layer.update()
@@ -570,9 +720,21 @@ def hand_light(arm):
     log("hand light at", tuple(round(c, 3) for c in pos))
 
 
+def show_gear():
+    for name, flag in (("Pie_Knight_Sword", SHOW_SWORD), ("Pie_Knight_Shield", SHOW_SHIELD)):
+        o = bpy.data.objects.get(name)
+        if o is not None:
+            o.hide_render = not ((POSE == "fist_forward") if flag is None else flag)
+            log(name, "shown" if not o.hide_render else "hidden")
+
+
 def apply(save=True):
     arm = bpy.data.objects[ARM]
-    build_action(arm)
+    if POSE == "keep":
+        log("POSE = keep: the knight's pose, sword and shield are left as they are")
+    else:
+        show_gear()
+        build_action(arm)
     smile_eyes(arm)
     hand_light(arm)
     if save:

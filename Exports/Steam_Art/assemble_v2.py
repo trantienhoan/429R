@@ -9,7 +9,7 @@ Then run knight_pass.py, then lighting_pass.py (it sets the logo sizes, lights a
 import bpy, os, shutil
 from mathutils import Vector, Matrix
 
-HERE = r"C:/Github_Repository/429R/Exports/Steam_Art"
+HERE = os.path.dirname(os.path.abspath(__file__))   # this folder, on whichever PC (was C:/Github_Repository/...)
 SRC = os.path.join(HERE, "Steam_Art.blend")
 BACKUP = os.path.join(HERE, "variants", "Steam_Art_before_v2.blend")
 ASSETS = os.path.join(HERE, "assets")

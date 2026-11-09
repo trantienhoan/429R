@@ -6,7 +6,7 @@ camera per Steam image (each with its own logo, parented to it). Run headless:
 import bpy, bmesh, math, os, random
 from mathutils import Vector, Euler, Matrix
 
-OUT_DIR = r"C:/Github_Repository/429R/Exports/Steam_Art"
+OUT_DIR = os.path.dirname(os.path.abspath(__file__))   # this folder, on whichever PC (was C:/Github_Repository/...)
 OUT_BLEND = os.path.join(OUT_DIR, "Steam_Art.blend")
 os.makedirs(OUT_DIR, exist_ok=True)
 random.seed(429)
