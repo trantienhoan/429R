@@ -1,5 +1,31 @@
 # Next time: where we stopped (2026-11-09)
 
+## TO DO NEXT SESSION (user, 2026-11-09): balance pass, the game is too easy at level 10
+
+At level 10 the user can "close my eyes and still win". Nothing below is started yet.
+
+1. **Rainbow Slime:** lower its spawn chance. Its reward is too good and it's too easy to catch.
+2. **Fat Pumpkin:** must be tankier.
+   - Raise its base health and its toughness.
+   - When it turns giant and starts hunting the player, its health goes up to 300 (not x2/x3).
+3. **Stun resistance:** every mini boss, and Pumpkin_Boss_Z, gets harder to stun once below 40% health (lower stun chance).
+4. **Bee bosses (Bee_Boss, Bee_Boss_PumpkinButt):** both are too weak today.
+   - They stay high, out of the player's reach, most of the time, shooting stings that poison (health lost over time).
+   - Only rarely do they dive down and sting by themselves.
+5. **Cockroach and Spider mini bosses:** +30% MOVE SPEED (scarier).
+6. **Flying Jab range:** its reach = the Fist Size (today it reaches further).
+7. **Candy healing:**
+   - Above full health, a candy heals +50% (as now).
+   - Once health is 1.5x max health, each candy heals only +10%.
+8. **Special stages:** inside every special stage, temporarily remove all buff stats from level-up points and candies, so the player plays with default stats. Restore them after.
+9. **Pumpkin_Boss_Z push:** x2.5 push power.
+10. **Chaos Pumpkin_Boss_Z:** a 33% chance to spawn as a chaos version with more health, more damage, more EXP and a red glow aura (like the Chaos_Aura on the runner pumpkins).
+12. **Candy colours:** redo the candy system so each candy kind is ONE colour, all different. Today at least 3 kinds are orange.
+13. **Slime drops match their colour:** red slime → red candy, blue slime → blue candy, and so on. The White Slime is the special one: it drops a random candy.
+14. **Cauldron recipe hidden until the hat:** hitting the PlayGround cauldron shows the recipe as `??? x ??? x ??? x` until the black hat is found and hit. Only then does the recipe show.
+15. **Recipe hat aura:** add an aura particle to the Recipe_Hat so it's easier to spot. Keep it light: the user dislikes overdone particles.
+11. **Defend the Tree stage:** the portal that spawns the spider-lings still uses the old smoke particles. Swap them for the shared 3D smoke (Smoke_Flash_Small_Puff; never Lana's Smoke_Blast).
+
 ## 2026-11-09 (late): the 3D Steam icon. Paused ("okay for now"), NOT uploaded.
 
 **Status:**
