@@ -72,6 +72,12 @@ namespace HutongGames.PlayMaker.Actions
 
             // Resume also tells the loading screen the game has gone on (the player is placed below, in this same call).
             string target = afterDying.Value ? Checkpoints.Die() : Checkpoints.Resume();
+            // The Steam demo ends after the bedroom: a checkpoint past it (saved as the bonus round began) starts it over.
+            if (Game.Steam.DemoBuild.IsDemo && !Game.Steam.DemoBuild.IsInDemo(target))
+            {
+                Checkpoints.StartNewRun();
+                target = "";
+            }
             Finish();
             if (string.IsNullOrEmpty(target))
             {

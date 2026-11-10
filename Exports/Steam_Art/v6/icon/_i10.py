@@ -1,0 +1,8 @@
+exec(open(os.path.join(HERE, "icon", "icon_scene.py"), encoding="utf-8").read(), globals())
+P.update(sword_tilt=10.0, sword_scale=0.82, ring_gold=(1.0, 0.70, 0.28), ring_light=10.0, moon_str=3.0, moon_col=(1.0, 0.92, 0.74),
+         halo_str=1.0, embers=12)
+build_icon()
+icon_sword()
+eyes_boost(1.8)
+icon_render("icon_t8", pct=50, spp=64)
+icon_render("icon_t8_mask", pct=50, spp=16, mask=True)

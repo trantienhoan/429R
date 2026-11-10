@@ -341,3 +341,42 @@ Still to do: at least 5 gameplay **screenshots** (1920x1080 or bigger, 16:9, rea
     - clover #72EA14 (#75EB06);
     - helmet #256102 (#2A6504 / #214E05);
     - ring bottom #89390B (#974008).
+
+## v6 (2026-11-10): new key art, "tiny knight vs giant Pumpkin Boss"
+User: "the color and pose and feeling, everything is so bad ... do your best". Rebuilt on top of v5 (v5 files untouched).
+- **Story/composition:** low hero camera; the knight raises his glowing sword at a giant Pumpkin Boss (boss clip
+  `jump_slam` f65, scale 2.4, both fists raised) towering over the back wall; moon behind the boss's head; the Tree of
+  Light glowing on the right; embers + green sparkles round the blade. Spiders and the burning pumpkin are hidden.
+- **Look:** new light rig (all `V6_*`: moon rims, warm fire key, violet fill, golden tree glow, knight-only lights via
+  light linking), thin blue haze volume (only moon/boss-rim/tree lights scatter in it), violet sky, darker damp floor,
+  AgX Punchy + re-tuned compositor grade.
+- **Logo:** laid on in 2D (the existing library logo PNG) by `v6/compose_v6.py`, so it is identical everywhere.
+- **The user posed the knight** in `Steam_Art_v6_pose.blend` (and moved the boss). That file is the source now.
+- **Render the set:** (about 10 min) then compose:
+
+      "E:/Steam/steamapps/common/Blender/blender.exe" -b Exports/Steam_Art/Steam_Art_v6_pose.blend --python Exports/Steam_Art/v6/render_user_v6.py
+      uv run --with pillow python Exports/Steam_Art/v6/compose_v6.py
+
+  `-- preview` / `only=Main,Header` work as before. Output: `renders_v6/` (raw renders in `renders_v6/raw/`).
+  Tall pictures slide the boss along the sword's line (face kept in frame). Icons = the user's painted badge (copied).
+- `v6/render_v6.py` + `shots_v6.py` rebuild everything from the ORIGINAL Steam_Art.blend with my pose (before the user
+  posed); `v6/*.py` are its modules; `v6/srv.py`/`send.py` = the headless helper used while designing.
+- **2026-11-10, later (user: "re-render it like my file"):** `render_user_v6.py` now changes NOTHING in the look of the
+  user's file: the moon, the sparkles and the boss stay as saved. It only hides the spiders + burning pumpkin, and
+  the tall pictures slide the boss into frame with the moon kept at the same offset from its head.
+  - Gotcha: `V6_TMP_L` (a 3.0 sun inside the hidden helper collection `V6_TMP_BossBrowse`) does NOT show in the
+    viewport but DOES light F12 renders (+13 % brightness, boss lit orange). The user picked that F12 look, so it stays on.
+
+### v6 icon candidate (2026-11-10, user: "analyze the old icon and create our own new icon fit with the current style")
+- Same layout as the user's painted badge (helmet over a big "429", gold ring, see-through outside), in the v6 style:
+  the user's posed knight in front of a big moon on the night sky, the sword breaking out of the ring, embers, the
+  store logo's "429" (its green fire tucked BEHIND the helmet and clipped to the badge; only the digits break the ring).
+- Files: `renders_v6/icon_new/` (512 PNG, 184 JPG, 1024 master, comparison). The uploaded icons are still the user's badge.
+- Scene: `Icon_v6_work.blend` (a copy of the pose file; camera CAM_ICON, all ICON_* objects; the sword is turned for the
+  icon only). Scripts: `v6/icon/icon_scene.py` (build + render, layout in icon fractions), `v6/icon/icon_compose.py`
+  (logo + Steam sizes; env FIRE_GAIN / SHADOW_GAIN / SHADOW_BLUR / DIGIT_POP; the chosen "B" = 0.55 / 1.0 / 60 / 1.25).
+- Sword safe margin (user asked if it gets out of the frame): tilt 16, scale 0.70 -> nothing outside a 4% margin with
+  16% rounded corners (was 4 px from the edge and clipped by rounded corners). Check: measure alpha at the edges.
+- **2026-11-10: the user picked the new icon for Steam.** `renders_v6/Icon_Shortcut_512x512.png` and
+  `Icon_App_184x184.jpg` are now the v6 icon (from `renders_v6/icon_new`; `compose_v6.py` copies them from there).
+  The painted badge is kept in `renders/` and `renders_v6/_old_badge_icons/`.

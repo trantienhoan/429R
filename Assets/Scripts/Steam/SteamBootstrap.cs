@@ -26,9 +26,15 @@ namespace Game.Steam
         {
             Initialized = false;
 
+            // The free demo is its own Steam app (DemoBuild, Demo Settings' App ID).
+            uint appId = DemoBuild.IsDemo ? DemoBuild.DemoAppId : AppId;
 #if !UNITY_EDITOR
+            if (appId == 0)
+            {
+                Debug.LogError("[Steam] This is the demo build but Demo Settings has no App ID (Tools > 429 Game > Steam Demo > Demo Settings).");
+            }
             // Started outside Steam: Steam starts the game again through itself, and this copy closes.
-            if (AppId != TestAppId && SteamAPI.RestartAppIfNecessary(new AppId_t(AppId)))
+            else if (appId != TestAppId && SteamAPI.RestartAppIfNecessary(new AppId_t(appId)))
             {
                 Application.Quit();
                 return;
@@ -47,12 +53,14 @@ namespace Game.Steam
             }
 
             Initialized = true;
-            SaveManager.UseProfile(SteamUser.GetSteamID().m_SteamID.ToString());
+            // The demo saves in its own folder (<Steam ID>_Demo); the full game copies it in on its first start.
+            string steamId = SteamUser.GetSteamID().m_SteamID.ToString();
+            SaveManager.UseProfile(DemoBuild.IsDemo ? steamId + SaveManager.DemoProfileSuffix : steamId);
 
             var runner = new GameObject("Steam");
             DontDestroyOnLoad(runner);
             runner.AddComponent<SteamBootstrap>();
-            Debug.Log($"[Steam] Started. Saves go to '{SaveManager.SaveFolder}'.");
+            Debug.Log($"[Steam] Started{(DemoBuild.IsDemo ? " (the demo, App ID " + appId + ")" : "")}. Saves go to '{SaveManager.SaveFolder}'.");
         }
 
         private void Update()

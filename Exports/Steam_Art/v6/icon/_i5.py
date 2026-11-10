@@ -1,0 +1,5 @@
+exec(open(os.path.join(HERE, "icon", "icon_scene.py"), encoding="utf-8").read(), globals())
+build_icon()
+icon_sword()
+icon_render("icon_t4", pct=50, spp=64)
+icon_render("icon_t4_mask", pct=50, spp=16, mask=True)

@@ -35,6 +35,8 @@ namespace Game.Steam
         /// </summary>
         public static bool Unlock(string apiName)
         {
+            // The free demo has no achievements (Valve's advice): the full game gives them.
+            if (DemoBuild.IsDemo) return false;
 #if STEAM_BUILD
             if (!SteamBootstrap.Initialized || string.IsNullOrEmpty(apiName)) return false;
             if (SteamUserStats.GetAchievement(apiName, out bool unlocked) && unlocked) return true;
@@ -58,6 +60,7 @@ namespace Game.Steam
         /// </summary>
         public static bool AddToStat(string apiName, int amount)
         {
+            if (DemoBuild.IsDemo) return false;
 #if STEAM_BUILD
             if (!SteamBootstrap.Initialized || string.IsNullOrEmpty(apiName)) return false;
 

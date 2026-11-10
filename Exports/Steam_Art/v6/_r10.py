@@ -1,0 +1,5 @@
+exec(open(os.path.join(HERE, "shots_v6.py"), encoding="utf-8").read(), globals())
+setup_shot("Header_Capsule_920x430", SHOTS["Header_Capsule_920x430"])
+R("CAM_V6_Header_Capsule_920x430", pct=60, spp=32, out="cam_header2", show_logo=False, hide=HIDE_MAIN)
+setup_shot("Library_Hero_3840x1240", SHOTS["Library_Hero_3840x1240"])
+R("CAM_V6_Library_Hero_3840x1240", pct=20, spp=32, out="cam_hero2", show_logo=False, hide=HIDE_MAIN)

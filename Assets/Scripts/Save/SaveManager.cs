@@ -77,6 +77,12 @@ namespace Game.Saving
         private const int CurrentVersion = 1;
         private const string LegacyFileName = "save.json";
         private const string DefaultProfile = "Local";
+
+        /// <summary>
+        /// The Steam demo's save folder is the player's Steam ID plus this (see DemoBuild). The full game's first start
+        /// copies its slots in.
+        /// </summary>
+        public const string DemoProfileSuffix = "_Demo";
         // In a Steam player's folder: the Local folder's slots were already checked for copying in (see UseProfile).
         private const string LocalCheckedFileName = "local_slots_checked.txt";
         private const float RetryDelay = 5f;
@@ -160,31 +166,38 @@ namespace Game.Saving
             if (string.IsNullOrEmpty(profile)) return;
 
             string localFolder = Path.Combine(SavesRoot, DefaultProfile);
+            // The same player's Steam demo saves (2026-11-10): what they earned in the demo is waiting in the full game.
+            string demoFolder = profile.EndsWith(DemoProfileSuffix) ? null : Path.Combine(SavesRoot, profile + DemoProfileSuffix);
             Profile = profile;
             string marker = Path.Combine(SaveFolder, LocalCheckedFileName);
             if (profile == DefaultProfile || File.Exists(marker)) return;
 
+            string source = localFolder;
             try
             {
                 Directory.CreateDirectory(SaveFolder);
-                if (!HasSlotFiles(SaveFolder) && HasSlotFiles(localFolder))
+                if (!HasSlotFiles(SaveFolder))
                 {
-                    for (int slot = 1; slot <= SlotCount; slot++)
+                    source = demoFolder != null && HasSlotFiles(demoFolder) ? demoFolder : HasSlotFiles(localFolder) ? localFolder : null;
+                    if (source != null)
                     {
-                        foreach (var suffix in new[] { "", ".bak" })
+                        for (int slot = 1; slot <= SlotCount; slot++)
                         {
-                            string from = Path.Combine(localFolder, SlotFileName(slot) + suffix);
-                            if (File.Exists(from)) File.Copy(from, Path.Combine(SaveFolder, SlotFileName(slot) + suffix));
+                            foreach (var suffix in new[] { "", ".bak" })
+                            {
+                                string from = Path.Combine(source, SlotFileName(slot) + suffix);
+                                if (File.Exists(from)) File.Copy(from, Path.Combine(SaveFolder, SlotFileName(slot) + suffix));
+                            }
                         }
+                        Debug.Log($"[SaveManager] Copied the save slots in '{source}' to '{SaveFolder}'.");
                     }
-                    Debug.Log($"[SaveManager] Copied the save slots in '{localFolder}' to '{SaveFolder}'.");
                 }
                 // Checked (copied or not): never again for this player.
-                File.WriteAllText(marker, "The save slots in the Local folder were checked and copied in if there were any (once per player).");
+                File.WriteAllText(marker, "The save slots in the Local folder (or the Steam demo's) were checked and copied in if there were any (once per player).");
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"[SaveManager] Couldn't copy the save slots in '{localFolder}' to '{SaveFolder}' (tried again next time): {e.Message}");
+                Debug.LogWarning($"[SaveManager] Couldn't copy the save slots in '{source}' to '{SaveFolder}' (tried again next time): {e.Message}");
             }
         }
 
