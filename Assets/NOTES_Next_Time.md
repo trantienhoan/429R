@@ -1,30 +1,62 @@
-# Next time: where we stopped (2026-11-11 evening)
+# Next time: where we stopped (2026-11-11 night)
 
-## RESUME HERE (2026-11-11 evening, this PC)
+Two PCs: the **K: PC** (has K:/WORK_2026/08_04/_claude/ with the boss round-3 files) and the **second PC** (no K:). Claude's memory, backups and test scripts stay on each PC, so everything needed to go on is written here.
 
-**1. Pumpkin boss ROUND 3: prepared + compile-checked, NOT applied, NOT tested.** Everything is in K:/WORK_2026/08_04/_claude/boss_slide_2026-11-11/staged3/ (PumpkinBossBrain.cs, Editor/PumpkinBossSlideMenu.cs, PumpkinBossFx.cs, LiveNavMesh.cs; base3/ + base3_md5.txt = the repo files it was made from; they still matched at 17:05). What it does (all user decisions):
+## RESUME HERE
+
+**1. Pumpkin boss ROUND 3 (K: PC): prepared + compile-checked, NOT applied, NOT tested.** Everything is in K:/WORK_2026/08_04/_claude/boss_slide_2026-11-11/staged3/ (PumpkinBossBrain.cs, Editor/PumpkinBossSlideMenu.cs, PumpkinBossFx.cs, LiveNavMesh.cs; base3/ + base3_md5.txt = the repo files it was made from; they still matched at 17:05). What it does (all user decisions):
 - **Cracks removed** (user: "not really good, remove it for now"; may model cracking parts later): brain `drawCracks` off; the menu takes the crack overlay off the renderer. The 1/5 damage on the pumpkin and the break at 20% stay. *Meanwhile* the cracks are hidden in the game by Boss_Butt_Cracks.mat `_Collapse = 1` (set 17:07; round 3 makes it proper).
 - **Arms swing on hops:** each butt hop plays the user's `jump_slam` retimed (arms back on the crouch, up on take-off, forward-down on landing) with an Animator "HopSpeed" speed parameter; a "Face" override layer keeps his normal face (idle_true) while hopping; half the clip's hip turn reaches the waist.
 - **Break and regrow instead of sinking** (user: the sinking up and down looked really bad): going down for punches/slam/clap/spin/dizzy, the pumpkin bursts (light burst, no candy) and his upper body drops 0.35 s to the old sunk height; going back up, the pumpkin regrows in 0.6 s with an overshoot. The transform grows the pumpkin out at 1.2 s. The real break (20%) still never regrows.
 - **Heavier ground smoke:** wake puffs on both sides while sliding (thicker in the charge), a skid burst, a dust ring at hop take-off and a ground blast on every hop landing (boom/shake only near the player). Estimated peaks ~69 slide / ~93 charge / ~95 hop chain (limit ~98): measure.
 - **Stone blocks (Stone_Cube_Dice 1/2/3, immovable):** hop arcs/landings checked against the pumpkin's real width; LiveNavMesh treats immovable bodies as never-walkable (all enemies path round them).
 - **To resume:** (1) write gen_pairs3.py (copy of gen_pairs2.py: base3 → staged3 → pairs3), re-check the repo md5s against base3_md5.txt; (2) apply outside Play (fixlist_2026-11-11/rep.py), recompile, run Tools > 429 Game > Enemies > Pumpkin Boss Slide Setup (log should say the crack overlay was taken off); (3) run test/run_case3.sh cases (no_overlay, hop_arms, drop_regrow, trail_particles, block_hop, block_behind, bugs_path, pics before/after) + round-2 regressions (momentum, charge_hit, bounce_hit, butt, pose, hops, crush) + test3/bk_test.cs a2_hopPast and b3_headOn; (4) show the user pictures of the break-and-regrow, the hop arm swing and the smoke.
+- **MERGE FIRST (2026-11-11 night):** the second PC changed `PumpkinBossBrain.cs` and `pumpkin_boss_Z.prefab` for the hop damage (item 2), so those two no longer match base3's md5. Build round 3's pairs from base3 → staged3 as planned, but apply them to the CURRENT files. The hop change touches only three places: (a) the hop fields after `hopStretch` (tooltips, `hopHitReach` 2, `hopHitEvent` "DamageHeavy", new `[Range(1f, 3f)] hopNearShare = 2.5f`); (b) the top of `HitPlayer(string healthEvent, Vector2 launch, Vector3 from, float share = 1f)` (`if (IsChaos) share *= chaosDamage;`, then `PlayerDamageShare.Next(share)` before the event and `Take()` after, only when share isn't 1); (c) the end of `HopLands()` (`float outside = hopHitReach > 0f ? Mathf.Clamp01((near - BodyRadius) / hopHitReach) : 0f;` and `HitPlayer(hopHitEvent, hopLaunch, transform.position, Mathf.Lerp(hopNearShare, 1f, outside));`). If a round-3 pair hits one of those spots, apply round 3, then redo the hop change from this description. The prefab only got the 3 hop values (hopHitReach 2, hopHitEvent DamageHeavy, hopNearShare 2.5).
 
-**2. Waiting on the user (boss):**
-- Hop landing on the player does only ~6 (a bite event, `hopHitEvent` "Damage"); his slam hit is "PumpkinBossHit" (~70-90 before Toughness). Stronger?
-- The rooftop's graffiti decals paint onto the giant pumpkin (and smoke/arms) when he slides over them: fix with a render setting so those decals only paint floor/walls?
-- In the roar slide pose his forearms are ~9% bigger (the transform clip scales them 1.149 vs idle_true 1.05): keep, or use idle_true's forearm size in the pose?
-- Showing the pumpkin's damage: the user may MODEL cracking parts (e.g. chunks Butt_Chunk_1-3 that burst off at 33/66/100%, or 2-3 damage-stage models); the code already tracks the damage 0-1 (ButtCracked).
+**2. Done 2026-11-11 night (second PC), all compile-checked and Editor-tested** (save profile `_claude_test`, deleted after; the user's slots untouched):
+- **Hop landing damage (user: the closer the player, the more damage; x2.5 right next to him):** a hop landing within 2 m of his pumpkin's edge sends **DamageHeavy** (40-50 before Toughness) times **x2.5 right next to him (100-125)**, falling off to x1 at 2 m; nothing further out. A chaos boss adds its x1.3 (all shares are capped at x3). Tested (a chaos boss): 0 m 135, 0.2 m 141, 1 m 91, 1.8 m 66, 2.4 m no hit, all in the expected ranges.
+- **NEW PUNCH after dying in a stage (user: "Yeah"):** a punch (or exploding throws) bought inside a special stage, then a game over there: the notice now shows 3 s into the next run, once the player is up (never over the death). PlayerLevel.cs ("next run news"). Tested for real: Fist Size bought in a stage, death with no coins left, the restart about 4.5 s later, NEW PUNCH! (Jab) 3 s after that.
+- **Wingless bees never sting:** any flier that has lost its wings now only bites (before, only the kamikaze bees stopped). SpiderBrain.TryStartWebShot. Tested on Bee_Boss_PumpkinButt with the sting cooldown forced off: with wings 9 stings in 8 s, without wings 0 in 12 s (chase and bite only).
+- **Candy vacuum: it was already fixed** by the afternoon boss rework (the bug report was from the morning test, before it). Tested: 8 candies dropped round the boss were all eaten within 1 s (first form) and 2 s (true form on the giant pumpkin).
+- **Fairy lock tower: now fully tested.** On release it moves to the Fairy's parent and the sound plays to its end (1.4 s) although the Fairy is destroyed 0.4 s in; then it removes itself. The brightness looks right in a picture (second PC: Documents/429R_claude_backups/2026-11-11/pc2_fixes/pics/tower_steady.png).
+- **Git noise:** `.gitignore` now ignores `*.spp.meta` and `*.unitypackage.meta` (Unity makes them for the ignored Substance and package files). **Commit the deleted `Assets/Models/TEST/Build_Square_Slot.unitypackage.meta` once:** its package isn't in git, so Unity deletes the meta on every start.
+- Backups of the changed files (second PC): Documents/429R_claude_backups/2026-11-11/pc2_fixes/originals; the test scripts are next to them (pt_*.py).
 
-**3. Fairy bone cage → purple "lock tower" particles: APPLIED, mostly tested.** Menu Tools > 429 Game > Fairy > Fairy Lock Tower (run; re-runnable). Fairy.prefab: The_Cage keeps only its trigger box + kinematic body + Start FSM (the lock still breaks when the StartGamePumpkin drops / the Fairy Shield clears it); its bone mesh, the bone drop (The_Cage_Drop_Pos FSM) and the 3 Skull_Candle_Purple (they were EditorOnly anyway) are gone; a nested Fairy_Lock_Tower (Prefabs/Effects/Fairy_Lock_Tower.prefab; materials Data/Effects/Fairy Lock *.mat; script Scripts/VFX/FairyLockTower.cs) shows a turning rune circle, 8 circling purple bars, a top ring and spiralling sparks (~30 particles, no lights) and on release fades, sweeps a ring, bursts sparks and plays glass_break_2. **No scene change** (GAMESTAGES' Fairy_Pos spawns the Fairy). Play-tested: appears 0.3 s after the Fairy spawns, released 0.02 s after the cage goes, no bones, fresh tower after a Game Over. **Not tested yet:** the last fix (the tower detaches to the Fairy's parent on release, so the Fairy's own destroy 0.4 s later doesn't cut the burst/sound short) and the last brightness tweak (applied by the menu at 17:07). Backup: Documents/429R_claude_backups/2026-11-11/fairy_lock/Fairy.prefab. Now unused: Prefabs/Items/Broken_Stuffs/The_Cage_Drop.prefab, The_Cage.fbx (left for the user to delete; PumpkinLaughSoundMenu still lists the drop prefab). Pictures: K:/WORK_2026/08_04/_claude/fairy_lock_2026-11-11/pics/.
+**2b. Done later 2026-11-11 night (second PC), compile-checked and Editor-tested unless said:**
+- **Steam demo App ID 5604260** is in `Assets/Resources/Demo Settings.asset` (new: commit it). The demo has no store page of its own (user: leave it unticked). Next: Tools > 429 Game > Steam Demo > Build Steam Demo (Windows) → `E:/429_Demo`, then SteamPipe-upload to the demo's depot (usually 5604261; Claude can write the upload script).
+- **Game icon = the new v6 icon:** `Assets/Images/429_icon.png` (the default icon, used by Windows) and the 4 Android icons (legacy, round, adaptive fg/bg). Old ones: Documents/429R_claude_backups/2026-11-11/game_icon/ (second PC).
+- **Reddit banner:** `Exports/Steam_Art/renders_v6/Promo_Reddit_Banner_1920x640.png` + a 305 KB `.jpg` (Reddit's limit is 500 KB); the shot is in `v6/render_user_v6.py` (only=Reddit).
+- **Box bombs calmer (user: "so dangerous"):** Paper_Box_1-5 chance 30% → **15%**, rest between attacks 3 → **7 s**, face hit 20-25 → **12-15** (faceShare 0.3). Not played in the headset.
+- **Pumpkin rooms x4 (user):** bedroom 45 → **180**, mini bedroom 35 → **140**, Pumpkin_On_Tree limit 140 → 560, rain 6 s; refill stays **12 more below 12** (user). **No rolling pumpkin bombs while a pumpkin room runs** (user; TurnsIntoBowler.Hold/Release). Each dropped pumpkin can't be hurt for its first 2.5 s (a third broke landing on the pile), and the room's pumpkins and its stage pumpkin take **only the player's hits** (EnemyHitDamage.PlayerHitsOnly): one broken pumpkin's flying pieces broke its neighbours in a chain (474 re-dropped in 2.5 min). That is also the answer to "why does Pumpkin_1 get hit by a normal pumpkin break": the pieces hit the mini bedroom's stage pumpkin. Tested: 180/180 stay, the pile sleeps, ~160 fps in the Editor (empty room ~257, rain 136-187); breaking 3 removes exactly 3. **The scene values were saved by the user at 20:21.**
+- **Flying punch 7 damage at Fist Size 1 (user asked why): not a bug, the bonuses stack.** A flying punch does (1 + Fist Size) x Elon Boong (x2) + 1 hard hit + 1 red-hot hands; eaten red candies count as Fist Size points (~0.6 each at 1 point; the user's 2026-11-10 rule). E.g. Elon + one red candy: 6, hard 7. The user may still want candies to give size only, or a cap: ask.
+- **Fat Pumpkin + Elon Boong:** the Elon punch's small blast landed a moment before the punch and started the fat pumpkin's 0.2 s hit pause, so the punch was ignored (1 damage a punch). Blasts no longer start that pause (FatPumpkin.Hit). Not tried with a real punch.
+- **Pumpkin health (user, 2026-11-11 late):** runners x3 (Pumpkin_0/1/2/4/6 = 12/15/18/24/24; Chaos 1/2/4/6 = 24/27/30/36), Mob Pumpkin_7 5, chase Pumpkin_5/3/7 = 3/4/5, Pumpkin_Tree 100. **Fat Pumpkin:** starts at 6, +2 health a candy (at once), giant 150 (plus what won fights saved up; a won fight no longer doubles a small one). BalanceEnemiesMenu matches. Prefab values; nothing in the scene overrides them (only Pumpkin_Big, a copy of Pumpkin_10, overrides its health to 50).
+- **Only the player's hits hurt pumpkins (user):** EnemyHitDamage got a saved **Player Hits Only** setting, on for Pumpkin_0/00/1/2/4/6 (+ Chaos), 6 1, 6 2, 51, On_Tree, Big, StartGamePumpkin (and the bonus round's copies) and pumpkin_Z; furniture the player holds or just threw still counts as theirs. Fat, Laughing, Mob and chase pumpkins already took only the player's hits.
+- **Fairy Shield pops Fat Pumpkins, giant too (user):** it bursts as usual with no candy and no EXP (FatPumpkin.shieldTag). Tested: a small and a 150-health giant both popped.
+- **TO DO later (user):** Laughing pumpkins (Pumpkin_8, 9, 9 1, 10) have 1 health; the user wants "at least 500 stamina". Their stamina today is METRES they can run before they're tired and stunned (3/4/5 m by round; hits take Metres Per Damage off it), so 500 would mean they never tire: agree with the user what it should mean first.
+- **Candy (user: leave it):** a candy adds 0.5 point (x1 + 0.2 per own point) up to 5, then 0.1 up to 10; Weapon Efficiency and Fist Size points (candy ones too) are +1 damage each, which is why damage climbs fast with candy.
+- **Fat Pumpkin damage numbers:** DamageNumbers.Show(target, damage, big, kill) (new) for health kept outside a Health FSM; FatPumpkin calls it. Tested: two hits showed "2", "2".
+- **Pumpkin_00 still moving in the hand:** HeldStill paused Look At only in the FSM's current state, so the Health FSM's state change (9 s after it appears, then every ~78 s) turned it ~18° and the hand dragged it back. Now Look At, Smooth Look At and Tween Punch are switched off in every state while held. Tested: held 14 s past the change, 0 turns (before: 14 turns, 88°). Runner pumpkins too.
+- Backups (second PC): Documents/429R_claude_backups/2026-11-11/ (box_bombs, pumpkin_rooms, fat_pumpkin, held_still).
 
-**4. Done today, small:** Right Ctrl (video) and Right Shift (photo) work ONLY while the 429R Editor is the focused window (Scripts/Cam/CaptureKeys.cs) — other apps no longer start recordings/photos. Not yet tried live with Unity focused.
+**3. User decisions (2026-11-11 night):**
+- His forearms in the roar slide pose stay ~9% bigger ("Bigger = Cooler"). No change.
+- Graffiti on the boss (user: remove it, or keep it simple). **Nothing like it exists in the project on the second PC:** no decal projector, no graffiti object, material or texture in any prefab or the scene (an old Graffiti material and textures were deleted in 2025). On the rooftop the yellow marks are the lid's carved pumpkin face and the pink skulls are the stone dice. If the K: PC still shows graffiti on the boss, it's only there: show Claude a picture of it there.
+- The pumpkin's damage look: the user may MODEL cracking parts later (e.g. chunks Butt_Chunk_1-3 that burst off at 33/66/100%, or 2-3 damage-stage models); the code already tracks the damage 0-1 (ButtCracked).
+
+**How a punch is bought (the user asked):** level up, then make two fists (grip + trigger on both hands) and bump them together twice to open the Level Up menu. Each point in **Fist Size** makes the fist bigger; the punches unlock at Jab 1 point, Swollen Hand 6, Triple Punch 10 (Swing and Uppercut are locked for now). NEW PUNCH! shows when the menu closes.
+
+**4. Fairy bone cage → purple "lock tower" particles (K: PC): APPLIED and fully tested.** Menu Tools > 429 Game > Fairy > Fairy Lock Tower (run; re-runnable). Fairy.prefab: The_Cage keeps only its trigger box + kinematic body + Start FSM (the lock still breaks when the StartGamePumpkin drops / the Fairy Shield clears it); its bone mesh, the bone drop (The_Cage_Drop_Pos FSM) and the 3 Skull_Candle_Purple (they were EditorOnly anyway) are gone; a nested Fairy_Lock_Tower (Prefabs/Effects/Fairy_Lock_Tower.prefab; materials Data/Effects/Fairy Lock *.mat; script Scripts/VFX/FairyLockTower.cs) shows a turning rune circle, 8 circling purple bars, a top ring and spiralling sparks (~30 particles, no lights) and on release fades, sweeps a ring, bursts sparks and plays glass_break_2. **No scene change** (GAMESTAGES' Fairy_Pos spawns the Fairy). Backup: K: PC Documents/429R_claude_backups/2026-11-11/fairy_lock/Fairy.prefab. Now unused: Prefabs/Items/Broken_Stuffs/The_Cage_Drop.prefab, The_Cage.fbx (left for the user to delete; PumpkinLaughSoundMenu still lists the drop prefab).
+
+**5. Not tried live yet:** Right Ctrl (video) and Right Shift (photo) work ONLY while the 429R Editor is the focused window (Scripts/Cam/CaptureKeys.cs).
 
 **Boss rework so far (APPLIED + Editor play-tested, 2 story fights won):** giant pumpkin butt (user's model Assets/Blender/Pumpkin_Boss_Z2.blend; butt slot split on import), snowman SLIDE in the user's roar pose (`transform` at 1.40 s, face from idle_true; slide_pose until < 0.6 m/s), SLIDE CHARGE (skids at the floor's end, bonks on props/stone blocks, 1 s recovery), BUTT BOUNCE, BUTT HOPS when the player is far (also over low walls/gaps), CRUSHING things in his path (not candy/Seed/Coin/held things/the player/bosses), throws now really fly (they pass through his own colliders), STUN GUARD 17 s (chained spells 3 → 1.8 → 1.5 s), pumpkin hits take 1/5, the pumpkin breaks at 20% (146 full damage) → 5 s dizzy → fights from the floor, pumpkin hidden in phase 2 and while sunk, candy vacuum fixed, 10% bigger. Details below and in Claude's memory.
 
 **Crack painting tools (unused now, kept):** paint setup script + how-to in K:/WORK_2026/08_04/_claude/boss_slide_2026-11-11/cracks/ (boss_cracks_paint_setup.py, HOWTO_paint_cracks.txt); the user's painting Assets/M_Textures/Pumpkin_Boss/Boss_Butt_Cracks_Paint.png; menu Tools > 429 Game > Enemies > Rebuild Boss Cracks.
 
-## 2026-11-11 (Claude, this PC)
+## 2026-11-11 (Claude, K: PC)
+
+(Everything in this section was done on the K: PC; "this PC" below means the K: PC.)
 
 **Pull from the other PC (Steam demo):** merged and checked state by state (the scene has both sides). GitHub Desktop "stashed" the local work during the pull; it was restored. The stash is still in GitHub Desktop (and backed up as git ref refs/claude/stash-backup-2026-11-11): drop it once you're happy.
 
@@ -54,7 +86,7 @@
 - **Wingless bees are a menace:** losing their wings makes them tougher (normal and small bees x2; Bee_Boss_PumpkinButt now loses its wings at 40% health, x3) and they walk at 80% speed (was 50%). Bee_Boss keeps its wings.
 - Menu: Tools > 429 Game > Enemies > Set Up Kamikaze Bees (already run; prefab backups in Documents/429R_claude_backups/2026-11-11/suicide_bees). Test toggle in Play: "Kamikaze Bees: Every Attack Is A Dive (test)". No scene change.
 - **Editor play test (11:35-12:30): all PASS.** Dive hits 20-25 + poison 2/s x5, shove ~0.55 m, bee gone, no EXP; swat = normal death + EXP; a 3 m sidestep dodges (1.8 m doesn't); 8 s timeout blows up harmlessly. Dives were 20 of 158 attacks (about 1 in 8; the roll is 1 in 6). Wingless: toughness 1.5→3 / 1→2 / PumpkinButt 2→6, speed x0.8; Bee_Boss keeps its wings. Bee bosses as yesterday (stings now hit 9-10 of 10-11). Boss candy heal: full roll below 729, half up to 1.5x, then ~10%, no cap. Fat Pumpkin: +2..+12 per candy seen (20 → 128 after 16), giant 300, duel x2.
-- Seen in the tests, not changed: a wingless PumpkinButt fired 1 sting from the ground right after losing its wings, then only bit (26-49). When 6-8 candies drop around the pumpkin boss only 1-2 get vacuumed; the rest hover inside its body until removed (old, not from today's change).
+- Seen in the tests, not changed: a wingless PumpkinButt fired 1 sting from the ground right after losing its wings, then only bit (26-49). When 6-8 candies drop around the pumpkin boss only 1-2 get vacuumed; the rest hover inside its body until removed (old, not from today's change). **Both handled 2026-11-11 night (RESUME HERE item 2):** wingless bees no longer sting; the vacuum was already fixed by the boss rework.
 
 **Pumpkin boss rework (user, 2026-11-11 afternoon): giant pumpkin butt, no more walking.**
 - New model: the user's Assets/Blender/Pumpkin_Boss_Z2.blend (legs removed, a giant pumpkin weighted 100% to Hips), exported to Models/Enemies/Pumpkin_Boss_Z.fbx. The old Pumpkin_Boss_Z.blend is untouched.
@@ -82,7 +114,7 @@ At level 10 the user can "close my eyes and still win".
   4. No more "linear velocity of a kinematic body" warning on PlayGround chest drops.
   5. Anomaly Chance comments say 0.003 (about 1 in 333).
 - Not tested (headset): arm-swing walking lead, a real triple punch after a game over, Re-Dream's scene reload inside a stage.
-- **Open question for the user:** after buying the punch inside a stage and dying there, should the NEW PUNCH notice show at the start of the next run? Today it doesn't.
+- **Answered 2026-11-11 (user: yes) and done:** after buying a punch inside a stage and dying there, the NEW PUNCH notice now shows 3 s into the next run.
 - **Open items found (ALL HANDLED 2026-11-11, see the top section):** pumpkin boss health can go slightly above max (1094 → 1101, cause unknown); a Candy Box broken at the face feeds 1-2 candies; a box bomb from behind shoves you into its loot; its "about to blow" beep plays even if it then calms down; "+TOPH" etc. shows at a stat's candy max; Max Health candies make the cap a fraction (127.5); Daruma counts a snap turn as moving when the head is ~10 cm+ off the play-area centre; first dive sting of a run can lift the player ~1.3 m; Paint Bees: something shoves a standing player north over Fall Edge North every 6-7 s; a poison tick in the same frame as a hit skips that hit's red lines and hurt slow (DamageVignette/HurtSlow).
 - Editor-only noise (old, FIXED 2026-11-11): SpawnPreview.cs:146 made PlayMaker log a burst of "Fsm not initialized" errors after each Play exit.
 - Test scripts and results: K:/WORK_2026/08_04/_claude/playtest_2026-11-10/ and playtest_fixes_2026-11-10/.
@@ -206,83 +238,16 @@ Before re-running **Aggressive Bosses And White Bugs**, check its health table i
 15. **Recipe hat aura:** add an aura particle to the Recipe_Hat so it's easier to spot. Keep it light: the user dislikes overdone particles.
 11. **Defend the Tree stage:** the portal that spawns the spider-lings still uses the old smoke particles. Swap them for the shared 3D smoke (Smoke_Flash_Small_Puff; never Lana's Smoke_Blast).
 
-## 2026-11-09 (late): the 3D Steam icon. Paused ("okay for now"), NOT uploaded.
+## Steam page assets (current: 2026-11-10/11, made on the second PC, all in git under Exports/)
 
-**Status:**
-- The uploaded Steam icon is still the user's painted badge (`Exports/Steam_Art/renders/`).
-- The 3D remake is `Exports/Steam_Art/assets/icon/Icon_Scene.blend`, which the USER HAND-EDITED:
-  - arms removed, so the paws peek over the digits;
-  - Subdivision on;
-  - digits tilted like the badge.
-- **NEVER re-run `icon_scene_build.py`**: it rebuilds the scene and would wipe those edits. To render, run:
-  `blender -b assets/icon/Icon_Scene.blend --python assets/icon/icon_render.py -- full`
-- The colours, the eyes, the subtle weed leaf in the knight's LEFT eye and the gold come from `grade_icon.py`, applied after the render. They don't show in Blender.
-
-**Files:**
-- Latest render: `assets/icon/icon_render_1024.png`.
-- Steam sizes: `assets/icon/3d/` (512 PNG, 184 JPG, 800 YouTube).
-- Side-by-side with the badge: `story_tests/icon_colour_final.png`.
-
-**Reviews:** v8 got 6.5 and 7 from independent reviewers. The last v9 review was cancelled when the user paused.
-
-**Open ideas** (not done):
-- give the paws 3 toe pads;
-- fix the 2 and the 9 crossing rims;
-- level the head (it's tilted about 6 degrees);
-- bigger ears.
-
-Details are in the README, sections "v4" to "v7-v8".
-
-## 2026-11-09 (other PC, afternoon): Steam store art v5 "the knight guards the Tree of Light" (RENDERED)
-
-**Where it lives:** `Exports/Steam_Art/`. `README.md` there has the v5 section, every switch and the Steam upload list.
-
-**Pipeline:**
-1. `knight_pass.py`
-2. `story_pass.py` (NEW)
-3. `lighting_pass.py`
-4. `render_all.py`
-
-Notes on running it:
-- The scripts now find their own folder, so they run on both PCs.
-- `fix_paths.py` (new) points texture paths of the other PC at this checkout.
-- Blender is at `E:/Steam/...` on one PC and `G:/steam/...` on the other.
-
-**User decisions 2026-11-09:**
-- Title "429" only (the Steam page will be named "429").
-- Keep the current fiery logo.
-- **The Tree of Light** is the game's Pumpkin_Tree (the rooftop tree), **as in the game**: orange maple leaves, pumpkins on it. The Tree-of-Light POT in Knight.blend is NOT used in the game any more.
-- **The knight:** right fist pushed toward the viewer, sword across his body pointing to HIS left, the blade's flat side facing the camera, shield on. Smiley eyes kept.
-
-**In the art:**
-- The Pumpkin Boss looms over the back wall with raised fists (its transform animation, frame 100), face glowing.
-- The menace pumpkins turn toward the knight.
-
-**Steam rule fixes:**
-- The Library Hero puts the knight in the 860x380 safe area. Put the library logo at "centered top" in Steamworks.
-- The Small capsule is mostly logo.
-- The Page Background has no characters and is darker.
-- The Library Logo is trimmed to the logo (about 1214x720).
-- New icons: 512x512 PNG shortcut and 184x184 JPG app icon, of the knight's helmet.
-
-**Renders:** `Exports/Steam_Art/renders/` (11 files). The previous round is in `variants/renders_v4/`.
-- **Later (same day):** the user edited the .blend: the tree turned and the boss moved back. Those edits are copied into `story_pass.py`.
-- **The rooftop is now the game's current one** from Unity: the cursed-stone floor with glowing cracks, the new walls and the rebuilt Lid. It is re-rendered.
-- The renders before that update are in `variants/renders_v5a/`.
-- **Evening:**
-  - The user posed the knight by hand. `knight_pass.py` is now `POSE = "keep"`, so it never overwrites that pose.
-  - The pumpkin moved next to the knight.
-  - **2 promo pictures for Reddit:** `Promo_KeyArt_1920x1080` and `Promo_Portrait_1080x1350`, in `Exports/Steam_Art/renders/`.
-  - If the .blend is open in Blender while the scripts run, saving from Blender overwrites the scripts' work. Close it first, or rerun `story_pass.py` + `lighting_pass.py`, which is safe.
-  - **Night:**
-    - 4 spiders in the user's chosen poses stand in front of the boss (smaller, as asked).
-    - The big pumpkin glows.
-    - The user's knight pose is kept in `Exports/Steam_Art/knight_pose_user.json`. `story_pass.py` restores it every run; if the knight is re-posed by hand, update that file.
-  - **Late:** the big pumpkin now has the user's ORIGINAL game face (`pumpkin_0`), with black charred eye and mouth rims and fire burning deep inside.
-
-**Still to do:**
-- The user reviews the renders.
-- At least 5 real gameplay screenshots (1920x1080+, 16:9; 4 marked all-ages).
+- **Store art v6:** the knight raises his glowing sword at the giant Pumpkin Boss over the back wall (moon, Tree of Light, violet night). The USER posed the knight in `Exports/Steam_Art/Steam_Art_v6_pose.blend`: that file is the source, never re-pose him, and renders must look like the user's own F12 render. The whole Steam set (header, main, small, vertical and library capsules, library hero and logo, page background) plus promo key art, portrait and the YouTube banner: `Exports/Steam_Art/renders_v6/`. Scripts: `Exports/Steam_Art/v6/` (render_user_v6.py, compose_v6.py).
+- **Steam icon = the new v6 icon** (user: "use the new icon for Steam"): `renders_v6/icon_new/` (512 PNG, 184 JPG, 1024 master; the sword stays inside a 4% margin). The painted badge and the 2026-11-09 3D icon remake (`assets/icon/Icon_Scene.blend`) are retired; never re-run `icon_scene_build.py` (it wipes the user's hand edits).
+- **Profile picture** (the knight alone, blurry background): `renders_v6/profile/Knight_Profile_2048.png`, an 800 PNG and an 800 JPG under 500 KB.
+- **Screenshots:** 14 in `Exports/Steam_Screenshots/2026-11-09/`.
+- **Trailer 3** (rough cut) and its vertical Short, with the v6 logo end card and the "A VR ADVENTURE GAME" line under the logo (made in Blender: `Exports/Steam_Art/assets/tagline/Tagline.png`): D:/Movie/StreamingHere/Trailer/Trailer3/ on the second PC; build scripts in Documents/429R_claude_backups/2026-11-10/trailer3/ there.
+- **Shorts** 35 (the last pumpkin) and 36 (one HP left): D:/Movie/StreamingHere/Shorts/ on the second PC.
+- **The user's job:** upload the v6 set, the icon, the screenshots and the trailer in Steamworks; set up the demo (see "Steam demo" above: the App ID is still 0).
+- Older rounds (renders v4/v5, the README's v4-v8 icon notes) stay in `Exports/Steam_Art/` for reference.
 
 **Done from 2026-11-08:** `2 Game Scene` was saved with Use Bowling For Gate 2. The Bowling_Arena prefab is in the scene in commit da31bc37.
 

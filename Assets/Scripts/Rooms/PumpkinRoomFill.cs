@@ -23,20 +23,20 @@ namespace Game.Rooms
         [Tooltip("What fills the room (Pumpkin_On_Tree).")]
         [SerializeField] private GameObject fill;
         [Min(0)]
-        [SerializeField] private int startCount = 45;
+        [SerializeField] private int startCount = 180;
         [Tooltip("Fewer than this left before the enemies come: Refill Count more drop from the ceiling.")]
         [Min(0)]
         [SerializeField] private int refillBelow = 12;
         [Min(1)]
         [SerializeField] private int refillCount = 12;
         [Min(0.1f)]
-        [SerializeField] private float rainSeconds = 3f;
+        [SerializeField] private float rainSeconds = 6f;
         [Min(0.1f)]
         [SerializeField] private float refillSeconds = 1.2f;
         [Tooltip("The Live Limit group raised for the room, and to how many.")]
         [SerializeField] private string limitGroup = "Pumpkin_On_Tree";
         [Min(1)]
-        [SerializeField] private int roomLimit = 140;
+        [SerializeField] private int roomLimit = 560;
 
         [Header("The room")]
         [Tooltip("The floor's area (world space): the Stuffs room's spots, a little wider.")]
@@ -60,6 +60,7 @@ namespace Game.Rooms
         [SerializeField] private string fightState = "Enemy1 - Wait";
         [SerializeField] private float startDelay = 0.8f;
 
+        private const float LandSeconds = 2.5f;
         private bool runner;
         private bool lowered;
         private float ceilingY;
@@ -96,6 +97,7 @@ namespace Game.Rooms
         private void OnDestroy()
         {
             if (runner && !lowered) LiveLimit.LowerLimit(limitGroup);
+            if (runner) Game.Enemies.TurnsIntoBowler.Release(this);
         }
 
         /// <summary>How many of its pumpkins are left (Play tests).</summary>
@@ -108,6 +110,8 @@ namespace Game.Rooms
         private IEnumerator Run()
         {
             LiveLimit.RaiseLimit(limitGroup, roomLimit);
+            // No rolling pumpkin bombs while the room runs (user, 2026-11-11): packed this tight, their blasts break the pile.
+            Game.Enemies.TurnsIntoBowler.Hold(this);
             foreach (var f in FindObjectsByType<PlayMakerFSM>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 if (f.FsmName == "GAMESTAGES" && f.gameObject.scene.IsValid()) { gameStages = f; break; }
@@ -136,6 +140,7 @@ namespace Game.Rooms
                 yield return new WaitForSeconds(1f);
             }
             LiveLimit.LowerLimit(limitGroup);
+            Game.Enemies.TurnsIntoBowler.Release(this);
             lowered = true;
             Destroy(gameObject);
         }
@@ -169,6 +174,8 @@ namespace Game.Rooms
         {
             if (fill == null || count <= 0) yield break;
             if (stage == null) stage = FindStagePumpkin();
+            // The stage pumpkin too: the pile's flying pieces don't hurt it, only the player does.
+            if (stage != null && stage.TryGetComponent(out Game.Combat.EnemyHitDamage stageHits)) stageHits.PlayerHitsOnly = true;
             planned.Clear();
             foreach (var f in fillers) if (f != null) planned.Add(f.transform.position);
             var parent = transform.parent;
@@ -180,6 +187,14 @@ namespace Game.Rooms
                     var made = Instantiate(fill, at, Quaternion.Euler(Random.Range(-15f, 15f), Random.Range(0f, 360f), Random.Range(-15f, 15f)), parent);
                     if (made.TryGetComponent(out Rigidbody body) && !body.isKinematic)
                         body.angularVelocity = Random.insideUnitSphere * 2f;
+                    // Unhurt while it drops and lands: packed this tight, falling onto the others broke a third of them
+                    // (play test 2026-11-11).
+                    if (made.TryGetComponent(out Game.Combat.EnemyHitDamage hits))
+                    {
+                        hits.SettleFor(LandSeconds);
+                        // Only the player breaks them: no chain of breaks through the pile (see Player Hits Only).
+                        hits.PlayerHitsOnly = true;
+                    }
                     fillers.Add(made);
                     planned.Add(at);
                     Dropped++;

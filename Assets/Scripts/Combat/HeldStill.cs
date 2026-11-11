@@ -33,18 +33,24 @@ namespace Game.Combat
 
         private void OnDisable() => Resume();
 
-        // The turning actions of each FSM's state now (a state change while held brings new ones: they're caught too).
+        // The turning (and punch-shaking) actions of every state of each FSM, not only the one it's in: a state entered while it's held runs
+        // its actions' first step at once (play test 2026-11-11: Pumpkin_00's Health FSM turned it 18 degrees in the hand
+        // 9 s after it appeared, and the hand dragged it back). Switched off (Enabled), so entering a state skips them.
         private void Pause()
         {
             foreach (var fsm in fsms)
             {
-                var state = fsm != null && fsm.enabled ? fsm.Fsm.ActiveState : null;
-                if (state == null) continue;
-                foreach (var action in state.Actions)
+                if (fsm == null || !fsm.enabled) continue;
+                foreach (var state in fsm.FsmStates)
                 {
-                    if (!action.Active || !(action is HutongGames.PlayMaker.Actions.LookAt || action is HutongGames.PlayMaker.Actions.SmoothLookAt)) continue;
-                    action.Active = false;
-                    paused.Add(action);
+                    foreach (var action in state.Actions)
+                    {
+                        if (!action.Enabled || !(action is HutongGames.PlayMaker.Actions.LookAt || action is HutongGames.PlayMaker.Actions.SmoothLookAt ||
+                              action is HutongGames.PlayMaker.Actions.TweenPunch)) continue;
+                        action.Enabled = false;
+                        action.Active = false;
+                        paused.Add(action);
+                    }
                 }
             }
         }
@@ -52,7 +58,11 @@ namespace Game.Combat
         private void Resume()
         {
             if (paused.Count == 0) return;
-            foreach (var action in paused) action.Active = true;
+            foreach (var action in paused)
+            {
+                action.Enabled = true;
+                action.Active = true;
+            }
             paused.Clear();
         }
     }

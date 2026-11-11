@@ -315,6 +315,7 @@ namespace Game.Leveling
             stageHolders.Clear();
             suspended = false;
             describing = false;
+            nextRunNews.Clear();
         }
 
         // The special stages on right now (Special Stage Stats); while any is, the stats are at level 0.
@@ -327,6 +328,13 @@ namespace Game.Leveling
         private static float candyHealthAtStart;
         // The Level Up menu is asking what the points give (Describe): the real stats, also in a special stage.
         private static bool describing;
+        // A game over inside a special stage (user, 2026-11-11): the punches ("Jab", ... see Punch Unlocked) and exploding
+        // throws (Throws News) a point spent inside unlocked, told about once the next run is under way (Update).
+        private static readonly List<string> nextRunNews = new();
+        private const string ThrowsNews = "Throws";
+        // How long the player is up in the new run before that news shows (the restart's fade, getting placed).
+        private const float NextRunNewsDelay = 3f;
+        private float upSince = -1f;
 
         /// <summary>
         /// Whether the player is in a special stage (user, 2026-11-10): the stats are at level 0 until it ends (see
@@ -377,7 +385,8 @@ namespace Game.Leveling
 
         // Quiet: a game over inside the stage (End Special Stages), so the player is dead. The stats come back without a
         // heal (the restart fills the heart to the real cap anyway) and without a notice over the death (it would stop
-        // the game): a punch or exploding throws a point spent inside unlocked just works from the new run on.
+        // the game): a punch or exploding throws a point spent inside unlocked works from the new run on, and is told
+        // about once that run is under way (Next Run News).
         private static void Resume(bool quiet)
         {
             var player = Instance;
@@ -395,10 +404,15 @@ namespace Game.Leveling
             HotHands.SwollenHand = hadSwollen;
             if (player == null) return;
             // The punches as they were before the stage, announced first: only one a point spent inside unlocked is new
-            // (Apply's own quiet ApplyPunches then changes nothing; quiet, it sets them without a word).
-            if (!quiet) player.ApplyPunches(true);
+            // (Apply's own quiet ApplyPunches then changes nothing; quiet, it sets them without a word and keeps the news
+            // for the next run).
+            player.ApplyPunches(!quiet, quiet ? nextRunNews : null);
             player.Apply(false, false);
-            if (quiet) return;
+            if (quiet)
+            {
+                if (!hadExplodingThrows && player.Points(Stat.ThrowPower) >= 1) nextRunNews.Add(ThrowsNews);
+                return;
+            }
             // The cap comes back without healing, but a Max Health or Extra Revive point spent inside heals as it would
             // have then. A Max Health candy eaten inside doesn't: it healed when it was eaten (like outside a stage).
             float raised = PlayerBoosts.LevelHealthBonus - levelHealthAtStart -
@@ -859,8 +873,9 @@ namespace Game.Leveling
         private float FistSizePoints => Worth(Stat.FistSize);
 
         // The flying punches unlock at their Fist Size (and lock again if the points go, e.g. Reset Progress). Announce:
-        // a point just raised it (not the save being read), so the player is told about each new punch.
-        private void ApplyPunches(bool announce)
+        // a point just raised it (not the save being read), so the player is told about each new punch. Keep: the new
+        // ones are added to it instead, to be told about later.
+        private void ApplyPunches(bool announce, List<string> keep = null)
         {
             float size = UnlockPoints;
             bool jab = size >= jabAtFistSize;
@@ -880,9 +895,55 @@ namespace Game.Leveling
             Fist.UppercutUnlocked = uppercut;
             Fist.TriplePunch = triple;
             HotHands.SwollenHand = swollen;
+            keep?.AddRange(unlocked);
             if (!announce) return;
             foreach (var punch in unlocked) PunchUnlocked?.Invoke(punch);
         }
+
+        // The news a game over inside a special stage kept back (Resume): told once the next run is under way and the
+        // player has been up for Next Run News Delay (not dying, getting up or at 0 health; not in a stage or the
+        // opening). Only what's still unlocked then (Reset Progress may have locked it again).
+        private void Update()
+        {
+            if (nextRunNews.Count == 0 || Instance != this) return;
+            if (InSpecialStage || PlayerDown() || Game.Menus.OpeningCutscene.IsPlaying || !Checkpoints.HasResumed)
+            {
+                upSince = -1f;
+                return;
+            }
+            if (upSince < 0f) upSince = Time.time;
+            if (Time.time - upSince < NextRunNewsDelay) return;
+            upSince = -1f;
+            var news = nextRunNews.ToArray();
+            nextRunNews.Clear();
+            foreach (var item in news)
+            {
+                if (item == ThrowsNews)
+                {
+                    if (Points(Stat.ThrowPower) >= 1) ExplodingThrowsUnlocked?.Invoke();
+                }
+                else if (StillUnlocked(item))
+                {
+                    PunchUnlocked?.Invoke(item);
+                }
+            }
+        }
+
+        private static bool StillUnlocked(string punch) => punch switch
+        {
+            "Jab" => Fist.JabUnlocked,
+            "Swing" => Fist.SwingUnlocked,
+            "Uppercut" => Fist.UppercutUnlocked,
+            "Triple" => Fist.TriplePunch,
+            "Swollen" => HotHands.SwollenHand,
+            _ => false,
+        };
+
+        // The player is down: the lucky coins in the air, getting up from a revive, or 0 health (dead).
+        private static bool PlayerDown() =>
+            Checkpoints.IsDying ||
+            (PlayerRevive.Instance != null && PlayerRevive.Instance.IsReviving) ||
+            (PlayerBoosts.TryGetHealth(out float health) && health <= 0f);
 
         /// <summary>Gives the player EXP, e.g. for a kill. Nothing happens without a Player Level in the scene.</summary>
         public static void AddExp(int amount)

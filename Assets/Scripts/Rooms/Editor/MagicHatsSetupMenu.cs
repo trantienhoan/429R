@@ -57,10 +57,10 @@ namespace Game.EditorTools
         {
             new Room { source = "--MiniBedroom--", name = "--MiniBedroom_Pumpkins--", marker = "Pumpkin_1_Pos", stagePumpkin = "Pumpkin_1",
                 enemyManager = "-EnemyManager 0", table = "MiniBR_MagicTable", smokeFrom = "Smoke Wait", smokeName = "Smoke P Wait",
-                stuffsState = "Mini Stuffs", pumpkinState = "Mini Pumpkins", count = 35 },
+                stuffsState = "Mini Stuffs", pumpkinState = "Mini Pumpkins", count = 140 },
             new Room { source = "--Bedroom--", name = "--Bedroom_Pumpkins--", marker = "Pumpkin_2_Random_Pos", stagePumpkin = "Pumpkin_2",
                 enemyManager = "-EnemyManager 1", table = "BR_Magic_Table", smokeFrom = "Smoke Wait 2", smokeName = "SmokeP Wait 2",
-                stuffsState = "BR_Stuffs", pumpkinState = "BR_Pumpkins", count = 45 },
+                stuffsState = "BR_Stuffs", pumpkinState = "BR_Pumpkins", count = 180 },
         };
 
         [MenuItem("Tools/429 Game/Rooms/Set Up Magic Hats + Pumpkin Rooms")]
@@ -354,6 +354,11 @@ namespace Game.EditorTools
             so.FindProperty("startCount").intValue = room.count;
             so.FindProperty("refillBelow").intValue = 12;
             so.FindProperty("refillCount").intValue = 12;
+            // x4 pumpkins and limit (user, 2026-11-11: more pumpkins in the pumpkin rooms; the refill stays 12 below 12);
+            // the rain lasts longer so 4x the pumpkins don't all spawn at once.
+            so.FindProperty("roomLimit").intValue = 560;
+            so.FindProperty("rainSeconds").floatValue = 6f;
+            so.FindProperty("refillSeconds").floatValue = 1.2f;
             so.FindProperty("area").boundsValue = area;
             so.FindProperty("floorY").floatValue = floorY;
             so.FindProperty("stagePumpkin").stringValue = room.stagePumpkin;

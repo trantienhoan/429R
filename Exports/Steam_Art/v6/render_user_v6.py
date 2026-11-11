@@ -67,6 +67,10 @@ _d = Vector((_MC.x - _KN.x, _MC.y - _KN.y, 0.0)).normalized()
 _bl = _KN + _d * 1.85
 SHOTS["Promo_YouTube_Banner_2560x1440"] = dict(size=(2560, 1440), cam=((_bl.x, _bl.y, 0.12), (_KN.x, _KN.y, 0.24), 16),
                                                shift=(-0.12, 0.0), logo=(0.262, 0.395, 0.196))
+# Reddit profile banner (2026-11-11, user): 3:1, the Library Hero's view; the logo goes on the sky right of the knight.
+# Reddit may show only a 5:1 strip round the middle, so the knight and the logo stay inside that band.
+SHOTS["Promo_Reddit_Banner_1920x640"] = dict(size=(1920, 640), cam=((-0.32, 1.50, 0.09), (-0.10, 0.0, 0.46), 14.5),
+                                             shift=(0.0, 0.025), logo=(0.565, 0.06, 0.17))
 _pl = _HD + _d * 0.80
 SHOTS["Promo_YouTube_Profile_800x800"] = dict(size=(800, 800), cam=((_pl.x, _pl.y, _HD.z + 0.05), (_HD.x, _HD.y, _HD.z + 0.08), 62))
 

@@ -105,6 +105,10 @@ namespace Game.Combat
                  "into it count only Bump Share as hard. A launched player can land on it, the level-up burst pushes it like " +
                  "any loose thing, and it never gives EXP. Tools > 429 Game > Rooms > Set Up Breakable Furniture sets it.")]
         [SerializeField] private bool furniture;
+        [Tooltip("Only the player's hits, throws and blasts hurt it (user, 2026-11-11: every pumpkin): knocks they didn't make " +
+                 "(another pumpkin's pieces and candies, a bug bumping it, a stray blast) do nothing. Furniture the player " +
+                 "holds or has just thrown still breaks on what it hits.")]
+        [SerializeField] private bool playerHitsOnly;
         [Tooltip("Furniture only: how hard a bump from something the player isn't using counts (0.35 = a fall or a " +
                  "tumble hurts a little, only when it's hard).")]
         [Range(0f, 1f)]
@@ -273,6 +277,17 @@ namespace Game.Combat
             if (furniture && grab == null) TryGetComponent(out grab);
         }
 
+        /// <summary>Nothing hurts it for this many seconds from now, e.g. a pumpkin room's pumpkins while they drop and land.</summary>
+        public void SettleFor(float seconds) => settledAt = Mathf.Max(settledAt, Time.time + seconds);
+
+        /// <summary>
+        /// Only the player's hits, throws and blasts hurt it; knocks they didn't make (another pumpkin's flying pieces and
+        /// candies, a bug bumping it) do nothing. A pumpkin room sets it on its pumpkins and its stage pumpkin (play test
+        /// 2026-11-11: packed that tight, one broken pumpkin's pieces broke its neighbours in a chain, and hit the stage
+        /// pumpkin).
+        /// </summary>
+        public bool PlayerHitsOnly { get => playerHitsOnly; set => playerHitsOnly = value; }
+
         /// <summary>Furniture the player is holding, or threw a moment ago: it's being used as a weapon.</summary>
         public bool InPlayersHands => HeldThings.InUse(grab);
 
@@ -330,6 +345,8 @@ namespace Game.Combat
             bool stray = false;
             // The player's hit: a fist, a thing they hold or just threw, or a shot.
             bool byPlayer = HeldThings.ByPlayer(collision);
+            // (Furniture in the player's hands or just thrown by them: the hit is theirs too.)
+            if (PlayerHitsOnly && !byPlayer && !(furniture && (InPlayersHands || WeaponPower.IsThrown(this)))) return;
             LastHitByPlayer = byPlayer;
             // The part it landed on (one of its colliders: the enemy's Rigidbody gets all their collisions).
             var part = collision.contactCount > 0 ? collision.GetContact(0).thisCollider : null;
@@ -535,6 +552,7 @@ namespace Game.Combat
         public bool TakeBlast(float damage, Vector3 center, float radius, bool byPlayer)
         {
             if (health == null || dead || Time.time < settledAt) return false;
+            if (PlayerHitsOnly && !byPlayer) return false;
             LastHitByPlayer = byPlayer;
 
             float edge = radius > 0f ? Mathf.Clamp01(DistanceFrom(center) / radius) : 0f;

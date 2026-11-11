@@ -3887,12 +3887,15 @@ namespace Game.Enemies
         private bool TryStartWebShot(float distance)
         {
             if (GoesForObject) return false;
-            // A kamikaze bee: without its wings it no longer shoots; called into a boss's rush it holds its fire through
-            // the warning, then shoots with the others (the volley: no waiting for its cooldown or for others to finish).
+            // A flier without its wings no longer shoots: its stings are a flying attack, on the floor it bites (play test
+            // 2026-11-11: a wingless Bee_Boss_PumpkinButt still stung once from the floor).
+            if (flies && grounded) return false;
+            // A kamikaze bee called into a boss's rush holds its fire through the warning, then shoots with the others (the
+            // volley: no waiting for its cooldown or for others to finish).
             bool volley = false;
             if (KamikazeKind)
             {
-                if (grounded || Time.time < rushHoldUntil) return false;
+                if (Time.time < rushHoldUntil) return false;
                 if (volleyAt > 0f && Time.time >= volleyAt)
                 {
                     if (Time.time > volleyAt + VolleyGrace) volleyAt = 0f;

@@ -10,7 +10,7 @@ using FsmVariables = HutongGames.PlayMaker.FsmVariables;
 namespace Game.Enemies
 {
     /// <summary>
-    /// A paper box that turns out to be a bomb (user, 2026-11-10). Each box rolls once when it appears: Chance (0.30) of
+    /// A paper box that turns out to be a bomb (user, 2026-11-10). Each box rolls once when it appears: Chance (0.15) of
     /// them are armed, the rest drop this component and stay plain boxes. An armed box looks, weighs and breaks exactly
     /// like any other box until the player comes near: then it shakes (little physics hops, the shaking bottles' rattle,
     /// a soft orange pulse on its own texture), hops once more and flies straight at the eyes. In the face it goes off:
@@ -26,10 +26,10 @@ namespace Game.Enemies
     public class BoxBomb : MonoBehaviour
     {
         [Header("Becoming a bomb")]
-        [Tooltip("The chance a box is a bomb, rolled once when it appears (user, 2026-11-10: 0.30). A box that misses " +
+        [Tooltip("The chance a box is a bomb, rolled once when it appears (user, 2026-11-10: 0.30; 2026-11-11: 0.15, they were too dangerous). A box that misses " +
                  "removes this component and stays a plain box for good.")]
         [Range(0f, 1f)]
-        [SerializeField] private float chance = 0.3f;
+        [SerializeField] private float chance = 0.15f;
 
         [Header("Waking up")]
         [Tooltip("A box can't wake until this many seconds after it appeared (rooms drop all their boxes at once and " +
@@ -58,9 +58,9 @@ namespace Game.Enemies
         [Min(1)]
         [SerializeField] private int maxAwake = 1;
         [Tooltip("After an attack ends (a bang, a swat, a defuse or a calm-down), no box may wake for this many seconds " +
-                 "(user, 2026-11-10: 3). Shared: the box whose attack ended decides, so set the same on Paper_Box_1-5.")]
+                 "(user, 2026-11-10: 3; 2026-11-11: at least 7, a rest between attacks). Shared: the box whose attack ended decides, so set the same on Paper_Box_1-5.")]
         [Min(0f)]
-        [SerializeField] private float restSeconds = 3f;
+        [SerializeField] private float restSeconds = 7f;
         [Tooltip("How often, in seconds, the boxes look for the player (one check for all of them). Shared: the first " +
                  "armed box in the room decides, so set the same on Paper_Box_1-5.")]
         [Min(0.05f)]
@@ -162,9 +162,9 @@ namespace Game.Enemies
         [Header("Hurting the player")]
         [Tooltip("Sent to the player's Damage FSM when it hits the face (DamageHeavy: 40-50 before Toughness).")]
         [SerializeField] private string faceEvent = "DamageHeavy";
-        [Tooltip("The face hit does this share of it (user, 2026-11-10: 0.5, so 20-25).")]
+        [Tooltip("The face hit does this share of it (user, 2026-11-10: 0.5, so 20-25; 2026-11-11: 0.3, so 12-15).")]
         [Range(0f, 3f)]
-        [SerializeField] private float faceShare = 0.5f;
+        [SerializeField] private float faceShare = 0.3f;
         [Tooltip("A face hit shoves the player this high (X) and this far back (Y), in metres (the Fat Pumpkin's bite " +
                  "shove; no camera shake).")]
         [SerializeField] private Vector2 shove = new(0.15f, 0.6f);

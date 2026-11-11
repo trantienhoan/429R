@@ -40,6 +40,8 @@ namespace Game.Enemies
         private const string SpawnedStuffVariable = "CurrentlySpawnedStuffs";
         private static readonly List<TurnsIntoBowler> all = new();
         private static float nextCheck;
+        // Places with no rolling bombs while they run (user, 2026-11-11: none in the pumpkin rooms, Pumpkin Room Fill).
+        private static readonly HashSet<Object> holds = new();
 
         private Rigidbody body;
         private XRGrabInteractable grab;
@@ -49,6 +51,7 @@ namespace Game.Enemies
         {
             all.Clear();
             nextCheck = 0f;
+            holds.Clear();
         }
 
         private void OnEnable()
@@ -60,11 +63,21 @@ namespace Game.Enemies
 
         private void OnDisable() => all.Remove(this);
 
+        /// <summary>No tree pumpkin turns into a bowler while By holds (e.g. a pumpkin room); Release ends it.</summary>
+        public static void Hold(Object by)
+        {
+            if (by != null) holds.Add(by);
+        }
+
+        public static void Release(Object by) => holds.Remove(by);
+
         private void Update()
         {
             // The first one checks for all of them.
             if (all.Count == 0 || all[0] != this || Time.time < nextCheck) return;
             nextCheck = Time.time + checkEvery;
+            holds.RemoveWhere(h => h == null);
+            if (holds.Count > 0) return;
             if (bowler == null || LiveLimit.Count(group) <= moreThan || BowlingPumpkin.Alive >= maxAtOnce) return;
             if (Random.value > chance) return;
             TurnOne();

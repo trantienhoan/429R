@@ -12,7 +12,7 @@ namespace Game.EditorTools
     /// numbers on the prefabs; they're absolute, so running it again gives the same result:
     /// - the rare Rainbow Slime: Spider Brain > White anomaly > Anomaly Chance 0.003 (about 1 in 333, was 0.01) on
     ///   Spider_, Cockroach_ and Bee_Smarter; every bug made from them inherits it;
-    /// - Fat_Pumpkin_Enemy: Health 20 (was 5), Toughness 2 (was 1), Giant Health 300;
+    /// - Fat_Pumpkin_Enemy: Health 6 (user 2026-11-11; 20 on 2026-11-10, was 5), Toughness 2 (was 1), Giant Health 150;
     /// - Spider_Boss and Cockroach_Boss: Size > Boss > Speed 1.17 and 1.235 (+30%, was 0.9 and 0.95), set on those
     ///   variants so their Pumpkin Butt variants inherit it;
     /// - pumpkin_boss_Z: Push Power 7.5 and Cyclone Push Power 3.75 (x2.5, was 3 and 1.5), and its Chaos Aura (Chaos_Aura).
@@ -33,9 +33,9 @@ namespace Game.EditorTools
         private static readonly string[] Bugs = { "Spider_Smarter", "Cockroach_Smarter", "Bee_Smarter" };
 
         // Fat Pumpkin: tankier, and a giant has a fixed 300.
-        private const float FatHealth = 20f;
+        private const float FatHealth = 6f;
         private const float FatToughness = 2f;
-        private const float FatGiantHealth = 300f;
+        private const float FatGiantHealth = 150f;
 
         // The white spider and cockroach bosses +30% (their base prefabs' 0.9 and 0.95 x 1.3); the Pumpkin Butt ones
         // are variants of these and must not have their own.

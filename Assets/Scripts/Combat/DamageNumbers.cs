@@ -156,6 +156,17 @@ namespace Game.Combat
         }
 
         /// <summary>
+        /// Shows a number for damage that isn't kept in a Health FSM (e.g. a Fat Pumpkin's own health, user 2026-11-11):
+        /// Big as a big hit, Kill as the killing blow. Nothing while the numbers are switched off.
+        /// </summary>
+        public static void Show(Transform target, float damage, bool big = false, bool kill = false)
+        {
+            if (target == null || damage < 0.25f || !Enabled) return;
+            Ensure();
+            if (instance != null && instance.show) instance.Spawn(target, damage, big, kill);
+        }
+
+        /// <summary>
         /// Watches a Health FSM that's switched off (its health kept by Enemy Hit Damage, e.g. the pumpkin boss's), which
         /// the scan for running FSMs would miss.
         /// </summary>

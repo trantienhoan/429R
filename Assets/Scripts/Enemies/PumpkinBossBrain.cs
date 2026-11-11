@@ -430,11 +430,14 @@ namespace Game.Enemies
                  "(1.2 = 20% taller). Only the pumpkin: the upper body keeps its size.")]
         [Range(0.4f, 1f)] [SerializeField] private float hopSquash = 0.75f;
         [Range(1f, 1.6f)] [SerializeField] private float hopStretch = 1.2f;
-        [Tooltip("Landing on or next to the player (within its pumpkin's radius and this many metres) hurts, once per hop: a " +
-                 "lighter hit than its bounce. This event goes to their PlayerHealth FSM (Damage: like a bug's bite; Pumpkin " +
-                 "Boss Hit would be its slam's)...")]
-        [Min(0f)] [SerializeField] private float hopHitReach = 0.5f;
-        [SerializeField] private string hopHitEvent = "Damage";
+        [Tooltip("Landing on or next to the player (within its pumpkin's radius and this many metres) hurts, once per hop. " +
+                 "This event goes to their PlayerHealth FSM (DamageHeavy: 40-50 before Toughness, what it does this far out; " +
+                 "Pumpkin Boss Hit is its slam's)...")]
+        [Min(0f)] [SerializeField] private float hopHitReach = 2f;
+        [SerializeField] private string hopHitEvent = "DamageHeavy";
+        [Tooltip("...times this much right next to its pumpkin or under it, less the further out, x1 at Hop Hit Reach (user, " +
+                 "2026-11-11: the closer the player, the harder; x2.5 the most: DamageHeavy does 100-125)...")]
+        [Range(1f, 3f)] [SerializeField] private float hopNearShare = 2.5f;
         [Tooltip("...and throws them: x = how high, y = how far, in metres (before Push Power).")]
         [SerializeField] private Vector2 hopLaunch = new(1.2f, 1.0f);
         [Tooltip("Sliding at the player but getting nowhere this many seconds (pushing into a gap too narrow for its pumpkin, " +
@@ -1839,19 +1842,21 @@ namespace Game.Enemies
         // The player is thrown away from From (its middle; the charge throws them on along its way).
         private void HitPlayer(Vector2 launch, bool heavy, Vector3 from) => HitPlayer(heavy ? trueHitEvent : upperHitEvent, launch, from);
 
-        // A blow with this event to the player's PlayerHealth FSM (the hops' is lighter).
-        private void HitPlayer(string healthEvent, Vector2 launch, Vector3 from)
+        // A blow with this event to the player's PlayerHealth FSM, doing Share times its damage (a hop's: more the closer).
+        private void HitPlayer(string healthEvent, Vector2 launch, Vector3 from, float share = 1f)
         {
             var target = player.gameObject;
             target.GetComponents(fsmBuffer);
             // A chaos boss hits harder: the PlayerHealth FSM's damage (Player Toughness ticked) uses this share up.
-            if (IsChaos) PlayerDamageShare.Next(chaosDamage);
+            if (IsChaos) share *= chaosDamage;
+            bool shared = !Mathf.Approximately(share, 1f);
+            if (shared) PlayerDamageShare.Next(share);
             foreach (var fsm in fsmBuffer)
             {
                 if (fsm.FsmName == playerHealthFsm) fsm.SendEvent(healthEvent);
             }
             // Not used up (the player is down or getting up): thrown away, or the next spider bite would hurt more.
-            if (IsChaos) PlayerDamageShare.Take();
+            if (shared) PlayerDamageShare.Take();
             // Push Power throws them further (as high: the same arc, faster); its cyclone has its own.
             float push = act == Act.Cyclone ? cyclonePushPower : pushPower;
             // Its own body (over or against the player as it hits) doesn't cut the throw short (user's play test 2026-11-11:
@@ -2635,7 +2640,7 @@ namespace Game.Enemies
         }
 
         // Down it comes: dust (a little boom and a light shake only near the player), what's under it crushed, and a player
-        // on or next to it hit once (a lighter blow than its bounce).
+        // on or next to it hit once, the harder the closer (Hop Near Share right next to it, x1 at Hop Hit Reach).
         private void HopLands()
         {
             agent.Warp(hopToAt);
@@ -2647,7 +2652,8 @@ namespace Game.Enemies
             if (!hopHit && near <= BodyRadius + hopHitReach && !PlayerFlying())
             {
                 hopHit = true;
-                HitPlayer(hopHitEvent, hopLaunch, transform.position);
+                float outside = hopHitReach > 0f ? Mathf.Clamp01((near - BodyRadius) / hopHitReach) : 0f;
+                HitPlayer(hopHitEvent, hopLaunch, transform.position, Mathf.Lerp(hopNearShare, 1f, outside));
             }
         }
 
