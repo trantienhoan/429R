@@ -13,8 +13,9 @@ namespace Game.Enemies
     /// then waddles after every candy lying on the floor, nearest first, sucks each one in and gets fatter and slower. With
     /// no candy left that it can get to (Angry After), it gets angry: it goes red and fumes a moment, then waddles after
     /// the player and bites (it squashes down, then hops at them with a chomp: a bug's bite and a little shove). A candy
-    /// it can get to calms it down, and it goes back to eating. The player's hits break it (Health 5, user 2026-11-03: one
-    /// good one, weaker ones add up; their blasts too), and it gives back only a few of what it ate (Drop Share).
+    /// it can get to calms it down, and it goes back to eating. The player's hits break it (Health 20 and Toughness 2, user
+    /// 2026-11-10: tankier, was 5 and 1; weaker hits add up; their blasts too), and it gives back only a few of what it ate
+    /// (Drop Share).
     /// Two of them that meet fight (user, 2026-11-04: "make fat pumpkin eat each other, the 1st to bite win and get bonus
     /// stat"): within Duel Range they forget the candy and go for each other, each winds up a bite (a little sooner or
     /// later, by chance) and lunges; the first bite that lands wins: it sucks the other into its mouth and gets Winner
@@ -24,7 +25,9 @@ namespace Game.Enemies
     /// Once it's Danger Height tall (user, 2026-11-05: "when it gets to a certain size, like bigger than the Player, it
     /// will come and start jump on Player to push Player to fall edge") it's a giant for good: it roars, stays red, forgets
     /// the candy and comes for the player; in Stomp Range it squashes down and leaps onto where they stand, and landing on
-    /// them it hurts (Stomp Event) and throws them towards the nearest Fall Edge (away from it if there's none near).
+    /// them it hurts (Stomp Event) and throws them towards the nearest Fall Edge (away from it if there's none near). A
+    /// giant has Giant Health and shrugs hits off (user, 2026-11-10): they hurt, but don't knock it back, stop it or cancel
+    /// its leap.
     /// Goes on the prefab's root, next to its NavMesh Agent. Its look is under Model > Jiggle: an Animator with a controller
     /// found under it replaces the waddle, and gets the Walking bool, the Walk Speed float and the Eat, Hit and Laugh triggers
     /// if its controller has them (Tools > 429 Game > Enemies > Set Up Fat Pumpkin Animation makes all that).
@@ -88,6 +91,12 @@ namespace Game.Enemies
         [Tooltip("...up to this many times its first size.")]
         [Min(1f)]
         [SerializeField] private float mostGrowth = 1.6f;
+        [Tooltip("Every candy it swallows adds health (user, 2026-11-11: \"twice the amount that'd heal the Player, so the more " +
+                 "eating, the more tankier\"): a roll of Candy Heal Roll (the player's candy: 1 to 7) times Candy Heal Times. " +
+                 "No limit. A giant keeps it if it's above Giant Health.")]
+        [SerializeField] private Vector2Int candyHealRoll = new(1, 7);
+        [Min(0f)]
+        [SerializeField] private float candyHealTimes = 2f;
         [Tooltip("Played at every gulp (at most one every Gulp Gap).")]
         [SerializeField] private AudioClip eatSound;
         [Range(0f, 1f)]
@@ -166,6 +175,10 @@ namespace Game.Enemies
         [Tooltip("A giant walks at this share of Walk Speed (not slowed by how fat it is).")]
         [Min(0.1f)]
         [SerializeField] private float giantSpeedShare = 1f;
+        [Tooltip("Turning giant, its health goes up to this (user, 2026-11-10: 300, whatever fights it won before). 0 = " +
+                 "unchanged.")]
+        [Min(0f)]
+        [SerializeField] private float giantHealth = 300f;
         [Tooltip("It leaps at a player this close, in metres (flat), onto where they stand...")]
         [Min(0.5f)]
         [SerializeField] private float stompRange = 4.5f;
@@ -197,18 +210,20 @@ namespace Game.Enemies
 
         [Header("Breaking")]
         [Tooltip("Its health, in the game's whole-number damage (a closed-fist punch does 1, hard 2; a flying jab 1 + the " +
-                 "Fist Size points; weapons and throws their own).")]
+                 "Fist Size points; weapons and throws their own). 20 since 2026-11-10 (user: tankier, was 5).")]
         [Min(1f)]
-        [SerializeField] private float health = 5f;
+        [SerializeField] private float health = 20f;
         [Tooltip("How hits turn into damage (the enemies' shared Hit Settings asset). Empty: the default numbers.")]
         [SerializeField] private HitSettings hitSettings;
-        [Tooltip("Divides the hit power, like an enemy's Toughness.")]
+        [Tooltip("Divides the hit power, like an enemy's Toughness (2 since 2026-11-10, was 1: a punch has to be twice as " +
+                 "fast to hurt).")]
         [Min(0.1f)]
-        [SerializeField] private float toughness = 1f;
+        [SerializeField] private float toughness = 2f;
         [Tooltip("After a hit that hurts, more hits are ignored this long, in seconds, so one swing counts once.")]
         [Min(0f)]
         [SerializeField] private float hitCooldown = 0.2f;
-        [Tooltip("A hit that doesn't break it knocks it back this far, in metres, and it stands stunned this long, in seconds.")]
+        [Tooltip("A hit that doesn't break it knocks it back this far, in metres, and it stands stunned this long, in seconds " +
+                 "(not a giant: it shrugs hits off).")]
         [SerializeField] private Vector2 knock = new(0.8f, 0.5f);
         [Tooltip("Played at a hit that doesn't break it (one at random).")]
         [SerializeField] private AudioClip[] hitSounds = System.Array.Empty<AudioClip>();
@@ -962,6 +977,8 @@ namespace Game.Enemies
         private void BecomeGiant()
         {
             phase = Phase.Giant;
+            // A fixed number, so the fights it won before (Winner Health) don't stack on it.
+            if (giantHealth > 0f) health = Mathf.Max(health, giantHealth);
             stomp = StompStep.Coming;
             nextStomp = Time.time + 1.2f;
             noCandySince = -1f;
@@ -1131,6 +1148,7 @@ namespace Game.Enemies
         private void Gulp()
         {
             Eaten++;
+            health += candyHealTimes * Random.Range(Mathf.Min(candyHealRoll.x, candyHealRoll.y), Mathf.Max(candyHealRoll.x, candyHealRoll.y) + 1);
             if (jiggle != null) jiggle.Hit(GulpWobble);
             if (eatSound != null && speaker != null && Time.time >= nextGulpSound)
             {
@@ -1194,6 +1212,13 @@ namespace Game.Enemies
                 return;
             }
             if (jiggle != null) jiggle.Hit(HitWobble);
+            // A giant shrugs hits off (user, 2026-11-10): they hurt (the wobble and its yelp), but don't knock it back,
+            // stop it or cancel its leap, or fast punches could keep it from ever stomping.
+            if (phase == Phase.Giant)
+            {
+                if (hitSounds.Length > 0 && speaker != null) speaker.PlayOneShot(hitSounds[Random.Range(0, hitSounds.Length)]);
+                return;
+            }
             pausedUntil = Mathf.Max(pausedUntil, Time.time + KnockSeconds + knock.y);
             // A hit stops a bite coming (it has to wind up again once it's over the hit).
             if (phase == Phase.Angry && rage != Rage.Fuming)
@@ -1201,13 +1226,6 @@ namespace Game.Enemies
                 rage = Rage.Chasing;
                 Squash(0f);
                 nextBite = Mathf.Max(nextBite, pausedUntil);
-            }
-            // A giant hit while it squashes down to leap: no leap this time.
-            if (phase == Phase.Giant && stomp == StompStep.WindingUp)
-            {
-                stomp = StompStep.Coming;
-                Squash(0f);
-                nextStomp = Mathf.Max(nextStomp, pausedUntil);
             }
             if (hitSounds.Length > 0 && speaker != null) speaker.PlayOneShot(hitSounds[Random.Range(0, hitSounds.Length)]);
             if (hasHit) animator.SetTrigger(hitTrigger);

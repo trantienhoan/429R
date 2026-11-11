@@ -234,6 +234,74 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.0017
   m_Center: {x: 0, y: 0.0011999999, z: 0}
+--- !u!1 &2354953405022817593
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2676607092143467810}
+  - component: {fileID: 4733456409564840460}
+  - component: {fileID: 576177619737815582}
+  m_Layer: 0
+  m_Name: Butt_Collider
+  m_TagString: Enemy
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2676607092143467810
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2354953405022817593}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.01, y: 0.01, z: 0.01}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 431392634989774144}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!64 &4733456409564840460
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2354953405022817593}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 4300000, guid: 4fc43a05a3ea4814db69293e5639ec6c, type: 2}
+--- !u!114 &576177619737815582
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2354953405022817593}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0375455121df7c746b081127ab0a9f7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.HitZone
+  damageShare: 0.2
 --- !u!1 &2883095337070253155
 GameObject:
   m_ObjectHideFlags: 0
@@ -243,7 +311,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 431392634989774144}
-  - component: {fileID: 3362269117426969774}
   m_Layer: 0
   m_Name: Hips
   m_TagString: Enemy
@@ -267,29 +334,9 @@ Transform:
   - {fileID: 91275751626779395}
   - {fileID: 6747249454652691451}
   - {fileID: 7222592026877578247}
+  - {fileID: 2676607092143467810}
   m_Father: {fileID: 2038205712931802302}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!135 &3362269117426969774
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2883095337070253155}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 0.002
-  m_Center: {x: 0, y: 0.001, z: 0}
 --- !u!1 &2920600599112229501
 GameObject:
   m_ObjectHideFlags: 0
@@ -353,7 +400,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1836036265804912994}
-  - component: {fileID: 7084470810600918616}
   m_Layer: 0
   m_Name: Shin.L
   m_TagString: Enemy
@@ -377,27 +423,6 @@ Transform:
   - {fileID: 6707998955561650824}
   m_Father: {fileID: 91275751626779395}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!135 &7084470810600918616
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3362517891436335621}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 0.0018000001
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &3438147975518317740
 GameObject:
   m_ObjectHideFlags: 0
@@ -703,6 +728,8 @@ SkinnedMeshRenderer:
   m_RendererPriority: 0
   m_Materials:
   - {fileID: 2100000, guid: 9dbdbbbc657c48f41950f0c9163ca920, type: 2}
+  - {fileID: 2100000, guid: 9dbdbbbc657c48f41950f0c9163ca920, type: 2}
+  - {fileID: 2100000, guid: 1a68429af91703d49a3c165bd85d2872, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -7589,10 +7616,8 @@ MonoBehaviour:
   candies:
   - {fileID: 8690403555129543112, guid: cdc38a3b62c4ce74599d6cfed8d6c696, type: 3}
   - {fileID: 8690403555129543112, guid: 69a17a112506bd2499387184d87d5fc2, type: 3}
-  - {fileID: 8690403555129543112, guid: 2fe269950326c7e4ea5270686d9f60f1, type: 3}
   - {fileID: 8690403555129543112, guid: f4484be4d3c9d8c4298c6f277b0e1307, type: 3}
   - {fileID: 8690403555129543112, guid: 095b3a6dbb3314a4aa1260a5b1e49c40, type: 3}
-  - {fileID: 8690403555129543112, guid: 676a3126f33c8de41885ed4c0d0b0878, type: 3}
   - {fileID: 8690403555129543112, guid: ec76c087b6f2f7e449bd46ac0079ccba, type: 3}
   - {fileID: 8690403555129543112, guid: 423da62656a4eb74a94fb73d5dce640f, type: 3}
   radius: 3
@@ -7600,8 +7625,13 @@ MonoBehaviour:
   mouth: {fileID: 0}
   mouthHeight: 0.35
   eatDistance: 0.25
+  stuckEatSeconds: 3
+  stuckEatDistance: 0.6
   healthFsm: Health
   healthVariable: health
+  healLikePlayer: 1
+  healRoll: {x: 1, y: 7}
+  aboveShare: 0.5
   healthPerCandy: 1
   capAtStartHealth: 0
   eatSound: {fileID: 8300000, guid: 47de85b970c9670489f43c6f01903dda, type: 3}
@@ -7621,6 +7651,7 @@ MonoBehaviour:
   settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
   toughness: 1.5
   hitCooldown: 0.3
+  everyHitCounts: 0
   knockBack: 0
   knockBackDistance: 2
   knockBackTime: 0.45
@@ -7661,6 +7692,13 @@ MonoBehaviour:
   healthFsm: Health
   healthVariable: health
   trueFormBelow: 0.4
+  chaosChance: 0.33
+  chaosHealth: 1.5
+  chaosDamage: 1.3
+  chaosExp: 2
+  chaosAura: {fileID: 7477810676398532062, guid: ca52c50c82102644f9036d162775e98b,
+    type: 3}
+  chaosAuraWidth: 1.15
   revealHits: 3
   wakeUpSeconds: 33
   buried:
@@ -7668,16 +7706,25 @@ MonoBehaviour:
   - 1.41
   - 1.22
   - 1.06
-  headScale: 1.7
-  upperScale: 1.7
-  trueScale: 2.1
+  headScale: 1.87
+  upperScale: 1.87
+  trueScale: 2.31
   trueSpeed: 5
   upperSpeed: 0.6
   dizzyAfterDamage: 0.06
   dizzyFadePerSecond: 0.0029
   dizzySeconds: 3
-  dizzyCooldown: 20
   dizzyStars: {x: 1, y: 0.5}
+  stunGuardSeconds: 17
+  stunRepeatWindow: 45
+  stunRepeatShare: 0.6
+  stunShortest: 1.5
+  staggerSeconds: 0.5
+  spamHits: 4
+  spamSeconds: 2
+  spamSlamChance: 0.5
+  spamCooldown: 6
+  spamMergeSeconds: 0.15
   upperHitEvent: PumpkinBossHit
   trueHitEvent: PumpkinBossHitHeavy
   playerHealthFsm: PlayerHealth
@@ -7685,8 +7732,8 @@ MonoBehaviour:
   punchLaunch: {x: 1, y: 3}
   jumpSlamLaunch: {x: 3.6, y: 3}
   cycloneLaunch: {x: 4.5, y: 7}
-  pushPower: 3
-  cyclonePushPower: 1.5
+  pushPower: 7.5
+  cyclonePushPower: 3.75
   minPushShare: 0.6
   cycloneSeconds: 3
   cycloneCooldown: 8
@@ -7696,6 +7743,8 @@ MonoBehaviour:
   throwCombo: {x: 1, y: 5}
   bugsPerThrownPumpkin: 1
   throwGap: 0.3
+  throwLead: 0.85
+  throwLeadMost: 4
   leftThrowState: throw_L
   punchesBeforeThrow: 2
   missesBeforeBodySlam: 2
@@ -7706,6 +7755,80 @@ MonoBehaviour:
   bodySlamCooldown: 3
   punchesBeforeBodySlam: 2
   bodySlamRange: 4.5
+  slideOnPumpkin: 1
+  slideMoveState: slide_pose
+  slideStandState: idle_true
+  slideBlend: 0.25
+  slideAcceleration: 4
+  slideTurnSpeed: 200
+  slideLeanForward: 5
+  slideLeanTurn: 6
+  slideLeanMost: 12
+  slideLeanSmooth: 0.15
+  slideWobble: 1.2
+  slideDustEvery: 0.35
+  slideDustSize: 0.6
+  slideGrind: {fileID: 8300000, guid: abd37bb9b11220447b30377203be3076, type: 3}
+  slideGrindVolume: 0.45
+  slideGrindPitch: {x: 0.85, y: 1.25}
+  slideGrindTail: 0.3
+  pumpkinRadius: 0.78
+  sinkForUpperMoves: 1
+  holdHipsStill: 1
+  hipsBone: Hips
+  waistBone: Waist
+  hipsRestSet: 1
+  hipsRestPosition: {x: 0, y: 0.868, z: 0}
+  hipsRestRotation: {x: 0, y: 0, z: 0, w: 1}
+  bounceState: attack
+  bounceClipFrom: 0.28
+  bounceHeight: 1.1
+  bounceSquash: 0.3
+  bounceStretch: 0.2
+  chargeChance: 0.5
+  chargeCooldown: 7
+  chargeRange: 6
+  chargeWindUp: 0.9
+  chargeSpeed: 9
+  chargePastPlayer: 1.6
+  chargeMaxDistance: 20
+  chargeMaxSeconds: 2.6
+  chargeBrake: 8
+  chargeSkid: 18
+  chargeRecovery: 1
+  chargeRecoverState: being_hit
+  chargeHitRadius: 0.55
+  chargeLaunch: {x: 3.2, y: 3.4}
+  chargeHitsHeavy: 1
+  chargeCrouch: 8
+  bonkOnProps: 1
+  bonkMinSpeed: 3
+  bonkDizzySeconds: 2.5
+  buttCollider: {fileID: 4733456409564840460}
+  buttMaterialSlot: 1
+  buttCrackMaterial: {fileID: 2100000, guid: 1a68429af91703d49a3c165bd85d2872, type: 2}
+  buttBreakShare: 0.2
+  breakDizzySeconds: 5
+  hopFrom: 5.2
+  hopLength: 2.3
+  hopHeight: 0.75
+  hopCrouch: 0.18
+  hopAir: 0.6
+  hopRest: 0.22
+  hopSquash: 0.75
+  hopStretch: 1.2
+  hopHitReach: 0.5
+  hopHitEvent: Damage
+  hopLaunch: {x: 1.2, y: 1}
+  stuckHopAfter: 0.5
+  crushOnPath: 1
+  crushMinSpeed: 1
+  crushReach: 0.25
+  crushOwnDrops: 0
+  crushKeepNames:
+  - Seed
+  - Coin
+  - Chest
   bugs:
   - {fileID: 9003613759866821804, guid: e99e0ff83f2a2134db4a1ec3a6357312, type: 3}
   - {fileID: 8879391879696220359, guid: 05da503bb47783844a68712d2fd9719c, type: 3}
@@ -7760,17 +7883,9 @@ MonoBehaviour:
     offset: {x: -0.00003, y: 0.00243, z: 0.00007}
     size: 0.19
     at: 0.5
-  - bone: Shin.L
-    offset: {x: 0, y: -0.00021, z: 0.00003}
-    size: 0.18
-    at: 0.58
-  - bone: Shin.R
-    offset: {x: -0.00002, y: -0.00011, z: -0.00002}
-    size: 0.18
-    at: 0.58
   - bone: Hips
-    offset: {x: 0, y: 0.00273, z: -0.00003}
-    size: 0.28
+    offset: {x: -0.000123, y: -0.004029, z: -0.000068}
+    size: 1.563
     at: 0.66
   shardSpeed: 7
   deathTremble: 0.05
@@ -7865,12 +7980,8 @@ MonoBehaviour:
     centre: {x: -0.00001, y: 0.00005, z: -0.00009}
   - bone: Waist
     centre: {x: -0.00003, y: 0.00243, z: 0.00007}
-  - bone: Shin.L
-    centre: {x: 0, y: -0.00021, z: 0.00003}
-  - bone: Shin.R
-    centre: {x: -0.00002, y: -0.00011, z: -0.00002}
   - bone: Hips
-    centre: {x: 0, y: 0.00273, z: -0.00003}
+    centre: {x: -0.000123, y: -0.004029, z: -0.000068}
   minSpeed: 1.5
   fullSpeed: 6
   squash: 0.3
@@ -8203,8 +8314,8 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.0015
-  m_Center: {x: 0, y: 0.0011999999, z: 0}
+  m_Radius: 0.0030531602
+  m_Center: {x: -0.000036643145, y: 0.0005871328, z: -0.0000713253}
 --- !u!1 &8092004496468704944
 GameObject:
   m_ObjectHideFlags: 0
@@ -8397,7 +8508,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 737080675634304045}
-  - component: {fileID: 3274762282976004988}
   m_Layer: 0
   m_Name: Shin.R
   m_TagString: Enemy
@@ -8421,24 +8531,3 @@ Transform:
   - {fileID: 4686181704963199304}
   m_Father: {fileID: 6747249454652691451}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!135 &3274762282976004988
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8879832619108536854}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 0.0018000001
-  m_Center: {x: 0, y: 0, z: 0}

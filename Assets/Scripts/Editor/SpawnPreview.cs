@@ -39,6 +39,16 @@ namespace Game.EditorTools
         private static readonly List<Spawner> spawners = new();
         private static readonly Dictionary<GameObject, Part[]> looks = new();
         private static double nextRefresh;
+        // Just after a script reload or leaving play mode, PlayMaker hasn't set its FSMs up again yet, and reading a start
+        // state's actions then makes PlayMaker log thousands of 'Fsm not initialized' / 'Error Loading Action' errors
+        // (play test 2026-11-10). Until then, FSMs whose actions aren't loaded yet are left for a later look.
+        private const double SettleSeconds = 5.0;
+        private static double settledAt;
+        // On opening the Editor the Scene view draws long before PlayMaker has given each state its FSM (re-test
+        // 2026-11-11: 4,526 errors on start-up, well after Settle Seconds). Such a state is left for a look a moment later.
+        private const double NotReadyRetrySeconds = 1.0;
+        private static readonly System.Reflection.FieldInfo StateOwner = typeof(HutongGames.PlayMaker.FsmState).GetField("fsm",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
         private static bool On
         {
@@ -56,6 +66,16 @@ namespace Game.EditorTools
             // A prefab changed (e.g. a prop's model or size): its look is read again.
             EditorApplication.projectChanged += Forget;
             AssemblyReloadEvents.beforeAssemblyReload += () => looks.Clear();
+            settledAt = EditorApplication.timeSinceStartup + SettleSeconds;
+            EditorApplication.playModeStateChanged += state =>
+            {
+                // Leaving play mode reloads the scene well before Entered Edit Mode (9 s in the re-test 2026-11-11), and
+                // the Scene view repaints in between: it waits the whole time, then Settle Seconds more.
+                if (state == PlayModeStateChange.ExitingPlayMode) settledAt = double.MaxValue;
+                if (state != PlayModeStateChange.EnteredEditMode) return;
+                settledAt = EditorApplication.timeSinceStartup + SettleSeconds;
+                spawners.Clear();
+            };
         }
 
         [MenuItem(MenuPath, priority = 2000)]
@@ -132,16 +152,32 @@ namespace Game.EditorTools
             return at;
         }
 
+        // Whether PlayMaker has given this state its FSM yet (reading its actions before that logs errors). Without the
+        // field (a PlayMaker update renamed it) it's taken as ready, as before.
+        private static bool HasOwner(HutongGames.PlayMaker.FsmState state) => StateOwner == null || StateOwner.GetValue(state) != null;
+
         // Every FSM in the open stage (the scene, or the prefab in Prefab Mode) whose start state makes a prefab.
         private static void Refresh()
         {
             nextRefresh = EditorApplication.timeSinceStartup + RefreshSeconds;
             spawners.Clear();
+            bool settling = EditorApplication.timeSinceStartup < settledAt;
             foreach (var fsm in StageUtility.GetCurrentStageHandle().FindComponentsOfType<PlayMakerFSM>())
             {
                 if (fsm == null || fsm.Fsm == null) continue;
                 var start = fsm.Fsm.GetState(fsm.Fsm.StartState);
                 if (start == null) continue;
+                if (settling && !start.ActionsLoaded && !fsm.Fsm.Initialized)
+                {
+                    // Looked at again once things have settled.
+                    nextRefresh = System.Math.Min(nextRefresh, settledAt);
+                    continue;
+                }
+                if (!start.ActionsLoaded && !HasOwner(start))
+                {
+                    nextRefresh = System.Math.Min(nextRefresh, EditorApplication.timeSinceStartup + NotReadyRetrySeconds);
+                    continue;
+                }
                 HutongGames.PlayMaker.FsmStateAction[] actions;
                 try { actions = start.Actions; }
                 catch { continue; }

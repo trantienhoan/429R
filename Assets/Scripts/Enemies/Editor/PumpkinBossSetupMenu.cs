@@ -48,14 +48,15 @@ namespace Game.EditorTools
         };
         private static readonly HashSet<string> Looping = new() { "laugh", "move", "run", "idle_true", "being_hit", "dizzy_true" };
         // Hit spheres on the bones: radius and how far along the bone the middle is, in metres of the model.
-        // The arms and shins too (2026-10-29, so a punch there lands and jiggles that part: Part Jiggle), sized from
-        // their pumpkins in the mesh.
+        // The arms too (2026-10-29, so a punch there lands and jiggles that part: Part Jiggle), sized from their pumpkins
+        // in the mesh. No hips or shins since the remodel (2026-11-11): the legs are gone and the giant pumpkin butt gets
+        // a collider made from the mesh (Pumpkin Boss Slide Setup, run at the end of the set-up).
         private static readonly (string bone, float radius, float along)[] Spheres =
         {
-            ("Head", 0.24f, 0.20f), ("Chest", 0.22f, 0.0f), ("Waist", 0.15f, 0.12f), ("Hips", 0.20f, 0.10f),
+            ("Head", 0.24f, 0.20f), ("Chest", 0.22f, 0.0f), ("Waist", 0.15f, 0.12f),
             ("Hand.L", 0.17f, 0.12f), ("Hand.R", 0.17f, 0.12f),
             ("UpperArm.L", 0.19f, 0.08f), ("UpperArm.R", 0.19f, 0.05f), ("LowerArm.L", 0.13f, 0.10f),
-            ("LowerArm.R", 0.13f, 0.02f), ("Shin.L", 0.18f, 0f), ("Shin.R", 0.18f, 0f),
+            ("LowerArm.R", 0.13f, 0.02f),
         };
         // Model units to the bones' own units (the FBX keeps centimetres under an armature scaled 100).
         private const float BoneUnit = 0.01f;
@@ -253,6 +254,10 @@ namespace Game.EditorTools
                 SetArray(so.FindProperty("deathScreams"), new[] { "boss_scream_1", "boss_scream_2" }
                     .Select(n => (Object)AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + n + ".wav")).ToArray());
                 so.ApplyModifiedPropertiesWithoutUndo();
+                // The remodel's set-up on top (sizes, the pumpkin butt's collider, hips, death burst, cracks, grinding).
+                var slideNotes = new List<string>();
+                PumpkinBossSlideMenu.Apply(root, slideNotes);
+                notes.Add("slide set-up: " + string.Join("; ", slideNotes));
 
                 PrefabUtility.SaveAsPrefabAsset(root, BossPath);
                 notes.Add("pumpkin_boss_Z rebuilt with the new model and Pumpkin Boss Brain");

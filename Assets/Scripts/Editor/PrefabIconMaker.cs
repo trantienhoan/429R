@@ -38,12 +38,15 @@ namespace Game.EditorTools
             EditorApplication.update += Tick;
         }
 
-        /// <summary>Draws the icon now and gives it to the item. False if the prefab has nothing to draw.</summary>
-        public static bool MakeNow(GameObject prefab, ItemDefinition item)
+        /// <summary>
+        /// Draws the icon now and gives it to the item. False if the prefab has nothing to draw. Yaw turns the prefab
+        /// round its up axis first (degrees), for one whose face points away from the icon camera (e.g. an eyeball candy).
+        /// </summary>
+        public static bool MakeNow(GameObject prefab, ItemDefinition item, float yaw = 0f)
         {
             if (prefab == null || item == null) return false;
 
-            var icon = Render(prefab);
+            var icon = Render(prefab, yaw);
             if (icon == null) return false;
 
             SaveIcon(icon, item);
@@ -52,11 +55,11 @@ namespace Game.EditorTools
         }
 
         /// <summary>Draws the prefab's icon and saves it as a sprite at 'path' (e.g. a recipe picture). Null if it has
-        /// nothing to draw.</summary>
-        public static Sprite MakeSprite(GameObject prefab, string path)
+        /// nothing to draw. Yaw turns it first, as in Make Now.</summary>
+        public static Sprite MakeSprite(GameObject prefab, string path, float yaw = 0f)
         {
             if (prefab == null) return null;
-            var icon = Render(prefab);
+            var icon = Render(prefab, yaw);
             if (icon == null) return null;
             SetupUtility.EnsureFolder(Path.GetDirectoryName(path).Replace('\\', '/'));
             File.WriteAllBytes(path, icon.EncodeToPNG());
@@ -103,7 +106,8 @@ namespace Game.EditorTools
         }
 
         // The prefab alone in a preview scene (the open scene isn't touched), lit by two lights, framed to fill the icon.
-        private static Texture2D Render(GameObject prefab)
+        // Yaw: degrees it is turned round the world up axis first.
+        private static Texture2D Render(GameObject prefab, float yaw = 0f)
         {
             var scene = EditorSceneManager.NewPreviewScene();
             var cameraObject = EditorUtility.CreateGameObjectWithHideFlags("Icon Camera", HideFlags.HideAndDontSave);
@@ -111,7 +115,7 @@ namespace Game.EditorTools
             try
             {
                 var copy = (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene);
-                copy.transform.SetPositionAndRotation(Vector3.zero, prefab.transform.rotation);
+                copy.transform.SetPositionAndRotation(Vector3.zero, Quaternion.Euler(0f, yaw, 0f) * prefab.transform.rotation);
 
                 // Only solid meshes: no particles, trails, lines or world-space menus.
                 bool hasBounds = false;
@@ -211,7 +215,8 @@ namespace Game.EditorTools
             serialized.FindProperty("icon").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(path);
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(item);
-            AssetDatabase.SaveAssets();
+            // Only the item: saving every changed asset would also write things the user is editing (review, 2026-11-10).
+            AssetDatabase.SaveAssetIfDirty(item);
         }
 
         // Preview textures aren't always readable, so copy them through a render texture first.

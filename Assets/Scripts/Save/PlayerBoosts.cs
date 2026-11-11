@@ -23,9 +23,11 @@ namespace Game.Saving
 
         /// <summary>
         /// Raised when SetHealth sets the player's health (e.g. Get a Rest's health given back): not a hit, so the Hurt
-        /// Slow doesn't slow the player for it.
+        /// Slow doesn't slow the player for it. Gives the change (new health minus the health just before), so a listener
+        /// moves its last-seen health by just that much: a real hit earlier in the same frame still shows as a hit (play
+        /// test 2026-11-10: a poison tick right after a hit hid the hit's red lines and slow).
         /// </summary>
-        public static event Action HealthSet;
+        public static event Action<float> HealthSet;
 
         /// <summary>How much Boss Seeds have raised the health cap in total (saved).</summary>
         public static float HealthCapBonus { get; private set; }
@@ -90,8 +92,9 @@ namespace Game.Saving
         public static bool SetHealth(float value)
         {
             if (!Find(out var health, out _)) return false;
+            float before = health.Value;
             health.Value = value;
-            HealthSet?.Invoke();
+            HealthSet?.Invoke(value - before);
             return true;
         }
 

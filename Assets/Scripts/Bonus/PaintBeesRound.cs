@@ -24,7 +24,8 @@ namespace Game.Bonus
     ///   a beat far in front, a few at a time and more often as it goes, reach the face's front on a beat, hover there
     ///   (the warning) and dive on a beat, at the face on the next; they throb to every beat. They stop coming at Last
     ///   Bee At seconds into the song, and it fades out once the last one is done;
-    /// - a swat with the hand of its colour bursts it into paint: Candies Per Bee candies and Exp Per Bee EXP (the
+    /// - a swat with the hand of its colour bursts it into paint: Candies Per Bee candies (its colour's kind, Colour
+    ///   Candies) and Exp Per Bee EXP (the
     ///   rainbow bee: any painted hand, Rainbow Candies and Rainbow Exp); a swat on a beat (within On Beat Window) gives
     ///   On Beat Candies and On Beat Exp more and a gold flash, no words; the wrong colour (or a clean hand) knocks it back with a boing
     ///   and it comes again; one that reaches the face stings (Sting Share of a bite: about 1 health), splats its
@@ -187,6 +188,11 @@ namespace Game.Bonus
         [Header("Rewards")]
         [Tooltip("One of these, picked at random, per candy.")]
         [SerializeField] private GameObject[] candies = System.Array.Empty<GameObject>();
+        [Tooltip("Each paint colour's own candy, in the order of Colours (user, 2026-11-10: a slime drops candy of its " +
+                 "colour; red Candy_8, blue Candy_1, yellow Candy_5): a bee of that colour gives only that kind, its " +
+                 "on-beat extras too. Empty (or an empty slot): one of Candies at random. The rainbow bee and the perfect " +
+                 "round stay random.")]
+        [SerializeField] private GameObject[] colourCandies = System.Array.Empty<GameObject>();
         [Min(0)]
         [SerializeField] private int candiesPerBee = 1;
         [Min(0)]
@@ -1040,7 +1046,7 @@ namespace Game.Bonus
                 popSplash.Emit(emit, 1);
             }
             PlayAt(Pick(popSounds), at, Random.Range(1.15f, 1.4f), popVolume);
-            StartCoroutine(CandiesLater(at + Vector3.down * 0.12f, candiesOut, candiesAfter));
+            StartCoroutine(CandiesLater(at + Vector3.down * 0.12f, candiesOut, candiesAfter, colour));
             if (Head != null && (Head.position - at).magnitude <= fleckReach && Random.value < fleckChance)
                 StartCoroutine(Splat(rainbow ? Color.white : ColourOf(colour), rainbow, true));
         }
@@ -1122,16 +1128,19 @@ namespace Game.Bonus
             foreach (var (blob, _, _, _) in made) if (blob != null) Destroy(blob.gameObject);
         }
 
-        // Candies popping out of where a bee burst, one by one (they break if they start inside each other).
-        private IEnumerator Candies(Vector3 at, int amount)
+        // Candies popping out of where a bee burst, one by one (they break if they start inside each other); all of the
+        // paint colour's own candy when it has one (Colour: index into Colours; -1, the rainbow bee or the perfect round:
+        // random ones).
+        private IEnumerator Candies(Vector3 at, int amount, int colour = -1)
         {
             if (candies.Length == 0 || amount <= 0) yield break;
+            var own = colourCandies != null && colour >= 0 && colour < colourCandies.Length ? colourCandies[colour] : null;
             fountains++;
             try
             {
                 for (int i = 0; i < amount; i++)
                 {
-                    var prefab = candies[Random.Range(0, candies.Length)];
+                    var prefab = own != null ? own : candies[Random.Range(0, candies.Length)];
                     if (prefab == null) continue;
                     // A spot with nothing in it (two bees burst together, or a bonus candy, put candies inside each
                     // other: they broke at once, and their smoke clouded the view).
@@ -1201,13 +1210,13 @@ namespace Game.Bonus
         }
 
         // Candies a moment after the splash (counted as on their way from now, so the round waits for them).
-        private IEnumerator CandiesLater(Vector3 at, int amount, float wait)
+        private IEnumerator CandiesLater(Vector3 at, int amount, float wait, int colour = -1)
         {
             if (amount <= 0) yield break;
             fountains++;
             try { if (wait > 0f) yield return new WaitForSeconds(wait); }
             finally { fountains--; }
-            yield return Candies(at, amount);
+            yield return Candies(at, amount, colour);
         }
 
         // Gold star sparks off a swat on the beat.

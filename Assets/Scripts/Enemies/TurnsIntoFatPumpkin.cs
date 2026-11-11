@@ -82,7 +82,8 @@ namespace Game.Enemies
         private static void CheckAll()
         {
             CandyHelmet.FindLoose(loose);
-            bool none = BonusRound.Running != null || loose.Count == 0;
+            // Never during a bonus round or any special stage (Paint Bees and Daruma don't set BonusRound.Running).
+            bool none = BonusRound.Running != null || Game.Leveling.PlayerLevel.InSpecialStage || loose.Count == 0;
             TurnsIntoFatPumpkin ready = null;
             float now = Time.time;
             foreach (var one in all)

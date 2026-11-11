@@ -32,7 +32,7 @@ namespace Game.Inventory.Editor
 
             string mouth = AddMouth();
             int candies = 0;
-            for (int i = 1; i <= 8; i++)
+            foreach (int i in Game.Inventory.CandyKinds.Numbers)
             {
                 if (FixCandy(CandyFolder + "Candy_" + i + ".prefab")) candies++;
             }

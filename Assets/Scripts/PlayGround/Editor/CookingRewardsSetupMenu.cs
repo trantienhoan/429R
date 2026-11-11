@@ -46,7 +46,7 @@ namespace Game.EditorTools
             var sound = AssetDatabase.LoadAssetAtPath<AudioClip>(Sound);
             var small = AssetDatabase.LoadAssetAtPath<GameObject>(SmallFirework);
             var big = AssetDatabase.LoadAssetAtPath<GameObject>(BigFirework);
-            var candies = Enumerable.Range(1, 8)
+            var candies = Game.Inventory.CandyKinds.Numbers
                 .Select(i => AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/Prefabs/Items/Breakable/Candy_{i}.prefab"))
                 .Where(c => c != null).ToArray();
 

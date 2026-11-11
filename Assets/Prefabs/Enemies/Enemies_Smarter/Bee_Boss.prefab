@@ -86,7 +86,28 @@ PrefabInstance:
         type: 3}
     - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
         type: 3}
+      propertyPath: webBall
+      value: 
+      objectReference: {fileID: 1537666069373900684, guid: 42a7f341b92320048973a221bdde60da,
+        type: 3}
+    - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
+        type: 3}
       propertyPath: bossRush
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
+        type: 3}
+      propertyPath: webSound
+      value: 
+      objectReference: {fileID: 8300000, guid: b019b2d89c3814a4d97fc7001ac02603, type: 3}
+    - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
+        type: 3}
+      propertyPath: webSpeed
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
+        type: 3}
+      propertyPath: boss.webs
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
@@ -96,13 +117,33 @@ PrefabInstance:
       objectReference: {fileID: 8300000, guid: 8fc35f48eb86fe34e8411aebe014e102, type: 3}
     - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
         type: 3}
+      propertyPath: staysHigh
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
+        type: 3}
       propertyPath: highWait.x
-      value: 0.8
+      value: 12
       objectReference: {fileID: 0}
     - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
         type: 3}
       propertyPath: highWait.y
-      value: 1.6
+      value: 18
+      objectReference: {fileID: 0}
+    - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
+        type: 3}
+      propertyPath: webRange.x
+      value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
+        type: 3}
+      propertyPath: webRange.y
+      value: 14
+      objectReference: {fileID: 0}
+    - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
+        type: 3}
+      propertyPath: circleSpeed
+      value: 45
       objectReference: {fileID: 0}
     - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
         type: 3}
@@ -116,10 +157,25 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
         type: 3}
+      propertyPath: webDuration
+      value: 0.9
+      objectReference: {fileID: 0}
+    - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
+        type: 3}
+      propertyPath: webHoldBone
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
+        type: 3}
       propertyPath: minionEffect
       value: 
       objectReference: {fileID: 431296081563789977, guid: 7d85674d137626445accce4cef7fe159,
         type: 3}
+    - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
+        type: 3}
+      propertyPath: webAnimation
+      value: attack
+      objectReference: {fileID: 0}
     - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
         type: 3}
       propertyPath: boss.health.x
@@ -129,6 +185,41 @@ PrefabInstance:
         type: 3}
       propertyPath: boss.health.y
       value: 80
+      objectReference: {fileID: 0}
+    - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
+        type: 3}
+      propertyPath: webCooldown.x
+      value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
+        type: 3}
+      propertyPath: webCooldown.y
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
+        type: 3}
+      propertyPath: circleDistance
+      value: 3.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
+        type: 3}
+      propertyPath: cruiseHeight.x
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
+        type: 3}
+      propertyPath: cruiseHeight.y
+      value: 3.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
+        type: 3}
+      propertyPath: maxWebShooters
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
+        type: 3}
+      propertyPath: webReleaseTime
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
         type: 3}
@@ -144,6 +235,11 @@ PrefabInstance:
         type: 3}
       propertyPath: stunGuardSeconds
       value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
+        type: 3}
+      propertyPath: groundBelowHealth
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
         type: 3}
@@ -179,6 +275,16 @@ PrefabInstance:
         type: 3}
       propertyPath: setOnDeath.Array.data[0].boolName
       value: BeeBoss
+      objectReference: {fileID: 0}
+    - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
+        type: 3}
+      propertyPath: attacks.Array.data[0].poisonSeconds
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
+        type: 3}
+      propertyPath: attacks.Array.data[0].poisonPerSecond
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 1902382962154646887, guid: 1cc89289591e2854da50a70d2bb3f91e,
         type: 3}

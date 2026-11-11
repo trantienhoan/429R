@@ -17,6 +17,9 @@ namespace Game.Combat
     /// switches off the enemy's old "Damage" FSM so hits aren't counted twice. Where a hit of the player's hurts an enemy,
     /// a small pop shows (set in the Hit Settings asset; a big hit gets the bigger one). Blasts come in through Take
     /// Blast by the same rule (Toughness counts), with more push than damage.
+    /// A part of it with a Hit Zone (on that collider) loses only its Damage Share of a hit's damage from the health
+    /// (whole numbers: the fractions add up from hit to hit); Part Hit tells the part and the full hit first, e.g. the
+    /// pumpkin boss's pumpkin butt takes a fifth but cracks by the full hits (user, 2026-11-11).
     /// Once the health runs out, however it happened, more hits are ignored and the enemy's NavMesh agent is held
     /// still: the death states switch off the FSM that walks the enemy, but not the agent, which would carry the body
     /// on along its last path.
@@ -137,6 +140,10 @@ namespace Game.Combat
         private float stunPointRing;
         private float stunPointLift;
         private float settledAt;
+        // Its colliders, when some part has a Hit Zone (blasts and knock-outs find the part nearest them); and what the Hit
+        // Zones' shares left over (a fifth of a 1 is no whole point yet: the fractions add up).
+        private Collider[] zoneParts;
+        private float zoneCarry;
         // Furniture the player can pick up (chairs, boxes).
         private XRGrabInteractable grab;
 
@@ -157,6 +164,18 @@ namespace Game.Combat
         public static event Action<EnemyHitDamage> WeakHit;
         /// <summary>An enemy's health has run out (once each), however that happened.</summary>
         public static event Action<EnemyHitDamage> Died;
+
+        /// <summary>
+        /// Raised for every hit that would hurt an enemy, before its part's Hit Zone share is taken off: the enemy, the
+        /// part (the collider the hit landed on; for a blast the one nearest its middle, for a knock-out the one nearest
+        /// where it landed, those two only on an enemy with a Hit Zone; else null) and the hit at its FULL damage. The
+        /// health then goes down by the part's share (Any Hit tells that, when it's a whole point or more). Last Hit By
+        /// Player is already set. E.g. the pumpkin boss cracks its pumpkin butt by the full hits on it (user, 2026-11-11).
+        /// </summary>
+        public static event Action<EnemyHitDamage, Collider, HitResult> PartHit;
+
+        /// <summary>The part the last hit landed on (one of its colliders, see Part Hit), or null.</summary>
+        public Collider LastHitCollider { get; private set; }
 
         /// <summary>The most recent hit on this enemy, whether it hurt or not.</summary>
         public HitResult LastHit { get; private set; }
@@ -205,6 +224,13 @@ namespace Game.Combat
         /// </summary>
         [NonSerialized] public float damageTaken = 1f;
 
+        /// <summary>
+        /// Whether the last hit that hurt it (or tried to) was the player's: a fist, a thing they hold or just threw, a
+        /// shot, their blast or knock-out. False for knocks they didn't make (a bug's or a box's blast, a prop tumbling
+        /// into it). Read it in Any Hit, e.g. a kamikaze bee swatted out of its dive dies for the player's EXP only then.
+        /// </summary>
+        public bool LastHitByPlayer { get; private set; }
+
         /// <summary>Its Toughness (set while the game runs, e.g. for the white bug; not saved).</summary>
         public float Toughness
         {
@@ -231,6 +257,7 @@ namespace Game.Combat
             AnyHit = null;
             WeakHit = null;
             Died = null;
+            PartHit = null;
         }
 
         // Its Spider Brain, if it has one: with a Stun Guard the brain decides whether a knock-back may stop it. In
@@ -274,6 +301,8 @@ namespace Game.Combat
             else if (!healthOwner.enabled) DamageNumbers.Watch(healthOwner, health);
 
             TryGetComponent(out agent);
+            // Parts that take only a share of hits (Hit Zone): blasts and knock-outs look for the part nearest them.
+            if (GetComponentsInChildren<HitZone>(true).Length > 0) zoneParts = GetComponentsInChildren<Collider>(true);
             // The hit pops are made ready once, by the first enemy, so the first hit doesn't stutter.
             if (!furniture && !hideHitEffect) Settings.WarmEffects();
         }
@@ -301,6 +330,10 @@ namespace Game.Combat
             bool stray = false;
             // The player's hit: a fist, a thing they hold or just threw, or a shot.
             bool byPlayer = HeldThings.ByPlayer(collision);
+            LastHitByPlayer = byPlayer;
+            // The part it landed on (one of its colliders: the enemy's Rigidbody gets all their collisions).
+            var part = collision.contactCount > 0 ? collision.GetContact(0).thisCollider : null;
+            LastHitCollider = part;
             // Furniture takes its knocks from the player: a fist, or a thing they hold or just threw. Tumbling over,
             // landing, or a thing lying around falling or sliding into it hurts it only a little, and a chair the player
             // swings or throws wears down slowly.
@@ -344,6 +377,20 @@ namespace Game.Combat
                 return;
             }
 
+            // A part that takes only a share (Hit Zone): Part Hit gets the full hit, the health loses the share. Under a
+            // whole point so far, it landed but took nothing off yet: it waits out its cooldown like any hit and counts as a
+            // light knock (no pop, no number).
+            hit = Zoned(hit, part);
+            LastHit = hit;
+            if (hit.Damage <= 0f)
+            {
+                if (everyHitCounts) WaitOut(hitter);
+                else nextHit = Time.time + hitCooldown;
+                Send(weakHitEvent);
+                WeakHit?.Invoke(this);
+                return;
+            }
+
             bool wasAlive = health.Value > 0f;
             health.Value -= hit.Damage;
             LastHurtAt = Time.time;
@@ -378,6 +425,38 @@ namespace Game.Combat
             AnyHit?.Invoke(this, hit);
         }
 
+        // A hit that hurts, on this part: Part Hit hears the full hit, then the part's Hit Zone share of its damage is what
+        // the health loses. Whole numbers: the fraction left over is kept for the next hit on a zone (five punches of 1 on a
+        // fifth zone take 1 off). No Hit Zone: the hit as it is.
+        private HitResult Zoned(HitResult hit, Collider part)
+        {
+            if (hit.Damage <= 0f) return hit;
+            PartHit?.Invoke(this, part, hit);
+            float share = HitZone.ShareOf(part);
+            if (share >= 1f) return hit;
+            zoneCarry += hit.Damage * share;
+            float dealt = Mathf.Floor(zoneCarry + 0.0001f);
+            zoneCarry = Mathf.Max(0f, zoneCarry - dealt);
+            return new HitResult(hit.Power, dealt, hit.IsBig && dealt > 0f);
+        }
+
+        // The part nearest a point (a blast's middle, where a knock-out landed), on an enemy with a Hit Zone; else null.
+        private Collider NearestPart(Vector3 point)
+        {
+            if (zoneParts == null) return null;
+            Collider best = null;
+            float bestSqr = float.MaxValue;
+            foreach (var part in zoneParts)
+            {
+                if (part == null || !part.enabled || part.isTrigger || !part.gameObject.activeInHierarchy) continue;
+                // (Closest Point needs a convex shape.)
+                if (part is MeshCollider mesh && !mesh.convex) continue;
+                float sqr = (part.ClosestPoint(point) - point).sqrMagnitude;
+                if (sqr < bestSqr) { bestSqr = sqr; best = part; }
+            }
+            return best;
+        }
+
         private float NextHitBy(UnityEngine.Object hitter) => hitter != null && nextHitBy.TryGetValue(hitter, out float at) ? at : 0f;
 
         // This hitter may hurt it again after Hit Cooldown; the ones long done are forgotten.
@@ -397,13 +476,14 @@ namespace Game.Combat
         }
 
         // A punch's knock-back (Hit Settings' Punch Knock: the distance and hop as shares, the stun in seconds). Combo: the
-        // fist's own punch, its distance a share of how far a flying jab reaches now (Fist.JabReach), so the jab that
-        // follows still lands; an enemy heavier than a bug (a smaller Knock Back Distance, e.g. a boss) goes that much less.
+        // fist's own punch, its distance a share of Fist.ComboReach (the flying jab's old reach, kept as it was when jabs
+        // started flying their own size: user, 2026-11-10); an enemy heavier than a bug (a smaller Knock Back Distance,
+        // e.g. a boss) goes that much less.
         private void PunchBack(Vector3 knock, bool combo)
         {
             if (knock.x <= 0f) return;
             scaledUntil = Time.time + 0.1f;
-            scaledDistance = combo ? knock.x * Fist.JabReach / BugKnockBack : knock.x;
+            scaledDistance = combo ? knock.x * Fist.ComboReach / BugKnockBack : knock.x;
             scaledHop = knock.y;
             scaledStun = Mathf.Max(knockBackStun, knock.z);
             KnockBackFromPlayer();
@@ -455,6 +535,7 @@ namespace Game.Combat
         public bool TakeBlast(float damage, Vector3 center, float radius, bool byPlayer)
         {
             if (health == null || dead || Time.time < settledAt) return false;
+            LastHitByPlayer = byPlayer;
 
             float edge = radius > 0f ? Mathf.Clamp01(DistanceFrom(center) / radius) : 0f;
             float share = 1f;
@@ -469,7 +550,11 @@ namespace Game.Combat
                 stray = true;
             }
             float amount = Settings.BlastDamage(damage * share * damageTaken, edge, toughness);
-            var hit = new HitResult(0f, amount, false);
+            // A blast hits no one part: the one nearest its middle counts (its Hit Zone, Part Hit).
+            var part = NearestPart(center);
+            LastHitCollider = part;
+            var hit = Zoned(new HitResult(0f, amount, false), part);
+            amount = hit.Damage;
             LastHit = hit;
 
             if (amount <= 0f)
@@ -610,6 +695,30 @@ namespace Game.Combat
         }
 
         /// <summary>
+        /// Crushed by something heavy rolling over it or landing on it (the pumpkin boss's giant pumpkin butt, user
+        /// 2026-11-11: "crush stuffs on hit path"): all its health goes at once, as from above (a bug is squashed flat), and
+        /// its hit reaction and its death or break play as for any killing blow. No knock-back, and no EXP (not the
+        /// player's doing). True if it was still standing.
+        /// </summary>
+        public bool Crush()
+        {
+            if (health == null || dead || health.Value <= 0f) return false;
+            LastHitByPlayer = false;
+            LastHitCollider = null;
+            LastHurtFromAbove = true;
+            LastHurtAt = Time.time;
+            noReward = true;
+            var hit = new HitResult(0f, Mathf.Max(1f, health.Value), true);
+            LastHit = hit;
+            health.Value = 0f;
+            Send(hitEvent);
+            Die();
+            HoldStill();
+            AnyHit?.Invoke(this, hit);
+            return true;
+        }
+
+        /// <summary>
         /// A knock-out blow, e.g. a fist's uppercut to the head: an extra hit of this power on top of the one that just
         /// landed (Toughness still counts), then it's knocked back this many times as far and hopping this many times as
         /// high, and lies stunned for this many seconds (enemies with Knock Back off only take the damage). Damage Scale
@@ -620,9 +729,14 @@ namespace Game.Combat
             Vector3? at = null)
         {
             if (health == null || dead || furniture) return false;
+            // A knock-out is always the player's (a fist's uppercut, a thrown thing's headshot or splat).
+            LastHitByPlayer = true;
 
-            // No Hot Hands bonus: the punch that landed it already had it.
-            var hit = Taken(Settings.Evaluate(power / toughness, damageScale), 0);
+            // No Hot Hands bonus: the punch that landed it already had it. The part nearest where it landed counts (its Hit
+            // Zone, Part Hit).
+            var part = at.HasValue ? NearestPart(at.Value) : null;
+            LastHitCollider = part;
+            var hit = Zoned(Taken(Settings.Evaluate(power / toughness, damageScale), 0), part);
             bool hurt = hit.Damage > 0f;
             if (hurt)
             {

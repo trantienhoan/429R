@@ -106,12 +106,13 @@ namespace Game.EditorTools
             ("Items/Breakable/Paper_Box_3", Small, 0f),
             ("Items/Breakable/Paper_Box_4", Small, 0f),
             ("Items/Breakable/Paper_Box_5", Small, 0f),
+            // The shop's Candy Box, a copy of Paper_Box_0 (Balance 2026-11-10 > Shop Candies And Candy Box).
+            ("Items/Breakable/Candy_Box", Small, 0f),
+            // Candy_3 and Candy_6 are out of the game (user, 2026-11-10).
             ("Items/Breakable/Candy_1", Small, 0f),
             ("Items/Breakable/Candy_2", Small, 0f),
-            ("Items/Breakable/Candy_3", Small, 0f),
             ("Items/Breakable/Candy_4", Small, 0f),
             ("Items/Breakable/Candy_5", Small, 0f),
-            ("Items/Breakable/Candy_6", Small, 0f),
             ("Items/Breakable/Candy_7", Small, 0f),
             ("Items/Breakable/Candy_8", Small, 0f),
             ("Items/Breakable/Skull_2", Small, 0f),

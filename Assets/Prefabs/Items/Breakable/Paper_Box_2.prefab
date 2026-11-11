@@ -19,6 +19,7 @@ GameObject:
   - component: {fileID: 6128300106284532410}
   - component: {fileID: 6899749273522936523}
   - component: {fileID: 5406813230119669110}
+  - component: {fileID: 8080695616909668247}
   m_Layer: 0
   m_Name: Paper_Box_2
   m_TagString: Weapon
@@ -1605,6 +1606,7 @@ MonoBehaviour:
   settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
   toughness: 2.3333333
   hitCooldown: 0.3
+  everyHitCounts: 0
   knockBack: 0
   knockBackDistance: 2
   knockBackTime: 0.45
@@ -1624,6 +1626,79 @@ MonoBehaviour:
   bumpShare: 1
   wieldedShare: 1
   settleSeconds: 0
+--- !u!114 &8080695616909668247
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 936478556243301555}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 16b7e368a2c1e164db99548eee03a006, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Enemies.BoxBomb
+  chance: 0.3
+  wakeDelay: 3
+  stillSeconds: 1
+  stillSpeed: 0.2
+  wakeRange: 2.2
+  wakeHeight: 2
+  viewAngle: 60
+  maxAwake: 1
+  restSeconds: 3
+  checkEvery: 0.2
+  shakeSeconds: 1
+  outOfViewShakeSeconds: 1.4
+  kicksPerSecond: 11
+  hopSpeed: 0.45
+  tiltSpeed: 1.5
+  rattle: {fileID: 8300000, guid: 84ec0c1975986024ba74bc4051f12de0, type: 3}
+  rattleVolume: 0.8
+  beep: {fileID: 8300000, guid: 6ffd5f3eee896794fa17506c74259fe3, type: 3}
+  beepBefore: 0.35
+  beepVolume: 0.8
+  glow: 1
+  glowColour: {r: 1, g: 0.45, b: 0.2, a: 1}
+  glowPulse: 6
+  glowSolid: 0.25
+  calmDistance: 3.2
+  lastHop: 1.5
+  hopSeconds: 0.15
+  flySpeed: {x: 3, y: 5.5}
+  speedUpSeconds: 0.25
+  tumble: 2
+  launchSound: {fileID: 8300000, guid: 97d2e1dfb0c1d454cb1ef3d2f8ce2511, type: 3}
+  launchVolume: 0.8
+  launchPitch: {x: 1.15, y: 1.35}
+  launchGrace: 0.12
+  pushMass: 100
+  stopNames:
+  - Paper_Box
+  - Candy_Box
+  faceReach: 0.2
+  duckHeight: 0.2
+  missPast: 0.6
+  maxFlightSeconds: 1
+  faceEvent: DamageHeavy
+  faceShare: 0.5
+  shove: {x: 0.15, y: 0.6}
+  bangInFront: 0.45
+  nearEvent: Damage
+  nearReach: 0.6
+  bangRadius: 1
+  bangDamage: 1
+  bangPush: 1.5
+  effects:
+  - {fileID: 431296081563789977, guid: 7d85674d137626445accce4cef7fe159, type: 3}
+  - {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
+  effectSize: 0.6
+  bangSound: {fileID: 8300000, guid: 0c38739de2059ac40ab5b60a42fd1c5f, type: 3}
+  bangVolume: 0.8
+  swatSpeed: 1
+  healthFsm: Health
+  healthVariable: health
+  shieldTag: Fairy_Shield
 --- !u!1 &1100433147235037478
 GameObject:
   m_ObjectHideFlags: 0

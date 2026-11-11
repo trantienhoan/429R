@@ -80,13 +80,13 @@ namespace Game.PlayGround.Editor
         private static void SetRounds(SerializedObject so, List<string> notes)
         {
             var candies = new List<Object>();
-            for (int n = 1; n <= 8; n++)
+            foreach (int n in Game.Inventory.CandyKinds.Numbers)
             {
                 var candy = Load<GameObject>(Breakable + "Candy_" + n + ".prefab");
                 if (candy != null) candies.Add(candy);
             }
             if (candies.Count > 0) SetArray(so.FindProperty("candies"), candies.ToArray());
-            else Warn(notes, "no Candy_1-8 found, candies kept");
+            else Warn(notes, "none of the 6 candies found, candies kept");
 
             var pumpkin = Load<GameObject>(Breakable + "Pumpkin_On_Tree.prefab");
             if (pumpkin != null) so.FindProperty("pumpkin").objectReferenceValue = pumpkin;

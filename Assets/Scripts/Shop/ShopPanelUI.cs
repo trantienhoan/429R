@@ -8,7 +8,9 @@ namespace Game.Shopping
 {
     /// <summary>
     /// The world-space shop panel. One lives in the scene, on the right hand like the inventory on the left;
-    /// a Shop borrows it while open. It lists what's on sale; clicking a row buys it, with poke or ray.
+    /// a Shop borrows it while open. It lists what's on sale; clicking a row buys it, with poke or ray. The candy rows
+    /// (user, 2026-11-10) are made while the game runs, from the row template, below the normal rows, and the panel
+    /// grows to fit them: the panel in the scene stays as it was built (for Items On Sale rows).
     /// </summary>
     public class ShopPanelUI : MonoBehaviour
     {
@@ -32,6 +34,8 @@ namespace Game.Shopping
         [SerializeField] private Transform head;
         [Tooltip("Turn the panel towards your eyes so it's always readable, like the inventory.")]
         [SerializeField] private bool faceHead = true;
+        [Tooltip("The candy rows' faint background colour, so they stand out from the normal rows (see-through as the template's).")]
+        [SerializeField] private Color candyRowTint = new(1f, 0.55f, 0.85f, 1f);
 
         /// <summary>
         /// Where the panel sits on a hand until you move it: its bottom edge a little above the controller and to
@@ -48,6 +52,9 @@ namespace Game.Shopping
         private const string LegendaryTitle = "Legendary Offer!";
 
         private readonly List<ShopItemRow> rows = new();
+        private readonly List<ShopItemRow> candyRows = new();
+        // How many candy rows the panel has grown taller for.
+        private int candyRoom;
         private PlayerInventory inventory;
         private float statusHideTime;
         private float clicksFrom;
@@ -161,7 +168,55 @@ namespace Game.Shopping
                 if (used) rows[i].Set(entry.item, entry.price, currency, Owner.IsSoldOut(entry), money >= entry.price, () => OnBuyClicked(index));
             }
 
+            RefreshCandies(currency, money);
             RefreshSpecial(money);
+        }
+
+        // The candy rows: clones of the row template, tinted, always below the normal rows; the panel grows (from its
+        // pivot, the bottom edge on the hand) by one row and gap for each.
+        private void RefreshCandies(ItemDefinition currency, int money)
+        {
+            var candies = Owner.Catalog.Candies;
+            var onSale = Owner.CandiesOnSale;
+            while (candyRows.Count < onSale.Count)
+            {
+                var row = Instantiate(rowTemplate, rowParent);
+                row.name = "Candy Row";
+                row.Tint(candyRowTint);
+                candyRows.Add(row);
+            }
+
+            int shown = 0;
+            for (int i = 0; i < candyRows.Count; i++)
+            {
+                int index = i < onSale.Count ? onSale[i] : -1;
+                var entry = index >= 0 && index < candies.Count ? candies[index] : null;
+                bool used = entry != null && entry.item != null;
+                candyRows[i].gameObject.SetActive(used);
+                // Below the normal rows, also ones made after it.
+                candyRows[i].transform.SetAsLastSibling();
+                if (!used) continue;
+                shown++;
+                candyRows[i].Set(entry.item, entry.price, currency, Owner.IsSoldOut(entry), money >= entry.price, () => OnCandyClicked(index));
+            }
+            MakeRoom(shown);
+        }
+
+        private void MakeRoom(int candyRowCount)
+        {
+            if (candyRowCount == candyRoom || !(transform is RectTransform panel)) return;
+            panel.sizeDelta += new Vector2(0f, (candyRowCount - candyRoom) * RowStep());
+            candyRoom = candyRowCount;
+        }
+
+        // One row's height and the gap under it, as the rows' list lays them out.
+        private float RowStep()
+        {
+            float height = 0f;
+            if (rowTemplate.TryGetComponent<LayoutElement>(out var layout)) height = Mathf.Max(layout.preferredHeight, layout.minHeight);
+            if (height <= 0f) height = ((RectTransform)rowTemplate.transform).rect.height;
+            float gap = rowParent.TryGetComponent<VerticalLayoutGroup>(out var list) ? list.spacing : 0f;
+            return height + gap;
         }
 
         private void RefreshSpecial(int money)
@@ -227,6 +282,15 @@ namespace Game.Shopping
 
             var catalog = Owner.Catalog;
             ShowResult(Owner.TryBuy(index), catalog.Entries[index], catalog.Currency);
+            Refresh();
+        }
+
+        private void OnCandyClicked(int index)
+        {
+            if (Owner == null || Time.unscaledTime < clicksFrom) return;
+
+            var catalog = Owner.Catalog;
+            ShowResult(Owner.TryBuyCandy(index), catalog.Candies[index], catalog.Currency);
             Refresh();
         }
 

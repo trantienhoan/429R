@@ -261,7 +261,7 @@ namespace Game.EditorTools
         private static Object[] Candies()
         {
             var list = new List<Object>();
-            for (int i = 1; i <= 8; i++)
+            foreach (int i in Game.Inventory.CandyKinds.Numbers)
             {
                 var candy = AssetDatabase.LoadAssetAtPath<GameObject>($"{CandyFolder}/Candy_{i}.prefab");
                 if (candy != null) list.Add(candy);

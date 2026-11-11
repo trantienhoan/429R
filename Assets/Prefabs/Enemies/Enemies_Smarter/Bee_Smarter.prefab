@@ -3524,6 +3524,7 @@ MonoBehaviour:
   appearRise: 0
   target: 0
   targetTag: PumpkinTree
+  targetStandOff: 0
   targetFsm: Damage
   targetEvent: Damage
   sightRange: 8
@@ -3579,6 +3580,8 @@ MonoBehaviour:
     clingBiteSeconds: 2
     slowPlayerTo: 0.6
     slowSeconds: 1.5
+    poisonPerSecond: 0
+    poisonSeconds: 0
     pushPower: 1
     pushFarther: 1
     usedWhen: 1
@@ -3607,6 +3610,8 @@ MonoBehaviour:
     clingBiteSeconds: 2
     slowPlayerTo: 0.6
     slowSeconds: 1.5
+    poisonPerSecond: 0
+    poisonSeconds: 0
     pushPower: 1
     pushFarther: 1
     usedWhen: 2
@@ -3684,6 +3689,7 @@ MonoBehaviour:
   rushWarning: 1.2
   rushSound: {fileID: 0}
   rushShake: ShakeMed
+  staysHigh: 0
   flinchSeconds: 0.4
   flinchCooldown: 1
   stunGuardSeconds: 0
@@ -3769,7 +3775,7 @@ MonoBehaviour:
   rotBurstSound: {fileID: 0}
   rotSquashSound: {fileID: 0}
   rotPieces: {fileID: 0}
-  anomalyChance: 0.01
+  anomalyChance: 0.003
   anomalySpeed: 1.5
   anomalyHelmetSeconds: 10
   anomalyKeepAway: 6

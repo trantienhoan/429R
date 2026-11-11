@@ -242,8 +242,10 @@ namespace Game.Enemies
             if (isLoot) { WatchLoot(); return; }
             mine.RemoveAll(x => x == null);
             fromAllPortals.RemoveAll(x => x == null);
-            // Paused while a bonus round is on: the wait to the next one starts again after it.
-            if (Game.Bonus.BonusRound.Running != null) { next = Mathf.Max(next, Time.time + 1f); return; }
+            // Paused while a bonus round or a special stage is on: the wait to the next one starts again after it.
+            // (Paint Bees and Daruma don't set BonusRound.Running; any special stage counts. Play test 2026-11-10: portal
+            // bugs bit a standing player over Paint Bees' north edge every 6-7 s.)
+            if (Game.Bonus.BonusRound.Running != null || Game.Leveling.PlayerLevel.InSpecialStage) { next = Mathf.Max(next, Time.time + 1f); return; }
             if (Time.time < next || kind == null || kind.enemies.Length == 0) return;
             int alive = Mathf.Min(maxAlive, startAlive + spawned / moreEvery);
             if (mine.Count >= alive || fromAllPortals.Count >= totalCap) { next = Time.time + 0.5f; return; }

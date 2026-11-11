@@ -206,7 +206,9 @@ namespace Game.EditorTools
 
             database.EditorSetItems(items);
             EditorUtility.SetDirty(database);
-            AssetDatabase.SaveAssets();
+            // Only the database and the items: not every changed asset in the project (review, 2026-11-10).
+            AssetDatabase.SaveAssetIfDirty(database);
+            foreach (var item in items) AssetDatabase.SaveAssetIfDirty(item);
             return database;
         }
 

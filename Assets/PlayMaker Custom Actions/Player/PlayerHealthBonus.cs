@@ -5,7 +5,8 @@ namespace HutongGames.PlayMaker.Actions
     [ActionCategory("Player")]
     [Tooltip("Extra healing for the player as if they ate more candies, and/or a higher health cap. Each candy heals " +
              "Candy Min to Candy Max (whole numbers); above the starting health only Above Share of it counts, rounded " +
-             "up, like candy itself. Works on the PlayerHealth FSM's PlayerHealth and DefautPlayerHealth floats. Put it " +
+             "up, and above 1.5x the starting health only 10% (Player Level's Candy Slow Heal From and Share), like " +
+             "candy itself. Works on the PlayerHealth FSM's PlayerHealth and DefautPlayerHealth floats. Put it " +
              "after a Send Event Health1 to the player, which plays the heal effects and already counts as one candy: " +
              "a seed that heals like 7 candies has Extra Candies 6. Each candy heals more with the player's Max Health " +
              "level-up stat, like eaten candy.")]
@@ -21,7 +22,8 @@ namespace HutongGames.PlayMaker.Actions
         public FsmFloat candyMax;
 
         [HasFloatSlider(0f, 1f)]
-        [Tooltip("Share of a candy's heal that counts above the starting health, e.g. 0.5 = 50% (user, 2026-11-05: candies above max health heal half) (rounded up).")]
+        [Tooltip("Share of a candy's heal that counts above the starting health (up to 1.5x it; above that 10%), e.g. 0.5 = " +
+                 "50% (user, 2026-11-05: candies above max health heal half) (rounded up).")]
         public FsmFloat aboveShare;
 
         [Tooltip("Raise the starting health (the health cap) by this much, e.g. 30. It's saved, and lasts until the save is reset or lost.")]
@@ -63,9 +65,8 @@ namespace HutongGames.PlayMaker.Actions
             for (int i = 0; i < extraCandies.Value; i++)
             {
                 float amount = CandyHeal.Scale(RandomAmount.Roll(candyMin.Value, candyMax.Value, true), true);
-                float full = Mathf.Clamp(cap.Value - health.Value, 0f, amount);       // up to the cap: in full
-                float over = Mathf.Ceil((amount - full) * share - 0.0001f);             // above it: the share, rounded up
-                health.Value += full + over;
+                // Up to the cap in full, then the share (rounded up), then above 1.5x the cap only 10% (CandyHeal).
+                health.Value += CandyHeal.AboveCap(health.Value, amount, cap.Value, share, true);
             }
             Finish();
         }

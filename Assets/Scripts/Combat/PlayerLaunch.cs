@@ -43,10 +43,13 @@ namespace Game.Combat
         /// Toughness (a level-up stat) cuts both, unless <paramref name="toughness"/> is off (a throw that must clear
         /// something, like a bonus pumpkin growing over them), but never below <paramref name="minShare"/> (e.g. a boss's
         /// throws stay big however tough the player is). <paramref name="shake"/> off: no camera shake (small shoves).
+        /// <paramref name="thrower"/>: who threw them (a boss): its colliders don't stop this flight (its body stands over or
+        /// against the player as it hits; user's play test 2026-11-11: the pumpkin boss's throws ended after 0.03 s), they
+        /// are flown through until the player lands.
         /// Returns false when there's no player to throw, or they're down.
         /// </summary>
         public static bool Launch(Vector3 from, float height, float distance, bool shake = true, bool toughness = true,
-            float minShare = 0f)
+            float minShare = 0f, GameObject thrower = null)
         {
             var launcher = Find();
             if (launcher == null) return false;
@@ -56,6 +59,7 @@ namespace Game.Combat
             // Toughness cuts the throw, but never below Min Share (a boss still throws a tough player about).
             float share = toughness ? Mathf.Max(Game.Leveling.PlayerLevel.PushShare, Mathf.Clamp01(minShare)) : 1f;
             launcher.Begin(from, height * share, distance * share, shake);
+            if (launcher.flying && thrower != null) launcher.PassThrough(thrower);
             return true;
         }
 
@@ -241,6 +245,21 @@ namespace Game.Combat
         {
             if (flying && hit.normal.y > 0.5f) groundBelow = hit.collider;
         }
+
+        // The thrower's solid colliders are flown through until this flight ends (made solid again in End Flight).
+        private void PassThrough(GameObject thrower)
+        {
+            thrower.GetComponentsInChildren(true, throwerParts);
+            foreach (var part in throwerParts)
+            {
+                if (part == null || part.isTrigger || passedThrough.Contains(part)) continue;
+                Physics.IgnoreCollision(body, part, true);
+                passedThrough.Add(part);
+            }
+            throwerParts.Clear();
+        }
+
+        private readonly System.Collections.Generic.List<Collider> throwerParts = new();
 
         private void EndFlight(bool landed)
         {

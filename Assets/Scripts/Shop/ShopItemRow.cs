@@ -55,5 +55,21 @@ namespace Game.Shopping
                 button.onClick.AddListener(onBuy);
             }
         }
+
+        /// <summary>Tints the row's faint background (its button's colours, each keeping its see-through), e.g. a candy row.</summary>
+        public void Tint(Color tint)
+        {
+            if (button == null) button = GetComponentInChildren<Button>(true);
+            if (button == null) return;
+            var colors = button.colors;
+            colors.normalColor = Recolor(colors.normalColor, tint);
+            colors.highlightedColor = Recolor(colors.highlightedColor, tint);
+            colors.pressedColor = Recolor(colors.pressedColor, tint);
+            colors.selectedColor = Recolor(colors.selectedColor, tint);
+            colors.disabledColor = Recolor(colors.disabledColor, tint);
+            button.colors = colors;
+        }
+
+        private static Color Recolor(Color from, Color tint) => new(tint.r, tint.g, tint.b, from.a);
     }
 }

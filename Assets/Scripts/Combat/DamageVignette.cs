@@ -141,6 +141,17 @@ namespace Game.Combat
             if (instance != null) Destroy(instance);
         }
 
+        // Health set by the game (Player Boosts' Set Health: Get a Rest's health given back, poison ticks, a special
+        // stage's heal) isn't a hit: no red lines for it, as Hurt Slow does.
+        private void OnEnable() => Game.Saving.PlayerBoosts.HealthSet += TakeHealthAsIs;
+        private void OnDisable() => Game.Saving.PlayerBoosts.HealthSet -= TakeHealthAsIs;
+
+        // Only the set's own change is taken as it is; a hit not yet seen this frame still counts.
+        private void TakeHealthAsIs(float change)
+        {
+            if (health != null) lastHealth += change;
+        }
+
         private void Update()
         {
             float now = health.Value;

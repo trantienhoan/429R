@@ -52,12 +52,24 @@ namespace HutongGames.PlayMaker.Actions
             var stuff = FsmVariables.GlobalVariables.FindFsmGameObject("CurrentlySpawnedStuffs");
             var parent = stuff != null && stuff.Value != null ? stuff.Value.transform : null;
             running = Object.Instantiate(round.Value, at, Quaternion.identity, parent).GetComponentInChildren<IBonusGame>() as Component;
+            // A special stage (Types 1 and 2): level-0 stats until the round goes (user, 2026-11-10). Added here, not on
+            // the prefabs, so their setup menus can't drop it; OnExit's Destroy gives the stats back.
+            if (running != null) running.gameObject.AddComponent<Game.Leveling.SpecialStageStats>();
         }
 
         public override void OnUpdate()
         {
-            if (running == null || ((IBonusGame)running).Finished) Done();
+            // Not while the player is down (coins in the air, getting up, dead): ending gives the stats back (Special Stage
+            // Stats), which would heal a player at 0 health and pop the Level Up Notice over them, and after a game over
+            // it would move GAMESTAGES on to the next checkpoint. Dead: the Game Over takes the round away instead.
+            if (running == null || (((IBonusGame)running).Finished && !PlayerDown())) Done();
         }
+
+        // Down like Daruma Stage's Player Down: the lucky coins in the air, getting up, or 0 health (dead).
+        private static bool PlayerDown() =>
+            Game.Saving.Checkpoints.IsDying ||
+            (Game.Combat.PlayerRevive.Instance != null && Game.Combat.PlayerRevive.Instance.IsReviving) ||
+            (Game.Saving.PlayerBoosts.TryGetHealth(out float health) && health <= 0f);
 
         public override void OnExit()
         {

@@ -80,11 +80,9 @@ namespace Game.Cam
         }
 
 #if UNITY_EDITOR_WIN
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        private static extern short GetAsyncKeyState(int key);
-
-        // Read straight from Windows, so it works with the headset on even when Unity isn't the focused window.
-        private static bool RightShiftDown() => (GetAsyncKeyState(0xA1) & 0x8000) != 0;
+        // Read straight from Windows (it works with the headset on), but only while this Editor is the focused window
+        // (user, 2026-11-11: typing in other apps kept taking photos).
+        private static bool RightShiftDown() => CaptureKeys.Down(0xA1);
 #else
         private static bool RightShiftDown() => Keyboard.current != null && Keyboard.current.rightShiftKey.isPressed;
 #endif

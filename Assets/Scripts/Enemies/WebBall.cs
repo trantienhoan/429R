@@ -9,11 +9,12 @@ using FsmVariables = HutongGames.PlayMaker.FsmVariables;
 namespace Game.Enemies
 {
     /// <summary>
-    /// A spider's web shot (Spider Brain launches it). It flies with gravity; reaching the player's body it hurts them
-    /// (Player Event, sent to their Damage FSM) and adds web to them (Web Added; a full web slows them and stops
-    /// teleporting for a while, Player Web). A weapon held in its way, or a fist, swats it: no web. Anything else just
-    /// splats it. It has no collider of its own and
-    /// finds what it hits by sweeping
+    /// A spider's web shot (Spider Brain launches it). It flies with gravity (straight, with its Rigidbody's Use Gravity
+    /// off: the bee bosses' poison sting, Bee_Poison_Sting); reaching the player's body it hurts them (Player Event, sent
+    /// to their Damage FSM), adds web to them (Web Added; a full web slows them and stops teleporting for a while, Player
+    /// Web) and poisons them if it carries Poison (Player Poison). A weapon held in its way, or a fist, swats it: no web,
+    /// no poison. Anything else just splats it (its splat comes from the shared Effect Pool). It has no collider of its
+    /// own and finds what it hits by sweeping
     /// along its flight, so it never knocks things over, hurts other enemies, or sets off other objects' trigger FSMs.
     /// A boss's giant web (MakeGiant) goes straight through fists and held weapons, and smashes through what's in its way
     /// (user, 2026-11-05: "strong enough to break almost everything that block its path"): furniture, props and loose
@@ -31,6 +32,14 @@ namespace Game.Enemies
                  "and stops teleporting for a while (Player Web on the XR Origin).")]
         [Range(0f, 1f)]
         [SerializeField] private float webAdded = 0.2f;
+        [Tooltip("Poison (the bee bosses' sting shot; user, 2026-11-10): when it hits the player they also lose this much " +
+                 "health every second for Poison Seconds (Player Poison: cut by Toughness like any hit, never below 1 " +
+                 "health). Only with Poison Seconds above 0.")]
+        [Min(0f)]
+        [SerializeField] private float poisonPerSecond;
+        [Tooltip("How long its poison lasts, in seconds. 0 = no poison (the spiders' web balls).")]
+        [Min(0f)]
+        [SerializeField] private float poisonSeconds;
         [Tooltip("How big it is for hitting things (radius, metres at size 1).")]
         [Min(0.01f)]
         [SerializeField] private float radius = 0.1f;
@@ -85,6 +94,8 @@ namespace Game.Enemies
             body.interpolation = RigidbodyInterpolation.Interpolate;
             lastPosition = body.position;
             dieAt = Time.time + lifetime;
+            // Its splat ready before the first one (a bee boss shoots every few seconds).
+            if (splatEffect != null) EffectPool.Warm(splatEffect);
         }
 
         /// <summary>
@@ -226,12 +237,7 @@ namespace Game.Enemies
             Game.Weapons.Blast.Damage(other, point, smashDamage, false);
             if (thing != null && !thing.isKinematic)
                 thing.AddForce(body.linearVelocity.normalized * smashShove + Vector3.up * (smashShove * 0.3f), ForceMode.VelocityChange);
-            if (splatEffect != null)
-            {
-                var effect = Instantiate(splatEffect, point, Quaternion.identity);
-                effect.transform.localScale = Vector3.one * (splatScale * 0.5f);
-                Destroy(effect, 3f);
-            }
+            PlaySplat(point, 0.5f);
             if (splatSound != null) AudioSource.PlayClipAtPoint(splatSound, point, volume);
         }
 
@@ -257,6 +263,7 @@ namespace Game.Enemies
                 DamageVignette.HitFrom(shooter != null ? shooter.position : point);
                 SendToPlayer(playerEvent, playerFsm);
                 PlayerWeb.Add(webAdded);
+                if (poisonSeconds > 0f && poisonPerSecond > 0f) PlayerPoison.Add(poisonPerSecond, poisonSeconds);
                 Splat(point, hitSound != null ? hitSound : splatSound);
                 return;
             }
@@ -266,14 +273,18 @@ namespace Game.Enemies
         private void Splat(Vector3 point, AudioClip sound)
         {
             done = true;
-            if (splatEffect != null)
-            {
-                var effect = Instantiate(splatEffect, point, Quaternion.identity);
-                effect.transform.localScale = Vector3.one * splatScale;
-                Destroy(effect, 3f);
-            }
+            PlaySplat(point, 1f);
             if (sound != null) AudioSource.PlayClipAtPoint(sound, point, volume);
             Destroy(gameObject);
+        }
+
+        // Its splat effect at Splat Scale (times Times), from the shared pool instead of a new copy each time: the same
+        // size as before, whatever the effect prefab's own root scale (Smoke_Flash_Small_Puff's is 3).
+        private void PlaySplat(Vector3 point, float times)
+        {
+            if (splatEffect == null) return;
+            float rootScale = Mathf.Max(0.0001f, splatEffect.transform.localScale.x);
+            EffectPool.Play(splatEffect, point, splatScale * times / rootScale);
         }
 
         private static bool IsPlayer(Collider other)

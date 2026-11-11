@@ -11,7 +11,7 @@ namespace Game.Combat
     /// as health drops below the starting health (the PlayerHealth FSM's DefautPlayerHealth, 120), and turns green,
     /// with little green sparkles flying up around it, when candy has pushed health above it. Health has no cap, so the number tells the rest. Each change pops a
     /// "-8" / "+5" next to the number, and a heal makes the heart pop. An eaten candy's buff shows under the number for a
-    /// moment: "+TOPH", "+SPD", "+THROW" or "+ATK" (no amount). The HUD shows for a few seconds after any change, then fades, and stays up
+    /// moment: "+HP", "+TOPH", "+WPN", "+FIST", "+THROW" or "+SPD" (no amount). The HUD shows for a few seconds after any change, then fades, and stays up
     /// while health is low; then the heart beats, and the player hears it beat too (Heartbeat), faster as health drops.
     /// Once the player has died and got back up this run (a revive), the heart is cracked
     /// (until a new run). The player can hide it all in the pause menu (Health: hidden), e.g. to record video: the
@@ -19,8 +19,10 @@ namespace Game.Combat
     /// is on (Player Buffs) the heart smokes white and stays in view, with a countdown under it for each
     /// buff (its colour, no name), blinking red over the last 10 seconds. Spider web on the player (Player Web) shows as
     /// white rings over the heart, one per 20%, each new ring with a little pop; webbed (a full web), the heart turns paler
-    /// and shakes, with a white countdown under it. The HUD stays in view while there's web. It only reads the FSM, so
-    /// damage and heals still all happen there.
+    /// and shakes, with a white countdown under it. The HUD stays in view while there's web. Poisoned (Player Poison: the
+    /// bee bosses' stings), the heart pulses purple (not green: that's health above the start), each poison tick pops in
+    /// purple (a pop with a real hit in it stays in the hit colour), and the HUD stays in view until the poison is
+    /// over. It only reads the FSM, so damage and heals still all happen there.
     /// Goes on the HUD canvas under the Main Camera. Tools > 429 Game > Player > Set Up Health HUD sets it up.
     /// </summary>
     [DisallowMultipleComponent]
@@ -66,6 +68,14 @@ namespace Game.Combat
         [SerializeField] private float webLockPale = 0.3f;
         [Min(0f)]
         [SerializeField] private float webShake = 3f;
+
+        [Header("Poison")]
+        [Tooltip("While the player is poisoned (Player Poison) the heart pulses towards this colour, and each poison tick " +
+                 "pops in it (user, 2026-11-10). Purple, because green already means health above the start.")]
+        [SerializeField] private Color poisonColor = new(0.62f, 0.25f, 0.85f);
+        [Tooltip("How many times a second the poisoned heart pulses.")]
+        [Min(0.1f)]
+        [SerializeField] private float poisonPulses = 1.5f;
 
         [Header("Colours")]
         [SerializeField] private Color healthColor = new(0.93f, 0.16f, 0.2f);
@@ -117,7 +127,7 @@ namespace Game.Combat
         [SerializeField] private float changeRise = 40f;
 
         [Header("Candy buff")]
-        [Tooltip("Under the number: what an eaten candy made better for the run (+TOPH, +SPD, +THROW or +ATK; no " +
+        [Tooltip("Under the number: what an eaten candy made better for the run (+HP, +TOPH, +WPN, +FIST, +THROW or +SPD; no " +
                  "amount). Left empty, it's made from the Change text.")]
         [SerializeField] private TMP_Text candyBuff;
         [SerializeField] private Color candyBuffColor = new(1f, 0.84f, 0.35f);
@@ -186,6 +196,11 @@ namespace Game.Combat
         private Vector2 heartHome;
         private bool heartHomeKnown;
         private bool wasWebbed;
+        private bool wasPoisoned;
+        // Poison ticks' share of a health drop: Player Poison's Health Taken when last read, and whether the pop
+        // showing now has a real hit in it (then it's in the hit colour, poison ticks in it or not).
+        private double poisonSeen;
+        private bool changeHasHit;
 
         // The heartbeat: counts heartbeats (one per whole number; the big beat at .0, the small one at .25), so the
         // heart and the sound stay in step while the beat speeds up.
@@ -293,7 +308,9 @@ namespace Game.Combat
                 case Game.Leveling.Stat.Toughness: return "+TOPH";
                 case Game.Leveling.Stat.MoveSpeed: return "+SPD";
                 case Game.Leveling.Stat.ThrowPower: return "+THROW";
-                case Game.Leveling.Stat.FistSize: return "+ATK";
+                case Game.Leveling.Stat.FistSize: return "+FIST";
+                case Game.Leveling.Stat.MaxHealth: return "+HP";
+                case Game.Leveling.Stat.WeaponEfficiency: return "+WPN";
                 default: return "+" + Game.Leveling.PlayerLevel.Name(stat).ToUpperInvariant();
             }
         }
@@ -305,6 +322,7 @@ namespace Game.Combat
             ready = Find();
             if (!ready) return;
             lastHealth = health.Value;
+            poisonSeen = PlayerPoison.HealthTaken;
             Refresh(true);
         }
 
@@ -316,6 +334,7 @@ namespace Game.Combat
             ready = Find();
             if (!ready) return;
             lastHealth = health.Value;
+            poisonSeen = PlayerPoison.HealthTaken;
             Refresh(true);
         }
 
@@ -355,9 +374,14 @@ namespace Game.Combat
         {
             if (!ready) return;
             float now = health.Value;
+            // What poison ticks took since the last read (Player Poison): that part of a change is poison, the rest
+            // real hits or heals.
+            double taken = PlayerPoison.HealthTaken;
+            float ticked = (float)(taken - poisonSeen);
+            poisonSeen = taken;
             if (Mathf.Abs(now - lastHealth) > 0.01f)
             {
-                Changed(now - lastHealth);
+                Changed(now - lastHealth, ticked);
                 lastHealth = now;
             }
             // Cracked once the player has died this run: shown as it happens.
@@ -376,19 +400,26 @@ namespace Game.Combat
             Refresh(false);
         }
 
-        private void Changed(float amount)
+        // amount: how health changed since the last read; ticked: how much of that poison ticks took (Player Poison).
+        private void Changed(float amount, float ticked)
         {
             changedAt = Time.unscaledTime;
             if (amount > 0f) healedAt = Time.unscaledTime;
             if (change == null) return;
             // Quick hits in a row add up in one pop instead of flickering.
             bool sameWay = Mathf.Sign(amount) == Mathf.Sign(changeAmount);
-            if (Time.unscaledTime - changeAt < changeSeconds * 0.5f && sameWay) changeAmount += amount;
+            bool adding = Time.unscaledTime - changeAt < changeSeconds * 0.5f && sameWay;
+            if (adding) changeAmount += amount;
             else changeAmount = amount;
+            // A real hit is whatever poison didn't take. A pop with one in it is in the hit colour, poison ticks
+            // added to it or not (user, 2026-11-10).
+            changeHasHit = amount + ticked < -0.01f || (adding && changeHasHit);
             changeAt = Time.unscaledTime;
             int shown = Mathf.RoundToInt(changeAmount);
             change.SetText(shown > 0 ? "+{0}" : "{0}", shown);
-            change.color = shown > 0 ? healColor : damageColor;
+            // Only poison ticks on their own pop in purple.
+            bool poisonOnly = ticked > 0f && !changeHasHit;
+            change.color = shown > 0 ? healColor : poisonOnly ? poisonColor : damageColor;
         }
 
         private void Refresh(bool instant)
@@ -400,11 +431,15 @@ namespace Game.Combat
             bool low = hp <= full * lowShare;
             float time = Time.unscaledTime;
             bool webbedNow = Game.Locomotion.PlayerWeb.Locked;
+            bool poisoned = PlayerPoison.Active;
 
             if (heartFill != null)
             {
                 heartFill.fillAmount = Mathf.Clamp01(share);
                 var target = bonus ? bonusColor * (1f + 0.08f * Mathf.Sin(time * 3f)) : healthColor;
+                // Poisoned: it pulses between mostly and fully purple, so it reads as poisoned at any moment.
+                if (poisoned)
+                    target = Color.Lerp(target, poisonColor, 0.7f + 0.3f * Mathf.Sin(time * poisonPulses * 2f * Mathf.PI));
                 if (webbedNow) target = Color.Lerp(target, Color.white, webLockPale);
                 target.a = 1f;
                 heartFill.color = instant ? target : Color.Lerp(heartFill.color, target, 1f - Mathf.Exp(-Time.unscaledDeltaTime * 8f));
@@ -479,9 +514,12 @@ namespace Game.Combat
             bool webbed = Game.Locomotion.PlayerWeb.Rings > 0 || webbedNow;
             if (wasWebbed && !webbed) changedAt = time;
             wasWebbed = webbed;
+            // And so does poison, until it's over.
+            if (wasPoisoned && !poisoned) changedAt = time;
+            wasPoisoned = poisoned;
 
             float shown = time - changedAt;
-            group.alpha = !Shown ? 0f : alwaysShow || low || buffed || webbed ? 1f : 1f - Mathf.Clamp01((shown - showSeconds) / fadeSeconds);
+            group.alpha = !Shown ? 0f : alwaysShow || low || buffed || webbed || poisoned ? 1f : 1f - Mathf.Clamp01((shown - showSeconds) / fadeSeconds);
             Sparkle(bonus && group.alpha > 0.01f, group.alpha);
             Smoke(buffed && group.alpha > 0.01f, group.alpha);
             UpdateTimers(buffed, webbedNow);

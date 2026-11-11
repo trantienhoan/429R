@@ -200,7 +200,10 @@ namespace Game.EditorTools
             var machine = controller.layers[0].stateMachine;
             foreach (var name in BossStates)
             {
-                var clip = clips.FirstOrDefault(c => c.name == name);
+                // notice and laugh_true aren't in the user's Blender file any more (2026-11-11): they were kept as their
+                // own clips next to the model (Pumpkin_Boss_Z_<name>.anim), taken from the last export that had them.
+                var clip = clips.FirstOrDefault(c => c.name == name)
+                    ?? AssetDatabase.LoadAssetAtPath<AnimationClip>($"Assets/Models/Enemies/Pumpkin_Boss_Z_{name}.anim");
                 if (clip == null) Debug.LogWarning($"[Opening] No clip {name} in {BossFbx}.");
                 machine.AddState(name).motion = clip;
             }

@@ -8,38 +8,31 @@ namespace Game.Inventory.Editor
 {
     /// <summary>
     /// Tools > 429 Game > Player > Give Candies Their Buffs.
-    /// Each Candy_1..8 gets an Eat Candy Buff in its eat state (the Damage FSM's "Health 1", where it heals and adds the
-    /// Wrap): Candy 1, 2, 6, 7 Toughness, Candy 3, 4 Throw Power, Candy 5 Move Speed, Candy 8 Punch Damage, half a
-    /// level-up point each (Player Level keeps them for the run: the full half point up to +5 a stat, then a tenth a
-    /// candy, at most 10). Safe to run again: a candy that already has one gets this table's boost and points back.
+    /// Each candy in the game (Candy Kinds: user 2026-11-10, one per level-up stat) gets an Eat Candy Buff in its eat
+    /// state (the Damage FSM's "Health 1", where it heals and adds the Wrap): Candy_1 Max Health, Candy_2 Weapon
+    /// Efficiency, Candy_4 Move Speed, Candy_5 Toughness, Candy_7 Throw Power, Candy_8 Fist Size, half a level-up point
+    /// each before the player's own points in that stat make it bigger (Player Level keeps them for the run: the full
+    /// share up to +5 a stat, then a tenth a candy, at most 10). Retired candies (Candy_3, Candy_6) are left alone.
+    /// Safe to run again: a candy that already has one gets its stat and points back.
     /// </summary>
     public static class CandyBuffSetupMenu
     {
-        private const string CandyFolder = "Assets/Prefabs/Items/Breakable/";
         private const string EatState = "Health 1";
         private const float PointsPerCandy = 0.5f;
-
-        // Candy_1..8, in order.
-        private static readonly EatCandyBuff.Boost[] Boosts =
-        {
-            EatCandyBuff.Boost.Toughness, EatCandyBuff.Boost.Toughness, EatCandyBuff.Boost.ThrowPower,
-            EatCandyBuff.Boost.ThrowPower, EatCandyBuff.Boost.MoveSpeed, EatCandyBuff.Boost.Toughness,
-            EatCandyBuff.Boost.Toughness, EatCandyBuff.Boost.PunchDamage,
-        };
 
         [MenuItem("Tools/429 Game/Player/Give Candies Their Buffs")]
         public static void Run()
         {
             int added = 0, updated = 0;
             var missing = new System.Collections.Generic.List<string>();
-            for (int i = 1; i <= Boosts.Length; i++)
+            foreach (int n in CandyKinds.Numbers)
             {
-                string path = CandyFolder + "Candy_" + i + ".prefab";
-                switch (GiveBuff(path, Boosts[i - 1]))
+                string path = CandyKinds.PathOf(n);
+                switch (GiveBuff(path, EatCandyBuff.BoostOf(CandyKinds.StatOf(n))))
                 {
                     case 1: added++; break;
                     case 0: updated++; break;
-                    default: missing.Add("Candy_" + i); break;
+                    default: missing.Add("Candy_" + n); break;
                 }
             }
             AssetDatabase.SaveAssets();

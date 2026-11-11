@@ -942,7 +942,7 @@ namespace Game.EditorTools
                 // Gold sparks for a swat on the beat (the flash prefab became a big 3D smoke that hid the splash).
                 Set(so, "onBeatSparkMaterial", mats.sparkle, filled);
                 Set(so, "floorSplatMaterial", mats.floorSplat, filled);
-                var candies = Enumerable.Range(1, 8).Select(i => AssetDatabase.LoadAssetAtPath<GameObject>(string.Format(CandyPath, i))).Where(c => c != null).ToArray();
+                var candies = Game.Inventory.CandyKinds.Numbers.Select(i => AssetDatabase.LoadAssetAtPath<GameObject>(string.Format(CandyPath, i))).Where(c => c != null).ToArray();
                 SetList(so, "candies", candies, filled);
                 // This PC's first sound picks go: the user's (from the other PC) come in their place.
                 foreach (var field in new[] { "bucketSound", "boingSound", "stingSound", "goSound", "perfectSound" })

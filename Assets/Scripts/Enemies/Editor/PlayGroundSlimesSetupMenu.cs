@@ -48,7 +48,6 @@ namespace Game.EditorTools
         private const string BeeBossPath = Bugs + "Bee_Boss_PumpkinButt.prefab";
         private const string WebBallPath = Bugs + "Spider_Web_Ball.prefab";
         private const string CandyPath = "Assets/Prefabs/Items/Breakable/Candy_{0}.prefab";
-        private const int CandyKinds = 8;
         private const string HealthFsmName = "SlimeHealth";
         private static readonly string[] SlimeSounds =
         {
@@ -126,6 +125,8 @@ namespace Game.EditorTools
                 return;
             }
             Debug.Log("[PlayGround Slimes] " + string.Join("; ", SetUp()));
+            // The candies' slime colours and drops win over the paint colours above (user, 2026-11-10).
+            Game.Inventory.Editor.CandyColourSetupMenu.Run();
         }
 
         /// <summary>Builds (or rebuilds) the five slime prefabs and the three colour materials; returns what it did.</summary>
@@ -199,8 +200,7 @@ namespace Game.EditorTools
             parts.slimeSounds = LoadAll<AudioClip>(SlimeSounds, notes);
             parts.popSounds = LoadAll<AudioClip>(PopSounds, notes);
             parts.burstEffects = LoadAll<GameObject>(BurstEffects, notes);
-            var candyPaths = new string[CandyKinds];
-            for (int i = 0; i < CandyKinds; i++) candyPaths[i] = string.Format(CandyPath, i + 1);
+            var candyPaths = System.Array.ConvertAll(Game.Inventory.CandyKinds.Numbers, n => string.Format(CandyPath, n));
             parts.candies = LoadAll<GameObject>(candyPaths, notes);
             // Rebuilt first below; until then (or if that fails) the one from before.
             parts.small = AssetDatabase.LoadAssetAtPath<GameObject>(SmallPath);

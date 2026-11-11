@@ -42,6 +42,16 @@ namespace Game.Shopping
         [SerializeField] private ItemDefinition currency;
         [SerializeField] private List<ShopEntry> entries = new();
 
+        [Header("Candies")]
+        [Tooltip("The candy rows (user, 2026-11-10): at every restock Candy Rows of these (each a different one) come up " +
+                 "at random, on rows of their own below the normal items, so they never take a normal item's place. " +
+                 "Bought candies are handed over gently, so they don't break. Filled by Tools > 429 Game > Balance " +
+                 "2026-11-10 > Shop Candies And Candy Box.")]
+        [SerializeField] private List<ShopEntry> candies = new();
+        [Tooltip("How many candy rows are on sale at once, each a different candy. 0 = no candy rows.")]
+        [Min(0)]
+        [SerializeField] private int candyRows = 2;
+
         [Header("Special offers")]
         [Tooltip("The special line is an extra slot, picked again at every restock: first a roll for a legendary offer " +
                  "(Legendary Chance), otherwise one of the normal items (not one already on sale) or of the specials " +
@@ -62,6 +72,10 @@ namespace Game.Shopping
 
         public ItemDefinition Currency => currency;
         public IReadOnlyList<ShopEntry> Entries => entries;
+        /// <summary>The candy rows' list (see Candies in the Inspector).</summary>
+        public IReadOnlyList<ShopEntry> Candies => candies;
+        /// <summary>How many candy rows are on sale at once.</summary>
+        public int CandyRows => candyRows;
         public IReadOnlyList<SpecialEntry> Specials => specials;
         public float LegendaryChance => legendaryChance;
         public float BossLegendaryChance => bossLegendaryChance;
@@ -120,6 +134,39 @@ namespace Game.Shopping
         {
             specialUnlockCurrency = item;
             specialUnlockPrice = price;
+        }
+
+        /// <summary>
+        /// Puts the item on the normal list at this price: added, or its first listing's price changed. Returns its old
+        /// price, or -1 if it was added.
+        /// </summary>
+        public int EditorSetEntry(ItemDefinition item, int price) => SetPrice(entries, item, price);
+
+        /// <summary>The same for the candy rows' list.</summary>
+        public int EditorSetCandy(ItemDefinition item, int price) => SetPrice(candies, item, price);
+
+        /// <summary>Takes listings off the candy rows' list (empty ones, a retired candy's). Returns how many went.</summary>
+        public int EditorRemoveCandies(Predicate<ShopEntry> which) => candies.RemoveAll(which);
+
+        /// <summary>Sets how many candy rows are on sale at once. Returns the old number.</summary>
+        public int EditorSetCandyRows(int count)
+        {
+            int old = candyRows;
+            candyRows = Mathf.Max(0, count);
+            return old;
+        }
+
+        private static int SetPrice(List<ShopEntry> list, ItemDefinition item, int price)
+        {
+            var entry = list.Find(e => e != null && e.item == item);
+            if (entry == null)
+            {
+                list.Add(new ShopEntry { item = item, price = price });
+                return -1;
+            }
+            int old = entry.price;
+            entry.price = price;
+            return old;
         }
 #endif
     }

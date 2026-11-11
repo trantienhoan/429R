@@ -17,7 +17,8 @@ namespace Game.Combat
     /// the hand swells to Fist Scale (half as big again) with a little buzz, so the player sees it's ready and punches
     /// land easier; the ball grows with it.
     /// Three punches thrown well do more, and fly: an echo of the fist, bigger than the fist (Fly Size), goes on the way
-    /// the punch went (Jab Reach) and hits the first thing in its way. A jab is a fast, straight punch out where the
+    /// the punch went (a jab as far as the echo is big, Jab Size Reach; a swing or an uppercut Jab Reach) and hits the
+    /// first thing in its way. A jab is a fast, straight punch out where the
     /// player is looking, and flies straight ahead. A swing (a hook: the fist sweeps sideways) hits harder (Swing Power)
     /// and flies on sideways, level, the way the fist swept (a left hook sweeping to the right flies to the right). An
     /// uppercut (the fist drives upwards) hits harder (Uppercut Power), flies up, sends things flying up and away and
@@ -108,9 +109,15 @@ namespace Game.Combat
         [Tooltip("A jab this fast or faster (and straight, and aimed) flies the farthest.")]
         [Min(0.5f)]
         [SerializeField] private float topJabSpeed = 5f;
-        [Tooltip("How far past the fist a flying punch goes (a jab, a swing, an uppercut), in metres: x for a " +
-                 "just-good-enough one, y for a perfect one.")]
+        [Tooltip("How far past the fist a flying swing or uppercut goes, in metres: x for a just-good-enough one, y for a " +
+                 "perfect one. A flying jab flies its own size instead (Jab Size Reach). The perfect one, grown with Fist " +
+                 "Size, also sets how far a closed punch's combo knocks a bug back.")]
         [SerializeField] private Vector2 jabReach = new(0.4f, 0.75f);
+        [Tooltip("How far a flying jab flies from where the hand stopped, in its own sizes (user, 2026-11-10: \"if the " +
+                 "fist size = 15cm, then the flying fist can fly 15cm\"): 1 = as far as it is big, measured from its look " +
+                 "(the copy of the hand, Fist Size growth included) as it's thrown. The boongs' extra reach comes on top.")]
+        [Min(0.1f)]
+        [SerializeField] private float jabSizeReach = 1f;
         [Tooltip("Longest the punch may take, in seconds, from starting to move to snapping to a stop. Slower pushes don't fly.")]
         [Min(0.05f)]
         [SerializeField] private float jabSeconds = 0.4f;
@@ -150,8 +157,8 @@ namespace Game.Combat
         [Tooltip("A flying swing and a flying uppercut are this many times as big as a flying jab.")]
         [Min(1f)]
         [SerializeField] private float bigMoveSize = 1.35f;
-        [Tooltip("At full Fist Size, flying punches go this many times as far as when the Jab is unlocked (Jab Reach x " +
-                 "this); in between, step by step.")]
+        [Tooltip("At full Fist Size, flying swings and uppercuts go this many times as far as when the Jab is unlocked " +
+                 "(Jab Reach x this); in between, step by step. A closed punch's combo knock-back grows the same way.")]
         [Min(1f)]
         [SerializeField] private float maxReachScale = 2.5f;
         [Tooltip("Triple Punch (full Fist Size): the two extra jab fists fly out this many degrees to each side.")]
@@ -484,11 +491,11 @@ namespace Game.Combat
         }
 
         /// <summary>
-        /// How far a good flying jab flies on from the knuckles right now, in metres (Fist Size and the buffs included; the
-        /// first jab's reach before jabs are unlocked). A punch knocks an enemy back a share of this, so the jab after it
-        /// still reaches it: the combo.
+        /// How far a closed punch's combo reaches, in metres: a punch knocks a bug back a share of this (Enemy Hit Damage).
+        /// It's the perfect Jab Reach grown with Fist Size, plus the boongs' extra reach: the flying jab's reach from before
+        /// jabs flew their own size, kept apart so the knock-back stays as it was (user, 2026-11-10).
         /// </summary>
-        public static float JabReach
+        public static float ComboReach
         {
             get
             {
@@ -1061,8 +1068,9 @@ namespace Game.Combat
         private float StraightGrade(float straightness) => Mathf.Lerp(0.6f, 1f, Mathf.InverseLerp(jabStraightness, 1f, straightness));
 
         // A good punch that hit nothing flies on from the knuckles, the way the fist went: a jab straight ahead, a swing
-        // sideways (level, the way it swept), an uppercut up. The better it was, the farther; the more Fist Size, the
-        // farther and bigger. At full Fist Size it throws three.
+        // sideways (level, the way it swept), an uppercut up. The more Fist Size, the bigger, and a bigger jab flies
+        // farther (its own size, see Throw); a swing or an uppercut goes farther the better it was and with Fist Size.
+        // At full Fist Size it throws three.
         private void TryFly(Move move, float quality)
         {
             if (!closed || Time.time < nextFly || lastBallHit >= strokeStartTime) return;
@@ -1074,6 +1082,7 @@ namespace Game.Combat
             direction.Normalize();
             nextFly = Time.time + FlyCooldownNow;
 
+            // A swing's or an uppercut's reach (a jab's is measured from its look as it's thrown: Throw).
             float reach = Mathf.Lerp(jabReach.x, jabReach.y, quality) * Mathf.Lerp(1f, maxReachScale, Game.Leveling.PlayerLevel.PunchReachGrowth);
             // Sized from the fist at Fist Scale, so it grows with Fist Size apart from the hand's own little growth.
             float flyRadius = radius * fistScale * FlySize(move);
@@ -1186,6 +1195,10 @@ namespace Game.Combat
             // The Elon and Green Boong buffs: every fist flies farther by the same metres (not more for a Triple Punch's
             // farther ones).
             flyer.Launch(from, direction, reach + Game.Leveling.PlayerBuffs.FlyReach, hitSpeed, move, flyRadius);
+            // A jab flies from where the hand stopped as far as it is big, measured now that it's sized (user, 2026-11-10:
+            // "if the fist size = 15cm, then the flying fist can fly 15cm"), so Fist Size, a swollen hand and the Green
+            // Boong's bigger fist take it farther; the boongs' extra reach still comes on top.
+            if (move == Move.Jab) flyer.FlyFor(flyer.WorldSize * jabSizeReach + Game.Leveling.PlayerBuffs.FlyReach);
             flyer.Stroke = strokeId;
             flyer.Perfect = strokeJab >= perfectJab;
         }
@@ -1439,6 +1452,10 @@ namespace Game.Combat
             private Vector3 direction;
             private float reach;
             private float flown;
+            // How fast it flies (Fly Speed; a jab a little slower if need be, see Fly For), and how far past its reach the
+            // last counted step may end.
+            private float speed = FlySpeed;
+            private float overshoot;
             private float hitSpeed;
             private Move move;
             private bool done;
@@ -1455,6 +1472,41 @@ namespace Game.Combat
             /// <summary>How far it still has to fly, in metres; below 0 once it has stopped (the more shrunk away, the lower).</summary>
             public float LeftToFly => done ? -fade : reach - flown;
             public SphereCollider Ball => ball != null ? ball : ball = GetComponent<SphereCollider>();
+
+            /// <summary>
+            /// How big it looks right now, in metres: the longest side of the bounds its echo renders (the copy of the
+            /// hand, sized up with Fist Size), or its ball's width without an echo.
+            /// </summary>
+            public float WorldSize
+            {
+                get
+                {
+                    if (echoLook == null || echoShape == null || echoMesh == null) return Ball.radius * 2f;
+                    // The rendered mesh's own bounds in world metres (not the world box), so a hand turned on its side
+                    // isn't counted bigger.
+                    var side = Vector3.Scale(echoMesh.bounds.size, echoShape.lossyScale);
+                    return Mathf.Max(side.x, Mathf.Max(side.y, side.z));
+                }
+            }
+
+            /// <summary>
+            /// Sets how far it flies from where it was thrown, in metres (a jab: its own size, see Fist.Throw), exactly: a
+            /// whole number of physics steps, a little slower than Fly Speed if need be, hitting just as hard.
+            /// </summary>
+            public void FlyFor(float distance)
+            {
+                reach = Mathf.Max(distance, 0.01f);
+                // A step at Fly Speed is 8.9 cm (90 Hz), about half a fist, and counted in those a 15 cm fist flew only
+                // 8.9 cm (review, 2026-11-10). So it takes the fewest whole steps that cover its reach, each an even share.
+                float step = Mathf.Max(Time.fixedDeltaTime, 0.0001f);
+                int steps = Mathf.Max(1, Mathf.CeilToInt(reach / (FlySpeed * step) - 0.001f));
+                speed = reach / (steps * step);
+                // Enemy Hit Damage reads its speed x Weapon Power: as hard as the punch, however fast it flies.
+                weapon.Power = owner.Power * hitSpeed / speed;
+                // FixedUpdate counts a step before the physics moves it: half a step of leeway lets the last one move too.
+                overshoot = speed * step * 0.5f;
+                body.linearVelocity = direction * speed;
+            }
 
             private void Awake()
             {
@@ -1480,6 +1532,8 @@ namespace Game.Combat
                     // knuckles, then sized up around them.
                     var skin = owner.handSkin.transform;
                     owner.handSkin.BakeMesh(echoMesh);
+                    // Its bounds are its size (World Size: how far a jab flies), so they must be the hand as it is now.
+                    echoMesh.RecalculateBounds();
                     echo.localScale = Vector3.one;
                     echoShape.SetPositionAndRotation(skin.position + (from - owner.FistPoint()), skin.rotation);
                     echoShape.localScale = Vector3.one;
@@ -1499,6 +1553,9 @@ namespace Game.Combat
                 direction = towards.normalized;
                 reach = Mathf.Max(distance, 0.01f);
                 flown = 0f;
+                // A swing or an uppercut flies at Fly Speed and stops as it always did; a jab sets its own (Fly For).
+                speed = FlySpeed;
+                overshoot = 0f;
                 PuffAtTheWrist();
                 fade = 0f;
                 done = false;
@@ -1517,9 +1574,9 @@ namespace Game.Combat
                     if (fade >= 1f) gameObject.SetActive(false);
                     return;
                 }
-                flown += FlySpeed * Time.fixedDeltaTime;
-                if (flown >= reach) Stop();
-                else body.linearVelocity = direction * FlySpeed;
+                flown += speed * Time.fixedDeltaTime;
+                if (flown >= reach + overshoot) Stop();
+                else body.linearVelocity = direction * speed;
             }
 
             // A puff of smoke just behind it, at the wrist, as big as it is; it rides along (Wrist Smoke).

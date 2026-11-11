@@ -24,7 +24,9 @@ namespace Game.Shopping
     /// sometimes a legendary special (rare, less so while the pumpkin boss is fought), otherwise another normal item or
     /// special; each offer can be bought once. That line is locked until it's paid for once (15 Yellow Seed by
     /// default); once it's open, a legendary offer buzzes the shop hand twice. Bought items pop out of the panel and
-    /// fall to the floor. FSMs use the actions in PlayMaker's "Shop" category.
+    /// fall to the floor. Besides those, the candy rows (user, 2026-11-10): at every restock 2 different candies from the
+    /// catalog's Candies (not the same pair as last time when there's another), on rows of their own, handed over gently
+    /// so they don't break. FSMs use the actions in PlayMaker's "Shop" category.
     /// </summary>
     [DisallowMultipleComponent]
     public class Shop : MonoBehaviour
@@ -77,6 +79,9 @@ namespace Game.Shopping
         [Tooltip("How fast bought items fly out of the shop, in metres per second (x right, y up, z away from you); " +
                  "then they fall to the floor. All zero = they just drop.")]
         [SerializeField] private Vector3 flyOutVelocity = new(0f, 2f, 0.8f);
+        [Tooltip("The same for candies bought on the candy rows (user, 2026-11-10): gentler, so a bought candy never lands " +
+                 "hard enough to break (a candy is hurt by a knock over about 7 m/s).")]
+        [SerializeField] private Vector3 candyFlyOutVelocity = new(0f, 1f, 0.5f);
 
         [Header("Sounds")]
         [SerializeField] private AudioClip openSound;
@@ -102,6 +107,10 @@ namespace Game.Shopping
         private readonly Dictionary<string, int> purchases = new();
         private readonly List<int> onSale = new();
         private readonly List<int> lastOnSale = new();
+        // The candy rows: where in the catalog's Candies the candies on sale now are, the last pick, and the choices.
+        private readonly List<int> candiesOnSale = new();
+        private readonly List<int> lastCandies = new();
+        private readonly List<int> candyChoices = new();
         private Transform head;
         private bool available = true;
         private bool openedByHold;
@@ -133,6 +142,9 @@ namespace Game.Shopping
 
         /// <summary>Where in the catalog the items on sale now are.</summary>
         public IReadOnlyList<int> OnSale => onSale;
+
+        /// <summary>Where in the catalog's Candies the candies on the candy rows now are (catalog order).</summary>
+        public IReadOnlyList<int> CandiesOnSale => candiesOnSale;
 
         /// <summary>Seconds of play until new items go on sale.</summary>
         public float SecondsToRestock => stocked ? Mathf.Max(0f, restockAt - Time.time) : restockSeconds;
@@ -300,6 +312,15 @@ namespace Game.Shopping
             return Buy(catalog.Entries[index]);
         }
 
+        /// <summary>Buys the candy on a candy row (its place in the catalog's Candies), like a normal row.</summary>
+        public PurchaseResult TryBuyCandy(int index)
+        {
+            if (catalog == null || index < 0 || index >= catalog.Candies.Count) return Fail(PurchaseResult.Unavailable);
+            var entry = catalog.Candies[index];
+            if (entry == null) return Fail(PurchaseResult.Unavailable);
+            return Buy(entry, true);
+        }
+
         /// <summary>Buys the special on offer, once per offer; the special line must be unlocked first.</summary>
         public PurchaseResult TryBuySpecial()
         {
@@ -327,7 +348,8 @@ namespace Game.Shopping
             return PurchaseResult.Bought;
         }
 
-        private PurchaseResult Buy(ShopEntry entry)
+        // Gently: handed over slower (a candy, so it doesn't break when it lands).
+        private PurchaseResult Buy(ShopEntry entry, bool gently = false)
         {
             var inventory = PlayerInventory.Instance;
             if (entry.item == null || inventory == null) return Fail(PurchaseResult.Unavailable);
@@ -338,7 +360,7 @@ namespace Game.Shopping
             purchases[entry.item.Id] = bought + 1;
 
             GameObject spawned = null;
-            if (entry.item.WorldPrefab != null) spawned = Deliver(entry.item.WorldPrefab);
+            if (entry.item.WorldPrefab != null) spawned = Deliver(entry.item.WorldPrefab, gently);
             else inventory.Add(entry.item);
 
             PlaySound(buySound, spawned != null ? spawned.transform.position : transform.position);
@@ -360,6 +382,7 @@ namespace Game.Shopping
                 PickOnSale();
                 if (!SameAsLast()) break;
             }
+            PickCandies();
             PickSpecial();
 
             if (IsOpen && panel != null) panel.Restocked();
@@ -512,14 +535,62 @@ namespace Game.Shopping
             return false;
         }
 
-        private bool SameAsLast()
+        private bool SameAsLast() => SameList(onSale, lastOnSale);
+
+        private static bool SameList(List<int> a, List<int> b)
         {
-            if (onSale.Count != lastOnSale.Count) return false;
-            for (int i = 0; i < onSale.Count; i++)
+            if (a.Count != b.Count) return false;
+            for (int i = 0; i < a.Count; i++)
             {
-                if (onSale[i] != lastOnSale[i]) return false;
+                if (a[i] != b[i]) return false;
             }
             return true;
+        }
+
+        // The candy rows (user, 2026-11-10): Candy Rows different candies from the catalog's Candies, picked at random,
+        // kept in catalog order. Never exactly the same ones as the last restock when there's another to choose: then
+        // one of them sits out for one that wasn't picked.
+        private void PickCandies()
+        {
+            lastCandies.Clear();
+            lastCandies.AddRange(candiesOnSale);
+            candiesOnSale.Clear();
+            if (catalog == null) return;
+
+            candyChoices.Clear();
+            var candies = catalog.Candies;
+            for (int i = 0; i < candies.Count; i++)
+            {
+                var entry = candies[i];
+                if (entry != null && entry.item != null && !IsSoldOut(entry) && !CandyListedBefore(i)) candyChoices.Add(i);
+            }
+            // Shuffled: the first Count are the pick, the rest wait.
+            for (int i = candyChoices.Count - 1; i > 0; i--)
+            {
+                int j = UnityEngine.Random.Range(0, i + 1);
+                (candyChoices[i], candyChoices[j]) = (candyChoices[j], candyChoices[i]);
+            }
+            int count = Mathf.Min(catalog.CandyRows, candyChoices.Count);
+            for (int i = 0; i < count; i++) candiesOnSale.Add(candyChoices[i]);
+            candiesOnSale.Sort();
+
+            if (count > 0 && count < candyChoices.Count && SameList(candiesOnSale, lastCandies))
+            {
+                candiesOnSale[UnityEngine.Random.Range(0, count)] = candyChoices[UnityEngine.Random.Range(count, candyChoices.Count)];
+                candiesOnSale.Sort();
+            }
+        }
+
+        // The same candy listed twice is only on sale once (the first listing's price).
+        private bool CandyListedBefore(int index)
+        {
+            var item = catalog.Candies[index].item;
+            for (int i = 0; i < index; i++)
+            {
+                var entry = catalog.Candies[i];
+                if (entry != null && entry.item == item) return true;
+            }
+            return false;
         }
 
         public int GetPurchaseCount(ItemDefinition item)
@@ -585,7 +656,7 @@ namespace Game.Shopping
             return anchor != null;
         }
 
-        private GameObject Deliver(GameObject prefab)
+        private GameObject Deliver(GameObject prefab, bool gently)
         {
             var position = transform.position;
             var facing = Quaternion.identity;
@@ -604,19 +675,20 @@ namespace Game.Shopping
             {
                 // "Away from you" is the way the head looks; without a head, away from the panel's face.
                 var away = TryGetHead(out var eyes) ? HeadYaw(eyes) : Quaternion.Euler(0f, facing.eulerAngles.y + 180f, 0f);
-                FlyOut(body, away);
+                FlyOut(body, away, gently);
             }
             return spawned;
         }
 
         // Pops the item up and out with a tumble; gravity then drops it to the floor. A little random sideways, so a
-        // few bought in a row don't land in a pile.
-        private void FlyOut(Rigidbody body, Quaternion away)
+        // few bought in a row don't land in a pile. Gently (a candy): Candy Fly Out Velocity, half the scatter and spin.
+        private void FlyOut(Rigidbody body, Quaternion away, bool gently)
         {
-            var velocity = flyOutVelocity;
-            if (velocity.sqrMagnitude > 0f) velocity.x += UnityEngine.Random.Range(-0.3f, 0.3f);
+            var velocity = gently ? candyFlyOutVelocity : flyOutVelocity;
+            float scatter = gently ? 0.15f : 0.3f;
+            if (velocity.sqrMagnitude > 0f) velocity.x += UnityEngine.Random.Range(-scatter, scatter);
             body.linearVelocity = away * velocity;
-            body.angularVelocity = UnityEngine.Random.insideUnitSphere * 6f;
+            body.angularVelocity = UnityEngine.Random.insideUnitSphere * (gently ? 3f : 6f);
         }
 
         private bool TryGetHead(out Transform eyes)

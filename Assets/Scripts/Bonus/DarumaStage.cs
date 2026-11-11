@@ -266,6 +266,8 @@ namespace Game.Bonus
             returnSpot = HeadFloor();
             returnYaw = HeadYaw();
             tookPlayer = true;
+            // Special Stage Type 3: level-0 stats until Restore (user, 2026-11-10).
+            gameObject.AddComponent<Game.Leveling.SpecialStageStats>();
             Freeze(true);
             Teleporting(false);
             Fog(true);
@@ -352,8 +354,11 @@ namespace Game.Bonus
             float p = Progress();
             var range = p > 0.66f ? lookSecondsNear : lookSeconds;
             float until = Time.time + Random.Range(range.x, range.y);
-            var rigAt = origin != null ? origin.transform.position : Vector3.zero;
+            // Walking is measured where the head was in the play area: a snap turn swings the rig round the head, which
+            // moved the rig itself by up to ~0.3 m and counted as walking whenever the player stood away from the play
+            // area's middle (play test 2026-11-10); round the head it hardly moves. Leaning is the head check's job.
             var headAt = Local(head);
+            var rigAt = RigSpot(headAt);
             var leftAt = Local(leftHand);
             var rightAt = Local(rightHand);
             while (Time.time < until && !over && !Caught)
@@ -362,14 +367,14 @@ namespace Game.Bonus
                 // back from either: nothing counts, and getting up (or the punch that closes a notice) isn't moving.
                 if (Excused())
                 {
-                    rigAt = origin != null ? origin.transform.position : rigAt;
                     headAt = Local(head);
+                    rigAt = origin != null ? RigSpot(headAt) : rigAt;
                     leftAt = Local(leftHand);
                     rightAt = Local(rightHand);
                     yield return null;
                     continue;
                 }
-                var rigNow = origin != null ? origin.transform.position : rigAt;
+                var rigNow = origin != null ? RigSpot(headAt) : rigAt;
                 var walk = rigNow - rigAt;
                 walk.y = 0f;
                 var headNow = Local(head);
@@ -896,6 +901,9 @@ namespace Game.Bonus
 
         private Vector3 Local(Transform t) => t == null || origin == null ? Vector3.zero : origin.transform.InverseTransformPoint(t.position);
 
+        // Where a point of the play area (in the rig's own space) is in the world now.
+        private Vector3 RigSpot(Vector3 local) => origin != null ? origin.transform.TransformPoint(local) : Vector3.zero;
+
         // The player is down: health out, the lucky coins under way, or getting back up from a revive (as Player Launch).
         private bool PlayerDown()
         {
@@ -947,12 +955,17 @@ namespace Game.Bonus
             return global != null ? global.Value : null;
         }
 
+        // A spawned candy: "Candy_<number>(Clone)", never the shop's Candy Box (review, 2026-11-10: a bought Candy Box
+        // lying near the stage was deleted with the candies).
+        private static bool IsCandy(string name) =>
+            name.StartsWith("Candy_") && name.Length > 6 && char.IsDigit(name[6]) && name.EndsWith("(Clone)");
+
         // Candies left lying on the stage go with it.
         private void ClearCandies()
         {
             foreach (var t in FindObjectsByType<Transform>(FindObjectsSortMode.None))
             {
-                if (t != null && t.name.StartsWith("Candy_") && t.name.EndsWith("(Clone)") && (t.position - transform.position).sqrMagnitude < 60f * 60f) Destroy(t.gameObject);
+                if (t != null && IsCandy(t.name) && (t.position - transform.position).sqrMagnitude < 60f * 60f) Destroy(t.gameObject);
             }
         }
 
@@ -1054,6 +1067,8 @@ namespace Game.Bonus
             Teleporting(true);
             Freeze(false);
             ClearBombers();
+            // The player's own stats back (switched off now; it goes with the stage).
+            if (TryGetComponent(out Game.Leveling.SpecialStageStats stats)) stats.enabled = false;
         }
 
         private void ClearBombers()

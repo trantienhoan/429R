@@ -270,7 +270,7 @@ namespace Game.EditorTools
                 so.FindProperty("caughtSound").objectReferenceValue = Load<AudioClip>(Sfx + "Special_Stage_3/gotcha.wav");
                 so.FindProperty("bomber").objectReferenceValue = bomber;
                 var candies = so.FindProperty("candyPrefabs");
-                var candy = Enumerable.Range(1, 8).Select(i => Load<GameObject>($"Assets/Prefabs/Items/Breakable/Candy_{i}.prefab")).Where(c => c != null).ToArray();
+                var candy = Game.Inventory.CandyKinds.Numbers.Select(i => Load<GameObject>($"Assets/Prefabs/Items/Breakable/Candy_{i}.prefab")).Where(c => c != null).ToArray();
                 candies.arraySize = candy.Length;
                 for (int i = 0; i < candy.Length; i++) candies.GetArrayElementAtIndex(i).objectReferenceValue = candy[i];
                 so.FindProperty("winEffect").objectReferenceValue = Load<GameObject>("Assets/Prefabs/Light/Firework_Big.prefab");

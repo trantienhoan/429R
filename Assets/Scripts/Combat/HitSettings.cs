@@ -117,6 +117,15 @@ namespace Game.Combat
                  "0.6 since 2026-10-29). The pumpkin boss's own Dizzy Stars size isn't changed by this.")]
         [Min(0.1f)]
         [SerializeField] private float stunStarsSize = 0.6f;
+        [Tooltip("Low on health, a mini boss or the pumpkin boss is hard to stun (user, 2026-11-10): below this share of " +
+                 "its health, a hit stops it only Low Health Stun Chance of the time. 0 = never harder.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float lowHealthBelow = 0.4f;
+        [Tooltip("The chance a hit still stuns it then (a mini boss's knock-back, flinch and stars; the pumpkin boss's dizzy " +
+                 "spell after its cyclone). One roll per hit; a hit it shrugs off still hurts, and still starts a mini " +
+                 "boss's Stun Guard, so fast punches can't roll again on every hit. 1 = always, as before.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float lowHealthStunChance = 0.35f;
 
         [Header("Headshot (thrown things)")]
         [Tooltip("A thrown thing (not a fist, not a weapon in the hand) that hurts an enemy on the head knocks it out for " +
@@ -254,6 +263,12 @@ namespace Game.Combat
         /// <summary>The stars shown over a stunned boss's head (null: none), and how big (1 = the usual).</summary>
         public GameObject StunStars => stunStars;
         public float StunStarsSize => stunStarsSize;
+
+        /// <summary>
+        /// Rolls whether a boss with this share of its health left (0-1) shrugs off a stun: only below Low Health Below,
+        /// and then it's stunned Low Health Stun Chance of the time. Call it once per hit.
+        /// </summary>
+        public bool ResistsStun(float healthShare) => healthShare < lowHealthBelow && Random.value > lowHealthStunChance;
 
         public float HeadshotStunSeconds => headshotStunSeconds;
         public Vector2 HeadshotPush => headshotPush;

@@ -31,7 +31,11 @@ namespace Game.Enemies
     /// e.g. the bee) flies at heights the brain sets (its animations stay at the root): it circles up high, dives to the
     /// player's chest to sting whenever it's ready (no waiting for a turn), and after a sting, a hit or a dodge goes
     /// back up, flies around a little and dives again. Low on health it loses its wings, drops to the floor and from
-    /// then on walks like a spider, but still attacks without waiting for a turn (Flying section). Once its dodge
+    /// then on walks like a spider, but still attacks without waiting for a turn (Flying section). A flying boss that
+    /// Stays High (the bee bosses) keeps up there instead, shooting its Web Shot (a poison sting), and dives only now and
+    /// then (Bee tactics). A flier with a Kamikaze Chance (the normal bees) never dives the usual way: it stays up and
+    /// shoots that sting too, and about one attack in six is a suicide dive that blows up on the player (Kamikaze dives).
+    /// Once its dodge
     /// animations are added it dodges swings (back) and things thrown or shot at it (to the side), now and then.
     /// Health, death and hits stay with its Health FSM and Enemy Hit Damage. It sends events to its own FSMs (Noticed,
     /// Attack, Bite, Blocked, Missed, Flinch, WeakFlinch, Flee, CallMinions, Died) for sounds and effects made in
@@ -49,7 +53,7 @@ namespace Game.Enemies
     /// a giant web ball that webs them at once (Giant Web). Nothing stops it while it does. A charge knocks the bugs
     /// in its way flying. Or it becomes a Ticking Bomb: it flashes and beeps, faster and faster, while it keeps after the
     /// player, taking double damage meanwhile, and Bomb Seconds later blows up (killed first, it doesn't).
-    /// Now and then (Anomaly Chance, 1 in 100) a bug appears as the rare white one, always a small white cockroach (a
+    /// Now and then (Anomaly Chance; 0.003 = about 1 in 333) a bug appears as the rare white one, always a small white cockroach (a
     /// spider or bee becomes one, Anomaly Body): it never bites, only runs, fast, among the other bugs and from tree
     /// pumpkin to tree pumpkin, always keeping away from the player; one good throw kills it (Anomaly Health), for the
     /// Candy Helmet for a few seconds. After
@@ -150,6 +154,14 @@ namespace Game.Enemies
             [Tooltip("How long the slow lasts, in seconds; it eases back to normal over the last half second. 0 = none.")]
             [Min(0f)]
             public float slowSeconds;
+            [Tooltip("Poison: when this attack lands, the player also loses this much health every second for Poison " +
+                     "Seconds (Player Poison: cut by Toughness like any hit, never below 1 health; user, 2026-11-10: the " +
+                     "bee bosses' sting). Only with Poison Seconds above 0.")]
+            [Min(0f)]
+            public float poisonPerSecond;
+            [Tooltip("How long the poison lasts, in seconds. 0 = none.")]
+            [Min(0f)]
+            public float poisonSeconds;
             [Tooltip("How hard this attack shoves the player when it lands: multiplies its size's Launch Height and Launch " +
                      "Distance (2 = twice as far). 0 or 1 = as the size says. A face leap shoves as it lets go of the face " +
                      "(at Hit Until); swatted off before that, it doesn't shove.")]
@@ -479,7 +491,8 @@ namespace Game.Enemies
         [SerializeField] private float throwSpeed = 4f;
 
         [Header("Web shot")]
-        [Tooltip("What it shoots (Spider_Web_Ball). Empty: no web shots.")]
+        [Tooltip("What it shoots (Spider_Web_Ball; the bee bosses: Bee_Poison_Sting, which flies straight, without " +
+                 "gravity). Empty: no web shots.")]
         [SerializeField] private GameObject webBall;
         [Tooltip("Animator state for making and shooting the web. Empty: it rears up (Alert Animation) instead.")]
         [SerializeField] private string webAnimation = "";
@@ -545,6 +558,12 @@ namespace Game.Enemies
                  "Skitter is on), still without waiting for a turn. 0 = never.")]
         [Range(0f, 1f)]
         [SerializeField] private float groundBelowHealth = 0.4f;
+        [Tooltip("Losing its wings makes it a menace (user, 2026-11-11: \"they would be so weak right there\"): as the " +
+                 "wings come off, its Toughness (Enemy Hit Damage) is multiplied by this, once. 2 = a hit has to be twice " +
+                 "as hard to hurt it (or to count as a hard hit) and blasts do half; a hit that hurts still does its " +
+                 "weapon's damage. The normal bees 2, the Pumpkin Butt bee boss 3. 1 = no change. Never the white bug.")]
+        [Min(1f)]
+        [SerializeField] private float winglessToughness = 1f;
         [Tooltip("The wing bones in its model: they shrink away when the wings are lost.")]
         [SerializeField] private string[] wingBones = Array.Empty<string>();
         [Tooltip("Animator state for losing its wings and falling. Empty or not in the Animator: its hit animation.")]
@@ -611,6 +630,71 @@ namespace Game.Enemies
         [SerializeField] private AudioClip rushSound;
         [Tooltip("The camera shake with the warning (ShakeSmall, ShakeMed, ShakeBig). Empty: none.")]
         [SerializeField] private string rushShake = "ShakeMed";
+        [Tooltip("Stays High (Boss size fliers; user, 2026-11-10: the bee bosses were easy at chest height): it keeps up at " +
+                 "its Cruise Height, circling, and shoots its Web Shot from there (the bee bosses: a poison sting). It " +
+                 "dives only after a full High Wait (never halved for an Aggressive Boss), also the first time, climbs " +
+                 "straight back up after any hit (even with a Stun Guard), hovers at Cruise Height before it has noticed " +
+                 "the player, and calls its Boss Rush without diving in it. A Ticking Bomb still makes it dive.")]
+        [SerializeField] private bool staysHigh;
+
+        [Header("Kamikaze dives (normal bees)")]
+        [Tooltip("Kamikaze bees (user, 2026-11-11: \"Bee Dive Sting would kill the Bee, but do poison and explode " +
+                 "damage\"). A flier that isn't a boss never dives the usual way: it stays up, keeps its distance and " +
+                 "shoots its Web Shot (the poison sting), and this share of those attacks (0.17 = about 1 in 6) is a " +
+                 "suicide dive instead: it flashes and beeps, comes down at the chest the usual way (wind-up, homing " +
+                 "sting) and blows up on the player (Kamikaze Event at Kamikaze Share, the poison dose and a small shove). " +
+                 "Blocked (a held weapon, a fist, the legendary shield) it still blows up, but the player takes nothing; " +
+                 "dodged, it blows up where its dive ends. It dies in its own blast: no EXP, no orbs. Swatted by the " +
+                 "player during the dive (any hit that hurts) it dies the normal way: their EXP, no blast. A boss's rush " +
+                 "makes it shoot with the others (a volley), never dive. Without its wings it walks and stings as before " +
+                 "and doesn't shoot. No feints and no swarm dives with it. 0 = off (spiders, cockroaches, the bee bosses).")]
+        [Range(0f, 1f)]
+        [SerializeField] private float kamikazeChance;
+        [Tooltip("Sent to the player's Damage FSM when its blast lands on them: DamageHeavy (40-50 before Toughness)...")]
+        [SerializeField] private string kamikazeEvent = "DamageHeavy";
+        [Tooltip("...doing this share of it (0.5 = 20-25, the box bomb's face hit).")]
+        [Range(0f, 3f)]
+        [SerializeField] private float kamikazeShare = 0.5f;
+        [Tooltip("A blast that missed (the player stepped aside or ran) still hurts with this (Damage: 6-9), poison " +
+                 "included, when the player's body is within Kamikaze Radius. Empty: a miss never hurts.")]
+        [SerializeField] private string kamikazeNearEvent = "Damage";
+        [Tooltip("How far the blast reaches, in metres: the player when it missed, and the bugs around (Kamikaze Bug Damage).")]
+        [Min(0.1f)]
+        [SerializeField] private float kamikazeRadius = 0.9f;
+        [Tooltip("The poison dose its blast gives the player: this much health a second (Player Poison: cut by Toughness, " +
+                 "never below 1 health)...")]
+        [Min(0f)]
+        [SerializeField] private float kamikazePoisonPerSecond = 2f;
+        [Tooltip("...for this many seconds. 0 = no poison.")]
+        [Min(0f)]
+        [SerializeField] private float kamikazePoisonSeconds = 5f;
+        [Tooltip("A blast that lands shoves the player this high (X) and this far back (Y), in metres (the box bomb's " +
+                 "shove; no camera shake).")]
+        [SerializeField] private Vector2 kamikazeShove = new(0.15f, 0.6f);
+        [Tooltip("What its blast does to the bugs in reach (the one blast rule; not the player's blast, so a bug it kills " +
+                 "gives no EXP). 1, like the box bomb.")]
+        [Min(0f)]
+        [SerializeField] private float kamikazeBugDamage = 1f;
+        [Tooltip("A dive that hasn't reached the player after this many seconds (they ran or teleported away) blows up " +
+                 "where it is.")]
+        [Min(1f)]
+        [SerializeField] private float kamikazeMaxSeconds = 8f;
+        [Tooltip("The blast's effects (Effect Pool: the box bomb's Smoke_Flash_Small_Puff + Flash_round_yellow, never " +
+                 "Smoke_Blast), how big they are, and its sound.")]
+        [SerializeField] private GameObject[] kamikazeEffects = Array.Empty<GameObject>();
+        [Min(0.01f)]
+        [SerializeField] private float kamikazeEffectSize = 0.5f;
+        [SerializeField] private AudioClip kamikazeSound;
+        [Range(0f, 1f)]
+        [SerializeField] private float kamikazeVolume = 0.8f;
+        [Tooltip("Played as the dive starts (the box bomb's beep), so the player hears which bee is coming. Empty: none.")]
+        [SerializeField] private AudioClip kamikazeWarning;
+        [Tooltip("While it dives its body flashes this colour (its own texture tinted, and its glow), Kamikaze Blinks " +
+                 "times a second. Off: no flash.")]
+        [SerializeField] private bool kamikazeFlash = true;
+        [SerializeField] private Color kamikazeFlashColour = new(1f, 0.35f, 0.1f);
+        [Min(0.5f)]
+        [SerializeField] private float kamikazeBlinks = 5f;
 
         [Header("Getting hit")]
         [Tooltip("How long a hit stops it, in seconds.")]
@@ -621,8 +705,8 @@ namespace Game.Enemies
         [SerializeField] private float flinchCooldown = 1f;
         [Tooltip("Stun guard: after something stops it (a flinch, a knock-back, a knock-out), nothing can stop it again " +
                  "for this many seconds, counted from when it's back on its feet. Light taps never make it jerk, and a " +
-                 "flier comes straight back at the player after a hit instead of flying up. Hits still hurt. 0 = off " +
-                 "(minions can be stun-locked). White mini bosses: 0.5; Pumpkin Butt mini bosses: 2.")]
+                 "flier comes straight back at the player after a hit instead of flying up (not one that Stays High). " +
+                 "Hits still hurt. 0 = off (minions can be stun-locked). White mini bosses: 0.5; Pumpkin Butt mini bosses: 2.")]
         [Min(0f)]
         [SerializeField] private float stunGuardSeconds;
         [Tooltip("A hit too weak to hurt it (a soft throw, a light tap) still makes it flinch this long, in seconds: it " +
@@ -686,7 +770,8 @@ namespace Game.Enemies
         [Tooltip("Boss size only (the mini bosses): it goes for the player as soon as it's out and never gives up on " +
                  "them, wherever they are. It never waits for a turn (no boss does), the other enemies make way for it, " +
                  "it runs straight at the player (no skittering), and between attacks it stays close, facing the player, " +
-                 "instead of circling; after a leap it doesn't run off. A flier waits up high half as long. Off: it acts " +
+                 "instead of circling; after a leap it doesn't run off. A flier waits up high half as long (not one that " +
+                 "Stays High). Off: it acts " +
                  "like the others (still without waiting for a turn).")]
         [SerializeField] private bool aggressiveBoss = true;
         [Tooltip("Boss size only: once it winds up an attack ticked Unstoppable (its jumps; its special moves always), " +
@@ -868,12 +953,13 @@ namespace Game.Enemies
         [SerializeField] private GameObject rotPieces;
 
         [Header("White anomaly (rare)")]
-        [Tooltip("Chance (0 to 1) that a bug turns out to be the rare white one as it appears: 0.01 = 1 in 100. Never a " +
+        [Tooltip("Chance (0 to 1) that a bug turns out to be the rare white one as it appears: 0.003 = about 1 in 333 " +
+                 "(user, 2026-11-10: rarer, was 0.01). Never a " +
                  "boss or a tree spider. It's small and white and never bites: it only runs, Anomaly Speed times as fast, " +
                  "keeping away from the player. Killing it gives the player the bonus round's Candy Helmet for Anomaly " +
                  "Helmet Seconds. It isn't part of its spawner's wave, and the bonus round doesn't wait for it.")]
         [Range(0f, 1f)]
-        [SerializeField] private float anomalyChance = 0.01f;
+        [SerializeField] private float anomalyChance = 0.003f;
         [Min(0.1f)]
         [SerializeField] private float anomalySpeed = 1.5f;
         [Min(0f)]
@@ -992,6 +1078,9 @@ namespace Game.Enemies
         private static readonly Dictionary<AudioClip, float> soundStarted = new();
         private static readonly Collider[] nearby = new Collider[48];
         private static XROrigin player;
+        // The player's walking (the thumbstick's Dynamic Move Provider and the Arm Swing Move Provider), looked up when a
+        // shot is aimed and let go of straight after.
+        private static readonly List<UnityEngine.XR.Interaction.Toolkit.Locomotion.Movement.ContinuousMoveProvider> playerMovers = new();
 
         private NavMeshAgent agent;
         private AudioSource speaker;
@@ -1023,6 +1112,8 @@ namespace Game.Enemies
         private float nextCruiseChange;
         private float bobPhase;
         private readonly List<Transform> wings = new();
+        // Its Toughness has been multiplied by Wingless Toughness (only ever once).
+        private bool winglessTough;
         private bool fled;
         // The rare white bug: it only runs. Until when it keeps its way, when it may pick a new one, and whether it's
         // running away from the player.
@@ -1054,6 +1145,8 @@ namespace Game.Enemies
         // come in the same frame and count as one stop).
         private float stunGuardUntil;
         private int stunFrame = -1;
+        // A low-health boss shrugged off the hit of that frame (Hit Settings > Low Health Stun Chance, one roll per hit).
+        private bool stunResisted;
         // Where its agent was going before a weak flinch stopped it, so it carries on afterwards.
         private bool resumeAgent;
         private bool resumeTurning;
@@ -1087,6 +1180,15 @@ namespace Game.Enemies
         private bool calledIn;
         private float nextRush;
         private float rushHoldUntil;
+        // Kamikaze dives: this dive is its last (it blows up at the end), when it gives up and blows up anyway, how far
+        // through its flashes it is and whether it's lit; and a boss's rush volley: its sting goes at this time (0: none).
+        private bool kamikaze;
+        private float kamikazeUntil;
+        private float kamikazePhase;
+        private bool kamikazeLit;
+        private float volleyAt;
+        // A rush volley's sting still goes this many seconds late (it was dodging or flinching as the rush came), then not.
+        private const float VolleyGrace = 1.5f;
         private readonly HashSet<string> missingAnimations = new();
 
         private AttackMove move;
@@ -1180,6 +1282,12 @@ namespace Game.Enemies
         /// <summary>For testing: the next bug that appears is a white one (if it can be).</summary>
         public static bool ForceNextAnomaly;
 
+        /// <summary>For testing: every kamikaze bee's next attack is its kamikaze dive (until set back to false).</summary>
+        public static bool ForceKamikaze;
+
+        /// <summary>On its kamikaze dive right now (it blows up at the end of it).</summary>
+        public bool IsKamikaze => kamikaze;
+
         /// <summary>Which size it turned out to be: Small, Normal or Boss.</summary>
         public string SizeName => kindName.ToString();
         /// <summary>True while its Stun Guard is up: hits hurt but don't stop it (for debugging and FSMs).</summary>
@@ -1202,6 +1310,8 @@ namespace Game.Enemies
 
         /// <summary>A boss (its Size is Boss).</summary>
         public bool IsBoss => kindName == SizeClass.Boss;
+        // A flying boss with Stays High (the bee bosses): up high, shooting, diving only now and then.
+        private bool StaysHigh => staysHigh && kindName == SizeClass.Boss && IsFlying && !anomaly;
         // How much further it may chase a backing-off player while it stings (fliers with Homing Sting; 0 otherwise).
         private float HomingExtra => flies && homingSting ? homingReach : 0f;
 
@@ -1235,6 +1345,7 @@ namespace Game.Enemies
             player = null;
             ForceNextAnomaly = false;
             makingWhite = false;
+            ForceKamikaze = false;
         }
 
         private void Awake()
@@ -1291,6 +1402,7 @@ namespace Game.Enemies
             EnemyHitDamage.AnyHit += OnAnyHit;
             EnemyHitDamage.WeakHit += OnWeakHit;
             if (special == SpecialMove.BullCharge) EffectPool.Warm(chargeDust, 4);
+            if (KamikazeKind) Game.Weapons.Blast.Warm(kamikazeEffects);
 
             if (anomaly)
             {
@@ -1400,6 +1512,12 @@ namespace Game.Enemies
                 FallIfLifted();
                 if (flies) UpdateHeight();
                 return;
+            }
+
+            if (kamikaze)
+            {
+                UpdateKamikaze();
+                if (state == State.Dead) return;
             }
 
             switch (state)
@@ -1556,6 +1674,8 @@ namespace Game.Enemies
             if (GoesForObject && targetObject == null) return;
             noticed = true;
             lastSeen = Time.time;
+            // One that Stays High shoots first: its first dive waits a full High Wait.
+            if (StaysHigh) nextAttack = Mathf.Max(nextAttack, Time.time + Random.Range(highWait.x, Mathf.Max(highWait.x, highWait.y)));
             // Still climbing out: it goes for the player once it's out.
             if (state == State.Appear)
             {
@@ -1888,10 +2008,18 @@ namespace Game.Enemies
                 StartCling();
                 return;
             }
+            // A kamikaze bee's blast has ended it.
+            if (state == State.Dead) return;
             if (!attackResolved && t > move.hitUntil)
             {
                 attackResolved = true;
                 SendToOwnFsms("Missed");
+                // Dodged: a kamikaze bee blows up where its dive ends.
+                if (kamikaze)
+                {
+                    KamikazeBlast(KamikazeMissPoint(), false, false);
+                    return;
+                }
             }
 
             // A leaper waits until it's back on the floor (one going through, until it has landed behind the player).
@@ -2275,6 +2403,13 @@ namespace Game.Enemies
                 if (other.transform.IsChildOf(transform)) continue;
                 if (heldThingsBlock && !Unstoppable && IsHeldOrFist(other))
                 {
+                    // A kamikaze bee blows up on what blocks it: the player takes nothing.
+                    if (kamikaze)
+                    {
+                        attackResolved = true;
+                        KamikazeBlast(mouth, false, true);
+                        return false;
+                    }
                     if (Fist.IsFistBall(other.attachedRigidbody)) FistBlocked();
                     else WearBlocker(other.attachedRigidbody);
                     BiteBlocked();
@@ -2305,11 +2440,23 @@ namespace Game.Enemies
             // A legendary shield held between it and the player's head stops it, even if the bite missed the shield.
             if (heldThingsBlock && Game.Weapons.LegendaryGear.TryBlock(mouth))
             {
+                if (kamikaze)
+                {
+                    attackResolved = true;
+                    KamikazeBlast(mouth, false, true);
+                    return false;
+                }
                 BiteBlocked();
                 return false;
             }
 
             attackResolved = true;
+            // A kamikaze bee's sting is its blast.
+            if (kamikaze)
+            {
+                KamikazeBlast(mouth, true, false);
+                return false;
+            }
             BitePlayer(true, true);
             return true;
         }
@@ -2322,6 +2469,7 @@ namespace Game.Enemies
             if (BossAttacking && !string.IsNullOrEmpty(unstoppablePlayerEvent)) SendToPlayer(unstoppablePlayerEvent, PlayerHealthFsm);
             else SendToPlayer(BiteEvent);
             if (move.slowSeconds > 0f) Game.Locomotion.PlayerSlow.Apply(move.slowPlayerTo, move.slowSeconds);
+            if (move.poisonSeconds > 0f && move.poisonPerSecond > 0f) PlayerPoison.Add(move.poisonPerSecond, move.poisonSeconds);
             if (landSound && move.landSound != null) PlayOne(move.landSound, true);
             // The size's push, times this attack's Push Power (a jump attack shoves harder), and the distance times Push
             // Farther.
@@ -2458,21 +2606,30 @@ namespace Game.Enemies
             }
             if (Time.time < stateUntil) return;
 
-            if (!fled && fleeBelowHealth > 0f && health != null && health.Value / startHealth <= fleeBelowHealth)
+            if (LowEnoughToFlee)
             {
-                fled = true;
-                // Now and then it hides in a tree pumpkin instead (Hiding in pumpkins).
-                if (hideChance > 0f && !anomaly && Random.value < hideChance && StartHide(true)) return;
-                StartFlee();
+                FleeOnce();
                 return;
             }
-            // A flier goes back up after a hit; one with a Stun Guard (a Pumpkin Butt boss) comes straight back instead.
-            if (IsFlying && noticed && stunGuardSeconds <= 0f)
+            // A flier goes back up after a hit; one with a Stun Guard (a Pumpkin Butt boss) comes straight back instead,
+            // unless it Stays High (user, 2026-11-10: the bee bosses always climb back up).
+            if (IsFlying && noticed && (stunGuardSeconds <= 0f || StaysHigh))
             {
                 GoHigh();
                 return;
             }
             Enter(noticed ? State.Chase : State.Idle, 1f);
+        }
+
+        // Low enough on health to run away (Flee Below Health), and it hasn't yet.
+        private bool LowEnoughToFlee => !fled && fleeBelowHealth > 0f && health != null && health.Value / startHealth <= fleeBelowHealth;
+
+        // It runs away, once; now and then it hides in a tree pumpkin instead (Hiding in pumpkins).
+        private void FleeOnce()
+        {
+            fled = true;
+            if (hideChance > 0f && !anomaly && Random.value < hideChance && StartHide(true)) return;
+            StartFlee();
         }
 
         private void StartFlee()
@@ -2849,6 +3006,16 @@ namespace Game.Enemies
         {
             bombAt = Time.time + bombSeconds;
             bombPhase = 0f;
+            FindFlashRenderers();
+            if (models != null) bombModelsScale = models.localScale;
+            if (TryGetComponent(out EnemyHitDamage hits)) hits.damageTaken = bombDamageTaken;
+            PlayOne(noticeSounds, true);
+            SendToOwnFsms("BombArmed");
+        }
+
+        // The renderers that flash (the Ticking Bomb, a kamikaze dive): its body's, not its particles.
+        private void FindFlashRenderers()
+        {
             bombRenderers.Clear();
             var under = models != null ? models : transform;
             foreach (var r in under.GetComponentsInChildren<Renderer>())
@@ -2856,25 +3023,27 @@ namespace Game.Enemies
                 if (r is ParticleSystemRenderer || r.sharedMaterial == null || !r.sharedMaterial.HasProperty(BaseColorId)) continue;
                 bombRenderers.Add(r);
             }
-            if (models != null) bombModelsScale = models.localScale;
-            if (TryGetComponent(out EnemyHitDamage hits)) hits.damageTaken = bombDamageTaken;
-            PlayOne(noticeSounds, true);
-            SendToOwnFsms("BombArmed");
         }
 
         // Its own colours, or the flash colour on its body and its glow.
         private void ShowBombFlash(bool lit)
         {
             bombLit = lit;
+            ShowFlash(lit, bombFlash);
+        }
+
+        private void ShowFlash(bool lit, Color colour)
+        {
             bombBlock ??= new MaterialPropertyBlock();
             foreach (var r in bombRenderers)
             {
                 if (r == null) continue;
                 var material = r.sharedMaterial;
+                if (material == null) continue;
                 r.GetPropertyBlock(bombBlock);
-                bombBlock.SetColor(BaseColorId, lit ? bombFlash : material.GetColor(BaseColorId));
+                bombBlock.SetColor(BaseColorId, lit ? colour : material.GetColor(BaseColorId));
                 if (material.HasProperty(EmissionColorId))
-                    bombBlock.SetColor(EmissionColorId, lit ? bombFlash * 2f : material.GetColor(EmissionColorId));
+                    bombBlock.SetColor(EmissionColorId, lit ? colour * 2f : material.GetColor(EmissionColorId));
                 r.SetPropertyBlock(bombBlock);
             }
         }
@@ -2926,18 +3095,120 @@ namespace Game.Enemies
         }
 
         // The player's body (a standing line from their feet to their head) within Bomb Radius.
-        private bool PlayerInBlast(Vector3 point)
+        private bool PlayerInBlast(Vector3 point) => PlayerWithin(point, bombRadius);
+
+        // The player's body (a standing line from their feet to their head) within this many metres of the point.
+        private bool PlayerWithin(Vector3 point, float radius)
         {
             var head = player.Camera.transform.position;
             float feet = player.transform.position.y;
             var closest = new Vector3(head.x, Mathf.Clamp(point.y, feet, head.y), head.z);
-            float reach = bombRadius + playerBodyRadius;
+            float reach = radius + playerBodyRadius;
             return (closest - point).sqrMagnitude <= reach * reach;
+        }
+
+        // ---- Kamikaze dives ----
+
+        // A bee with Kamikaze Chance (never a boss, the white bug or a tree bug)...
+        private bool KamikazeKind => kamikazeChance > 0f && flies && kindName != SizeClass.Boss && !anomaly && !GoesForObject;
+        // ...while it has its wings: it shoots, and now and then dives to blow up.
+        private bool KamikazeMode => KamikazeKind && !grounded;
+
+        // Its attack is the suicide dive this time: it takes its turn (no feint, no swarm with it) and comes down at the
+        // chest the usual way, flashing; the dive ends in its blast (Try Bite, Do Attack, Update Kamikaze).
+        private void StartKamikaze()
+        {
+            kamikaze = true;
+            kamikazeUntil = Time.time + kamikazeMaxSeconds;
+            hasTurn = true;
+            turnCounted = false;
+            feinting = strikeBack = quickWindUp = calledIn = false;
+            if (kamikazeFlash)
+            {
+                FindFlashRenderers();
+                kamikazePhase = 0f;
+                ShowKamikazeFlash(true);
+            }
+            if (kamikazeWarning != null) PlayOne(kamikazeWarning, true);
+            Enter(State.Chase, 0f);
+            SendToOwnFsms("Kamikaze");
+        }
+
+        // While it dives: its flash, and a dive that takes too long (the player got away) blows up where it is.
+        private void UpdateKamikaze()
+        {
+            if (Time.time >= kamikazeUntil && state != State.Attack)
+            {
+                KamikazeBlast(KamikazeMissPoint(), false, false);
+                return;
+            }
+            if (!kamikazeFlash) return;
+            kamikazePhase += kamikazeBlinks * Time.deltaTime;
+            bool lit = kamikazePhase % 1f < 0.5f;
+            if (lit != kamikazeLit) ShowKamikazeFlash(lit);
+        }
+
+        private void ShowKamikazeFlash(bool lit)
+        {
+            kamikazeLit = lit;
+            ShowFlash(lit, kamikazeFlashColour);
+        }
+
+        // The dive is off without a blast (a hit, a flinch, lost wings, calming down, dying the normal way): its own
+        // colours back.
+        private void EndKamikaze()
+        {
+            if (!kamikaze) return;
+            kamikaze = false;
+            if (kamikazeLit) ShowKamikazeFlash(false);
+        }
+
+        // Where it blows up when it never reached the player: at its sting, where it flies.
+        private Vector3 KamikazeMissPoint()
+        {
+            float size = Size();
+            return transform.position + transform.forward * (0.3f * size) + Vector3.up * (0.15f * size + flyLift);
+        }
+
+        // The end of its dive. Landed on the player: Kamikaze Event at Kamikaze Share, the poison and the shove. Blocked
+        // (a held weapon, a fist, the legendary shield): nothing for the player. Missed: Kamikaze Near Event and the
+        // poison if the player is within Kamikaze Radius. It dies in its own blast (no EXP, no orbs, no damage number), its
+        // body gone in the bang, and the bugs around take the blast by the one rule (not the player's: no EXP for them).
+        private void KamikazeBlast(Vector3 point, bool landed, bool blocked)
+        {
+            if (!kamikaze || state == State.Dead) return;
+            EndKamikaze();
+            Signalled?.Invoke(this, landed ? "KamikazeHit" : blocked ? "KamikazeBlocked" : "KamikazeMissed");
+
+            bool near = !landed && !blocked && !string.IsNullOrEmpty(kamikazeNearEvent) && player != null &&
+                        player.Camera != null && PlayerWithin(point, kamikazeRadius);
+            if (near && Game.Weapons.LegendaryGear.TryBlock(point)) near = false;
+            if (landed || near)
+            {
+                DamageVignette.HitFrom(point);
+                if (landed)
+                {
+                    PlayerDamageShare.Next(kamikazeShare);
+                    SendToPlayer(kamikazeEvent);
+                    if (kamikazeShove.x > 0f || kamikazeShove.y > 0f) PlayerLaunch.Launch(point, kamikazeShove.x, kamikazeShove.y, false);
+                }
+                else SendToPlayer(kamikazeNearEvent);
+                if (kamikazePoisonPerSecond > 0f && kamikazePoisonSeconds > 0f) PlayerPoison.Add(kamikazePoisonPerSecond, kamikazePoisonSeconds);
+            }
+            SendToOwnFsms("KamikazeBlast");
+
+            Game.Leveling.PlayerLevel.NoRewardFor(gameObject);
+            if (health != null) health.Value = 0f;
+            Die();
+            if (models != null) models.gameObject.SetActive(false);
+            TryGetComponent(out Rigidbody own);
+            Game.Weapons.Blast.Explode(point, kamikazeRadius, kamikazeBugDamage, 0f, own, kamikazeEffects, kamikazeSound,
+                kamikazeVolume, null, false, kamikazeEffectSize, -1f, false);
         }
 
         // ---- The white anomaly ----
 
-        // One in a hundred (Anomaly Chance) of the bugs that go for the player; never a boss.
+        // A small chance (Anomaly Chance; 0.003 = about 1 in 333) for each bug that goes for the player; never a boss.
         private bool RollAnomaly()
         {
             if (size == SizeClass.Boss || target != TargetKind.Player) return false;
@@ -3359,8 +3630,17 @@ namespace Game.Enemies
         {
             grounded = true;
             wingsOffAt = Time.time;
+            // A kamikaze dive or a rush volley it was on is off: on the ground it walks and stings.
             GiveUpTurn();
+            volleyAt = 0f;
             StopShooting();
+            // Tougher without its wings (Wingless Toughness), once.
+            if (winglessToughness > 1f && !winglessTough && !anomaly && TryGetComponent(out EnemyHitDamage tougher))
+            {
+                winglessTough = true;
+                tougher.Toughness *= winglessToughness;
+                SendToOwnFsms("Toughened");
+            }
             Stop();
             Enter(State.WingsOff, wingsOffSeconds);
             Play(HasAnimationQuiet(wingsOffAnimation) ? wingsOffAnimation : HitLook, true);
@@ -3435,7 +3715,8 @@ namespace Game.Enemies
                     return 0f;
                 case State.Idle:
                 case State.Wander:
-                    return wanderHeight;
+                    // One that Stays High is up there from the start (it rises during a barrel's Hold Off).
+                    return StaysHigh ? CruiseHeight() : wanderHeight;
                 case State.Prepare:
                 case State.Attack:
                     return AttackHeight();
@@ -3478,9 +3759,15 @@ namespace Game.Enemies
         // After a sting, a hit or a dodge a flier goes back up, flies around a little, then dives again.
         private void GoHigh()
         {
+            // Holding a turn means it was diving (a flier takes one only to dive).
+            bool dived = hasTurn;
             GiveUpTurn();
             feinting = strikeBack = quickWindUp = false;
-            nextAttack = Time.time + Random.Range(highWait.x, Mathf.Max(highWait.x, highWait.y)) * (Aggressive ? 0.5f : 1f);
+            // One that Stays High waits the full High Wait: its dives are rare (user, 2026-11-10). Only a dive starts that
+            // wait again: a dodge or a hit while it's up keeps the dive it was waiting for, or throws every ~10 s would
+            // keep it from ever coming down (review, 2026-11-10).
+            if (!(StaysHigh && !dived && nextAttack > Time.time))
+                nextAttack = Time.time + Random.Range(highWait.x, Mathf.Max(highWait.x, highWait.y)) * (Aggressive && !StaysHigh ? 0.5f : 1f);
             // Called into a boss's rush: it comes down with the others.
             if (rushHoldUntil > Time.time) nextAttack = rushHoldUntil + Random.Range(0f, 0.2f);
             nextCruiseChange = 0f;
@@ -3510,7 +3797,7 @@ namespace Game.Enemies
             foreach (var other in spiders)
             {
                 if (other == this || !other.swarmDives || !other.IsFlying || !other.noticed || other.anomaly ||
-                    other.kindName == SizeClass.Boss || other.state != State.Circle || other.hasTurn ||
+                    other.KamikazeMode || other.kindName == SizeClass.Boss || other.state != State.Circle || other.hasTurn ||
                     Time.time < other.nextAttack - 1.5f || Time.time < other.rushHoldUntil) continue;
                 if ((other.transform.position - transform.position).sqrMagnitude > swarmRange * swarmRange) continue;
                 float apart = Mathf.Abs(Mathf.DeltaAngle(mine, AngleAroundPlayer(other.transform.position)));
@@ -3547,8 +3834,9 @@ namespace Game.Enemies
             var crew = new List<SpiderBrain>();
             foreach (var other in spiders)
             {
+                // A boss that Stays High never dives in a rush, its own or another boss's.
                 if (other == this || !other.flies || !other.IsFlying || other.anomaly || other.state == State.Dead ||
-                    other.state == State.Appear || other.GoesForObject) continue;
+                    other.state == State.Appear || other.GoesForObject || other.StaysHigh) continue;
                 if ((other.transform.position - transform.position).sqrMagnitude <= rushRange * rushRange) crew.Add(other);
             }
             if (crew.Count < 2) return;
@@ -3557,7 +3845,8 @@ namespace Game.Enemies
             if (!string.IsNullOrEmpty(rushShake)) ViewShake.Send(rushShake);
             Signalled?.Invoke(this, "Rush");
             float go = Time.time + rushWarning;
-            crew.Add(this);
+            // The boss comes down with them, unless it Stays High: then its minions dive and it keeps shooting.
+            if (!StaysHigh) crew.Add(this);
             foreach (var bee in crew) bee.JoinRush(go);
         }
 
@@ -3565,6 +3854,16 @@ namespace Game.Enemies
         // stinging), then comes down when the warning is over.
         private void JoinRush(float go)
         {
+            // A kamikaze bee answers with a sting (the volley), never a dive, so a rush is no mass suicide; one already on
+            // its kamikaze dive carries on.
+            if (KamikazeMode)
+            {
+                if (kamikaze) return;
+                rushHoldUntil = go;
+                volleyAt = go + Random.Range(0f, 0.25f);
+                if (!noticed) Notice(false);
+                return;
+            }
             rushHoldUntil = go;
             calledIn = true;
             if (!noticed) Notice(false);
@@ -3588,8 +3887,29 @@ namespace Game.Enemies
         private bool TryStartWebShot(float distance)
         {
             if (GoesForObject) return false;
-            if (webBall == null || !kind.webs || Time.time < nextWeb || webShootersNow >= maxWebShooters) return false;
+            // A kamikaze bee: without its wings it no longer shoots; called into a boss's rush it holds its fire through
+            // the warning, then shoots with the others (the volley: no waiting for its cooldown or for others to finish).
+            bool volley = false;
+            if (KamikazeKind)
+            {
+                if (grounded || Time.time < rushHoldUntil) return false;
+                if (volleyAt > 0f && Time.time >= volleyAt)
+                {
+                    if (Time.time > volleyAt + VolleyGrace) volleyAt = 0f;
+                    else volley = true;
+                }
+            }
+            if (webBall == null || !kind.webs) return false;
+            if (!volley && (Time.time < nextWeb || webShootersNow >= maxWebShooters)) return false;
             if (distance < webRange.x || distance > webRange.y || !CanSeePlayer()) return false;
+            if (volley) volleyAt = 0f;
+            // About one attack in Kamikaze Chance is its suicide dive instead of a sting.
+            else if (KamikazeMode && (ForceKamikaze || Random.value < kamikazeChance))
+            {
+                nextWeb = Time.time + Random.Range(webCooldown.x, Mathf.Max(webCooldown.x, webCooldown.y));
+                StartKamikaze();
+                return true;
+            }
 
             isShooting = true;
             webShootersNow++;
@@ -3666,11 +3986,16 @@ namespace Game.Enemies
         {
             float size = Size();
             float speed = giant ? giantWebSpeed : webSpeed;
-            var mouth = transform.position + transform.forward * (0.35f * size) + Vector3.up * (0.25f * size);
+            // A flier shoots from where it flies, not from the floor under it (walkers have no lift).
+            var mouth = transform.position + transform.forward * (0.35f * size) + Vector3.up * (0.25f * size + flyLift);
             var head = player.Camera.transform.position;
             var chest = head + Vector3.down * 0.45f;
-            var playerBody = player.GetComponent<CharacterController>();
-            var lead = playerBody != null && !giant ? Vector3.ProjectOnPlane(playerBody.velocity, Vector3.up) : Vector3.zero;
+            // Ahead by the player's walking (thumbstick or arm swing), only while it moves them this very frame. The
+            // Character Controller keeps its last move for as long as nothing moves it again (a shove's landing, the last
+            // stick step), so on its own it sent every shot past a player who was standing still.
+            var lead = !giant && PlayerWalking() && player.TryGetComponent(out CharacterController playerBody) && playerBody.enabled
+                ? Vector3.ProjectOnPlane(playerBody.velocity, Vector3.up)
+                : Vector3.zero;
             chest += lead * ((chest - mouth).magnitude / speed);
 
             GameObject ball;
@@ -3693,7 +4018,9 @@ namespace Game.Enemies
                 mouth.y = transform.position.y + big.HitRadius + 0.05f;
                 ball.transform.position = mouth;
             }
-            var velocity = WebBall.Aim(mouth, chest, speed, -Physics.gravity.y);
+            // A ball without gravity (the bee's poison sting) flies straight at the player's chest.
+            float gravity = ball.TryGetComponent(out Rigidbody ballBody) && !ballBody.useGravity ? 0f : -Physics.gravity.y;
+            var velocity = WebBall.Aim(mouth, chest, speed, gravity);
             if (ball.TryGetComponent(out WebBall web))
             {
                 if (giant) web.MakeGiant(specialPlayerEvent, PlayerHealthFsm, giantWebSize);
@@ -3701,6 +4028,22 @@ namespace Game.Enemies
             }
             else if (ball.TryGetComponent(out Rigidbody body)) body.linearVelocity = velocity;
             if (webSound != null) PlayOne(webSound);
+        }
+
+        // Whether the thumbstick or arm swing is walking the player this very frame, with no throw carrying them. XRI
+        // walks the player (order -210, then -205) before any enemy's Update, and a mover ends within a frame or two of the
+        // last input (those last moves have no flat step), so only then is the Character Controller's velocity a real step.
+        private static bool PlayerWalking()
+        {
+            if (player.TryGetComponent(out PlayerLaunch launch) && launch.Flying) return false;
+            player.GetComponentsInChildren(playerMovers);
+            bool walking = false;
+            foreach (var mover in playerMovers)
+            {
+                if (mover.isActiveAndEnabled && mover.isLocomotionActive) walking = true;
+            }
+            playerMovers.Clear();
+            return walking;
         }
 
         private void StopShooting()
@@ -3728,7 +4071,7 @@ namespace Game.Enemies
         private void ScanThreats()
         {
             nextThreatScan = Time.time + 0.033f;
-            bool canDodge = noticed && Time.time >= nextDodge && kind.dodgeChance > 0f && HasDodge &&
+            bool canDodge = !kamikaze && noticed && Time.time >= nextDodge && kind.dodgeChance > 0f && HasDodge &&
                             (state == State.Chase || state == State.Circle || state == State.Prepare || state == State.Retreat) &&
                             PlayerDistance() < 8f;
             // A feinting flier on its way in (or winding up) watches for the swing it's baiting.
@@ -3902,24 +4245,51 @@ namespace Game.Enemies
         /// Asked before anything stops it for this many seconds (its flinch, and Enemy Hit Damage's knock-backs and
         /// knock-outs). Without a Stun Guard always yes. With one: no while the guard is up; otherwise yes, and the guard
         /// then lasts until Stun Guard Seconds after that stop ends. Everything one hit does (its knock-back and its
-        /// flinch) happens in one frame and counts as one stop: the longest of them sets the guard.
+        /// flinch) happens in one frame and counts as one stop: the longest of them sets the guard. A boss low on health
+        /// often shrugs a hit off (Hit Settings > Low Health Stun Chance).
         /// </summary>
         public bool TryStun(float seconds)
         {
             // Nothing stops its special move (hits still hurt).
             if (state == State.Special || Unstoppable) return false;
-            if (stunGuardSeconds <= 0f || state == State.Dead) return true;
+            if (state == State.Dead) return true;
             bool sameHit = stunFrame == Time.frameCount;
+            if (sameHit && stunResisted) return false;
+            // Low on health, a mini boss is stunned only now and then (user, 2026-11-10: below 40%). One roll per hit, so
+            // its knock-back and flinch agree; a hit it shrugs off still starts its Stun Guard, or fast punches would
+            // roll again on every hit and the chance would hardly matter.
+            if (!sameHit && Time.time >= stunGuardUntil && IsBoss && !anomaly && health != null)
+            {
+                stunFrame = Time.frameCount;
+                stunResisted = HitSettings.Shared.ResistsStun(health.Value / startHealth);
+                if (stunResisted)
+                {
+                    stunGuardUntil = Time.time + stunGuardSeconds;
+                    return false;
+                }
+            }
+            if (stunGuardSeconds <= 0f) return true;
             if (!sameHit && Time.time < stunGuardUntil) return false;
             float until = Time.time + Mathf.Max(0f, seconds) + stunGuardSeconds;
             stunGuardUntil = sameHit ? Mathf.Max(stunGuardUntil, until) : until;
             stunFrame = Time.frameCount;
+            stunResisted = false;
             return true;
         }
 
         private void OnAnyHit(EnemyHitDamage enemy, HitResult hit)
         {
             if (enemy == null || enemy.gameObject != gameObject || state == State.Dead) return;
+            // A kamikaze bee swatted out of its dive by the player dies there the normal way (their EXP, no blast). A knock
+            // the player didn't make only stops the dive, as any hit stops a sting (below).
+            if (kamikaze && enemy.LastHitByPlayer)
+            {
+                EndKamikaze();
+                PlayOne(hitSounds, true);
+                Signalled?.Invoke(this, "KamikazeSwatted");
+                if (health != null && health.Value > 0f) health.Value = 0f;
+                return;
+            }
             // Any hit knocks it off the face, whatever else it shrugs off.
             if (state == State.Cling) LetGo(true);
 
@@ -3930,7 +4300,19 @@ namespace Game.Enemies
             if (!noticed) Notice(true);
             if (state == State.Appear || state == State.WingsOff || state == State.Special || Unstoppable || Time.time < nextFlinch) return;
             // A boss with a Stun Guard that was stopped a moment ago shrugs this one off: it hurts, the attack goes on.
-            if (!TryStun(flinchSeconds)) return;
+            if (!TryStun(flinchSeconds))
+            {
+                // Low on health it shrugs most hits off (Low Health Stun Chance), but still runs away at Flee Below
+                // Health: its flee used to wait for a flinch, so a quick kill below 30% never ran (review, 2026-11-10).
+                if (stunFrame == Time.frameCount && stunResisted && LowEnoughToFlee && !IsDying() && agent.isOnNavMesh)
+                {
+                    GiveUpTurn();
+                    StopShooting();
+                    Stop();
+                    FleeOnce();
+                }
+                return;
+            }
 
             nextFlinch = Time.time + flinchCooldown;
             GiveUpTurn();
@@ -4046,6 +4428,8 @@ namespace Game.Enemies
             // boss (only the mini bosses are Boss size), so the minions it calls can't crowd it out of attacking.
             if (flies || kindName == SizeClass.Boss)
             {
+                // A kamikaze bee never dives the usual way: its one dive comes from its sting roll (Try Start Web Shot).
+                if (KamikazeMode) return false;
                 hasTurn = true;
                 turnCounted = false;
                 if (IsFlying) StartDive();
@@ -4067,6 +4451,8 @@ namespace Game.Enemies
 
         private void GiveUpTurn()
         {
+            // A kamikaze dive given up (a hit, lost wings, calming down, losing its nerve, dying) is over without a blast.
+            EndKamikaze();
             if (!hasTurn) return;
             hasTurn = false;
             if (turnCounted) attackersNow = Mathf.Max(0, attackersNow - 1);

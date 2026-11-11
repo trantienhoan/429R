@@ -117,11 +117,9 @@ namespace Game.Cam
         }
 
 #if UNITY_EDITOR_WIN
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        private static extern short GetAsyncKeyState(int key);
-
-        // Read straight from Windows, so it works with the headset on even when Unity isn't the focused window.
-        private static bool RightCtrlDown() => (GetAsyncKeyState(0xA3) & 0x8000) != 0;
+        // Read straight from Windows (it works with the headset on), but only while this Editor is the focused window
+        // (user, 2026-11-11: Right Ctrl in other apps, e.g. the my-town Editor, kept starting recordings).
+        private static bool RightCtrlDown() => CaptureKeys.Down(0xA3);
 #else
         private static bool RightCtrlDown() =>
             UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.rightCtrlKey.isPressed;

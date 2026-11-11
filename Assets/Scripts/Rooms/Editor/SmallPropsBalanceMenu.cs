@@ -31,7 +31,7 @@ namespace Game.EditorTools
             var paths = new List<string>();
             for (int i = 0; i <= 5; i++) paths.Add(Breakable + "Paper_Box_" + i + ".prefab");
             for (int i = 1; i <= 13; i++) paths.Add(Breakable + "Bedroom_Book_" + i + ".prefab");
-            for (int i = 1; i <= 8; i++) paths.Add(Breakable + "Candy_" + i + ".prefab");
+            foreach (int i in Game.Inventory.CandyKinds.Numbers) paths.Add(Breakable + "Candy_" + i + ".prefab");
             paths.Add(Breakable + "Skull_2.prefab");
             for (int i = 1; i <= 7; i++) paths.Add("Assets/Prefabs/PlayGround/Lolipop_" + i + ".prefab");
             var health = new Dictionary<string, float>

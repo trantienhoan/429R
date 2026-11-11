@@ -12,6 +12,9 @@ namespace Game.Enemies
     /// boss that grows bigger clears a wider path. Only loose physics objects move: walls, furniture that isn't loose,
     /// other enemies, things in the player's hands and the player stay put. Goes on the enemy's root, next to its NavMesh
     /// Agent (TheSpider, TheSpider 1, TheCockroach, TheCockroach 1 and pumpkin_boss_Z have it).
+    /// On the pumpkin boss (2026-11-11) the zone follows its model (its root stays size 1 while the model grows) and, while
+    /// its giant pumpkin is out, reaches the pumpkin's edge plus Radius; it counts the boss's own moves (its charge) as well
+    /// as its agent's, pushes nothing while it's in the air (a hop, its bounce), and leaves what the boss crushes to it.
     /// </summary>
     [DisallowMultipleComponent]
     public class Bulldozer : MonoBehaviour
@@ -50,6 +53,7 @@ namespace Game.Enemies
         private NavMeshAgent agent;
         private Rigidbody ownBody;
         private CandyVacuum vacuum;
+        private PumpkinBossBrain boss;
         private Vector3 lastPosition;
 
         private void Awake()
@@ -57,6 +61,7 @@ namespace Game.Enemies
             agent = GetComponent<NavMeshAgent>();
             ownBody = GetComponent<Rigidbody>();
             vacuum = GetComponent<CandyVacuum>();
+            boss = GetComponent<PumpkinBossBrain>();
             lastPosition = transform.position;
         }
 
@@ -65,14 +70,23 @@ namespace Game.Enemies
             var position = transform.position;
             // The agent knows how fast it's walking; knock-backs and other moves show up as a change of position.
             var velocity = agent != null && agent.enabled ? agent.velocity : (position - lastPosition) / Time.fixedDeltaTime;
+            // The pumpkin boss also moves itself (its charge): how far it really went counts too. In the air it pushes nothing.
+            if (boss != null)
+            {
+                var moved = (position - lastPosition) / Time.fixedDeltaTime;
+                if (moved.sqrMagnitude > velocity.sqrMagnitude) velocity = moved;
+                if (boss.Airborne) velocity = Vector3.zero;
+            }
             lastPosition = position;
             velocity.y = 0f;
             if (velocity.sqrMagnitude < minMoveSpeed * minMoveSpeed) return;
 
             var moving = velocity.normalized;
-            float size = transform.lossyScale.x;
-            var center = position + Vector3.up * (height * size) + moving * (reachAhead * size);
-            float reach = radius * size;
+            // The pumpkin boss: its model's size, and its giant pumpkin's reach while that's out.
+            float size = boss != null ? boss.ModelSize : transform.lossyScale.x;
+            float pumpkin = boss != null ? boss.BodyRadius : 0f;
+            var center = position + Vector3.up * (pumpkin > 0f ? pumpkin * 0.6f : height * size) + moving * (reachAhead * size);
+            float reach = pumpkin > 0f ? pumpkin + radius : radius * size;
 
             pushed.Clear();
             int count = Physics.OverlapSphereNonAlloc(center, reach, hits, Physics.AllLayers, QueryTriggerInteraction.Ignore);
@@ -85,6 +99,8 @@ namespace Game.Enemies
                 if (Game.Combat.PushWeight.IsImmovable(body)) continue;
                 // Candy it's about to eat isn't pushed away.
                 if (vacuum != null && vacuum.IsCandy(body)) continue;
+                // What the pumpkin boss crushes is left for that (pushed away first, it would miss it).
+                if (boss != null && boss.Crushes(hits[i])) continue;
 
                 Push(body, center, moving, Mathf.Clamp(velocity.magnitude * 1.5f, pushSpeed, Mathf.Max(pushSpeed, maxPushSpeed)));
             }

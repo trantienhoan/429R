@@ -397,7 +397,7 @@ namespace Game.EditorTools
                 var list = so.FindProperty("candies");
                 if (list.arraySize == 0)
                 {
-                    for (int i = 1; i <= 8; i++)
+                    foreach (int i in Game.Inventory.CandyKinds.Numbers)
                     {
                         var candy = AssetDatabase.LoadAssetAtPath<GameObject>(string.Format(CandyPath, i));
                         if (candy == null) continue;

@@ -55,7 +55,7 @@ namespace Game.PlayGround.Editor
 
             // 1. Candies: ingredients with a picture, and they stay a while.
             var candies = new List<GameObject>();
-            for (int n = 1; n <= 8; n++)
+            foreach (int n in Game.Inventory.CandyKinds.Numbers)
             {
                 string path = Breakable + "Candy_" + n + ".prefab";
                 var asset = Load<GameObject>(path, notes);

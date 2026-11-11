@@ -87,7 +87,7 @@ namespace Game.Locomotion
                 bool small = Mathf.Max(shape.size.x, shape.size.z) <= maxWidth;
                 bool low = shape.max.y <= feet + walkThroughHeight;
                 // Asked again every step: Unity forgets it when either collider is switched off and on.
-                if ((small && low) || Held(loose)) Physics.IgnoreCollision(body, thing, true);
+                if ((small && low) || Held(loose) || Flier(loose)) Physics.IgnoreCollision(body, thing, true);
             }
         }
 
@@ -102,6 +102,15 @@ namespace Game.Locomotion
         {
             var grab = loose.GetComponent<XRGrabInteractable>();
             return grab != null && grab.isSelected;
+        }
+
+        // A flying bug (a bee) is never stood on or shoved by: diving in to sting, its solid body ends up inside the
+        // player's body, and the next Character Controller move pushed them out of it in one frame (up to 1.4 m up; play
+        // test 2026-11-10).
+        private static bool Flier(Rigidbody loose)
+        {
+            var bug = loose.GetComponentInParent<Game.Enemies.SpiderBrain>();
+            return bug != null && bug.IsFlying;
         }
     }
 }

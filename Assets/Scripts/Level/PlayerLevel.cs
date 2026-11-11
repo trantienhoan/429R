@@ -46,16 +46,21 @@ namespace Game.Leveling
     /// point thrown books, bottles and flip-flops explode (Grenade), more points making the blast reach farther and
     /// hurt more (at 0 they don't explode); Move Speed
     /// makes walking faster. What one point gives is set below; the last point that fills a stat up counts as Last Point
-    /// Worth (7) points (all but Fist Size, whose last point is the Triple Punch).
+    /// Worth points (1 since 2026-11-10, so like any other; it was 7).
     /// Reaching a Bonus Level (10, 20, 21) also gives a bonus point for the three bonus stats (the menu's Bonus Stats
     /// panel): Explosive Fist (every punch that hits something explodes, harder with each point, and flying punches come
     /// quicker one after another; no bigger fists), Weapon Master (weapons held in the hand hit 30/40/50% harder, and a
     /// held thing that blocks a bite wears 20/30/40% less) and Extra Revive (one more revive every run, see Checkpoints:
     /// one more lucky coin to flip when the player goes down, see Revive Coins; and a higher health cap).
-    /// A smoked boong adds Toughness or Move Speed points for a while (Player Buffs); those are never saved. Eaten candies
-    /// add points for the run (Eat Candy Buff: Toughness, Move Speed, Throw Power, and punch damage only for Fist Size),
-    /// each its full share up to Candy Full Rate Points a stat (5), then only Candy Slow Points (0.1), at most Candy Max
-    /// Points (10); never saved, gone when a new run starts.
+    /// A smoked boong adds Toughness points for a while (Player Buffs); those are never saved. Eaten candies add points
+    /// for the run (Eat Candy Buff; user 2026-11-10: one candy kind per stat, see Candy Kinds), each its full share up to
+    /// Candy Full Rate Points a stat (5), then only Candy Slow Points (0.1), at most Candy Max Points (10), every share
+    /// bigger the more of their own points the player has in that stat (Candy Boost Per Point). Fist Size candy makes
+    /// the fist bigger and the jab harder but never unlocks a punch. Never saved, gone when a new run starts.
+    /// Inside a special stage (user, 2026-11-10: the nesting pumpkins, Paint Bees and Daruma; see Special Stage Stats)
+    /// the player has level-0 stats: their own points and eaten candies count for nothing and the health cap drops to
+    /// the level-0 one (Boss Seed raises kept), but the health itself stays as it is, the points stay theirs (menu, save)
+    /// and boong buffs and lucky coins stay on. Everything comes back when the stage ends.
     /// The level, the EXP and the points are kept in the save (Save Manager). Keep one in the scene;
     /// Tools > 429 Game > Player > Set Up Level System makes it, with its menu and its notice.
     /// </summary>
@@ -117,34 +122,32 @@ namespace Game.Leveling
         [Min(0f)]
         [SerializeField] private float healthPerPoint = 10f;
         [Tooltip("Max Health: eating candy (candies, lollipops, seeds) heals this share more (0.05 = 5% more a point; " +
-                 "a full stat counts as 16 points, +80%).")]
+                 "+50% at 10 points).")]
         [Min(0f)]
         [SerializeField] private float candyHealPerPoint = 0.05f;
         [Tooltip("Toughness: enemies' damage is cut by this share (0.04 = 4% less a point).")]
         [Range(0f, 0.09f)]
         [SerializeField] private float damageCutPerPoint = 0.04f;
         [Tooltip("Toughness: enemies push the player (bites, the boss's punches, touching a monster) this share less far " +
-                 "and high (0.08 = 8% less a point). Never less than a tenth.")]
+                 "and high (user, 2026-11-10: 0.04 = 4% less a point; it was 8%). Never less than a tenth.")]
         [Range(0f, 0.09f)]
-        [SerializeField] private float pushCutPerPoint = 0.08f;
-        [Tooltip("+1 damage every this many points (5: +1 at 5, +2 at 10): Weapon Efficiency to weapons and their bullets, " +
-                 "eaten candies' punch points to closed punches. (Fist Size itself gives flying jabs +1 every point.)")]
-        [Min(1)]
-        [SerializeField] private int damageStepPoints = 5;
-        [Tooltip("Weapon Efficiency: a hard hit wears a weapon the player has held this share less (0.05 = 5% less a " +
-                 "point), so it takes more hits to break.")]
+        [SerializeField] private float pushCutPerPoint = 0.04f;
+        [Tooltip("Weapon Efficiency: weapons and their bullets do +1 damage a point (user, 2026-11-10; it was +1 every 5 " +
+                 "points), and a hard hit wears a weapon the player has held this share less (0.05 = 5% less a point), so " +
+                 "it takes more hits to break.")]
         [Range(0f, 0.09f)]
         [SerializeField] private float weaponWearCutPerPoint = 0.05f;
-        [Tooltip("Fist Size: flying punches get this share bigger (0.1 = 10% more a point: twice as big at 10 points). " +
-                 "The Fist's Max Fly Size caps it.")]
+        [Tooltip("Fist Size: flying punches get this share bigger (user, 2026-11-10: 0.05 = 5% more a point, 1.5x at 10 " +
+                 "points; it was 10%). A flying jab flies as far as it is big, so it flies a little farther too. The " +
+                 "Fist's Max Fly Size caps it.")]
         [Min(0f)]
-        [SerializeField] private float punchSizePerPoint = 0.1f;
+        [SerializeField] private float punchSizePerPoint = 0.05f;
         [Tooltip("Fist Size: the hand itself grows by this much of its normal size, only a little so it never blocks the " +
                  "view (0.02: Fist Scale 1.25 becomes 1.27; the Fist's Max Hand Growth caps it).")]
         [Min(0f)]
         [SerializeField] private float handSizePerPoint = 0.02f;
-        [Tooltip("Throw Power: things leave the hand this share faster (0.03 = 3% more a point; a full stat counts as 16 " +
-                 "points: +48%). Gentle drops aren't sped up.")]
+        [Tooltip("Throw Power: things leave the hand this share faster (0.03 = 3% more a point: +30% at 10). Gentle drops " +
+                 "aren't sped up.")]
         [Min(0f)]
         [SerializeField] private float throwPerPoint = 0.03f;
         [Tooltip("Throw Power never makes throws more than this many times faster (1.6 = " +
@@ -152,19 +155,19 @@ namespace Game.Leveling
                  "pumpkins can fly through a small bug.")]
         [Min(1f)]
         [SerializeField] private float maxThrowScale = 1.6f;
-        [Tooltip("Throw Power: far grabs pull things to the hand this share faster (0.035 = 3.5% more a point; a full " +
-                 "stat counts as 16 points: +56%, 9 m/s becomes 14). Gentle Far Grab's Max Pull Speed caps it.")]
+        [Tooltip("Throw Power: far grabs pull things to the hand this share faster (0.035 = 3.5% more a point: +35% at " +
+                 "10, 9 m/s becomes 12). Gentle Far Grab's Max Pull Speed caps it.")]
         [Min(0f)]
         [SerializeField] private float pullPerPoint = 0.035f;
 
         [Header("Exploding throws (Throw Power)")]
         [Tooltip("At 0 Throw Power, thrown books, bottles and flip-flops (Grenade) don't explode: they just hit and break. " +
                  "The 1st point makes them explode as they always did; each point after it makes the blast reach this many " +
-                 "metres farther (a full stat counts as 16 points: +1.2 m).")]
+                 "metres farther (+0.72 m at 10 points).")]
         [Min(0f)]
         [SerializeField] private float blastRadiusPerPoint = 0.08f;
-        [Tooltip("Throw Power: +1 blast damage every this many points after the 1st (5: +1 at 6 points, +2 at 11, +3 for a " +
-                 "full stat, which counts as 16).")]
+        [Tooltip("Throw Power: +1 blast damage every this many points after the 1st (5: +1 at 6 points, +2 at 11, which " +
+                 "takes eaten candies' points on top of the 10).")]
         [Min(1)]
         [SerializeField] private int blastDamageStepPoints = 5;
         [Tooltip("Throw Power: every point after the 1st makes a throw need this share less speed to count as a hard throw " +
@@ -184,9 +187,8 @@ namespace Game.Leveling
         [Tooltip("Move Speed: walking is this share faster (0.04 = 4% more a point).")]
         [Min(0f)]
         [SerializeField] private float speedPerPoint = 0.04f;
-        [Tooltip("Move Speed: a smoked boong's high lasts this share longer a point (0.1 = 10% a point; a full stat " +
-                 "counts as 16 points, so 60 s becomes 156 s). Only the player's own points count, not a boong's or " +
-                 "candies' (user, 2026-10-29).")]
+        [Tooltip("Move Speed: a smoked boong's high lasts this share longer a point (0.1 = 10% a point, so at 10 points " +
+                 "60 s becomes 120 s). Only the player's own points count, not a boong's or candies' (user, 2026-10-29).")]
         [Min(0f)]
         [SerializeField] private float highTimePerPoint = 0.1f;
 
@@ -195,10 +197,11 @@ namespace Game.Leveling
                  "reward for maxing one.")]
         [SerializeField] private Stat[] bigLastPoint =
             { Stat.MaxHealth, Stat.Toughness, Stat.WeaponEfficiency, Stat.ThrowPower, Stat.MoveSpeed };
-        [Tooltip("How many points the last point of a Big Last Point stat counts as (7: a full stat counts as 16 points " +
-                 "instead of 10). Damage, knockback and wear never drop below a tenth.")]
+        [Tooltip("How many points the last point of a Big Last Point stat counts as (user, 2026-11-10: 1, so the 10th " +
+                 "point counts like the others and eaten candies fill the rest; it was 7, a full stat counting as 16). " +
+                 "Damage, knockback and wear never drop below a tenth.")]
         [Min(1)]
-        [SerializeField] private int lastPointWorth = 7;
+        [SerializeField] private int lastPointWorth = 1;
 
         [Header("Candy")]
         [Tooltip("The most points eaten candies add to one stat this run (each candy's Eat Candy Buff adds its share, " +
@@ -212,6 +215,21 @@ namespace Game.Leveling
         [Tooltip("What each candy adds to a stat past Candy Full Rate Points (0.1 = a tenth of a point).")]
         [Min(0f)]
         [SerializeField] private float candySlowPoints = 0.1f;
+        [Tooltip("How much stronger eaten candies are for each of the player's own points in their stat (user, " +
+                 "2026-11-10: the more points a stat has, the sooner its candies fill it). A candy adds its points x (1 + " +
+                 "this x the stat's own points): 0.2 gives x1 at 0 points (0.5 a candy), x2 at 5 (1.0), x3 at 10 (1.5). " +
+                 "The slow share past Candy Full Rate Points grows the same way.")]
+        [Min(0f)]
+        [SerializeField] private float candyBoostPerPoint = 0.2f;
+        [Tooltip("Eating candy above max health (user, 2026-11-10): up to max health a candy heals in full, from there to " +
+                 "this many times max health it heals its action's Above Share (50%), and above that only Candy Slow Heal " +
+                 "Share (1.5 = from 150% of max health on). A candy that crosses a line is split.")]
+        [Min(1f)]
+        [SerializeField] private float candySlowHealFrom = 1.5f;
+        [Tooltip("The share of a candy's heal that counts above Candy Slow Heal From x max health (0.1 = 10%). Whole " +
+                 "numbers are rounded up or down at random, so it really averages this (a 4 heals 1 four times in ten).")]
+        [Range(0f, 1f)]
+        [SerializeField] private float candySlowHealShare = 0.1f;
 
         [Header("Flying punches unlocked by Fist Size")]
         [Tooltip("Fist Size points that unlock the Jab (a fast straight punch flies on). Below it no punch flies. " +
@@ -228,7 +246,8 @@ namespace Game.Leveling
         [Min(0)]
         [SerializeField] private int uppercutAtFistSize = 3;
         [Tooltip("Fist Size points for the Triple Punch: a jab throws 3 fists side by side, a swing or an uppercut 3 in a " +
-                 "row. Flying punches also reach their farthest here (they go farther step by step from the Jab's points).")]
+                 "row. Flying swings and uppercuts also reach their farthest here (they go farther step by step from the " +
+                 "Jab's points); a flying jab flies as far as it is big (the Fist's Jab Size Reach).")]
         [Min(1)]
         [SerializeField] private int triplePunchAtFistSize = 10;
         [Tooltip("Fist Size points for Swollen Hand: a red-hot hand's fist (Hot Hands) and its flying punches swell bigger " +
@@ -293,6 +312,111 @@ namespace Game.Leveling
             ExplodingThrowsUnlocked = null;
             CandyEaten = null;
             lastRead = null;
+            stageHolders.Clear();
+            suspended = false;
+            describing = false;
+        }
+
+        // The special stages on right now (Special Stage Stats); while any is, the stats are at level 0.
+        private static readonly HashSet<UnityEngine.Object> stageHolders = new();
+        // What the stage's start put away (see Suspend), given back when the last stage ends.
+        private static bool suspended;
+        private static bool hadJab, hadSwing, hadUppercut, hadTriple, hadSwollen, hadExplodingThrows;
+        private static float levelHealthAtStart;
+        // Max Health candy points at the stage's start: a candy eaten inside raises the cap on the way out without healing.
+        private static float candyHealthAtStart;
+        // The Level Up menu is asking what the points give (Describe): the real stats, also in a special stage.
+        private static bool describing;
+
+        /// <summary>
+        /// Whether the player is in a special stage (user, 2026-11-10): the stats are at level 0 until it ends (see
+        /// Enter Special Stage).
+        /// </summary>
+        public static bool InSpecialStage => stageHolders.Count > 0;
+
+        // The stats count as level 0 right now: in a special stage, unless the menu is describing the points.
+        private static bool StatsDown => stageHolders.Count > 0 && !describing;
+
+        /// <summary>
+        /// A special stage starts (Special Stage Stats, added by Play Bonus Round and Daruma Stage): the first one puts
+        /// the stats to level 0 (user, 2026-11-10): no own points or candy points count, the cap drops to the level-0 one
+        /// (Boss Seed raises kept), walking goes back to normal and the flying punches lock, all without a notice. The
+        /// health stays as it is (user: keep current health). Boong buffs and the lucky coins stay.
+        /// </summary>
+        public static void EnterSpecialStage(UnityEngine.Object by)
+        {
+            if (by == null || !stageHolders.Add(by) || stageHolders.Count > 1) return;
+            if (Instance != null) Instance.Suspend();
+        }
+
+        /// <summary>
+        /// A special stage is over (or gone): when no other one is on, the stats come back. Points spent and candies eaten
+        /// inside count from now on, and a punch a point inside unlocked is announced now.
+        /// </summary>
+        public static void ExitSpecialStage(UnityEngine.Object by)
+        {
+            if (by == null || !stageHolders.Remove(by) || stageHolders.Count > 0) return;
+            Resume(false);
+        }
+
+        private void Suspend()
+        {
+            suspended = true;
+            hadJab = Fist.JabUnlocked;
+            hadSwing = Fist.SwingUnlocked;
+            hadUppercut = Fist.UppercutUnlocked;
+            hadTriple = Fist.TriplePunch;
+            hadSwollen = HotHands.SwollenHand;
+            hadExplodingThrows = Points(Stat.ThrowPower) >= 1;
+            levelHealthAtStart = PlayerBoosts.LevelHealthBonus;
+            candyHealthAtStart = candyPoints[(int)Stat.MaxHealth];
+            // Lowering the cap never takes health away (Player Boosts), and the revives aren't lowered (Checkpoints
+            // would take the coins for good): Apply keeps them at the real points.
+            Apply(false, false);
+        }
+
+        // Quiet: a game over inside the stage (End Special Stages), so the player is dead. The stats come back without a
+        // heal (the restart fills the heart to the real cap anyway) and without a notice over the death (it would stop
+        // the game): a punch or exploding throws a point spent inside unlocked just works from the new run on.
+        private static void Resume(bool quiet)
+        {
+            var player = Instance;
+            if (!suspended)
+            {
+                // Nothing was put away (no Player Level when it started): just the real stats again.
+                if (player != null) player.Apply(false, false);
+                return;
+            }
+            suspended = false;
+            Fist.JabUnlocked = hadJab;
+            Fist.SwingUnlocked = hadSwing;
+            Fist.UppercutUnlocked = hadUppercut;
+            Fist.TriplePunch = hadTriple;
+            HotHands.SwollenHand = hadSwollen;
+            if (player == null) return;
+            // The punches as they were before the stage, announced first: only one a point spent inside unlocked is new
+            // (Apply's own quiet ApplyPunches then changes nothing; quiet, it sets them without a word).
+            if (!quiet) player.ApplyPunches(true);
+            player.Apply(false, false);
+            if (quiet) return;
+            // The cap comes back without healing, but a Max Health or Extra Revive point spent inside heals as it would
+            // have then. A Max Health candy eaten inside doesn't: it healed when it was eaten (like outside a stage).
+            float raised = PlayerBoosts.LevelHealthBonus - levelHealthAtStart -
+                           (player.candyPoints[(int)Stat.MaxHealth] - candyHealthAtStart) * player.healthPerPoint;
+            // (A point raises it by 10 or more; under 1 is only the cap's rounding to a whole number.)
+            if (raised >= 1f && PlayerBoosts.TryGetHealth(out float health)) PlayerBoosts.SetHealth(health + raised);
+            // The first Throw Power point spent inside: thrown things explode from now on (Raise kept the notice back).
+            if (!hadExplodingThrows && player.Points(Stat.ThrowPower) >= 1) ExplodingThrowsUnlocked?.Invoke();
+        }
+
+        // A new run (e.g. a game over inside a stage): no stage holds the stats any more, so the full cap is back before
+        // the heart is filled. Quietly: the player is dead (a game over) or the scene reloads at once (Re-Dream), so no
+        // heal and no notice. Raised twice at a game over: the second time there's nothing left to do.
+        private void EndSpecialStages()
+        {
+            if (stageHolders.Count == 0) return;
+            stageHolders.Clear();
+            Resume(true);
         }
 
         public int Level => level;
@@ -394,8 +518,17 @@ namespace Game.Leveling
         /// <summary>How much more eating candy heals (Max Health): 1 = as always.</summary>
         public static float CandyHealScale => Instance != null ? Instance.Gain(Stat.MaxHealth, Instance.candyHealPerPoint) : 1f;
 
-        /// <summary>The extra damage weapons do (Weapon Efficiency): +1 every Damage Step Points. 0 = as always.</summary>
-        public static int WeaponDamageBonus => Instance != null ? Instance.Steps(Instance.Worth(Stat.WeaponEfficiency)) : 0;
+        /// <summary>Above this many times max health, candy heals only Candy Slow Heal Share (1.5 without a Player Level).</summary>
+        public static float CandySlowHealFrom => Instance != null ? Instance.candySlowHealFrom : 1.5f;
+
+        /// <summary>The share of a candy's heal above Candy Slow Heal From x max health (0.1 without a Player Level).</summary>
+        public static float CandySlowHealShare => Instance != null ? Instance.candySlowHealShare : 0.1f;
+
+        /// <summary>
+        /// The extra damage weapons do (Weapon Efficiency, user 2026-11-10): +1 a point, eaten candies' whole points
+        /// included. 0 = as always.
+        /// </summary>
+        public static int WeaponDamageBonus => Instance != null ? Whole(Instance.Worth(Stat.WeaponEfficiency)) : 0;
 
         /// <summary>The share of a hit's wear a weapon takes (Weapon Efficiency): 1 = all of it.</summary>
         public static float WeaponWearShare => Instance != null ? Instance.Cut(Stat.WeaponEfficiency, Instance.weaponWearCutPerPoint) : 1f;
@@ -410,35 +543,21 @@ namespace Game.Leveling
         public static float PunchSizeBonus => Instance != null ? (Instance.FistSizePoints + PlayerBuffs.FistSizePoints) * Instance.punchSizePerPoint : 0f;
 
         /// <summary>
-        /// How far flying punches have come along to their farthest: 0 at the Fist Size that unlocks the Jab, 1 at the
-        /// Triple Punch's.
+        /// How far flying swings and uppercuts (and a closed punch's combo knock-back) have come along to their farthest:
+        /// 0 at the Fist Size that unlocks the Jab, 1 at the Triple Punch's. A flying jab flies its own size instead.
         /// </summary>
         public static float PunchReachGrowth => Instance != null
             ? Mathf.InverseLerp(Instance.jabAtFistSize, Instance.triplePunchAtFistSize, Instance.FistSizePoints)
             : 0f;
 
         /// <summary>
-        /// The extra damage flying jabs do (user, 2026-10-27): +1 every Fist Size point. The closed fist doesn't get it.
+        /// The extra damage flying jabs do (user, 2026-10-27): +1 every Fist Size point, eaten candies' whole points
+        /// included (Candy_8, user 2026-11-10). The closed fist doesn't get it.
         /// </summary>
-        public static int FlyingJabBonus => Instance != null ? Instance.Points(Stat.FistSize) : 0;
+        public static int FlyingJabBonus => Instance != null ? Whole(Instance.Worth(Stat.FistSize)) : 0;
 
-        /// <summary>
-        /// The extra damage the closed fist does from eaten candies (user, 2026-10-28: the candy punch buff helps closed
-        /// punches only): +1 every Damage Step Points of eaten candies' Fist Size points.
-        /// </summary>
-        public static int CandyPunchBonus => Instance != null ? Instance.Steps(Instance.candyPoints[(int)Stat.FistSize]) : 0;
-
-        // Whole damage steps for this many points: +1 every Damage Step Points.
-        private int Steps(float points) => Mathf.FloorToInt((points + 0.001f) / Mathf.Max(1, damageStepPoints));
-
-        // What the next step needs, for the menu: "+1 damage at 5", "+1 damage, +2 at 10", "+2 damage" (no more steps).
-        private string DamageNote(int bonus, float points, int maxPoints)
-        {
-            int step = Mathf.Max(1, damageStepPoints);
-            int next = (bonus + 1) * step;
-            if (bonus <= 0) return next <= maxPoints ? $"+1 damage at {next}" : "";
-            return next <= maxPoints && points < next ? $"+{bonus} damage, +{bonus + 1} at {next}" : $"+{bonus} damage";
-        }
+        // Whole points of a stat's worth (eaten candies give parts of a point).
+        private static int Whole(float worth) => Mathf.FloorToInt(worth + 0.001f);
 
         /// <summary>How much faster throws leave the hand (Throw Power, at most Max Throw Scale): 1 = as always.</summary>
         public static float ThrowScale => Instance != null
@@ -452,7 +571,7 @@ namespace Game.Leveling
         /// Whether thrown books, bottles and flip-flops explode (Grenade): from the first Throw Power point. Without a Player
         /// Level in the scene they always do.
         /// </summary>
-        public static bool ExplodingThrows => Instance == null || Instance.Points(Stat.ThrowPower) >= 1;
+        public static bool ExplodingThrows => Instance == null || Instance.EffectPoints(Stat.ThrowPower) >= 1;
 
         /// <summary>A thrown blast's reach with Throw Power, from its own: farther with every point after the first.</summary>
         public static float ThrowBlastRadius(float own) =>
@@ -491,7 +610,7 @@ namespace Game.Leveling
             get
             {
                 if (Instance == null) return 0;
-                int p = Instance.Points(Stat.BonusPower);
+                int p = Instance.EffectPoints(Stat.BonusPower);
                 var bonus = Instance.weaponMasterBonus;
                 return p <= 0 || bonus == null || bonus.Length == 0 ? 0 : bonus[Mathf.Min(p, bonus.Length) - 1];
             }
@@ -503,7 +622,7 @@ namespace Game.Leveling
         // Weapon Master's value for its points now (its 1st, 2nd or 3rd entry; 0 with no point).
         private float Tier(float[] byPoint)
         {
-            int p = Points(Stat.BonusPower);
+            int p = EffectPoints(Stat.BonusPower);
             return p <= 0 || byPoint == null || byPoint.Length == 0 ? 0f : byPoint[Mathf.Min(p, byPoint.Length) - 1];
         }
 
@@ -511,7 +630,7 @@ namespace Game.Leveling
         /// Explosive Fist points (a bonus stat): every punch that hits something explodes, harder with each, and the hand
         /// can throw flying punches quicker one after another (Fist: Explosive Fist Faster). 0 = none.
         /// </summary>
-        public static int ExplosiveFist => Instance != null ? Instance.Points(Stat.BonusFistSize) : 0;
+        public static int ExplosiveFist => Instance != null ? Instance.EffectPoints(Stat.BonusFistSize) : 0;
 
         /// <summary>Worn weapons (Weapon Wear): the share of its health at which a weapon cracks (0 = never), and its sounds.</summary>
         public static float CrackShare => Instance != null ? Instance.crackShare : 0f;
@@ -543,26 +662,35 @@ namespace Game.Leveling
         private float Gain(Stat stat, float perPoint) => 1f + Worth(stat) * perPoint;
 
         // A stat's points as they count: a full Big Last Point stat's last point counts as Last Point Worth. A boong's
-        // points for now (Player Buffs: Toughness, Move Speed) and eaten candies' points (Toughness, Move Speed, Throw
-        // Power) come on top, never as that last point, and aren't saved. Candies' Fist Size points only add closed
-        // punch damage (Candy Punch Bonus), so they aren't counted here.
+        // points for now (Player Buffs: the Bone Boong's Toughness) and eaten candies' points (one candy kind for each of
+        // the 6 stats, user 2026-11-10) come on top, never as that last point, and aren't saved. Candies' Fist Size
+        // points make the fist and its flying punches bigger and the jab harder, but never unlock a punch (Unlock
+        // Points). In a special stage only a boong's count.
         private float Worth(Stat stat) =>
-            OwnWorth(stat) + PlayerBuffs.ExtraPoints(stat) + (stat != Stat.FistSize ? candyPoints[(int)stat] : 0f);
+            OwnWorth(stat) + PlayerBuffs.ExtraPoints(stat) + (!StatsDown ? candyPoints[(int)stat] : 0f);
+
+        // Fist Size points that unlock punches: the player's own (and a boong's), never eaten candies' (they'd come and
+        // go with every death).
+        private float UnlockPoints => OwnWorth(Stat.FistSize) + PlayerBuffs.ExtraPoints(Stat.FistSize);
+
+        // A stat's own points as they work right now: none in a special stage (level-0 stats there; the points stay).
+        private int EffectPoints(Stat stat) => StatsDown ? 0 : Points(stat);
 
         // The player's own points as they count (the big last point included), without a boong's or candies'.
         private int OwnWorth(Stat stat)
         {
-            int p = Points(stat);
+            int p = EffectPoints(stat);
             if (p > 0 && p >= MaxPoints(stat) && bigLastPoint != null && Array.IndexOf(bigLastPoint, stat) >= 0)
                 p += lastPointWorth - 1;
             return p;
         }
 
         /// <summary>
-        /// An eaten candy's points for this run (the PlayMaker action Eat Candy Buff): Toughness, Move Speed and Throw Power
-        /// count like the player's own points, Fist Size only as punch damage (no bigger fist, no new punches). Full points
+        /// An eaten candy's points for this run (the PlayMaker action Eat Candy Buff; user 2026-11-10: one candy kind for
+        /// each of the 6 stats). They count like the player's own points, except that Fist Size candy never unlocks a
+        /// punch. Each candy's points grow with the player's own points in that stat (Candy Boost Per Point): full points
         /// up to Candy Full Rate Points a stat, then only Candy Slow Points a candy, up to Candy Max Points; never saved,
-        /// and gone when a new run starts. Returns the stat's candy points now (0 for any other stat, or without a Player
+        /// and gone when a new run starts. Returns the stat's candy points now (0 for a bonus stat, or without a Player
         /// Level).
         /// </summary>
         public static float AddCandyPoints(Stat stat, float points)
@@ -576,13 +704,22 @@ namespace Game.Leveling
             int i = (int)stat;
             float had = Instance.candyPoints[i];
             // The candy that reaches Candy Full Rate Points tops it up to there; every candy after it adds the slow share.
+            // Both are bigger the more of their own points the player has put into the stat (their real points, also
+            // in a special stage: the candy counts once it's over).
             if (points > 0f)
+            {
+                float boost = 1f + Instance.candyBoostPerPoint * Instance.Points(stat);
                 points = had < Instance.candyFullRatePoints
-                    ? Mathf.Min(points, Instance.candyFullRatePoints - had)
-                    : Mathf.Min(points, Instance.candySlowPoints);
+                    ? Mathf.Min(points * boost, Instance.candyFullRatePoints - had)
+                    : Mathf.Min(points, Instance.candySlowPoints) * boost;
+            }
             Instance.candyPoints[i] = Mathf.Clamp(had + points, 0f, Instance.candyMaxPoints);
             if (stat == Stat.MoveSpeed) Instance.ApplySpeed();
-            if (points > 0f) CandyEaten?.Invoke(stat);
+            // A higher health cap, without healing (the candy has just healed by itself).
+            if (stat == Stat.MaxHealth) Instance.ApplyHealth(false);
+            // Only a candy that really added something is shown (the HUD's '+TOPH' and the like): at Candy Max Points it
+            // adds nothing (play test 2026-11-10).
+            if (Instance.candyPoints[i] > had) CandyEaten?.Invoke(stat);
             return Instance.candyPoints[i];
         }
 
@@ -595,12 +732,14 @@ namespace Game.Leveling
             if (Instance != null) Instance.DropCandy();
         }
 
-        private static bool TakesCandy(Stat stat) =>
-            stat == Stat.Toughness || stat == Stat.MoveSpeed || stat == Stat.ThrowPower || stat == Stat.FistSize;
+        // The 6 stats the level-up points go into; never a bonus stat.
+        private static bool TakesCandy(Stat stat) => !IsBonus(stat);
 
         private void DropCandy()
         {
             Array.Clear(candyPoints, 0, StatCount);
+            // The cap a Max Health candy raised comes down (never taking health away), and the walking speed.
+            ApplyHealth(false);
             ApplySpeed();
         }
 
@@ -633,9 +772,16 @@ namespace Game.Leveling
 
         /// <summary>
         /// What the stat's points give right now, for the Level Up menu, e.g. "+30 health" (a bonus stat with no point
-        /// yet: what one gives).
+        /// yet: what one gives). In a special stage too: what they give once it's over.
         /// </summary>
         public string Describe(Stat stat)
+        {
+            describing = true;
+            try { return DescribeNow(stat); }
+            finally { describing = false; }
+        }
+
+        private string DescribeNow(Stat stat)
         {
             int p = Points(stat);
             // A bonus stat shows what a point would give until it has one.
@@ -645,10 +791,9 @@ namespace Game.Leveling
             {
                 case Stat.MaxHealth: return $"+{Worth(stat) * healthPerPoint:0} health, +{Percent(CandyHealScale - 1f)} candy heal";
                 case Stat.Toughness: return $"-{Percent(1f - DamageShare)} damage, -{Percent(1f - PushShare)} enemy push";
-                case Stat.WeaponEfficiency:
-                    return Join(DamageNote(WeaponDamageBonus, Worth(stat), MaxPoints(stat)), $"-{Percent(1f - WeaponWearShare)} wear");
+                case Stat.WeaponEfficiency: return $"+{WeaponDamageBonus} damage, -{Percent(1f - WeaponWearShare)} wear";
                 case Stat.FistSize:
-                    return Join($"+{Percent(p * punchSizePerPoint)} size", p > 0 ? $"flying jab +{FlyingJabBonus} damage" : "") + PunchNote();
+                    return Join($"+{Percent(FistSizePoints * punchSizePerPoint)} size", p > 0 ? $"flying jab +{FlyingJabBonus} damage" : "") + PunchNote();
                 case Stat.ThrowPower: return ThrowNote();
                 case Stat.MoveSpeed:
                     return Join($"+{Percent(SpeedScale - 1f)} walking speed", p > 0 ? $"+{Percent(HighTimeScale - 1f)} boong time" : "");
@@ -678,7 +823,7 @@ namespace Game.Leveling
         // Uppercut at 3" when they aren't locked), and ", Triple Punch" once everything is unlocked.
         private string PunchNote()
         {
-            float size = FistSizePoints;
+            float size = UnlockPoints;
             bool bigMoves = !lockSwingAndUppercut;
             int next = int.MaxValue;
             foreach (int at in new[] { jabAtFistSize, bigMoves ? swingAtFistSize : -1, bigMoves ? uppercutAtFistSize : -1, swollenHandAtFistSize, triplePunchAtFistSize })
@@ -709,15 +854,15 @@ namespace Game.Leveling
                 : $"{speed}, blasts +{BlastSteps * blastRadiusPerPoint:0.0} m";
         }
 
-        // Fist Size points, a bonus point counting as Bonus Multiplier of them.
-        // Fist Size points as they count (the bonus stat is Explosive Fist now: it gives no size).
+        // Fist Size points as they count for size and reach, eaten candies' included (the bonus stat is Explosive Fist
+        // now: it gives no size). Unlocking punches counts only the player's own (Unlock Points).
         private float FistSizePoints => Worth(Stat.FistSize);
 
         // The flying punches unlock at their Fist Size (and lock again if the points go, e.g. Reset Progress). Announce:
         // a point just raised it (not the save being read), so the player is told about each new punch.
         private void ApplyPunches(bool announce)
         {
-            float size = FistSizePoints;
+            float size = UnlockPoints;
             bool jab = size >= jabAtFistSize;
             // Kept for later: locked, they never unlock (and are never announced).
             bool swing = !lockSwingAndUppercut && size >= swingAtFistSize;
@@ -812,8 +957,8 @@ namespace Game.Leveling
             points[(int)stat]++;
             Apply(true, true);
             Changed?.Invoke();
-            // The first Throw Power point: the player is told thrown things explode now.
-            if (stat == Stat.ThrowPower && points[(int)stat] == 1) ExplodingThrowsUnlocked?.Invoke();
+            // The first Throw Power point: the player is told thrown things explode now (in a special stage, once it ends).
+            if (stat == Stat.ThrowPower && points[(int)stat] == 1 && !InSpecialStage) ExplodingThrowsUnlocked?.Invoke();
             return true;
         }
 
@@ -890,8 +1035,9 @@ namespace Game.Leveling
         private void OnEnable()
         {
             if (Instance != this) return;
-            // A new run drops the candy points.
+            // A new run drops the candy points, and ends any special stage's level-0 stats.
             Checkpoints.RunStarted += DropCandy;
+            Checkpoints.RunStarted += EndSpecialStages;
             // Weapons the player picks up wear out slower with Weapon Efficiency.
             var origin = FindAnyObjectByType<XROrigin>(FindObjectsInactive.Include);
             if (origin != null) origin.GetComponentsInChildren(true, hands);
@@ -901,6 +1047,7 @@ namespace Game.Leveling
         private void OnDisable()
         {
             Checkpoints.RunStarted -= DropCandy;
+            Checkpoints.RunStarted -= EndSpecialStages;
             foreach (var hand in hands)
             {
                 if (hand != null) hand.selectEntered.RemoveListener(OnPickedUp);
@@ -922,11 +1069,20 @@ namespace Game.Leveling
         // the revives. Heal: a raised cap heals too. Give Revives: a new bonus revive is one more right now too.
         private void Apply(bool heal, bool giveRevives)
         {
-            PlayerBoosts.SetLevelHealthBonus(Worth(Stat.MaxHealth) * healthPerPoint + Points(Stat.ExtraRevive) * reviveHealthPerPoint, heal);
+            ApplyHealth(heal);
             ApplySpeed();
+            // Always the real points, also in a special stage: lowering them would take the lucky coins for good.
             Checkpoints.SetLevelRevives(Points(Stat.ExtraRevive), giveRevives);
             // Raised by a point (giveRevives), a new punch is announced; read from the save, it's just unlocked.
             ApplyPunches(giveRevives);
+        }
+
+        // The health cap from Max Health (eaten candies' points included) and Extra Revive. Heal: a raised cap heals too.
+        private void ApplyHealth(bool heal)
+        {
+            // A whole number: candy points come in halves and tenths, which made caps like 127.5 (play test 2026-11-10).
+            float bonus = Worth(Stat.MaxHealth) * healthPerPoint + EffectPoints(Stat.ExtraRevive) * reviveHealthPerPoint;
+            PlayerBoosts.SetLevelHealthBonus(Mathf.Floor(bonus + 0.5f), heal);
         }
 
         private void ApplySpeed()

@@ -62,7 +62,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 0}
+  - {fileID: 6988543560108305873, guid: cb4516ac98eb5854ea4d7a8f558eb4da, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -109,7 +109,8 @@ MonoBehaviour:
   m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: cb4516ac98eb5854ea4d7a8f558eb4da, type: 2}
-  m_sharedMaterial: {fileID: 0}
+  m_sharedMaterial: {fileID: 6988543560108305873, guid: cb4516ac98eb5854ea4d7a8f558eb4da,
+    type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -527,7 +528,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 948085353163510825}
-  m_LocalRotation: {x: 0, y: -0.35172667, z: 0, w: 0.93610274}
+  m_LocalRotation: {x: 0, y: -0.35172668, z: 0, w: 0.93610275}
   m_LocalPosition: {x: 0, y: 0, z: 2.6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -564,7 +565,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 0}
+  - {fileID: 6988543560108305873, guid: cb4516ac98eb5854ea4d7a8f558eb4da, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -621,7 +622,8 @@ MonoBehaviour:
     before time runs out.'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: cb4516ac98eb5854ea4d7a8f558eb4da, type: 2}
-  m_sharedMaterial: {fileID: 0}
+  m_sharedMaterial: {fileID: 6988543560108305873, guid: cb4516ac98eb5854ea4d7a8f558eb4da,
+    type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1015,7 +1017,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 0}
+  - {fileID: 6988543560108305873, guid: cb4516ac98eb5854ea4d7a8f558eb4da, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1062,7 +1064,8 @@ MonoBehaviour:
   m_text: 60
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: cb4516ac98eb5854ea4d7a8f558eb4da, type: 2}
-  m_sharedMaterial: {fileID: 0}
+  m_sharedMaterial: {fileID: 6988543560108305873, guid: cb4516ac98eb5854ea4d7a8f558eb4da,
+    type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2840,6 +2843,11 @@ MonoBehaviour:
   - {fileID: 8300000, guid: a8b773bd2f16f894b800914d37aae198, type: 3}
   noteSeconds: 0.42
   songVolume: 1
+  maxSongSeconds: 9.5
+  slowTempo: {x: 0.45, y: 0.8}
+  fastTempo: {x: 1.4, y: 2.6}
+  fastNear: 3.5
+  pitchFollowsTempo: 0.25
   singEffect: {fileID: 368729453677311122}
   turnSound: {fileID: 8300000, guid: 97d2e1dfb0c1d454cb1ef3d2f8ce2511, type: 3}
   lookSound: {fileID: 8300000, guid: 7a905e6065379334eb9c2947ac280031, type: 3}
@@ -2869,10 +2877,8 @@ MonoBehaviour:
   candyPrefabs:
   - {fileID: 8690403555129543112, guid: cdc38a3b62c4ce74599d6cfed8d6c696, type: 3}
   - {fileID: 8690403555129543112, guid: 69a17a112506bd2499387184d87d5fc2, type: 3}
-  - {fileID: 8690403555129543112, guid: 2fe269950326c7e4ea5270686d9f60f1, type: 3}
   - {fileID: 8690403555129543112, guid: f4484be4d3c9d8c4298c6f277b0e1307, type: 3}
   - {fileID: 8690403555129543112, guid: 095b3a6dbb3314a4aa1260a5b1e49c40, type: 3}
-  - {fileID: 8690403555129543112, guid: 676a3126f33c8de41885ed4c0d0b0878, type: 3}
   - {fileID: 8690403555129543112, guid: ec76c087b6f2f7e449bd46ac0079ccba, type: 3}
   - {fileID: 8690403555129543112, guid: 423da62656a4eb74a94fb73d5dce640f, type: 3}
   winEffect: {fileID: 4623798490042213957, guid: e1812b1d90f61c94dab0f126b70eb3f3,
@@ -2881,10 +2887,20 @@ MonoBehaviour:
   laughSound: {fileID: 8300000, guid: f81c01b366ac0de49ade00d023caa213, type: 3}
   tickSound: {fileID: 8300000, guid: 0475d725b886eae469de65d86ff11ed9, type: 3}
   collectSeconds: 15
+  seedSeconds: 20
+  seedBeside: 1
+  seedArea: 3
+  seedHeight: 0.5
+  roofWaitSeconds: 20
+  lidStandOff: 4
+  resumeGrace: 1
+  hostPaint: {fileID: 2800000, guid: d59705b18934d684aaeed4225c4f9b23, type: 3}
+  singColour: {r: 0.25, g: 0.95, b: 0.35, a: 1}
+  lookColour: {r: 1, g: 0.15, b: 0.12, a: 1}
+  restColour: {r: 1, g: 0.8, b: 0.3, a: 1}
   timerText: {fileID: 8223469072881386371}
   statusText: {fileID: 5333777509630332733}
   fog: {x: 14, y: 48}
-  hostPaint: {fileID: 2800000, guid: d59705b18934d684aaeed4225c4f9b23, type: 3}
 --- !u!1001 &2091935610835551579
 PrefabInstance:
   m_ObjectHideFlags: 0

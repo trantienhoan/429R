@@ -289,7 +289,8 @@ namespace Game.PlayGround
         {
             var at = Middle();
             var made = Instantiate(chest, at, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f), SpawnedStuff());
-            if (made.TryGetComponent<Rigidbody>(out var body)) body.linearVelocity = Vector3.zero;
+            // A kinematic chest (held still until opened) has no velocity to clear, and Unity warns if it's set.
+            if (made.TryGetComponent<Rigidbody>(out var body) && !body.isKinematic) body.linearVelocity = Vector3.zero;
             Puff(chestEffect, at, chestEffectScale);
         }
 

@@ -13,9 +13,11 @@ namespace Game.PlayGround
     /// sky, landing on its crown, and spits out its recipe card (Recipe_Card): the card shoots up out of the hole,
     /// growing from a fifth of its size to full size, and hangs above it with the recipe (each ingredient's picture and
     /// how many) on its blank side, turned to the player. After a few seconds, or once the player walks off, it flies
-    /// back into the hat; another hit brings it out again. Once the card has been out, the cauldron shows the recipe
-    /// above its pot too, as ingredients go in. When a wrong recipe finishes cooking, the hat shakes and giggles, a hint
-    /// to go and read it. Goes on the hat's root, which needs a collider.
+    /// back into the hat; another hit brings it out again. Until the card has been out, the cauldron shows only
+    /// "??? x ?" above its pot; after, the real recipe (as ingredients go in, or after a hit on the pot). When a wrong
+    /// recipe finishes cooking, the hat shakes and giggles, a hint to go and read it. While this round's recipe is still
+    /// unread, a soft aura (Aura) glows round the hat so it's easy to spot (user, 2026-11-10). Goes on the hat's root,
+    /// which needs a collider.
     /// </summary>
     [DisallowMultipleComponent]
     public class MagicHat : MonoBehaviour
@@ -96,6 +98,11 @@ namespace Game.PlayGround
         [Min(0f)]
         [SerializeField] private float launchHeight = 0.8f;
 
+        [Header("Aura")]
+        [Tooltip("A soft glow so the hat is easy to spot (its child Aura, a Hat_Aura). It shows only while the cauldron " +
+                 "is out, this round's recipe hasn't been read yet and it isn't the candy pot; then it fades. Empty = no glow.")]
+        [SerializeField] private ParticleSystem aura;
+
         // The recipe is written this many pixels wide, over this much of the card's side (its border stays clear).
         private const float CanvasWidth = 300f;
         private const float FaceUse = 0.74f;
@@ -104,6 +111,9 @@ namespace Game.PlayGround
         private const float CountWidth = 110f;
         // Going back in takes this share of Fly Seconds.
         private const float BackShare = 0.7f;
+        // The aura checks whether it's wanted this often, in seconds, and looks this far for the cauldron, in metres.
+        private const float AuraCheckEvery = 0.25f;
+        private const float CauldronReach = 200f;
 
         private readonly List<Collider> colliders = new();
         private Transform[] hands = System.Array.Empty<Transform>();
@@ -130,6 +140,10 @@ namespace Game.PlayGround
         private bool trickWasKinematic;
         // Turned hole up by a hit and held there (kinematic) until it's hidden again.
         private bool standing;
+        // Whether the aura has been switched on or off yet (since it was enabled), and which.
+        private bool auraSet;
+        private bool auraOn;
+        private float nextAuraCheck;
 
         private void Awake()
         {
@@ -156,6 +170,7 @@ namespace Game.PlayGround
             for (int i = 0; i < hands.Length; i++) lastHand[i] = hands[i] != null ? hands[i].position : Vector3.zero;
 
             LieAnyWay();
+            UpdateAura();
         }
 
         /// <summary>
@@ -186,6 +201,9 @@ namespace Game.PlayGround
         {
             Cauldron.CookFailed += OnCookFailed;
             Cauldron.RecipeChanged += OnRecipeChanged;
+            // Switched on again, its aura plays by itself: checked again at once.
+            auraSet = false;
+            nextAuraCheck = 0f;
         }
 
         private void OnDisable()
@@ -242,6 +260,7 @@ namespace Game.PlayGround
 
         private void Update()
         {
+            UpdateAura();
             CheckSlaps();
             AnimateShake();
 
@@ -304,6 +323,24 @@ namespace Game.PlayGround
         {
             state = next;
             stateSince = Time.time;
+        }
+
+        // The aura glows only while the hat is worth finding (user, 2026-11-10: "add an aura particle to the Recipe_Hat
+        // so it's easier to spot ... keep it light"): the cauldron is out, this round's recipe hasn't been read, and it
+        // isn't the candy pot. The cauldron comes later than the hat (out of a seed) and goes when the pot bursts, so it's
+        // looked for again while there's none. Checked a few times a second; the particles change only when that does.
+        private void UpdateAura()
+        {
+            if (aura == null || Time.time < nextAuraCheck) return;
+            nextAuraCheck = Time.time + AuraCheckEvery;
+            if (cauldron == null) cauldron = Cauldron.Nearest(transform.position, CauldronReach);
+            bool want = cauldron != null && !cauldron.RecipeKnown && !cauldron.AllCooked && !cauldron.IsBroken;
+            if (auraSet && want == auraOn) return;
+            if (want) aura.Play(true);
+            // The first time (it plays by itself as it appears) it's off at once; later the blobs out fade away.
+            else aura.Stop(true, auraSet ? ParticleSystemStopBehavior.StopEmitting : ParticleSystemStopBehavior.StopEmittingAndClear);
+            auraSet = true;
+            auraOn = want;
         }
 
         // Out of the hat it comes, small, and flies up to hang above it.

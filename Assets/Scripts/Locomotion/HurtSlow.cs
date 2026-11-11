@@ -90,9 +90,10 @@ namespace Game.Locomotion
         private void OnDisable() => Game.Saving.PlayerBoosts.HealthSet -= TakeHealthAsIs;
 
         // The health was set by the game (Get a Rest's health given back on loading), not lowered by a hit.
-        private void TakeHealthAsIs()
+        // Only the set's own change is taken as it is; a hit not yet seen this frame still counts.
+        private void TakeHealthAsIs(float change)
         {
-            if (health != null) lastHealth = health.Value;
+            if (health != null) lastHealth += change;
         }
 
         private void Update()

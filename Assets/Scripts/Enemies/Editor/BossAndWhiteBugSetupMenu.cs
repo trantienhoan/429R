@@ -12,11 +12,13 @@ namespace Game.EditorTools
     ///   pumpkins), and spiders and bees turn into a small white cockroach when they come out white (Anomaly Body);
     /// - every bug gets the rare white anomaly's look: the white mini boss's own painted material for its kind (Spider_,
     ///   Cockroach_ or Bee_Smol_White_Painted_Mat, same models and UVs), its sparkles (White_Bug_Glow), the burst where
-    ///   it's killed (White_Bug_Pop) and a reward sound (Spider Brain > White anomaly; 1 in 100 by default);
+    ///   it's killed (White_Bug_Pop) and a reward sound (Spider Brain > White anomaly; about 1 in 333 by default since
+    ///   2026-11-10, was 1 in 100);
     /// - the six mini bosses call only the small bug of their own kind, as many as the Enemy Limit has room for, as soon
     ///   as they run away (or get low, for the bees);
     /// - the spider and cockroach mini bosses get more health and toughness, a Stun Guard, and leap at the player from
-    ///   further away (the spiders get a Pounce; the roaches' Face Leap reaches further). The bees are left as they are.
+    ///   further away (the spiders get a Pounce; the roaches' Face Leap reaches further); the white ones (and so their
+    ///   Pumpkin Butt variants) also move 30% faster (user, 2026-11-10). The bees are left as they are.
     /// Running it again sets the same numbers (it doesn't add up).
     /// </summary>
     public static class BossAndWhiteBugSetupMenu
@@ -55,17 +57,21 @@ namespace Game.EditorTools
             public Vector2Int health;
             public float toughness;
             public float stunGuard;
+            // Size > Boss > Speed (walking, running and fleeing); 0 = leave it (the Pumpkin Butt variants inherit theirs).
+            public float speed;
             // Share of the Enemy Limit's room its low-health call fills (user, 2026-10-27: white bosses half).
             public float minionShare = 1f;
         }
 
         private static readonly Boss[] Bosses =
         {
-            // Stun guard (user, 2026-10-27): white bosses 0.5 s, Pumpkin Butt bosses 2 s. Health as on the prefabs, halved
-            // for whole-number damage (2026-10-27).
-            new() { name = "Spider_Boss", minion = "Spider_Small", walks = true, health = new Vector2Int(38, 48), toughness = 3f, stunGuard = 0.5f, minionShare = 0.5f },
+            // Stun guard (user, 2026-10-27): white bosses 0.5 s, Pumpkin Butt bosses 2 s. Health as on the prefabs: halved
+            // for whole-number damage (2026-10-27), then the white bosses raised on the other PC (f4ad1289, 2026-11-05).
+            // Speed (user, 2026-11-10): the spider and cockroach bosses +30% (0.9 -> 1.17, 0.95 -> 1.235); their Pumpkin
+            // Butt variants inherit it.
+            new() { name = "Spider_Boss", minion = "Spider_Small", walks = true, health = new Vector2Int(67, 84), toughness = 3f, stunGuard = 0.5f, speed = 1.17f, minionShare = 0.5f },
             new() { name = "Spider_Boss_PumpkinButt", minion = "Spider_Small", walks = true, health = new Vector2Int(87, 95), toughness = 2.5f, stunGuard = 2f },
-            new() { name = "Cockroach_Boss", minion = "Cockroach_Small", walks = true, health = new Vector2Int(44, 49), toughness = 2.5f, stunGuard = 0.5f, minionShare = 0.5f },
+            new() { name = "Cockroach_Boss", minion = "Cockroach_Small", walks = true, health = new Vector2Int(77, 86), toughness = 2.5f, stunGuard = 0.5f, speed = 1.235f, minionShare = 0.5f },
             new() { name = "Cockroach_Boss_PumpkinButt", minion = "Cockroach_Small", walks = true, health = new Vector2Int(132, 147), toughness = 2.5f, stunGuard = 2f },
             new() { name = "Bee_Boss", minion = "Bee_Small", minionShare = 0.5f },
             new() { name = "Bee_Boss_PumpkinButt", minion = "Bee_Small" },
@@ -141,6 +147,7 @@ namespace Game.EditorTools
                 // They call as they run away (both at the same share of health).
                 brain.FindProperty("callBelowHealth").floatValue = brain.FindProperty("fleeBelowHealth").floatValue;
                 brain.FindProperty("boss").FindPropertyRelative("health").vector2IntValue = boss.health;
+                if (boss.speed > 0f) brain.FindProperty("boss").FindPropertyRelative("speed").floatValue = boss.speed;
                 brain.FindProperty("stunGuardSeconds").floatValue = boss.stunGuard;
                 brain.FindProperty("attackRange").floatValue = BossAttackRange;
                 extra = boss.name.StartsWith("Spider") ? Pounce(brain.FindProperty("attacks")) : LongerFaceLeap(brain.FindProperty("attacks"));
@@ -148,7 +155,8 @@ namespace Game.EditorTools
                 var hits = new SerializedObject(root.GetComponent<Game.Combat.EnemyHitDamage>());
                 hits.FindProperty("toughness").floatValue = boss.toughness;
                 hits.ApplyModifiedPropertiesWithoutUndo();
-                extra = $", health {boss.health}, toughness {boss.toughness}, stun guard {boss.stunGuard}, {extra}";
+                extra = $", health {boss.health}, toughness {boss.toughness}, stun guard {boss.stunGuard}" +
+                        (boss.speed > 0f ? $", speed {boss.speed}" : "") + $", {extra}";
             }
             brain.ApplyModifiedPropertiesWithoutUndo();
             PrefabUtility.SaveAsPrefabAsset(root, path);

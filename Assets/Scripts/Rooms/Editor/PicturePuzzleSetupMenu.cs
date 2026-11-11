@@ -616,7 +616,7 @@ namespace Game.EditorTools
                 so.FindProperty("winFireworks").objectReferenceValue = fireworks;
                 var candies = so.FindProperty("candyPrefabs");
                 var candyList = new List<GameObject>();
-                for (int n = 1; n <= 8; n++)
+                foreach (int n in Game.Inventory.CandyKinds.Numbers)
                 {
                     var c = AssetDatabase.LoadAssetAtPath<GameObject>(CandyFolder + "Candy_" + n + ".prefab");
                     if (c != null) candyList.Add(c);

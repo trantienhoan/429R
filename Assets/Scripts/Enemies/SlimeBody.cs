@@ -17,7 +17,8 @@ namespace Game.Enemies
     /// bite or spit.
     /// Its death (the brain's "Died"): it bursts (smoke, a pop and a squelch). Killed by the player (a hit or a blast on
     /// it a moment before, or its own Ticking Bomb), a big one splits into Split Count small ones, once (a slime made by
-    /// a split never splits again), and a small one drops a few candies. Killed any other way (a wave cleared, a fall,
+    /// a split never splits again), and a small one drops a few candies (its colour's kind: Colour Candy, handed down by
+    /// the big one it split off). Killed any other way (a wave cleared, a fall,
     /// the Live Limit, a blast that wasn't the player's, Clear All) it only bursts. The Fairy Shield pops it: no EXP, no
     /// split, no candy.
     /// Tools > 429 Game > PlayGround > Set Up PlayGround Slimes builds the prefabs.
@@ -76,6 +77,11 @@ namespace Game.Enemies
         [Header("Candies (small ones)")]
         [Tooltip("The candies it can drop when the player kills it (Candy_1..8, one at random each). Empty: none.")]
         [SerializeField] private GameObject[] candies = Array.Empty<GameObject>();
+        [Tooltip("Its colour's candy (user, 2026-11-10: a slime drops candy of its own colour; the Candy Colours menu " +
+                 "sets it from Candy_Colours.asset): every candy it drops is this kind. Empty: one of Candies at random. A " +
+                 "big one hands it down to the small ones it splits into. It only picks the kind: a slime with no Candies " +
+                 "still drops none.")]
+        [SerializeField] private GameObject colourCandy;
         [Tooltip("How many, random between (both included).")]
         [SerializeField] private Vector2Int candyCount = new(0, 2);
         [Tooltip("How fast they're tossed up, in m/s (gently: a candy breaks on a hard landing).")]
@@ -165,11 +171,24 @@ namespace Game.Enemies
 
         /// <summary>
         /// Called on a slime just made by a big one's split (straight after Instantiate): it never splits again, whatever
-        /// its prefab says, and wears its parent's skin (Skin; none: its own).
+        /// its prefab says, wears its parent's skin (Skin; none: its own) and drops its parent's colour candy (Candy;
+        /// none: its own Colour Candy).
         /// </summary>
-        public void MadeBySplit(Material skin)
+        public void MadeBySplit(Material skin, GameObject candy = null)
         {
             madeBySplit = true;
+            Recolour(skin, candy);
+        }
+
+        /// <summary>
+        /// Gives it another colour (straight after Instantiate): it wears this skin (none: its own) and drops this colour
+        /// candy (none: its own Colour Candy), and hands both down to its splits. E.g. the cauldron's wrong-recipe slime
+        /// comes in the colour of a candy the recipe still needs (user, 2026-11-10).
+        /// </summary>
+        public void Recolour(Material skin, GameObject candy)
+        {
+            // A small one off the blue boss drops only blue candies (user, 2026-11-10).
+            if (candy != null) colourCandy = candy;
             if (skin == null) return;
             var under = body != null ? body : transform;
             foreach (var look in under.GetComponentsInChildren<Renderer>(true))
@@ -180,6 +199,9 @@ namespace Game.Enemies
                 look.sharedMaterials = mats;
             }
         }
+
+        /// <summary>The candy it drops when it has a colour (Colour Candy), else null (random ones).</summary>
+        public GameObject ColourCandy => colourCandy;
 
         private void Awake()
         {
@@ -460,7 +482,7 @@ namespace Game.Enemies
                     ? hit.position
                     : at;
                 var child = Instantiate(splitInto, spot, Quaternion.LookRotation(way), parent);
-                if (child.TryGetComponent(out SlimeBody slime)) slime.MadeBySplit(skin);
+                if (child.TryGetComponent(out SlimeBody slime)) slime.MadeBySplit(skin, colourCandy);
                 // It counts at once (the answer doesn't matter: the split always happens).
                 EnemyLimit.TryTakeSlot();
                 foreach (var spawner in waves) EnemyWave.Add(spawner, child);
@@ -498,7 +520,8 @@ namespace Game.Enemies
             float turn = Random.Range(0f, 360f);
             for (int i = 0; i < amount; i++)
             {
-                var prefab = candies[Random.Range(0, candies.Length)];
+                // Its colour's candy when it has one; Died only gets here with Candies set, so the gate stays the same.
+                var prefab = colourCandy != null ? colourCandy : candies[Random.Range(0, candies.Length)];
                 if (prefab == null) continue;
                 var outward = Quaternion.Euler(0f, turn + 360f * i / amount, 0f) * Vector3.forward;
                 var candy = Instantiate(prefab, transform.position + outward * ring + Vector3.up * CandyHeight,

@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using Game.Combat;
 using Game.Enemies;
+using Game.Inventory;
 using Unity.XR.CoreUtils;
 using UnityEngine.AI;
 using UnityEngine.Serialization;
@@ -16,20 +17,22 @@ namespace Game.PlayGround
 {
     /// <summary>
     /// The PlayGround's witch cauldron. It cooks a few dishes in a row (Rounds), each with its own recipe of pumpkins
-    /// (Pumpkin_On_Tree) and random candies (Candy_1 ... 8); the magic hat shows the current one. Ingredients dropped
-    /// or thrown into the pot are taken in with a puff of green smoke; once the player has read the recipe off the hat,
-    /// what's in the pot and what's still missing shows above it. Its surface always bubbles. The moment the pot is
+    /// (Pumpkin_On_Tree) and random candies (the 6 in Candies); the magic hat shows the current one. Ingredients dropped
+    /// or thrown into the pot are taken in with a puff of green smoke. Above the pot, while ingredients go in (and for a
+    /// few seconds after a hit), the recipe shows: only "??? x ?" for each ingredient until the player has read it off
+    /// the hat, then what's in the pot and what's still missing. Its surface always bubbles. The moment the pot is
     /// full it checks the recipe. Right: it cooks (Cooking Started, the round's wave starts): the surface boils, a tower
     /// of bubbles rises out of it and a meter fills; done, it spits the round's laughing pumpkin out to the middle of
     /// the PlayGround, and a small bubble plume stays until the pumpkin is caught. Wrong: it boils a moment and spits
-    /// out a big slime (Slime_Big) next to it, the magic hat shakes, and the same recipe can be tried again at once.
+    /// out a big slime (Slime_Big) next to it, in the colour of a candy the recipe still needs (Candy Colours), so it
+    /// drops that candy; the magic hat shakes, and the same recipe can be tried again at once.
     /// Firewood thrown into the fire under it makes the fire roar and the cooking go faster for a while. A punch or a
-    /// hit with a weapon rings its bell and lets a wild slime out of the pot (candy, no EXP); a head over the pot is
-    /// pushed back. With a PlayGround Rounds director next to it, the next round waits until the pumpkin is caught and
-    /// the chest's seed taken (Continue). After the last round comes the candy pot: it shakes and rings by itself,
-    /// letting slimes out, until enough candies are in; then it cooks, swells and bursts (Pot Broken). It stands fixed
-    /// on the floor, upright, wherever it appears. Goes on Fire_Woods_n_Cauldron's root; it makes its own zones, panels
-    /// and pot collider when the game runs.
+    /// hit with a weapon rings its bell, shows the recipe above it for a few seconds and lets a wild slime out of the
+    /// pot (candy, no EXP); a head over the pot is pushed back. With a PlayGround Rounds director next to it, the next
+    /// round waits until the pumpkin is caught and the chest's seed taken (Continue). After the last round comes the
+    /// candy pot: it shakes and rings by itself, letting slimes out, until enough candies are in; then it cooks, swells
+    /// and bursts (Pot Broken). It stands fixed on the floor, upright, wherever it appears. Goes on
+    /// Fire_Woods_n_Cauldron's root; it makes its own zones, panels and pot collider when the game runs.
     /// </summary>
     [DisallowMultipleComponent]
     public class Cauldron : MonoBehaviour
@@ -97,14 +100,16 @@ namespace Game.PlayGround
             new() { pumpkins = 1, candies = 4, cookSeconds = 45f },
             new() { pumpkins = 1, candies = 5, cookSeconds = 60f },
         };
-        [Tooltip("The candies a recipe can ask for (Candy_1 ... 8); each needs a Cooking Ingredient.")]
+        [Tooltip("The candies a recipe can ask for (the 6 in the game: Candy_1, 2, 4, 5, 7, 8); each needs a Cooking " +
+                 "Ingredient.")]
         [FormerlySerializedAs("lollipops")]
         [SerializeField] private GameObject[] candies = Array.Empty<GameObject>();
         [Tooltip("Most different candies one recipe asks for, so it fits on the card.")]
         [Min(1)] [SerializeField] private int maxKinds = 3;
         [Tooltip("The pumpkin recipes ask for (Pumpkin_On_Tree).")]
         [SerializeField] private GameObject pumpkin;
-        [Tooltip("Each new round's recipe has to be read off the magic hat again before it shows above the cauldron.")]
+        [Tooltip("Each new round's recipe has to be read off the magic hat again before it shows above the cauldron " +
+                 "(until then it shows as '??? x ?').")]
         [SerializeField] private bool hatEachRound = true;
 
         [Header("Taking in")]
@@ -135,6 +140,10 @@ namespace Game.PlayGround
                  "not on the player, with a puff (one with a loose Rigidbody flies there in an arc instead).")]
         [FormerlySerializedAs("badPumpkin")]
         [SerializeField] private GameObject wrongResult;
+        [Tooltip("The candy colour table (Candy_Colours.asset; the Candy Colours menu sets it): a wrong recipe's slime " +
+                 "comes in the colour of a candy the recipe still needs, so it drops that candy (user, 2026-11-10). " +
+                 "Empty: it keeps its own colour.")]
+        [SerializeField] private CandyColours candyColours;
         [Min(0)] [SerializeField] private int minBadPumpkins = 1;
         [Min(0)] [SerializeField] private int maxBadPumpkins = 1;
         [Tooltip("Seconds a wrong recipe boils before it's spat out (no meter, no wave).")]
@@ -183,6 +192,9 @@ namespace Game.PlayGround
         [Min(0f)] [SerializeField] private float slimeCooldown = 3f;
         [Tooltip("How fast a held or thrown weapon has to hit it to ring it, in m/s (a fist rings on any real punch).")]
         [Min(0f)] [SerializeField] private float bellHitSpeed = 1.5f;
+        [Tooltip("Seconds the recipe shows above the pot after a punch or a weapon hit: '??? x ?' for each ingredient " +
+                 "until the magic hat has been read, then the real recipe (even with nothing in yet). 0 = hits show nothing.")]
+        [Min(0f)] [SerializeField] private float hitShowSeconds = 6f;
 
         [Header("Last: the candy pot")]
         [Tooltip("After the last round it asks for this many candies (any of Candies; nothing else counts), shaking and " +
@@ -291,6 +303,8 @@ namespace Game.PlayGround
         private float nextSlime;
         private float nextBellSound;
         private float nextFinaleBell;
+        // A hit keeps the recipe panel up until then (0 = no hit showing it).
+        private float hitShowUntil;
 
         public IReadOnlyList<Line> Recipe => recipe;
         public bool IsCooking => cooking;
@@ -312,7 +326,7 @@ namespace Game.PlayGround
         /// </summary>
         public bool HoldBetweenRounds { get; set; }
         public bool WaitingForNextRound => waitingForNext;
-        /// <summary>The player has read this round's recipe off the magic hat, so it shows above the pot.</summary>
+        /// <summary>The player has read this round's recipe off the magic hat, so it shows above the pot (not "???").</summary>
         public bool RecipeKnown => recipeKnown;
         /// <summary>The middle of the pot's opening.</summary>
         public Vector3 Mouth => MouthPoint();
@@ -414,7 +428,7 @@ namespace Game.PlayGround
             if (recipePanel != null) Destroy(recipePanel.gameObject);
         }
 
-        /// <summary>The magic hat showed the recipe: from now on it shows above the pot as ingredients go in.</summary>
+        /// <summary>The magic hat showed the recipe: from now on the panel above the pot shows it, not "???".</summary>
         public void RevealRecipe()
         {
             if (recipeKnown) return;
@@ -449,6 +463,12 @@ namespace Game.PlayGround
             // The candy pot rings by itself every few seconds, letting slimes out (their candy can feed it).
             if (InMystery && !cooking && Time.time >= nextFinaleBell) RingFinaleBell();
             PushBack();
+            // A hit's showing is over: the panel goes (or stays, if ingredients are in).
+            if (hitShowUntil > 0f && Time.time >= hitShowUntil)
+            {
+                hitShowUntil = 0f;
+                if (recipePanel != null) RefreshRecipePanel();
+            }
         }
 
         // The surface bubbles gently all the time, and boils (faster, more so with a hot fire) while cooking or while a
@@ -654,12 +674,15 @@ namespace Game.PlayGround
             playerBody = player.GetComponent<CharacterController>();
         }
 
+        // A candy by its name ("Candy_4", "Candy_4(Clone)"), never the shop's Candy Box.
+        private static bool IsCandyName(string name) => name.StartsWith("Candy_") && name.Length > 6 && char.IsDigit(name[6]);
+
         // Something it cooks with: an ingredient (a candy, a tree pumpkin) or firewood.
         private static bool IsFood(Transform thing)
         {
             if (thing == null) return false;
             return thing.GetComponentInParent<CookingIngredient>() != null || thing.GetComponentInParent<FireFuel>() != null ||
-                   thing.name.StartsWith("Candy") || thing.name.StartsWith("Pumpkin_On_Tree");
+                   IsCandyName(thing.name) || thing.name.StartsWith("Pumpkin_On_Tree");
         }
 
         private Transform Head()
@@ -670,11 +693,12 @@ namespace Game.PlayGround
 
         // ---- Bell and wild slimes ----
 
-        // A punch on it (the fist itself or a flying one) rings the bell.
+        // A punch on it (the fist itself or a flying one) rings the bell and shows the recipe for a while.
         private void OnPunchLanded(Fist.PunchLanded punch)
         {
             if (potBroken || punch.Hit == null || !punch.Hit.transform.IsChildOf(transform)) return;
             Ring(true);
+            ShowRecipeForHit();
         }
 
         // A held or thrown weapon (or a shot) hitting it hard enough rings the bell. Fists count in OnPunchLanded;
@@ -688,6 +712,18 @@ namespace Game.PlayGround
                 body.GetComponentInParent<RunAwayPumpkin>() != null) return;
             if (collision.relativeVelocity.magnitude < bellHitSpeed) return;
             Ring(true);
+            ShowRecipeForHit();
+        }
+
+        // A hit on the pot shows the recipe above it for Hit Show Seconds (user, 2026-11-10: hitting the cauldron shows
+        // "??? x" until the black hat is found and hit): '??? x ?' until the hat has been read, then the real one. More
+        // hits only keep it up longer (it isn't rebuilt each time). The candy pot's own rings never come here.
+        private void ShowRecipeForHit()
+        {
+            if (potBroken || hitShowSeconds <= 0f) return;
+            bool wasUp = recipePanel != null;
+            hitShowUntil = Time.time + hitShowSeconds;
+            if (!wasUp) RefreshRecipePanel();
         }
 
         // The bell rings (one of Bell Sounds, as it is); 'callSlime' also lets a wild slime out if it may.
@@ -1124,6 +1160,7 @@ namespace Game.PlayGround
                     if (flies)
                     {
                         var made = Instantiate(wrongResult, from, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f), SpawnedStuff());
+                        ColourForRecipe(made);
                         IgnorePot(made);
                         if (made.TryGetComponent<Rigidbody>(out var body) && !body.isKinematic)
                         {
@@ -1133,12 +1170,48 @@ namespace Game.PlayGround
                     }
                     else
                     {
-                        Instantiate(wrongResult, landing, FacingPlayer(landing), SpawnedStuff());
+                        ColourForRecipe(Instantiate(wrongResult, landing, FacingPlayer(landing), SpawnedStuff()));
                         DoneEffect(landing + Vector3.up * 0.3f);
                     }
                 }
             }
             CookFailed?.Invoke(this);
+        }
+
+        // A wrong recipe's slime comes in the colour of a candy the recipe still needs (user, 2026-11-10: so it drops
+        // that candy): one the pot is short of, more likely the more it's short; if none is short (too many of
+        // something), any of the recipe's candies. Called before the pot is emptied. Without Candy Colours, or a slime
+        // with no Slime Body, it keeps its own colour.
+        private void ColourForRecipe(GameObject made)
+        {
+            if (made == null || candyColours == null || !made.TryGetComponent(out SlimeBody slime)) return;
+            var needed = new List<GameObject>();
+            var any = new List<GameObject>();
+            foreach (var line in recipe)
+            {
+                var candy = CandyFor(line.id);
+                if (candy == null) continue;
+                any.Add(candy);
+                contents.TryGetValue(line.id, out int had);
+                for (int i = had; i < line.count; i++) needed.Add(candy);
+            }
+            var pool = needed.Count > 0 ? needed : any;
+            if (pool.Count == 0) return;
+            var pick = pool[Random.Range(0, pool.Count)];
+            if (!candyColours.TryGetRow(pick, out var row)) return;
+            slime.Recolour(row.slimeSkin, row.candy);
+        }
+
+        // The candy prefab (of Candies) whose ingredient id this is; null for a pumpkin or anything else.
+        private GameObject CandyFor(string id)
+        {
+            foreach (var candy in candies)
+            {
+                if (candy == null) continue;
+                var ingredient = candy.GetComponent<CookingIngredient>();
+                if ((ingredient != null ? ingredient.Id : CookingIngredient.BaseName(candy.name)) == id) return candy;
+            }
+            return null;
         }
 
         // A spot on the NavMesh Spit Distance from the pot, trying round from 'startAngle': the first one at least Keep
@@ -1264,8 +1337,8 @@ namespace Game.PlayGround
             go.AddComponent<CauldronZone>().Setup(this, zone);
         }
 
-        // A filling bar while it cooks, orange when the fire is hot. Before that, once the player has read the recipe off
-        // the hat and put something in, the recipe with what's in and what's missing (see RefreshRecipePanel).
+        // A filling bar while it cooks, orange when the fire is hot. Before that, while something is in or after a hit,
+        // the recipe with what's in and what's missing, or "???" before the hat (see RefreshRecipePanel).
         private void UpdateMeter()
         {
             Head();
@@ -1295,8 +1368,10 @@ namespace Game.PlayGround
         }
 
         // The recipe above the pot: each ingredient's picture over how many are in / how many it needs (green when
-        // there are enough, red when too many), and a red "?" for anything that isn't in the recipe. Shown only once the
-        // magic hat has shown the recipe, and only while ingredients are going in. Rebuilt whenever that changes.
+        // there are enough, red when too many), and a red "?" for anything that isn't in the recipe. Until the magic hat
+        // has shown the recipe it's only "??? x ?" for each ingredient (BuildHiddenPanel). Shown while ingredients are
+        // going in, and for Hit Show Seconds after a hit on the pot (then even with nothing in). Rebuilt whenever that
+        // changes.
         private void RefreshRecipePanel()
         {
             if (recipePanel != null)
@@ -1309,7 +1384,13 @@ namespace Game.PlayGround
                 BuildMysteryPanel();
                 return;
             }
-            if (!recipeKnown || cooking || count == 0 || AllCooked || recipe.Count == 0 || waitingForNext) return;
+            bool hitShown = Time.time < hitShowUntil;
+            if (cooking || AllCooked || recipe.Count == 0 || waitingForNext || (count == 0 && !hitShown)) return;
+            if (!recipeKnown)
+            {
+                BuildHiddenPanel();
+                return;
+            }
 
             int wrong = count;
             foreach (var line in recipe)
@@ -1348,6 +1429,27 @@ namespace Game.PlayGround
                 var what = WorldUI.CreateText("Wrong", recipePanel, "?", 54f, FontStyles.Bold, TextAlignmentOptions.Center, TooMany, font);
                 WorldUI.Place((Graphic)what, left, PanelPad, ColumnWidth, ColumnIcon);
                 var amount = WorldUI.CreateText("Wrong Count", recipePanel, $"x {wrong}", 30f, FontStyles.Bold, TextAlignmentOptions.Center, TooMany, font);
+                WorldUI.Place((Graphic)amount, left, PanelPad + ColumnIcon, ColumnWidth, ColumnCount);
+            }
+            PlacePanel(recipePanel);
+        }
+
+        // Before the magic hat has been read: one column per recipe line, "???" over "x ?", so the player sees there is a
+        // recipe but not what it asks for, nor how many (user, 2026-11-10). No red "?" for wrong things either: that
+        // would give the recipe away.
+        private void BuildHiddenPanel()
+        {
+            int columns = recipe.Count;
+            float width = Mathf.Max(ColumnWidth * 2f, columns * ColumnWidth) + PanelPad * 2f;
+            float height = PanelPad + ColumnIcon + ColumnCount + PanelPad;
+            recipePanel = WorldUI.CreatePanel("Cauldron Recipe Hidden", width, height, MeterScale, MeterBack);
+
+            float left = (width - columns * ColumnWidth) * 0.5f;
+            for (int i = 0; i < columns; i++, left += ColumnWidth)
+            {
+                var what = WorldUI.CreateText($"Hidden {i + 1}", recipePanel, "???", 34f, FontStyles.Bold, TextAlignmentOptions.Center, Color.white, font);
+                WorldUI.Place((Graphic)what, left, PanelPad, ColumnWidth, ColumnIcon);
+                var amount = WorldUI.CreateText($"Hidden Count {i + 1}", recipePanel, "x ?", 30f, FontStyles.Bold, TextAlignmentOptions.Center, Color.white, font);
                 WorldUI.Place((Graphic)amount, left, PanelPad + ColumnIcon, ColumnWidth, ColumnCount);
             }
             PlacePanel(recipePanel);

@@ -38,7 +38,6 @@ namespace Game.EditorTools
         // comes out (user, 2026-11-05: "a little too big right at start").
         private const float Scale = 1.06f;
         private const string BugAgentType = "Spider";
-        private const int CandyKinds = 8;
 
         [MenuItem("Tools/429 Game/Enemies/Set Up Fat Pumpkin")]
         public static void Run()
@@ -135,8 +134,7 @@ namespace Game.EditorTools
                 so.FindProperty("eatSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "om_nom_nom.wav");
                 BowlingPumpkinSetupMenu.SetList(so.FindProperty("hitSounds"), Sfx + "bone_bonk_1.wav", Sfx + "bone_bonk_2.wav");
                 so.FindProperty("pieces").objectReferenceValue = MakePieces();
-                var candies = new string[CandyKinds];
-                for (int i = 0; i < CandyKinds; i++) candies[i] = string.Format(CandyPath, i + 1);
+                var candies = System.Array.ConvertAll(Game.Inventory.CandyKinds.Numbers, n => string.Format(CandyPath, n));
                 BowlingPumpkinSetupMenu.SetList(so.FindProperty("candies"), candies);
                 so.ApplyModifiedPropertiesWithoutUndo();
                 return PrefabUtility.SaveAsPrefabAsset(root, FatPath);
