@@ -18,7 +18,8 @@ namespace Game.Audio
         [Tooltip("0: the same everywhere, like background music; 1: heard from here (3D).")]
         [Range(0f, 1f)]
         [SerializeField] private float spatialBlend;
-        [Tooltip("A punch or a tap with a fist (or a flying punch) skips to the next song: the radios.")]
+        [Tooltip("A punch or a tap with a fist (or a flying punch), or a tap with a thing held in the hand (user, 2026-11-12: " +
+                 "without gloves there's no fist), skips to the next song: the radios.")]
         [SerializeField] private bool punchToSkip;
         [Tooltip("At most one skip this often, in seconds.")]
         [Min(0f)]
@@ -83,7 +84,10 @@ namespace Game.Audio
         {
             if (!punchToSkip || Time.time < nextSkip) return;
             var hitter = collision.rigidbody;
-            if (!Game.Combat.Fist.IsFistBall(hitter) && !Game.Combat.Fist.IsFlyingFist(hitter)) return;
+            bool punch = Game.Combat.Fist.IsFistBall(hitter) || Game.Combat.Fist.IsFlyingFist(hitter);
+            // No gloves, no fist (user, 2026-11-12): a tap with a thing in the hand skips too (not one thrown at it).
+            bool tap = hitter != null && hitter.TryGetComponent(out UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable grab) && grab.isSelected;
+            if (!punch && !tap) return;
             nextSkip = Time.time + skipCooldown;
             Skip();
         }

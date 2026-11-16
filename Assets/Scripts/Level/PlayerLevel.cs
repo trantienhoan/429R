@@ -28,7 +28,8 @@ namespace Game.Leveling
         BonusMaxHealth,
         // Explosive Fist (named from when it was Fist Size x10; the name keeps the saved points in place).
         BonusFistSize,
-        // Weapon Master (named from when it was Power; the name keeps the saved points in place).
+        // Strong Grip (named from when it was Power; it was called Weapon Master until 2026-11-12, when Weapon Efficiency's
+        // 10th point took that name; the name keeps the saved points in place).
         BonusPower,
     }
 
@@ -39,28 +40,42 @@ namespace Game.Leveling
     /// level; the last one is the highest level), and each level up gives Points Per Level points to put into the six
     /// stats in the Level Up menu:
     /// Max Health raises the health cap and makes eating candy heal more; Toughness cuts the damage enemies do and how
-    /// far enemies push the player; Weapon Efficiency makes weapons hit harder and wear out slower; Fist Size unlocks the
-    /// flying Jab at 1 point (Swing and Uppercut are locked for later: Lock Swing And Uppercut), and every point makes
-    /// punches hit harder and flying punches bigger and fly farther (Triple Punch at 10), the hand itself only a little
-    /// bigger; Throw Power makes throws leave the hand faster and far grabs pull faster (Gentle Far Grab), and from 1
-    /// point thrown books, bottles and flip-flops explode (Grenade), more points making the blast reach farther and
-    /// hurt more (at 0 they don't explode); Move Speed
-    /// makes walking faster. What one point gives is set below; the last point that fills a stat up counts as Last Point
+    /// far enemies push the player; Weapon Efficiency makes weapons hit harder and wear out slower; Fist Size makes
+    /// punches hit harder and flying punches bigger and fly farther, the hand (or the glove) itself only a little bigger;
+    /// Throw Power makes throws leave the hand faster and far grabs pull faster (Gentle Far Grab); Move Speed makes walking
+    /// faster.
+    /// What the points unlock (user, 2026-11-12; the player's own points in the stat and the gloves', never eaten candies':
+    /// a level-10 player with no Throw Power point has no exploding throws at all), told once each with a short notice:
+    /// - Fist Size: the flying Jab at 1, Swing at 3, Uppercut at 5, Swollen Hand at 6, Triple Punch at 10;
+    /// - Throw Power: Explosive Objects at 1, 4 and 7 (levels 1, 2, 3: every thing thrown hard enough explodes where it
+    ///   hits, bigger each level; books, bottles and flip-flops their own way, Grenade), Bomber Man at 10 (every throw
+    ///   explodes twice, at the hit and half a second later);
+    /// - Weapon Efficiency: Impact at 1, 4 and 7 (small, decent, big: a thing knocked with a held weapon into another
+    ///   explodes where they meet), Weapon Master at 10 (every held weapon's hit explodes).
+    /// The blasts' numbers are Blast Skills' (Assets/Resources/Blast Skills.asset). What one point gives is set below; the last point that fills a stat up counts as Last Point
     /// Worth points (1 since 2026-11-10, so like any other; it was 7).
     /// Reaching a Bonus Level (10, 20, 21) also gives a bonus point for the three bonus stats (the menu's Bonus Stats
     /// panel): Explosive Fist (every punch that hits something explodes, harder with each point, and flying punches come
-    /// quicker one after another; no bigger fists), Weapon Master (weapons held in the hand hit 30/40/50% harder, and a
-    /// held thing that blocks a bite wears 20/30/40% less) and Extra Revive (one more revive every run, see Checkpoints:
+    /// quicker one after another; no bigger fists), Strong Grip (was Weapon Master: weapons held in the hand hit harder,
+    /// and a held thing that blocks a bite wears 20/30/40% less) and Extra Revive (one more revive every run, see Checkpoints:
     /// one more lucky coin to flip when the player goes down, see Revive Coins; and a higher health cap).
     /// A smoked boong adds Toughness points for a while (Player Buffs); those are never saved. Eaten candies add points
     /// for the run (Eat Candy Buff; user 2026-11-10: one candy kind per stat, see Candy Kinds), each its full share up to
     /// Candy Full Rate Points a stat (5), then only Candy Slow Points (0.1), at most Candy Max Points (10), every share
     /// bigger the more of their own points the player has in that stat (Candy Boost Per Point). Fist Size candy makes
     /// the fist bigger and the jab harder but never unlocks a punch. Never saved, gone when a new run starts.
+    /// A pair of gloves (user, 2026-11-12: Gloves, the Knight's pair at the start of each run) adds its kind's points to
+    /// one stat for the run (Boxing: Fist Size, Throwing: Throw Power, Soldier: Weapon Efficiency; 3 each), counted like
+    /// eaten candies' points (candies and gloves together at most Candy Max Points a stat, nothing in a special stage),
+    /// except that, unlike candies, they also count towards the unlocks above, and each kind unlocks its own on top
+    /// (Glove Kinds' Unlocks: Boxing all three flying punches, Throwing Explosive Objects 1, Soldier Impact 1), for as
+    /// long as they're worn. What a pair unlocks is told once per save slot, a few seconds after it's picked up. A punch
+    /// a point unlocks while the player has no gloves is told about once a pair is on (no gloves, no punching).
     /// Inside a special stage (user, 2026-11-10: the nesting pumpkins, Paint Bees and Daruma; see Special Stage Stats)
     /// the player has level-0 stats: their own points and eaten candies count for nothing and the health cap drops to
     /// the level-0 one (Boss Seed raises kept), but the health itself stays as it is, the points stay theirs (menu, save)
-    /// and boong buffs and lucky coins stay on. Everything comes back when the stage ends.
+    /// and boong buffs and lucky coins stay on; nothing the points unlock works there. Everything comes back when the
+    /// stage ends.
     /// The level, the EXP and the points are kept in the save (Save Manager). Keep one in the scene;
     /// Tools > 429 Game > Player > Set Up Level System makes it, with its menu and its notice.
     /// </summary>
@@ -161,15 +176,11 @@ namespace Game.Leveling
         [SerializeField] private float pullPerPoint = 0.035f;
 
         [Header("Exploding throws (Throw Power)")]
-        [Tooltip("At 0 Throw Power, thrown books, bottles and flip-flops (Grenade) don't explode: they just hit and break. " +
-                 "The 1st point makes them explode as they always did; each point after it makes the blast reach this many " +
-                 "metres farther (+0.72 m at 10 points).")]
+        [Tooltip("What makes thrown blasts bigger is the Explosive Objects level (Throw Power 1 / 4 / 7, Blast Skills); on " +
+                 "top, every eaten Throw Power candy point makes them reach this many metres farther (user, 2026-11-12: " +
+                 "candies never unlock, they only grow the basic numbers), up to Max Blast Radius.")]
         [Min(0f)]
         [SerializeField] private float blastRadiusPerPoint = 0.08f;
-        [Tooltip("Throw Power: +1 blast damage every this many points after the 1st (5: +1 at 6 points, +2 at 11, which " +
-                 "takes eaten candies' points on top of the 10).")]
-        [Min(1)]
-        [SerializeField] private int blastDamageStepPoints = 5;
         [Tooltip("Throw Power: every point after the 1st makes a throw need this share less speed to count as a hard throw " +
                  "(set off a book, flip-flop or bottle, burst a tree pumpkin, hit hard): 0.03 = 3% a point, never below Min " +
                  "Hard Throw Share. Throws also leave the hand faster with each point, so it adds up (user, 2026-10-27).")]
@@ -177,13 +188,10 @@ namespace Game.Leveling
         [SerializeField] private float hardThrowCutPerPoint = 0.03f;
         [Range(0.1f, 1f)]
         [SerializeField] private float minHardThrowShare = 0.55f;
-        [Tooltip("The farthest a thrown blast reaches with Throw Power, in metres (a blast that reaches farther by itself " +
-                 "keeps its own reach).")]
+        [Tooltip("The farthest a thrown blast reaches with eaten candies, in metres (a blast that reaches farther by its " +
+                 "level keeps that reach).")]
         [Min(0.1f)]
         [SerializeField] private float maxBlastRadius = 2f;
-        [Tooltip("The most damage a thrown blast does with Throw Power (a blast that does more by itself keeps its own).")]
-        [Min(0f)]
-        [SerializeField] private float maxBlastDamage = 5f;
         [Tooltip("Move Speed: walking is this share faster (0.04 = 4% more a point).")]
         [Min(0f)]
         [SerializeField] private float speedPerPoint = 0.04f;
@@ -231,20 +239,18 @@ namespace Game.Leveling
         [Range(0f, 1f)]
         [SerializeField] private float candySlowHealShare = 0.1f;
 
-        [Header("Flying punches unlocked by Fist Size")]
+        [Header("Flying punches unlocked by Fist Size (own + gloves' points, never candies')")]
         [Tooltip("Fist Size points that unlock the Jab (a fast straight punch flies on). Below it no punch flies. " +
-                 "0 = unlocked from the start.")]
+                 "0 = unlocked from the start. Boxing gloves unlock Jab, Swing and Uppercut at once (Glove Kinds).")]
         [Min(0)]
         [SerializeField] private int jabAtFistSize = 1;
-        [Tooltip("Swing and Uppercut stay locked whatever the Fist Size (kept for later). Untick to unlock them at their " +
-                 "Fist Size below again.")]
-        [SerializeField] private bool lockSwingAndUppercut = true;
         [Tooltip("Fist Size points that unlock the Swing (a fast sideways hook of the fist).")]
         [Min(0)]
         [SerializeField] private int swingAtFistSize = 3;
-        [Tooltip("Fist Size points that unlock the Uppercut (a fast drive of the fist upwards).")]
+        [Tooltip("Fist Size points that unlock the Uppercut (a fast drive of the fist upwards; user, 2026-11-12: at 5). " +
+                 "(Swing and Uppercut aren't locked for later any more: the old Lock Swing And Uppercut is gone.)")]
         [Min(0)]
-        [SerializeField] private int uppercutAtFistSize = 3;
+        [SerializeField] private int uppercutUnlockPoints = 5;
         [Tooltip("Fist Size points for the Triple Punch: a jab throws 3 fists side by side, a swing or an uppercut 3 in a " +
                  "row. Flying swings and uppercuts also reach their farthest here (they go farther step by step from the " +
                  "Jab's points); a flying jab flies as far as it is big (the Fist's Jab Size Reach).")]
@@ -254,6 +260,20 @@ namespace Game.Leveling
                  "while it's hot (Swollen Size on Hot Hands).")]
         [Min(1)]
         [SerializeField] private int swollenHandAtFistSize = 6;
+
+        [Header("Powers unlocked by Throw Power and Weapon Efficiency (own + gloves' points, never candies')")]
+        [Tooltip("Throw Power points for Explosive Objects levels 1, 2 and 3 (user, 2026-11-12: 1, 4, 7): every thing thrown " +
+                 "hard enough explodes where it hits, bigger each level (Blast Skills). Throwing gloves give level 1.")]
+        [SerializeField] private int[] explosiveAtThrowPower = { 1, 4, 7 };
+        [Tooltip("Throw Power points for Bomber Man (10): every throw explodes, at the hit and again a moment later.")]
+        [Min(1)]
+        [SerializeField] private int bomberManAtThrowPower = 10;
+        [Tooltip("Weapon Efficiency points for Impact small, decent and big (1, 4, 7): a thing knocked with a held weapon into " +
+                 "another explodes where they meet (Blast Skills). Soldier gloves give the small one.")]
+        [SerializeField] private int[] impactAtWeaponEfficiency = { 1, 4, 7 };
+        [Tooltip("Weapon Efficiency points for Weapon Master (10): every hit of a held weapon explodes (Blast Skills).")]
+        [Min(1)]
+        [SerializeField] private int weaponMasterAtWeaponEfficiency = 10;
 
         [Header("Worn weapons")]
         [Tooltip("A weapon the player has held cracks (Crack Sound) when its health first drops to this share of what it " +
@@ -291,13 +311,23 @@ namespace Game.Leveling
         public static event Action<int> LeveledUp;
 
         /// <summary>
-        /// A Fist Size point just unlocked a punch: "Jab", "Swing", "Uppercut" or "Triple", or "Swollen" (Swollen Hand; not
-        /// when the save is read).
+        /// A point (or a pair of gloves) just unlocked something, by its name (not when the save is read): a punch ("Jab",
+        /// "Swing", "Uppercut", "Triple", or "Swollen": Swollen Hand) or a power ("Explosive1" to "Explosive3",
+        /// "BomberMan", "Impact1" to "Impact3", "WeaponMaster"). The Level Up Notice tells the player.
         /// </summary>
         public static event Action<string> PunchUnlocked;
 
-        /// <summary>The first Throw Power point was just spent: thrown things explode from now on (not when the save is read).</summary>
-        public static event Action ExplodingThrowsUnlocked;
+        // The names of everything the points unlock, in the order they're told (punches first).
+        public const string Jab = "Jab", Swing = "Swing", Uppercut = "Uppercut", Swollen = "Swollen", Triple = "Triple";
+        public const string BomberManName = "BomberMan", WeaponMasterName = "WeaponMaster";
+        public static readonly string[] AllUnlocks =
+        {
+            Jab, Swing, Uppercut, Swollen, Triple, "Explosive1", "Explosive2", "Explosive3", BomberManName,
+            "Impact1", "Impact2", "Impact3", WeaponMasterName,
+        };
+
+        /// <summary>Whether this unlock is a punch (it waits for gloves: no gloves, no punching).</summary>
+        public static bool IsPunch(string name) => name == Jab || name == Swing || name == Uppercut || name == Swollen || name == Triple;
 
         /// <summary>An eaten candy added points to this stat (Eat Candy Buff): the health HUD shows which, e.g. "+SPD".</summary>
         public static event Action<Stat> CandyEaten;
@@ -309,29 +339,34 @@ namespace Game.Leveling
             Changed = null;
             LeveledUp = null;
             PunchUnlocked = null;
-            ExplodingThrowsUnlocked = null;
             CandyEaten = null;
+            unlockedNow.Clear();
+            unlockedBefore.Clear();
             lastRead = null;
             stageHolders.Clear();
             suspended = false;
             describing = false;
             nextRunNews.Clear();
+            gloveNews.Clear();
         }
 
         // The special stages on right now (Special Stage Stats); while any is, the stats are at level 0.
         private static readonly HashSet<UnityEngine.Object> stageHolders = new();
         // What the stage's start put away (see Suspend), given back when the last stage ends.
         private static bool suspended;
-        private static bool hadJab, hadSwing, hadUppercut, hadTriple, hadSwollen, hadExplodingThrows;
+        // Everything unlocked right now (Apply Unlocks), and what was unlocked when the special stage started.
+        private static readonly HashSet<string> unlockedNow = new();
+        private static readonly HashSet<string> unlockedBefore = new();
         private static float levelHealthAtStart;
         // Max Health candy points at the stage's start: a candy eaten inside raises the cap on the way out without healing.
         private static float candyHealthAtStart;
         // The Level Up menu is asking what the points give (Describe): the real stats, also in a special stage.
         private static bool describing;
-        // A game over inside a special stage (user, 2026-11-11): the punches ("Jab", ... see Punch Unlocked) and exploding
-        // throws (Throws News) a point spent inside unlocked, told about once the next run is under way (Update).
+        // A game over inside a special stage (user, 2026-11-11): the punches and powers ("Jab", ... see Punch Unlocked) a
+        // point spent inside unlocked, told about once the next run is under way (Update).
         private static readonly List<string> nextRunNews = new();
-        private const string ThrowsNews = "Throws";
+        // Glove news waiting to be told (Tell Once): remembered for the save slot once it's really shown.
+        private static readonly HashSet<string> gloveNews = new();
         // How long the player is up in the new run before that news shows (the restart's fade, getting placed).
         private const float NextRunNewsDelay = 3f;
         private float upSince = -1f;
@@ -370,12 +405,8 @@ namespace Game.Leveling
         private void Suspend()
         {
             suspended = true;
-            hadJab = Fist.JabUnlocked;
-            hadSwing = Fist.SwingUnlocked;
-            hadUppercut = Fist.UppercutUnlocked;
-            hadTriple = Fist.TriplePunch;
-            hadSwollen = HotHands.SwollenHand;
-            hadExplodingThrows = Points(Stat.ThrowPower) >= 1;
+            unlockedBefore.Clear();
+            unlockedBefore.UnionWith(unlockedNow);
             levelHealthAtStart = PlayerBoosts.LevelHealthBonus;
             candyHealthAtStart = candyPoints[(int)Stat.MaxHealth];
             // Lowering the cap never takes health away (Player Boosts), and the revives aren't lowered (Checkpoints
@@ -385,8 +416,8 @@ namespace Game.Leveling
 
         // Quiet: a game over inside the stage (End Special Stages), so the player is dead. The stats come back without a
         // heal (the restart fills the heart to the real cap anyway) and without a notice over the death (it would stop
-        // the game): a punch or exploding throws a point spent inside unlocked works from the new run on, and is told
-        // about once that run is under way (Next Run News).
+        // the game): a punch or a power a point spent inside unlocked works from the new run on, and is told about once
+        // that run is under way (Next Run News).
         private static void Resume(bool quiet)
         {
             var player = Instance;
@@ -397,30 +428,22 @@ namespace Game.Leveling
                 return;
             }
             suspended = false;
-            Fist.JabUnlocked = hadJab;
-            Fist.SwingUnlocked = hadSwing;
-            Fist.UppercutUnlocked = hadUppercut;
-            Fist.TriplePunch = hadTriple;
-            HotHands.SwollenHand = hadSwollen;
+            unlockedNow.Clear();
+            unlockedNow.UnionWith(unlockedBefore);
+            SetUnlocks();
             if (player == null) return;
-            // The punches as they were before the stage, announced first: only one a point spent inside unlocked is new
-            // (Apply's own quiet ApplyPunches then changes nothing; quiet, it sets them without a word and keeps the news
-            // for the next run).
-            player.ApplyPunches(!quiet, quiet ? nextRunNews : null);
+            // What was unlocked before the stage, announced first: only what a point spent inside unlocked is new (Apply's
+            // own quiet Apply Unlocks then changes nothing; quiet, it sets them without a word and keeps the news for the
+            // next run).
+            player.ApplyUnlocks(!quiet, quiet ? nextRunNews : null);
             player.Apply(false, false);
-            if (quiet)
-            {
-                if (!hadExplodingThrows && player.Points(Stat.ThrowPower) >= 1) nextRunNews.Add(ThrowsNews);
-                return;
-            }
+            if (quiet) return;
             // The cap comes back without healing, but a Max Health or Extra Revive point spent inside heals as it would
             // have then. A Max Health candy eaten inside doesn't: it healed when it was eaten (like outside a stage).
             float raised = PlayerBoosts.LevelHealthBonus - levelHealthAtStart -
                            (player.candyPoints[(int)Stat.MaxHealth] - candyHealthAtStart) * player.healthPerPoint;
             // (A point raises it by 10 or more; under 1 is only the cap's rounding to a whole number.)
             if (raised >= 1f && PlayerBoosts.TryGetHealth(out float health)) PlayerBoosts.SetHealth(health + raised);
-            // The first Throw Power point spent inside: thrown things explode from now on (Raise kept the notice back).
-            if (!hadExplodingThrows && player.Points(Stat.ThrowPower) >= 1) ExplodingThrowsUnlocked?.Invoke();
         }
 
         // A new run (e.g. a game over inside a stage): no stage holds the stats any more, so the full cap is back before
@@ -582,21 +605,61 @@ namespace Game.Leveling
         public static float PullScale => Instance != null ? Instance.Gain(Stat.ThrowPower, Instance.pullPerPoint) : 1f;
 
         /// <summary>
-        /// Whether thrown books, bottles and flip-flops explode (Grenade): from the first Throw Power point. Without a Player
-        /// Level in the scene they always do.
+        /// The Explosive Objects level (user, 2026-11-12): 0 none, 1 to 3 at Throw Power 1 / 4 / 7 (own + gloves' points;
+        /// Throwing gloves: at least 1). 0 in a special stage, and without a Player Level.
         /// </summary>
-        public static bool ExplodingThrows => Instance == null || Instance.EffectPoints(Stat.ThrowPower) >= 1;
+        public static int ExplosiveLevel => unlockedNow.Contains("Explosive3") ? 3 : unlockedNow.Contains("Explosive2") ? 2 :
+            unlockedNow.Contains("Explosive1") ? 1 : 0;
 
-        /// <summary>A thrown blast's reach with Throw Power, from its own: farther with every point after the first.</summary>
-        public static float ThrowBlastRadius(float own) =>
-            Instance != null ? Mathf.Min(own + Instance.BlastSteps * Instance.blastRadiusPerPoint, Mathf.Max(own, Instance.maxBlastRadius)) : own;
+        /// <summary>Bomber Man (Throw Power 10): every throw explodes twice.</summary>
+        public static bool BomberMan => unlockedNow.Contains(BomberManName);
 
-        /// <summary>A thrown blast's damage with Throw Power, from its own: more with every point after the first.</summary>
-        public static float ThrowBlastDamage(float own) =>
-            Instance != null ? Mathf.Min(own + Instance.BlastDamageBonus, Mathf.Max(own, Instance.maxBlastDamage)) : own;
+        /// <summary>The Impact level: 0 none, 1 to 3 (small, decent, big) at Weapon Efficiency 1 / 4 / 7 (Soldier gloves: 1).</summary>
+        public static int ImpactLevel => unlockedNow.Contains("Impact3") ? 3 : unlockedNow.Contains("Impact2") ? 2 :
+            unlockedNow.Contains("Impact1") ? 1 : 0;
 
-        // Whole blast damage steps from Throw Power: +1 every Blast Damage Step Points after the 1st point.
-        private int BlastDamageBonus => Mathf.FloorToInt((BlastSteps + 0.001f) / Mathf.Max(1, blastDamageStepPoints));
+        /// <summary>Weapon Master (Weapon Efficiency 10): every held weapon's hit explodes.</summary>
+        public static bool WeaponMaster => unlockedNow.Contains(WeaponMasterName);
+
+        /// <summary>Whether this is unlocked right now (a name from All Unlocks).</summary>
+        public static bool IsUnlocked(string name) => unlockedNow.Contains(name);
+
+        /// <summary>
+        /// Whether thrown books, bottles and flip-flops explode (Grenade): from Explosive Objects level 1 (or Bomber Man).
+        /// Without a Player Level in the scene they always do.
+        /// </summary>
+        public static bool ExplodingThrows => Instance == null || ExplosiveLevel >= 1 || BomberMan;
+
+        /// <summary>
+        /// A book's, bottle's or flip-flop's blast reach, from its own: farther with the Explosive Objects level (Blast
+        /// Skills' Grenade Radius Bonus; Bomber Man as level 3) and a little with eaten Throw Power candies.
+        /// </summary>
+        public static float ThrowBlastRadius(float own)
+        {
+            if (Instance == null) return own;
+            int level = BomberMan ? 3 : ExplosiveLevel;
+            float reach = own + Game.Weapons.BlastSkills.Values.GrenadeRadiusBonus(level);
+            return Mathf.Min(reach + CandyBlastReach, Mathf.Max(reach, Instance.maxBlastRadius));
+        }
+
+        /// <summary>
+        /// A book's, bottle's or flip-flop's blast damage, from its own: more with the Explosive Objects level (Blast
+        /// Skills' Grenade Damage Bonus, user 2026-11-12: +0 / +2 / +4; no cap any more: the old Max Blast Damage is gone).
+        /// </summary>
+        public static float ThrowBlastDamage(float own)
+        {
+            if (Instance == null) return own;
+            int level = BomberMan ? 3 : ExplosiveLevel;
+            return own + Game.Weapons.BlastSkills.Values.GrenadeDamageBonus(level);
+        }
+
+        /// <summary>How much farther thrown blasts reach from eaten Throw Power candies (the basic growth), in metres.</summary>
+        public static float CandyBlastReach => Instance != null && !StatsDown
+            ? Instance.candyPoints[(int)Stat.ThrowPower] * Instance.blastRadiusPerPoint
+            : 0f;
+
+        /// <summary>The farthest the candies make a thrown blast reach (a level's own reach can be more).</summary>
+        public static float MaxBlastReach => Instance != null ? Instance.maxBlastRadius : 2f;
 
         /// <summary>
         /// The share of a hard throw's speed a throw needs with Throw Power (1 = as always, less with every point after the
@@ -618,7 +681,7 @@ namespace Game.Leveling
         /// </summary>
         public static float HighTimeScale => Instance != null ? 1f + Instance.OwnWorth(Stat.MoveSpeed) * Instance.highTimePerPoint : 1f;
 
-        /// <summary>The extra damage of weapons held in the hand (the Weapon Master bonus): 0 = as always.</summary>
+        /// <summary>The extra damage of weapons held in the hand (the Strong Grip bonus stat; it was Weapon Master): 0 = as always.</summary>
         public static int WeaponMasterBonus
         {
             get
@@ -630,7 +693,7 @@ namespace Game.Leveling
             }
         }
 
-        /// <summary>The share of a block's wear a held thing takes (the Weapon Master bonus): 1 = all of it.</summary>
+        /// <summary>The share of a block's wear a held thing takes (the Strong Grip bonus stat): 1 = all of it.</summary>
         public static float WeaponMasterBlockShare => Instance != null ? 1f - Instance.Tier(Instance.weaponMasterBlockCut) : 1f;
 
         // Weapon Master's value for its points now (its 1st, 2nd or 3rd entry; 0 with no point).
@@ -676,16 +739,24 @@ namespace Game.Leveling
         private float Gain(Stat stat, float perPoint) => 1f + Worth(stat) * perPoint;
 
         // A stat's points as they count: a full Big Last Point stat's last point counts as Last Point Worth. A boong's
-        // points for now (Player Buffs: the Bone Boong's Toughness) and eaten candies' points (one candy kind for each of
-        // the 6 stats, user 2026-11-10) come on top, never as that last point, and aren't saved. Candies' Fist Size
-        // points make the fist and its flying punches bigger and the jab harder, but never unlock a punch (Unlock
-        // Points). In a special stage only a boong's count.
+        // points for now (Player Buffs: the Bone Boong's Toughness) and the run's points (Run Points: eaten candies', one
+        // candy kind for each of the 6 stats, user 2026-11-10, and the gloves', user 2026-11-12) come on top, never as
+        // that last point. Candies' and gloves' Fist Size points make the fist (the glove) and its flying punches bigger
+        // and the jab harder; only the gloves' also count for the unlocks (Unlock Points). In a special stage only a
+        // boong's count.
         private float Worth(Stat stat) =>
-            OwnWorth(stat) + PlayerBuffs.ExtraPoints(stat) + (!StatsDown ? candyPoints[(int)stat] : 0f);
+            OwnWorth(stat) + PlayerBuffs.ExtraPoints(stat) + (!StatsDown ? RunPoints(stat) : 0f);
 
-        // Fist Size points that unlock punches: the player's own (and a boong's), never eaten candies' (they'd come and
-        // go with every death).
-        private float UnlockPoints => OwnWorth(Stat.FistSize) + PlayerBuffs.ExtraPoints(Stat.FistSize);
+        // The run's points in a stat: eaten candies' and the gloves' (user, 2026-11-12: like candies), together at most
+        // Candy Max Points (10). Not saved here: candies are gone after a reload, the gloves come back with the run
+        // (Checkpoints keeps them).
+        private float RunPoints(Stat stat) =>
+            TakesCandy(stat) ? Mathf.Min(candyPoints[(int)stat] + Gloves.PointsFor(stat), candyMaxPoints) : 0f;
+
+        // The points that unlock things in a stat (user, 2026-11-12): the player's own (and a boong's), and the gloves'
+        // while they're worn (none in a special stage); never eaten candies' (they'd come and go with every death).
+        private float UnlockPoints(Stat stat) => OwnWorth(stat) + PlayerBuffs.ExtraPoints(stat) +
+                                                 (!StatsDown ? Gloves.PointsFor(stat) : 0f);
 
         // A stat's own points as they work right now: none in a special stage (level-0 stats there; the points stay).
         private int EffectPoints(Stat stat) => StatsDown ? 0 : Points(stat);
@@ -746,6 +817,39 @@ namespace Game.Leveling
             if (Instance != null) Instance.DropCandy();
         }
 
+        /// <summary>
+        /// The gloves worn changed (Gloves: picked up, read from the save, or off for a new run): their points count from
+        /// now on, and what their points and their kind unlock is unlocked (or locked again when they come off). Picked Up: a pair was just picked up, so a raised health cap heals too and what the pair
+        /// unlocks is told once per save slot (Glove News), a few seconds later; read from the save or taken off, quietly
+        /// (the cap comes down without taking health away).
+        /// </summary>
+        public static void GlovesChanged(bool pickedUp)
+        {
+            var player = Instance;
+            if (player == null) return;
+            player.ApplyHealth(pickedUp);
+            player.ApplySpeed();
+            var unlocked = pickedUp ? new List<string>() : null;
+            player.ApplyUnlocks(false, unlocked);
+            if (pickedUp)
+            {
+                foreach (var name in unlocked) TellOnce(name);
+            }
+            Changed?.Invoke();
+        }
+
+        // Glove news (what a pair just picked up unlocks): told a few seconds later (Next Run News, Update) and only the
+        // first time in this save slot (Show Once), so a Boxing pair doesn't stop the game with JAB every run.
+        private static void TellOnce(string news)
+        {
+            if (Game.Menus.ShowOnce.WasShown(GloveNewsKey + news)) return;
+            gloveNews.Add(news);
+            if (!nextRunNews.Contains(news)) nextRunNews.Add(news);
+        }
+
+        // The Show Once keys of the glove news ("GloveNews.Jab", ... "GloveNews.WeaponMaster"; Show Once lists them all).
+        public const string GloveNewsKey = "GloveNews.";
+
         // The 6 stats the level-up points go into; never a bonus stat.
         private static bool TakesCandy(Stat stat) => !IsBonus(stat);
 
@@ -779,7 +883,8 @@ namespace Game.Leveling
                 case Stat.ThrowPower: return "Throw Power";
                 case Stat.MoveSpeed: return "Move Speed";
                 case Stat.BonusFistSize: return "Explosive Fist";
-                case Stat.BonusPower: return "Weapon Master";
+                // Was "Weapon Master" (user, 2026-11-12: the name went to Weapon Efficiency's 10th point).
+                case Stat.BonusPower: return "Strong Grip";
                 default: return "Extra Revive";
             }
         }
@@ -805,9 +910,10 @@ namespace Game.Leveling
             {
                 case Stat.MaxHealth: return $"+{Worth(stat) * healthPerPoint:0} health, +{Percent(CandyHealScale - 1f)} candy heal";
                 case Stat.Toughness: return $"-{Percent(1f - DamageShare)} damage, -{Percent(1f - PushShare)} enemy push";
-                case Stat.WeaponEfficiency: return $"+{WeaponDamageBonus} damage, -{Percent(1f - WeaponWearShare)} wear";
+                case Stat.WeaponEfficiency:
+                    return $"+{WeaponDamageBonus} damage, -{Percent(1f - WeaponWearShare)} wear" + NextNote(Stat.WeaponEfficiency);
                 case Stat.FistSize:
-                    return Join($"+{Percent(FistSizePoints * punchSizePerPoint)} size", p > 0 ? $"flying jab +{FlyingJabBonus} damage" : "") + PunchNote();
+                    return Join($"+{Percent(FistSizePoints * punchSizePerPoint)} size", p > 0 ? $"flying jab +{FlyingJabBonus} damage" : "") + NextNote(Stat.FistSize);
                 case Stat.ThrowPower: return ThrowNote();
                 case Stat.MoveSpeed:
                     return Join($"+{Percent(SpeedScale - 1f)} walking speed", p > 0 ? $"+{Percent(HighTimeScale - 1f)} boong time" : "");
@@ -823,7 +929,7 @@ namespace Game.Leveling
 
         private static string Join(string a, string b) => string.IsNullOrEmpty(a) ? b : string.IsNullOrEmpty(b) ? a : a + ", " + b;
 
-        // The Weapon Master row: what this many points give, e.g. "+1 held weapon damage, -20% block wear".
+        // The Strong Grip row (was Weapon Master): what this many points give, e.g. "+1 held weapon damage, -20% block wear".
         private string WeaponMasterNote(int points)
         {
             float Pick(float[] byPoint) => byPoint == null || byPoint.Length == 0 ? 0f : byPoint[Mathf.Clamp(points, 1, byPoint.Length) - 1];
@@ -833,80 +939,145 @@ namespace Game.Leveling
             return $"+{bonus} held weapon damage, -{Percent(Pick(weaponMasterBlockCut))} block wear";
         }
 
-        // The Fist Size row also says which punch comes next: ", Jab at 1", ", Triple Punch at 10" (and ", Swing +
-        // Uppercut at 3" when they aren't locked), and ", Triple Punch" once everything is unlocked.
-        private string PunchNote()
+        // What a stat's points unlock next, briefly (the user wants few words): ", Uppercut at 5", ", Bomber Man at 10"; ""
+        // once all is unlocked.
+        private string NextNote(Stat stat)
         {
-            float size = UnlockPoints;
-            bool bigMoves = !lockSwingAndUppercut;
+            float have = UnlockPoints(stat);
             int next = int.MaxValue;
-            foreach (int at in new[] { jabAtFistSize, bigMoves ? swingAtFistSize : -1, bigMoves ? uppercutAtFistSize : -1, swollenHandAtFistSize, triplePunchAtFistSize })
+            string what = "";
+            foreach (var (name, at) in Unlocks(stat))
             {
-                if (at > size && at < next) next = at;
+                if (at > have && at < next)
+                {
+                    next = at;
+                    what = name;
+                }
             }
-            if (next == int.MaxValue) return ", Triple Punch";
-            var names = new List<string>();
-            if (jabAtFistSize == next) names.Add("Jab");
-            if (bigMoves && swingAtFistSize == next) names.Add("Swing");
-            if (bigMoves && uppercutAtFistSize == next) names.Add("Uppercut");
-            if (swollenHandAtFistSize == next) names.Add("Swollen Hand");
-            if (triplePunchAtFistSize == next) names.Add("Triple Punch");
-            return $", {string.Join(" + ", names)} at {next}";
+            return next == int.MaxValue ? "" : $", {what} at {next}";
         }
 
-        // The Throw Power row: "Throws explode at 1 point" at 0, then the throw and pull speed and how much bigger the
-        // blasts are.
+        // A stat's unlocks with their points, for the menu.
+        private IEnumerable<(string name, int at)> Unlocks(Stat stat)
+        {
+            if (stat == Stat.FistSize)
+            {
+                yield return ("Jab", jabAtFistSize);
+                yield return ("Swing", swingAtFistSize);
+                yield return ("Uppercut", uppercutUnlockPoints);
+                yield return ("Swollen Hand", swollenHandAtFistSize);
+                yield return ("Triple Punch", triplePunchAtFistSize);
+            }
+            else if (stat == Stat.ThrowPower)
+            {
+                for (int i = 0; explosiveAtThrowPower != null && i < explosiveAtThrowPower.Length; i++)
+                    yield return (i == 0 ? "Explosive Throws" : $"Explosive Throws {i + 1}", explosiveAtThrowPower[i]);
+                yield return ("Bomber Man", bomberManAtThrowPower);
+            }
+            else if (stat == Stat.WeaponEfficiency)
+            {
+                for (int i = 0; impactAtWeaponEfficiency != null && i < impactAtWeaponEfficiency.Length; i++)
+                    yield return (i == 0 ? "Impact" : $"Impact {i + 1}", impactAtWeaponEfficiency[i]);
+                yield return ("Weapon Master", weaponMasterAtWeaponEfficiency);
+            }
+        }
+
+        // The Throw Power row: the throw and pull speed, and what it unlocks next.
         private string ThrowNote()
         {
-            int p = Points(Stat.ThrowPower);
-            if (p == 0) return "Throws explode at 1 point";
             float throwShare = Mathf.Min(Worth(Stat.ThrowPower) * throwPerPoint, maxThrowScale - 1f);
-            string speed = $"+{Percent(throwShare)} throw speed, +{Percent(PullScale - 1f)} pull";
-            if (BlastSteps == 0) return speed + ", throws explode";
-            return BlastDamageBonus > 0
-                ? $"{speed}, blasts +{BlastDamageBonus} damage, +{BlastSteps * blastRadiusPerPoint:0.0} m"
-                : $"{speed}, blasts +{BlastSteps * blastRadiusPerPoint:0.0} m";
+            return $"+{Percent(throwShare)} throw speed, +{Percent(PullScale - 1f)} pull" + NextNote(Stat.ThrowPower);
         }
 
         // Fist Size points as they count for size and reach, eaten candies' included (the bonus stat is Explosive Fist
         // now: it gives no size). Unlocking punches counts only the player's own (Unlock Points).
         private float FistSizePoints => Worth(Stat.FistSize);
 
-        // The flying punches unlock at their Fist Size (and lock again if the points go, e.g. Reset Progress). Announce:
-        // a point just raised it (not the save being read), so the player is told about each new punch. Keep: the new
-        // ones are added to it instead, to be told about later.
-        private void ApplyPunches(bool announce, List<string> keep = null)
+        // Everything the points unlock (user, 2026-11-12), from the player's own points in each stat and the gloves' (never
+        // candies'), and what the gloves' kind unlocks by itself (Boxing: the three flying punches; Throwing: Explosive
+        // Objects 1; Soldier: Impact 1); none of it in a special stage. Things lock again if the points go (Reset
+        // Progress, the gloves coming off). Announce: a point just raised it (not the save being read), so the player is
+        // told about each new thing (a punch only once gloves are on). Keep: the new ones are added to it instead, to be
+        // told about later.
+        private void ApplyUnlocks(bool announce, List<string> keep = null)
         {
-            float size = UnlockPoints;
-            bool jab = size >= jabAtFistSize;
-            // Kept for later: locked, they never unlock (and are never announced).
-            bool swing = !lockSwingAndUppercut && size >= swingAtFistSize;
-            bool uppercut = !lockSwingAndUppercut && size >= uppercutAtFistSize;
-            bool triple = size >= triplePunchAtFistSize;
-            bool swollen = size >= swollenHandAtFistSize;
+            var glove = !StatsDown && Gloves.Worn != null ? Gloves.Worn.unlocks : GloveUnlocks.None;
+            var now = new HashSet<string>();
+            float fist = UnlockPoints(Stat.FistSize);
+            bool moves = (glove & GloveUnlocks.FlyingPunches) != 0;
+            if (fist >= jabAtFistSize || moves) now.Add(Jab);
+            if (fist >= swingAtFistSize || moves) now.Add(Swing);
+            if (fist >= uppercutUnlockPoints || moves) now.Add(Uppercut);
+            if (fist >= swollenHandAtFistSize) now.Add(Swollen);
+            if (fist >= triplePunchAtFistSize) now.Add(Triple);
+            float throwing = UnlockPoints(Stat.ThrowPower);
+            int explosive = Steps(throwing, explosiveAtThrowPower);
+            if ((glove & GloveUnlocks.ExplosiveObjects) != 0) explosive = Mathf.Max(explosive, 1);
+            for (int i = 1; i <= Mathf.Min(explosive, 3); i++) now.Add("Explosive" + i);
+            if (throwing >= bomberManAtThrowPower) now.Add(BomberManName);
+            float weapons = UnlockPoints(Stat.WeaponEfficiency);
+            int impact = Steps(weapons, impactAtWeaponEfficiency);
+            if ((glove & GloveUnlocks.Impact) != 0) impact = Mathf.Max(impact, 1);
+            for (int i = 1; i <= Mathf.Min(impact, 3); i++) now.Add("Impact" + i);
+            if (weapons >= weaponMasterAtWeaponEfficiency) now.Add(WeaponMasterName);
+
             var unlocked = new List<string>();
-            if (jab && !Fist.JabUnlocked) unlocked.Add("Jab");
-            if (swing && !Fist.SwingUnlocked) unlocked.Add("Swing");
-            if (uppercut && !Fist.UppercutUnlocked) unlocked.Add("Uppercut");
-            if (swollen && !HotHands.SwollenHand) unlocked.Add("Swollen");
-            if (triple && !Fist.TriplePunch) unlocked.Add("Triple");
-            Fist.JabUnlocked = jab;
-            Fist.SwingUnlocked = swing;
-            Fist.UppercutUnlocked = uppercut;
-            Fist.TriplePunch = triple;
-            HotHands.SwollenHand = swollen;
+            foreach (var name in AllUnlocks)
+            {
+                if (now.Contains(name) && !unlockedNow.Contains(name)) unlocked.Add(name);
+            }
+            unlockedNow.Clear();
+            unlockedNow.UnionWith(now);
+            SetUnlocks();
             keep?.AddRange(unlocked);
             if (!announce) return;
-            foreach (var punch in unlocked) PunchUnlocked?.Invoke(punch);
+            // No gloves, no punching (user, 2026-11-12): a punch's news waits until a pair is on (Update).
+            bool punches = Gloves.CanPunch;
+            foreach (var name in unlocked)
+            {
+                if (IsPunch(name) && !punches)
+                {
+                    if (!nextRunNews.Contains(name)) nextRunNews.Add(name);
+                }
+                else
+                {
+                    PunchUnlocked?.Invoke(name);
+                }
+            }
         }
 
-        // The news a game over inside a special stage kept back (Resume): told once the next run is under way and the
-        // player has been up for Next Run News Delay (not dying, getting up or at 0 health; not in a stage or the
-        // opening). Only what's still unlocked then (Reset Progress may have locked it again).
+        // How many of these steps the points have reached (e.g. 1, 4, 7: 5 points = 2).
+        private static int Steps(float have, int[] at)
+        {
+            int count = 0;
+            if (at == null) return 0;
+            foreach (int step in at)
+            {
+                if (have >= step) count++;
+            }
+            return count;
+        }
+
+        // The punches' switches (Fist, Hot Hands) as the unlocks are now.
+        private static void SetUnlocks()
+        {
+            Fist.JabUnlocked = unlockedNow.Contains(Jab);
+            Fist.SwingUnlocked = unlockedNow.Contains(Swing);
+            Fist.UppercutUnlocked = unlockedNow.Contains(Uppercut);
+            Fist.TriplePunch = unlockedNow.Contains(Triple);
+            HotHands.SwollenHand = unlockedNow.Contains(Swollen);
+        }
+
+        // The news a game over inside a special stage kept back (Resume), and punches a point unlocked while the player
+        // had no gloves (Apply Unlocks): told once the next run is under way and the player has been up for Next Run
+        // News Delay (not dying, getting up or at 0 health; not in a stage or the opening), the punches only once a pair
+        // of gloves is on. Only what's still unlocked then (Reset Progress may have locked it again).
         private void Update()
         {
             if (nextRunNews.Count == 0 || Instance != this) return;
-            if (InSpecialStage || PlayerDown() || Game.Menus.OpeningCutscene.IsPlaying || !Checkpoints.HasResumed)
+            bool punches = Gloves.CanPunch;
+            if (InSpecialStage || PlayerDown() || Game.Menus.OpeningCutscene.IsPlaying || !Checkpoints.HasResumed ||
+                (!punches && nextRunNews.TrueForAll(IsPunch)))
             {
                 upSince = -1f;
                 return;
@@ -914,30 +1085,35 @@ namespace Game.Leveling
             if (upSince < 0f) upSince = Time.time;
             if (Time.time - upSince < NextRunNewsDelay) return;
             upSince = -1f;
-            var news = nextRunNews.ToArray();
+            // Each once (the same punch can be kept back twice: no gloves, then a game over in a stage).
+            var news = new List<string>();
+            foreach (var item in nextRunNews)
+            {
+                if (!news.Contains(item)) news.Add(item);
+            }
             nextRunNews.Clear();
             foreach (var item in news)
             {
-                if (item == ThrowsNews)
+                if (IsPunch(item) && !punches)
                 {
-                    if (Points(Stat.ThrowPower) >= 1) ExplodingThrowsUnlocked?.Invoke();
+                    // Still no gloves: kept for when a pair is on.
+                    nextRunNews.Add(item);
                 }
                 else if (StillUnlocked(item))
                 {
                     PunchUnlocked?.Invoke(item);
+                    Told(item);
                 }
             }
         }
 
-        private static bool StillUnlocked(string punch) => punch switch
+        // Glove news just shown: not again in this save slot (Show Once).
+        private static void Told(string news)
         {
-            "Jab" => Fist.JabUnlocked,
-            "Swing" => Fist.SwingUnlocked,
-            "Uppercut" => Fist.UppercutUnlocked,
-            "Triple" => Fist.TriplePunch,
-            "Swollen" => HotHands.SwollenHand,
-            _ => false,
-        };
+            if (gloveNews.Remove(news)) Game.Menus.ShowOnce.Remember(GloveNewsKey + news);
+        }
+
+        private static bool StillUnlocked(string name) => unlockedNow.Contains(name);
 
         // The player is down: the lucky coins in the air, getting up from a revive, or 0 health (dead).
         private static bool PlayerDown() =>
@@ -1018,8 +1194,6 @@ namespace Game.Leveling
             points[(int)stat]++;
             Apply(true, true);
             Changed?.Invoke();
-            // The first Throw Power point: the player is told thrown things explode now (in a special stage, once it ends).
-            if (stat == Stat.ThrowPower && points[(int)stat] == 1 && !InSpecialStage) ExplodingThrowsUnlocked?.Invoke();
             return true;
         }
 
@@ -1123,7 +1297,10 @@ namespace Game.Leveling
 
         private void OnPickedUp(SelectEnterEventArgs args)
         {
-            if (args.interactableObject is Component thing) WeaponWear.Watch(thing.gameObject);
+            if (args.interactableObject is not Component thing) return;
+            WeaponWear.Watch(thing.gameObject);
+            // Its throws and hits can explode (Explosive Objects, Bomber Man, Impact, Weapon Master; user, 2026-11-12).
+            Game.Weapons.WeaponSkills.Watch(thing.gameObject);
         }
 
         // The stats that are set on something (the others are read when needed): the health cap, the walking speed and
@@ -1134,8 +1311,8 @@ namespace Game.Leveling
             ApplySpeed();
             // Always the real points, also in a special stage: lowering them would take the lucky coins for good.
             Checkpoints.SetLevelRevives(Points(Stat.ExtraRevive), giveRevives);
-            // Raised by a point (giveRevives), a new punch is announced; read from the save, it's just unlocked.
-            ApplyPunches(giveRevives);
+            // Raised by a point (giveRevives), a new punch or power is announced; read from the save, it's just unlocked.
+            ApplyUnlocks(giveRevives);
         }
 
         // The health cap from Max Health (eaten candies' points included) and Extra Revive. Heal: a raised cap heals too.

@@ -14,7 +14,8 @@ namespace Game.PlayGround
     /// <summary>
     /// Drives the PlayGround's walls and lays it out anew each time a round's seed is taken from its chest (endgame+
     /// cooking game, user 2026-11-07):
-    /// 0. When a round starts cooking (its wave starts), the walls go down (Go States: GO, GO2, GO3).
+    /// 0. When a round starts cooking (its wave starts), the walls go down (Go States: GO, GO2, GO3). The cauldron
+    ///    defence (Cauldron Defence) drops them itself when its countdown starts (Walls Down), and never takes a seed.
     /// 1. Clean: everything on the field pops away (trees, bushes, the skull, barrels, baskets, boxes, pipes, broken
     ///    pieces, the opened chest...: what Clean Names matches, and what this laid out before), and so does every
     ///    creature left (slimes, flying slimes, slime bombers, fat and bowling pumpkins), wherever it is. The cauldron
@@ -181,6 +182,15 @@ namespace Game.PlayGround
 
         // A round started cooking: the walls go down.
         private void OnWaveStarted(PlayGroundRounds rounds, int round)
+        {
+            PlayState(goStates, round);
+        }
+
+        /// <summary>
+        /// The walls go down (Go States: GO for round 1, GO2, GO3): for the cauldron defence (Cauldron Defence, user
+        /// 2026-11-16), which has no rounds director to start it.
+        /// </summary>
+        public void WallsDown(int round = 0)
         {
             PlayState(goStates, round);
         }

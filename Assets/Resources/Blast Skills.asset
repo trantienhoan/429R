@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f8fe5e13f1085f42a6b2774eb3d0cbe, type: 3}
+  m_Name: Blast Skills
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Weapons.BlastSkills
+  thrownRadius: {x: 0.6, y: 0.9, z: 1.2}
+  thrownDamage: {x: 2, y: 4, z: 6}
+  thrownPush: {x: 3, y: 3.5, z: 4}
+  grenadeRadiusBonus: {x: 0, y: 0.25, z: 0.5}
+  grenadeDamageBonus: {x: 0, y: 2, z: 4}
+  hardThrowHandSpeed: 3.5
+  thrownPlayerReach: 0.5
+  thrownPlayerEvent: Damage
+  thrownEffects:
+  - {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
+  - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}
+  - {fileID: 431296081563789977, guid: 7d85674d137626445accce4cef7fe159, type: 3}
+  thrownEffectSize: 0.6
+  thrownSound: {fileID: 8300000, guid: 0c38739de2059ac40ab5b60a42fd1c5f, type: 3}
+  thrownVolume: 0.8
+  bomber: {x: 1.4, y: 6, z: 4.5}
+  secondBlastSeconds: 0.5
+  tossHandSpeed: 1
+  impactRadius: {x: 0.5, y: 0.8, z: 1.1}
+  impactDamage: {x: 2, y: 4, z: 6}
+  impactPush: {x: 2, y: 3, z: 4}
+  knockSeconds: 1.5
+  knockHitSpeed: 2
+  impactEffects:
+  - {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
+  - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}
+  - {fileID: 431296081563789977, guid: 7d85674d137626445accce4cef7fe159, type: 3}
+  impactEffectSize: 0.5
+  impactSound: {fileID: 8300000, guid: 4c7447597d4959e4296abb074effa21b, type: 3}
+  impactVolume: 0.7
+  master: {x: 0.9, y: 8, z: 3}
+  masterHitSpeed: 2
+  masterEvery: 0.3
+  masterEffects:
+  - {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
+  - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}
+  - {fileID: 431296081563789977, guid: 7d85674d137626445accce4cef7fe159, type: 3}
+  masterEffectSize: 0.45
+  masterSound: {fileID: 8300000, guid: 0c38739de2059ac40ab5b60a42fd1c5f, type: 3}
+  masterVolume: 0.5
+  maxBlastsPerSecond: 10
+  menuVersion: 1

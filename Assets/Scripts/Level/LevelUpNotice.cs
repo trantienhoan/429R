@@ -14,6 +14,13 @@ namespace Game.Leveling
     /// burst, and pauses the game while it's up (Pause Game). It stays until a trigger is pulled (after a short reading
     /// time) or its seconds are over. If the player looks away it glides back in front of them. While the pause menu is
     /// open the notice hides and waits. Tools > 429 Game > Player > Set Up Level System builds it.
+    /// What a point unlocks (Player Level: Punch Unlocked) is told once the Level Up menu is closed: a new punch (NEW
+    /// PUNCH!) or a new power (NEW POWER!: Swollen Hand, and since 2026-11-12 Explosive Throws 1-3, Bomber Man, Impact 1-3,
+    /// Weapon Master; user: very few words). Two levels of one power unlocked together are told as the higher. Those are
+    /// Unlock Cards (user, 2026-11-12): they fly out in front of the player, don't stop the game, break on a hit and fade
+    /// away by themselves after Card Seconds. Since the user's "make the level-up notices fly out the same way" (same
+    /// day) the level notices are cards too (Level Notices Fly Out): no pause, no trigger to close them, gone after Level
+    /// Card Seconds or a hit; untick it for the old notice that pauses until a trigger closes it.
     /// </summary>
     public class LevelUpNotice : MonoBehaviour
     {
@@ -58,10 +65,53 @@ namespace Game.Leveling
         [TextArea(2, 6)]
         [SerializeField] private string swollenText = "SWOLLEN HAND\n\nRed-hot fists swell bigger.";
 
-        [Header("Exploding throws (the first Throw Power point; shown once the Level Up menu is closed)")]
-        [SerializeField] private string throwsTitle = "NEW POWER!";
+        [Header("New powers (Throw Power and Weapon Efficiency unlock them; shown once the Level Up menu is closed)")]
+        [Tooltip("The title of every new power (user, 2026-11-12: very few words).")]
+        [SerializeField] private string powerTitle = "NEW POWER!";
+        [Tooltip("Explosive Objects level 1 (Throw Power 1, or Throwing gloves).")]
         [TextArea(2, 6)]
-        [SerializeField] private string throwsText = "EXPLODING THROWS\n\nThrow books, bottles and flip-flops hard: BOOM!";
+        [SerializeField] private string explosive1Text = "EXPLOSIVE THROWS\n\nThrow things hard: BOOM!";
+        [TextArea(2, 6)]
+        [SerializeField] private string explosive2Text = "EXPLOSIVE THROWS 2\n\nBigger booms.";
+        [TextArea(2, 6)]
+        [SerializeField] private string explosive3Text = "EXPLOSIVE THROWS 3\n\nBiggest booms.";
+        [Tooltip("Throw Power 10.")]
+        [TextArea(2, 6)]
+        [SerializeField] private string bomberManText = "BOMBER MAN\n\nEverything you throw is a bomb.";
+        [Tooltip("Impact small (Weapon Efficiency 1, or Soldier gloves).")]
+        [TextArea(2, 6)]
+        [SerializeField] private string impact1Text = "IMPACT\n\nHit things into things: BOOM!";
+        [TextArea(2, 6)]
+        [SerializeField] private string impact2Text = "IMPACT 2\n\nBigger impacts.";
+        [TextArea(2, 6)]
+        [SerializeField] private string impact3Text = "IMPACT 3\n\nBiggest impacts.";
+        [Tooltip("Weapon Efficiency 10.")]
+        [TextArea(2, 6)]
+        [SerializeField] private string weaponMasterText = "WEAPON MASTER\n\nEvery weapon hit explodes.";
+
+        [Header("Unlock cards (the punches' and powers' notices; user, 2026-11-12)")]
+        [Tooltip("An unlock card nobody hits fades away after this many seconds (it never stops the game).")]
+        [Min(1f)]
+        [SerializeField] private float cardSeconds = 7f;
+        [Tooltip("How far ahead of the eyes it flies out to, in metres.")]
+        [Min(0.5f)]
+        [SerializeField] private float cardDistance = 1.25f;
+        [Tooltip("Its size, compared with this notice's panel.")]
+        [Range(0.3f, 1f)]
+        [SerializeField] private float cardScale = 0.6f;
+        [Tooltip("Seconds between two cards coming out one after another.")]
+        [Min(0f)]
+        [SerializeField] private float cardEvery = 0.5f;
+        [Tooltip("The level notices (Teach, Remind, Bonus) fly out as cards too (user, 2026-11-12: no pause, broken by a " +
+                 "hit, gone by themselves). Untick: the old notice in front of the player that pauses the game until a " +
+                 "trigger closes it.")]
+        [SerializeField] private bool levelNoticesFlyOut = true;
+        [Tooltip("A level card nobody hits fades away after this many seconds (its text is a little longer).")]
+        [Min(1f)]
+        [SerializeField] private float levelCardSeconds = 8f;
+        [Tooltip("A level card's size, compared with this notice's panel.")]
+        [Range(0.3f, 1f)]
+        [SerializeField] private float levelCardScale = 0.8f;
 
         [Header("When")]
         [Tooltip("Reaching one of these levels shows the notice that teaches how to open the Level Up menu (Teach Text).")]
@@ -118,10 +168,9 @@ namespace Game.Leveling
         private float pendingAt;
         private bool holding;
         private bool showing;
-        // New punches and powers waiting to be told about ("Jab", "Swing", "Uppercut", "Triple", "Swollen", "Throws"), in
-        // order.
-        private const string Throws = "Throws";
+        // New punches and powers waiting to be told about (Player Level's names: "Jab", ... "WeaponMaster"), in order.
         private readonly System.Collections.Generic.List<string> punches = new();
+        private float nextCardAt;
         private bool closing;
         private bool gliding;
 
@@ -152,13 +201,12 @@ namespace Game.Leveling
             continueButton.action?.Enable();
             PlayerLevel.LeveledUp += OnLeveledUp;
             PlayerLevel.PunchUnlocked += OnPunchUnlocked;
-            PlayerLevel.ExplodingThrowsUnlocked += OnExplodingThrows;
             LevelUpMenu.Opened += Close;
+            // The menu open: the cards in front go (they'd stand between the player and the menu).
+            LevelUpMenu.Opened += UnlockCard.FadeAll;
         }
 
         private void OnPunchUnlocked(string punch) => punches.Add(punch);
-
-        private void OnExplodingThrows() => punches.Add(Throws);
 
         private void OnDisable()
         {
@@ -166,8 +214,8 @@ namespace Game.Leveling
             if (continueButton.reference == null) continueButton.action?.Disable();
             PlayerLevel.LeveledUp -= OnLeveledUp;
             PlayerLevel.PunchUnlocked -= OnPunchUnlocked;
-            PlayerLevel.ExplodingThrowsUnlocked -= OnExplodingThrows;
             LevelUpMenu.Opened -= Close;
+            LevelUpMenu.Opened -= UnlockCard.FadeAll;
             // Never leave the game paused (e.g. the scene closing while a notice is up).
             Unpause();
             pendingLevel = -1;
@@ -215,6 +263,14 @@ namespace Game.Leveling
             // level that unlocked the Bonus Stats).
             if (PlayerLevel.Instance != null && kind != Kind.Bonus) level = Mathf.Max(level, PlayerLevel.Instance.Level);
             string text = kind == Kind.Bonus ? bonusText : kind == Kind.Teach ? teachText : shortText;
+            if (levelNoticesFlyOut)
+            {
+                // A card like the unlocks' (user, 2026-11-12): no pause, a hit breaks it, it fades away by itself.
+                UnlockCard.Show(panel, title, body, continueText, Fill(titleText, level, points), Fill(text, level, points),
+                    levelCardSeconds, cardDistance, levelCardScale);
+                nextCardAt = Time.time + cardEvery;
+                return;
+            }
             ShowText(Fill(titleText, level, points), Fill(text, level, points), kind == Kind.Remind ? shortSeconds : teachSeconds);
         }
 
@@ -230,23 +286,60 @@ namespace Game.Leveling
                 "Uppercut" => uppercutText,
                 _ => tripleText,
             };
-            ShowText(punchTitle, text, teachSeconds);
+            ShowCard(punchTitle, text);
         }
 
-        // The next new punch (or exploding throws, or Swollen Hand); Swing and Uppercut unlocked by the same point get one
-        // notice together.
+        // An unlock card (user, 2026-11-12): out in front of the player, no pause, broken by a hit, gone after Card Seconds.
+        private void ShowCard(string heading, string message)
+        {
+            UnlockCard.Show(panel, title, body, continueText, heading, message, cardSeconds, cardDistance, cardScale);
+            nextCardAt = Time.time + cardEvery;
+        }
+
+        // The next new punch or power; Swing and Uppercut unlocked by the same point get one notice together, and of two
+        // levels of a power unlocked together (e.g. Throwing gloves on 1 point: Explosive 1 and 2) only the higher is told.
         private void ShowNextPunch()
         {
             string punch = punches[0];
             punches.RemoveAt(0);
-            if (punch == Throws)
-                ShowText(throwsTitle, throwsText, teachSeconds);
+            if (Higher(punch)) return;
+            string power = PowerText(punch);
+            if (power != null)
+                ShowCard(powerTitle, power);
             else if (punch == "Swollen")
-                ShowText(swollenTitle, swollenText, teachSeconds);
+                ShowCard(swollenTitle, swollenText);
             else if ((punch == "Swing" && punches.Remove("Uppercut")) || (punch == "Uppercut" && punches.Remove("Swing")))
-                ShowText(punchesTitle, swingUppercutText, teachSeconds);
+                ShowCard(punchesTitle, swingUppercutText);
             else
                 ShowPunch(punch);
+        }
+
+        // A power's text (null for a punch).
+        private string PowerText(string name) => name switch
+        {
+            "Explosive1" => explosive1Text,
+            "Explosive2" => explosive2Text,
+            "Explosive3" => explosive3Text,
+            "BomberMan" => bomberManText,
+            "Impact1" => impact1Text,
+            "Impact2" => impact2Text,
+            "Impact3" => impact3Text,
+            "WeaponMaster" => weaponMasterText,
+            _ => null,
+        };
+
+        // Whether a higher level of this power is waiting too (then only that one is told).
+        private bool Higher(string name)
+        {
+            if (name.Length < 2 || !char.IsDigit(name[name.Length - 1])) return false;
+            string family = name.Substring(0, name.Length - 1);
+            int level = name[name.Length - 1] - '0';
+            foreach (var waiting in punches)
+            {
+                if (waiting.Length == name.Length && waiting.StartsWith(family, System.StringComparison.Ordinal) &&
+                    waiting[waiting.Length - 1] - '0' > level) return true;
+            }
+            return false;
         }
 
         private void ShowText(string heading, string message, float seconds)
@@ -297,14 +390,15 @@ namespace Game.Leveling
         private void Update()
         {
             // Game time: a notice due while the pause menu is open waits for it to close.
-            if (pendingLevel >= 0 && !showing && Time.time >= pendingAt)
+            if (pendingLevel >= 0 && !showing && Time.time >= pendingAt && (!levelNoticesFlyOut || UnlockCard.HasRoom))
             {
                 Show(pendingLevel, pendingKind);
                 pendingLevel = -1;
             }
-            // A new punch is told about once the Level Up menu (where its point was spent) is closed.
-            if (!showing && pendingLevel < 0 && punches.Count > 0 && !PauseMenu.IsPaused &&
-                (LevelUpMenu.Instance == null || !LevelUpMenu.Instance.IsOpen))
+            // A new punch or power is told about once the Level Up menu (where its point was spent) is closed: a card,
+            // one after another (up to Unlock Card's Max Shown at once, stacked).
+            if (!showing && pendingLevel < 0 && punches.Count > 0 && !PauseMenu.IsPaused && Time.time >= nextCardAt &&
+                UnlockCard.HasRoom && (LevelUpMenu.Instance == null || !LevelUpMenu.Instance.IsOpen))
                 ShowNextPunch();
             if (!showing) return;
 

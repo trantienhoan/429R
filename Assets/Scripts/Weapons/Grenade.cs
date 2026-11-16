@@ -28,10 +28,13 @@ namespace Game.Weapons
     /// it as a hard hit. Scripts that handle hits themselves (IHittable, e.g. the PlayGround's ghost tree, bush and balloons)
     /// are hit with the damage first, even when they also have a Health FSM (e.g. for the fairy's shield pop); the ghost
     /// tree passes it on to that FSM's health.
-    /// The player's Throw Power (a level-up stat) decides it all: at 0 it never explodes (nor charges), it's just a
-    /// weapon that hits and breaks; from 1 point it explodes as set here, and every point after that makes the blast
-    /// reach farther and do more damage (Player Level: Exploding throws). The extra reach never hurts the player or what
-    /// they hold: only the blast's own reach (or going off in the hand) does.
+    /// The player's Throw Power (a level-up stat) decides it all: below Explosive Objects level 1 it never explodes (nor
+    /// charges), it's just a weapon that hits and breaks; from level 1 (Throw Power 1, or Throwing gloves) it explodes as
+    /// set here, levels 2 and 3 (4 and 7 points) make the blast reach farther and do more damage (Blast Skills' Grenade
+    /// bonuses; eaten candies reach a little farther), and with Bomber Man (10 points; user, 2026-11-12) any toss sets it
+    /// off and the same blast goes off again half a second later where it went off. The extra reach never hurts the
+    /// player or what they hold: only the blast's own reach (or going off in the hand) does. (Every other thing thrown
+    /// hard explodes too, Weapon Skills; this keeps its own blast.)
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(XRGrabInteractable))]
@@ -244,13 +247,21 @@ namespace Game.Weapons
             // No Throw Power yet: it just hits (its Damage FSM breaks it as usual).
             if (!Game.Leveling.PlayerLevel.ExplodingThrows) return;
             var point = collision.contactCount > 0 ? collision.GetContact(0).point : body.position;
-            // A throw that isn't hard enough just hits.
-            if (throwSpeed < HardThrowSpeed) return;
-            if (Charged) ExplodeCharged(point, false);
+            // A throw that isn't hard enough just hits; with Bomber Man any toss goes off (user, 2026-11-12).
+            bool bomberMan = Game.Leveling.PlayerLevel.BomberMan;
+            float needed = bomberMan
+                ? Mathf.Min(BlastSkills.Values.TossHandSpeed * (grab != null ? grab.throwVelocityScale : 1f), HardThrowSpeed)
+                : HardThrowSpeed;
+            if (throwSpeed < needed) return;
+            if (Charged) ExplodeCharged(point, false, bomberMan);
             else
             {
                 float reach = Game.Leveling.PlayerLevel.ThrowBlastRadius(radius);
-                Explode(point, reach, Game.Leveling.PlayerLevel.ThrowBlastDamage(damage), push, playerEvent, false, BangSize(reach), radius);
+                float hurt = Game.Leveling.PlayerLevel.ThrowBlastDamage(damage);
+                Explode(point, reach, hurt, push, playerEvent, false, BangSize(reach), radius);
+                // Bomber Man: the same blast again a moment later (the book itself is gone by then).
+                if (bomberMan)
+                    BlastSkills.Values.GrenadeSecondBlast(point, reach, hurt, push, effects, sound, volume, playerEvent, BangSize(reach), radius);
             }
         }
 
@@ -333,8 +344,9 @@ namespace Game.Weapons
             }
         }
 
-        // The blast as big as the shaking made it: in between two steps of Charge, in between their reach.
-        private void ExplodeCharged(Vector3 point, bool inHand)
+        // The blast as big as the shaking made it: in between two steps of Charge, in between their reach. Bomber Man: a
+        // thrown one goes off again a moment later.
+        private void ExplodeCharged(Vector3 point, bool inHand, bool bomberMan = false)
         {
             float reach = charge[charge.Length - 1].y;
             for (int i = 0; i < charge.Length - 1; i++)
@@ -346,8 +358,11 @@ namespace Game.Weapons
             float strength = Mathf.InverseLerp(charge[0].x, charge[charge.Length - 1].x, shaken);
             // Throw Power makes it bigger and harder, but only the charge's own reach can hurt the player.
             float bigger = Game.Leveling.PlayerLevel.ThrowBlastRadius(reach);
-            Explode(point, bigger, Game.Leveling.PlayerLevel.ThrowBlastDamage(Mathf.Lerp(chargeDamage.x, chargeDamage.y, strength)),
-                Mathf.Lerp(chargePush.x, chargePush.y, strength), inHand ? inHandEvent : playerEvent, inHand, BangSize(bigger), reach);
+            float hurt = Game.Leveling.PlayerLevel.ThrowBlastDamage(Mathf.Lerp(chargeDamage.x, chargeDamage.y, strength));
+            float force = Mathf.Lerp(chargePush.x, chargePush.y, strength);
+            Explode(point, bigger, hurt, force, inHand ? inHandEvent : playerEvent, inHand, BangSize(bigger), reach);
+            if (bomberMan && !inHand)
+                BlastSkills.Values.GrenadeSecondBlast(point, bigger, hurt, force, effects, sound, volume, playerEvent, BangSize(bigger), reach);
         }
 
         private const float MaxEffectScale = 1.3f;

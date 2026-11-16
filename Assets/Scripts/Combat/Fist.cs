@@ -38,6 +38,17 @@ namespace Game.Combat
     /// past the knuckles, punches do double damage, and every punch that hits something explodes once more where it hit
     /// (Elon Boong, never hurting the player; the Explosive Fist bonus stat does that too, harder with each point); the
     /// Elon Boong (0.5 m) and the Green Boong (5 m) make every flying punch fly farther.
+    /// Gloves (user, 2026-11-12: "When we press grip and trigger, we pop up a glove for really punching"): with Glove
+    /// Kinds set up, a fist takes a pair of gloves (Gloves: the Knight carries one pair at the start of each run).
+    /// Without them, grip + trigger does nothing: no fist, no punch, no flying punch, no swelling (the squeezed hands
+    /// still count for the fist bump that opens the Level Up menu: Is Made Fist). With them, closing the fist pops a
+    /// glove onto the hand (a quick scale-up with a little overshoot and a soft fwump: Glove Kinds' Pop; the hand hides
+    /// under it), the glove's own punch shape (its colliders, put onto the ball's body) hits instead of the ball, Fist
+    /// Size (and a swollen hot hand) grows the glove instead of the hand, and flying punches throw an echo of the glove.
+    /// Letting go, it pops away and the hand is back, grabbing as always. Without Glove Kinds (or with its Need Gloves
+    /// unticked and no gloves on) the bare fist punches as before. Flying punches are easier to throw with Boxing gloves
+    /// (user, 2026-11-12: Glove Kinds' Easy Flying Punches: the conditions under Flying Jab, Swing and Uppercut, today's);
+    /// with any other pair the harder ones under "Flying punches without easy gloves" are used (Easy Flying Punches).
     /// Goes on each controller (Left Controller, Right Controller), next to the hand model.
     /// </summary>
     [DisallowMultipleComponent]
@@ -103,7 +114,9 @@ namespace Game.Combat
                  "Untick to turn it off.")]
         [SerializeField] private bool flyingJab = true;
         [Tooltip("How fast the fist must move at its fastest, in metres per second, for the punch to fly. An easy punch is " +
-                 "about 2-3, a snappy jab 4-6.")]
+                 "about 2-3, a snappy jab 4-6. This and the other flying-punch conditions here (Top Jab Speed, Jab Seconds, " +
+                 "Jab Straightness, Jab Aim, Swing Speed, Uppercut Speed) are the easy ones, with Boxing gloves (user, " +
+                 "2026-11-12); other gloves use the harder ones under Flying punches without easy gloves.")]
         [Min(0.5f)]
         [SerializeField] private float jabSpeed = 2.6f;
         [Tooltip("A jab this fast or faster (and straight, and aimed) flies the farthest.")]
@@ -213,6 +226,32 @@ namespace Game.Combat
                  "ground only take the damage).")]
         [Min(0f)]
         [SerializeField] private float knockOutSeconds = 2.5f;
+
+        [Header("Flying punches without easy gloves (harder; user, 2026-11-12)")]
+        [Tooltip("With gloves whose kind hasn't Easy Flying Punches (Glove Kinds: all but Boxing), a punch must be this fast " +
+                 "to fly (instead of Jab Speed), so flying punches feel easier with Boxing gloves (user: \"with Boxing gloves " +
+                 "we can feel it's easier\"). A perfect jab (Perfect Jab) is judged against these too. The fist's own hit " +
+                 "doesn't change.")]
+        [Min(0.5f)]
+        [SerializeField] private float hardJabSpeed = 3.2f;
+        [Tooltip("Instead of Top Jab Speed: a jab this fast or faster flies the farthest.")]
+        [Min(0.5f)]
+        [SerializeField] private float hardTopJabSpeed = 6f;
+        [Tooltip("Instead of Jab Seconds: the longest a jab may take, from starting to move to snapping to a stop.")]
+        [Min(0.05f)]
+        [SerializeField] private float hardJabSeconds = 0.32f;
+        [Tooltip("Instead of Jab Straightness: how straight a jab must be (1 = a perfectly straight line).")]
+        [Range(0.5f, 1f)]
+        [SerializeField] private float hardJabStraightness = 0.85f;
+        [Tooltip("Instead of Jab Aim: how far from where the player is looking a jab may go, in degrees.")]
+        [Range(10f, 90f)]
+        [SerializeField] private float hardJabAim = 40f;
+        [Tooltip("Instead of Swing Speed: how fast the fist must sweep to count as a swing.")]
+        [Min(0.5f)]
+        [SerializeField] private float hardSwingSpeed = 3.8f;
+        [Tooltip("Instead of Uppercut Speed: how fast the fist must rise to count as an uppercut.")]
+        [Min(0.5f)]
+        [SerializeField] private float hardUppercutSpeed = 3.4f;
 
         [Header("Input (left empty: the hand model's own)")]
         [SerializeField] private InputActionProperty grip;
@@ -401,6 +440,36 @@ namespace Game.Combat
         private Quaternion lastAreaTurn;
         private Vector3 lastAreaPosition;
 
+        // Gloves (user, 2026-11-12). The hand is squeezed into a fist, punching or not (the fist bump counts it).
+        private bool formed;
+        // The glove on this hand (a copy of the worn kind's, under the controller), the kind it's from and its own
+        // scale, and what it hits with: its colliders, copied onto the ball's body (Glove Shape).
+        private Transform glove;
+        private GloveKinds.Kind gloveKind;
+        private Vector3 gloveScale = Vector3.one;
+        private Transform gloveShape;
+        private readonly List<Collider> gloveColliders = new();
+        private readonly List<Renderer> gloveLooks = new();
+        private float shapeSize = -1f;
+        // How thick its punch shape is (as a ball's radius), in its own units.
+        private float gloveRadius = 0.06f;
+        // Popping on (true) or away; how far (0 hidden, 1 its size, past 1 overshooting), from where, since when.
+        private bool gloveUp;
+        private float gloveShow;
+        private float gloveFrom;
+        private float gloveAt;
+        // A pair just picked up shows on the empty hand until then (it doesn't punch).
+        private float showGloveUntil = -1f;
+        // The hand model's own looks (hidden under the glove), and whether they're hidden now.
+        private readonly List<Renderer> handLooks = new();
+        private bool handHidden;
+        private AudioSource gloveSpeaker;
+        private float nextGloveSound;
+        private const float GloveSoundEvery = 0.06f;
+        // The pop's back-easing strength, worked out once for each overshoot.
+        private static float popOvershootFor = -1f;
+        private static float popEase;
+
         private enum Move { None, Jab, Swing, Uppercut }
 
         /// <summary>
@@ -454,11 +523,67 @@ namespace Game.Combat
         /// <summary>Whether the hand is a fist right now (it punches).</summary>
         public bool IsFist => closed;
 
+        /// <summary>
+        /// Whether the hand is squeezed into a fist right now (grip and trigger, holding nothing), punching or not: without
+        /// gloves it doesn't punch, but two of these still bump (Fist Bump: the Level Up menu).
+        /// </summary>
+        public bool IsMadeFist => formed;
+
         /// <summary>Where the fist's knuckles are (the middle of its punching ball).</summary>
         public Vector3 Knuckles => FistPoint();
 
-        /// <summary>How big the fist's punching ball is right now (its radius, in metres).</summary>
-        public float BallSize => radius * grown;
+        /// <summary>
+        /// How big the fist's punching ball is right now (its radius, in metres); with a glove on, how thick the glove's
+        /// punch shape is.
+        /// </summary>
+        public float BallSize => closed && GloveMode ? gloveRadius * GloveWorldScale : radius * grown;
+
+        /// <summary>The glove on this hand (its look; null without gloves). It shows while the fist is closed.</summary>
+        public Transform Glove => glove;
+
+        /// <summary>Whether a glove shows on this hand right now (popping on, on, or popping away).</summary>
+        public bool GloveShowing => glove != null && glove.gameObject.activeSelf;
+
+        // The fist punches with a glove: gloves are worn and this hand's glove is made.
+        private bool GloveMode => gloveKind != null && glove != null;
+
+        /// <summary>
+        /// Whether flying punches use the easy conditions now (user, 2026-11-12): with a pair whose kind has Easy Flying
+        /// Punches (Boxing), or with no gloves on (punching then takes none, as before the gloves). With any other pair,
+        /// the harder ones (Flying punches without easy gloves).
+        /// </summary>
+        public bool EasyFlyingPunches => Gloves.Worn == null || Gloves.Worn.easyFlyingPunches;
+
+        // The flying-punch conditions in use (Easy Flying Punches): the easy set or the harder one.
+        private float JabSpeedNow => EasyFlyingPunches ? jabSpeed : hardJabSpeed;
+        private float TopJabSpeedNow => EasyFlyingPunches ? topJabSpeed : hardTopJabSpeed;
+        private float JabSecondsNow => EasyFlyingPunches ? jabSeconds : hardJabSeconds;
+        private float JabStraightnessNow => EasyFlyingPunches ? jabStraightness : hardJabStraightness;
+        private float JabAimNow => EasyFlyingPunches ? jabAim : hardJabAim;
+        private float SwingSpeedNow => EasyFlyingPunches ? swingSpeed : hardSwingSpeed;
+        private float UppercutSpeedNow => EasyFlyingPunches ? uppercutSpeed : hardUppercutSpeed;
+
+        // How big the glove is (1 = its own size): Fist Size grows it as it grew the hand (a little, up to Max Hand
+        // Growth: the user asked the hand never block the view), and a swollen hot hand more (Hot Hands).
+        private float GloveGrowth =>
+            (fistScale + Mathf.Min(Game.Leveling.PlayerLevel.FistSizeBonus, maxHandGrowth)) / Mathf.Max(fistScale, 0.01f) * HotHands.SizeOf(this);
+
+        // The glove's world scale when it's fully on (its own scale, grown, on the controller).
+        private float GloveWorldScale => Mathf.Abs(gloveScale.x) * GloveGrowth * Mathf.Abs(transform.lossyScale.x);
+
+        // Which hand this is: its interactor's (Left or Right), else by the controller's name ("Left Controller").
+        private bool IsLeftHand
+        {
+            get
+            {
+                if (rumbler != null && rumbler.handedness != InteractorHandedness.None) return rumbler.handedness == InteractorHandedness.Left;
+                return name.IndexOf("Left", System.StringComparison.OrdinalIgnoreCase) >= 0;
+            }
+        }
+
+        // A collider of a fist's ball (its glove's punch shape) or of a flying fist stands for its body.
+        private static Component BodyOf(Component thing) =>
+            thing is Collider collider && collider.attachedRigidbody != null ? collider.attachedRigidbody : thing;
 
         /// <summary>How fast the hand itself is moving, in the play area's space (walking and turning left out).</summary>
         public Vector3 HandVelocity => handVelocity;
@@ -472,21 +597,27 @@ namespace Game.Combat
         /// <summary>The hand (its interactor, which buzzes) behind this fist ball or flying fist, or null.</summary>
         public static XRBaseInputInteractor HandOf(Component thing)
         {
+            thing = BodyOf(thing);
             return thing != null && thing.TryGetComponent<Punch>(out var punch) && punch.owner != null ? punch.owner.rumbler : null;
         }
 
-        // Power (it used to grow with the old Power bonus stat, which is Weapon Master now: held weapons only).
+        // Power (it used to grow with the old Power bonus stat, which is Strong Grip now: held weapons only).
         private float Power => power;
 
         /// <summary>The Fist (hand) a punching ball or flying fist belongs to; null for anything else.</summary>
         public static Fist OwnerOf(Component thing)
         {
+            thing = BodyOf(thing);
             return thing != null && thing.TryGetComponent<Punch>(out var punch) ? punch.owner : null;
         }
 
-        /// <summary>Whether this is a fist's punching ball (it has a Weapon Power like a weapon, but it's a hand).</summary>
+        /// <summary>
+        /// Whether this is a fist's punching ball (it has a Weapon Power like a weapon, but it's a hand), a glove's punch
+        /// shape on it, or a flying fist.
+        /// </summary>
         public static bool IsFistBall(Component thing)
         {
+            thing = BodyOf(thing);
             return thing != null && thing.TryGetComponent<Punch>(out _);
         }
 
@@ -509,19 +640,32 @@ namespace Game.Combat
         /// <summary>Whether this is a flying punch (a jab carried on ahead of the fist), not the fist's own ball.</summary>
         public static bool IsFlyingFist(Component thing)
         {
+            thing = BodyOf(thing);
             return thing != null && thing.TryGetComponent<FlyingFist>(out _);
         }
 
         /// <summary>The hand's model (its skin), once the fist has found it.</summary>
         public SkinnedMeshRenderer HandSkin => handSkin;
 
-        /// <summary>Adds what looks like this hand: its model and its flying punches' echoes (Hot Hands makes them glow).</summary>
+        /// <summary>
+        /// Adds what looks like this hand: its model, its glove (with gloves on) and its flying punches' echoes (Hot Hands
+        /// makes them glow, Paint Bees paints them).
+        /// </summary>
         public void CollectHandRenderers(List<Renderer> into)
         {
             if (handSkin != null) into.Add(handSkin);
+            foreach (var look in gloveLooks)
+            {
+                if (look != null) into.Add(look);
+            }
             foreach (var flyer in flyers)
             {
-                if (flyer != null && flyer.echoLook != null) into.Add(flyer.echoLook);
+                if (flyer == null) continue;
+                if (flyer.echoLook != null) into.Add(flyer.echoLook);
+                foreach (var look in flyer.gloveEchoLooks)
+                {
+                    if (look != null) into.Add(look);
+                }
             }
         }
 
@@ -537,6 +681,11 @@ namespace Game.Combat
                 handScale = handModel.localScale;
                 handPosition = handModel.localPosition;
                 handSkin = handModel.GetComponentInChildren<SkinnedMeshRenderer>(true);
+                // What hides under a glove: the hand model's meshes (not effects added to it later).
+                foreach (var look in handModel.GetComponentsInChildren<Renderer>(true))
+                {
+                    if (look is SkinnedMeshRenderer || look is MeshRenderer) handLooks.Add(look);
+                }
             }
 
             GetComponentsInChildren(true, interactors);
@@ -570,16 +719,19 @@ namespace Game.Combat
             fists.Add(this);
             foreach (var nearFar in nearFars) nearFar.selectFilters.Add(this);
             if (body != null) body.gameObject.SetActive(true);
+            Gloves.PickedUp += OnGlovesPickedUp;
         }
 
         private void OnDisable()
         {
+            Gloves.PickedUp -= OnGlovesPickedUp;
             fists.Remove(this);
             foreach (var nearFar in nearFars)
             {
                 if (nearFar != null) nearFar.selectFilters.Remove(this);
             }
             Open();
+            formed = false;
             if (body != null) body.gameObject.SetActive(false);
             foreach (var flyer in flyers)
             {
@@ -587,6 +739,12 @@ namespace Game.Combat
             }
             grown = 1f;
             SetHandSize(1f);
+            // The glove off at once, the hand back.
+            gloveUp = false;
+            gloveShow = 0f;
+            showGloveUntil = -1f;
+            if (glove != null) glove.gameObject.SetActive(false);
+            HideHand(false);
             stroking = false;
             strokeMove = Move.None;
             hasLastHand = false;
@@ -596,10 +754,18 @@ namespace Game.Combat
         {
             if (body != null) Destroy(body.gameObject);
             if (punchSpeaker != null) Destroy(punchSpeaker.gameObject);
+            if (glove != null) Destroy(glove.gameObject);
             foreach (var flyer in flyers)
             {
                 if (flyer != null) Destroy(flyer.gameObject);
             }
+        }
+
+        // A pair was just picked up: the glove pops onto this hand for a moment, if it's empty, so the player sees it.
+        private void OnGlovesPickedUp(GloveKinds.Kind kind)
+        {
+            var settings = Gloves.Kinds;
+            if (settings != null && settings.ShowOnPickupSeconds > 0f) showGloveUntil = Time.time + settings.ShowOnPickupSeconds;
         }
 
         /// <summary>
@@ -614,22 +780,45 @@ namespace Game.Combat
             if (!squeezing || Holding())
             {
                 squeezedSince = -1f;
+                formed = false;
                 Open();
             }
             else
             {
                 if (squeezedSince < 0f) squeezedSince = Time.time;
-                if (!closed && Time.time - squeezedSince >= formSeconds) Close();
+                if (Time.time - squeezedSince >= formSeconds) formed = true;
             }
+            // Gloves (user, 2026-11-12): this hand's glove of the pair worn (a new pair, or none once a new run starts).
+            // Gloves changing under a closed fist open it; it closes again with the new ones.
+            if (gloveKind != Gloves.Worn)
+            {
+                Open();
+                MakeGlove(Gloves.Worn);
+            }
+            // A fist punches only with gloves on (or when punching takes no gloves): without, grip + trigger does nothing.
+            if (formed && !closed && Gloves.CanPunch) Close();
             Grow();
+            ShowGlove();
             WatchPunches();
+        }
+
+        // After the hand's animation: the glove sits at the knuckles, turned with the controller.
+        private void LateUpdate()
+        {
+            if (glove != null && glove.gameObject.activeSelf) glove.localPosition = transform.InverseTransformPoint(FistPoint());
         }
 
         private void FixedUpdate()
         {
+            // With a glove the punch shape turns with the hand (a ball needn't).
+            if (closed && GloveMode)
+            {
+                body.rotation = transform.rotation;
+                FitGloveShape();
+            }
             if (closed)
             {
-                ball.radius = radius * grown;
+                if (!GloveMode) ball.radius = radius * grown;
                 // Only the hand's own movement hits: walking, turning or being carried along with a still fist adds
                 // to how fast the ball goes, but not to the punch.
                 float ballSpeed = body.linearVelocity.magnitude;
@@ -903,15 +1092,26 @@ namespace Game.Combat
             body.linearVelocity = Vector3.zero;
             reachOut = Vector3.zero;
             lastTarget = hand;
-            ball.enabled = true;
+            // With a glove, its punch shape hits (turned with the hand); bare, the ball.
+            if (GloveMode)
+            {
+                body.rotation = transform.rotation;
+                SetGloveShape(true);
+            }
+            else
+            {
+                ball.enabled = true;
+            }
+            // (Silent while Hit Buzz's Only Damage is on: the user's rule, controllers buzz only for damage dealt.)
             if (formRumble > 0f) HitBuzz.Other(rumbler, formRumble, 0.05f);
         }
 
         // The hand swells into a big fist while it's closed, and back after. Fist Size makes it a little bigger (up to
         // Max Hand Growth); the flying punches grow much more. A hot hand with Swollen Hand swells more on top (Hot Hands).
+        // With a glove on the hand stays as it is: the glove grows instead (Glove Growth).
         private void Grow()
         {
-            float target = closed ? (fistScale + Mathf.Min(Game.Leveling.PlayerLevel.FistSizeBonus, maxHandGrowth)) * HotHands.SizeOf(this) : 1f;
+            float target = closed && !GloveMode ? (fistScale + Mathf.Min(Game.Leveling.PlayerLevel.FistSizeBonus, maxHandGrowth)) * HotHands.SizeOf(this) : 1f;
             if (handModel == null || grown == target) return;
             float rate = growSeconds > 0f ? Mathf.Max(fistScale - 1f, 1f) / growSeconds : float.MaxValue;
             grown = Mathf.MoveTowards(grown, target, rate * Time.deltaTime);
@@ -933,6 +1133,185 @@ namespace Game.Combat
             if (!closed) return;
             closed = false;
             if (ball != null) ball.enabled = false;
+            SetGloveShape(false);
+        }
+
+        // The glove of this kind for this hand (Glove Kinds: its Left or Right): its look under the controller, hidden
+        // until the fist closes, and its colliders moved onto the ball's body as its punch shape (Glove Shape: off until
+        // then; a glove without colliders punches with a ball as big as the bare fist's). None: no gloves.
+        private void MakeGlove(GloveKinds.Kind kind)
+        {
+            DropGlove();
+            gloveKind = kind;
+            var prefab = kind != null ? kind.For(IsLeftHand) : null;
+            if (prefab == null || body == null) return;
+            glove = Instantiate(prefab, transform, false).transform;
+            glove.name = $"Glove ({prefab.name})";
+            gloveScale = prefab.transform.localScale;
+            int layer = handSkin != null ? handSkin.gameObject.layer : gameObject.layer;
+            foreach (var part in glove.GetComponentsInChildren<Transform>(true)) part.gameObject.layer = layer;
+
+            gloveShape = new GameObject("Glove Shape").transform;
+            gloveShape.SetParent(body.transform, false);
+            foreach (var collider in glove.GetComponentsInChildren<Collider>(true))
+            {
+                var copy = Gloves.CopyCollider(collider, gloveShape, glove);
+                if (copy != null) gloveColliders.Add(copy);
+                collider.enabled = false;
+                Destroy(collider);
+            }
+            if (gloveColliders.Count == 0)
+            {
+                var round = gloveShape.gameObject.AddComponent<SphereCollider>();
+                round.radius = radius * fistScale / Mathf.Max(0.0001f, Mathf.Abs(gloveScale.x));
+                gloveColliders.Add(round);
+            }
+            // Like the ball: tagged a weapon (PlayMaker's collision checks), on its layer, off until the fist closes, and
+            // never bumping into the player or the other fist.
+            foreach (var part in gloveShape.GetComponentsInChildren<Transform>(true))
+            {
+                part.gameObject.tag = body.gameObject.tag;
+                part.gameObject.layer = body.gameObject.layer;
+            }
+            foreach (var collider in gloveColliders)
+            {
+                collider.enabled = false;
+                IgnorePlayer(collider);
+            }
+            gloveRadius = Mathf.Max(0.01f, Gloves.ShapeRadius(gloveColliders, gloveShape));
+            glove.GetComponentsInChildren(true, gloveLooks);
+            shapeSize = -1f;
+            gloveUp = false;
+            gloveShow = 0f;
+            glove.gameObject.SetActive(false);
+        }
+
+        // Takes this hand's glove away (no gloves now, or another pair): the hand is back.
+        private void DropGlove()
+        {
+            HideHand(false);
+            if (glove != null) Destroy(glove.gameObject);
+            if (gloveShape != null) Destroy(gloveShape.gameObject);
+            glove = null;
+            gloveShape = null;
+            gloveKind = null;
+            gloveColliders.Clear();
+            gloveLooks.Clear();
+            gloveUp = false;
+            gloveShow = 0f;
+        }
+
+        // The glove's punch shape on or off (on: sized as the glove is, and kept from bumping into the player, which a
+        // collider switched off may forget).
+        private void SetGloveShape(bool on)
+        {
+            if (gloveShape == null) return;
+            if (on)
+            {
+                shapeSize = -1f;
+                FitGloveShape();
+            }
+            foreach (var collider in gloveColliders)
+            {
+                if (collider == null) continue;
+                collider.enabled = on;
+                if (on) IgnorePlayer(collider);
+            }
+        }
+
+        // The punch shape as big as the glove when it's fully on (not while it pops); resized only when that changed.
+        private void FitGloveShape()
+        {
+            if (gloveShape == null) return;
+            float size = GloveWorldScale;
+            if (Mathf.Abs(size - shapeSize) < 0.005f * Mathf.Max(size, 0.01f)) return;
+            shapeSize = size;
+            gloveShape.localScale = Vector3.one * size;
+        }
+
+        // The glove pops on while the fist is closed (or for a moment after a pair is picked up, Show On Pickup Seconds)
+        // with a little overshoot and a fwump, and pops away when it opens; the hand hides under it once it's half on.
+        private void ShowGlove()
+        {
+            if (glove == null) return;
+            var settings = Gloves.Kinds;
+            bool want = (closed && GloveMode) || (Time.time < showGloveUntil && !Holding());
+            if (want != gloveUp)
+            {
+                gloveUp = want;
+                gloveFrom = gloveShow;
+                gloveAt = Time.time;
+                PlayGloveSound(want, settings);
+            }
+            if (gloveUp)
+            {
+                float seconds = settings != null ? settings.PopSeconds : 0.14f;
+                float t = Mathf.Clamp01((Time.time - gloveAt) / seconds);
+                gloveShow = Mathf.LerpUnclamped(gloveFrom, 1f, PopCurve(t, settings != null ? settings.PopOvershoot : 0.2f));
+            }
+            else
+            {
+                float seconds = settings != null ? settings.AwaySeconds : 0.09f;
+                float t = Mathf.Clamp01((Time.time - gloveAt) / seconds);
+                gloveShow = Mathf.Lerp(gloveFrom, 0f, t * t);
+            }
+            bool visible = gloveShow > 0.001f;
+            if (glove.gameObject.activeSelf != visible) glove.gameObject.SetActive(visible);
+            HideHand(gloveUp && gloveShow >= 0.5f);
+            if (!visible) return;
+            glove.localScale = gloveScale * (GloveGrowth * gloveShow);
+            glove.localPosition = transform.InverseTransformPoint(FistPoint());
+        }
+
+        // From 0 to 1, shooting past 1 by Overshoot on the way (a back ease-out: 1 + (s+1)(t-1)^3 + s(t-1)^2, whose peak
+        // is 1 + 4s^3 / (27 (s+1)^2); s is found for the overshoot asked).
+        private static float PopCurve(float t, float overshoot)
+        {
+            if (t >= 1f) return 1f;
+            if (overshoot != popOvershootFor)
+            {
+                popOvershootFor = overshoot;
+                float low = 0f, high = 20f;
+                for (int i = 0; i < 30; i++)
+                {
+                    float s = (low + high) * 0.5f;
+                    if (4f * s * s * s / (27f * (s + 1f) * (s + 1f)) < overshoot) low = s;
+                    else high = s;
+                }
+                popEase = (low + high) * 0.5f;
+            }
+            float u = t - 1f;
+            return 1f + (popEase + 1f) * u * u * u + popEase * u * u;
+        }
+
+        // The hand model hides under the glove (its meshes only: embers and paint drips on it keep showing).
+        private void HideHand(bool hide)
+        {
+            if (hide == handHidden) return;
+            handHidden = hide;
+            foreach (var look in handLooks)
+            {
+                if (look != null) look.forceRenderingOff = hide;
+            }
+        }
+
+        // The glove's soft fwump as it pops on, a lighter one as it pops away (Glove Kinds' sounds), from the hand.
+        private void PlayGloveSound(bool on, GloveKinds settings)
+        {
+            var clip = settings == null ? null : on ? settings.PopSound : settings.AwaySound;
+            if (clip == null || Time.time < nextGloveSound) return;
+            nextGloveSound = Time.time + GloveSoundEvery;
+            if (gloveSpeaker == null)
+            {
+                gloveSpeaker = new GameObject("Glove Sound").AddComponent<AudioSource>();
+                gloveSpeaker.transform.SetParent(transform, false);
+                gloveSpeaker.playOnAwake = false;
+                gloveSpeaker.spatialBlend = 1f;
+                gloveSpeaker.dopplerLevel = 0f;
+            }
+            gloveSpeaker.transform.position = FistPoint();
+            gloveSpeaker.pitch = (on ? 1f : settings.AwayPitch) * Random.Range(0.94f, 1.06f);
+            gloveSpeaker.PlayOneShot(clip, on ? settings.PopVolume : settings.AwayVolume);
         }
 
         // Watches the hand for punches. A punch is one stroke: the hand gets going, then stops short (the snap) or
@@ -991,7 +1370,7 @@ namespace Game.Combat
             strokeMove = WhichMove(travel, took, eyes.transform, out strokeQuality);
             bool snapped = speed <= strokePeak * SnapShare || Vector3.Dot(handVelocity, travel) <= 0f;
             // Too long for a punch: a push, or the hand just moving about.
-            if (!snapped && took <= Mathf.Max(jabSeconds, LongMoveSeconds)) return;
+            if (!snapped && took <= Mathf.Max(JabSecondsNow, LongMoveSeconds)) return;
 
             stroking = false;
             followingThrough = true;
@@ -1017,28 +1396,32 @@ namespace Game.Combat
             float off = 1f;
             float needed = 0f;
             strokeJab = -1f;
-            if (strokePeak >= jabSpeed && took <= jabSeconds && straightness >= jabStraightness)
+            // The easy conditions with Boxing gloves, the harder ones with other gloves (Easy Flying Punches).
+            float jabNeeds = JabSpeedNow;
+            if (strokePeak >= jabNeeds && took <= JabSecondsNow && straightness >= JabStraightnessNow)
             {
-                float jabOff = Vector3.Angle(direction, InPlayAreaDirection(eyes.forward)) / jabAim;
-                if (jabOff <= 1f) strokeJab = Grade(jabSpeed, jabOff) * StraightGrade(straightness);
+                float jabOff = Vector3.Angle(direction, InPlayAreaDirection(eyes.forward)) / JabAimNow;
+                if (jabOff <= 1f) strokeJab = Grade(jabNeeds, jabOff) * StraightGrade(straightness);
                 if (CanJab && jabOff <= off)
                 {
                     move = Move.Jab;
                     off = jabOff;
-                    needed = jabSpeed;
+                    needed = jabNeeds;
                 }
             }
-            if (CanUppercut && strokePeak >= uppercutSpeed && took <= LongMoveSeconds)
+            float uppercutNeeds = UppercutSpeedNow;
+            if (CanUppercut && strokePeak >= uppercutNeeds && took <= LongMoveSeconds)
             {
                 float upOff = Vector3.Angle(direction, Vector3.up) / UppercutAngle;
                 if (upOff < off)
                 {
                     move = Move.Uppercut;
                     off = upOff;
-                    needed = uppercutSpeed;
+                    needed = uppercutNeeds;
                 }
             }
-            if (CanSwing && strokePeak >= swingSpeed && took <= LongMoveSeconds)
+            float swingNeeds = SwingSpeedNow;
+            if (CanSwing && strokePeak >= swingNeeds && took <= LongMoveSeconds)
             {
                 var side = InPlayAreaDirection(eyes.right);
                 float sideOff = Mathf.Min(Vector3.Angle(direction, side), Vector3.Angle(direction, -side)) / SwingAngle;
@@ -1046,7 +1429,7 @@ namespace Game.Combat
                 {
                     move = Move.Swing;
                     off = sideOff;
-                    needed = swingSpeed;
+                    needed = swingNeeds;
                 }
             }
             if (move == Move.None) return move;
@@ -1057,15 +1440,16 @@ namespace Game.Combat
         }
 
         // How good a stroke is for a move that needs this speed, this far off its line (as a share of what it allows):
-        // as much faster than needed as Top Jab Speed is than Jab Speed is the best.
+        // as much faster than needed as Top Jab Speed is than Jab Speed is the best (the set in use: Easy Flying Punches).
         private float Grade(float needed, float off)
         {
-            float top = needed * Mathf.Max(topJabSpeed, jabSpeed + 0.1f) / jabSpeed;
+            float jab = JabSpeedNow;
+            float top = needed * Mathf.Max(TopJabSpeedNow, jab + 0.1f) / jab;
             return Mathf.InverseLerp(needed, top, strokePeak) * Mathf.Lerp(0.6f, 1f, 1f - off);
         }
 
         // A jab's straightness counts too.
-        private float StraightGrade(float straightness) => Mathf.Lerp(0.6f, 1f, Mathf.InverseLerp(jabStraightness, 1f, straightness));
+        private float StraightGrade(float straightness) => Mathf.Lerp(0.6f, 1f, Mathf.InverseLerp(JabStraightnessNow, 1f, straightness));
 
         // A good punch that hit nothing flies on from the knuckles, the way the fist went: a jab straight ahead, a swing
         // sideways (level, the way it swept), an uppercut up. The more Fist Size, the bigger, and a bigger jab flies
@@ -1089,7 +1473,7 @@ namespace Game.Combat
             // It hits as hard as the fist would at the punch's speed (x Jab Power; a swing and an uppercut harder still).
             float hitSpeed = strokePeak * jabPower * MovePower(move);
             // Its back at the knuckles, so a big one starts out in front of the hand, not around the player's face.
-            var from = FistPoint() + direction * Mathf.Max(0f, flyRadius - radius * grown);
+            var from = FistPoint() + direction * Mathf.Max(0f, flyRadius - BallSize);
             Throw(from, direction, reach, hitSpeed, move, flyRadius);
 
             if (TriplePunch)
@@ -1252,11 +1636,13 @@ namespace Game.Combat
             var flying = go.AddComponent<FlyingFist>();
             flying.owner = this;
             punch.flyer = flying;
+            // Echo: sized around the knuckles (the ball's middle). Under it, Echo Mesh: the copy of the hand; or, with
+            // gloves on, Glove Echo: a copy of the glove (made at the first glove punch, see FlyingFist.Launch).
+            flying.echo = new GameObject("Echo").transform;
+            flying.echo.SetParent(go.transform, false);
             if (handSkin != null)
             {
-                // Echo: sized around the knuckles (the ball's middle); Echo Mesh: the copy of the hand inside it.
-                var echo = new GameObject("Echo").transform;
-                echo.SetParent(go.transform, false);
+                var echo = flying.echo;
                 var echoObject = new GameObject("Echo Mesh");
                 echoObject.layer = handSkin.gameObject.layer;
                 echoObject.transform.SetParent(echo, false);
@@ -1267,7 +1653,6 @@ namespace Game.Combat
                 look.sharedMaterials = handSkin.sharedMaterials;
                 look.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 look.receiveShadows = false;
-                flying.echo = echo;
                 flying.echoShape = echoObject.transform;
                 flying.echoLook = look;
             }
@@ -1312,6 +1697,7 @@ namespace Game.Combat
             foreach (var other in fists)
             {
                 Ignore(collider, other.ball);
+                foreach (var shape in other.gloveColliders) Ignore(collider, shape);
                 foreach (var flyer in other.flyers)
                 {
                     if (flyer != null) Ignore(collider, flyer.Ball);
@@ -1445,6 +1831,12 @@ namespace Game.Combat
             // Each system's own colour (it burns red while the hands are hot), and the echo's renderer (it glows too).
             public ParticleSystem.MinMaxGradient[] smokeColours = System.Array.Empty<ParticleSystem.MinMaxGradient>();
             public MeshRenderer echoLook;
+            // With gloves on (user, 2026-11-12): its echo is a copy of the glove (only to look at), the glove prefab it
+            // was made from (another pair makes it again), how long its look is in its own units, and its renderers.
+            public Transform gloveEcho;
+            public GameObject gloveEchoOf;
+            public float gloveEchoLength;
+            public readonly List<Renderer> gloveEchoLooks = new();
 
             private Rigidbody body;
             private SphereCollider ball;
@@ -1475,12 +1867,17 @@ namespace Game.Combat
 
             /// <summary>
             /// How big it looks right now, in metres: the longest side of the bounds its echo renders (the copy of the
-            /// hand, sized up with Fist Size), or its ball's width without an echo.
+            /// hand, or of the glove, sized up with Fist Size), or its ball's width without an echo.
             /// </summary>
             public float WorldSize
             {
                 get
                 {
+                    if (gloveEcho != null && gloveEcho.gameObject.activeSelf)
+                    {
+                        var scale = gloveEcho.lossyScale;
+                        return gloveEchoLength * Mathf.Max(Mathf.Abs(scale.x), Mathf.Max(Mathf.Abs(scale.y), Mathf.Abs(scale.z)));
+                    }
                     if (echoLook == null || echoShape == null || echoMesh == null) return Ball.radius * 2f;
                     // The rendered mesh's own bounds in world metres (not the world box), so a hand turned on its side
                     // isn't counted bigger.
@@ -1522,11 +1919,24 @@ namespace Game.Combat
             public void Launch(Vector3 from, Vector3 towards, float distance, float punchSpeed, Move thrown, float flyRadius)
             {
                 move = thrown;
-                // The echo is the hand as it is now, sized up to the ball.
-                size = Mathf.Max(flyRadius, 0.001f) / Mathf.Max(owner.radius * owner.grown, 0.001f);
+                // The echo is the hand (or its glove) as it is now, sized up to the ball.
+                size = Mathf.Max(flyRadius, 0.001f) / Mathf.Max(owner.BallSize, 0.001f);
                 gameObject.SetActive(false);
                 transform.SetPositionAndRotation(from, Quaternion.identity);
-                if (echo != null && owner.handSkin != null)
+                bool gloved = owner.GloveMode;
+                if (gloveEcho != null) gloveEcho.gameObject.SetActive(gloved);
+                if (echoShape != null) echoShape.gameObject.SetActive(!gloved);
+                if (gloved)
+                {
+                    // A copy of the glove as it is when fully on, placed as it is around the knuckles, then sized up.
+                    var prefab = owner.gloveKind.For(owner.IsLeftHand);
+                    if (gloveEcho == null || gloveEchoOf != prefab) MakeGloveEcho(prefab);
+                    echo.localScale = Vector3.one;
+                    gloveEcho.SetPositionAndRotation(owner.glove.position + (from - owner.FistPoint()), owner.glove.rotation);
+                    gloveEcho.localScale = owner.gloveScale * (owner.GloveGrowth * Mathf.Abs(owner.transform.lossyScale.x));
+                    echo.localScale = Vector3.one * size;
+                }
+                else if (echo != null && owner.handSkin != null)
                 {
                     // A still copy of the hand as it is now (baked in world size), placed as the hand is around the
                     // knuckles, then sized up around them.
@@ -1561,6 +1971,27 @@ namespace Game.Combat
                 done = false;
                 body.position = from;
                 body.linearVelocity = direction * FlySpeed;
+            }
+
+            // The glove's copy to look at (no colliders, no shadows), under Echo.
+            private void MakeGloveEcho(GameObject prefab)
+            {
+                if (gloveEcho != null) Destroy(gloveEcho.gameObject);
+                gloveEcho = Gloves.MakeLook(prefab, echo);
+                gloveEchoOf = prefab;
+                gloveEchoLooks.Clear();
+                if (gloveEcho == null) return;
+                gloveEcho.name = "Glove Echo";
+                int layer = owner.handSkin != null ? owner.handSkin.gameObject.layer : owner.gameObject.layer;
+                foreach (var part in gloveEcho.GetComponentsInChildren<Transform>(true)) part.gameObject.layer = layer;
+                gloveEcho.GetComponentsInChildren(true, gloveEchoLooks);
+                foreach (var look in gloveEchoLooks)
+                {
+                    look.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    look.receiveShadows = false;
+                }
+                var bounds = Gloves.LookBounds(gloveEcho);
+                gloveEchoLength = Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z));
             }
 
             private void FixedUpdate()
@@ -1634,7 +2065,7 @@ namespace Game.Combat
         {
             if (knuckleA == null) FindKnuckles();
             Gizmos.color = new Color(1f, 0.4f, 0.2f, 0.8f);
-            Gizmos.DrawWireSphere(FistPoint(), radius * grown);
+            Gizmos.DrawWireSphere(FistPoint(), BallSize);
         }
 #endif
     }

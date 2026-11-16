@@ -1,0 +1,238 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &7863378838843977471
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7272778008242389161}
+  - component: {fileID: 2336074395021610029}
+  m_Layer: 0
+  m_Name: Ball_Valley
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7272778008242389161
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7863378838843977471}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2336074395021610029
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7863378838843977471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e71e1fdb951712d4bae46fc1ab3ada24, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Balls.BallValleyStage
+  tune:
+    halfX: 25
+    halfZ: 12.5
+    shrinkDelay: 30
+    shrinkDuration: 120
+    minMapScale: 0.35
+    phases: 5
+    phaseShrinkSeconds: 4
+    lawnUnderBorder: 3
+    momentOfTruth: 1
+    momentOfTruthReviveSeconds: 1
+    momentOfTruthCrumble: 0
+    regrowDuration: 3
+    revives: 2
+    selfPocketGift: 1
+    selfPocketGiftsFaller: 0
+    selfPocketGiftMinScale: 0.6
+    pointsPerRoundWin: 200
+    roundRestartDelay: 6
+    botAggressionMin: 0.45
+    botAggressionMax: 0.6
+    rockHealth: 600
+    treeHealth: 400
+    rockFood: 8
+    treeFood: 5
+    caveCornerWidth: 5
+    caveMiddleWidth: 4.5
+    caveMaxWidth: 10
+    headRadius: 0.8
+    sizeStep: 0.1
+    headMaxRadius: 2
+    baseMass: 1
+    massPerBaby: 0.08
+    baseAccel: 14
+    baseTopSpeed: 9
+    topSpeedPerSqrtBaby: 0.06
+    topSpeedPerSize: 0.7
+    gripSmall: 3
+    gripBig: 0.6
+    dampingSmall: 0.9
+    dampingBig: 0.25
+    extraGravity: 1
+    chargeTime: 1.2
+    dashSpeed: 24
+    launchDistance: 2
+    dashPerSqrtBaby: 0.06
+    dashCooldown: 4
+    dashDuration: 0.8
+    smokeAmount: 0.5
+    dashDamping: 0.25
+    shotScrew: 1
+    spinRollDistance: 10
+    spinTransfer: 0.35
+    maxHitSpeed: 60
+    shotRecoverSpeed: 5
+    shotMaxLock: 7
+    shotDamping: 0.6
+    shotFriction: 5
+    knockChainSpeed: 8
+    ballBounce: 0.92
+    rimBounce: 0.8
+    tailSpring: 40
+    tailDamping: 9
+    tailMaxAccel: 160
+    babyMass: 0.35
+    startBabies: 0
+    baseCost: 3
+    costPerBaby: 1
+    pelletValue: 1
+    looseBallValue: 3
+    maxPellets: 12
+    pelletSpawnInterval: 0.4
+    foodBoost: 2.5
+    berriesFollowField: 1
+    minBerries: 6
+    rockCount: 6
+    treeCount: 5
+    maxGrass: 12
+    grassSpawnInterval: 1
+    grassHeight: 1.2
+    slimeRockShare: 0.3
+    slimeCount: 4
+    slimeSpawnInterval: 3
+    slimeCountSmallest: 6
+    slimeSpawnIntervalSmallest: 0.8
+    swallowedPropSlimes: 1
+    slimeRadius: 0.6
+    slimeMass: 0.15
+    slimeHopSpeed: 5
+    slimeHopInterval: {x: 0.3, y: 0.55}
+    slimeHopUp: 3
+    slimeSightRadius: 50
+    slimeGrowPerGrass: 0.12
+    slimeMaxSize: 1.8
+    slimeFleeRadius: 13
+    slimeFleeHopSpeed: 7.5
+    slimeFood: 3
+    slimeFoodPerGrass: 2
+    rainbowKingSeconds: 55
+    rainbowSlimeLife: 25
+    rainbowSpeed: 1.7
+    rainbowFleeRange: 2
+    rainbowFood: 6
+    rainbowInvincibleSeconds: 7
+    rainbowWeight: 4
+    pointsPerFood: 1
+    pointsPerKill: 50
+    pointsPerVictimBall: 10
+    kingPointsPerSecond: 5
+    hpPerBall: 6
+    hazardSafeSpeed: 6
+    hazardDamage: 0.7
+    hazardMassWeight: 0.5
+    spawnShield: 3
+    shotShield: 0.7
+    killCreditWindow: 6
+    maxBabies: 8
+    spawnDropHeight: 10
+    maxLooseBalls: 40
+  vertexColorShader: {fileID: 0}
+  botsPerRound: 05000000060000000700000008000000
+  aggressionPerRound:
+  - {x: 0.45, y: 0.6}
+  - {x: 0.6, y: 0.75}
+  - {x: 0.75, y: 0.9}
+  - {x: 0.9, y: 1}
+  watchMode: 1
+  skyMaterial: {fileID: 2100000, guid: fe8ed4034c704124abe3c6dfc0b98957, type: 2}
+  seeingDistance: 240
+  skyRadius: 200
+  sunAngles: {x: 32, y: 20, z: 0}
+  sunColour: {r: 1, g: 0.8, b: 0.58, a: 1}
+  sunIntensity: 1.15
+  sunShadows: 1
+  ambient: {r: 0.36, g: 0.31, b: 0.48, a: 1}
+  sounds:
+  - name: choo_choo
+    clip: {fileID: 8300000, guid: c89ca9af279ae154ca895c0ef6a0057a, type: 3}
+  - name: giant_ball_rolling_shot
+    clip: {fileID: 8300000, guid: 10b3514d540f7de49bc2b8c0a4b29890, type: 3}
+  - name: Bell_1
+    clip: {fileID: 8300000, guid: 5943196f0a63fe2479f529bd4acc00e5, type: 3}
+  - name: Bell_2
+    clip: {fileID: 8300000, guid: 6c1f355a1875edf4fb720dadc9b62880, type: 3}
+  - name: fist_bump_punch
+    clip: {fileID: 8300000, guid: 4c7447597d4959e4296abb074effa21b, type: 3}
+  - name: rock_hit_1
+    clip: {fileID: 8300000, guid: 4e6efe95af19bb14aa25c0029c0bc5dc, type: 3}
+  - name: rock_hit_2
+    clip: {fileID: 8300000, guid: 3834bd401e6164e4297188d4c336ca3b, type: 3}
+  - name: rock_hit_3
+    clip: {fileID: 8300000, guid: 38562cd8a57a883469b809817935e9c4, type: 3}
+  - name: rock_hit_4
+    clip: {fileID: 8300000, guid: b5b2f9ae397dbc94493a5a64f0a96d65, type: 3}
+  - name: wood_get_hit_1
+    clip: {fileID: 8300000, guid: be9beca93dc0f514c8220a12fd387f63, type: 3}
+  - name: wood_get_hit_2
+    clip: {fileID: 8300000, guid: 1ab0a3a1ae573ae4a83eec9c81323797, type: 3}
+  - name: Cartoon_fall_1
+    clip: {fileID: 8300000, guid: 3358e64fa152195488f438ce5256cc06, type: 3}
+  - name: Cartoon_fall_2
+    clip: {fileID: 8300000, guid: 4a1621518813a244bb355d4b0444a86b, type: 3}
+  - name: om_nom_nom
+    clip: {fileID: 8300000, guid: 6fdf6f77440580b4c9cebaffaef7b0a0, type: 3}
+  - name: levelup
+    clip: {fileID: 8300000, guid: b5a8281a35f408f4881abd0e15f2b5a4, type: 3}
+  - name: revive_sound_1
+    clip: {fileID: 8300000, guid: acc48719f08184843a98e7d5e8a904f3, type: 3}
+  - name: Balloon_Pop
+    clip: {fileID: 8300000, guid: 6057d7d54707db14f86184d5f74ffc8e, type: 3}
+  - name: pumpkin_face_splat
+    clip: {fileID: 8300000, guid: e0223e15ca33742104b45bcfdd0445ca, type: 3}
+  - name: cute_laugh
+    clip: {fileID: 8300000, guid: f81c01b366ac0de49ade00d023caa213, type: 3}
+  - name: rock_pumpkin_break
+    clip: {fileID: 8300000, guid: 22d4ec6dfcc64504cb94076b466f8d79, type: 3}
+  - name: rock_pumpkin_break_2
+    clip: {fileID: 8300000, guid: a29df37b10ad36f43a4d2591467c15db, type: 3}
+  - name: wood_furniture_break_1
+    clip: {fileID: 8300000, guid: 13f91cb6868675c488381166c9aab1f9, type: 3}
+  - name: wood_furniture_break_2
+    clip: {fileID: 8300000, guid: 6c2cd6069380b994c8691af36086d705, type: 3}
+  - name: firework_launch
+    clip: {fileID: 8300000, guid: 87cf47d1a1f62ab44998611c0b5558ac, type: 3}
+  - name: firework_bang_1
+    clip: {fileID: 8300000, guid: 2a1f03c9524e6f449b5cd921617aea17, type: 3}
+  - name: firework_bang_2
+    clip: {fileID: 8300000, guid: e648e3d4c12bff04eba0bbb2d8cb2762, type: 3}
+  - name: Cartoon_dizzy_stun1
+    clip: {fileID: 8300000, guid: 4fdf60d739155c145bcee62525d45c08, type: 3}
+  logFeed: 1
+  momentOfTruthRampSeconds: 15

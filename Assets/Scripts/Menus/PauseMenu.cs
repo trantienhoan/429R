@@ -371,6 +371,9 @@ namespace Game.Menus
         // Quit asks how; with no question set up, it just closes the game.
         private void AskQuit()
         {
+            // At the boss fight there's no resting: quitting there means Re-Dream (user, 2026-11-16: "Quit boss =
+            // Re-dream"; a save left there starts a new run anyway, see Checkpoints.NoResume).
+            if (restButton != null) restButton.gameObject.SetActive(!Checkpoints.AtBoss);
             if (quitPanel != null) quitPanel.SetActive(true);
             else Quit();
         }

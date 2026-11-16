@@ -15951,6 +15951,8 @@ GameObject:
   - component: {fileID: 8827829908399273245}
   - component: {fileID: 2191865971262014776}
   - component: {fileID: 8063553352153741508}
+  - component: {fileID: 4175713724800095535}
+  - component: {fileID: 8665842718282963939}
   m_Layer: 0
   m_Name: Fire_Woods_n_Cauldron
   m_TagString: Untagged
@@ -16157,6 +16159,12 @@ MonoBehaviour:
   breakSound: {fileID: 8300000, guid: fa130e6cf4c8cb84eb979ef3ddbaff63, type: 3}
   font: {fileID: 11400000, guid: cb4516ac98eb5854ea4d7a8f558eb4da, type: 2}
   meterHeight: 0.5
+  smallFire: {x: 0.3, y: 0.55}
+  bigFire: {x: 1.4, y: 1.25}
+  lightSound: {fileID: 8300000, guid: 97d2e1dfb0c1d454cb1ef3d2f8ce2511, type: 3}
+  lightBurst: 40
+  countdownScale: 0.0026
+  countdownHeight: 0.75
 --- !u!114 &2152237332117689656
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16789,7 +16797,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7200057240857087366}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 91625b46a91d6d54285101eb60bfdb83, type: 3}
   m_Name: 
@@ -16871,6 +16879,168 @@ MonoBehaviour:
   seed: {fileID: 3101255149643869238, guid: 23249313e7cb0cf489370b4ecb4416fe, type: 3}
   stageAt: {x: 0, y: 0, z: 400}
   delay: 1.2
+--- !u!114 &4175713724800095535
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7200057240857087366}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7145b269615e2d94aad9995b07d5d7f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.PlayGround.CauldronHealth
+  maxHealth: 150
+  smallBite: 1
+  normalBite: 2
+  bossBite: 4
+  hitSounds:
+  - {fileID: 8300000, guid: 4e6efe95af19bb14aa25c0029c0bc5dc, type: 3}
+  - {fileID: 8300000, guid: 3834bd401e6164e4297188d4c336ca3b, type: 3}
+  - {fileID: 8300000, guid: 38562cd8a57a883469b809817935e9c4, type: 3}
+  - {fileID: 8300000, guid: b5b2f9ae397dbc94493a5a64f0a96d65, type: 3}
+  hitVolume: 0.8
+  hitPuff: {fileID: 431296081563789977, guid: 7d85674d137626445accce4cef7fe159, type: 3}
+  hitPuffScale: 0.15
+  squash: 0.06
+  alarmEvery: 3
+  halfWarning: THE CAULDRON IS UNDER ATTACK!
+  quarterWarning: THE CAULDRON IS BREAKING!
+--- !u!114 &8665842718282963939
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7200057240857087366}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 228e49d8289c0dc40b2baf615732f298, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.PlayGround.CauldronDefence
+  recipeCandies: 4
+  recipePumpkins: 1
+  cookSeconds: 600
+  fuelSpeedsCountdown: 1
+  spareLogAfter: 45
+  spareLog: {fileID: 3078483929477014812, guid: f7983ab7340866148894de292c188122,
+    type: 3}
+  countdownTitle: DEFEND THE CAULDRON!
+  popEffects:
+  - effect: {fileID: 3026262276578176907, guid: 8928595719cc9994993b1189ce3c4067,
+      type: 3}
+    scale: 0.6
+    height: 0.05
+  - effect: {fileID: 804983386052247261, guid: 8ab20db805bb89d4b94a3836325db5ad, type: 3}
+    scale: 0.8
+    height: 0.6
+  - effect: {fileID: 3863394568552092252, guid: 0030dcf570a4b2f469bf29eb41f204cb,
+      type: 3}
+    scale: 0.35
+    height: 0.3
+  popSound: {fileID: 8300000, guid: fa130e6cf4c8cb84eb979ef3ddbaff63, type: 3}
+  popVolume: 1
+  popGrowSeconds: 0.4
+  popPushRadius: 3
+  popClear: 2.8
+  popMinPush: 1
+  popPushHeight: 0.5
+  popShake: 0
+  phases:
+  - label: 0:00-2:30 small spiders
+    from: 0
+    enemies:
+    - {fileID: 9003613759866821804, guid: e99e0ff83f2a2134db4a1ec3a6357312, type: 3}
+    maxAlive: 4
+    spawnWait: {x: 2.5, y: 4}
+  - label: 2:30-5:00 spiders
+    from: 0.25
+    enemies:
+    - {fileID: 9003613759866821804, guid: e99e0ff83f2a2134db4a1ec3a6357312, type: 3}
+    - {fileID: 2515223889021974101, guid: 3f36e39c26e449b448cf35bde06ec618, type: 3}
+    maxAlive: 5
+    spawnWait: {x: 2, y: 3.5}
+  - label: 5:00-7:30 spiders and small roaches
+    from: 0.5
+    enemies:
+    - {fileID: 2515223889021974101, guid: 3f36e39c26e449b448cf35bde06ec618, type: 3}
+    - {fileID: 8879391879696220359, guid: 05da503bb47783844a68712d2fd9719c, type: 3}
+    maxAlive: 6
+    spawnWait: {x: 1.8, y: 3}
+  - label: 7:30-10:00 roaches
+    from: 0.75
+    enemies:
+    - {fileID: 8879391879696220359, guid: 05da503bb47783844a68712d2fd9719c, type: 3}
+    - {fileID: 3397754568903227887, guid: 9d68f40626cd378448edce75bb037da3, type: 3}
+    maxAlive: 7
+    spawnWait: {x: 1.5, y: 2.5}
+  firstSpawnAfter: 2
+  spawnEffect: {fileID: 431296081563789977, guid: 7d85674d137626445accce4cef7fe159,
+    type: 3}
+  spawnEffectScale: 0.5
+  minPlayerDistance: 5
+  edgeInset: 1
+  nearRadius: 7
+  farRadius: 8.5
+  standOff: 1.05
+  miniBosses:
+  - label: '2:30 Slime_Big_Blue (Sticky): Chest gear'
+    at: 0.25
+    boss: {fileID: 3281142397827328732, guid: 4e01ff316294f184285b0ae58ef661b1, type: 3}
+    chest: {fileID: 5004806074365477220, guid: 0d672aeee51ec0f4384a940ebac911cb, type: 3}
+    gearBool: Chest_Gear
+  - label: '5:00 Slime_Big_Red (Bull): Head gear'
+    at: 0.5
+    boss: {fileID: 3974992168220850300, guid: 8f90ce31d2c9c164b8f65449ace00f0d, type: 3}
+    chest: {fileID: 8518339275496821638, guid: 1cfdbf71c85721e4daaa8295b4b11fab, type: 3}
+    gearBool: Head_Gear
+  - label: '7:30 Slime_Big_Yellow (Bomb): Shield gear'
+    at: 0.75
+    boss: {fileID: 2807294713687959662, guid: 832005bd3f0127342930a313c6ce3d25, type: 3}
+    chest: {fileID: 1076085778901865882, guid: 671fc05d320fdd0478535c70a7973b98, type: 3}
+    gearBool: Shield_Gear
+  - label: '9:00 Slime_Big: reward chest'
+    at: 0.9
+    boss: {fileID: 8163673524177615910, guid: cca6a220c06c53c4c969c444d9a4c7d5, type: 3}
+    chest: {fileID: 825044878368177420, guid: ab1253a5665b2714095e2f3cddf36de9, type: 3}
+    gearBool: 
+  bossSound: {fileID: 8300000, guid: 7b6ab3bcb6f72564eb1ac631a17a02b8, type: 3}
+  bossNote: MINI BOSS!
+  chestEffect: {fileID: 431296081563789977, guid: 7d85674d137626445accce4cef7fe159,
+    type: 3}
+  chestEffectScale: 0.6
+  cleanWithFairyShield: 1
+  shieldName: Shield_Sphere
+  shieldSmokeName: Smoke_Blast_Green
+  startGearBool: Bracer_Gear
+  burstDelay: 2.5
+  chaosBoss: {fileID: 1311611032248163501, guid: 022dafcfb46152645a387cc42919ea2b,
+    type: 3}
+  bossDelay: 1.5
+  breakEffects:
+  - effect: {fileID: 3026262276578176907, guid: 8928595719cc9994993b1189ce3c4067,
+      type: 3}
+    scale: 1
+    height: 0.05
+  - effect: {fileID: 3863394568552092252, guid: 0030dcf570a4b2f469bf29eb41f204cb,
+      type: 3}
+    scale: 0.6
+    height: 0.3
+  - effect: {fileID: 804983386052247261, guid: 8ab20db805bb89d4b94a3836325db5ad, type: 3}
+    scale: 1.2
+    height: 0.6
+  breakSound: {fileID: 8300000, guid: 22d4ec6dfcc64504cb94076b466f8d79, type: 3}
+  rumbleSound: {fileID: 8300000, guid: 66f2cc9112289f94caf4de5330633e10, type: 3}
+  breakShake: ShakeBig
+  doomExtraAlive: 2
+  doomSpawnWaitShare: 0.7
+  groundBreakEffect: {fileID: 3026262276578176907, guid: 8928595719cc9994993b1189ce3c4067,
+    type: 3}
+  groundBreakScale: 0.35
+  groundBreakSound: {fileID: 8300000, guid: 3fb426873a7b92145a586f16e06f1eba, type: 3}
+  groundBreakText: NO ESCAPE!
+  font: {fileID: 11400000, guid: cb4516ac98eb5854ea4d7a8f558eb4da, type: 2}
 --- !u!1 &7245688906410322813
 GameObject:
   m_ObjectHideFlags: 0

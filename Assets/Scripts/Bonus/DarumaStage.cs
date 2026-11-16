@@ -20,10 +20,14 @@ namespace Game.Bonus
     /// firework, EXP in gold orbs and a fountain of candies, a few seconds to grab them. No teleport on the bridge. The
     /// PlayGround's own creatures and music wait meanwhile.
     /// The PlayGround's finale (user, 2026-11-07): made by Special Stage 3 Trigger (on the cauldron) when the mystery pot
-    /// breaks. A win leaves the Green Seed (The_Seed) on the slime's platform; once it's eaten (or after 20 s) GAMESTAGES
-    /// ends the PlayGround, and the player, in the black, is put on the rooftop near the Lid, facing it. Time running out
-    /// is the end of the run: no lucky coins, a death and a new run. A pause (the menu, a notice, the coins) is like
-    /// being knocked down: nothing counts, and a short grace after it.
+    /// breaks, or (user, 2026-11-16) when the cauldron defence is won and the pot bursts. A win leaves the Green Seed
+    /// (The_Seed) on the slime's platform; once it's eaten (or after 20 s) GAMESTAGES ends the PlayGround, and the player,
+    /// in the black, is put on the rooftop near the Lid, facing it; or, when GAMESTAGES goes straight to the Pumpkin Boss
+    /// (Boss States: gate 1's way since 2026-11-16, no rooftop and no tree), Boss Stand Off metres from where the boss
+    /// comes up, facing it. The win's candies (user, 2026-11-16: more candy before the final boss) are Candies Per Kind
+    /// of every candy kind, tossed out in front of the player; what they haven't eaten when Collect Seconds are up flies
+    /// into their mouth (Feed Leftovers). Time running out is the end of the run: no lucky coins, a death and a new run.
+    /// A pause (the menu, a notice, the coins) is like being knocked down: nothing counts, and a short grace after it.
     /// Tools > 429 Game > Bonus > Set Up Special Stage 3 builds it (Prefabs/Bonus/Special_Stage_3).
     /// </summary>
     public class DarumaStage : MonoBehaviour
@@ -101,8 +105,24 @@ namespace Game.Bonus
         [Tooltip("Touching it: a hand or the head this close to its skin (metres).")]
         [SerializeField] private float touchReach = 0.2f;
         [SerializeField] private int exp = 200;
+        [Tooltip("Candies a win tosses out, each one of Candy Prefabs at random (only when Candies Per Kind is 0).")]
         [SerializeField] private int candies = 30;
         [SerializeField] private GameObject[] candyPrefabs = System.Array.Empty<GameObject>();
+        [Tooltip("A win's prize: this many candies, each one of Candy Prefabs (the 6 kinds, one per stat) at random (user " +
+                 "2026-11-16: \"42 random candies, go big feel good\", for better stats before the final boss). 42 = about 7 " +
+                 "of a kind, about +3.5 candy points a stat with none of the player's own (Player Level's candy rules). All " +
+                 "of it counts: what isn't caught is fed at the end. 0 = Candies at random, as before (no feeding).")]
+        [Min(0)]
+        [SerializeField] private int prizeCandies = 42;
+        [Tooltip("Seconds the candies take to come out (all at once they'd knock each other about).")]
+        [Min(0.5f)]
+        [SerializeField] private float candySpread = 5f;
+        [Tooltip("When Collect Seconds are up, every candy still lying on the stage flies into the player's mouth and is " +
+                 "eaten (its buff and heal), one after another, so the whole prize counts.")]
+        [SerializeField] private bool feedLeftovers = true;
+        [Tooltip("Seconds between two candies flying in.")]
+        [Min(0.02f)]
+        [SerializeField] private float feedEvery = 0.12f;
         [SerializeField] private GameObject winEffect;
         [SerializeField] private AudioClip winSound;
         [SerializeField] private AudioClip laughSound;
@@ -126,6 +146,15 @@ namespace Game.Bonus
         [Tooltip("The player is put this far from the Lid (metres), facing it.")]
         [Min(0.5f)]
         [SerializeField] private float lidStandOff = 4f;
+        [Tooltip("GAMESTAGES states that mean the way goes straight to the Pumpkin Boss and no rooftop comes (gate 1 since " +
+                 "2026-11-16: 'Boss PG', then 'clean it' and 'BOSS'). Reached in the black, the player is put by the boss's " +
+                 "spot instead of the Lid.")]
+        [SerializeField] private string[] bossStates = { "Boss PG", "clean it", "BOSS" };
+        [Tooltip("The scene object the Pumpkin Boss comes up at (GAMESTAGES' -BOSS-), and how far from it the player is put " +
+                 "(metres, behind it as it faces), facing it.")]
+        [SerializeField] private string bossSpotName = "-BOSS-";
+        [Min(1f)]
+        [SerializeField] private float bossStandOff = 6f;
 
         [Header("Pause")]
         [Tooltip("Seconds after a pause or getting up before moving counts again.")]
@@ -234,6 +263,7 @@ namespace Game.Bonus
         {
             SlimeBomber.FaceHit -= OnFaceHit;
             FallOutOfWorld.Fell -= OnFell;
+            Game.Leveling.PlayerLevel.CandyEaten -= OnPrizeCandy;
         }
 
         private void OnDestroy()
@@ -529,14 +559,152 @@ namespace Game.Bonus
             // The candies at the player's feet, in front of them.
             var feet = HeadFloor();
             var forward = head != null ? Vector3.ProjectOnPlane(head.forward, Vector3.up).normalized : transform.forward;
-            CandyFountain.Play(feet + forward * 0.8f + Vector3.up * 0.6f, candies, candyPrefabs, 2f, new Vector2(1.6f, 2.6f), new Vector2(0.4f, 1.1f));
-            float until = Time.time + collectSeconds;
+            WinCandies(feet + forward * 0.8f + Vector3.up * 0.6f);
+            // Never shorter than the fountains take to throw every candy out (play test 2026-11-16: with a short collect
+            // time the feed ran while candies were still coming, and a third of the prize was lost).
+            float until = Time.time + (prizeCandies > 0 ? Mathf.Max(collectSeconds, candySpread + 0.8f) : collectSeconds);
             while (Time.time < until)
             {
                 Status("YOU WIN!\n<size=50%>Grab your candies! " + Mathf.CeilToInt(until - Time.time) + "</size>");
                 yield return null;
             }
+            yield return FeedLeftovers();
+            yield return TopUpPrize();
             yield return ToTheRooftop();
+        }
+
+        // The win's candies: Prize Candies, each a random kind, one fountain per kind (so each kind's count is known and
+        // can be topped up), or the old Candies at random.
+        private void WinCandies(Vector3 at)
+        {
+            var up = new Vector2(1.6f, 2.6f);
+            var outward = new Vector2(0.5f, 1.3f);
+            var kinds = new List<GameObject>();
+            foreach (var prefab in candyPrefabs) if (prefab != null) kinds.Add(prefab);
+            if (prizeCandies <= 0 || kinds.Count == 0)
+            {
+                CandyFountain.Play(at, candies, candyPrefabs, 2f, up, outward);
+                return;
+            }
+            prizeCounts.Clear();
+            for (int i = 0; i < prizeCandies; i++)
+            {
+                var kind = kinds[Random.Range(0, kinds.Count)];
+                prizeCounts.TryGetValue(kind, out int n);
+                prizeCounts[kind] = n + 1;
+            }
+            prizeEaten.Clear();
+            Game.Leveling.PlayerLevel.CandyEaten -= OnPrizeCandy;
+            Game.Leveling.PlayerLevel.CandyEaten += OnPrizeCandy;
+            foreach (var pair in prizeCounts) CandyFountain.Play(at, pair.Value, new[] { pair.Key }, candySpread, up, outward);
+        }
+
+        // How many of each kind this win's prize has.
+        private readonly Dictionary<GameObject, int> prizeCounts = new Dictionary<GameObject, int>();
+
+        // The prize's candies eaten so far, by stat (Player Level's Candy Eaten). Play test 2026-11-16: the fountains threw
+        // about half the prize off the bridge, so whatever is missing is topped up at the end (Top Up Prize).
+        private readonly Dictionary<Game.Leveling.Stat, int> prizeEaten = new Dictionary<Game.Leveling.Stat, int>();
+
+        private void OnPrizeCandy(Game.Leveling.Stat stat)
+        {
+            prizeEaten.TryGetValue(stat, out int n);
+            prizeEaten[stat] = n + 1;
+        }
+
+        // After the feed: every kind short of its share of the prize (fallen off the bridge) gets the rest straight into
+        // the mouth, so the whole prize always counts. A stat already at its candy cap doesn't count up, so it may get a
+        // few extra candies, which do nothing.
+        private IEnumerator TopUpPrize()
+        {
+            Game.Leveling.PlayerLevel.CandyEaten -= OnPrizeCandy;
+            if (prizeCandies <= 0 || prizeCounts.Count == 0 || !feedLeftovers || head == null) yield break;
+            var missing = new List<GameObject>();
+            foreach (var pair in prizeCounts)
+            {
+                var prefab = pair.Key;
+                if (prefab == null) continue;
+                int cut = prefab.name.LastIndexOf('_');
+                if (cut < 0 || !int.TryParse(prefab.name.Substring(cut + 1), out int number)) continue;
+                prizeEaten.TryGetValue(Game.Inventory.CandyKinds.StatOf(number), out int eaten);
+                for (int i = eaten; i < pair.Value; i++) missing.Add(prefab);
+            }
+            if (missing.Count == 0) yield break;
+            Status("YOU WIN!\n<size=50%>Candy rush!</size>");
+            foreach (var prefab in missing)
+            {
+                if (head == null) yield break;
+                var candy = Instantiate(prefab, head.position + head.forward * 0.6f + Vector3.up * 0.2f, Random.rotation);
+                StartCoroutine(FlyIntoMouth(candy));
+                yield return new WaitForSeconds(feedEvery);
+            }
+            // The last ones land.
+            yield return new WaitForSeconds(0.6f);
+        }
+
+        // Collect Seconds are up: every candy still lying on the stage flies into the player's mouth, one after another,
+        // and is eaten there (Feed Leftovers). One in a hand stays there.
+        private IEnumerator FeedLeftovers()
+        {
+            if (!feedLeftovers || head == null) yield break;
+            // Twice: a candy still bouncing out of a fountain on the first sweep is caught on the second (play test
+            // 2026-11-16: 2 were left behind).
+            for (int sweep = 0; sweep < 2; sweep++)
+            {
+                var left = new List<GameObject>();
+                foreach (var t in FindObjectsByType<Transform>(FindObjectsSortMode.None))
+                {
+                    if (t != null && IsCandy(t.name) && (t.position - transform.position).sqrMagnitude < 60f * 60f && !Held(t.gameObject)) left.Add(t.gameObject);
+                }
+                if (left.Count == 0) yield break;
+                Status("YOU WIN!\n<size=50%>Candy rush!</size>");
+                foreach (var candy in left)
+                {
+                    if (candy == null || Held(candy)) continue;
+                    StartCoroutine(FlyIntoMouth(candy));
+                    yield return new WaitForSeconds(feedEvery);
+                }
+                // The last ones land.
+                yield return new WaitForSeconds(0.6f);
+            }
+        }
+
+        // Straight at the mouth (it bumps into nothing on the way), then eaten as if it had been put there: its Damage
+        // FSM's mouth trigger (Wait for Collision -> FINISHED: the buff, the heal, gone).
+        private IEnumerator FlyIntoMouth(GameObject candy)
+        {
+            if (candy.TryGetComponent<Rigidbody>(out var body))
+            {
+                if (!body.isKinematic) body.linearVelocity = Vector3.zero;
+                body.isKinematic = true;
+            }
+            foreach (var part in candy.GetComponentsInChildren<Collider>())
+            {
+                if (!part.isTrigger) part.enabled = false;
+            }
+            var from = candy.transform.position;
+            const float flight = 0.35f;
+            for (float t = 0f; t < flight && candy != null && head != null; t += Time.deltaTime)
+            {
+                float k = t / flight;
+                var mouth = head.position + head.forward * 0.08f - head.up * 0.1f;
+                candy.transform.position = Vector3.Lerp(from, mouth, k * k) + Vector3.up * (Mathf.Sin(k * Mathf.PI) * 0.25f);
+                yield return null;
+            }
+            if (candy == null) yield break;
+            foreach (var fsm in candy.GetComponents<PlayMakerFSM>())
+            {
+                if (fsm.FsmName == "Damage" && fsm.ActiveStateName == "Wait for Collision") fsm.SendEvent("FINISHED");
+            }
+        }
+
+        private static bool Held(GameObject thing)
+        {
+            foreach (var grab in thing.GetComponentsInChildren<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>())
+            {
+                if (grab.isSelected) return true;
+            }
+            return false;
         }
 
         // After a win (user, 2026-11-07): the Green Seed on the slime's platform. Eating it (or Seed Seconds) sets
@@ -590,10 +758,12 @@ namespace Game.Bonus
             if (fade != null) fade.FadeOut(0.8f);
             yield return new WaitForSeconds(0.9f);
 
-            // In the black until the new rooftop is there (Rooftop_Base changes, about 5 s after the seed).
+            // In the black until the new rooftop is there (Rooftop_Base changes, about 5 s after the seed), or until
+            // GAMESTAGES is on its way straight to the Pumpkin Boss (Boss States: no rooftop comes).
             GameObject roof;
             float waited = 0f;
             bool warned = false;
+            bool toBoss = false;
             while (true)
             {
                 if (GameStages.ActiveState() == "Game Over")
@@ -606,6 +776,11 @@ namespace Game.Bonus
                 bool down = PlayerDown();
                 roof = Global("Rooftop_Base");
                 if (!down && roof != null && roof != oldRoof) break;
+                if (!down && StraightToBoss())
+                {
+                    toBoss = true;
+                    break;
+                }
                 if (!down && Paused())
                 {
                     // A notice or the menu: shown, not hidden in the black; black again after.
@@ -653,7 +828,7 @@ namespace Game.Bonus
                 yield return new WaitForSeconds(0.6f);
             }
             roof = Global("Rooftop_Base");
-            var (spot, yaw) = RooftopSpot(roof);
+            var (spot, yaw) = toBoss ? BossSpot() : RooftopSpot(roof);
 
             ClearCandies();
             Restore();
@@ -703,6 +878,41 @@ namespace Game.Bonus
             spot.y = roofAt.y + 0.03f;
             if (Physics.Raycast(spot + Vector3.up * 3f, Vector3.down, out var hit, 6f, ~0, QueryTriggerInteraction.Ignore) &&
                 Mathf.Abs(hit.point.y - roofAt.y) < 1.5f)
+                spot.y = hit.point.y;
+            var look = centre - spot;
+            look.y = 0f;
+            float yaw = look.sqrMagnitude > 0.0001f ? Quaternion.LookRotation(look).eulerAngles.y : 0f;
+            return (spot, yaw);
+        }
+
+        // GAMESTAGES is on its way straight to the Pumpkin Boss (one of Boss States): no rooftop is coming.
+        private bool StraightToBoss()
+        {
+            if (bossStates == null || bossStates.Length == 0) return false;
+            return System.Array.IndexOf(bossStates, GameStages.ActiveState()) >= 0;
+        }
+
+        // Boss Stand Off metres behind the spot the Pumpkin Boss comes up at (the scene's -BOSS-, switched off until the
+        // fight; the world's middle if there's none), on the floor, facing it.
+        private (Vector3 spot, float yaw) BossSpot()
+        {
+            Transform boss = null;
+            foreach (var t in Resources.FindObjectsOfTypeAll<Transform>())
+            {
+                if (t != null && t.name == bossSpotName && t.gameObject.scene.IsValid() && (t.parent == null || t.parent.name != bossSpotName))
+                {
+                    boss = t;
+                    break;
+                }
+            }
+            var centre = boss != null ? boss.position : Vector3.zero;
+            var back = boss != null ? -boss.forward : Vector3.back;
+            back.y = 0f;
+            if (back.sqrMagnitude < 0.0001f) back = Vector3.back;
+            var spot = centre + back.normalized * bossStandOff;
+            spot.y = centre.y + 0.03f;
+            if (Physics.Raycast(spot + Vector3.up * 3f, Vector3.down, out var hit, 6f, ~0, QueryTriggerInteraction.Ignore) &&
+                Mathf.Abs(hit.point.y - centre.y) < 1.5f)
                 spot.y = hit.point.y;
             var look = centre - spot;
             look.y = 0f;

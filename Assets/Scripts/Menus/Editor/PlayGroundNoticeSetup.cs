@@ -22,7 +22,7 @@ namespace Game.EditorTools
         private const string StagesFsm = "GAMESTAGES";
         private const string PathState = "Path 1 ON";
 
-        private const string Title = "STILL WORKING ON THIS!";
+        private const string Title = "WORKING SITE";   // user 2026-11-16 (was "STILL WORKING ON THIS!")
         private const string Body = "You can play around here, but I can't guarantee the fun.\nLove u! I'll finish it soon, so soon.";
         private const string CloseLine = "Pull a trigger to play around";
         // After the fade into the PlayGround (Path 1 ON fades for 1 s).

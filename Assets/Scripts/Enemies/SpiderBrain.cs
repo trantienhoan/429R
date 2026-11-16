@@ -61,7 +61,8 @@ namespace Game.Enemies
     /// A cockroach low on health may hide in a tree pumpkin instead of running away (Hiding in pumpkins): it rots black
     /// and bursts into small roaches (Rotting Pumpkin).
     /// With Target on Tagged Object it ignores the player and goes for the nearest object with that tag instead (the
-    /// tree spiders: the PumpkinTree, whose Damage FSM its bites hurt).
+    /// tree spiders: the PumpkinTree, whose Damage FSM its bites hurt). Code can also switch it between the player and an
+    /// object while it runs (Go For: the PlayGround's cauldron defence; a Bite Target on the object takes the bites).
     /// Goes on the spider's root, next to its NavMesh Agent; Tools > 429 Game > Enemies > Set Up Smarter Spider adds it.
     /// </summary>
     [DisallowMultipleComponent]
@@ -342,7 +343,8 @@ namespace Game.Enemies
         [Min(0f)]
         [SerializeField] private float targetStandOff;
         [Tooltip("When its bite lands on that object, Target Event is sent to the object's FSM called Target Fsm (the " +
-                 "tree's Damage FSM takes 1 health per Damage). Empty Target Fsm: every FSM on it.")]
+                 "tree's Damage FSM takes 1 health per Damage). Empty Target Fsm: every FSM on it. An object with a Bite " +
+                 "Target script (the PlayGround's cauldron) takes the bite there instead.")]
         [SerializeField] private string targetFsm = "Damage";
         [SerializeField] private string targetEvent = "Damage";
 
@@ -1095,6 +1097,12 @@ namespace Game.Enemies
         private bool noticed;
         private Transform targetObject;
         private float targetRadius;
+        // Go For (the PlayGround's cauldron defence, 2026-11-16): the object was handed over by code, not found by Target
+        // Tag, so when it's gone it goes back to the player. A change asked for mid attack waits (Switch Waiting).
+        private bool targetFromCode;
+        private bool switchWaiting;
+        private Transform switchTo;
+        private float switchStandOff;
         // The stuck watchdog: when it last looked, since when it hasn't moved, and from where.
         private float nextStuckCheck;
         private float stuckSince = -1f;
@@ -1310,6 +1318,8 @@ namespace Game.Enemies
 
         /// <summary>A boss (its Size is Boss).</summary>
         public bool IsBoss => kindName == SizeClass.Boss;
+        /// <summary>The object it goes for now instead of the player (the tree, the cauldron); null while it's after the player.</summary>
+        public Transform GoingFor => GoesForObject ? targetObject : null;
         // A flying boss with Stays High (the bee bosses): up high, shooting, diving only now and then.
         private bool StaysHigh => staysHigh && kindName == SizeClass.Boss && IsFlying && !anomaly;
         // How much further it may chase a backing-off player while it stings (fliers with Homing Sting; 0 otherwise).
@@ -1484,6 +1494,8 @@ namespace Game.Enemies
                 holdUntil = 0f;
                 if (noticeOnSpawn || Aggressive) Notice(true);
             }
+            // A target change asked for mid attack (Go For) is made once the attack is over.
+            if (switchWaiting) TrySwitchTarget();
             if (Time.time >= nextSenses) Sense();
             if (Time.time >= nextThreatScan) ScanThreats();
             if (IsFlying && groundBelowHealth > 0f && state != State.Appear && health != null && health.Value / startHealth <= groundBelowHealth)
@@ -1577,6 +1589,12 @@ namespace Game.Enemies
             if (targetObject == null || !targetObject.gameObject.activeInHierarchy)
             {
                 targetObject = null;
+                // Handed over by Go For and gone now (the cauldron broke): back after the player, not after a tag.
+                if (targetFromCode)
+                {
+                    BackToPlayer();
+                    return;
+                }
                 if (Time.time >= nextTargetSearch)
                 {
                     nextTargetSearch = Time.time + 1f;
@@ -1617,6 +1635,70 @@ namespace Game.Enemies
                 targetRadius = Mathf.Max(any.bounds.extents.x, any.bounds.extents.z) * 0.8f;
             else targetRadius = 0.3f;
             targetRadius = Mathf.Max(0.2f, targetRadius);
+        }
+
+        /// <summary>
+        /// Changes what it goes for while it runs (the PlayGround's cauldron defence, user 2026-11-16: a player near the
+        /// cauldron is attacked, a player far from it leaves the cauldron to the monsters). An object: it runs to it,
+        /// stops Stand Off metres from its middle and bites it (the bite goes to the object's Bite Target, or to its FSM
+        /// like the tree's); it never bites the player meanwhile. Null: it's after the player again. Mid wind-up, attack,
+        /// face cling, special move, dodge, flight or hiding it changes once that's over. The white bug and the tree
+        /// spiders (Target on Tagged Object in their prefab) keep what they go for.
+        /// </summary>
+        public void GoFor(Transform thing, float standOff = 0f)
+        {
+            if (anomaly || state == State.Dead || (target == TargetKind.TaggedObject && !targetFromCode)) return;
+            switchTo = thing;
+            switchStandOff = standOff;
+            switchWaiting = true;
+            TrySwitchTarget();
+        }
+
+        // The change Go For asked for, once it's free to turn to something else.
+        private void TrySwitchTarget()
+        {
+            if (!switchWaiting) return;
+            switch (state)
+            {
+                case State.Prepare:
+                case State.Attack:
+                case State.Cling:
+                case State.Special:
+                case State.WebShot:
+                case State.Dodge:
+                case State.Flee:
+                case State.Hide:
+                case State.WingsOff:
+                    return;
+            }
+            switchWaiting = false;
+            var thing = switchTo;
+            switchTo = null;
+            if (thing == null || !thing.gameObject.activeInHierarchy)
+            {
+                if (targetFromCode) BackToPlayer();
+                return;
+            }
+            if (GoesForObject && targetObject == thing) return;
+            target = TargetKind.TaggedObject;
+            targetFromCode = true;
+            targetObject = thing;
+            targetRadius = Mathf.Max(0.2f, switchStandOff);
+            // Already after the player: it carries on, now after the object (the chase and the circling follow it).
+            if (noticed) lastSeen = Time.time;
+        }
+
+        // Go For's object is gone or given back: after the player again, at once if it was after the object (it's angry
+        // already; a spider that lost interest calms down by itself as usual).
+        private void BackToPlayer()
+        {
+            bool wasAfter = noticed;
+            target = TargetKind.Player;
+            targetFromCode = false;
+            targetObject = null;
+            if (!wasAfter) return;
+            lastSeen = Time.time;
+            if (state == State.Circle) Enter(State.Chase, 0f);
         }
 
         // Nothing solid between its eyes and the player's head. Loose things (props, other enemies, the player's own
@@ -4874,7 +4956,15 @@ namespace Game.Enemies
 
         private void SendToTarget()
         {
-            if (targetObject == null || string.IsNullOrEmpty(targetEvent)) return;
+            if (targetObject == null) return;
+            // A target with its own health in C# (the PlayGround's cauldron) takes the bite itself.
+            var biteTarget = targetObject.GetComponentInParent<IBiteTarget>();
+            if (biteTarget != null)
+            {
+                biteTarget.Bitten(this);
+                return;
+            }
+            if (string.IsNullOrEmpty(targetEvent)) return;
             targetObject.GetComponents(fsmBuffer);
             foreach (var fsm in fsmBuffer)
             {

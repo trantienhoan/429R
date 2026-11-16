@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: edb70ce7798c07d41a2b1117a23c4ba9, type: 3}
+  m_Name: Glove Kinds
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.GloveKinds
+  needGloves: 1
+  kinds:
+  - id: Boxing
+    title: Boxing Gloves
+    stat: 3
+    points: 3
+    left: {fileID: 8994010118876300428, guid: 7bf0b7166396b23499cebb1ba83e0bce, type: 3}
+    right: {fileID: 3817488562104546561, guid: 162ef733e7fe6494caf6bc8cf2c5bc34, type: 3}
+    colour: {r: 0.8, g: 0.08, b: 0.06, a: 1}
+    easyFlyingPunches: 1
+    unlocks: 1
+  - id: Throwing
+    title: Throwing Gloves
+    stat: 4
+    points: 3
+    left: {fileID: 8887741475681639791, guid: 7461d6516d016c24ca0ecb5332b4b3b1, type: 3}
+    right: {fileID: 5996742702167427279, guid: 083db2f0eb1b0ac45bf574d864160dd6, type: 3}
+    colour: {r: 0.13, g: 0.6, b: 0.2, a: 1}
+    easyFlyingPunches: 0
+    unlocks: 2
+  - id: Soldier
+    title: Soldier Gloves
+    stat: 2
+    points: 3
+    left: {fileID: 1415839244105446213, guid: 8871fd6467568a845a75a201626bec7a, type: 3}
+    right: {fileID: 5751464557423520016, guid: f5f3f4812e622694a8a7fb770bb40985, type: 3}
+    colour: {r: 0.1, g: 0.32, b: 0.85, a: 1}
+    easyFlyingPunches: 0
+    unlocks: 4
+  menuVersion: 2
+  popSeconds: 0.14
+  popOvershoot: 0.2
+  awaySeconds: 0.09
+  popSound: {fileID: 8300000, guid: 9d79bf4b968000d42b208c7c45a776f1, type: 3}
+  popVolume: 0.55
+  awaySound: {fileID: 8300000, guid: 9d79bf4b968000d42b208c7c45a776f1, type: 3}
+  awayVolume: 0.25
+  awayPitch: 1.25
+  showOnPickupSeconds: 0.9

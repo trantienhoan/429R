@@ -76,6 +76,16 @@ namespace Game.Menus
             }
         }
 
+        /// <summary>
+        /// Shatters it now, as a punch would, at this point, the shards flying with this motion (e.g. a weapon or a thrown
+        /// thing hit it: Unlock Card), if it can be broken now ('ready').
+        /// </summary>
+        public void ShatterAt(Vector3 at, Vector3 motion)
+        {
+            if (panel == null || shattered == null || (ready != null && !ready())) return;
+            Shatter(at, motion);
+        }
+
         // The fist's path this frame touches the panel: it ends within Depth of it, or goes right through it, over it.
         private bool Through(Vector3 from, Vector3 to, out Vector3 at)
         {

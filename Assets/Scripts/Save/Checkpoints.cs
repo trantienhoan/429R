@@ -15,6 +15,9 @@ namespace Game.Saving
     /// from that slot's last checkpoint, with the revives left and the health kept by "Get a Rest". The Save Manager
     /// keeps it all, one save per slot. GAMESTAGES uses the PlayMaker actions "Set Checkpoint", "Go To Checkpoint",
     /// "Start New Run" and "Add Extra Revive" (Save category); PlayerDeath uses "Try Revive".
+    /// The run's gloves are kept with it too (user, 2026-11-12, see Gloves): the pair worn, the Knight's pair this run and
+    /// his pair the run before, so a player resuming at a checkpoint (past the Knight) still has theirs. A new run takes
+    /// them off.
     /// </summary>
     public static class Checkpoints
     {
@@ -31,6 +34,11 @@ namespace Game.Saving
             public int extraRevives;
             // The player's health when they last picked Get a Rest (-1: none, they start with full health).
             public float restHealth = -1f;
+            // The run's gloves (Gloves, by their Glove Kinds Id; "" = none): the pair worn, the Knight's pair this run,
+            // and his pair the run before (the next run's is another kind). Older saves: none.
+            public string gloves = "";
+            public string glovesOffered = "";
+            public string glovesLastRun = "";
         }
 
         /// <summary>Raised when anything here changes, so the save is written.</summary>
@@ -54,6 +62,16 @@ namespace Game.Saving
 
         /// <summary>The checkpoint reached this run ("" = none: the game goes on from the start).</summary>
         public static string Current { get; private set; } = "";
+
+        /// <summary>
+        /// Checkpoints the game never goes on from (user, 2026-11-16: "Quit boss = Re-dream", every gate and the main
+        /// game): leaving during the boss fight, any way at all (Get a Rest, closing the game), starts the next game in
+        /// that slot as a new run, as Re-Dream does (candies, items and level kept).
+        /// </summary>
+        public static readonly string[] NoResume = { "CP Boss" };
+
+        /// <summary>The run is at the boss fight (a No Resume checkpoint): quitting now means Re-Dream.</summary>
+        public static bool AtBoss => Array.IndexOf(NoResume, Current) >= 0;
 
         /// <summary>How many more times this run the player can die and get back up.</summary>
         public static int RevivesLeft { get; private set; } = BaseRevives;
@@ -173,15 +191,25 @@ namespace Game.Saving
             return "";
         }
 
-        /// <summary>A new run: no checkpoint, all revives (beating the game, "Re-Dream", dying with none left).</summary>
+        /// <summary>
+        /// A new run: no checkpoint, all revives, no gloves (beating the game, "Re-Dream", dying with none left): the
+        /// next Knight carries a new pair.
+        /// </summary>
         public static void StartNewRun()
         {
             Current = "";
             RevivesLeft = RevivesPerRun;
             RestHealth = -1f;
             IsDying = false;
+            Game.Combat.Gloves.NewRun();
             Changed?.Invoke();
             RunStarted?.Invoke();
+        }
+
+        /// <summary>Something else kept with the run changed (the gloves: Gloves), so the save is written soon.</summary>
+        public static void RunChanged()
+        {
+            Changed?.Invoke();
         }
 
         /// <summary>The revive coins are thrown (Try Revive): saved at once as if the run were over, until they land.</summary>
@@ -272,7 +300,8 @@ namespace Game.Saving
 
         public static SavedCheckpoint ToSaveData()
         {
-            // While the coins are in the air the run counts as lost (see IsDying).
+            // While the coins are in the air the run counts as lost (see IsDying): no gloves, and this run's pair is the
+            // one the next Knight won't carry.
             if (IsDying)
             {
                 return new SavedCheckpoint
@@ -281,6 +310,9 @@ namespace Game.Saving
                     revivesLeft = RevivesPerRun,
                     extraRevives = ExtraRevives,
                     restHealth = -1f,
+                    gloves = "",
+                    glovesOffered = "",
+                    glovesLastRun = Game.Combat.Gloves.Offered != null ? Game.Combat.Gloves.OfferedId : Game.Combat.Gloves.LastRunId,
                 };
             }
             return new SavedCheckpoint
@@ -289,6 +321,9 @@ namespace Game.Saving
                 revivesLeft = RevivesLeft,
                 extraRevives = ExtraRevives,
                 restHealth = RestHealth,
+                gloves = Game.Combat.Gloves.WornId,
+                glovesOffered = Game.Combat.Gloves.OfferedId,
+                glovesLastRun = Game.Combat.Gloves.LastRunId,
             };
         }
 
@@ -304,10 +339,21 @@ namespace Game.Saving
             RevivesLeft = saved != null && saved.revivesLeft >= 0 ? Mathf.Min(saved.revivesLeft, RevivesPerRun) : RevivesPerRun;
             RestHealth = saved != null && saved.restHealth > 0f ? saved.restHealth : -1f;
             IsDying = false;
+            // The run's gloves (none in older saves).
+            Game.Combat.Gloves.Load(saved?.gloves, saved?.glovesOffered, saved?.glovesLastRun);
+            // Left during the boss fight: this game is a new run (Re-Dream), from the very start, all revives, no gloves.
+            if (AtBoss)
+            {
+                Debug.Log("[Checkpoints] The save was left at " + Current + " (the boss fight): a new run from the start (Re-Dream).");
+                Current = "";
+                RevivesLeft = RevivesPerRun;
+                RestHealth = -1f;
+                Game.Combat.Gloves.NewRun();
+            }
             IsLoaded = true;
         }
 
-        /// <summary>Forgets everything, extra revives too (Reset Progress).</summary>
+        /// <summary>Forgets everything, extra revives and the run's gloves too (Reset Progress).</summary>
         public static void Reset()
         {
             ExtraRevives = 0;
@@ -315,6 +361,7 @@ namespace Game.Saving
             RestHealth = -1f;
             RevivesLeft = RevivesPerRun;
             IsDying = false;
+            Game.Combat.Gloves.Forget();
         }
     }
 }

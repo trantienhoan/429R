@@ -43,6 +43,11 @@ namespace HutongGames.PlayMaker.Actions
                  "notice's own (\"Pull a trigger to FIGHT!\").")]
         public FsmString closeLine;
 
+        [Tooltip("The last this many pages show only to a player who can punch (user, 2026-11-12: with gloves on, see " +
+                 "Gloves; without gloves grip + trigger does nothing), e.g. the start pumpkin's MAKE A FIST! page. 0 = " +
+                 "every page always.")]
+        public FsmInt glovePages;
+
         [Tooltip("Sent once the tutorial has gone.")]
         public FsmEvent finishEvent;
 
@@ -70,6 +75,7 @@ namespace HutongGames.PlayMaker.Actions
             onceKey = "";
             oncePerInstall = false;
             closeLine = "";
+            glovePages = 0;
             finishEvent = null;
         }
 
@@ -114,6 +120,10 @@ namespace HutongGames.PlayMaker.Actions
 
             var target = pagesAbove.Value > 0 ? Fsm.GetOwnerDefaultTarget(above) : null;
             int count = Mathf.Max(titles.Length, Mathf.Max(bodies.Length, pictures.Length));
+            // A player who can't punch (no gloves) doesn't get the punching pages (an action saved before this field
+            // existed has none).
+            int punchPages = glovePages != null ? Mathf.Clamp(glovePages.Value, 0, count) : 0;
+            if (punchPages > 0 && !Game.Combat.Gloves.CanPunch) count -= punchPages;
             var pages = new List<Game.Menus.TutorialNotice.Page>(count);
             for (int i = 0; i < count; i++)
             {

@@ -33,6 +33,12 @@ namespace Game.PlayGround
     /// candy pot: it shakes and rings by itself, letting slimes out, until enough candies are in; then it cooks, swells
     /// and bursts (Pot Broken). It stands fixed on the floor, upright, wherever it appears. Goes on
     /// Fire_Woods_n_Cauldron's root; it makes its own zones, panels and pot collider when the game runs.
+    /// The cauldron defence (Cauldron Defence next to it, user 2026-11-16) turns a few things on from code: one long
+    /// dish instead of the rounds (Use One Dish), a fire that burns small until the first firewood and then big for
+    /// good (Fire Needs Lighting), a right recipe that waits for that fire before it cooks (Needs Fire To Cook), and a
+    /// big countdown with the cauldron's health above the pot instead of the meter (Show Countdown, Health Share). It
+    /// ends the dish either way: Burst (won: the candy pot's swell and burst, Pot Broken) or Wreck (lost: the pot is
+    /// smashed and hidden, nothing more comes of it).
     /// </summary>
     [DisallowMultipleComponent]
     public class Cauldron : MonoBehaviour
@@ -220,6 +226,22 @@ namespace Game.PlayGround
         [Tooltip("How far above the pot's rim the meter floats, in metres.")]
         [SerializeField] private float meterHeight = 0.5f;
 
+        [Header("Lighting the fire (with Fire Needs Lighting: the cauldron defence)")]
+        [Tooltip("The fire before the first firewood: its rate and its flame size as shares of the fire's own (x, y).")]
+        [SerializeField] private Vector2 smallFire = new(0.3f, 0.55f);
+        [Tooltip("The fire once it's lit, for good: its rate and flame size as shares of the fire's own (x, y).")]
+        [SerializeField] private Vector2 bigFire = new(1.4f, 1.25f);
+        [Tooltip("Played as the first firewood lights the big fire (whoosh). Empty: the Fuel Sound.")]
+        [SerializeField] private AudioClip lightSound;
+        [Tooltip("Flames thrown out at once as it lights.")]
+        [Min(0)] [SerializeField] private int lightBurst = 40;
+
+        [Header("Countdown (with Show Countdown: the cauldron defence)")]
+        [Tooltip("Metres per panel pixel of the big countdown above the pot (0.0026: about 1 m wide, readable from 8 m).")]
+        [Min(0.0005f)] [SerializeField] private float countdownScale = 0.0026f;
+        [Tooltip("How far above the pot's rim the countdown's bottom edge floats, in metres (about eye height).")]
+        [SerializeField] private float countdownHeight = 0.75f;
+
         /// <summary>Raised when a wrong recipe has boiled and its slime is spat out (the magic hat shakes).</summary>
         public static event Action<Cauldron> CookFailed;
         /// <summary>Raised when a right recipe finishes cooking, once for each thing it made.</summary>
@@ -230,6 +252,17 @@ namespace Game.PlayGround
         public static event Action<Cauldron> CookingStarted;
         /// <summary>Raised when the candy pot bursts (the cauldron is gone 3 s later).</summary>
         public static event Action<Cauldron> PotBroken;
+        /// <summary>Raised when a right recipe has finished cooking (also one that makes nothing: the cauldron defence).</summary>
+        public static event Action<Cauldron> CookDone;
+
+        /// <summary>
+        /// Test only: cooking runs this many times faster (e.g. 20 makes the defence's 10 minutes 30 s). Back to 1 on
+        /// every Play.
+        /// </summary>
+        public static float TestSpeed = 1f;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => TestSpeed = 1f;
 
         // Things it spawns go here, so the stage clean-up removes them.
         private const string SpawnedStuffVariable = "CurrentlySpawnedStuffs";
@@ -253,6 +286,11 @@ namespace Game.PlayGround
         private static readonly Color MeterBack = new(0.1f, 0.07f, 0.16f, 0.85f);
         private static readonly Color MeterFill = new(0.55f, 1f, 0.35f, 1f);
         private static readonly Color MeterHot = new(1f, 0.55f, 0.15f, 1f);
+        private static readonly Color HealthFull = new(0.35f, 0.95f, 0.4f, 1f);
+        private static readonly Color HealthLow = new(1f, 0.2f, 0.15f, 1f);
+        // The countdown panel (Show Countdown), in panel pixels.
+        private const float CountdownWidth = 380f;
+        private const float CountdownPixelsHigh = 196f;
         private static readonly Color TooMany = new(1f, 0.4f, 0.35f, 1f);
         // The recipe above the pot: one column per ingredient, its picture over "have/need".
         private const float ColumnWidth = 96f;
@@ -305,6 +343,19 @@ namespace Game.PlayGround
         private float nextFinaleBell;
         // A hit keeps the recipe panel up until then (0 = no hit showing it).
         private float hitShowUntil;
+        // Right recipe in, the fire not lit yet (Needs Fire To Cook): it waits for the first firewood.
+        private bool waitingForFire;
+        // The countdown panel's parts (Show Countdown), and a short line shown on it instead of its title until then.
+        private TMP_Text countdownTitle;
+        private Image countdownHealth;
+        private RectTransform countdownHealthBar;
+        private string note;
+        private Color noteColor;
+        private float noteUntil;
+        private int shownLeft = -1;
+        // Set by Use One Dish: the rounds were swapped for one dish and its recipe made.
+        private bool oneDish;
+        private bool shownHot;
 
         public IReadOnlyList<Line> Recipe => recipe;
         public bool IsCooking => cooking;
@@ -318,8 +369,41 @@ namespace Game.PlayGround
         public bool AllCooked => round >= rounds.Length;
         /// <summary>After the last round, the candy pot: asking for candies (only candies count), until it bursts.</summary>
         public bool InMystery => AllCooked && mysteryCount > 0 && !potBroken;
-        public int MysteryCount => mysteryCount;
+        /// <summary>How many candies the candy pot asks for; 0 = no candy pot after the last dish (the cauldron defence).</summary>
+        public int MysteryCount
+        {
+            get => mysteryCount;
+            set => mysteryCount = Mathf.Max(0, value);
+        }
         public bool IsBroken => potBroken;
+        /// <summary>The pot itself (its look; the cauldron's hits jiggle it).</summary>
+        public Transform Pot => pot;
+        /// <summary>How far this dish has cooked, 0 to 1 (0 when nothing cooks).</summary>
+        public float CookProgress => cooking ? Mathf.Clamp01(progress) : 0f;
+        /// <summary>Seconds this dish cooks with no firewood (its own, or Cook Seconds).</summary>
+        public float DishSeconds => RoundCookSeconds;
+        /// <summary>Most of its wild slimes about at once (0: a ring lets none out; the cauldron defence).</summary>
+        public int MaxWildSlimes
+        {
+            get => maxWildSlimes;
+            set => maxWildSlimes = Mathf.Max(0, value);
+        }
+        /// <summary>The fire burns small until the first firewood goes in, then big for good (the cauldron defence).</summary>
+        public bool FireNeedsLighting { get; set; }
+        /// <summary>A right recipe waits for the lit fire before it cooks (with Fire Needs Lighting).</summary>
+        public bool NeedsFireToCook { get; set; }
+        /// <summary>Firewood has gone into the fire at least once (the big fire).</summary>
+        public bool FireLit { get; private set; }
+        /// <summary>The right recipe is in and it waits for the fire to be lit.</summary>
+        public bool WaitingForFire => waitingForFire;
+        /// <summary>Hot fire (firewood's heat) makes it cook faster, as it always did. Off: the dish takes its seconds.</summary>
+        public bool HeatSpeedsCooking { get; set; } = true;
+        /// <summary>While it cooks, a big countdown (m:ss left) shows above the pot instead of the meter (the cauldron defence).</summary>
+        public bool ShowCountdown { get; set; }
+        /// <summary>The countdown's title line, e.g. "DEFEND THE CAULDRON!".</summary>
+        public string CountdownTitle { get; set; } = "";
+        /// <summary>The cauldron's health shown under the countdown, 0 to 1; below 0 there's no health bar.</summary>
+        public float HealthShare { get; set; } = -1f;
         /// <summary>
         /// Set by a PlayGround Rounds director: after a right recipe the next round waits until it calls Continue()
         /// (the player has caught the pumpkin and taken the chest's seed). Takes nothing in meanwhile.
@@ -380,7 +464,8 @@ namespace Game.PlayGround
                 candyIds.Add(ingredient != null ? ingredient.Id : CookingIngredient.BaseName(candy.name));
                 if (candyIcon == null && ingredient != null) candyIcon = ingredient.Icon;
             }
-            MakeRecipe();
+            // Use One Dish (the cauldron defence's Awake may come first) has thought up its recipe already: not again.
+            if (!oneDish) MakeRecipe();
         }
 
         private void Start()
@@ -399,7 +484,8 @@ namespace Game.PlayGround
                 fireRate = fire.emission.rateOverTimeMultiplier;
                 var main = fire.main;
                 fireSizeBase = main.startSizeMultiplier;
-                main.maxParticles = Mathf.Max(main.maxParticles, 80);
+                // Room for the big fire with full heat (Big Fire's rate x the heat's x4.5, ~1.1 s each).
+                main.maxParticles = Mathf.Max(main.maxParticles, 140);
             }
             if (bubbleTower != null)
             {
@@ -445,6 +531,118 @@ namespace Game.PlayGround
             pumpkinCaught = true;
         }
 
+        /// <summary>
+        /// One dish instead of the rounds (the cauldron defence, user 2026-11-16): its recipe asks for this many random
+        /// candies and tree pumpkins, it cooks this many seconds and makes nothing (no laughing pumpkin): what comes next
+        /// is the director's. No candy pot after it. A new recipe is thought up at once (the hat shows it).
+        /// </summary>
+        public void UseOneDish(int dishCandies, int dishPumpkins, float seconds)
+        {
+            rounds = new[] { new Round { candies = Mathf.Max(0, dishCandies), pumpkins = Mathf.Max(0, dishPumpkins), result = null, results = 1, cookSeconds = Mathf.Max(1f, seconds) } };
+            oneDish = true;
+            round = 0;
+            mysteryCount = 0;
+            contents.Clear();
+            count = 0;
+            recipeKnown = false;
+            MakeRecipe();
+            RecipeChanged?.Invoke(this);
+        }
+
+        /// <summary>
+        /// Lights the big fire (Fire Needs Lighting), as the first firewood does: a burst of flames and a whoosh. A right
+        /// recipe waiting for the fire starts cooking.
+        /// </summary>
+        public void LightFire()
+        {
+            if (potBroken) return;
+            if (!FireLit)
+            {
+                FireLit = true;
+                if (fire != null && lightBurst > 0) fire.Emit(lightBurst);
+                Play(lightSound != null ? lightSound : fuelSound, FirePoint());
+            }
+            if (waitingForFire)
+            {
+                waitingForFire = false;
+                StartCooking();
+            }
+        }
+
+        /// <summary>Rings its bell once (no slime comes out): the cauldron defence's alarm when it's bitten.</summary>
+        public void RingBell()
+        {
+            Ring(false);
+        }
+
+        /// <summary>A short line on the countdown in place of its title for a few seconds, e.g. "MINI BOSS!".</summary>
+        public void ShowNote(string text, Color color, float seconds)
+        {
+            note = text;
+            noteColor = color;
+            noteUntil = Time.time + Mathf.Max(0.1f, seconds);
+        }
+
+        /// <summary>
+        /// The dish is done for good and the cauldron defence won: it swells and bursts like the candy pot (Pot Broken:
+        /// Special Stage 3 Trigger takes the player to the Daruma game, Cooking Rewards gives the first-clear prize). The
+        /// cauldron is gone 3 s later.
+        /// </summary>
+        public void Burst()
+        {
+            if (potBroken) return;
+            cooking = false;
+            waitingForFire = false;
+            StartCoroutine(BreakPot());
+        }
+
+        /// <summary>
+        /// The cauldron defence lost: the pot is smashed (the director plays the smash and what comes after). It stops
+        /// cooking and takes nothing more; it's hidden, its effects, panels and colliders go. No Pot Broken (no Daruma
+        /// game, no prize), and it isn't destroyed: the director next to it plays on.
+        /// </summary>
+        public void Wreck()
+        {
+            if (potBroken) return;
+            potBroken = true;
+            cooking = false;
+            boiling = false;
+            waitingForFire = false;
+            PopWildSlimes();
+            StopShaking();
+            if (recipePanel != null)
+            {
+                Destroy(recipePanel.gameObject);
+                recipePanel = null;
+            }
+            if (meter != null) meter.gameObject.SetActive(false);
+            foreach (var shape in GetComponentsInChildren<Renderer>(true)) shape.enabled = false;
+            foreach (var effect in GetComponentsInChildren<ParticleSystem>(true)) effect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            foreach (var part in GetComponentsInChildren<Collider>(true)) part.enabled = false;
+        }
+
+        /// <summary>Test only: jumps the cooking dish to this share done (0 to 1).</summary>
+        public void TestSetProgress(float share)
+        {
+            if (cooking) progress = Mathf.Clamp01(share);
+        }
+
+        /// <summary>
+        /// Test only: the recipe goes in at once, as if the player had put in exactly what it asks for (a right recipe:
+        /// it cooks, or waits for the fire).
+        /// </summary>
+        [ContextMenu("Test: Put The Right Recipe In")]
+        public void TestPutRecipeIn()
+        {
+            if (potBroken || cooking || boiling || waitingForFire || waitingForNext || AllCooked) return;
+            contents.Clear();
+            foreach (var line in recipe) contents[line.id] = line.count;
+            count = RecipeTotal;
+            recipeKnown = true;
+            CookOrWaitForFire();
+            RefreshRecipePanel();
+        }
+
         private void Update()
         {
             float dt = Time.deltaTime;
@@ -455,7 +653,7 @@ namespace Game.PlayGround
             UpdateSurface();
             if (cooking)
             {
-                progress += dt / (InMystery ? mysteryCookSeconds : RoundCookSeconds) * (1f + heat);
+                progress += dt / (InMystery ? mysteryCookSeconds : RoundCookSeconds) * (HeatSpeedsCooking ? 1f + heat : 1f) * Mathf.Max(0f, TestSpeed);
                 if (progress >= 1f) Finish();
             }
             UpdateTower();
@@ -788,9 +986,9 @@ namespace Game.PlayGround
         {
             if (zone == Zone.Mouth)
             {
-                // Cooking (the recipe was checked when the pot filled up), boiling a wrong recipe, between rounds, or
-                // done: what goes in just lies there.
-                if (potBroken || waitingForNext || boiling || cooking) return;
+                // Cooking (the recipe was checked when the pot filled up), boiling a wrong recipe, waiting for the fire,
+                // between rounds, or done: what goes in just lies there.
+                if (potBroken || waitingForNext || boiling || cooking || waitingForFire) return;
                 if (InMystery)
                 {
                     var thing = MysteryThing(other);
@@ -803,6 +1001,7 @@ namespace Game.PlayGround
             }
             else
             {
+                if (potBroken) return;
                 var fuel = other.GetComponentInParent<FireFuel>();
                 if (fuel != null && taken.Add(fuel.gameObject)) AddFuel(fuel);
             }
@@ -822,10 +1021,22 @@ namespace Game.PlayGround
             // Checked the moment the pot is full: a right recipe cooks, a wrong one boils a moment and is spat out.
             if (!cooking && !boiling && count >= RecipeTotal)
             {
-                if (RightRecipe()) StartCooking();
+                if (RightRecipe()) CookOrWaitForFire();
                 else StartCoroutine(WrongBoil());
             }
             RefreshRecipePanel();
+        }
+
+        // A right recipe cooks, unless the fire has to be lit first (Needs Fire To Cook): then it waits for the first
+        // firewood, showing "LIGHT THE FIRE!" above the pot.
+        private void CookOrWaitForFire()
+        {
+            if (NeedsFireToCook && FireNeedsLighting && !FireLit)
+            {
+                waitingForFire = true;
+                return;
+            }
+            StartCooking();
         }
 
         // A puff of green smoke out of the pot.
@@ -900,6 +1111,12 @@ namespace Game.PlayGround
             Play(fuelSound, FirePoint());
             if (fire != null) fire.Emit(10);
             Destroy(fuel.gameObject);
+            // The first firewood lights the big fire (and starts a right recipe waiting for it).
+            if (FireNeedsLighting && (!FireLit || waitingForFire))
+            {
+                LightFire();
+                RefreshRecipePanel();
+            }
         }
 
         // A right recipe (or the full candy pot) starts cooking. Only a round's dish raises Cooking Started (its wave).
@@ -969,6 +1186,7 @@ namespace Game.PlayGround
                 else NextRound();
             }
             RefreshRecipePanel();
+            if (right) CookDone?.Invoke(this);
         }
 
         private void DoneEffect(Vector3 at)
@@ -1318,11 +1536,13 @@ namespace Game.PlayGround
 
         private void UpdateFire()
         {
-            if (fire == null) return;
+            if (fire == null || potBroken) return;
+            // With Fire Needs Lighting it burns small until the first firewood, then big for good; heat adds on top.
+            var look = !FireNeedsLighting ? Vector2.one : FireLit ? bigFire : smallFire;
             var emission = fire.emission;
-            emission.rateOverTimeMultiplier = fireRate * (1f + heat * 1.5f);
+            emission.rateOverTimeMultiplier = fireRate * look.x * (1f + heat * 1.5f);
             var main = fire.main;
-            main.startSizeMultiplier = fireSizeBase * (1f + heat * 0.25f);
+            main.startSizeMultiplier = fireSizeBase * look.y * (1f + heat * 0.25f);
             main.simulationSpeed = 1f + heat * 0.3f;
         }
 
@@ -1352,18 +1572,64 @@ namespace Game.PlayGround
             if (meter == null) BuildMeter();
             if (!meter.gameObject.activeSelf) meter.gameObject.SetActive(true);
 
-            meterText.text = heat > 0.5f ? "Cooking hot!" : "Cooking...";
             var fill = meterFillImage.rectTransform;
             fill.anchorMax = new Vector2(Mathf.Clamp01(progress), 1f);
-            meterFillImage.color = Color.Lerp(MeterFill, MeterHot, Mathf.Clamp01(heat / Mathf.Max(0.01f, maxHeat)));
+            float hot = Mathf.Clamp01(heat / Mathf.Max(0.01f, maxHeat));
+            meterFillImage.color = Color.Lerp(MeterFill, MeterHot, hot);
+            if (ShowCountdown)
+            {
+                UpdateCountdown(hot);
+                PlacePanel(meter, countdownHeight);
+                return;
+            }
+            meterText.text = heat > 0.5f ? "Cooking hot!" : "Cooking...";
             PlacePanel(meter);
+        }
+
+        // The big countdown (Show Countdown): the title (or a note for a few seconds), m:ss left at the dish's own
+        // speed (a hot fire makes it run faster), the cooking bar and the cauldron's health.
+        private void UpdateCountdown(float hot)
+        {
+            int left = Mathf.CeilToInt(Mathf.Max(0f, (1f - progress) * RoundCookSeconds));
+            bool hotNow = heat > 0.5f;
+            // Written only when it changes (once a second), so the headset isn't rebuilding text every frame.
+            if (left != shownLeft || hotNow != shownHot)
+            {
+                shownLeft = left;
+                shownHot = hotNow;
+                meterText.text = $"{left / 60}:{left % 60:00}" + (hotNow ? " <size=50%>HOT!</size>" : "");
+            }
+            bool low = HealthShare >= 0f && HealthShare < 0.25f;
+            meterText.color = low ? TooMany : Color.Lerp(Color.white, MeterHot, hot);
+            if (countdownTitle != null)
+            {
+                bool noted = Time.time < noteUntil && !string.IsNullOrEmpty(note);
+                countdownTitle.text = noted ? note : CountdownTitle;
+                countdownTitle.color = noted ? noteColor : Color.white;
+            }
+            if (countdownHealthBar != null)
+            {
+                bool shown = HealthShare >= 0f;
+                if (countdownHealthBar.gameObject.activeSelf != shown) countdownHealthBar.gameObject.SetActive(shown);
+                if (shown)
+                {
+                    float share = Mathf.Clamp01(HealthShare);
+                    countdownHealth.rectTransform.anchorMax = new Vector2(share, 1f);
+                    countdownHealth.color = Color.Lerp(HealthLow, HealthFull, share);
+                }
+            }
         }
 
         // Floats a panel above the pot, turned to the player.
         private void PlacePanel(RectTransform panel)
         {
+            PlacePanel(panel, meterHeight);
+        }
+
+        private void PlacePanel(RectTransform panel, float height)
+        {
             var top = pot != null && pot.TryGetComponent<Renderer>(out var shape) ? shape.bounds.max.y : MouthPoint().y;
-            panel.position = new Vector3(transform.position.x, top + meterHeight, transform.position.z);
+            panel.position = new Vector3(transform.position.x, top + height, transform.position.z);
             WorldUI.Face(panel, head);
         }
 
@@ -1382,6 +1648,11 @@ namespace Game.PlayGround
             if (InMystery && !cooking && !waitingForNext)
             {
                 BuildMysteryPanel();
+                return;
+            }
+            if (waitingForFire && !potBroken)
+            {
+                BuildFirePanel();
                 return;
             }
             bool hitShown = Time.time < hitShowUntil;
@@ -1455,6 +1726,22 @@ namespace Game.PlayGround
             PlacePanel(recipePanel);
         }
 
+        // The right recipe is in, the fire isn't lit (Needs Fire To Cook): "LIGHT THE FIRE!" over what to do.
+        private void BuildFirePanel()
+        {
+            float width = ColumnWidth * 3f + PanelPad * 2f;
+            float height = PanelPad + ColumnIcon + ColumnCount + PanelPad;
+            recipePanel = WorldUI.CreatePanel("Cauldron Light The Fire", width, height, MeterScale, MeterBack);
+            var what = WorldUI.CreateText("Light", recipePanel, "LIGHT THE FIRE!", 34f, FontStyles.Bold, TextAlignmentOptions.Center, MeterHot, font);
+            WorldUI.Place((Graphic)what, PanelPad, PanelPad, width - PanelPad * 2f, ColumnIcon);
+            var how = WorldUI.CreateText("How", recipePanel, "Throw firewood under the pot", 22f, FontStyles.Bold, TextAlignmentOptions.Center, Color.white, font);
+            WorldUI.Place((Graphic)how, PanelPad, PanelPad + ColumnIcon, width - PanelPad * 2f, ColumnCount);
+            // One line each, shrunk to fit.
+            FitOneLine(what, 18f);
+            FitOneLine(how, 12f);
+            PlacePanel(recipePanel);
+        }
+
         // The candy pot's card: a candy over how many are in, "3/8" (green once it's full). Shown from the start (no
         // magic hat needed).
         private void BuildMysteryPanel()
@@ -1483,6 +1770,11 @@ namespace Game.PlayGround
 
         private void BuildMeter()
         {
+            if (ShowCountdown)
+            {
+                BuildCountdown();
+                return;
+            }
             meter = WorldUI.CreatePanel("Cauldron Meter", MeterWidth, MeterPixelsHigh, MeterScale, MeterBack);
             meterText = WorldUI.CreateText("Text", meter, "", 30f, FontStyles.Bold, TextAlignmentOptions.Center, Color.white, font);
             WorldUI.Place((Graphic)meterText, 10f, 4f, MeterWidth - 20f, 40f);
@@ -1492,6 +1784,51 @@ namespace Game.PlayGround
             meterBar = bar.rectTransform;
             meterFillImage = WorldUI.CreateImage("Fill", meterBar, MeterFill);
             var fill = meterFillImage.rectTransform;
+            fill.anchorMin = Vector2.zero;
+            fill.anchorMax = new Vector2(0f, 1f);
+            fill.offsetMin = Vector2.zero;
+            fill.offsetMax = Vector2.zero;
+        }
+
+        // The cauldron defence's countdown: a title line, a big m:ss, the cooking bar and a health bar, about a metre
+        // wide at eye height over the pot so it reads from across the PlayGround.
+        private void BuildCountdown()
+        {
+            const float pad = 14f;
+            meter = WorldUI.CreatePanel("Cauldron Countdown", CountdownWidth, CountdownPixelsHigh, countdownScale, MeterBack);
+            countdownTitle = WorldUI.CreateText("Title", meter, CountdownTitle, 24f, FontStyles.Bold, TextAlignmentOptions.Center, Color.white, font);
+            WorldUI.Place((Graphic)countdownTitle, pad, 8f, CountdownWidth - pad * 2f, 32f);
+            // Its notes ("THE CAULDRON IS UNDER ATTACK!") are longer than the title: one line, shrunk to fit.
+            FitOneLine(countdownTitle, 14f);
+            meterText = WorldUI.CreateText("Time", meter, "", 76f, FontStyles.Bold, TextAlignmentOptions.Center, Color.white, font);
+            WorldUI.Place((Graphic)meterText, pad, 38f, CountdownWidth - pad * 2f, 86f);
+
+            var bar = WorldUI.CreateImage("Bar", meter, new Color(1f, 1f, 1f, 0.15f));
+            WorldUI.Place(bar, pad, 130f, CountdownWidth - pad * 2f, 14f);
+            meterBar = bar.rectTransform;
+            meterFillImage = WorldUI.CreateImage("Fill", meterBar, MeterFill);
+            Fill(meterFillImage.rectTransform);
+
+            var health = WorldUI.CreateImage("Health Bar", meter, new Color(1f, 1f, 1f, 0.15f));
+            WorldUI.Place(health, pad, 156f, CountdownWidth - pad * 2f, 26f);
+            countdownHealthBar = health.rectTransform;
+            countdownHealth = WorldUI.CreateImage("Health", countdownHealthBar, HealthFull);
+            Fill(countdownHealth.rectTransform);
+            countdownHealth.rectTransform.anchorMax = Vector2.one;
+        }
+
+        // Text kept on one line, shrinking (down to Smallest) when it's too long for its box.
+        private static void FitOneLine(TMP_Text text, float smallest)
+        {
+            text.textWrappingMode = TextWrappingModes.NoWrap;
+            text.fontSizeMax = text.fontSize;
+            text.fontSizeMin = smallest;
+            text.enableAutoSizing = true;
+        }
+
+        // A bar's fill: from its left edge, as wide as its anchor's x says.
+        private static void Fill(RectTransform fill)
+        {
             fill.anchorMin = Vector2.zero;
             fill.anchorMax = new Vector2(0f, 1f);
             fill.offsetMin = Vector2.zero;

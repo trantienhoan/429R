@@ -4,8 +4,9 @@ using UnityEngine;
 namespace Game.Combat
 {
     /// <summary>
-    /// Notices the player bumping their two fists together: both hands are fists (Fist), the fists touch, and each
-    /// hand was moving towards the other (so a punch flying past the other fist doesn't count). Each bump clanks like two
+    /// Notices the player bumping their two fists together: both hands are squeezed into fists (Fist: Is Made Fist; with
+    /// or without gloves, user 2026-11-12: a player without gloves can't punch, but must still reach the Level Up menu),
+    /// the fists touch, and each hand was moving towards the other (so a punch flying past the other fist doesn't count). Each bump clanks like two
     /// knight gauntlets over a heavy punch thump, and a hit goes off where the fists meet (Feedback: Fist_Bump_Impact, a
     /// flash, a spiky blast, rays and cartoon stars), so the player notices it counted.
     /// Two bumps in a row (Double Bump Seconds) is the double bump that opens the Level Up menu.
@@ -81,7 +82,7 @@ namespace Game.Combat
         {
             var a = fists[0];
             var b = fists[1];
-            if (a == null || b == null || !a.isActiveAndEnabled || !b.isActiveAndEnabled || !a.IsFist || !b.IsFist)
+            if (a == null || b == null || !a.isActiveAndEnabled || !b.isActiveAndEnabled || !a.IsMadeFist || !b.IsMadeFist)
             {
                 touching = false;
                 return;

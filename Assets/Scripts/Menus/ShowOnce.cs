@@ -18,7 +18,14 @@ namespace Game.Menus
         public const string PrefsPrefix = "429 Game.Tutorial.";
 
         /// <summary>Every key used, so they can all be forgotten.</summary>
-        public static readonly string[] Keys = { "StartPumpkinTutorial", "WalkTutorialSigns" };
+        public static readonly string[] Keys =
+        {
+            "StartPumpkinTutorial", "WalkTutorialSigns", "GloveTutorial",
+            // What a pair of gloves unlocks, told once per save slot (Player Level's glove news).
+            "GloveNews.Jab", "GloveNews.Swing", "GloveNews.Uppercut", "GloveNews.Swollen", "GloveNews.Triple",
+            "GloveNews.Explosive1", "GloveNews.Explosive2", "GloveNews.Explosive3", "GloveNews.BomberMan",
+            "GloveNews.Impact1", "GloveNews.Impact2", "GloveNews.Impact3", "GloveNews.WeaponMaster",
+        };
 
         /// <summary>Raised when the save slot being played has seen another tutorial (the save writes it).</summary>
         public static event System.Action Changed;
