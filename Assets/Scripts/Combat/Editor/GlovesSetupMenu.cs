@@ -22,7 +22,8 @@ namespace Game.EditorTools
     ///   is the knuckles (+Z where the punch goes, +Y the top of the fist); its child Model is the look (put your own
     ///   model there later) and its child Punch Shape the collider that hits (a capsule round the mitt);
     /// - Assets/Resources/Glove Kinds.asset: the three kinds (Boxing +3 Fist Size, Throwing +3 Throw Power, Soldier +3
-    ///   Weapon Efficiency; Soldier was called Warrior), the pop and its sounds; Boxing gets Easy Flying Punches (flying
+    ///   Weapon Efficiency; Soldier was called Warrior), the pop, its sounds and its puff of smoke (Smoke_Flash_Small_Puff,
+    ///   2026-11-18); Boxing gets Easy Flying Punches (flying
     ///   punches are harder with the other gloves) and each kind its Unlocks (Boxing the three flying punches, Throwing
     ///   Explosive Objects, Soldier Impact); set once (Menu Version), a later run never undoes a change made by hand;
     /// - Assets/Resources/Blast Skills.asset (user, 2026-11-12): the numbers and looks of the exploding throws, Bomber
@@ -103,9 +104,10 @@ namespace Game.EditorTools
         private const float CuffFrom = -0.085f, CuffTo = -0.175f;
         private static readonly Vector2 CuffSize = new(0.047f, 0.054f);
         private const float CuffFlare = 1.08f;
-        // The punch shape: a capsule along Z round the mitt.
-        private static readonly Vector3 PunchCentre = new(0f, -0.02f, -0.02f);
-        private const float PunchRadius = 0.058f, PunchLength = 0.16f;
+        // The punch shape: a capsule along Z round the mitt (2026-11-18: fitted to the modelled glove, Models/Gloves/Gloves.fbx,
+        // the user's chubby round fist; was centre y -0.02, radius 0.058, 0.16 long for the placeholder).
+        private static readonly Vector3 PunchCentre = new(0f, -0.028f, -0.02f);
+        private const float PunchRadius = 0.078f, PunchLength = 0.156f;
         // The pair on the Knight's boong: the string's length, how far apart the gloves hang, in metres.
         private const float StringLength = 0.09f, StringWidth = 0.006f, HangApart = 0.05f;
 
@@ -504,6 +506,8 @@ namespace Game.EditorTools
             var pop = Clip(PopSoundPath, PopSoundFallback);
             Fill(so, "popSound", pop, notes);
             Fill(so, "awaySound", pop, notes);
+            // The pop's puff of smoke (user, 2026-11-18): the shared small puff, never Lana's Smoke_Blast.
+            Fill(so, "popPuff", AssetDatabase.LoadAssetAtPath<GameObject>(PuffPath), notes);
             if (notes.Count > 0 && !made) Backup(KindsPath);
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(kinds);

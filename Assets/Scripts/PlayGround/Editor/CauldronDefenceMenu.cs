@@ -231,7 +231,7 @@ namespace Game.PlayGround.Editor
             {
                 d.FindProperty("recipeCandies").intValue = 4;
                 d.FindProperty("recipePumpkins").intValue = 1;
-                d.FindProperty("cookSeconds").floatValue = 600f;
+                d.FindProperty("cookSeconds").floatValue = 300f;   // user 2026-11-18: 5 minutes (was 10)
                 d.FindProperty("fuelSpeedsCountdown").boolValue = true;
                 d.FindProperty("spareLogAfter").floatValue = 45f;
                 d.FindProperty("countdownTitle").stringValue = "DEFEND THE CAULDRON!";

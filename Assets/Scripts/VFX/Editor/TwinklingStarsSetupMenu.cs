@@ -5,7 +5,8 @@ using UnityEngine.Rendering;
 
 namespace Game.EditorTools
 {
-    /// <summary>Menu command that fills the Skydome's sky with twinkling Star_Yellow particles (Tools > 429 Game > VFX).</summary>
+    /// <summary>Menu command that fills the Skydome's sky with twinkling Star_Yellow particles (Tools > 429 Game > VFX).
+    /// The user had them removed from the Skydome on 2026-11-18: running this puts them back.</summary>
     public static class TwinklingStarsSetupMenu
     {
         private const string SkydomePath = "Assets/Prefabs/Bases/Skydome.prefab";

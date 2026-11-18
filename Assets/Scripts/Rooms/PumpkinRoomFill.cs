@@ -15,6 +15,10 @@ namespace Game.Rooms
     /// - while the room's Enemy Manager hasn't started, drops Refill Count more from the ceiling whenever fewer than
     ///   Refill Below are left;
     /// - once the room's fight is over (GAMESTAGES has left Fight State), puts the limit back and goes.
+    /// The stage pumpkin (user, 2026-11-18: "spawn in the room randomly ... blend between those pumpkins"): the set's FSM
+    /// still makes it at one of its spots, but with Random Stage Spot the runner moves it straight away (while it grows
+    /// in) to a random free spot on the floor, away from the player and the walls, and the rain then packs the pile right
+    /// up to it (Stage Gap), so it lies hidden among them instead of in a ring of empty floor.
     /// Tools > 429 Game > Rooms > Set Up Magic Hats + Pumpkin Rooms makes the sets and fills this in.
     /// </summary>
     public class PumpkinRoomFill : MonoBehaviour
@@ -48,10 +52,18 @@ namespace Game.Rooms
         [SerializeField] private float highest = 2.8f;
         [Tooltip("Kept this far from the player's head, the stage pumpkin and each other, in metres (flat).")]
         [SerializeField] private float clearOfPlayer = 1f;
-        [SerializeField] private float clearOfStagePumpkin = 0.9f;
+        [Tooltip("Rain kept this far from the stage pumpkin (flat, centre to centre): small, so it hides in the pile.")]
+        [SerializeField] private float stageGap = 0.5f;
         [SerializeField] private float spacing = 0.32f;
+
+        [Header("The stage pumpkin")]
         [Tooltip("The stage's pumpkin (its name without (Clone)), kept clear of.")]
         [SerializeField] private string stagePumpkin = "Pumpkin_2";
+        [Tooltip("Move it to a random free spot on the floor as soon as it's made (off: it stays at the FSM's spot).")]
+        [SerializeField] private bool randomStageSpot = true;
+        [Tooltip("Its random spot is at least this far from the player (flat) and this far from the walls, in metres.")]
+        [SerializeField] private float stageFromPlayer = 2f;
+        [SerializeField] private float stageFromWalls = 0.7f;
 
         [Header("When to stop")]
         [Tooltip("The room's Enemy Manager: once it's on, no more refills.")]
@@ -84,7 +96,8 @@ namespace Game.Rooms
             copy.fill = fill; copy.startCount = startCount; copy.refillBelow = refillBelow; copy.refillCount = refillCount;
             copy.rainSeconds = rainSeconds; copy.refillSeconds = refillSeconds; copy.limitGroup = limitGroup; copy.roomLimit = roomLimit;
             copy.area = area; copy.floorY = floorY; copy.underCeiling = underCeiling; copy.highest = highest;
-            copy.clearOfPlayer = clearOfPlayer; copy.clearOfStagePumpkin = clearOfStagePumpkin; copy.spacing = spacing;
+            copy.clearOfPlayer = clearOfPlayer; copy.stageGap = stageGap; copy.spacing = spacing;
+            copy.randomStageSpot = randomStageSpot; copy.stageFromPlayer = stageFromPlayer; copy.stageFromWalls = stageFromWalls;
             copy.stagePumpkin = stagePumpkin; copy.enemyManager = enemyManager; copy.fightState = fightState; copy.startDelay = startDelay;
             go.SetActive(true);
         }
@@ -116,8 +129,9 @@ namespace Game.Rooms
             {
                 if (f.FsmName == "GAMESTAGES" && f.gameObject.scene.IsValid()) { gameStages = f; break; }
             }
-            yield return new WaitForSeconds(startDelay);
             FindCeiling();
+            if (randomStageSpot) yield return MoveStagePumpkin();
+            yield return new WaitForSeconds(startDelay);
             yield return Rain(startCount, rainSeconds);
 
             // Refilled until the enemies come.
@@ -217,7 +231,7 @@ namespace Game.Rooms
                 // Inside the room: under its ceiling too (outside the walls there's none).
                 if (roofed && !Physics.Raycast(hit.point + Vector3.up * 0.3f, Vector3.up, 5f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) continue;
                 if (Flat(top - head) < clearOfPlayer) continue;
-                if (stage != null && Flat(top - stage.position) < clearOfStagePumpkin) continue;
+                if (stage != null && Flat(top - stage.position) < stageGap) continue;
                 bool crowded = false;
                 foreach (var p in planned) if (Flat(top - p) < spacing) { crowded = true; break; }
                 if (crowded) continue;
@@ -225,6 +239,75 @@ namespace Game.Rooms
                 return true;
             }
             at = default;
+            return false;
+        }
+
+        /// <summary>Whether the stage pumpkin was moved to a random spot (Play tests).</summary>
+        public bool StageMoved { get; private set; }
+
+        // The set's FSM makes the stage pumpkin at the same time as this runner: wait for it (a second at most), then move
+        // it to a random free spot while it's still growing in.
+        private IEnumerator MoveStagePumpkin()
+        {
+            for (float waited = 0f; waited < 1f; waited += Time.deltaTime)
+            {
+                stage = FindStagePumpkin();
+                if (stage != null) break;
+                yield return null;
+            }
+            if (stage == null) yield break;
+            // Its height over the floor as the FSM made it (its pivot), kept at the new spot.
+            float overFloor = Mathf.Max(0f, stage.position.y - floorY);
+            // Strict first (on the NavMesh it runs on), then without the NavMesh if the room has none there.
+            if (!PickStageSpot(true, out var floor) && !PickStageSpot(false, out floor)) yield break;
+            var at = floor + Vector3.up * overFloor;
+            var turn = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f) * stage.rotation;
+            if (stage.TryGetComponent(out Rigidbody body))
+            {
+                if (!body.isKinematic) { body.linearVelocity = Vector3.zero; body.angularVelocity = Vector3.zero; }
+                body.position = at;
+                body.rotation = turn;
+            }
+            stage.SetPositionAndRotation(at, turn);
+            Physics.SyncTransforms();
+            StageMoved = true;
+        }
+
+        // A random spot on the floor for the stage pumpkin: inside the room, away from the player and the walls.
+        private bool PickStageSpot(bool onNavMesh, out Vector3 at)
+        {
+            var head = Camera.main != null ? Camera.main.transform.position : new Vector3(9999f, 0f, 9999f);
+            for (int tries = 0; tries < 60; tries++)
+            {
+                float x = Random.Range(area.min.x, area.max.x), z = Random.Range(area.min.z, area.max.z);
+                var top = new Vector3(x, ceilingY, z);
+                if (Flat(top - head) < stageFromPlayer) continue;
+                if (!Physics.Raycast(top, Vector3.down, out var hit, ceilingY - floorY + 1f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) continue;
+                if (hit.collider.transform.IsChildOf(stage)) continue;
+                if (hit.normal.y < 0.7f || Mathf.Abs(hit.point.y - floorY) > 0.35f) continue;
+                if (roofed && !Physics.Raycast(hit.point + Vector3.up * 0.3f, Vector3.up, 5f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) continue;
+                if (NearWall(hit.point)) continue;
+                if (onNavMesh && !UnityEngine.AI.NavMesh.SamplePosition(hit.point, out _, 0.3f, UnityEngine.AI.NavMesh.AllAreas)) continue;
+                at = hit.point;
+                return true;
+            }
+            at = default;
+            return false;
+        }
+
+        // Anything standing (a wall, furniture) within Stage From Walls around the spot, at pumpkin height.
+        private bool NearWall(Vector3 floor)
+        {
+            var from = floor + Vector3.up * 0.3f;
+            for (int i = 0; i < 8; i++)
+            {
+                var dir = Quaternion.Euler(0f, i * 45f, 0f) * Vector3.forward;
+                if (!Physics.Raycast(from, dir, out var hit, stageFromWalls, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) continue;
+                // Not loose things lying about, nor the stage pumpkin itself.
+                if (hit.rigidbody != null && !hit.rigidbody.isKinematic && hit.collider.bounds.size.magnitude < 1f) continue;
+                if (stage != null && hit.collider.transform.IsChildOf(stage)) continue;
+                return true;
+            }
             return false;
         }
 

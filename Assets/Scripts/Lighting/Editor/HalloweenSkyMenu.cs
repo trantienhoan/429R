@@ -7,9 +7,10 @@ using UnityEngine;
 namespace Game.EditorTools
 {
     /// <summary>
-    /// Tools > 429 Game > Look > Sky: Halloween (user, 2026-11-16: "use this sky for main game"): the gate 3 valley's
-    /// painted Halloween dusk (Assets/BallValley/Sky/BallValley_Sky.png: deep blue, violet, an orange horizon, a harvest
-    /// moon with bats) becomes the scene's skybox, and the player's head camera clears to it instead of the flat fog colour.
+    /// Tools > 429 Game > Look > Sky: Halloween (user, 2026-11-16: "use this sky for main game"): a painted 360 sky becomes
+    /// the scene's skybox, and the player's head camera clears to it instead of the flat fog colour. It was the gate 3
+    /// valley's Halloween dusk (BallValley_Sky.png); since 2026-11-18 it's a midnight sky (Midnight_Sky.png: dark navy, a
+    /// silver moon in the same spot, moonlit clouds, stars).
     /// A skybox is drawn at infinity after everything else, so the head's 40 m far plane and the house fog (6-22 m) don't
     /// cut it, and it only costs the pixels nothing else covers. Nothing else changes: the ambient light stays Flat and the
     /// reflections stay Custom (none), so shiny things don't pick it up. Before, the old Skydome showed nothing (black
@@ -22,7 +23,10 @@ namespace Game.EditorTools
     public static class HalloweenSkyMenu
     {
         private const string Log = "[Sky]";
-        private const string PicturePath = "Assets/BallValley/Sky/BallValley_Sky.png";
+        // The main game's sky picture: since 2026-11-18 a midnight one (user: "change the sky in game to mid night sky, dark
+        // blue color"; Documents/429R_claude_backups/2026-11-18/midnight_sky/midnight_sky.py, the moon where the valley's
+        // is, so the Sky Flyers still loop round it). The gate 3 valley keeps BallValley_Sky.png (its own material).
+        private const string PicturePath = "Assets/BallValley/Sky/Midnight_Sky.png";
         private const string MaterialPath = "Assets/BallValley/Sky/Halloween_Skybox_Mat.mat";
         private const string PanoramicShader = "Skybox/Panoramic";
         private const string FlyersName = "Sky Flyers";

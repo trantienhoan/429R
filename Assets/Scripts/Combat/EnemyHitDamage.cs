@@ -376,7 +376,10 @@ namespace Game.Combat
             // Every Hit Counts: the player's hit too soft to hurt (but more than a touch) takes its weapon's damage.
             if (everyHitCounts && byPlayer && !furniture && judged.Damage <= 0f && power >= MinFlinchPower)
                 judged = new HitResult(power, Mathf.Max(1f, HitSettings.Whole(WeaponPower.DamageOf(collision))), false);
-            var hit = Taken(judged, byPlayer ? HotHandsBonus(collision) : 0);
+            // A bare fist (no gloves on) only taps: 1, never a hard hit, no Hot Hands bonus (user, 2026-11-18).
+            bool bare = Fist.IsBareFist(collision.rigidbody);
+            if (bare) judged = BareTap(judged);
+            var hit = Taken(judged, byPlayer && !bare ? HotHandsBonus(collision) : 0);
             LastHit = hit;
             // Punches are the last resort (user, 2026-10-27): little damage, but every one shoves the enemy back and stuns
             // it; a flying jab shoves it much farther.
@@ -515,6 +518,9 @@ namespace Game.Combat
             return damage == hit.Damage ? hit : new HitResult(hit.Power, damage, hit.IsBig);
         }
 
+        // A bare fist's hit (Fist.IsBareFist): 1 if it hurt at all, never a hard one.
+        private static HitResult BareTap(HitResult hit) => hit.Damage > 0f ? new HitResult(hit.Power, 1f, false) : hit;
+
         // Hot Hands' bonus is for punches (the fist's own and flying ones) and throws (user, 2026-10-28): not for a weapon
         // in the hand, a shot, or a blast; and only from the hand that's hot (user, 2026-11-01).
         private static int HotHandsBonus(Collision collision)
@@ -538,6 +544,8 @@ namespace Game.Combat
             bool thrown = IsThrown(collision);
             if (thrown) power /= Game.Leveling.PlayerLevel.HardThrowShare;
             var hit = settings.Evaluate(power, WeaponPower.DamageOf(collision), thrown, Fist.IsFlyingFist(collision.rigidbody));
+            // A bare fist (no gloves on) only taps (user, 2026-11-18).
+            if (Fist.IsBareFist(collision.rigidbody)) return BareTap(hit);
             int bonus = hit.Damage > 0f && byPlayer ? HotHandsBonus(collision) : 0;
             return bonus == 0 ? hit : new HitResult(hit.Power, hit.Damage + bonus, hit.IsBig);
         }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using HutongGames.PlayMaker;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -98,6 +99,14 @@ namespace Balls.EditorTools
             var sounds = FindSounds(out var noSound);
             if (noSound.Count > 0) notes.Add("NO FILE for sounds " + string.Join(", ", noSound) + " (they stay silent)");
 
+            // 429R gate 3 (2026-11-18): the gate's pieces: the candies (the field's food), the boss, the seed.
+            var candies = Game.Inventory.CandyKinds.Paths.Select(AssetDatabase.LoadAssetAtPath<GameObject>).Where(c => c != null).ToArray();
+            var boss = AssetDatabase.LoadAssetAtPath<GameObject>(Game.Gates.EditorTools.PumpkinBallBossMenu.PrefabPath);
+            if (boss == null) boss = Game.Gates.EditorTools.PumpkinBallBossMenu.Run();
+            var seed = AssetDatabase.LoadAssetAtPath<GameObject>(SeedPath);
+            if (boss == null) notes.Add("NO BOSS (" + Game.Gates.EditorTools.PumpkinBallBossMenu.PrefabPath + ")");
+            if (seed == null) notes.Add("NO SEED (" + SeedPath + "): The_Seed is set without one");
+
             bool saved;
             if (AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath) != null)
             {
@@ -109,6 +118,7 @@ namespace Balls.EditorTools
                     if (stage == null) stage = root.AddComponent<BallValleyStage>();
                     if (stage.skyMaterial == null) stage.skyMaterial = sky;
                     stage.sounds = sounds;
+                    GatePieces(root, stage, candies, boss, seed, notes);
                     PrefabUtility.SaveAsPrefabAsset(root, PrefabPath, out saved);
                 }
                 finally
@@ -128,6 +138,7 @@ namespace Balls.EditorTools
                     var stage = root.AddComponent<BallValleyStage>();
                     stage.skyMaterial = sky;
                     stage.sounds = sounds;
+                    GatePieces(root, stage, candies, boss, seed, notes);
                     PrefabUtility.SaveAsPrefabAsset(root, PrefabPath, out saved);
                 }
                 finally
@@ -147,6 +158,34 @@ namespace Balls.EditorTools
                       $"{sounds.Length} sounds, sky {SkyMaterialPath}). Try it: Play, then {Root}Watch Ball Valley (Play mode).",
                 AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath));
             return true;
+        }
+
+        public const string SeedPath = "Assets/Prefabs/Items/Chest/The_Seed.prefab";
+
+        // 429R gate 3 (2026-11-18): the Ball Valley Gate and Ball Valley Player on the stage, the field's candies, the boss
+        // and the seed (the gate's numbers, once there, are kept); no Watch Mode (the gate runs its one round).
+        private static void GatePieces(GameObject root, BallValleyStage stage, GameObject[] candies, GameObject boss, GameObject seed, List<string> notes)
+        {
+            var gate = root.GetComponent<BallValleyGate>();
+            if (gate == null)
+            {
+                gate = root.AddComponent<BallValleyGate>();
+                notes.Add("Ball Valley Gate added");
+            }
+            var player = root.GetComponent<BallValleyPlayer>();
+            if (player == null)
+            {
+                player = root.AddComponent<BallValleyPlayer>();
+                notes.Add("Ball Valley Player added");
+            }
+            // A fall into a hole whistles like any fall (Fall Out Of World's Cartoon_fall_1/2).
+            player.fallSounds = new[] { "Cartoon_fall_1", "Cartoon_fall_2" }
+                .Select(n => AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx429 + n + ".wav")).Where(c => c != null).ToArray();
+            stage.watchMode = false;
+            stage.candyPrefabs = candies;
+            gate.bossPrefab = boss;
+            gate.seedPrefab = seed;
+            notes.Add($"{candies.Length} candies for berries");
         }
 
         // Every clip BALLS' Sfx table names: 429R's Audio/SFX file of that name (or the one in SoundFiles).
@@ -240,6 +279,12 @@ namespace Balls.EditorTools
                 var go = Object.Instantiate(prefab, Vector3.zero, Quaternion.identity, holder.transform);
                 go.name = prefab.name;
                 var stage = go.GetComponent<BallValleyStage>();
+                // Watching: BALLS' rounds with bots only (no gate, no player in the valley).
+                var gateOn = go.GetComponent<BallValleyGate>();
+                if (gateOn != null) gateOn.enabled = false;
+                var vrOn = go.GetComponent<BallValleyPlayer>();
+                if (vrOn != null) vrOn.enabled = false;
+                stage.watchMode = true;
                 var spot = new GameObject("Watch Spot");
                 spot.transform.SetParent(go.transform, false);
                 float back = stage.tune.halfZ + WatchBack;
@@ -255,6 +300,46 @@ namespace Balls.EditorTools
 
         [MenuItem(Root + "Watch Ball Valley (Play mode)", true)]
         private static bool CanWatch() => EditorApplication.isPlaying;
+
+        /// <summary>
+        /// 429R gate 3 (2026-11-18), Play mode: the valley as GAMESTAGES' Path 3 ON spawns it (a fresh
+        /// CurrentlySpawnedStuffs, the valley at (0, 0, 0)), with its gate and the player in it. GAMESTAGES isn't moved:
+        /// after the boss the seed is out, but no rooftop comes (Gate Exit waits, then gives the view back).
+        /// </summary>
+        [MenuItem(Root + "Play Ball Valley (Play mode)")]
+        public static void PlayGate()
+        {
+            if (!EditorApplication.isPlaying) { Debug.LogError($"{Log} Play Ball Valley works in Play mode: press Play first."); return; }
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+            if (prefab == null || prefab.GetComponent<BallValleyGate>() == null)
+            {
+                Debug.LogError($"{Log} No {PrefabPath} with a Ball Valley Gate: run {Root}Set Up Ball Valley first (out of Play mode).");
+                return;
+            }
+            var global = FsmVariables.GlobalVariables.FindFsmGameObject("CurrentlySpawnedStuffs");
+            if (global != null && global.Value != null) Object.Destroy(global.Value);
+            var manager = GameObject.Find("-LevelManger");
+            var holder = new GameObject("CurrentlySpawnedStuffs");
+            if (manager != null) holder.transform.SetParent(manager.transform);
+            holder.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+            if (global != null) global.Value = holder;
+            int frame = Time.frameCount;
+            EditorApplication.CallbackFunction spawn = null;
+            spawn = () =>
+            {
+                if (!EditorApplication.isPlaying) { EditorApplication.update -= spawn; return; }
+                if (Time.frameCount <= frame + 1) return;
+                EditorApplication.update -= spawn;
+                if (holder == null) return;
+                var go = Object.Instantiate(prefab, Vector3.zero, Quaternion.identity, holder.transform);
+                go.name = prefab.name;
+                Debug.Log($"{Log} Playing gate 3: Ball_Valley at (0, 0, 0) with its gate and the player. Stop Play mode when done.", go);
+            };
+            EditorApplication.update += spawn;
+        }
+
+        [MenuItem(Root + "Play Ball Valley (Play mode)", true)]
+        private static bool CanPlayGate() => EditorApplication.isPlaying;
 
         private static void Folder(string parent, string name)
         {

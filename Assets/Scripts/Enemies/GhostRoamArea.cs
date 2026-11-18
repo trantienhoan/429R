@@ -74,6 +74,19 @@ namespace Game.Enemies
         }
 
         /// <summary>
+        /// Is 'point' inside the box's floor plan, at least 'inset' metres (world) in from its edges? E.g. a big ball's middle
+        /// that must keep all of it inside (the gates' giant pumpkin, 2026-11-18).
+        /// </summary>
+        public bool ContainsFlat(Vector3 point, float inset)
+        {
+            var local = transform.InverseTransformPoint(point);
+            var scale = transform.lossyScale;
+            float hx = size.x * 0.5f - inset / Mathf.Max(0.0001f, Mathf.Abs(scale.x));
+            float hz = size.z * 0.5f - inset / Mathf.Max(0.0001f, Mathf.Abs(scale.z));
+            return hx > 0f && hz > 0f && Mathf.Abs(local.x - center.x) <= hx && Mathf.Abs(local.z - center.z) <= hz;
+        }
+
+        /// <summary>
         /// Fits the box's floor plan over a world-space rectangle (its height stays as it is), e.g. after the PlayGround
         /// has grown: World Size's x and y are its width along the world X and Z axes.
         /// </summary>

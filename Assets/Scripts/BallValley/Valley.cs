@@ -218,6 +218,31 @@ namespace Balls
             FloorMesh(floorMesh, HalfX, HalfZ, Cuts());
             floorCol.sharedMesh = null;   // assigning it again makes the collider take the new shape
             floorCol.sharedMesh = floorMesh;
+            if (teleportCol)
+            {
+                teleportCol.sharedMesh = null;   // 429R: the teleport lawn keeps the floor's shape too
+                teleportCol.sharedMesh = floorMesh;
+            }
+        }
+
+        MeshCollider teleportCol;
+
+        /// <summary>
+        /// 429R (gate 3): the lawn the player may teleport onto: a copy of the floor's shape (the holes' pits cut out, so
+        /// nobody teleports into one) on <paramref name="layer"/> (429R's Teleport layer, which the valley's own balls never
+        /// touch), kept the floor's shape as the valley shrinks. The caller puts the Teleportation Area on it.
+        /// </summary>
+        public MeshCollider MakeTeleportFloor(int layer)
+        {
+            if (teleportCol) return teleportCol;
+            if (!floorCol) return null;
+            var go = new GameObject("Teleport Lawn");
+            go.layer = layer;
+            go.transform.SetParent(transform, false);
+            go.transform.localPosition = new Vector3(0f, 0.01f, 0f);   // (a hair over the floor: the ray finds it first)
+            teleportCol = go.AddComponent<MeshCollider>();
+            teleportCol.sharedMesh = floorMesh;
+            return teleportCol;
         }
 
         void BuildWalls()

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Game.Combat;
 using Game.Enemies;
+using Game.Gates;
 using TMPro;
 using Unity.XR.CoreUtils;
 using UnityEngine;
@@ -31,8 +32,11 @@ namespace Game.PlayGround
     ///    gear bool (with the start chest's Bracer that's all four GAMESTAGES needs).
     /// 6. Won (the countdown runs out, the cauldron standing): the Fairy Shield sweeps the field, gear seeds still lying
     ///    are eaten for the player and any gear bool still missing is set, then the pot swells and bursts (the Cauldron's
-    ///    Burst: Pot Broken), which takes the player to the Daruma game (Special Stage 3 Trigger) and gives the first-clear
-    ///    prize (Cooking Rewards). A Daruma win hands over The_Seed, and GAMESTAGES goes on to the Pumpkin Boss.
+    ///    Burst: Pot Broken; the first-clear prize, Cooking Rewards). Since 2026-11-18 (user: gates 1 and 2 end like gate 3)
+    ///    with Pumpkin Finale on, the giant pumpkin (Finale Boss, a Pumpkin Ball Boss) drops where the pot stood and rolls
+    ///    about the PlayGround (its roam area): broken, it bursts into Finale Candies and The_Seed (Gate Exit), and
+    ///    GAMESTAGES takes the player to the rooftop's tree defence. Off: the pot's burst takes the player to the Daruma
+    ///    game (Special Stage 3 Trigger), whose win hands over The_Seed, as before.
     /// 7. Lost (its health runs out): the pot is smashed, the chaos Pumpkin Boss climbs out where it stood, the monsters keep
     ///    coming, all for the player now, and the teleport ground breaks (no teleporting until the run is over). It's
     ///    meant to be the end (user: "make it a sure death situation"); the normal death chain takes it from there, and a
@@ -92,8 +96,9 @@ namespace Game.PlayGround
         [Min(0)] [SerializeField] private int recipeCandies = 4;
         [Tooltip("Tree pumpkins (Pumpkin_On_Tree) it asks for.")]
         [Min(0)] [SerializeField] private int recipePumpkins = 1;
-        [Tooltip("How long it cooks, i.e. how long the cauldron has to be defended, in seconds (user: 10 minutes).")]
-        [Min(10f)] [SerializeField] private float cookSeconds = 600f;
+        [Tooltip("How long it cooks, i.e. how long the cauldron has to be defended, in seconds (user: 10 minutes; " +
+                 "2026-11-18: 5 minutes).")]
+        [Min(10f)] [SerializeField] private float cookSeconds = 300f;
         [Tooltip("Firewood's heat still makes it cook faster (as it always did: each log takes roughly 10 s off the " +
                  "countdown while it burns). Off: always the full Cook Seconds.")]
         [SerializeField] private bool fuelSpeedsCountdown = true;
@@ -158,6 +163,24 @@ namespace Game.PlayGround
         [SerializeField] private string startGearBool = "Bracer_Gear";
         [Tooltip("Seconds from the countdown's end to the pot's swell (the sweep first).")]
         [Min(0f)] [SerializeField] private float burstDelay = 2.5f;
+
+        [Header("Won: the giant pumpkin (user, 2026-11-18)")]
+        [Tooltip("On: after the pot bursts the giant pumpkin drops in; breaking it gives The_Seed (then the rooftop's tree " +
+                 "defence). Off: the Daruma game, as before.")]
+        [SerializeField] private bool pumpkinFinale = true;
+        [Tooltip("Prefabs/Gates/Pumpkin_Ball_Boss.")]
+        [SerializeField] private GameObject finaleBoss;
+        [Tooltip("What it leaves (Items/Chest/The_Seed).")]
+        [SerializeField] private GameObject finaleSeed;
+        [Tooltip("Seconds from the pot's swell to the drop (the swell and the burst take about 2).")]
+        [Min(0f)] [SerializeField] private float finaleDelay = 4f;
+        [Tooltip("Candies it bursts into (the Daruma game's prize was 42).")]
+        [Min(0)] [SerializeField] private int finaleCandies = 42;
+        [Tooltip("Its health here (the prefab's own if 0).")]
+        [Min(0f)] [SerializeField] private float finaleHealth;
+        [Tooltip("Its size here (metres): the PlayGround is only about 11 x 12 m (play test 2026-11-18: at 2.6 it could " +
+                 "hardly move).")]
+        [Min(0.5f)] [SerializeField] private float finaleRadius = 1.5f;
 
         [Header("Lost: the cauldron breaks")]
         [Tooltip("What climbs out where the pot stood, always as a chaos boss: pumpkin_boss_Z_Doom (made by the setup menu: " +
@@ -571,8 +594,41 @@ namespace Game.PlayGround
             GearGuard();
             Debug.Log("[Cauldron Defence] Won: the cauldron stood " + cauldron.DishSeconds.ToString("0") + " s (" + health.Health.ToString("0") + "/" + health.MaxHealth.ToString("0") + " health left). The pot bursts in " + burstDelay + " s.", this);
             Won?.Invoke(this);
+            // The giant pumpkin instead of the Daruma game: the pot's burst no longer takes the player away.
+            bool finale = pumpkinFinale && finaleBoss != null;
+            if (pumpkinFinale && finaleBoss == null)
+                Debug.LogWarning("[Cauldron Defence] Pumpkin Finale is on but Finale Boss is empty (Tools > 429 Game > PlayGround > " +
+                                 "Use Defend The Cauldron sets it): the Daruma game, as before.", this);
+            if (finale && TryGetComponent(out SpecialStage3Trigger daruma)) daruma.enabled = false;
             if (burstDelay > 0f) yield return new WaitForSeconds(burstDelay);
             cauldron.Burst();
+            if (finale) StartFinale();
+        }
+
+        // The giant pumpkin drops where the pot stood (once it has burst) and rolls about the PlayGround's roam area. It
+        // runs on its own object: this cauldron is gone 3 s after the burst.
+        private void StartFinale()
+        {
+            // The floor where the pot stands (not the pot itself: it's still there as this runs).
+            var spot = transform.position;
+            float best = float.NegativeInfinity;
+            foreach (var hit in Physics.RaycastAll(spot + Vector3.up * 2f, Vector3.down, 10f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+            {
+                if (hit.collider.transform.IsChildOf(transform) || hit.rigidbody != null) continue;
+                if (hit.point.y > best) best = hit.point.y;
+            }
+            if (!float.IsNegativeInfinity(best)) spot.y = best;
+            var area = GhostRoamArea.Around(transform.position);
+            var middle = area != null ? new Vector3(area.Middle.x, spot.y, area.Middle.z) : spot;
+            GateBossFinale.Begin(finaleBoss, finaleSeed, spot, finaleDelay, boss =>
+            {
+                boss.Resize(finaleRadius);
+                if (finaleCandies > 0) boss.breakCandies = finaleCandies;
+                if (finaleHealth > 0f) boss.health = finaleHealth;
+                boss.arenaCentre = middle;
+                // On the PlayGround, all of it inside its roam area.
+                if (area != null) boss.canBeAt = p => area.ContainsFlat(p, boss.radius);
+            }, at => area != null && !area.ContainsFlat(at, 1f) ? middle : at, "[Cauldron Defence]");
         }
 
         // Gear seeds still lying are eaten for the player (item, heal, gear bool, as the bowling stage does), then any gear

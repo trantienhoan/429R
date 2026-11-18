@@ -10,6 +10,9 @@ namespace Game.Lighting
     /// back. They keep a fixed distance from the head, as the sky does, so they look far away wherever the player goes
     /// (the house's 40 m far plane: they fly inside it; past the fog's 22 m they're dark silhouettes, without fog, as in
     /// the gate 3 valley, their faces glow). Made by Tools > 429 Game > Look > Sky: Halloween (the scene's "Sky Flyers").
+    /// Since 2026-11-18 (user: "smaller and rarer to see them, not all the time") the sky is empty most of the time: now
+    /// and then (Visit Every) one to three of them fly in from far away, loop round the moon for a while (Visit Seconds)
+    /// and fly off again.
     /// </summary>
     public class SkyFlyers : MonoBehaviour
     {
@@ -27,8 +30,23 @@ namespace Game.Lighting
         [Tooltip("How far from the head they fly (m), nearest and farthest. Under the head's far plane (40 m in the house).")]
         [SerializeField] private Vector2 distance = new Vector2(27f, 33f);
         [Tooltip("How big they look: wing tip to wing tip, in degrees of the view (the moon is about 9).")]
-        // 3 - 4.6 read as dots, 5.5 - 8 looked funny (user, 2026-11-16: "make them smaller, they are really far away").
-        [SerializeField] private Vector2 wingspanDegrees = new Vector2(2.5f, 3.8f);
+        // 3 - 4.6 read as dots, 5.5 - 8 looked funny (user, 2026-11-16: "make them smaller, they are really far away");
+        // 2.5 - 3.8 still too big (user, 2026-11-18: "look smaller"). Was "wingspanDegrees": renamed so the scene's saved
+        // 2.5 - 3.8 is left behind and this applies without editing the scene.
+        [SerializeField] private Vector2 wingspan = new Vector2(1.4f, 2.2f);
+
+        [Header("Visits (user, 2026-11-18: rarer, not all the time)")]
+        [Tooltip("Seconds of empty sky between visits.")]
+        [SerializeField] private Vector2 visitEvery = new Vector2(35f, 80f);
+        [Tooltip("Seconds a visit lasts (they loop round the moon meanwhile).")]
+        [SerializeField] private Vector2 visitSeconds = new Vector2(12f, 22f);
+        [Tooltip("How many slimes come on a visit, fewest and most (at most Count).")]
+        [SerializeField] private Vector2Int visitSlimes = new Vector2Int(1, 3);
+        [Tooltip("Seconds before the first visit.")]
+        [SerializeField] private Vector2 firstVisitAfter = new Vector2(15f, 40f);
+        [Tooltip("Seconds a slime takes to fly in from far away, and to fly off again.")]
+        [Min(0.1f)]
+        [SerializeField] private float arriveSeconds = 3f;
 
         [Header("Flying")]
         [Tooltip("How far from the moon they loop (degrees), smallest and biggest loop.")]
@@ -72,11 +90,16 @@ namespace Game.Lighting
             // A swoop: out to Out and back, from SwoopAt for swoopSeconds.
             public float swoopAt = -1f;
             public Vector3 swoopOut, lastDir;
+            // A visit: flies in from Far at ArriveAt, loops, flies back off toward Far from LeaveAt.
+            public bool visiting, justShown;
+            public float arriveAt, leaveAt;
+            public Vector3 far;
         }
 
         private readonly List<Flyer> flyers = new List<Flyer>();
+        private readonly List<Flyer> idle = new List<Flyer>();
         private MaterialPropertyBlock block;
-        private float nextSwoop;
+        private float nextSwoop, nextVisit;
         private Vector3 moon, moonRight, moonUp;
 
         private void Start()
@@ -88,7 +111,50 @@ namespace Game.Lighting
             moonUp = Vector3.Cross(moon, moonRight).normalized;
             float width = ModelWidth();
             for (int i = 0; i < count; i++) flyers.Add(Make(i, width));
+            // An empty sky until the first visit.
+            foreach (var f in flyers) f.root.gameObject.SetActive(false);
             nextSwoop = Time.time + Random.Range(3f, 6f);
+            nextVisit = Time.time + Random.Range(firstVisitAfter.x, firstVisitAfter.y);
+        }
+
+        // One to three of the slimes not out already come: each a little after the last, from far off to one side of the
+        // moon, and they leave toward there again when the visit is over.
+        private void StartVisit(float now)
+        {
+            float length = Random.Range(visitSeconds.x, visitSeconds.y);
+            nextVisit = now + length + arriveSeconds * 2f + Random.Range(visitEvery.x, visitEvery.y);
+            idle.Clear();
+            foreach (var f in flyers) if (!f.visiting && f.root != null) idle.Add(f);
+            int want = Mathf.Min(idle.Count, Random.Range(Mathf.Max(1, visitSlimes.x), Mathf.Max(visitSlimes.x, visitSlimes.y) + 1));
+            float side = Random.value < 0.5f ? -1f : 1f;
+            float at = now;
+            for (int i = 0; i < want; i++)
+            {
+                var f = idle[Random.Range(0, idle.Count)];
+                idle.Remove(f);
+                f.visiting = true;
+                f.justShown = true;
+                f.swoopAt = -1f;
+                f.arriveAt = at;
+                f.leaveAt = at + length * Random.Range(0.85f, 1f);
+                f.far = SkyDirection(moonLongitude + side * Random.Range(70f, 120f), Random.Range(12f, 30f));
+                at += Random.Range(0.6f, 1.8f);
+            }
+        }
+
+        // How far in a visiting slime is (0 = far off and tiny, 1 = on its loop); below 0 = not out (yet, or any more).
+        private float Presence(Flyer f, float now)
+        {
+            if (!f.visiting || now < f.arriveAt) return -1f;
+            if (now < f.leaveAt) return Mathf.Clamp01((now - f.arriveAt) / arriveSeconds);
+            float p = 1f - (now - f.leaveAt) / arriveSeconds;
+            if (p <= 0f)
+            {
+                f.visiting = false;
+                f.swoopAt = -1f;
+                return -1f;
+            }
+            return p;
         }
 
         /// <summary>A direction of the sky picture (BallValleySky's layout, which the skybox is turned to match).</summary>
@@ -140,7 +206,7 @@ namespace Game.Lighting
             // Spread out: each its own loop, speed (some the other way round), distance and size.
             float t = count > 1 ? index / (float)(count - 1) : 0.5f;
             f.distance = Random.Range(distance.x, distance.y);
-            float span = 2f * f.distance * Mathf.Tan(Random.Range(wingspanDegrees.x, wingspanDegrees.y) * 0.5f * Mathf.Deg2Rad);
+            float span = 2f * f.distance * Mathf.Tan(Random.Range(wingspan.x, wingspan.y) * 0.5f * Mathf.Deg2Rad);
             f.scale = span / width;
             go.transform.localScale = Vector3.one * f.scale;
             f.loop = Mathf.Lerp(loopDegrees.x, loopDegrees.y, t) * Random.Range(0.85f, 1.15f);
@@ -169,12 +235,15 @@ namespace Game.Lighting
             var centre = head.transform.position;
             float now = Time.time, dt = Time.deltaTime;
 
-            // Now and then one of those not swooping goes far out across the sky and back.
+            // Now and then a visit: a few fly in, loop round the moon a while, and fly off.
+            if (now >= nextVisit) StartVisit(now);
+
+            // Now and then one of those out (fully in, not leaving soon, not swooping) goes far out across the sky and back.
             if (now >= nextSwoop)
             {
                 nextSwoop = now + Random.Range(swoopEvery.x, swoopEvery.y);
                 var f = flyers[Random.Range(0, flyers.Count)];
-                if (f.swoopAt < 0f)
+                if (f.swoopAt < 0f && Presence(f, now) >= 1f && now + swoopSeconds < f.leaveAt)
                 {
                     f.swoopAt = now;
                     float side = Random.value < 0.5f ? -1f : 1f;
@@ -185,8 +254,28 @@ namespace Game.Lighting
             foreach (var f in flyers)
             {
                 if (f.root == null) continue;
+                float presence = Presence(f, now);
+                if (presence < 0f)
+                {
+                    if (f.root.gameObject.activeSelf) f.root.gameObject.SetActive(false);
+                    continue;
+                }
+                if (!f.root.gameObject.activeSelf) f.root.gameObject.SetActive(true);
                 f.phase += f.loopSpeed * dt;
                 var dir = LoopDirection(f);
+                // Flying in from far off (small, low over to one side of the moon) and back off again.
+                float inward = Mathf.SmoothStep(0f, 1f, presence);
+                if (inward < 1f)
+                {
+                    dir = Vector3.Slerp(f.far, dir, inward);
+                    dir = (dir + Vector3.up * (0.1f * Mathf.Sin(inward * Mathf.PI))).normalized;
+                }
+                f.root.localScale = Vector3.one * (f.scale * Mathf.Lerp(0.1f, 1f, inward));
+                if (f.justShown)
+                {
+                    f.justShown = false;
+                    f.lastDir = dir;
+                }
                 if (f.swoopAt >= 0f)
                 {
                     float s = (now - f.swoopAt) / Mathf.Max(0.5f, swoopSeconds);
@@ -243,7 +332,8 @@ namespace Game.Lighting
 
         private void OnEnable()
         {
-            foreach (var f in flyers) if (f.root) f.root.gameObject.SetActive(true);
+            // Only those out on a visit show again (the rest stay away until theirs).
+            foreach (var f in flyers) if (f.root && f.visiting) f.root.gameObject.SetActive(true);
         }
     }
 }

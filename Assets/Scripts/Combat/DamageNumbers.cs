@@ -246,7 +246,10 @@ namespace Game.Combat
                 if (now <= 0f && IsQuiet(w.fsm.transform)) continue;
                 if (w.grab != null && HeldThings.InUse(w.grab)) continue;
                 float lost = before - now;
-                // A "deal 999 damage" kill shows what it really had left.
+                // A kill of 999 or more is the game's own (an FSM's "deal 999"; no hit comes near it): no number. A
+                // 999 on the 666-health table skull showed in the user's 2026-11-18 recording.
+                if (now <= 0f && lost >= 999f) continue;
+                // Another "deal a lot" kill shows what it really had left.
                 if (now <= 0f && lost > 50f && lost > before * 3f) lost = before;
                 if (lost < 0.25f) continue;
                 int id = w.fsm.gameObject.GetInstanceID();

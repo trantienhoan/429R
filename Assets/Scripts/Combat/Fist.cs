@@ -227,6 +227,11 @@ namespace Game.Combat
         [Min(0f)]
         [SerializeField] private float knockOutSeconds = 2.5f;
 
+        [Header("Bare fists (user, 2026-11-18)")]
+        [Tooltip("Without gloves on (while the game wants gloves), a fist still punches, but only taps: 1 damage a hit, " +
+                 "never a hard one, no flying punches, no blasts. It still shoves and stuns. Off: no gloves, no punching.")]
+        [SerializeField] private bool bareFists = true;
+
         [Header("Flying punches without easy gloves (harder; user, 2026-11-12)")]
         [Tooltip("With gloves whose kind hasn't Easy Flying Punches (Glove Kinds: all but Boxing), a punch must be this fast " +
                  "to fly (instead of Jab Speed), so flying punches feel easier with Boxing gloves (user: \"with Boxing gloves " +
@@ -466,6 +471,8 @@ namespace Game.Combat
         private AudioSource gloveSpeaker;
         private float nextGloveSound;
         private const float GloveSoundEvery = 0.06f;
+        private float nextGlovePuff;
+        private const float GlovePuffEvery = 0.15f;
         // The pop's back-easing strength, worked out once for each overshoot.
         private static float popOvershootFor = -1f;
         private static float popEase;
@@ -620,6 +627,20 @@ namespace Game.Combat
             thing = BodyOf(thing);
             return thing != null && thing.TryGetComponent<Punch>(out _);
         }
+
+        /// <summary>
+        /// Whether this is a bare fist's ball (user, 2026-11-18): the game wants gloves and this hand has none on, so its
+        /// punch only taps: 1 damage a hit, never a hard one, no Hot Hands bonus (Enemy Hit Damage), no flying punches, no
+        /// blast, no Elon Boong double. The shove and stun stay.
+        /// </summary>
+        public static bool IsBareFist(Component thing)
+        {
+            var owner = OwnerOf(thing);
+            return owner != null && owner.Bare && !IsFlyingFist(thing);
+        }
+
+        // No glove on this hand while the game wants gloves: a bare fist (Bare Fists).
+        private bool Bare => glove == null && Gloves.Required;
 
         /// <summary>
         /// How far a closed punch's combo reaches, in metres: a punch knocks a bug back a share of this (Enemy Hit Damage).
@@ -795,8 +816,9 @@ namespace Game.Combat
                 Open();
                 MakeGlove(Gloves.Worn);
             }
-            // A fist punches only with gloves on (or when punching takes no gloves): without, grip + trigger does nothing.
-            if (formed && !closed && Gloves.CanPunch) Close();
+            // A fist punches for real with gloves on (or when punching takes no gloves); without, Bare Fists still punches a
+            // little (user, 2026-11-18: "can we still do a little damage when we make a fist without calling out gloves").
+            if (formed && !closed && (Gloves.CanPunch || bareFists)) Close();
             Grow();
             ShowGlove();
             WatchPunches();
@@ -826,8 +848,8 @@ namespace Game.Combat
                 // A jab lands as hard as a flying jab; a swing and an uppercut land harder.
                 weapon.Power *= LandedPower(CurrentMove);
             }
-            // The Elon Boong buff: punches do double damage.
-            weapon.boost = Game.Leveling.PlayerBuffs.PunchDamage;
+            // The Elon Boong buff: punches do double damage (not a bare fist's: that does 1).
+            weapon.boost = Bare ? 1f : Game.Leveling.PlayerBuffs.PunchDamage;
             CarryOnRigJump();
             // ...and the ball reaches out past the knuckles, along the hand (0 without the buff), but only at Reach Out
             // Speed on top of the hand's own movement: closing a fist or turning the hand doesn't throw it out.
@@ -918,7 +940,8 @@ namespace Game.Combat
             HelpPlayMaker(collision, punchSpeed);
             Push(collision, punchSpeed, flyer, move);
             float puff = 1f;
-            if (move == Move.Uppercut)
+            // (A bare fist only taps: no knock-outs.)
+            if (move == Move.Uppercut && !Bare)
             {
                 // Enemies walk by themselves and can't be pushed by physics: an uppercut knocks them back, hopping high,
                 // and on the head it knocks them out.
@@ -1026,6 +1049,8 @@ namespace Game.Combat
         // hit). True if it went off.
         private bool BoongBlast(Collision collision, Rigidbody hitter)
         {
+            // A bare fist (no gloves on) only taps: no blast.
+            if (Bare && !IsFlyingFist(hitter)) return false;
             if (Time.time < nextBoongBlast) return false;
             nextBoongBlast = Time.time + boongBlastEvery;
             int power = Mathf.Max(Game.Leveling.PlayerBuffs.PunchExplodes() ? 1 : 0, Game.Leveling.PlayerLevel.ExplosiveFist);
@@ -1083,7 +1108,7 @@ namespace Game.Combat
             closed = true;
             // Power and size are read each time, so they can be changed while playing.
             weapon.Power = Power;
-            weapon.boost = Game.Leveling.PlayerBuffs.PunchDamage;
+            weapon.boost = Bare ? 1f : Game.Leveling.PlayerBuffs.PunchDamage;
             ball.radius = radius * grown;
             // Starts right at the hand, so it doesn't sweep through whatever is between (with the Elon Boong it then
             // reaches out slowly).
@@ -1180,6 +1205,9 @@ namespace Game.Combat
             }
             gloveRadius = Mathf.Max(0.01f, Gloves.ShapeRadius(gloveColliders, gloveShape));
             glove.GetComponentsInChildren(true, gloveLooks);
+            // The pop's puff ready (both hands may pop at once), so the first one doesn't stutter.
+            var popSettings = Gloves.Kinds;
+            if (popSettings != null && popSettings.PopPuff != null) Game.EffectPool.Warm(popSettings.PopPuff, 2);
             shapeSize = -1f;
             gloveUp = false;
             gloveShow = 0f;
@@ -1242,6 +1270,7 @@ namespace Game.Combat
                 gloveFrom = gloveShow;
                 gloveAt = Time.time;
                 PlayGloveSound(want, settings);
+                if (want) PuffGlove(settings);
             }
             if (gloveUp)
             {
@@ -1293,6 +1322,15 @@ namespace Game.Combat
             {
                 if (look != null) look.forceRenderingOff = hide;
             }
+        }
+
+        // A puff of smoke as the glove pops on (user, 2026-11-18: "make a smoke pop out whenever the glove pop out"):
+        // Glove Kinds' Pop Puff at the knuckles, as big as the glove (Fist Size grows it too).
+        private void PuffGlove(GloveKinds settings)
+        {
+            if (settings == null || settings.PopPuff == null || Time.time < nextGlovePuff) return;
+            nextGlovePuff = Time.time + GlovePuffEvery;
+            Game.EffectPool.Play(settings.PopPuff, FistPoint(), settings.PopPuffSize * GloveWorldScale);
         }
 
         // The glove's soft fwump as it pops on, a lighter one as it pops away (Glove Kinds' sounds), from the hand.
@@ -1457,6 +1495,8 @@ namespace Game.Combat
         // At full Fist Size it throws three.
         private void TryFly(Move move, float quality)
         {
+            // Flying punches are the gloves' (a bare fist only taps).
+            if (Bare) return;
             if (!closed || Time.time < nextFly || lastBallHit >= strokeStartTime) return;
 
             var direction = transform.parent != null ? transform.parent.TransformDirection(lastStrokeDirection) : lastStrokeDirection;

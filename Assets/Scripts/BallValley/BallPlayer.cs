@@ -40,6 +40,17 @@ namespace Balls
         {
             if (owner) owner.OnPartCollision(this, c);
         }
+
+        // 429R: the VR body's trigger: balls coming into it, and staying pressed against the player.
+        void OnTriggerEnter(Collider other)
+        {
+            if (owner && owner.vrBody && isHead) owner.VrContact(other, true);
+        }
+
+        void OnTriggerStay(Collider other)
+        {
+            if (owner && owner.vrBody && isHead) owner.VrContact(other, false);
+        }
     }
 
     /// <summary>
@@ -59,6 +70,21 @@ namespace Balls
         // 429R: no networking (BALLS' netId, ownerClientId, proxy, netVelocity).
         /// <summary>429R: never grows a tail (the VR player's ball, a later step): food only scores points.</summary>
         public bool neverGrows;
+        /// <summary>
+        /// 429R (gate 3, 2026-11-18): the VR player's body. Set before it's spawned: its main ball is an invisible trigger
+        /// that follows the player (<see cref="follow"/>), with no face, smoke or sounds, and none of a ball's own doings
+        /// (no rolling, eating or dropping into a hole by itself). Bots see it and hunt it like any ball; what a ball touching
+        /// it does (a shove, a hurt, being pushed along) is Ball Valley Player's, through <see cref="vrContact"/>.
+        /// </summary>
+        public bool vrBody;
+        /// <summary>429R (VR body): where its main ball's centre goes each physics step.</summary>
+        public System.Func<Vector3> follow;
+        /// <summary>429R (VR body): a collider came into its trigger (true) or is still in it (false).</summary>
+        public System.Action<Collider, bool> vrContact;
+        /// <summary>429R: a fixed main-ball radius (0: by its number of balls, as in BALLS), e.g. the VR body.</summary>
+        public float fixedRadius;
+
+        public void VrContact(Collider other, bool entered) => vrContact?.Invoke(other, entered);
 
         public BallPart head;
         /// <summary>Tail, nearest the head first: babies[0] = B(n-1) ... last = B1 (smallest).</summary>
@@ -164,7 +190,7 @@ namespace Balls
         static float Sq(float x) => x * x;
 
         /// <summary>Radius of ball number k (1-based): S1 * (1 + step * (k - 1)), capped at the max size.</summary>
-        public float SizeRadius(int k) => Mathf.Min(T.headMaxRadius, T.headRadius * (1f + T.sizeStep * (k - 1)));
+        public float SizeRadius(int k) => fixedRadius > 0f ? fixedRadius : Mathf.Min(T.headMaxRadius, T.headRadius * (1f + T.sizeStep * (k - 1)));
 
         float TailBallMass(float r) => T.babyMass * Sq(r / T.headRadius);
 
@@ -227,10 +253,13 @@ namespace Balls
             aimDir = toCenter.sqrMagnitude > 1f ? toCenter.normalized : Vector3.forward;
 
             head = CreatePart(true, pos, radius);
-            if (!face) face = BuildFace();
-            face.gameObject.SetActive(true);
-            face.SetPositionAndRotation(pos, Quaternion.LookRotation(aimDir));
-            if (!smoke) smoke = Gfx.MakeSmoke(transform);
+            if (!vrBody)   // 429R: the VR body has no face or smoke (nobody sees it)
+            {
+                if (!face) face = BuildFace();
+                face.gameObject.SetActive(true);
+                face.SetPositionAndRotation(pos, Quaternion.LookRotation(aimDir));
+                if (!smoke) smoke = Gfx.MakeSmoke(transform);
+            }
 
             trail.Clear();
             trail.Add(new Vector3(pos.x, 0f, pos.z));
@@ -240,7 +269,7 @@ namespace Balls
             radius = targetRadius;
             foreach (var b in babies) b.curR = b.targetR;
             lastPosition = pos;
-            if (isHuman) Sfx.Play(Sfx.Sound.Respawn, pos);
+            if (isHuman && !vrBody) Sfx.Play(Sfx.Sound.Respawn, pos);
         }
 
         /// <summary>Removes the balls without dropping food (player left the game).</summary>
@@ -356,6 +385,17 @@ namespace Balls
             part.col = col;
             part.mr = mr;
             part.targetR = part.curR = r;
+            if (vrBody && isHead)
+            {
+                // 429R: the VR body: an invisible trigger carried along with the player (Ball Valley Player handles touches).
+                mr.enabled = false;
+                col.isTrigger = true;
+                rb.isKinematic = true;
+                rb.useGravity = false;
+                rb.interpolation = RigidbodyInterpolation.None;
+                ValleyGame.SetupBody(rb);
+                return part;
+            }
             // 429R: no network copies (BALLS' proxy branch): always simulated here.
             rb.interpolation = RigidbodyInterpolation.Interpolate;
             rb.collisionDetectionMode = isHead ? CollisionDetectionMode.ContinuousDynamic : CollisionDetectionMode.Continuous;
@@ -543,6 +583,14 @@ namespace Balls
         void FixedUpdate()
         {
             if (!alive || !head) return;   // 429R: no proxy
+            if (vrBody)
+            {
+                // 429R: the VR body only follows the player: no rolling, no pockets, no eating (Ball Valley Player).
+                if (follow != null) head.rb.MovePosition(follow());
+                head.prevVel = Vector3.zero;
+                head.prevPos = head.rb.position;
+                return;
+            }
             float dt = Time.fixedDeltaTime;
             var rb = head.rb;
             float bodyMass = BodyMass;   // (the Rainbow Slime's weight comes and goes with its power)
@@ -792,7 +840,7 @@ namespace Balls
         /// </summary>
         public void Knock(float burstUntil = 0f)
         {
-            if (!alive || Invincible) return;   // invincible: nothing knocks it out of your hands
+            if (!alive || Invincible || vrBody) return;   // invincible: nothing knocks it out of your hands (429R: nor the VR body)
             knocked = true;
             knockTime = Time.time;
             knockBurstUntil = burstUntil;
@@ -1228,7 +1276,7 @@ namespace Balls
         void Update()
         {
             UpdateChargeSound();
-            if (!alive || !head) return;
+            if (!alive || !head || vrBody) return;   // 429R: nothing to show on the VR body
             float dt = Time.deltaTime;
             radius = Mathf.MoveTowards(radius, targetRadius, dt * 0.8f);
             head.transform.localScale = Vector3.one * (radius * 2f);
@@ -1293,6 +1341,7 @@ namespace Balls
             if (!alive || !head) return;
             Vector3 p = head.transform.position;
             lastPosition = p;
+            if (vrBody) return;   // 429R: no face or smoke on the VR body
             Vector3 v = Velocity;
             v.y = 0f;
             Vector3 look = charging ? aimDir : (v.sqrMagnitude > 2f ? v.normalized : aimDir);

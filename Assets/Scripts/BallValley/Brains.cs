@@ -62,6 +62,23 @@ namespace Balls
             }
         }
 
+        /// <summary>429R: hunting the VR player's body right now (gate 3 lets only a few at a time: Ball Valley Gate's Max Hunters).</summary>
+        public bool HuntsHuman => mode == Mode.Hunt && prey && prey.isHuman;
+
+        // 429R: it leaves the VR player alone until then (it just hit them).
+        float humanRestUntil;
+
+        /// <summary>429R: it just hit the VR player: it stops hunting them and leaves them alone for <paramref name="seconds"/>.</summary>
+        public void ForgetHuman(float seconds)
+        {
+            humanRestUntil = Time.time + seconds;
+            if (mode == Mode.Hunt && prey && prey.isHuman)
+            {
+                mode = Mode.Wander;
+                nextPlan = 0f;
+            }
+        }
+
         void EndHunt(float aggression)
         {
             mode = Mode.Wander;
@@ -214,6 +231,7 @@ namespace Balls
                 foreach (var p in g.players)
                 {
                     if (p == me || !p.alive || p.Shielded || p.Invincible) continue;   // (no use hunting a ball that can't be knocked)
+                    if (p.isHuman && (Time.time < humanRestUntil || !g.HumanHuntable())) continue;   // 429R: gate 3: only a few at a time go for the player
                     float d = Vector3.Distance(Flat(p.Position), pos);
                     if (d > sight) continue;
                     if (p.BabyCount > me.BabyCount * 1.5f + 4 && aggression < 0.75f) continue;
@@ -323,6 +341,7 @@ namespace Balls
                 }
                 var rb = h.collider.attachedRigidbody;
                 if (rb && !rb.isKinematic) continue;   // loose balls, slimes: pushed aside
+                if (h.collider.GetComponent<Pellet>()) continue;   // 429R: a candy on the field: rolled over (eaten)
                 float at = h.distance;
                 if (at <= 0f)   // already touching it (wedged): only the way into it is blocked
                 {

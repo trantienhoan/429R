@@ -187,6 +187,24 @@ namespace Game.Bowling
         [Min(0.5f)]
         [SerializeField] private float lidStandOff = 4f;
 
+        [Header("The giant pumpkin (user, 2026-11-18: gates end like gate 3)")]
+        [Tooltip("On: after Boss After Phase's chest the slimes fly off and the giant pumpkin (Finale Boss) drops onto a " +
+                 "lane's far end: it bowls itself down the lane at the player, stops dizzy at the dirt's edge (punch it, or " +
+                 "bowl at it), then leaps to another lane. Broken, it's the win: The_Seed, then the rooftop's tree defence. " +
+                 "Off: phase 3 and the showdown, as before.")]
+        [SerializeField] private bool pumpkinFinale = true;
+        [Tooltip("Prefabs/Gates/Pumpkin_Ball_Boss.")]
+        [SerializeField] private GameObject finaleBoss;
+        [Tooltip("It comes after this phase's chest (1 to 3).")]
+        [Range(1, 3)] [SerializeField] private int bossAfterPhase = 2;
+        [Tooltip("Its size here (metres): the lanes are 2 m wide.")]
+        [Min(0.5f)] [SerializeField] private float finaleRadius = 1.3f;
+        [Tooltip("Its health here (the prefab's own if 0).")]
+        [Min(0f)] [SerializeField] private float finaleHealth = 100f;
+        [Tooltip("Strikes count up and a miss doesn't reset them (user, 2026-11-18: \"make it simple\"). Off: Strikes To " +
+                 "Hit in a row, as before.")]
+        [SerializeField] private bool strikesAddUp = true;
+
         [Header("Hooks")]
         [Tooltip("A lane lit (its index).")]
         [SerializeField] private UnityEvent<int> onLaneLit = new();
@@ -625,7 +643,7 @@ namespace Game.Bowling
                 Debug.Log("[Bowling] Strike on lane " + set.Lane + ": " + owner.slime.name + " streak " + owner.streak + "/" + strikesToHit + ".", this);
                 if (owner.streak >= strikesToHit) Hit(owner, strikesToHit + " strikes");
             }
-            else if (owner != null)
+            else if (owner != null && !strikesAddUp)
             {
                 owner.streak = 0;
             }
@@ -726,6 +744,13 @@ namespace Game.Bowling
             MeltAll();
             yield return Wait(0.5f);
             if (p - 1 < phaseChests.Length) DropChest(phaseChests[p - 1], Gear(p), p);
+            if (pumpkinFinale && finaleBoss != null && p >= bossAfterPhase)
+            {
+                // 2026-11-18: the giant pumpkin instead of the rest (phase 3, the showdown).
+                yield return Wait(finaleWait);
+                yield return PumpkinFinale();
+                yield break;
+            }
             if (p >= 3)
             {
                 yield return Wait(finaleWait);
@@ -751,6 +776,87 @@ namespace Game.Bowling
             phaseEnding = false;
             onPhase?.Invoke(Phase);
             Debug.Log("[Bowling] Phase " + Phase + ": " + i + " slimes.", this);
+        }
+
+        // ------------------------------------------------------------------ the giant pumpkin (2026-11-18)
+
+        private Game.Gates.PumpkinBallBoss finalePumpkin;
+        private int finaleLane = -1;
+
+        /// <summary>The giant pumpkin, once it's in (Play tests).</summary>
+        public Game.Gates.PumpkinBallBoss FinalePumpkin => finalePumpkin;
+
+        // The slimes fly off, every rack melts, and the giant pumpkin drops onto a lane's far end; broken, it's the win.
+        private IEnumerator PumpkinFinale()
+        {
+            Phase = 4;
+            phaseEnding = false;
+            onPhase?.Invoke(4);
+            MeltAll();
+            foreach (var f in flyers) if (f.slime != null) f.slime.Leave();
+            flyers.Clear();
+            RefreshSlimes();
+            EnemyWave.KillAll(this);
+            finaleLane = PickFinaleLane(-1);
+            var at = LaneEnd(finaleLane);
+            finalePumpkin = Game.Gates.PumpkinBallBoss.Spawn(finaleBoss, at, transform);
+            if (finalePumpkin == null)
+            {
+                Win();
+                yield break;
+            }
+            finalePumpkin.Resize(finaleRadius);
+            if (finaleHealth > 0f) finalePumpkin.health = finaleHealth;
+            finalePumpkin.arenaCentre = at;
+            finalePumpkin.canBeAt = OnALane;
+            finalePumpkin.chargeAlong = TowardsTheDirt;
+            finalePumpkin.hopTo = () =>
+            {
+                finaleLane = PickFinaleLane(finaleLane);
+                return LaneEnd(finaleLane);
+            };
+            finalePumpkin.Broken += _ => Win();
+            Debug.Log("[Bowling] The giant pumpkin drops onto lane " + finaleLane + ".", this);
+        }
+
+        // On a lane's middle line, all of it off the dirt, short of the lane's end.
+        private bool OnALane(Vector3 p) => LaneOf(p, out _);
+
+        private bool LaneOf(Vector3 p, out Vector3 dir)
+        {
+            dir = Vector3.zero;
+            var flat = p - CentrePoint();
+            flat.y = 0f;
+            float r = finalePumpkin != null ? finalePumpkin.radius : finaleRadius;
+            foreach (var lane in lanes)
+            {
+                if (lane == null) continue;
+                var d = lane.Direction;
+                float along = Vector3.Dot(flat, d);
+                float across = Mathf.Abs(Vector3.Dot(flat, Vector3.Cross(Vector3.up, d)));
+                if (across > 0.25f || along < BowlingLayout.LaneStart + r + 0.1f || along > BowlingLayout.LaneEnd - 0.3f) continue;
+                dir = d;
+                return true;
+            }
+            return false;
+        }
+
+        // A charge goes down its lane, at the dirt.
+        private Vector3 TowardsTheDirt(Vector3 p) => LaneOf(p, out var dir) ? -dir : Vector3.zero;
+
+        // The far end of lane k, on its floor.
+        private Vector3 LaneEnd(int k)
+        {
+            var c = CentrePoint();
+            var dir = k >= 0 && k < lanes.Length && lanes[k] != null ? lanes[k].Direction : Vector3.forward;
+            return c + dir * (BowlingLayout.LaneEnd - 1.5f);
+        }
+
+        private int PickFinaleLane(int not)
+        {
+            var ok = new List<int>();
+            for (int k = 0; k < lanes.Length; k++) if (lanes[k] != null && k != not) ok.Add(k);
+            return ok.Count > 0 ? ok[Random.Range(0, ok.Count)] : 0;
         }
 
         // ------------------------------------------------------------------ the showdown
@@ -1574,12 +1680,19 @@ namespace Game.Bowling
             rulesShowing = false;
         }
 
-        // Lid Stand Off metres from the rooftop's Lid (or its middle), towards the south gate, on its floor, facing it.
+        // Lid Stand Off metres from the rooftop's Pumpkin Tree (2026-11-18: the tree defence comes next, as in the main game;
+        // else its Lid, or its middle), towards the south gate, on its floor, facing it.
         private (Vector3 spot, float yaw) RooftopSpot(GameObject roof)
         {
             var roofAt = roof != null ? roof.transform.position : Vector3.zero;
             var lid = Global("Lid");
             var middle = lid != null && roof != null && lid.transform.IsChildOf(roof.transform) ? lid.transform.position : roofAt;
+            foreach (var tree in GameObject.FindGameObjectsWithTag("PumpkinTree"))
+            {
+                if (tree == null || (roof != null && !tree.transform.IsChildOf(roof.transform))) continue;
+                middle = tree.transform.position;
+                break;
+            }
             var back = roof != null ? -roof.transform.forward : Vector3.back;
             back.y = 0f;
             if (back.sqrMagnitude < 0.0001f) back = Vector3.back;

@@ -74,8 +74,9 @@ namespace Game.Combat
             }
         }
 
-        [Tooltip("Without a pair of gloves, grip + trigger does nothing (user, 2026-11-12: no fist, no punch, no flying " +
-                 "punch). Untick to punch bare-handed again when no gloves are worn (gloves still work when worn).")]
+        [Tooltip("Gloves make the real punch (user, 2026-11-12). Without a pair, a fist only taps for 1 (the Fists' Bare " +
+                 "Fists, user 2026-11-18; untick it there for no punching at all): no flying punches, no hard hits. Untick " +
+                 "this to punch bare-handed in full again when no gloves are worn (gloves still work when worn).")]
         [SerializeField] private bool needGloves = true;
         [Tooltip("The kinds the Knight can carry, one picked at random each run (never the same kind two runs in a row).")]
         [SerializeField] private List<Kind> kinds = new();
@@ -97,6 +98,12 @@ namespace Game.Combat
         [SerializeField] private AudioClip popSound;
         [Range(0f, 1f)]
         [SerializeField] private float popVolume = 0.55f;
+        [Tooltip("A puff of smoke where a glove pops on (user, 2026-11-18; the shared Smoke_Flash_Small_Puff). Empty: none.")]
+        [SerializeField] private GameObject popPuff;
+        [Tooltip("How big that puff is, times the effect's own size. It grows with the glove (Fist Size). Keep it small: " +
+                 "the glove is right in front of the eyes (0.3 hid the view for a moment; 0.08 hugs the knuckles).")]
+        [Min(0f)]
+        [SerializeField] private float popPuffSize = 0.08f;
         [Tooltip("Played as a glove pops away. Empty: silent.")]
         [SerializeField] private AudioClip awaySound;
         [Range(0f, 1f)]
@@ -117,6 +124,8 @@ namespace Game.Combat
         public float AwaySeconds => awaySeconds;
         public AudioClip PopSound => popSound;
         public float PopVolume => popVolume;
+        public GameObject PopPuff => popPuff;
+        public float PopPuffSize => popPuffSize;
         public AudioClip AwaySound => awaySound;
         public float AwayVolume => awayVolume;
         public float AwayPitch => awayPitch;

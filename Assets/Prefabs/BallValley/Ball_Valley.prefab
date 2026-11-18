@@ -10,6 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 7272778008242389161}
   - component: {fileID: 2336074395021610029}
+  - component: {fileID: 8262284768485154091}
+  - component: {fileID: 1423455340067669913}
   m_Layer: 0
   m_Name: Ball_Valley
   m_TagString: Untagged
@@ -170,7 +172,14 @@ MonoBehaviour:
   - {x: 0.6, y: 0.75}
   - {x: 0.75, y: 0.9}
   - {x: 0.9, y: 1}
-  watchMode: 1
+  watchMode: 0
+  candyPrefabs:
+  - {fileID: 8690403555129543112, guid: cdc38a3b62c4ce74599d6cfed8d6c696, type: 3}
+  - {fileID: 8690403555129543112, guid: 69a17a112506bd2499387184d87d5fc2, type: 3}
+  - {fileID: 8690403555129543112, guid: f4484be4d3c9d8c4298c6f277b0e1307, type: 3}
+  - {fileID: 8690403555129543112, guid: 095b3a6dbb3314a4aa1260a5b1e49c40, type: 3}
+  - {fileID: 8690403555129543112, guid: ec76c087b6f2f7e449bd46ac0079ccba, type: 3}
+  - {fileID: 8690403555129543112, guid: 423da62656a4eb74a94fb73d5dce640f, type: 3}
   skyMaterial: {fileID: 2100000, guid: fe8ed4034c704124abe3c6dfc0b98957, type: 2}
   seeingDistance: 240
   skyRadius: 200
@@ -236,3 +245,81 @@ MonoBehaviour:
     clip: {fileID: 8300000, guid: 4fdf60d739155c145bcee62525d45c08, type: 3}
   logFeed: 1
   momentOfTruthRampSeconds: 15
+--- !u!114 &8262284768485154091
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7863378838843977471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 311b2dea5db0e7949816973532876e44, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Balls.BallValleyGate
+  balls: 15
+  temper: {x: 0.5, y: 0.75}
+  maxHunters: 1
+  firstShrink: 40
+  shrinkSpan: 150
+  phases: 5
+  smallest: 0.5
+  finaleShrinkSeconds: 6
+  bossPrefab: {fileID: 5024745174123825868, guid: b13714af67e2bd14583d1eb4d4b3b2be,
+    type: 3}
+  bossDelay: 2
+  seedPrefab: {fileID: 3101255149643869238, guid: 23249313e7cb0cf489370b4ecb4416fe,
+    type: 3}
+  bossKnock: 9
+  rulesTitle: BALL VALLEY
+  rulesBody: 'Punch all 15 balls into the holes.
+
+    Don''t fall in!'
+  hudPlace: {x: 1.8, y: 0.55}
+  hudSize: 0.9
+--- !u!114 &1423455340067669913
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7863378838843977471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65240faff71fa4742a2b8ca89ef422b5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Balls.BallValleyPlayer
+  startSpot: {x: 0, y: 0, z: -4}
+  startYaw: 0
+  teleportLawn: 1
+  bodyRadius: 0.45
+  minShoveSpeed: 2.5
+  shovePerSpeed: 0.22
+  maxShove: 3.5
+  shoveHeight: 0.3
+  hurtSpeed: 12
+  hurtEvent: Damage
+  hurtEvery: 1.5
+  restAfterHit: 10
+  bounce: 0.35
+  sameBallEvery: 0.8
+  walkPush: 1.2
+  punchSlide: 0.35
+  pitMargin: 0.25
+  fallDrop: 1
+  fallSeconds: 0.45
+  secondsBack: 2
+  fallDamageEvent: FallDamage
+  keepFromRim: 1.5
+  fallSounds:
+  - {fileID: 8300000, guid: 3358e64fa152195488f438ce5256cc06, type: 3}
+  - {fileID: 8300000, guid: 4a1621518813a244bb355d4b0444a86b, type: 3}
+  fallVolume: 0.9
+  fistsTogether: 0.3
+  chargeSeconds: 1
+  dashSpeed: 12
+  dashSeconds: 0.35
+  dashCooldown: 3
+  dashKnockSpeed: 16
+  dashReach: 0.8
+  dashBossDamage: 10

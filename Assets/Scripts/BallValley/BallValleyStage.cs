@@ -19,6 +19,9 @@ namespace Balls
     /// (the VR player's ball, steered by its own IBallBrain) and BallPlayer.neverGrows.
     /// Tools > 429 Game > Ball Valley > Set Up Ball Valley builds the prefab (Prefabs/BallValley/Ball_Valley); Watch Ball
     /// Valley (Play mode) shows it. Changes from BALLS are marked "429R:".
+    /// 2026-11-18 (user): gate 3 itself. With a Ball Valley Gate on this object (Gate Mode) it plays one round of the gate's
+    /// balls, pocketed = gone (no drop-ins, no gifts, no last ball standing: the gate ends it with its giant pumpkin), and
+    /// Ball Valley Player puts the VR player in the valley on foot. The berries are random candies (Candy Prefabs).
     /// </summary>
     [DefaultExecutionOrder(-100)]
     [DisallowMultipleComponent]
@@ -39,8 +42,14 @@ namespace Balls
             new Vector2(0.45f, 0.6f), new Vector2(0.6f, 0.75f), new Vector2(0.75f, 0.9f), new Vector2(0.9f, 1f),
         };
         [Tooltip("On: rounds follow each other by themselves (after the last, round 1 again) and the player only watches. " +
-                 "Off: a round ends and waits for NextRound() (the gate's chests and seeds, a later step).")]
+                 "Off: a round ends and waits for NextRound() (the gate's chests and seeds, a later step). With a Ball Valley " +
+                 "Gate on this object (gate 3), neither: one round, the gate's way.")]
         public bool watchMode = true;
+
+        [Header("429R: food")]
+        [Tooltip("The candies the field's berries are (user, 2026-11-18: \"change all the berry on the field to random candy\"): " +
+                 "each berry is one of these at random, a real candy the player can pick up and eat. Empty: BALLS' berries.")]
+        public GameObject[] candyPrefabs = new GameObject[0];
 
         [Header("429R: look")]
         [Tooltip("The sky sphere's material (Assets/BallValley/Sky/BallValley_Sky_Mat: unlit, the sky picture).")]
@@ -88,6 +97,29 @@ namespace Balls
         public int Round { get; private set; }
         /// <summary>429R: how many rounds (Bots Per Round's length).</summary>
         public int RoundCount => Mathf.Max(1, botsPerRound != null ? botsPerRound.Length : 0);
+
+        /// <summary>
+        /// 429R: gate 3's own rules (Ball Valley Gate on this object): one round of its balls, no drop-ins after a pocket,
+        /// no gifts, no last ball standing (the gate ends it with its boss).
+        /// </summary>
+        public bool GateMode => gate && gate.enabled;
+        BallValleyGate gate;
+
+        /// <summary>429R: the valley has reached its last, smallest phase (the gate's boss comes then at the latest).</summary>
+        public event System.Action LastPhaseReached;
+
+        /// <summary>
+        /// 429R (gate 3, play test 2026-11-18: 15 bots all going for a player standing still took 106 health in a minute):
+        /// may one more bot hunt the VR player? Only while fewer than the gate's Max Hunters do.
+        /// </summary>
+        public bool HumanHuntable()
+        {
+            if (!GateMode) return true;
+            int hunting = 0;
+            foreach (var p in players)
+                if (p && !p.isHuman && p.alive && p.brain is BotBrain b && b.HuntsHuman) hunting++;
+            return hunting < Mathf.Max(0, gate.maxHunters);
+        }
 
         /// <summary>
         /// 429R: the layers the valley's physics queries look at. Everything it makes is on Default; this keeps its bots,
@@ -173,9 +205,17 @@ namespace Balls
             }
             I = this;
             owner = true;
+            gate = GetComponent<BallValleyGate>();
             CheckPlace();
             int ground = LayerMask.NameToLayer("Ground"), teleport = LayerMask.NameToLayer("Teleport");
             IgnoreLayers = (ground >= 0 ? 1 << ground : 0) | (teleport >= 0 ? 1 << teleport : 0);
+            // 429R (gate 3): the player's own colliders too (the XR Origin's body on Player, the body parts): balls meet
+            // the player only through the VR body (Ball Valley Player), never the rig's capsule.
+            foreach (var layer in new[] { "Player", "Character Collider", "Character Controller" })
+            {
+                int l = LayerMask.NameToLayer(layer);
+                if (l >= 0) IgnoreLayers |= 1 << l;
+            }
             QueryMask = 1 << 0;   // Default: everything the valley makes
             if (vertexColorShader) Gfx.VertexColorShader = vertexColorShader;
             Gfx.Init(transform);
@@ -330,7 +370,7 @@ namespace Balls
             var go = NewWorldObject("Player " + n);
             var p = go.AddComponent<BallPlayer>();
             p.Init(n, c, isHuman, isLocal, brain);
-            p.revives = tune.revives;
+            p.revives = GateMode ? 0 : tune.revives;   // 429R: gate 3: pocketed = gone
             players.Add(p);
             return p;
         }
@@ -547,7 +587,8 @@ namespace Balls
                 : inHole ? $"{p.displayName} rolled into a cave" : $"{p.displayName} fell off the edge";
             AddFeed(text, Color.Lerp(killer ? killer.color : p.color, Color.white, 0.35f));
             // Fell in a hole by themself (nobody pushed them): everyone else gets a revive back, spectators too.
-            if (!killer && inHole && !roundOver && tune.selfPocketGift > 0 && mapScale > tune.selfPocketGiftMinScale) GiftRevives(p);
+            // 429R: not in gate 3 (every pocket counts down its balls).
+            if (!killer && inHole && !roundOver && !GateMode && tune.selfPocketGift > 0 && mapScale > tune.selfPocketGiftMinScale) GiftRevives(p);
             if (!p.isHuman) QueueRevive(p, Random.Range(3f, 6f));
             else if (!CanRevive(p)) AddFeed($"{p.displayName} is out of revives", new Color(1f, 0.6f, 0.5f));
             if (cave != null) Gfx.Puff(cave.mouth + cave.outward * HoleM(3f), new Color(0.15f, 0.12f, 0.1f, 0.8f), 24, HoleM(4f), 6f);   // 429R: hole sized
@@ -683,7 +724,7 @@ namespace Balls
             if (t < regrow) SetMapScale(Mathf.Lerp(roundStartScale, 1f, Smooth(t / regrow)));   // a new round: back from the last phase to the first
             else if (borderPending > 0f)
             {
-                float k = Mathf.Clamp01((Time.time - shrinkStart) / ShrinkSeconds);
+                float k = Mathf.Clamp01((Time.time - shrinkStart) / (forcedShrinkSeconds > 0f ? forcedShrinkSeconds : ShrinkSeconds));   // 429R: Shrink To Last
                 SetMapScale(Mathf.Lerp(shrinkFrom, borderPending, Smooth(k)));
                 if (k >= 1f) ReachedPhase();
             }
@@ -709,6 +750,8 @@ namespace Balls
             }
             roundSeconds = !shrinking && phase + 1 < PhaseCount ? Mathf.Max(0f, roundStart + ShrinkAt(phase + 1) - Time.time) : 0f;
 
+            // 429R: gate 3 has no last ball standing: its gate ends the round (its boss, then the seed).
+            if (GateMode) return;
             // Last ball standing: everyone else is out of revives.
             if (players.Count < 2) return;
             int left = 0;
@@ -765,8 +808,8 @@ namespace Balls
         void StartRound(int r, bool announce)
         {
             Round = Mathf.Max(1, r);
-            int bots = BotsFor(Round);
-            Vector2 temper = TemperFor(Round);
+            int bots = GateMode ? Mathf.Max(1, gate.balls) : BotsFor(Round);              // 429R: gate 3: its balls
+            Vector2 temper = GateMode ? gate.temper : TemperFor(Round);
             tune.botAggressionMin = temper.x;   // (each bot keeps its own temper inside the range: BotBrain reads it live)
             tune.botAggressionMax = temper.y;
             while (BotCount > bots) RemoveOneBot();
@@ -787,6 +830,7 @@ namespace Balls
             roundStart = Time.time;
             roundStartScale = mapScale;
             borderPending = -1f;
+            forcedShrinkSeconds = 0f;   // 429R
             phase = 0;
             momentOfTruth = false;
             respawnQueue.Clear();
@@ -797,7 +841,7 @@ namespace Balls
             {
                 p.points = 0f;
                 p.kills = p.deaths = p.assists = 0;   // K / D / A count the round, like the points
-                p.revives = tune.revives;
+                p.revives = GateMode ? 0 : tune.revives;   // 429R: gate 3: pocketed = gone
                 if (p.alive) p.Despawn();
                 p.freeDrop = true;   // the first drop of a round doesn't use a revive
                 if (!p.isHuman) QueueRevive(p, Random.Range(0.3f, 2f));
@@ -821,7 +865,31 @@ namespace Balls
             borderPending = Phases[phase + 1];
             bool last = phase + 2 >= PhaseCount;
             AddFeed(last ? "The valley shrinks one last time!" : $"The valley shrinks!  Phase {phase + 2} of {PhaseCount}", new Color(1f, 0.6f, 0.3f));
+            Shrinks?.Invoke(phase + 1, last);
         }
+
+        /// <summary>429R: the valley starts shrinking to phase <c>k</c> (0-based); true: its last.</summary>
+        public event System.Action<int, bool> Shrinks;
+
+        /// <summary>
+        /// 429R (gate 3): straight to the last, smallest phase from wherever it is, over <paramref name="seconds"/> (the gate's
+        /// balls are all gone early: its boss comes on the smallest field). Nothing if it's there or on its way already.
+        /// </summary>
+        public void ShrinkToLast(float seconds)
+        {
+            int last = PhaseCount - 1;
+            if (!valley || phase >= last || roundOver) return;
+            if (borderPending > 0f && Mathf.Approximately(borderPending, Phases[last])) return;
+            phase = last - 1;   // (from where it is now, mid-shrink too: Begin Shrink starts at the size it has)
+            BeginShrink();
+            forcedShrinkSeconds = Mathf.Max(0.2f, seconds);
+        }
+
+        // 429R: Shrink To Last's own speed for the shrink going on (0: the usual Shrink Seconds).
+        float forcedShrinkSeconds;
+
+        /// <summary>429R: the valley is at its last, smallest phase.</summary>
+        public bool AtLastPhase => valley && phase >= PhaseCount - 1 && borderPending <= 0f;
 
         /// <summary>
         /// The valley has shrunk to its next phase. At the last one it's the Moment of Truth: anyone pocketed drops straight
@@ -831,9 +899,11 @@ namespace Balls
         {
             float to = borderPending;
             borderPending = -1f;
+            forcedShrinkSeconds = 0f;   // 429R
             phase = Mathf.Min(phase + 1, PhaseCount - 1);
             SetMapScale(to);
             CullOutside();
+            if (phase >= PhaseCount - 1) LastPhaseReached?.Invoke();   // 429R: gate 3's boss comes now at the latest
             if (phase < PhaseCount - 1 || !tune.momentOfTruth || momentOfTruth || roundOver) return;
             momentOfTruth = true;
             momentOfTruthAt = Time.time;   // 429R: bots get angrier from now
@@ -1169,6 +1239,19 @@ namespace Balls
 
         Color RandomPelletColor() => PelletColors[Random.Range(0, PelletColors.Length)];
 
+        /// <summary>429R: a random one of Candy Prefabs (null: none set, a berry then).</summary>
+        GameObject PickCandy()
+        {
+            if (candyPrefabs == null || candyPrefabs.Length == 0) return null;
+            for (int tries = 0; tries < 4; tries++)
+            {
+                var c = candyPrefabs[Random.Range(0, candyPrefabs.Length)];
+                if (c) return c;
+            }
+            foreach (var c in candyPrefabs) if (c) return c;
+            return null;
+        }
+
         int PelletCap => Mathf.RoundToInt(tune.maxPellets * Mathf.Max(0.1f, tune.foodBoost));
 
         /// <summary>Most berries on the field now: with Berries Follow Field, the same density at every size.</summary>
@@ -1316,9 +1399,21 @@ namespace Balls
             return p;
         }
 
-        /// <summary>A berry.</summary>
+        /// <summary>A berry (429R: a random candy, see Candy Prefabs).</summary>
         public Pellet BuildPellet(Vector3 pos, Vector3 vel, Color c)
         {
+            var candy = PickCandy();
+            if (candy)
+            {
+                // 429R: the candy itself is the field food (Pellet.SetupCandy): hovering where the berry would be.
+                var made = Instantiate(candy, new Vector3(pos.x, Mathf.Max(pos.y, Pellet.CandyHover), pos.z),
+                    Quaternion.Euler(0f, Random.Range(0f, 360f), 0f), world);
+                made.name = candy.name;
+                var cp = made.AddComponent<Pellet>();
+                cp.color = c;
+                cp.SetupCandy(vel);
+                return cp;
+            }
             var go = NewWorldObject("Pellet");
             go.transform.position = pos;
             var col = go.AddComponent<SphereCollider>();
@@ -1605,6 +1700,7 @@ namespace Balls
             float bestD = maxDist * maxDist;
             foreach (var p in pellets)
             {
+                if (!p) continue;   // 429R: a candy the game took away this frame
                 Vector3 d = Flat(p.transform.position - pos);
                 float s = d.sqrMagnitude;
                 if (s < bestD) { bestD = s; best = p; }
