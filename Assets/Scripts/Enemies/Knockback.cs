@@ -22,9 +22,19 @@ namespace Game.Enemies
         private float moved;
         private float restingBaseOffset;
         private bool pushing;
+        private float heldUntil = -1f;
 
         /// <summary>True while sliding back or standing stunned afterwards.</summary>
         public bool IsKnockedBack => pushing;
+
+        /// <summary>
+        /// The push waits until then (Time.time), the enemy standing still: a hit freeze (Hit Freeze), so it stops dead
+        /// first and then flies. Earlier than now: no wait.
+        /// </summary>
+        public void Hold(float until)
+        {
+            heldUntil = Mathf.Max(heldUntil, until);
+        }
 
         /// <summary>
         /// Knocks the enemy away from <paramref name="awayFrom"/>. A new push while one is running starts fresh from
@@ -57,6 +67,13 @@ namespace Game.Enemies
             if (!pushing)
             {
                 enabled = false;
+                return;
+            }
+
+            // Held by a hit freeze: it stands still until that's over, then the push starts.
+            if (Time.time < heldUntil)
+            {
+                if (agent != null && agent.enabled && agent.isOnNavMesh) agent.velocity = Vector3.zero;
                 return;
             }
 

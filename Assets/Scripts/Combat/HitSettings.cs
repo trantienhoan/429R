@@ -2,28 +2,36 @@ using UnityEngine;
 
 namespace Game.Combat
 {
-    /// <summary>What one hit did: how strong it was, the damage it did, and whether it was a big hit.</summary>
+    /// <summary>What one hit did: how strong it was, the damage it did, and whether it was a big hit (or a smash).</summary>
     public readonly struct HitResult
     {
-        public HitResult(float power, float damage, bool isBig)
+        public HitResult(float power, float damage, bool isBig, bool isSmash = false)
         {
             Power = power;
             Damage = damage;
-            IsBig = isBig;
+            IsBig = isBig || isSmash;
+            IsSmash = isSmash;
         }
 
         /// <summary>Hit speed (metres per second) x the weapon's Power / the enemy's Toughness.</summary>
         public float Power { get; }
         public float Damage { get; }
         public bool IsBig { get; }
+        /// <summary>A really big swing (Hit Settings' Smash Hit Power): the third step, above a hard hit. Always big too.</summary>
+        public bool IsSmash { get; }
+
+        /// <summary>The same hit with other damage (still big, or a smash).</summary>
+        public HitResult WithDamage(float damage) => new HitResult(Power, damage, IsBig, IsSmash);
     }
 
     /// <summary>
     /// How hard a hit has to be to hurt, and how much it hurts. A hit's power is its speed in metres per second, times
-    /// the weapon's Power, divided by the enemy's Toughness. Two steps, whole numbers (user, 2026-10-27): too weak does
+    /// the weapon's Power, divided by the enemy's Toughness. Steps, whole numbers (user, 2026-10-27): too weak does
     /// nothing, a normal hit does the weapon's Damage (a punch 1, a hammer 2), and a hard hit twice that (a hard throw
-    /// three times) and knocks the
-    /// enemy back. Shared by every enemy, piece of furniture and prop; Tools > 429 Game > Combat > Set Up Hit Damage makes it.
+    /// three times) and knocks the enemy back. Since 2026-11-19 (user: "feel good before anything else") a third step
+    /// above that, the SMASH, so swinging harder still pays: three times (a throw four), a bigger pop and crunch, a
+    /// longer knock-back and hit freeze. The player's hits that hurt an enemy also freeze it a moment (Hit Freeze).
+    /// Shared by every enemy, piece of furniture and prop; Tools > 429 Game > Combat > Set Up Hit Damage makes it.
     /// </summary>
     [CreateAssetMenu(menuName = "429 Game/Combat/Hit Settings", fileName = "Hit Settings")]
     public class HitSettings : ScriptableObject
@@ -43,6 +51,59 @@ namespace Game.Combat
         [SerializeField] private int hardThrowTimes = 3;
         // Set by Tools > 429 Game > Combat > Whole Numbers > 1. Halve Health And Blasts, so it only ever halves once.
         [SerializeField, HideInInspector] private bool healthHalved;
+
+        [Header("Smash (a really big swing: the third step, user 2026-11-19)")]
+        [Tooltip("Hits at least this strong are SMASHES: Smash Hit Times the damage (a thrown thing Smash Throw Times), a " +
+                 "bigger pop and a crunch, a longer knock-back and hit freeze. Twice Big Hit Power = a swing twice as hard as " +
+                 "a hard hit. 0 = no smashes (two steps, as before).")]
+        [Min(0f)]
+        [SerializeField] private float smashHitPower = 16f;
+        [Tooltip("A smash does this many times a normal hit's damage (3: a hammer 2 does 6; a hard hit does 4).")]
+        [Min(1)]
+        [SerializeField] private int smashHitTimes = 3;
+        [Tooltip("A smashing throw does this many times instead (4: a thrown book 2 does 8; a hard throw does 6).")]
+        [Min(1)]
+        [SerializeField] private int smashThrowTimes = 4;
+        [Tooltip("A smashing flying jab does this much more than a normal one (a hard one Flying Hard Bonus more).")]
+        [Min(0)]
+        [SerializeField] private int flyingSmashBonus = 2;
+        [Tooltip("How much farther a smash knocks the enemy back (x) and how much higher it hops (y), as times a hard " +
+                 "hit's; it lies stunned Smash Stun seconds longer.")]
+        [SerializeField] private Vector2 smashKnock = new(1.5f, 1.4f);
+        [Min(0f)]
+        [SerializeField] private float smashStun = 0.3f;
+        [Tooltip("A smash's pop is this many times as big as a hard hit's.")]
+        [Min(0.1f)]
+        [SerializeField] private float smashEffectSize = 1.6f;
+        [Tooltip("Played where a smash lands, on top of the enemy's own hit sound. One at random.")]
+        [SerializeField] private AudioClip[] smashSounds = System.Array.Empty<AudioClip>();
+        [Range(0f, 1f)]
+        [SerializeField] private float smashVolume = 1f;
+
+        [Header("Hit freeze (the enemy only: the player's view never stops)")]
+        [Tooltip("When the player's hit hurts an enemy, the enemy stops dead this long, in seconds (its animation and its " +
+                 "walking; a knock-back waits), so the hit lands with weight: x a normal hit, y a hard one, z a smash. 0 = none.")]
+        [SerializeField] private Vector3 hitFreeze = new(0.04f, 0.07f, 0.11f);
+        [Tooltip("A killing blow freezes it this much longer.")]
+        [Min(0f)]
+        [SerializeField] private float killFreeze = 0.05f;
+        [Tooltip("After a freeze the same enemy isn't frozen again for this long (a killing blow always is), so fast " +
+                 "punches don't keep a boss stuttering.")]
+        [Min(0f)]
+        [SerializeField] private float freezeRest = 0.12f;
+
+        [Header("Hit blink (the enemy goes red a moment when a hit hurts it, user 2026-11-19)")]
+        [Tooltip("The colour it blinks: its paint turns towards it and it glows a little of it. Alpha 0 = no blink.")]
+        [SerializeField] private Color blinkColour = new(1f, 0.1f, 0.06f, 1f);
+        [Tooltip("How far its paint turns that colour at the start of the blink: 0 = not at all, 1 = all the way.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float blinkTint = 0.8f;
+        [Tooltip("How strongly it glows that colour at the start (where its material glows; a black glow map stays black).")]
+        [Min(0f)]
+        [SerializeField] private float blinkGlow = 0.6f;
+        [Tooltip("How long the blink lasts, in seconds: x a normal hit, y a hard one, z a smash. It stays full red for the " +
+                 "first third, then fades.")]
+        [SerializeField] private Vector3 blinkSeconds = new(0.14f, 0.18f, 0.24f);
 
         [Header("Punches (the last resort: little damage, a big shove)")]
         [Tooltip("The combo (user, 2026-10-27): a punch that hurts knocks the enemy back out of the fist's reach but into " +
@@ -183,7 +244,7 @@ namespace Game.Combat
         /// <summary>
         /// What a hit of this power does with a weapon of this Damage (see Weapon Power, a whole number, at least 1): a
         /// normal hit does the Damage, a hard hit Hard Hit Times it (and knocks the enemy back), or Hard Throw Times it when
-        /// a thrown thing is in it (Thrown).
+        /// a thrown thing is in it (Thrown); a smash (Smash Hit Power) Smash Hit Times or Smash Throw Times.
         /// </summary>
         public HitResult Evaluate(float power, float damage, bool thrown = false, bool flyingFist = false)
         {
@@ -192,9 +253,49 @@ namespace Game.Combat
             damage = Mathf.Max(1f, Whole(damage));
             bool hard = power >= bigHitPower;
             if (!hard) return new HitResult(power, damage, false);
-            // A hard flying jab: one more (technique, user 2026-10-27), not twice.
-            if (flyingFist) return new HitResult(power, damage + flyingHardBonus, true);
-            return new HitResult(power, damage * (thrown ? hardThrowTimes : hardHitTimes), true);
+            bool smash = smashHitPower > 0f && power >= Mathf.Max(smashHitPower, bigHitPower);
+            // A hard flying jab: one more (technique, user 2026-10-27), not twice; a smashing one Flying Smash Bonus more.
+            if (flyingFist) return new HitResult(power, damage + (smash ? flyingSmashBonus : flyingHardBonus), true, smash);
+            int times = smash ? (thrown ? smashThrowTimes : smashHitTimes) : (thrown ? hardThrowTimes : hardHitTimes);
+            return new HitResult(power, damage * times, true, smash);
+        }
+
+        /// <summary>
+        /// A punch's or a big hit's knock-back (x distance, y hop, z stun seconds) made a smash's: farther, higher and
+        /// longer (Smash Knock, Smash Stun).
+        /// </summary>
+        public Vector3 SmashKnock(Vector3 knock) =>
+            new Vector3(knock.x * smashKnock.x, knock.y * smashKnock.y, knock.z + smashStun);
+
+        /// <summary>
+        /// How long the player's hit that hurt an enemy freezes it, in seconds (Hit Freeze): by its step, longer for a
+        /// killing blow. 0 = none.
+        /// </summary>
+        public float FreezeSeconds(HitResult hit, bool kill)
+        {
+            if (hit.Damage <= 0f) return 0f;
+            float seconds = hit.IsSmash ? hitFreeze.z : hit.IsBig ? hitFreeze.y : hitFreeze.x;
+            if (seconds <= 0f) return 0f;
+            return kill ? seconds + killFreeze : seconds;
+        }
+
+        /// <summary>After a freeze, the same enemy isn't frozen again for this many seconds (except by a killing blow).</summary>
+        public float FreezeRest => freezeRest;
+
+        /// <summary>Blinks this enemy red (Hit Blink) for a hit that hurt it: longer for a hard hit or a smash.</summary>
+        public void Blink(Component target, HitResult hit)
+        {
+            if (target == null || hit.Damage <= 0f || blinkColour.a <= 0f) return;
+            float seconds = hit.IsSmash ? blinkSeconds.z : hit.IsBig ? blinkSeconds.y : blinkSeconds.x;
+            HitBlink.Play(target.gameObject, blinkColour, blinkTint, blinkGlow, seconds);
+        }
+
+        /// <summary>The smash's crunch where it landed (on top of the enemy's own hit sound).</summary>
+        public void PlaySmash(Vector3 at)
+        {
+            if (smashSounds == null || smashSounds.Length == 0) return;
+            var clip = smashSounds[Random.Range(0, smashSounds.Length)];
+            if (clip != null) AudioSource.PlayClipAtPoint(clip, at, smashVolume);
         }
 
         /// <summary>What a hit of this power does with a Damage of 1 (a punch): 0, 1, or a hard hit's 2.</summary>
@@ -233,6 +334,7 @@ namespace Game.Combat
             if (effect == null) return;
 
             float scale = Mathf.Lerp(effectSize.x, effectSize.y, Mathf.InverseLerp(1f, 4f, hit.Damage)) * size;
+            if (hit.IsSmash) scale *= smashEffectSize;
             var eyes = Camera.main;
             if (eyes != null) at = Vector3.MoveTowards(at, eyes.transform.position, EffectTowardsEyes);
             EffectPool.Play(effect, at, scale, EffectSeconds);

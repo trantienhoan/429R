@@ -261,6 +261,9 @@ namespace Game.Enemies
             if (IsPlayer(other))
             {
                 DamageVignette.HitFrom(shooter != null ? shooter.position : point);
+                // Its shooter has hurt the player (a mini boss then won't come back as a chaos one; a chaos one's ball
+                // hurts more).
+                if (shooter != null && shooter.TryGetComponent(out SpiderBrain brain)) brain.ShotLanded();
                 SendToPlayer(playerEvent, playerFsm);
                 PlayerWeb.Add(webAdded);
                 if (poisonSeconds > 0f && poisonPerSecond > 0f) PlayerPoison.Add(poisonPerSecond, poisonSeconds);

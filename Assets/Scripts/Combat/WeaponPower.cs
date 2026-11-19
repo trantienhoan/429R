@@ -8,10 +8,11 @@ namespace Game.Combat
     /// damage is worked out, so a hammer (2) turns a normal swing into a hard hit. Damage is what a normal hit does, a
     /// whole number (a hard hit does twice): a fist 1, a hammer 2; thrown, its Thrown Bonus more (a book 2), so throwing
     /// beats punching. Anything without it counts as 1 and 1.
-    /// Goes on the weapon's root (the object with the Rigidbody). Level-ups add whole points to it: Fist Size to flying
-    /// punches; Weapon Efficiency and Weapon Master (a bonus stat) only while the thing is held in the hand; a thing off
-    /// the hand (thrown) gets only its Thrown Bonus (user, 2026-11-18: "weapon damage only counts when the object is still
-    /// in hand of Player, throw damage only counts when objects is off hand of Player").
+    /// Goes on the weapon's root (the object with the Rigidbody). Level-ups add whole points to it, one stat for each move
+    /// (user, 2026-11-19): Fist Size to flying punches (and +1 every 3 points to the closed punch); Weapon Efficiency and
+    /// Weapon Master (a bonus stat) only while the thing is held in the hand; a thing off the hand (thrown) gets its
+    /// Thrown Bonus and Throw Power's (+1 every 2 points) (user, 2026-11-18: "weapon damage only counts when the object
+    /// is still in hand of Player, throw damage only counts when objects is off hand of Player").
     /// Tools > 429 Game > Combat > Balance Damage sets both for every weapon and throwable.
     /// </summary>
     [DisallowMultipleComponent]
@@ -71,22 +72,22 @@ namespace Game.Combat
             return DamageOf(body != null && body.TryGetComponent(out WeaponPower weapon) ? weapon : null);
         }
 
-        // A whole number, at least 1 (halves round up). The closed fist does its own (1: punching is the last resort); a
-        // flying jab gets Fist Size's bonus (eaten Fist Size candies' included). A thing the player can hold: in the hand,
-        // Weapon Efficiency's bonus and Weapon Master's (weapon damage); off the hand (thrown), only its Thrown Bonus
-        // (throw damage; Throw Power's part is the hard-throw share and the blasts); lying about, its own. A weapon that
-        // can't be held (a gun's shot) is the held gun's: Weapon Efficiency's. A boost (two hands, the Elon Boong)
-        // multiplies. (Until 2026-11-18 Weapon Efficiency was added to thrown things too, and a hard throw triples it.)
+        // A whole number, at least 1 (halves round up). One stat, one move (user, 2026-11-19): the closed fist does its
+        // own (1) plus Fist Size's punch bonus (+1 every 3 points); a flying jab gets Fist Size's full bonus (eaten Fist
+        // Size candies' included). A thing the player can hold: in the hand, Weapon Efficiency's bonus and Weapon
+        // Master's (weapon damage); off the hand (thrown), its Thrown Bonus plus Throw Power's (+1 every 2 points); lying
+        // about, its own. A weapon that can't be held (a gun's shot) is the held gun's: Weapon Efficiency's. A boost (two
+        // hands, the Elon Boong) multiplies. (Until 2026-11-18 Weapon Efficiency was added to thrown things too.)
         private static float DamageOf(WeaponPower weapon)
         {
             if (weapon == null) return 1f;
             float own = Mathf.Max(1f, HitSettings.Whole(weapon.damage));
             float bonus;
             if (Fist.IsFlyingFist(weapon)) bonus = Game.Leveling.PlayerLevel.FlyingJabBonus;
-            else if (Fist.IsFistBall(weapon)) bonus = 0f;
+            else if (Fist.IsFistBall(weapon)) bonus = Game.Leveling.PlayerLevel.PunchDamageBonus;
             else if (!weapon.TryGetComponent(out XRGrabInteractable grab)) bonus = Game.Leveling.PlayerLevel.WeaponDamageBonus;
             else if (grab.isSelected) bonus = Game.Leveling.PlayerLevel.WeaponDamageBonus + Game.Leveling.PlayerLevel.WeaponMasterBonus;
-            else if (HeldThings.InUse(grab)) bonus = weapon.thrownBonus;
+            else if (HeldThings.InUse(grab)) bonus = weapon.thrownBonus + Game.Leveling.PlayerLevel.ThrowDamageBonus;
             else bonus = 0f;
             return Mathf.Max(1f, HitSettings.Whole((own + bonus) * weapon.boost));
         }

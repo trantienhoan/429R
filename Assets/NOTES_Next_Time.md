@@ -4,6 +4,74 @@ Two PCs: the **K: PC** (has K:/WORK_2026/08_04/_claude/ with the boss round-3 fi
 
 ## RESUME HERE
 
+**00. Hit feel (K: PC, 2026-11-19, user picked "fixes 1-3"): built, compile-checked, Editor-tested with shots at a Spider_Normal (bot profile, real saves untouched). Not tried in the headset; nothing committed.**
+- **Each fist or thing has its own hit window** (EnemyHitDamage, Fat Pumpkin): before, one shared 0.3 s wait per enemy silently ate a left-right combo's second punch and 2 of a Triple Punch's 3 fists. The same thing hitting again within 0.3 s is still ignored. Every Hit Counts now only means "a soft hit still does 1". Tested: two shots landing in the same frame both hurt; the same shot again 0.12 s later did not, 0.6 s later did.
+- **SMASH, a third step** (Hit Settings > Smash): power 16 or more (twice a hard hit) does x3 (a throw x4, a flying jab +2), with a 1.6x pop, a crunch (rock_hit_1-3, swap them in Hit Settings), knock-back x1.5 farther / x1.4 higher and 0.3 s more stun. Tested: 6 damage from a weapon with Damage 2 (hard 4); knocked 2.25 m vs 1.50 m.
+- **Hit freeze, the enemy only** (new HitFreeze.cs; Hit Settings > Hit Freeze): the player's hit that hurts stops the enemy dead (animation + walking): 0.04 s normal, 0.07 hard, 0.11 smash, +0.05 on a kill; no new freeze within 0.12 s after one (kills always). The knock-back waits for it (Knockback.Hold). Tested: the animator held at 0 for exactly those times and its speed came back, and the body stood still and then flew. Not on the Fat Pumpkin or the pumpkin ball boss (they get the smash crunch only). Not tried on pumpkin_boss_Z.
+- **One stat, one move (fix 4, same day):** Fist Size now also adds to the closed punch: +1 damage every 3 points (Player Level > Punch Damage Every; a bare fist still taps for 1). Throw Power adds to thrown damage: +1 every 2 points (Throw Damage Every), on top of each thing's Thrown Bonus, so a hard throw triples it. Candy points count. The Level Up menu shows "punch +N" and "+N damage". Tested: punch 2/3/4 at Fist Size 3/6/9; at Throw Power 10 a thrown book did 7, and 21 when thrown hard (it did 2 / 6 before).
+- **Red hit blink** (new HitBlink.cs; Hit Settings > Hit Blink): an enemy a hit hurts turns red (paint towards red + a little red glow), stays full for a third of the time, then fades: 0.14 s normal, 0.18 hard, 0.24 smash. It uses property blocks like the bee-boss bomb flash; each part's own block is put back afterwards (tested: cleared, so it batches again). Works on every EnemyHitDamage enemy (bugs, bosses, slimes, pumpkin_boss_Z) and the Fat Pumpkin. Not on furniture or things with Hide Hit Effect. The runner pumpkins and the pumpkin ball boss already had their own red flash and keep it. The chase pumpkins (Pumpkin_3/5/7, PlayMaker only) don't blink. Tested on a spider and a giant slime.
+- Feel audit numbers (enemy health/toughness, damage per stat, hits to kill): Claude's memory 429r-feel-audit-2026-11-19 (K: PC).
+- **EnemyManager 2 spawn points moved onto the NavMesh (scene SAVED by Claude, 2026-11-19; backup Documents/429R_claude_backups/2026-11-19/2 Game Scene_before_em2_spawns.unity).**
+  - **What was wrong:** in the Living Room, 7 of the 8 points were off the NavMesh: 0.3-1.3 m past its edge (±3.67 m when the room first appears, ±4.25 after LivingRoom_GO), or under furniture.
+  - **Why it rarely showed:** three things saved them. The FSM snaps each spawn to the NavMesh within 10 m, LandOnNavMesh catches any enemy that still appears off the mesh, and SpiderBrain re-places one that's been stuck off it for 3 s.
+  - **The new spots** are good with both furniture sets (Stuffs and Chaos), at least 0.4 m from the NavMesh edge, with a full path to the player:
+    - IdleSpawn (0.5, 3.25)
+    - (1) (-0.75, -3.75)
+    - (2) (-3.75, -1.75)
+    - (4) (-0.5, 3.75)
+    - (5) (0.25, -3.75)
+    - (6) (3.5, -3.75)
+    - (7) (-3.75, 2)
+  - **Tested:** CP LivingRoom → LR - Stuffs → Enemy2 - Wait. Each roach appeared within 0.33 m of its point (only the FSM's ±0.3 m jitter), and all moved to the player.
+  - **Door_Break_Drop_Pos_3 (the Cockroach_Boss) was left by the east door:** the nearest clear floor is 4.5 m away. LandOnNavMesh puts the boss on the floor 0.5-0.7 m away, and it walks fine.
+  - **Side effects of that save:** the scene also got the two new Player Level values and SkyFlyers' current field list. The old `wingspanDegrees` was already unused, so no change in game.
+  - **Also seen:** breaking a Living Room furniture piece drops Spider_Small spiders at the piece's height (y 1.1-1.3, once at z -6.1, outside the floor). LandOnNavMesh puts them on the floor.
+- **The other EnemyManagers' spawn points (same day, scene SAVED; backup Documents/429R_claude_backups/2026-11-19/2 Game Scene_before_em0_em1_spawns.unity).** Measured with every furniture set, before and after each room's GO animation. A point counts as good when it is on the NavMesh, at least 0.4 m from its edge, with a full path to the player.
+  - **EM0 (Mini Bedroom):** all 3 points were 0.4-1.0 m off the NavMesh. Moved:
+    - (-3.09, 3.93) → (-3, 2.75)
+    - (4.47, 0.63) → (3.5, 0.75)
+    - (-3.28, -3.97) → (-3.25, -3.5)
+  - **EM1 (Bedroom):** 5 of 6 points were 0.2-1.7 m off (IdleSpawn (4) at x 5.75 was outside the wall). Moved:
+    - IdleSpawn (-1.62, 2.94) → (-2.75, 2)
+    - (2) → (1.5, -3.5)
+    - (3) → (3.5, 3.5)
+    - (4) → (3.5, -0.5)
+    - (5) → (3.5, -1.75)
+    - (1) was fine, left as it was.
+  - **EM3 (Living Room ×1.5) and EM4 (rooftop bee points):** already fine, unchanged. EM4's GhostSpawns aren't used any more.
+  - **Tested:** the real waves (Mini Enemy, Enemy1 - Wait). Every spider appeared within 0.35 m of its point and walked to the player.
+- **Mini boss chaos rebirth (user, 2026-11-19), built + Editor-tested:**
+  - **When:** a mini boss (Spider/Cockroach/Bee Boss and their PumpkinButt versions) that the player kills without it ever hurting them comes back at once, 75% of the time, as a chaos one: ×2 health, ×1.5 damage, ×2.5 EXP, with the red Chaos_Aura (the chaos pumpkins' aura). It comes back once only.
+  - **What counts as hurting the player:** a bite, a fist-blocked bite, a charge, a bomb, or a web ball or sting that lands.
+  - **When it doesn't come back:** a boss the game kills (a fall, a crush, a stage clean-up).
+  - **Handover:** the chaos one takes over the first one's death flags, waves, FlagWhenAllGone, and its name (the rooftop swarm counts bosses by name). So the stage only goes on when the chaos one is dead too.
+  - **Where:** settings are in Assets/Resources/Mini Boss Chaos.asset (Tools > 429 Game > Enemies > Set Up Mini Boss Chaos Rebirth). Code: SpiderBrain (OnEnemyDied, BecomeChaos, LandOnPlayer), EnemyHitDamage.KilledByPlayer, WebBall, FlagWhenAllGone.Replace. Test hook: SpiderBrain.ForceNextChaosRebirth.
+  - **The big Gate 1 slimes (also Boss size) are left out:** they split and get their colour from the cauldron.
+  - **Tested:**
+    - Spider: 76 → chaos 134 health, EXP 13, aura.
+    - Bee PumpkinButt: 282 health, EXP 38.
+    - Cockroach: 172 health.
+    - Chaos bites 58 and 14, above a normal boss's maximums of 50 and 9.
+    - It doesn't come back after biting, after a game kill, or when already chaos.
+    - WhiteSpiderDown is set only when the chaos one dies.
+  - **Not tried in the headset.**
+- **Magic hat table smoke fixed (user: "scaling down at root, not puff out"):**
+  - **Cause:** Door_smoke_black (a Smoke_Puff_Loop copy) on both hat tables and 9 treasure chests has its own FSM: Wait 4.2 s → TweenScale itself to 0.1 over 2 s → Deactivate Self. With the 3D puffs (Hierarchy scaling, Local space) that squeezed every puff into a column at its root.
+  - **Fix:** new PuffOutWhenShrunk on the shared Prefabs/Effects/Smoke/Smoke_Puff_Loop (all copies get it). When the shrink starts, it stops that FSM, keeps the size, stops new puffs, lets the last ones drift up, grow and fade, then switches the smoke off and re-arms the FSM. Smokes that never shrink aren't touched.
+  - **Tested on the LR hat table:** puffs stayed about 2× size and rose 0.02 → 0.65 m; the smoke was off 3.4 s after the shrink began.
+  - **Treasure chests:** the user asked for the chest smoke too; it was already covered. All 9 Treasure_Chest_* and Bonus_Chest_Pumpkin have it (same FSM). Play-tested on Treasure_Chest_Seed with the same result.
+  - The other Smoke_Puff_Loop copies (rooftop smoke_black, Pumpkin_Tree, the Bus/Elon Boong and Elon_Bullet smoke) are never shrunk, so it does nothing there. EffectPool turns copies off and on around a re-scale, which resets it.
+  - **Rooftop smoke_black (user asked, same day):** never shrunk, but it vanished in one frame. The rooftop's Info "End" deletes the 4 *_Gate_Spawn 0.5 s after it starts, and a game over switches them off. New **Fade When Removed** option, on for those 4 copies only (Rooftop_Base_Z overrides; backup Documents/429R_claude_backups/2026-11-19/Rooftop_Base_Z_before_smoke_fade.prefab). It keeps a copy of the live puffs each frame, because a switched-off particle system has already dropped them by OnDisable. On removal those puffs go on in a loose copy where the smoke stood, with no new ones, deleted when the last one's life is over.
+  - **Tested:** deleted (End) → 18 puffs faded out in 2.3 s; switched off (game over) → same spot and size, gone in 3.9 s. No errors.
+  - **Pumpkin_Tree smoke (user asked, same day):** its Door_smoke_black loops 15-17 s with a sound, then its FSM's DestroySelf removed it in one frame; it also goes with the tree. Fade When Removed is now on for it too (Pumpkin_Tree override; backup .../Pumpkin_Tree_before_smoke_fade.prefab). Tested: on Destroy Self the 23 puffs went on in the same spot and size and were gone 2.3 s later.
+  - Backup: Documents/429R_claude_backups/2026-11-19/Smoke_Puff_Loop_before_puff_out.prefab.
+- **Music players' "Smoke_Spray" fixed too (user, same day).**
+  - **What it is:** a copy of Prefabs/Effects/Music_Notes_Loop (the flat music notes). Its own FSM takes a 2 s break every 300 s: TweenScale to 0 in 0.1 s, Wait 2, back to Init.
+  - **Fix:** PuffOutWhenShrunk with **Come Back** ticked on Music_Notes_Loop. At the break the notes stop coming and the last ones fade at full size; then the FSM restarts from Init and so do the notes.
+  - **Covers:** all 6 copies (the Bedroom, Living Room, JACK and PlayGround music players, Play_Ground_Z, and Special Stage 3's Song Notes).
+  - **Tested:** break forced in Play. Notes held 0.5 size, gone in 2 s, back to 6-7 notes.
+  - Backup: Documents/429R_claude_backups/2026-11-19/Music_Notes_Loop_before_puff_out.prefab.
+
 **0. NEXT (user, 2026-11-18 night: "Make the game run smoother and play fun first", before the remodel; build size left alone):** pick one first: (a) **smoothness**: profile a play session (bedroom bug fights, the 180-pumpkin rooms, bonus round, bosses: frame time, GC per frame, physics/animation/particles), fix the worst spikes, fade 3D smoke puffs right at the head; a code scan found no costly per-frame lookups, so it needs measuring (MCP server on, or Unity closed for a hidden run); (b) **fun**: the 15-point balance list (memory balance-pass-todo; the user died 3 times in the 11-18 recording, so check which points still stand). Also: Gloves.blend has unsaved changes in the user's Blender (thumb fix + chubby; the FBX already has them); nothing from 11-18 is committed.
 
 **1. Pumpkin boss ROUND 3 (K: PC): prepared + compile-checked, NOT applied, NOT tested.** Everything is in K:/WORK_2026/08_04/_claude/boss_slide_2026-11-11/staged3/ (PumpkinBossBrain.cs, Editor/PumpkinBossSlideMenu.cs, PumpkinBossFx.cs, LiveNavMesh.cs; base3/ + base3_md5.txt = the repo files it was made from; they still matched at 17:05). What it does (all user decisions):

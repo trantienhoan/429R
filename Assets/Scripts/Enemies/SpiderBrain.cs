@@ -768,6 +768,15 @@ namespace Game.Enemies
                  "that EnemyManager knows its boss is down. Empty: none.")]
         [SerializeField] private List<DeathFlag> setOnDeath = new();
 
+        // The chaos rebirth (Mini Boss Chaos, user 2026-11-19): whether its blows have hurt the player since it appeared,
+        // whether it's a chaos one (and is to be made one in Start), the chaos one it came back as, and its red aura.
+        private bool hurtPlayer;
+        private bool chaos;
+        private bool chaosPending;
+        private GameObject rebornAs;
+        private GameObject chaosAura;
+        private static readonly List<object> rebirthSpawners = new();
+
         [Header("Boss")]
         [Tooltip("Boss size only (the mini bosses): it goes for the player as soon as it's out and never gives up on " +
                  "them, wherever they are. It never waits for a turn (no boss does), the other enemies make way for it, " +
@@ -1293,6 +1302,12 @@ namespace Game.Enemies
         /// <summary>For testing: every kamikaze bee's next attack is its kamikaze dive (until set back to false).</summary>
         public static bool ForceKamikaze;
 
+        /// <summary>
+        /// For testing: the next mini boss the player beats without it hurting them comes back as its chaos version
+        /// (Mini Boss Chaos), whatever the chance.
+        /// </summary>
+        public static bool ForceNextChaosRebirth;
+
         /// <summary>On its kamikaze dive right now (it blows up at the end of it).</summary>
         public bool IsKamikaze => kamikaze;
 
@@ -1318,6 +1333,12 @@ namespace Game.Enemies
 
         /// <summary>A boss (its Size is Boss).</summary>
         public bool IsBoss => kindName == SizeClass.Boss;
+
+        /// <summary>
+        /// A chaos mini boss: it came back after the player beat it without it hurting them (Mini Boss Chaos): more
+        /// health, harder blows, more EXP, a red aura.
+        /// </summary>
+        public bool IsChaos => chaos;
         /// <summary>The object it goes for now instead of the player (the tree, the cauldron); null while it's after the player.</summary>
         public Transform GoingFor => GoesForObject ? targetObject : null;
         // A flying boss with Stays High (the bee bosses): up high, shooting, diving only now and then.
@@ -1356,6 +1377,7 @@ namespace Game.Enemies
             ForceNextAnomaly = false;
             makingWhite = false;
             ForceKamikaze = false;
+            ForceNextChaosRebirth = false;
         }
 
         private void Awake()
@@ -1400,6 +1422,8 @@ namespace Game.Enemies
             startHealth = health != null ? Mathf.Max(health.Value, 0.01f) : 1f;
             if (speaker != null) speaker.pitch = kind.pitch;
             if (TryGetComponent(out EnemyHitDamage hits)) hits.KnockBackDistance *= kind.knockBack;
+            // It came back as a chaos one (a mini boss beaten without it hurting the player): after its health is set.
+            if (chaosPending) BecomeChaos();
 
             home = transform.position;
             bornAt = Time.time;
@@ -1411,6 +1435,7 @@ namespace Game.Enemies
             nextWeb =Time.time + Random.Range(2f, Mathf.Max(2f, webCooldown.y));
             EnemyHitDamage.AnyHit += OnAnyHit;
             EnemyHitDamage.WeakHit += OnWeakHit;
+            EnemyHitDamage.Died += OnEnemyDied;
             if (special == SpecialMove.BullCharge) EffectPool.Warm(chargeDust, 4);
             if (KamikazeKind) Game.Weapons.Blast.Warm(kamikazeEffects);
 
@@ -1451,6 +1476,7 @@ namespace Game.Enemies
         {
             EnemyHitDamage.AnyHit -= OnAnyHit;
             EnemyHitDamage.WeakHit -= OnWeakHit;
+            EnemyHitDamage.Died -= OnEnemyDied;
         }
 
         private void Update()
@@ -2548,6 +2574,7 @@ namespace Game.Enemies
         private void BitePlayer(bool shove, bool landSound)
         {
             DamageVignette.HitFrom(transform);
+            LandOnPlayer();
             if (BossAttacking && !string.IsNullOrEmpty(unstoppablePlayerEvent)) SendToPlayer(unstoppablePlayerEvent, PlayerHealthFsm);
             else SendToPlayer(BiteEvent);
             if (move.slowSeconds > 0f) Game.Locomotion.PlayerSlow.Apply(move.slowPlayerTo, move.slowSeconds);
@@ -2596,7 +2623,7 @@ namespace Game.Enemies
         private void FistBlocked()
         {
             if (fistBlockShare <= 0f) return;
-            Game.Combat.PlayerDamageShare.Next(fistBlockShare);
+            LandOnPlayer(fistBlockShare);
             DamageVignette.HitFrom(transform);
             SendToPlayer(BiteEvent);
         }
@@ -3037,6 +3064,7 @@ namespace Game.Enemies
 
             chargeHit = true;
             DamageVignette.HitFrom(transform);
+            LandOnPlayer();
             SendToPlayer(specialPlayerEvent, PlayerHealthFsm);
             if (chargeHitSound != null) PlayOne(chargeHitSound, true);
             // Thrown on along its path, high and far.
@@ -3166,6 +3194,7 @@ namespace Game.Enemies
             if (PlayerInBlast(point))
             {
                 DamageVignette.HitFrom(point);
+                LandOnPlayer();
                 SendToPlayer(specialPlayerEvent, PlayerHealthFsm);
                 PlayerLaunch.Launch(point, bombLaunch.x, bombLaunch.y);
                 SendToOwnFsms("SpecialHit");
@@ -4493,12 +4522,117 @@ namespace Game.Enemies
                 leapFallSpeed = 0f;
                 StartCoroutine(FallWhenDead());
             }
-            foreach (var flag in setOnDeath)
+            // Came back as a chaos one: that one sets its flags when it dies (the stage waits for it too).
+            if (rebornAs == null)
             {
-                if (flag != null && !string.IsNullOrEmpty(flag.boolName)) GameStages.SetFsmBool(flag.globalObject, flag.fsm, flag.boolName, flag.value, this);
+                foreach (var flag in setOnDeath)
+                {
+                    if (flag != null && !string.IsNullOrEmpty(flag.boolName)) GameStages.SetFsmBool(flag.globalObject, flag.fsm, flag.boolName, flag.value, this);
+                }
             }
+            StopChaosAura();
             SendToOwnFsms("Died");
             enabled = false;
+        }
+
+        // ---- Chaos rebirth (Mini Boss Chaos, user 2026-11-19) ----
+
+        // Its blow on the player lands now (a bite, a charge, a bomb, its web ball or sting): it has hurt them, so it won't
+        // come back as a chaos one; a chaos one's blows do Damage Times as much (on top of Share, e.g. a fist block's).
+        private void LandOnPlayer(float share = 1f)
+        {
+            hurtPlayer = true;
+            var settings = chaos ? MiniBossChaos.Settings : null;
+            if (settings != null) share *= settings.DamageTimes;
+            if (!Mathf.Approximately(share, 1f)) PlayerDamageShare.Next(share);
+        }
+
+        /// <summary>Its web ball or sting hit the player (Web Ball tells its shooter).</summary>
+        public void ShotLanded() => LandOnPlayer();
+
+        // Its health ran out (Enemy Hit Damage's Died: the moment the killing blow lands, before anything waiting for it
+        // looks again). A mini boss the player beat without it ever hurting them comes back at once, Chance of the time, as
+        // its chaos version, which takes over what waited for this one: its death flags (this one sets none), its waves, a
+        // Flag When All Gone, and its name (a swarm counts its bosses by name). Not for a chaos one, nor one the player
+        // didn't kill (a fall, a crush, a stage clean-up).
+        private void OnEnemyDied(EnemyHitDamage enemy)
+        {
+            if (enemy == null || enemy.gameObject != gameObject || rebornAs != null) return;
+            if (kindName != SizeClass.Boss || anomaly || chaos || hurtPlayer || !enemy.KilledByPlayer || enemy.noReward) return;
+            var settings = MiniBossChaos.Settings;
+            if (settings == null) return;
+            if (!ForceNextChaosRebirth && (settings.Chance <= 0f || Random.value >= settings.Chance)) return;
+            var prefab = settings.PrefabFor(name);
+            if (prefab == null) return;
+            ForceNextChaosRebirth = false;
+            var at = transform.position;
+            if (NavMesh.SamplePosition(at, out var floor, 2f, NavMesh.AllAreas)) at = floor.position;
+            var born = Instantiate(prefab, at, transform.rotation, transform.parent);
+            born.name = prefab.name + "(Clone)";
+            rebornAs = born;
+            if (born.TryGetComponent(out SpiderBrain brain))
+            {
+                brain.chaosPending = true;
+                brain.setOnDeath = new List<DeathFlag>(setOnDeath);
+                brain.ComeAtOnce();
+            }
+            rebirthSpawners.Clear();
+            EnemyWave.SpawnersOf(gameObject, rebirthSpawners);
+            foreach (var spawner in rebirthSpawners) EnemyWave.Add(spawner, born);
+            FlagWhenAllGone.Replace(gameObject, born);
+            // It counts at once (the answer doesn't matter: it comes back anyway).
+            EnemyLimit.TryTakeSlot();
+            settings.PlayRebirth(at, Size());
+        }
+
+        // Made a chaos one (it came back): Health Times the health, Damage Times its blows (Land On Player), EXP Times the
+        // EXP, and the red aura round its body.
+        private void BecomeChaos()
+        {
+            chaosPending = false;
+            var settings = MiniBossChaos.Settings;
+            if (settings == null) return;
+            chaos = true;
+            if (health != null)
+            {
+                health.Value = Mathf.Round(health.Value * settings.HealthTimes);
+                startHealth = Mathf.Max(health.Value, 0.01f);
+            }
+            if (TryGetComponent(out EnemyHitDamage hits)) hits.Exp = Mathf.FloorToInt(hits.Exp * settings.ExpTimes + 0.5f);
+            MakeChaosAura(settings);
+        }
+
+        // The aura (made for a thing 1 m across, like the chaos pumpkins') round its body, on its model so it rises with a
+        // flier and grows with it, Aura Width of its body wide.
+        private void MakeChaosAura(MiniBossChaos settings)
+        {
+            if (settings.Aura == null) return;
+            var holder = models != null ? models : transform;
+            var body = new Bounds(transform.position, Vector3.zero);
+            bool any = false;
+            foreach (var r in GetComponentsInChildren<Renderer>())
+            {
+                if (!(r is SkinnedMeshRenderer) && !(r is MeshRenderer)) continue;
+                if (any) body.Encapsulate(r.bounds);
+                else body = r.bounds;
+                any = true;
+            }
+            float across = any ? Mathf.Max(body.size.x, body.size.z) : 1f;
+            chaosAura = Instantiate(settings.Aura, holder);
+            chaosAura.name = "Chaos_Aura";
+            var t = chaosAura.transform;
+            t.position = any ? body.center : holder.position;
+            // Upright, so its wisps rise.
+            t.rotation = Quaternion.identity;
+            t.localScale = Vector3.one * (across * settings.AuraWidth / Mathf.Max(0.0001f, Mathf.Abs(holder.lossyScale.x)));
+        }
+
+        // A chaos one's aura fades out as it dies (no new wisps).
+        private void StopChaosAura()
+        {
+            if (chaosAura == null) return;
+            foreach (var system in chaosAura.GetComponentsInChildren<ParticleSystem>())
+                system.Stop(true, ParticleSystemStopBehavior.StopEmitting);
         }
 
         // ---- Taking turns ----

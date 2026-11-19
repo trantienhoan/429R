@@ -22,6 +22,19 @@ namespace Game.Enemies
             watcher.watched.AddRange(enemies);
         }
 
+        /// <summary>
+        /// An enemy being watched came back as another (a mini boss's chaos rebirth): the new one is watched instead.
+        /// </summary>
+        public static void Replace(GameObject was, GameObject now)
+        {
+            if (was == null || now == null) return;
+            foreach (var watcher in FindObjectsByType<FlagWhenAllGone>(FindObjectsSortMode.None))
+            {
+                int i = watcher.watched.IndexOf(was);
+                if (i >= 0) watcher.watched[i] = now;
+            }
+        }
+
         /// <summary>Sets an FSM bool the way a boss's Set On Death does.</summary>
         public static void Set(SpiderBrain.DeathFlag flag, Object context)
         {

@@ -219,7 +219,8 @@ namespace Game.Enemies
                  "fast to hurt).")]
         [Min(0.1f)]
         [SerializeField] private float toughness = 2f;
-        [Tooltip("After a hit that hurts, more hits are ignored this long, in seconds, so one swing counts once.")]
+        [Tooltip("After a hit that hurts, more hits by the same fist or thing are ignored this long, in seconds, so one " +
+                 "swing counts once (each fist or thing on its own, user 2026-11-19: the other fist's punch still lands).")]
         [Min(0f)]
         [SerializeField] private float hitCooldown = 0.2f;
         [Tooltip("Touching something with this tag pops it, giant or not (user, 2026-11-11: the Fairy Shield kills it like " +
@@ -360,7 +361,8 @@ namespace Game.Enemies
         private float nextLook;
         private float nextLaugh;
         private float nextGulpSound;
-        private float nextHurt;
+        // When each fist or thing may hurt it again (Hit Cooldown).
+        private readonly Dictionary<Object, float> nextHurtBy = new();
         private float nextSoftWobble;
         private float pausedUntil;
         private float stuckFor;
@@ -1194,7 +1196,10 @@ namespace Game.Enemies
         // The player's hits, by the one rule: a fist, a thing they hold or just threw, a shot.
         private void OnCollisionEnter(Collision collision)
         {
-            if (phase == Phase.Gone || beingEaten || Time.time < nextHurt) return;
+            if (phase == Phase.Gone || beingEaten) return;
+            // What hit it: each fist or thing waits out its own Hit Cooldown.
+            var hitter = collision.rigidbody != null ? (Object)collision.rigidbody : collision.collider;
+            if (hitter != null && nextHurtBy.TryGetValue(hitter, out float next) && Time.time < next) return;
             var hit = EnemyHitDamage.Judge(collision, toughness, hitSettings, out bool byPlayer);
             if (!byPlayer) return;
             if (hit.Damage <= 0f)
@@ -1210,10 +1215,16 @@ namespace Game.Enemies
             var at = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
             var settings = hitSettings != null ? hitSettings : HitSettings.Shared;
             if (settings.ShowsEffect(hit, true)) settings.PlayEffect(at, hit);
+            if (hit.IsSmash) settings.PlaySmash(at);
             HitBuzz.Dealt(collision, hit.Damage);
             bool breaks = health - hit.Damage <= 0f;
             if (breaks) HitBuzz.Killed(collision, hit.Damage);
-            TakeDamage(hit.Damage, true, hit.IsBig);
+            if (hitter != null)
+            {
+                if (nextHurtBy.Count > 16) nextHurtBy.Clear();
+                nextHurtBy[hitter] = Time.time + hitCooldown;
+            }
+            TakeDamage(hit.Damage, hit.IsBig);
         }
 
         /// <summary>The player's blast (a grenade, a bottle), or a rolling pumpkin running it over.</summary>
@@ -1222,15 +1233,16 @@ namespace Game.Enemies
             if (phase == Phase.Gone) return;
             // No hit pause from a blast (play test 2026-11-11): the Elon Boong's blast went off just before its punch
             // landed, and the pause made the fat pumpkin ignore the punch (1 damage a punch instead of a double one).
-            TakeDamage(Mathf.Max(1f, HitSettings.Whole(strength / toughness)), false);
+            TakeDamage(Mathf.Max(1f, HitSettings.Whole(strength / toughness)));
         }
 
-        private void TakeDamage(float damage, bool pause = true, bool big = false)
+        private void TakeDamage(float damage, bool big = false)
         {
             health -= damage;
             // Its damage number (user, 2026-11-11): its health isn't in a Health FSM, so Damage Numbers can't see it.
             DamageNumbers.Show(transform, damage, big, health <= 0f);
-            if (pause) nextHurt = Time.time + hitCooldown;
+            // It blinks red (Hit Settings' Hit Blink).
+            (hitSettings != null ? hitSettings : HitSettings.Shared).Blink(this, new HitResult(0f, damage, big));
             if (health <= 0f)
             {
                 Break();

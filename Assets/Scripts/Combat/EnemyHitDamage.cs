@@ -16,7 +16,9 @@ namespace Game.Combat
     /// already watches it, sends "Damage" (or "ShakeSmall" for weak hits) so the enemy's hit reactions play, and
     /// switches off the enemy's old "Damage" FSM so hits aren't counted twice. Where a hit of the player's hurts an enemy,
     /// a small pop shows (set in the Hit Settings asset; a big hit gets the bigger one). Blasts come in through Take
-    /// Blast by the same rule (Toughness counts), with more push than damage.
+    /// Blast by the same rule (Toughness counts), with more push than damage. A really big swing is a smash (three
+    /// times, farther knock-back, a crunch), and the player's hits that hurt freeze the enemy a moment (Hit Freeze; the
+    /// knock-back waits for it). Each fist or thing waits out its own Hit Cooldown (user, 2026-11-19).
     /// A part of it with a Hit Zone (on that collider) loses only its Damage Share of a hit's damage from the health
     /// (whole numbers: the fractions add up from hit to hit); Part Hit tells the part and the full hit first, e.g. the
     /// pumpkin boss's pumpkin butt takes a fifth but cracks by the full hits (user, 2026-11-11).
@@ -38,11 +40,13 @@ namespace Game.Combat
         [Tooltip("Divides the hit power: 1 = a normal bug, 1.5 = needs harder hits (the mini-bosses).")]
         [Min(0.1f)]
         [SerializeField] private float toughness = 1f;
-        [Tooltip("After a hit that hurts, more hits are ignored this long, in seconds, so one swing counts once.")]
+        [Tooltip("After a hit that hurts, more hits by the same fist or thing are ignored this long, in seconds, so one " +
+                 "swing counts once. Each fist or thing waits on its own (user, 2026-11-19): the other fist's punch, and " +
+                 "every fist of a Triple Punch, still lands.")]
         [Min(0f)]
         [SerializeField] private float hitCooldown = 0.3f;
-        [Tooltip("Every hit of the player's counts (user, 2026-10-29, the bonus round's pumpkins): Hit Cooldown is for each " +
-                 "fist or thing on its own, so the other fist's punch still lands, and one too soft to hurt still takes 1.")]
+        [Tooltip("Every hit of the player's counts (user, 2026-10-29, the bonus round's pumpkins): one too soft to hurt " +
+                 "still takes its weapon's damage (at least 1).")]
         [SerializeField] private bool everyHitCounts;
 
         [Header("Big hits")]
@@ -127,9 +131,11 @@ namespace Game.Combat
         private Knockback knockback;
         private NavMeshAgent agent;
         private SpiderBrain brain;
-        private float nextHit;
-        // Every Hit Counts: when each fist or thing may hurt it again.
+        // When each fist or thing may hurt it again (Hit Cooldown).
         private readonly Dictionary<UnityEngine.Object, float> nextHitBy = new();
+        // The hit freeze: its own, and until when the one running now holds it (a knock-back waits for it).
+        private HitFreeze freezer;
+        private float frozenUntil = -1f;
         private float nextFlinch;
         private bool dead;
         private float scaledUntil = -1f;
@@ -190,6 +196,12 @@ namespace Game.Combat
         /// </summary>
         public bool LastHurtFromAbove { get; private set; }
         public float LastHurtAt { get; private set; } = -1f;
+
+        /// <summary>
+        /// The player's hit, blast or knock-out took the last of its health (false for a fall, a crush, a stage clean-up,
+        /// a blast that wasn't theirs). Read it in Died, e.g. a mini boss's chaos rebirth.
+        /// </summary>
+        public bool KilledByPlayer { get; private set; }
 
         /// <summary>True once its health has run out (its body may still be playing the death).</summary>
         public bool IsDead => dead || (health != null && health.Value <= 0f);
@@ -337,9 +349,10 @@ namespace Game.Combat
         private void OnCollisionEnter(Collision collision)
         {
             if (health == null || dead || Time.time < settledAt) return;
-            // What hit it: with Every Hit Counts, each one waits out its own Hit Cooldown.
+            // What hit it: each one waits out its own Hit Cooldown (user, 2026-11-19: until then one shared wait ate a
+            // left-right combo's second punch and two of a Triple Punch's three fists, with no number and no buzz).
             UnityEngine.Object hitter = collision.rigidbody != null ? collision.rigidbody : collision.collider;
-            if (Time.time < (everyHitCounts ? NextHitBy(hitter) : nextHit)) return;
+            if (Time.time < NextHitBy(hitter)) return;
 
             float power = collision.relativeVelocity.magnitude * WeaponPower.Of(collision) / toughness;
             bool stray = false;
@@ -404,8 +417,7 @@ namespace Game.Combat
             LastHit = hit;
             if (hit.Damage <= 0f)
             {
-                if (everyHitCounts) WaitOut(hitter);
-                else nextHit = Time.time + hitCooldown;
+                WaitOut(hitter);
                 Send(weakHitEvent);
                 WeakHit?.Invoke(this);
                 return;
@@ -415,34 +427,76 @@ namespace Game.Combat
             health.Value -= hit.Damage;
             LastHurtAt = Time.time;
             LastHurtFromAbove = byPlayer && FromAbove(collision);
-            if (everyHitCounts) WaitOut(hitter);
-            else nextHit = Time.time + hitCooldown;
+            WaitOut(hitter);
+            bool killed = wasAlive && health.Value <= 0f;
             // The hand behind it (a fist, or a hand holding what hit) buzzes as hard as it hurt.
             HitBuzz.Dealt(collision, hit.Damage);
             // The killing blow on an enemy: that hand gets one more, strong thump just after.
-            if (wasAlive && health.Value <= 0f && CountsAsKill) HitBuzz.Killed(collision, hit.Damage);
+            if (killed && CountsAsKill) HitBuzz.Killed(collision, hit.Damage);
             // Its damage number (Damage Numbers watches the health) shows big.
             if (hit.IsBig) DamageNumbers.NoteBigHit(gameObject);
             // The killing blow still plays the hit reaction (sound and sparks); the Health FSM's death state switches
             // that FSM off later this frame.
             Send(hitEvent);
-            // A small pop where it hurt (enemies only; by default only the player's hits, see the Hit Settings).
+            var at = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
+            // A small pop where it hurt (enemies only; by default only the player's hits, see the Hit Settings); a smash
+            // crunches too.
             if (!furniture)
-                ShowHitEffect(collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position, hit, byPlayer);
+            {
+                ShowHitEffect(at, hit, byPlayer);
+                if (hit.IsSmash && byPlayer) Settings.PlaySmash(at);
+            }
+            // It blinks red (Hit Blink), whoever hurt it.
+            BlinkRed(hit);
             if (health.Value <= 0f)
             {
+                if (!dead) KilledByPlayer = byPlayer;
                 Die();
                 HoldStill();
             }
+            // The player's hit stops it dead a moment (before any knock-back, which waits for it).
+            if (byPlayer && !furniture) Freeze(hit, killed);
             // A thrown thing that hurt it on the head: a headshot (it's knocked out, instead of the big hit's knock-back).
-            var at = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
             bool headshot = !furniture && !stray && Settings.Headshots && IsThrown(collision) && (IsHead(at) || IsFace(at));
             if (headshot) Headshot();
-            // Any punch that hurt knocks it back (a hard one farther), for longer.
-            else if (punch) PunchBack(Settings.PunchKnock(true, hit.IsBig, flyingFist), !flyingFist);
+            // Any punch that hurt knocks it back (a hard one farther, a smash farther still), for longer.
+            else if (punch)
+            {
+                var knock = Settings.PunchKnock(true, hit.IsBig, flyingFist);
+                PunchBack(hit.IsSmash ? Settings.SmashKnock(knock) : knock, !flyingFist);
+            }
             // A big killing blow still knocks the body back: Knockback moves the agent itself, which works while it's held.
-            else if (hit.IsBig && knockBack && !stray) KnockBackFromPlayer();
+            // A smash throws it farther and higher, and it lies stunned longer.
+            else if (hit.IsBig && knockBack && !stray)
+            {
+                if (hit.IsSmash)
+                {
+                    var knock = Settings.SmashKnock(new Vector3(1f, 1f, knockBackStun));
+                    scaledUntil = Time.time + 0.1f;
+                    scaledDistance = knock.x;
+                    scaledHop = knock.y;
+                    scaledStun = knock.z;
+                }
+                KnockBackFromPlayer();
+            }
             AnyHit?.Invoke(this, hit);
+        }
+
+        // The hit blink (Hit Settings' Hit Blink): an enemy goes red a moment when it's hurt. Not furniture, nor a thing
+        // with Hide Hit Effect ticked (a room door, the start pumpkin).
+        private void BlinkRed(HitResult hit)
+        {
+            if (!furniture && !hideHitEffect) Settings.Blink(this, hit);
+        }
+
+        // The hit freeze (Hit Settings' Hit Freeze): it stops dead a moment, longer for a hard hit, a smash or a killing
+        // blow; a knock-back that starts now waits for it.
+        private void Freeze(HitResult hit, bool killed)
+        {
+            float seconds = Settings.FreezeSeconds(hit, killed);
+            if (seconds <= 0f) return;
+            if (freezer == null && !TryGetComponent(out freezer)) freezer = gameObject.AddComponent<HitFreeze>();
+            if (freezer.Freeze(seconds, Settings.FreezeRest, killed)) frozenUntil = freezer.FrozenUntil;
         }
 
         // A hit that hurts, on this part: Part Hit hears the full hit, then the part's Hit Zone share of its damage is what
@@ -457,7 +511,7 @@ namespace Game.Combat
             zoneCarry += hit.Damage * share;
             float dealt = Mathf.Floor(zoneCarry + 0.0001f);
             zoneCarry = Mathf.Max(0f, zoneCarry - dealt);
-            return new HitResult(hit.Power, dealt, hit.IsBig && dealt > 0f);
+            return dealt > 0f ? hit.WithDamage(dealt) : new HitResult(hit.Power, 0f, false);
         }
 
         // The part nearest a point (a blast's middle, where a knock-out landed), on an enemy with a Hit Zone; else null.
@@ -515,7 +569,7 @@ namespace Game.Combat
         {
             if (hit.Damage <= 0f) return hit;
             float damage = Mathf.Max(1f, HitSettings.Whole(hit.Damage * damageTaken) + hotBonus);
-            return damage == hit.Damage ? hit : new HitResult(hit.Power, damage, hit.IsBig);
+            return damage == hit.Damage ? hit : hit.WithDamage(damage);
         }
 
         // A bare fist's hit (Fist.IsBareFist): 1 if it hurt at all, never a hard one.
@@ -547,7 +601,7 @@ namespace Game.Combat
             // A bare fist (no gloves on) only taps (user, 2026-11-18).
             if (Fist.IsBareFist(collision.rigidbody)) return BareTap(hit);
             int bonus = hit.Damage > 0f && byPlayer ? HotHandsBonus(collision) : 0;
-            return bonus == 0 ? hit : new HitResult(hit.Power, hit.Damage + bonus, hit.IsBig);
+            return bonus == 0 ? hit : hit.WithDamage(hit.Damage + bonus);
         }
 
         /// <summary>
@@ -593,15 +647,20 @@ namespace Game.Combat
             }
             else
             {
+                bool wasAlive = health.Value > 0f;
                 health.Value -= amount;
                 Send(hitEvent);
+                BlinkRed(hit);
                 if (health.Value <= 0f)
                 {
                     // Killed by a blast that wasn't the player's: they didn't earn it (no EXP, no orbs).
                     if (!byPlayer) noReward = true;
+                    if (!dead) KilledByPlayer = byPlayer;
                     Die();
                     HoldStill();
                 }
+                // The player's blast stops it dead a moment too (before it's thrown).
+                if (byPlayer && !furniture) Freeze(hit, wasAlive && health.Value <= 0f);
             }
             if (!furniture && !stray) BlastBack(center, edge);
             if (amount > 0f) AnyHit?.Invoke(this, hit);
@@ -617,6 +676,7 @@ namespace Game.Combat
             if (!dead && brain != null && !brain.TryStun(knockBackTime + knock.z)) return;
             if (knockback == null && !TryGetComponent(out knockback)) knockback = gameObject.AddComponent<Knockback>();
             knockback.Push(center, knockBackDistance * knock.x, knockBackTime, knockBackHop * knock.y, Mathf.Max(knockBackStun, knock.z));
+            knockback.Hold(frozenUntil);
             if (!dead && brain != null && brain.IsBoss) ShowStunned(knockBackTime + knock.z);
         }
 
@@ -766,16 +826,26 @@ namespace Game.Combat
             bool hurt = hit.Damage > 0f;
             if (hurt)
             {
+                bool wasAlive = health.Value > 0f;
                 health.Value -= hit.Damage;
                 // A knock-out blow's damage number shows big, and so does its pop.
                 DamageNumbers.NoteBigHit(gameObject);
                 Send(hitEvent);
-                if (at.HasValue) ShowHitEffect(at.Value, new HitResult(hit.Power, hit.Damage, true), true);
+                var big = new HitResult(hit.Power, hit.Damage, true, hit.IsSmash);
+                BlinkRed(big);
+                if (at.HasValue)
+                {
+                    ShowHitEffect(at.Value, big, true);
+                    if (hit.IsSmash) Settings.PlaySmash(at.Value);
+                }
                 if (health.Value <= 0f)
                 {
+                    if (!dead) KilledByPlayer = true;
                     Die();
                     HoldStill();
                 }
+                // It stops dead a moment, as a hard hit does, before it flies.
+                Freeze(big, wasAlive && health.Value <= 0f);
                 AnyHit?.Invoke(this, hit);
             }
 
@@ -906,6 +976,8 @@ namespace Game.Combat
             if (knockback == null && !TryGetComponent(out knockback)) knockback = gameObject.AddComponent<Knockback>();
             knockback.Push(eyes.transform.position, knockBackDistance * (scaled ? scaledDistance : 1f), knockBackTime,
                 knockBackHop * (scaled ? scaledHop : 1f), stun);
+            // A hit freeze running now: it stops dead first, then flies.
+            knockback.Hold(frozenUntil);
             // A mini boss knocked back and stunned sees stars until it's back on its feet.
             if (!dead && brain != null && brain.IsBoss) ShowStunned(knockBackTime + stun);
         }

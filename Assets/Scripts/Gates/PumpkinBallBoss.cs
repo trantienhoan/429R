@@ -619,6 +619,7 @@ namespace Game.Gates
             var at = collision.contactCount > 0 ? collision.GetContact(0).point : collision.transform.position;
             var settings = hitSettings != null ? hitSettings : HitSettings.Shared;
             if (settings.ShowsEffect(hit, true)) settings.PlayEffect(at, hit, 2f);
+            if (hit.IsSmash) settings.PlaySmash(at);
             float damage = Mathf.Max(1f, HitSettings.Whole(hit.Damage * (IsDizzy ? dizzyDamageTimes : 1f)));
             HitBuzz.Dealt(collision, damage);
             if (hp - damage <= 0f) HitBuzz.Killed(collision, damage);

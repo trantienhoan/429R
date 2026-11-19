@@ -175,6 +175,16 @@ namespace Game.Leveling
         [Min(0f)]
         [SerializeField] private float pullPerPoint = 0.035f;
 
+        [Header("One stat, one move (user, 2026-11-19: every level-up is felt in the move it's for)")]
+        [Tooltip("Fist Size: the closed punch (the fist itself, gloves on) does +1 damage every this many points (3: +1 " +
+                 "at 3, 6 and 9), eaten candies' whole points included. Flying jabs keep their own +1 a point. 0 = never.")]
+        [Min(0)]
+        [SerializeField] private int punchDamageEvery = 3;
+        [Tooltip("Throw Power: a thrown thing does +1 damage every this many points (2: +5 at 10), eaten candies' whole " +
+                 "points included, on top of its own Thrown Bonus (a hard throw triples it all). 0 = never.")]
+        [Min(0)]
+        [SerializeField] private int throwDamageEvery = 2;
+
         [Header("Exploding throws (Throw Power)")]
         [Tooltip("What makes thrown blasts bigger is the Explosive Objects level (Throw Power 1 / 4 / 7, Blast Skills); on " +
                  "top, every eaten Throw Power candy point makes them reach this many metres farther (user, 2026-11-12: " +
@@ -593,6 +603,22 @@ namespace Game.Leveling
         /// </summary>
         public static int FlyingJabBonus => Instance != null ? Whole(Instance.Worth(Stat.FistSize)) : 0;
 
+        /// <summary>
+        /// The extra damage of the closed punch (user, 2026-11-19, "one stat, one move"): +1 every Punch Damage Every
+        /// Fist Size points, eaten candies' whole points included. A bare fist still only taps for 1.
+        /// </summary>
+        public static int PunchDamageBonus => Instance != null && Instance.punchDamageEvery > 0
+            ? Whole(Instance.Worth(Stat.FistSize)) / Instance.punchDamageEvery
+            : 0;
+
+        /// <summary>
+        /// The extra damage of a thrown thing (user, 2026-11-19, "one stat, one move"): +1 every Throw Damage Every Throw
+        /// Power points, eaten candies' whole points included, on top of its Thrown Bonus.
+        /// </summary>
+        public static int ThrowDamageBonus => Instance != null && Instance.throwDamageEvery > 0
+            ? Whole(Instance.Worth(Stat.ThrowPower)) / Instance.throwDamageEvery
+            : 0;
+
         // Whole points of a stat's worth (eaten candies give parts of a point).
         private static int Whole(float worth) => Mathf.FloorToInt(worth + 0.001f);
 
@@ -913,7 +939,8 @@ namespace Game.Leveling
                 case Stat.WeaponEfficiency:
                     return $"+{WeaponDamageBonus} damage, -{Percent(1f - WeaponWearShare)} wear" + NextNote(Stat.WeaponEfficiency);
                 case Stat.FistSize:
-                    return Join($"+{Percent(FistSizePoints * punchSizePerPoint)} size", p > 0 ? $"flying jab +{FlyingJabBonus} damage" : "") + NextNote(Stat.FistSize);
+                    return Join(Join($"+{Percent(FistSizePoints * punchSizePerPoint)} size", p > 0 ? $"flying jab +{FlyingJabBonus} damage" : ""),
+                               PunchDamageBonus > 0 ? $"punch +{PunchDamageBonus}" : "") + NextNote(Stat.FistSize);
                 case Stat.ThrowPower: return ThrowNote();
                 case Stat.MoveSpeed:
                     return Join($"+{Percent(SpeedScale - 1f)} walking speed", p > 0 ? $"+{Percent(HighTimeScale - 1f)} boong time" : "");
@@ -986,7 +1013,8 @@ namespace Game.Leveling
         private string ThrowNote()
         {
             float throwShare = Mathf.Min(Worth(Stat.ThrowPower) * throwPerPoint, maxThrowScale - 1f);
-            return $"+{Percent(throwShare)} throw speed, +{Percent(PullScale - 1f)} pull" + NextNote(Stat.ThrowPower);
+            return Join($"+{Percent(throwShare)} throw speed, +{Percent(PullScale - 1f)} pull",
+                       ThrowDamageBonus > 0 ? $"+{ThrowDamageBonus} damage" : "") + NextNote(Stat.ThrowPower);
         }
 
         // Fist Size points as they count for size and reach, eaten candies' included (the bonus stat is Explosive Fist
