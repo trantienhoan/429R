@@ -4,6 +4,72 @@ Two PCs: the **K: PC** (has K:/WORK_2026/08_04/_claude/ with the boss round-3 fi
 
 ## RESUME HERE
 
+**SMOOTHNESS + PURPLE HOLE + BEDROOM KIT + LIVING ROOM KIT (second PC, 2026-11-19 evening/night). Scene SAVED 20:09 (user OK); BOTH kit room swaps after it are NOT saved yet; nothing committed.**
+- **Smoothness:**
+  - **How it was measured:** an editor profile of the whole bedroom flow, with a bot playing on the throwaway save. Tools: Documents/429R_claude_backups/2026-11-19/smooth (prof_tick, bot_tick, smooth_run.py).
+  - **Steady cost:** small, 2-3 ms of game work a frame.
+  - **The freezes were room furniture sets.** Every spawn point creates its object the moment it's switched on, all in one frame: 97-162 ms.
+  - **Fix:** StaggeredSpawn on the 10 room sets (Tools > 429 Game > Performance > Spread Room Set Spawns). Their simple spawn points are kept OFF in the scene and switched on 2 a frame. Restore Room Set Spawns undoes it. Result: mini room 162 -> 32 ms, bedroom 103 -> 7 ms.
+  - **Sounds:** Preload Short Sounds set 182 clips under 1 MB to preload and 7 bigger ones to load in the background (189 .meta files changed).
+  - **Not done, to suggest:**
+    - Windows IL2CPP: the PC build is Mono, and first-time code costs 20+ ms; the module isn't installed.
+    - SaveManager writes on the main thread (7.7 ms).
+    - Enemy and piece spawn bursts (10-17 ms): pooling.
+    - Smoke puffs at the head (GPU).
+    - No headset check yet.
+- **Purple hole** (user: "suck in everything else", candy stays):
+  - **What it is:** PurpleHole on the Fairy Shield (Shield_Sphere), made by Tools > 429 Game > Effects > Purple Hole along with Prefabs/Effects/Purple_Hole.prefab, using the wall portal's materials. Sounds: whoosh.wav, om_nom_nom.wav.
+  - **Where it opens:** all 9 shield uses: 8 GAMESTAGES clean-ups and PlayerDeath DEAD. It opens 5.5 m above the shield's centre.
+  - **What it eats:** loose or breakable stage things within 14 m. They fly in as copies of their looks; the originals are removed at once.
+  - **What it keeps:** candy, the player and what they hold, Fairy, Knight, bosses, anything named *_Base*/Skydome/Valley/Island, and anything bigger than 6 m.
+  - **The shield** still sweeps, unseen, from 2.6 s. Smoke_Blast_Brown/Green are switched off while it eats.
+  - **Tested:** the mini room clean-up ate 102 of 110 things, the room and candy stayed. Pictures in .../2026-11-19/purple_hole/pics.
+- **Bedroom kit:**
+  - **Files:** Exports/Remodel/BEDROOM_KIT_PLAN.md (analysis + swap steps) and Exports/Remodel/Bedroom_Kit.blend, made by tools/bedroom_kit.py (no overwrite without --force).
+  - **What it is:** 3 m pieces with today's wallpaper and wood textures, sample rooms at 7.5 x 7.5 m.
+  - **Window:** the user picked the old room's Wall02 window (86 faces), now in the kit window piece. Done live in their open Bedroom_Kit.blend, which THEY save; the script rebuilds the same piece from Bedroom_Walls.blend.
+  - **Doors** (user: "2 kinds of door, 1 secret door as a short cut, 1 normal locked door"):
+    - **BR_Kit_Door_Wide:** a doorway with the user's Wall05 frame.
+    - **The two leaves**, separate objects that snap into it: BR_Kit_Door_Secret (Bedroom_Base_Z_Door, horseshoe sign, the small room's breakable shortcut door) and BR_Kit_Door_Locked (Bedroom_Base_Z_Door_2, W/C). Both whole and unchanged.
+    - **BR_Kit_Door** stays as the open passage.
+    - Done live (the user saves).
+  - **Clean mesh** (user: "I want a clean mesh, not a messy kit"): the pieces were rebuilt the user's way (see the plan): one closed 0.345 m slab per wall with the fewest quads round openings, plus box baseboards, inner corner posts, and the user's door frame and window. No bevels, no crown, all quads, closed. Done live; the user saves.
+  - **User edits:** removed the chain from BR_Kit_Door_Secret ("so it looks more breakable"), saved. The file is dirty again (roof, rim and lamp pieces added live, material slots repaired): THE USER SAVES Bedroom_Kit.blend. Export: `blender -b Exports/Remodel/Bedroom_Kit.blend --python Exports/Remodel/tools/export_bedroom_kit.py -- <repo>/Assets/Models/Rooms/Bedroom_Kit.fbx` (13 meshes).
+- **Bedroom kit ROOM (user: "Yes, build it", same evening): BUILT, SWAPPED IN, editor-tested. The scene change is NOT SAVED yet (the user saves it).**
+  - **Menus:** Tools > 429 Game > Rooms > Build Bedroom Kit Room (makes Prefabs/Bases/Bedroom_Kit_Base.prefab + Models/Animator/Bedroom_Kit_Animator.controller), Use Bedroom Kit Room (Bedroom_Base_Pos spawns it, and fits the furniture), Use Old Bedroom Room.
+  - **How it moves:** RoomKit (Scripts/Rooms/RoomKit.cs) does the old clips in code: walls unfold from flat + grow with overshoot, the roof flies in last; going, the roof flies off first and the walls hop, fold and shrink. The floor never moves. The Animator keeps the old state names (RoomKitState on each), so GAMESTAGES, the light path and DropWallHungProps need no change. Hidden sets are invisible + not solid but stay ON, so the doors' FSMs run from the start like the old room.
+  - **Doors:** the old doors' own parts (health, damage, wobble, break pieces, coin toss) on the kit leaves. The secret door hangs on the old hinge, stands ajar 14.4° and slams shut when the player is on the floor (its trigger now watches the kit's Floor Trigger; Close Door turns it in its own space). Its break pieces are Door_Break_Drop_No_Chain (a variant with the chain + padlock pieces unseen; they still turn into pumpkins).
+  - **Layout** (from the old come clips): mini room secret door on the north wall, window on the south; big room W/C door on the west wall, chained door on the north wall, windows on the east (z -0.75) and south (x 0.75) walls.
+  - **Furniture:** the mini room was 8.1 x 7.7 m, so 97 furniture spawn points in the 6 bedroom sets moved in (up to 0.37 m) to fit 7.5 x 7.5. Touching pieces move as a group (stacks stay neat), falling Chaos pieces start under the 3 m ceiling. Hung props now sit flush on the walls.
+  - **Tested** (bot, throwaway save, 4 runs): both rooms come and go on time, light on/off, the hole, the furniture fit (0 pieces in the walls), the secret door's hits, wobble, break and coin (skull both times: the pumpkin boss folds the room). Pictures: Documents/429R_claude_backups/2026-11-19/bedroom_kit/build/play*. Not tried: the clover shortcut, the headset.
+  - **Chained door (user: "Yes, add it"):** new kit piece BR_Kit_Door_Chained = the horseshoe door WITH chain + padlock (the old big room's second locked door), added live to the user's open Bedroom_Kit.blend (THEY SAVE it) and exported (14 meshes). In the big room's north wall, centred x -0.75 (old -1.4; the 1.5 m grid), with the old door's Health/Damage FSMs (300 health, tough furniture hits, regular break pieces with the chain). The welcome mat spots (Bedroom_Matt_2_Pos in --Bedroom-- and --Bedroom_Chaos--) follow it (+0.69 m). Tested: it breaks and the doorway opens.
+  - **Not in the kit yet:** the bunting and curtains (part of the old wall mesh).
+  - **Old room:** Bedroom_Base_Z.fbx/prefab stay (the living room is the same model).
+- **Living room kit ROOM (user: "Yes, build it", same night): BUILT + SWAPPED IN (scene NOT saved).**
+  - **Menus:** Tools > 429 Game > Rooms > Build Living Room Kit Room / Use Living Room Kit Room / Use Old Living Room Room (LivingroomKitSetupMenu.cs).
+  - **Files:** prefab Prefabs/Bases/Livingroom_Kit_Base, controller Models/Animator/Livingroom_Kit_Animator, kit Models/Rooms/Livingroom_Kit.fbx (export: tools/export_livingroom_kit.py).
+  - **Sets:**
+    - **Living** (9 m): X door north, big double door east, the shortcut horseshoe door south with the old door's parts.
+    - **Play:** the cross at 1x; the game still scales the room 1.5x. The 4 old brick walls (+ portals) close the arms, the old breakable ceiling is its roof, and its arm floors stay after GO4.
+    - **Round-1 fall edges:** they watch a "Livingroom_Floor" marker under the Play floor, so they switch off when the playroom comes, as before.
+  - **Furniture:** 36 spawn points moved. Living room pictures go out 0.21 m to the new walls, the playroom candles go in to the arm ends, and the 4 Jenga gates (2.33 m, wider than the 2.25 m arms) now stand in front of the arm openings.
+  - **To redo the fits after a change:** reload the scene, then run BOTH Use … Kit Room menus once.
+  - **Tested** (bot, throwaway save, 7 runs; save deleted after): the living room comes on spawn and goes at EM2 (light off); the playroom comes after the 1.5x scale and goes at GO4; the brick wall breaks; hung props sit flush (gap 0.01); the playroom fit is fine.
+  - **Shortcut door tested** (user: "Yes, test it"): 75 health, two 60 hits break it, its chained pieces drop, the coin tosses (50/50) and the door is gone; the stage goes on. That run's coin was a skull (hurries the pumpkin boss); a clover broadcasts DOOR_SHORTCUT like the old door (GAMESTAGES global -> Door Shortcut).
+  - **Game Over at the end of the playroom (2 test runs): SOLVED, a test artifact, not the kit.** A big-hit logger caught it: two Fat_Pumpkin_Enemy stomping the standing-still bot player (DamageHeavy 40-50 each, ~1 s apart). They are tree pumpkins woken by the candy from the bot's kills; the tree belongs to the starting rooftop, which the real game removes in "2 - The BR" (DestroyObject Rooftop_Base). The test jumps from Move to Fairy straight to CP LivingRoom / CP Scale LR, so that rooftop stays under the playroom. The bot can't kill fat pumpkins and only heals below 60, so two quick stomps kill (Game Over without revive coins).
+  - **Test tools:** .../2026-11-19/livingroom_kit: lr_kit_run5.py + lr_kit_watch5.cs.txt (the kit watcher + player FSM snapshots at Rooftop_ON / Game Over + the shortcut door's states + a big-hit logger listing what's near the player). Gotchas: read prefab FSMs only after Fsm.Init, or LoadActions gives zeros and nulls (and console errors); for a clean test from a CP jump, destroy the Rooftop_Base var's object first.
+- **Living room + playroom kit (user, same night: "check the next stage, analyze them, check their animation, then create a kit of livingroom and playroom"): KIT MADE.**
+  - **Plan + analysis:** Exports/Remodel/LIVINGROOM_KIT_PLAN.md (rooms, doors, clips, flow, what the swap needs).
+  - **Kit:** Exports/Remodel/Livingroom_Kit.blend (new file), made by tools/livingroom_kit.py. Renders in livingroom_kit_renders/.
+  - **Pieces:** walls 3 / 1.5 m; LR_Kit_Door (1.40 m doorway + the user's frame) and LR_Kit_Door_Big (2.47 m); leaves X (chained), Double (big door) and Horseshoe (shortcut door, chained); floor; the old roof slab and lamp. Slabs 0.31 m, the wallpaper once up each 3 m wall, no baseboards (the panelling is painted).
+  - **Sample rooms:** living room 9 x 9 m; the playroom cross at 1x (square 7.5 m, arms 1.5 x 3.3 m; the game scales it 1.5x).
+  - **Waiting on the user:** check the kit and answer the sizes / 3 m height / reuse-the-breakable-ceiling-and-brick-walls questions, then "build it".
+  - **Analysis tools:** Documents/429R_claude_backups/2026-11-19/livingroom_kit (lr_watch.cs.txt + lr_run.py: bot from CP LivingRoom; lr_walls.py: wall faces from the baked mesh). Gotchas: SkinnedMeshRenderer doesn't re-skin between renders in one editor call (bake it). After a CP jump from the rooftop start, the rooftop castle stays under the living room (test artifact).
+
+**RUSH MOMENTS (user picked 2026-11-19, from their 10-22 wish "more enemies = more chaos"): BUILT + Editor-tested in both rooms (second PC, bot on a throwaway save; real saves untouched). Menu run in the open scene; the scene still needed SAVING at hand-off (check it has a Wave Rush on -EnemyManager 1 and 3). Not tried in the headset; nothing committed.** New WaveRush (Scripts/Enemies/WaveRush.cs) on -EnemyManager 1 (Bedroom) and -EnemyManager 3 (Playroom) via Tools > 429 Game > Enemies > Set Up Rush Moments. Once 6 of the room's 12 are down, 12 small bugs (Spider_Small / Cockroach_Small) pour in from the room's own spawn points (SpiderIdleSpawns / BeeSpawns), up to 8 at once (Enemy Limit still caps), with a laugh / roach screech + ShakeBigger; they join the manager's wave (and its CurrentlySpawnedStuffs holder, so Game Over clears them), so its own spawns and its boss wait; beat them all = 8 random candies burst where the last fell + a bell (give-up 45 s: reward by the player). Once per wave; re-armed on a new wave/loop (the manager's Init sets numberOfEnemies 0). All numbers on the Wave Rush component.
+- Test (both rooms the same): rush started on the 6th kill; 8 alive at once, 12 in all; the manager sat in Wait for Slot while they were out; candies burst at the last kill; then the rest of the wave and the boss (Spider_Boss_PumpkinButt / Call Boss). A player standing still with 9 bugs on them died in ~20 s.
+- The 11-09 balance list was already DONE 2026-11-10 (only a headset test left).
+
 **00. Hit feel (K: PC, 2026-11-19, user picked "fixes 1-3"): built, compile-checked, Editor-tested with shots at a Spider_Normal (bot profile, real saves untouched). Not tried in the headset; nothing committed.**
 - **Each fist or thing has its own hit window** (EnemyHitDamage, Fat Pumpkin): before, one shared 0.3 s wait per enemy silently ate a left-right combo's second punch and 2 of a Triple Punch's 3 fists. The same thing hitting again within 0.3 s is still ignored. Every Hit Counts now only means "a soft hit still does 1". Tested: two shots landing in the same frame both hurt; the same shot again 0.12 s later did not, 0.6 s later did.
 - **SMASH, a third step** (Hit Settings > Smash): power 16 or more (twice a hard hit) does x3 (a throw x4, a flying jab +2), with a 1.6x pop, a crunch (rock_hit_1-3, swap them in Hit Settings), knock-back x1.5 farther / x1.4 higher and 0.3 s more stun. Tested: 6 damage from a weapon with Damage 2 (hard 4); knocked 2.25 m vs 1.50 m.
