@@ -62,6 +62,10 @@ namespace Game.Gates
         public Vector2 chargeEvery = new Vector2(3f, 5f);
         [Tooltip("Seconds it shakes and laughs before a charge (the warning: step aside).")]
         [Min(0.2f)] public float windUpSeconds = 1.6f;
+        [Tooltip("It charges at the spot the player stands on as the warning begins (it faces that spot while it shakes), " +
+                 "so stepping aside during the warning makes it miss (user, 2026-11-20). Off: it charges at where they " +
+                 "are when the warning ends, the old way. Lanes (Charge Along) still decide the way when set.")]
+        public bool lockAimAtWindUp = true;
         [Min(1f)] public float chargeSpeed = 13f;
         [Min(1f)] public float chargeAccel = 30f;
         [Tooltip("A charge that hits nothing stops after this many seconds (no dizziness).")]
@@ -363,6 +367,9 @@ namespace Game.Gates
 
         // ---------------------------------------------------------------- states
 
+        // Lock Aim At Wind-Up: the player's floor spot as the warning began.
+        private Vector3 lockedFeet;
+
         private void Go(State next)
         {
             state = next;
@@ -375,6 +382,7 @@ namespace Game.Gates
                 case State.WindUp:
                     PlayVoice(laughSounds, 1f);
                     PlayVoice(windUpSound, 1f);
+                    lockedFeet = PlayerFeet();
                     break;
                 case State.Charge:
                     nextTrail = Time.time;
@@ -469,7 +477,9 @@ namespace Game.Gates
                     if (Time.time - stateAt >= windUpSeconds)
                     {
                         var along = chargeAlong != null ? Flat(chargeAlong(pos)) : Vector3.zero;
-                        chargeDir = along.sqrMagnitude > 0.0001f ? along.normalized : dirPlayer;
+                        var toLocked = Flat(lockedFeet - pos);
+                        var aimDir = lockAimAtWindUp && toLocked.sqrMagnitude > 0.0001f ? toLocked.normalized : dirPlayer;
+                        chargeDir = along.sqrMagnitude > 0.0001f ? along.normalized : aimDir;
                         // Already against the arena's edge that way (the player beyond it): no charge, it would only
                         // push into it (play test 2026-11-18: 3 s stuck in a corner).
                         if (canBeAt != null && !canBeAt(pos + chargeDir * 0.6f))
@@ -703,7 +713,9 @@ namespace Game.Gates
             var vel = Flat(body.isKinematic ? Vector3.zero : body.linearVelocity);
             float speed = vel.magnitude;
             // Faces the player (its way, while charging); rolls over and over on a charge, then rights itself.
-            var faceTo = state == State.Charge ? chargeDir : Flat(PlayerFeet() - transform.position);
+            var faceTo = state == State.Charge ? chargeDir
+                : state == State.WindUp && lockAimAtWindUp ? Flat(lockedFeet - transform.position)
+                : Flat(PlayerFeet() - transform.position);
             if (faceTo.sqrMagnitude > 0.0001f) faceDir = Vector3.Slerp(faceDir, faceTo.normalized, 1f - Mathf.Exp(-(state == State.Charge ? 12f : 5f) * dt));
             if (state == State.Charge) spin += speed * dt / Mathf.Max(0.1f, radius);
             else spin = Mathf.MoveTowards(spin, Mathf.Round(spin / (Mathf.PI * 2f)) * Mathf.PI * 2f, 7f * dt);

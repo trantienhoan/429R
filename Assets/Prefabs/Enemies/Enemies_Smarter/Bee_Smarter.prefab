@@ -57,7 +57,7 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: db47e1c340d93ad4cad3232d3b330832, type: 2}
+  - {fileID: 2100000, guid: d0e5e123b5db3894aa2f8bd4a891b3c3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1818,7 +1818,7 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: db47e1c340d93ad4cad3232d3b330832, type: 2}
+  - {fileID: 2100000, guid: d0e5e123b5db3894aa2f8bd4a891b3c3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -3448,6 +3448,7 @@ MonoBehaviour:
   weakHitEvent: ShakeSmall
   oldDamageFsm: Damage
   furniture: 0
+  playerHitsOnly: 0
   bumpShare: 0.35
   wieldedShare: 0.15
   settleSeconds: 2
@@ -3651,9 +3652,11 @@ MonoBehaviour:
   diveSpeed: 5
   homingSting: 1
   homingReach: 0.7
+  lockAimAtWindUp: 1
   highWait: {x: 1.5, y: 3}
   bob: 0.08
   groundBelowHealth: 0.4
+  winglessToughness: 1
   wingBones:
   - D_Wing_01.L
   - D_Wing_01.R
@@ -3690,6 +3693,24 @@ MonoBehaviour:
   rushSound: {fileID: 0}
   rushShake: ShakeMed
   staysHigh: 0
+  kamikazeChance: 0
+  kamikazeEvent: DamageHeavy
+  kamikazeShare: 0.5
+  kamikazeNearEvent: Damage
+  kamikazeRadius: 0.9
+  kamikazePoisonPerSecond: 2
+  kamikazePoisonSeconds: 5
+  kamikazeShove: {x: 0.15, y: 0.6}
+  kamikazeBugDamage: 1
+  kamikazeMaxSeconds: 8
+  kamikazeEffects: []
+  kamikazeEffectSize: 0.5
+  kamikazeSound: {fileID: 0}
+  kamikazeVolume: 0.8
+  kamikazeWarning: {fileID: 0}
+  kamikazeFlash: 1
+  kamikazeFlashColour: {r: 1, g: 0.35, b: 0.1, a: 1}
+  kamikazeBlinks: 5
   flinchSeconds: 0.4
   flinchCooldown: 1
   stunGuardSeconds: 0
@@ -3779,7 +3800,7 @@ MonoBehaviour:
   anomalySpeed: 1.5
   anomalyHelmetSeconds: 10
   anomalyKeepAway: 6
-  anomalyMaterial: {fileID: 2100000, guid: 12dcd3cdc10e6d5439f5177b97b7c449, type: 2}
+  anomalyMaterial: {fileID: 2100000, guid: 0dba9f69bab9ea448bcb39fe88e02014, type: 2}
   anomalyGlow: {fileID: 4407701992690780987, guid: 3a11fd1285525cc42b8f958c9ae28848,
     type: 3}
   anomalyPop: {fileID: 1937718453956067109, guid: a43d1c8d30bba3040ac7f5cba9a7022d,
@@ -4588,7 +4609,7 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: db47e1c340d93ad4cad3232d3b330832, type: 2}
+  - {fileID: 2100000, guid: d0e5e123b5db3894aa2f8bd4a891b3c3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

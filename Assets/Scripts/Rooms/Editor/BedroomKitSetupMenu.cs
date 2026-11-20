@@ -21,7 +21,9 @@ namespace Game.EditorTools
     ///     the global Bedroom_Base), Drop Wall Hung Props, the floor trigger, the fall edges, the teleport area, the room
     ///     light at the old path (Bedroom_Base_Z_Armature/Wall02/Rooftop/Point Light, which GAMESTAGES switches), and both
     ///     doors with all their parts (health, damage, wobble, break pieces, the shortcut's coin toss), on the kit's leaves;
-    ///   - an Animator (Bedroom_Kit_Animator) with the old state names, each playing the Room Kit's come or go.
+    ///   - an Animator (Bedroom_Kit_Animator) with the old state names, each playing the Room Kit's come or go;
+    ///   - (2026-11-20) the secret room behind the big room's chained door: a third set, Secret, north of it (the Secret
+    ///     Room component opens it when that door breaks), with the giant pumpkin and Giant Spider of Secret Room Setup.
     /// - Use Bedroom Kit Room / Use Old Bedroom Room: which room the stage's Bedroom_Base_Pos spawns (the open scene is
     ///   marked changed, not saved). Use Bedroom Kit Room also moves the furniture spawn points whose pieces would poke
     ///   into the kit walls or ceiling in, just enough (the old mini room was 8.1 x 7.7 m, both old rooms 3.58 m high).
@@ -60,13 +62,32 @@ namespace Game.EditorTools
             new[] { "BR_Kit_Window", "BR_Kit_Wall_1p5m", "BR_Kit_Wall_3m" },
             new[] { "BR_Kit_Wall_3m", "BR_Kit_Wall_1p5m", "BR_Kit_Wall_3m" },
         };
+        // The chained door (user, 2026-11-20: "move this door to the left, so the door and the welcome mat [are] closer to
+        // the wall hang"): half a grid step west of where it was, its doorway centred at x -1.5, 0.15 m from the hung
+        // shelf (x -2.94). Half-width (0.75 m) wall pieces fill the two ends. Behind it is the secret room.
         private static readonly string[][] BigSides =
         {
-            new[] { "BR_Kit_Wall_1p5m", "BR_Kit_Door_Wide+Chained", "BR_Kit_Wall_3m" },
+            new[] { HalfWall, "BR_Kit_Door_Wide+Chained", "BR_Kit_Wall_3m", HalfWall },
             new[] { "BR_Kit_Wall_3m", "BR_Kit_Window", "BR_Kit_Wall_1p5m" },
             new[] { "BR_Kit_Wall_1p5m", "BR_Kit_Window", "BR_Kit_Wall_3m" },
             new[] { "BR_Kit_Door_Wide+Locked", "BR_Kit_Wall_1p5m", "BR_Kit_Wall_3m" },
         };
+        // The secret room behind the chained door (user, 2026-11-20: "a new room almost mirrors that bedroom, same in size
+        // and same with light but don't have the 2nd door and window"): north of the big room, sharing its north wall.
+        // Its sides as above (its south side is the big room's north wall: none of its own).
+        private static readonly string[][] SecretSides =
+        {
+            new[] { "BR_Kit_Wall_3m", "BR_Kit_Wall_1p5m", "BR_Kit_Wall_3m" },
+            new[] { "BR_Kit_Wall_3m", "BR_Kit_Wall_1p5m", "BR_Kit_Wall_3m" },
+            null,
+            new[] { "BR_Kit_Wall_3m", "BR_Kit_Wall_1p5m", "BR_Kit_Wall_3m" },
+        };
+        // Its middle: one room and one wall north of the big room's middle.
+        private const float SecretZ = Room + Wall;
+        // A half 1.5 m wall, cut from it (its wallpaper not squashed), saved next to the kit.
+        private const string HalfWall = "BR_Kit_Wall_0p75m";
+        private const string HalfWallPath = "Assets/Models/Rooms/BR_Kit_Wall_0p75m.asset";
+
         // Into the room, and the corner a side starts at (it runs along Cross(inside, up) from there).
         private static readonly (Vector3 inside, Vector3 start)[] Sides =
         {
@@ -184,12 +205,14 @@ namespace Game.EditorTools
 
                 var mini = MakeSet(root.transform, "Mini", MiniSides, notes);
                 var big = MakeSet(root.transform, "Big", BigSides, notes);
+                var secret = MakeSecret(root.transform, big.root, lightParent.Find("Point Light"), kit, notes);
 
                 var so = new SerializedObject(kit);
                 var sets = so.FindProperty("sets");
-                sets.arraySize = 2;
+                sets.arraySize = 3;
                 SetEntry(sets.GetArrayElementAtIndex(0), "Mini", mini);
                 SetEntry(sets.GetArrayElementAtIndex(1), "Big", big);
+                SetEntry(sets.GetArrayElementAtIndex(2), "Secret", secret);
                 var puffGuid = AssetDatabase.FindAssets("Smoke_Flash_Small_Puff t:Prefab").FirstOrDefault();
                 if (puffGuid != null)
                 {
@@ -241,6 +264,11 @@ namespace Game.EditorTools
                     .Select(m => m != null && MaterialFor.TryGetValue(m.name, out var path) ? AssetDatabase.LoadAssetAtPath<Material>(path) : m)
                     .ToArray();
             }
+            if (meshes.TryGetValue("BR_Kit_Wall_1p5m", out var full))
+            {
+                meshes[HalfWall] = MakeHalfWall(full);
+                if (materials.TryGetValue("BR_Kit_Wall_1p5m", out var looks)) materials[HalfWall] = looks;
+            }
             problem = null;
             return true;
         }
@@ -289,7 +317,7 @@ namespace Game.EditorTools
                     var part = Piece(names[0], set, start + run * along, turn);
                     Solid(part, names[0]);
                     if (names.Length > 1) Door(part, names[1], notes);
-                    along += names[0] == "BR_Kit_Wall_1p5m" ? 1.5f : 3f;
+                    along += Length(names[0]);
                 }
             }
 
@@ -302,6 +330,139 @@ namespace Game.EditorTools
             Piece("BR_Kit_Roof_Rim", roof, Vector3.zero, Quaternion.identity).transform.localScale = new Vector3(ring, 1f, ring);
             Piece("BR_Kit_Lamp", roof, Vector3.zero, Quaternion.identity);
             return (set, roof);
+        }
+
+        private static float Length(string piece) => piece == HalfWall ? 0.75f : piece == "BR_Kit_Wall_1p5m" ? 1.5f : 3f;
+
+        // The secret room: its set (walls, corner posts, roof with its lamp) north of the big room, and, apart from the
+        // set (the Secret Room shows them), its floor, its teleport area and its room light; then the Secret Room itself.
+        private static (Transform root, Transform roof) MakeSecret(Transform room, Transform big, Transform roomLight, RoomKit kit, List<string> notes)
+        {
+            int layer = room.gameObject.layer;
+            var set = Child(room, "Secret", layer);
+            set.localPosition = new Vector3(0f, 0f, SecretZ);
+            for (int i = 0; i < Sides.Length; i++)
+            {
+                var (inside, start) = Sides[i];
+                var turn = Quaternion.LookRotation(inside, Vector3.up);
+                var run = Vector3.Cross(inside, Vector3.up);
+                // Its four inner corner posts (the south ones stand against the big room's north wall).
+                Solid(Piece("BR_Kit_Corner", set, start, turn), null);
+                if (SecretSides[i] == null) continue;
+                float along = 0f;
+                foreach (var piece in SecretSides[i])
+                {
+                    Solid(Piece(piece, set, start + run * along, turn), piece);
+                    along += Length(piece);
+                }
+            }
+            // Its roof: the bedroom's, not reaching over the big room's wall (that one has its own roof over it).
+            var roof = Child(set, "Roof", layer);
+            float slabX = (Room + 2f * Wall) / OldRoofSlab, slabZ = (Room + Wall) / OldRoofSlab, ring = Room / OldRoofRim;
+            var top = Piece("BR_Kit_Roof", roof, new Vector3(0f, 0f, Wall / 2f), Quaternion.identity);
+            top.transform.localScale = new Vector3(slabX, 1f, slabZ);
+            top.AddComponent<BoxCollider>();
+            Piece("BR_Kit_Roof_Rim", roof, Vector3.zero, Quaternion.identity).transform.localScale = new Vector3(ring, 1f, ring);
+            Piece("BR_Kit_Lamp", roof, Vector3.zero, Quaternion.identity);
+
+            // Its floor: 3 x 3 more kit tiles north of the big room's (z 4.5 to 13.5).
+            var floor = Child(room, "Secret_Floor", layer);
+            foreach (float x in new[] { -1.5f, 1.5f, 4.5f })
+                foreach (float z in new[] { 7.5f, 10.5f, 13.5f })
+                    Piece("BR_Kit_Floor_3m", floor, new Vector3(x, 0f, z), Quaternion.identity);
+            // Its teleport area: the big room's, moved over it.
+            GameObject teleport = null;
+            var bigTeleport = room.Find("Teleport Area");
+            if (bigTeleport != null)
+            {
+                teleport = Object.Instantiate(bigTeleport.gameObject, room);
+                teleport.name = "Secret Teleport Area";
+                teleport.transform.localPosition = bigTeleport.localPosition + new Vector3(0f, 0f, 9f);
+            }
+            // Its light: the bedroom's lamp light, its own (GAMESTAGES' light switching is the bedroom's).
+            Light secretLight = null;
+            if (roomLight != null)
+            {
+                var copy = Object.Instantiate(roomLight.gameObject, room);
+                copy.name = "Secret Room Light";
+                copy.transform.localPosition = new Vector3(0f, Height - 0.3f, SecretZ);
+                foreach (var fsm in copy.GetComponents<PlayMakerFSM>()) Object.DestroyImmediate(fsm);
+                secretLight = copy.GetComponent<Light>();
+            }
+
+            var door = big.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == "Chained_Door");
+            var secretRoom = room.gameObject.AddComponent<SecretRoom>();
+            var so = new SerializedObject(secretRoom);
+            so.FindProperty("kit").objectReferenceValue = kit;
+            so.FindProperty("door").objectReferenceValue = door != null ? door.gameObject : null;
+            so.FindProperty("doorwayObstacle").objectReferenceValue = door != null && door.parent != null ? door.parent.GetComponent<NavMeshObstacle>() : null;
+            so.FindProperty("floor").objectReferenceValue = floor;
+            so.FindProperty("teleportArea").objectReferenceValue = teleport;
+            so.FindProperty("roomLight").objectReferenceValue = secretLight;
+            so.FindProperty("inside").boundsValue = new Bounds(new Vector3(0f, Height / 2f, SecretZ), new Vector3(Room - 0.2f, Height, Room - 0.2f));
+            so.FindProperty("fallEdgeNorth").objectReferenceValue = Edge(room, "Fall Edge North");
+            so.FindProperty("fallEdgeEast").objectReferenceValue = Edge(room, "Fall Edge East");
+            so.FindProperty("fallEdgeWest").objectReferenceValue = Edge(room, "Fall Edge West");
+            so.FindProperty("newNorthEdge").floatValue = 13.5f + 0.042f;
+            so.FindProperty("openPuff").objectReferenceValue = SecretRoomSetupMenu.Find("Smoke_Puff_Burst_Out");
+            so.FindProperty("breakPuff").objectReferenceValue = SecretRoomSetupMenu.Find("Smoke_Flash_Five_Puffs");
+            so.FindProperty("openSound").objectReferenceValue = SecretRoomSetupMenu.Sound("whoosh");
+            so.FindProperty("candySound").objectReferenceValue = SecretRoomSetupMenu.Sound("Clear,_resonant_bell_1");
+            so.FindProperty("spiderSound").objectReferenceValue = SecretRoomSetupMenu.Sound("creepy_laugh_1");
+            so.FindProperty("giantPumpkin").objectReferenceValue = SecretRoomSetupMenu.GiantPumpkin(notes);
+            so.FindProperty("giantSpider").objectReferenceValue = SecretRoomSetupMenu.GiantSpider(notes);
+            so.FindProperty("pumpkinSpot").vector3Value = new Vector3(0f, 0f, SecretZ);
+            so.FindProperty("brokenPieces").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(SecretRoomSetupMenu.PiecesPath);
+            var candies = SecretRoomSetupMenu.Candies();
+            var list = so.FindProperty("candies");
+            list.arraySize = candies.Length;
+            for (int i = 0; i < candies.Length; i++) list.GetArrayElementAtIndex(i).objectReferenceValue = candies[i];
+            so.ApplyModifiedPropertiesWithoutUndo();
+            notes.Add("secret room behind the chained door" + (door == null ? " (NO chained door found)" : ""));
+            return (set, roof);
+        }
+
+        private static BoxCollider Edge(Transform room, string name)
+        {
+            var t = room.Find("Fall Edges/" + name);
+            return t != null ? t.GetComponent<BoxCollider>() : null;
+        }
+
+        // The 1.5 m wall cut to 0.75 m: its far end (x -1.5) moves to x -0.75 and the texture there goes half way, so the
+        // wallpaper keeps its size. The piece only has vertices at its two ends. Saved as a mesh asset (made again each
+        // build).
+        private static Mesh MakeHalfWall(Mesh full)
+        {
+            var v = full.vertices;
+            var n = full.normals;
+            var uv = full.uv;
+            for (int i = 0; i < v.Length; i++)
+            {
+                if (Mathf.Abs(v[i].x + 1.5f) > 0.001f) continue;
+                int partner = -1;
+                for (int j = 0; j < v.Length && partner < 0; j++)
+                    if (Mathf.Abs(v[j].x) < 0.001f && Mathf.Abs(v[j].y - v[i].y) < 0.001f && Mathf.Abs(v[j].z - v[i].z) < 0.001f
+                        && Vector3.Dot(n[j], n[i]) > 0.99f) partner = j;
+                v[i].x = -0.75f;
+                if (partner >= 0) uv[i] = (uv[i] + uv[partner]) / 2f;
+            }
+            var half = Object.Instantiate(full);
+            half.name = HalfWall;
+            half.vertices = v;
+            half.uv = uv;
+            half.RecalculateBounds();
+            half.RecalculateTangents();
+            var asset = AssetDatabase.LoadAssetAtPath<Mesh>(HalfWallPath);
+            if (asset == null)
+            {
+                AssetDatabase.CreateAsset(half, HalfWallPath);
+                return half;
+            }
+            EditorUtility.CopySerialized(half, asset);
+            asset.name = HalfWall;
+            EditorUtility.SetDirty(asset);
+            Object.DestroyImmediate(half);
+            return asset;
         }
 
         private static GameObject Piece(string mesh, Transform parent, Vector3 at, Quaternion turn)

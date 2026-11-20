@@ -31,6 +31,10 @@ namespace Game.Enemies
         [SerializeField] private int dives = 3;
         [Tooltip("It hits the face within this (metres) of the head.")]
         [SerializeField] private float faceRadius = 0.22f;
+        [Tooltip("When it winds up it holds still and keeps the spot the eyes are at then, and dives straight at that spot " +
+                 "(not following the head), so a step or a duck during the wind-up or the dive makes it miss (user, " +
+                 "2026-11-20). Off: it follows the face through the wind-up and a little during the dive, the old way.")]
+        [SerializeField] private bool lockAimAtWindUp = true;
         [Tooltip("A hit on the face is this share of a bee's bite.")]
         [Range(0f, 2f)]
         [SerializeField] private float faceShare = 0.5f;
@@ -162,17 +166,19 @@ namespace Game.Enemies
                     if (InState >= hoverSeconds)
                     {
                         look.WindUp(windUpSeconds);
+                        lockedEyes = eyes;
                         Enter(State.WindUp);
                     }
                     break;
                 }
                 case State.WindUp:
-                    pos = Vector3.Lerp(pos, HoverSpot(head), 1f - Mathf.Exp(-6f * dt));
-                    Face(eyes, 12f);
+                    // Lock Aim At Wind-Up: it holds where it is, eyeing the spot it locked.
+                    if (!lockAimAtWindUp) pos = Vector3.Lerp(pos, HoverSpot(head), 1f - Mathf.Exp(-6f * dt));
+                    Face(lockAimAtWindUp ? lockedEyes : eyes, 12f);
                     if (InState >= windUpSeconds)
                     {
                         diveFrom = pos;
-                        diveTo = eyes;
+                        diveTo = lockAimAtWindUp ? lockedEyes : eyes;
                         StopDiveSound();
                         diveVoice = SlimeKit.PlayOn(diveSounds, transform, volume, divePitch);
                         Enter(State.Dive);
@@ -180,9 +186,11 @@ namespace Game.Enemies
                     break;
                 case State.Dive:
                 {
-                    // At the face, faster and faster (following the head a little).
-                    diveTo = Vector3.Lerp(diveTo, eyes, 1f - Mathf.Exp(-2f * dt));
-                    var way = diveTo - pos;
+                    // At the face, faster and faster (without Lock Aim At Wind-Up, following the head a little). Locked,
+                    // it keeps one straight line through the spot, so a dodged dive flies on past it (re-aimed every
+                    // frame at a fixed spot it would only jiggle there).
+                    if (!lockAimAtWindUp) diveTo = Vector3.Lerp(diveTo, eyes, 1f - Mathf.Exp(-2f * dt));
+                    var way = lockAimAtWindUp ? diveTo - diveFrom : diveTo - pos;
                     float speed = Mathf.Lerp(diveSpeed.x, diveSpeed.y, Mathf.Clamp01(InState / 0.4f));
                     var dir = way.sqrMagnitude > 0.0001f ? way.normalized : transform.forward;
                     velocity = dir * speed;
@@ -214,6 +222,9 @@ namespace Game.Enemies
             }
             transform.position = pos;
         }
+
+        // Lock Aim At Wind-Up: where the eyes were as it began to wind up.
+        private Vector3 lockedEyes;
 
         // In front of the face, where the player looks (a little to one side), at eye height.
         private Vector3 HoverSpot(Transform head)

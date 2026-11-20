@@ -253,6 +253,12 @@ namespace Game.Enemies
                  "fly over the player's head without it. Aimed while it winds up; once the fist flies the player can " +
                  "still step aside.")]
         [Range(0f, 1f)] [SerializeField] private float punchAim = 1f;
+        [Tooltip("When a punch, the two-arm slam, a pumpkin throw or the slide charge starts, it picks the spot it will " +
+                 "strike, where the player is then, and keeps it: it turns, aims its arm, throws (not ahead of a walking " +
+                 "player) and charges at that spot. So stepping away during the wind-up makes it miss; a player still " +
+                 "there is hit as before (user, 2026-11-20). Off: it follows the player through the wind-up, the old way. " +
+                 "The body slam and the hops always picked their landing spot at the start.")]
+        [SerializeField] private bool lockAimAtWindUp = true;
         [Tooltip("After a throw combo it chases the player at least this long before it claps and throws again.")]
         [Min(0f)] [SerializeField] private float chaseSeconds = 4f;
         [Tooltip("The player dodged every pumpkin: the chance it vomits bugs to back it up; otherwise it claps for them.")]
@@ -883,8 +889,8 @@ namespace Game.Enemies
         // Degrees down from level for a punch from this shoulder to reach the player's chest.
         private float PitchTo(Transform shoulder)
         {
-            float chest = player.Camera.transform.position.y - 0.35f;
-            float across = Flat(PlayerFloor() - shoulder.position);
+            float chest = (aimLocked ? lockedHeadY : player.Camera.transform.position.y) - 0.35f;
+            float across = Flat(AimFloor() - shoulder.position);
             return Mathf.Atan2(shoulder.position.y - chest, Mathf.Max(0.5f, across)) * Mathf.Rad2Deg;
         }
 
@@ -1412,16 +1418,35 @@ namespace Game.Enemies
             act = what;
             actStarted = Time.time;
             actUntil = Time.time + seconds;
+            LockAim(what);
             actHit = false;
             actImpact = false;
             Stop();
             PlayState(state, true, fade, clipFrom);
         }
 
+        // Lock Aim At Wind-Up: the spot a punch, slam, throw or charge strikes is where the player is as it starts (their
+        // floor spot under the head, and the head's height), kept until that move is over.
+        private bool aimLocked;
+        private Vector3 lockedFloor;
+        private float lockedHeadY;
+
+        private void LockAim(Act what)
+        {
+            aimLocked = lockAimAtWindUp && player != null && player.Camera != null &&
+                        (what == Act.PunchL || what == Act.PunchR || what == Act.Slam || what == Act.Throw || what == Act.Charge);
+            if (!aimLocked) return;
+            lockedFloor = PlayerFloor();
+            lockedHeadY = player.Camera.transform.position.y;
+        }
+
+        // Where the move aims: the locked spot while it's locked, else the player.
+        private Vector3 AimFloor() => aimLocked ? lockedFloor : PlayerFloor();
+
         private void UpdateAct(bool trueForm)
         {
             float t = Time.time - actStarted;
-            var target = PlayerFloor();
+            var target = AimFloor();
             switch (act)
             {
                 case Act.PunchL:
@@ -1783,13 +1808,16 @@ namespace Game.Enemies
             playerSeen = true;
         }
 
-        // Thrown from the hand at where the player will be if they keep moving as they are: they dodge it by changing direction.
+        // Thrown from the hand at where the player stood when the throw began (Lock Aim At Wind-Up: they dodge it by
+        // stepping away); without the lock, at where they will be if they keep moving as they are.
         private void ThrowBugPumpkin(Transform hand)
         {
             if (bugPumpkin == null) return;
             var from = hand != null ? hand.position : transform.position + Vector3.up * 3f;
             const float flight = 1.0f;
-            var to = PlayerFloor() + Vector3.ClampMagnitude(playerMove * (flight * throwLead), throwLeadMost) + Vector3.up * 0.3f;
+            var to = aimLocked
+                ? lockedFloor + Vector3.up * 0.3f
+                : PlayerFloor() + Vector3.ClampMagnitude(playerMove * (flight * throwLead), throwLeadMost) + Vector3.up * 0.3f;
             var velocity = (to - from) / flight - 0.5f * Physics.gravity * flight;
             var thrown = Instantiate(bugPumpkin, from, Random.rotation, transform.parent);
             if (!thrown.TryGetComponent(out BugPumpkin pumpkin)) return;
@@ -2741,7 +2769,7 @@ namespace Game.Enemies
         // ---------- the slide charge ----------
 
         // It stops, faces the player and winds up (rocking back, shivering, grinding louder, dust round its base, a roar),
-        // then slides straight at where they stood at the end of the wind-up (no aiming ahead, no turning) at Charge Speed,
+        // then slides straight at where they stood as the wind-up began (Lock Aim At Wind-Up; off: at its end), with no aiming ahead or turning, at Charge Speed,
         // until it has passed them by Charge Past Player (or Charge Max Distance / Seconds), brakes, and catches its breath
         // (Charge Recovery). Touching the player once on the way throws them (Charge Launch). The floor ending ahead makes it
         // skid to a stop; a solid prop in its way makes it bonk (Bonk On Props).
@@ -2761,7 +2789,8 @@ namespace Game.Enemies
         // Returns false when the charge started another move (it bonked): Update Act stops there.
         private bool UpdateCharge(float t)
         {
-            var target = PlayerFloor();
+            // The spot it charges at (Lock Aim At Wind-Up: where the player stood when it began revving).
+            var target = AimFloor();
             var at = transform.position;
             if (chargeStep == ChargeStep.WindUp)
             {
@@ -2775,7 +2804,7 @@ namespace Game.Enemies
                     fx.Scrape(at + new Vector3(round.x, 0f, round.y), Size * slideDustSize);
                 }
                 if (t < chargeWindUp) return true;
-                // Its way is fixed now: straight at where the player stands.
+                // Its way is fixed now: straight at that spot.
                 var way = target - at;
                 way.y = 0f;
                 if (way.sqrMagnitude < 0.01f) way = transform.forward;
@@ -2791,7 +2820,7 @@ namespace Game.Enemies
             }
             if (chargeStep == ChargeStep.Recover)
             {
-                Face(target, 90f);
+                Face(PlayerFloor(), 90f);
                 if (Time.time >= recoverStarted + chargeRecovery) actUntil = Time.time;
                 return true;
             }

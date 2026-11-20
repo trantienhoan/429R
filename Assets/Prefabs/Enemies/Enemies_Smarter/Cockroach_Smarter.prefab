@@ -1894,6 +1894,7 @@ MonoBehaviour:
   weakHitEvent: ShakeSmall
   oldDamageFsm: Damage
   furniture: 0
+  playerHitsOnly: 0
   bumpShare: 0.35
   wieldedShare: 0.15
   settleSeconds: 2
@@ -2127,9 +2128,11 @@ MonoBehaviour:
   diveSpeed: 3.5
   homingSting: 1
   homingReach: 0.7
+  lockAimAtWindUp: 1
   highWait: {x: 2, y: 4}
   bob: 0.08
   groundBelowHealth: 0.4
+  winglessToughness: 1
   wingBones: []
   wingsOffAnimation: 
   wingsOffSeconds: 0.8
@@ -2156,6 +2159,24 @@ MonoBehaviour:
   rushSound: {fileID: 0}
   rushShake: ShakeMed
   staysHigh: 0
+  kamikazeChance: 0
+  kamikazeEvent: DamageHeavy
+  kamikazeShare: 0.5
+  kamikazeNearEvent: Damage
+  kamikazeRadius: 0.9
+  kamikazePoisonPerSecond: 2
+  kamikazePoisonSeconds: 5
+  kamikazeShove: {x: 0.15, y: 0.6}
+  kamikazeBugDamage: 1
+  kamikazeMaxSeconds: 8
+  kamikazeEffects: []
+  kamikazeEffectSize: 0.5
+  kamikazeSound: {fileID: 0}
+  kamikazeVolume: 0.8
+  kamikazeWarning: {fileID: 0}
+  kamikazeFlash: 1
+  kamikazeFlashColour: {r: 1, g: 0.35, b: 0.1, a: 1}
+  kamikazeBlinks: 5
   flinchSeconds: 0.4
   flinchCooldown: 1
   stunGuardSeconds: 0
@@ -2250,7 +2271,7 @@ MonoBehaviour:
   anomalySpeed: 1.5
   anomalyHelmetSeconds: 10
   anomalyKeepAway: 6
-  anomalyMaterial: {fileID: 2100000, guid: 85c4c9b971c18794f9e18ae97fee7dfd, type: 2}
+  anomalyMaterial: {fileID: 2100000, guid: 3922e81c5a0776c4e9e7152548db5d76, type: 2}
   anomalyGlow: {fileID: 4407701992690780987, guid: 3a11fd1285525cc42b8f958c9ae28848,
     type: 3}
   anomalyPop: {fileID: 1937718453956067109, guid: a43d1c8d30bba3040ac7f5cba9a7022d,
@@ -4806,7 +4827,7 @@ PrefabInstance:
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: df04ddff934915d4ebb166fb0d605722, type: 2}
+      objectReference: {fileID: 2100000, guid: e3c1cb323b998b942963d28cf21e5892, type: 2}
     - target: {fileID: 6251960192484509100, guid: 4fe4b3045bd26fd449bd9d61f4b45c6e,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -4906,12 +4927,12 @@ PrefabInstance:
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: df04ddff934915d4ebb166fb0d605722, type: 2}
+      objectReference: {fileID: 2100000, guid: e3c1cb323b998b942963d28cf21e5892, type: 2}
     - target: {fileID: 8642493621552623502, guid: 4fe4b3045bd26fd449bd9d61f4b45c6e,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: df04ddff934915d4ebb166fb0d605722, type: 2}
+      objectReference: {fileID: 2100000, guid: e3c1cb323b998b942963d28cf21e5892, type: 2}
     - target: {fileID: 8740129627447436511, guid: 4fe4b3045bd26fd449bd9d61f4b45c6e,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.x

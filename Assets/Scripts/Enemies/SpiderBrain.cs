@@ -541,14 +541,19 @@ namespace Game.Enemies
         [SerializeField] private float climbSpeed = 2f;
         [Min(0.1f)]
         [SerializeField] private float diveSpeed = 3.5f;
-        [Tooltip("It keeps after the player while it stings: during the wind-up it drifts after them if they back off, " +
-                 "and during the sting it keeps turning to them and darts to where they are now, not where they were " +
-                 "when the sting started. So a small step back doesn't dodge it; a block, a dodge to the side or " +
-                 "running away still do. Off: it lunges at where the player was, like the spider.")]
+        [Tooltip("It darts further than its lunge, up to Homing Reach, and drifts in during the wind-up to keep its gap. " +
+                 "With Lock Aim At Wind-Up (the default) it darts at the spot picked when the wind-up began; without it, " +
+                 "it keeps turning to the player and darts to where they are now. Off: it lunges like the spider.")]
         [SerializeField] private bool homingSting = true;
         [Tooltip("How much further than the attack's Lunge it may chase a player who backs off, in metres.")]
         [Min(0f)]
         [SerializeField] private float homingReach = 0.7f;
+        [Tooltip("When a wind-up starts (a bite, a leap, a sting dive, a web or sting shot, a charge, the giant web) it " +
+                 "picks the spot it will strike, where the player is then, and keeps it: it faces that spot through the " +
+                 "wind-up and lunges, dives or shoots there. So stepping away during the wind-up makes it miss; a player " +
+                 "still there is hit as before (user, 2026-11-20). A homing sting darts at that spot, not at the player. " +
+                 "Off: it follows the player until it strikes, the old way.")]
+        [SerializeField] private bool lockAimAtWindUp = true;
         [Tooltip("After a sting, a hit or a dodge it flies around up high for this many seconds (random between) " +
                  "before it dives again.")]
         [SerializeField] private Vector2 highWait = new(2f, 4f);
@@ -1982,10 +1987,32 @@ namespace Game.Enemies
             Run(point, 0.7f);
         }
 
+        // Lock Aim At Wind-Up: the spot its strike goes to is where the player is now (their floor spot under the head, and
+        // the head's height); it keeps that spot until the strike is over.
+        private bool aimLocked;
+        private Vector3 lockedFloor;
+        private float lockedHeadY;
+
+        private void LockAim()
+        {
+            aimLocked = lockAimAtWindUp && player != null && player.Camera != null;
+            if (!aimLocked) return;
+            lockedFloor = PlayerFloor();
+            lockedHeadY = player.Camera.transform.position.y;
+        }
+
+        // Where it aims: the locked spot (at its own height, like Player Floor) while a strike is locked, else the player.
+        private Vector3 AimFloor() => aimLocked ? new Vector3(lockedFloor.x, transform.position.y, lockedFloor.z) : PlayerFloor();
+
+        // The head height it aims at: the locked one while a strike is locked, else the player's now.
+        private float AimHeadY() => aimLocked ? lockedHeadY
+            : player != null && player.Camera != null ? player.Camera.transform.position.y : transform.position.y + 1.6f;
+
         private void StartPrepare()
         {
             // A feinting flier's strike-back winds up quickly, while the arm that swung is still out.
             Enter(State.Prepare, prepareSeconds * kind.windUp * (quickWindUp ? feintWindUp : 1f));
+            LockAim();
             quickWindUp = false;
             Stop();
             Play(AlertLook);
@@ -2027,17 +2054,20 @@ namespace Game.Enemies
         // The wind-up: stands still and rears up at the player. Then it picks its attack.
         private void DoPrepare()
         {
-            Face(PlayerFloor());
+            Face(AimFloor());
             if (HomingExtra > 0f)
             {
-                // Keeps the gap it wound up at, so backing off a little during the warning doesn't throw it off.
-                var to = PlayerFloor() - transform.position;
+                // Keeps the gap it wound up at, so backing off a little during the warning doesn't throw it off (with Lock
+                // Aim At Wind-Up, the gap to the locked spot).
+                var to = AimFloor() - transform.position;
                 float gap = to.magnitude - WindUpDistance();
                 if (gap > 0.05f) agent.Move(to.normalized * Mathf.Min(gap, RunSpeed * moveSpeedScale * 0.6f * Time.deltaTime));
             }
             if (Time.time < stateUntil) return;
 
-            float distance = PlayerDistance();
+            var aimFlat = AimFloor() - transform.position;
+            aimFlat.y = 0f;
+            float distance = aimFlat.magnitude;
             move = PickAttack(distance);
             if (move == null)
             {
@@ -2050,7 +2080,7 @@ namespace Game.Enemies
             attackStart = Time.time;
             attackResolved = false;
             pendingPush = Vector2.zero;
-            // Just far enough to put its mouth where the player is now (a face leap stops just in front of the face).
+            // Just far enough to put its mouth on the spot it aims at (a face leap stops just in front of the face).
             lungeTotal = lungeLeft = Mathf.Clamp(distance - move.reach * Size() - (move.leapToFace ? 0.1f : 0.05f), 0f, move.lunge);
             passStarted = false;
             passLeft = 0f;
@@ -2068,7 +2098,7 @@ namespace Game.Enemies
         private void DoAttack()
         {
             float t = Time.time - attackStart;
-            var target = PlayerFloor();
+            var target = AimFloor();
             bool homing = HomingExtra > 0f && !move.leapToFace;
             if (t < move.hitFrom || (homing && t <= move.hitUntil)) Face(target);
 
@@ -2147,11 +2177,11 @@ namespace Game.Enemies
         private void StartPass()
         {
             passStarted = true;
-            var across = PlayerFloor() - transform.position;
+            var across = AimFloor() - transform.position;
             across.y = 0f;
             passDirection = across.sqrMagnitude > 0.0001f ? across.normalized : transform.forward;
             var from = transform.position;
-            var to = PlayerFloor() + passDirection * (shoveDistance + move.throughDistance);
+            var to = AimFloor() + passDirection * (shoveDistance + move.throughDistance);
             to.y = from.y;
             if (NavMesh.Raycast(from, to, out var wall, NavMesh.AllAreas)) to = wall.position - passDirection * 0.15f;
             var flat = to - from;
@@ -2184,7 +2214,7 @@ namespace Game.Enemies
         private void Leap(float t)
         {
             float takeoff = Mathf.Max(0f, move.hitFrom - leapRiseFall.x);
-            float face = Mathf.Max(0f, player.Camera.transform.position.y - 0.1f - transform.position.y - 0.15f * Size());
+            float face = Mathf.Max(0f, AimHeadY() - 0.1f - transform.position.y - 0.15f * Size());
             if (t < takeoff)
             {
                 leapLift = 0f;
@@ -2894,7 +2924,7 @@ namespace Game.Enemies
                     StartSpecialWindUp();
                     return;
                 case SpecialPhase.WindUp:
-                    Face(PlayerFloor());
+                    Face(AimFloor());
                     if (special == SpecialMove.BullCharge)
                     {
                         if (Time.time >= stateUntil) StartCharge();
@@ -2922,6 +2952,7 @@ namespace Game.Enemies
         {
             specialPhase = SpecialPhase.WindUp;
             Stop();
+            LockAim();
             if (special == SpecialMove.BullCharge)
             {
                 Enter(State.Special, chargeWindUp);
@@ -2944,11 +2975,12 @@ namespace Game.Enemies
             SendToOwnFsms("SpecialWindUp");
         }
 
-        // Aims at where the player stands now and charges on through, until Charge Past beyond them or a wall.
+        // Aims at where the player stood when the wind-up began (Lock Aim At Wind-Up; else where they stand now) and
+        // charges on through, until Charge Past beyond it or a wall.
         private void StartCharge()
         {
             var from = transform.position;
-            var target = PlayerFloor();
+            var target = AimFloor();
             var way = target - from;
             way.y = 0f;
             chargeDirection = way.sqrMagnitude > 0.0001f ? way.normalized : transform.forward;
@@ -3854,7 +3886,7 @@ namespace Game.Enemies
         // Its sting at the player's chest: Attack Below Head under their head (a big one a little lower).
         private float AttackHeight()
         {
-            float head = player != null && player.Camera != null ? player.Camera.transform.position.y - transform.position.y : 1.6f;
+            float head = aimLocked || (player != null && player.Camera != null) ? AimHeadY() - transform.position.y : 1.6f;
             return Mathf.Max(0.3f, head - attackBelowHead - 0.2f * Size());
         }
 
@@ -4030,6 +4062,7 @@ namespace Game.Enemies
             webLaunched = false;
             webStart = Time.time;
             Enter(State.WebShot, webDuration);
+            LockAim();
             Stop();
             Play(!string.IsNullOrEmpty(webAnimation) && HasAnimation(webAnimation) ? webAnimation : AlertLook, true);
             if (playing == webAnimation) StartMakingWeb();
@@ -4083,7 +4116,7 @@ namespace Game.Enemies
         // Faces the player and spits the ball at Web Release Time, aimed a little ahead if they're moving.
         private void DoWebShot()
         {
-            var target = PlayerFloor();
+            var target = AimFloor();
             Face(target);
             if (!webLaunched && Time.time - webStart >= webReleaseTime)
             {
@@ -4102,12 +4135,13 @@ namespace Game.Enemies
             float speed = giant ? giantWebSpeed : webSpeed;
             // A flier shoots from where it flies, not from the floor under it (walkers have no lift).
             var mouth = transform.position + transform.forward * (0.35f * size) + Vector3.up * (0.25f * size + flyLift);
-            var head = player.Camera.transform.position;
+            // Lock Aim At Wind-Up: at where the player was when the shot began (not led: walking off dodges it).
+            var head = aimLocked ? new Vector3(lockedFloor.x, lockedHeadY, lockedFloor.z) : player.Camera.transform.position;
             var chest = head + Vector3.down * 0.45f;
             // Ahead by the player's walking (thumbstick or arm swing), only while it moves them this very frame. The
             // Character Controller keeps its last move for as long as nothing moves it again (a shove's landing, the last
             // stick step), so on its own it sent every shot past a player who was standing still.
-            var lead = !giant && PlayerWalking() && player.TryGetComponent(out CharacterController playerBody) && playerBody.enabled
+            var lead = !giant && !aimLocked && PlayerWalking() && player.TryGetComponent(out CharacterController playerBody) && playerBody.enabled
                 ? Vector3.ProjectOnPlane(playerBody.velocity, Vector3.up)
                 : Vector3.zero;
             chest += lead * ((chest - mouth).magnitude / speed);
@@ -4966,6 +5000,8 @@ namespace Game.Enemies
 
         private void Enter(State next, float seconds)
         {
+            // The spot picked at a wind-up's start lasts through that wind-up and its strike only.
+            if (next != State.Prepare && next != State.Attack && next != State.Special && next != State.WebShot) aimLocked = false;
             state = next;
             stateUntil = Time.time + seconds;
             stillSince = -1f;

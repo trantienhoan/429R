@@ -128,6 +128,10 @@ namespace Game.Enemies
         [SerializeField] private float biteWindUp = 0.45f;
         [Tooltip("...then hopping at them this far (x, metres) over this long (y, seconds).")]
         [SerializeField] private Vector2 biteLunge = new(0.7f, 0.25f);
+        [Tooltip("Its bite and its giant stomp go at the spot the player stood on when the squash-down (the warning) " +
+                 "began, so stepping away during it makes them miss; a player still there is bitten or stomped as before " +
+                 "(user, 2026-11-20). Off: it turns after the player through the warning and goes where they are at its end.")]
+        [SerializeField] private bool lockAimAtWindUp = true;
         [Tooltip("Seconds from one bite to the next.")]
         [Min(0.2f)]
         [SerializeField] private float biteEvery = 1.6f;
@@ -829,6 +833,7 @@ namespace Game.Enemies
                         if (Time.time < nextBite) break;
                         rage = Rage.WindingUp;
                         rageUntil = Time.time + biteWindUp;
+                        lockedFeet = feet;
                         break;
                     }
                     Chase(feet);
@@ -839,10 +844,11 @@ namespace Game.Enemies
                     break;
                 case Rage.WindingUp:
                     Stand();
-                    TurnTo(toPlayer);
+                    var biteAt = AimFrom(toPlayer);
+                    TurnTo(biteAt);
                     float k = biteWindUp > 0f ? 1f - Mathf.Clamp01((rageUntil - Time.time) / biteWindUp) : 1f;
                     Squash(k * k);
-                    if (Time.time >= rageUntil) Lunge(toPlayer, gap);
+                    if (Time.time >= rageUntil) Lunge(biteAt, biteAt.magnitude - radius * Size);
                     break;
                 case Rage.Lunging:
                     Squash(0f);
@@ -1033,6 +1039,7 @@ namespace Game.Enemies
                         Stand();
                         stomp = StompStep.WindingUp;
                         rageUntil = Time.time + stompWindUp;
+                        lockedFeet = feet;
                         break;
                     }
                     if (distance > radius * Size + stompReach)
@@ -1052,10 +1059,11 @@ namespace Game.Enemies
                     break;
                 case StompStep.WindingUp:
                     Stand();
-                    TurnTo(toPlayer);
+                    var stompAt = AimFrom(toPlayer);
+                    TurnTo(stompAt);
                     float k = 1f - Mathf.Clamp01((rageUntil - Time.time) / stompWindUp);
                     Squash(k * k);
-                    if (Time.time >= rageUntil) Leap(toPlayer, distance);
+                    if (Time.time >= rageUntil) Leap(stompAt, stompAt.magnitude);
                     break;
                 case StompStep.Flying:
                     Squash(0f);
@@ -1067,7 +1075,18 @@ namespace Game.Enemies
             if (hasWalkSpeed) animator.SetFloat(walkSpeedFloat, Mathf.Clamp(speed / walkSpeed, MinWalkAnimation, 1f));
         }
 
-        // Up and onto where the player stands.
+        // Lock Aim At Wind-Up: the flat way to the spot the player stood on as the warning began; else to them now.
+        private Vector3 lockedFeet;
+
+        private Vector3 AimFrom(Vector3 toPlayer)
+        {
+            if (!lockAimAtWindUp) return toPlayer;
+            var to = lockedFeet - transform.position;
+            to.y = 0f;
+            return to;
+        }
+
+        // Up and onto the spot it aims at.
         private void Leap(Vector3 toPlayer, float distance)
         {
             stomp = StompStep.Flying;

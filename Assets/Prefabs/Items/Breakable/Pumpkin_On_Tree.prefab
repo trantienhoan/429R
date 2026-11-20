@@ -239,6 +239,7 @@ GameObject:
   - component: {fileID: 427083803342577044}
   - component: {fileID: 4579088779525671740}
   - component: {fileID: 2456636594257766406}
+  - component: {fileID: 252794510804588786}
   m_Layer: 0
   m_Name: Pumpkin_On_Tree
   m_TagString: Weapon
@@ -2305,6 +2306,25 @@ MonoBehaviour:
   seconds: 3
   maxAtOnce: 2
   restSeconds: 10
+--- !u!114 &252794510804588786
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8690403555129543112}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4578f55bd5e1d3e46b3ff2684c3a75dd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Items.RandomPumpkinSize
+  sizeRange: {x: 0.75, y: 1.5}
+  bigOnesRarer: 1.5
+  massPower: 3
+  healthPower: 2
+  healthFsm: Health
+  healthVariable: health
+  followGrowSeconds: 1.2
 --- !u!1001 &2754267303966219221
 PrefabInstance:
   m_ObjectHideFlags: 0

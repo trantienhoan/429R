@@ -114,10 +114,12 @@ namespace Game.Enemies
         [Tooltip("The last hop, in m/s up (1.5 is about 12 cm).")]
         [Min(0f)]
         [SerializeField] private float lastHop = 1.5f;
-        [Tooltip("It flies this many seconds after the last hop. Its aim locks onto the eyes then: it doesn't follow " +
-                 "the head.")]
+        [Tooltip("It flies this many seconds after the last hop, straight at its aim: it doesn't follow the head.")]
         [Min(0f)]
         [SerializeField] private float hopSeconds = 0.15f;
+        [Tooltip("Its aim is where the eyes are when it wakes and starts to shake, so stepping away during the shake makes " +
+                 "it fly past (user, 2026-11-20). Off: it aims at the eyes as it takes off, after the shake, the old way.")]
+        [SerializeField] private bool lockAimAtWindUp = true;
         [Tooltip("How fast it flies, in m/s: from X to Y over Speed Up Seconds, dead straight. Under 7 m/s it never " +
                  "hurts itself or other boxes on what it hits.")]
         [SerializeField] private Vector2 flySpeed = new(3f, 5.5f);
@@ -493,6 +495,7 @@ namespace Game.Enemies
             forced = test;
             awakeCount++;
             Enter(State.Shaking);
+            lockedEyes = head.position;
             var toBox = body.worldCenterOfMass - head.position;
             bool inView = Vector3.Angle(head.forward, toBox) <= viewAngle;
             shakeFor = inView ? shakeSeconds : outOfViewShakeSeconds;
@@ -509,6 +512,9 @@ namespace Game.Enemies
             state = next;
             stateAt = Time.time;
         }
+
+        // Lock Aim At Wind-Up: where the eyes were as it woke.
+        private Vector3 lockedEyes;
 
         // ---------------------------------------------------------------- shaking, hopping, flying
 
@@ -599,7 +605,7 @@ namespace Game.Enemies
                 CalmDown("the player is down or it's held still");
                 return;
             }
-            aim = head.position;
+            aim = lockAimAtWindUp ? lockedEyes : head.position;
             var way = aim - body.worldCenterOfMass;
             dir = way.sqrMagnitude > 0.0001f ? way.normalized : -head.forward;
             if (!modeChanged)

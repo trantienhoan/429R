@@ -39,10 +39,13 @@ namespace Game.Enemies
         [Min(0f)]
         [SerializeField] private float breakOutEffectSize = 1f;
         [SerializeField] private AudioClip breakOutSound;
-        [Tooltip("How long it turns to the player and shakes before it rolls, in seconds: the player's warning (its laugh, " +
-                 "then Roll Warning). It aims at where they stand when this ends.")]
+        [Tooltip("How long it shakes before it rolls, in seconds: the player's warning (its laugh, then Roll Warning).")]
         [Min(0f)]
         [SerializeField] private float windUpSeconds = 2f;
+        [Tooltip("It aims at the spot the player stands on as the wind-up begins and rolls there, so stepping away during " +
+                 "the warning makes it miss (user, 2026-11-20). Off: it turns after them and aims at where they stand " +
+                 "when the wind-up ends, the old way.")]
+        [SerializeField] private bool lockAimAtWindUp = true;
         [Tooltip("How far it shakes while it winds up, in metres.")]
         [Min(0f)]
         [SerializeField] private float shake = 0.03f;
@@ -222,12 +225,21 @@ namespace Game.Enemies
             else Roll();
         }
 
-        // Pops out of the pumpkin, turns to the player and shakes; then sets off at where they stand.
+        // Lock Aim At Wind-Up: the player's floor spot as the wind-up began.
+        private bool aimLocked;
+        private Vector3 lockedFloor;
+
+        // Pops out of the pumpkin, turns to the spot it aims at and shakes; then sets off at it.
         private void WindUp()
         {
             float popped = Mathf.Clamp01((Time.time - bornAt) / PopSeconds);
             transform.localScale = fullScale * Mathf.Lerp(0.6f, 1f, 1f - (1f - popped) * (1f - popped));
-            var to = PlayerFloor() - transform.position;
+            if (lockAimAtWindUp && !aimLocked)
+            {
+                aimLocked = true;
+                lockedFloor = PlayerFloor();
+            }
+            var to = (aimLocked ? new Vector3(lockedFloor.x, transform.position.y, lockedFloor.z) : PlayerFloor()) - transform.position;
             to.y = 0f;
             if (to.sqrMagnitude > 0.0001f)
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(to), 360f * Time.deltaTime);

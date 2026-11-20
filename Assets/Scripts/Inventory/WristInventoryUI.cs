@@ -184,8 +184,14 @@ namespace Game.Inventory
             return true;
         }
 
+        /// <summary>
+        /// Shown whatever the show mode says, while set (the Editor's PC controls: I opens it). Not saved; false in VR.
+        /// </summary>
+        [System.NonSerialized] public bool forceShow;
+
         private bool ShouldShow()
         {
+            if (forceShow) return true;
             switch (showMode)
             {
                 case ShowMode.Always:

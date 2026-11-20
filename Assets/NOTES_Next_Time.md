@@ -4,6 +4,20 @@ Two PCs: the **K: PC** (has K:/WORK_2026/08_04/_claude/ with the boss round-3 fi
 
 ## RESUME HERE
 
+**START HERE TONIGHT (K: PC, 2026-11-20 day; the user goes on tonight on the other PC). Nothing committed today; the scene is saved.**
+- **Bedroom secret room + door move + random tree pumpkin sizes:** built and Play-tested in real bot runs. Details are in "BEDROOM SECRET ROOM" below.
+  - The secret room now breaks away whole when the bedroom fight starts (user: "when the EnemyManager is on, break the secret room"). Tested: 29 PASS, 0 FAIL.
+  - Open question for the user: the 50/50 spider/candies split (Secret Room > Spider Chance on Bedroom_Kit_Base) was my default. The chained door's 300 hp is unchanged and takes a long time by hand.
+  - The user's next step: they look at the pictures in `Exports/Rooms_2026-11-20/` (`7_secret_room_*.jpg`, plus the 10 room sheets `1_storage_* .. 4_playroom_*`) and say what to change or fix in each room. The other rooms are untouched.
+- **Rooms photographed** (user: "play test like a normal player, so the previous stuffs always get cleaned up"): all 4 rooms in real runs, normal / chaos / pumpkin furniture, 4 walls + a plan each, in `Exports/Rooms_2026-11-20/`. NEVER use GAMESTAGES checkpoint jumps for room pictures (they stack old rooms).
+- **Bug looks today** (each has its own entry below): pumpkin repaints of the spider, cockroach and bee, and of their bosses (ghost-white pumpkins on the white bosses, orange bugs under the pumpkin butts). The dormant white anomaly bug uses the ghost look too.
+- **Also today** (entries below): aim lock at wind-up (8 enemy scripts) and PC controls in the Editor.
+- **Unity crashed once (16:20) in its own Profiler** (ThreadDeserializer, while a bot run spawned a room's furniture). Switch Profiler recording off before long Play tests: Window > Analysis > Profiler, untick Record, or `tools/profiler_off.cs`. After that restart, "MCP for Unity" needed Start Session again, and Unity's Pipeline port 7801 stayed held by the dead process.
+- **Test tools** are copied to `Exports/Rooms_2026-11-20/tools/` (the originals are on the K: PC under K:/WORK_2026/08_04/_claude/rooms_2026-11-20/). They are C# 6 scripts for the MCP for Unity :8080 runner (`pt.sh` -> `mcp_exec.ps1`) and use K: paths, so change the paths on the other PC.
+  - `run_bot.sh <stuffs|chaos|pumpkin>` = room photo run.
+  - `run_secret.sh <stuffs|chaos> <false|true>` = secret room test (true = spider outcome).
+  - Both use the bot's own save profile `_claude_bot`.
+
 **SMOOTHNESS + PURPLE HOLE + BEDROOM KIT + LIVING ROOM KIT (second PC, 2026-11-19 evening/night). Scene SAVED 20:09 (user OK); BOTH kit room swaps after it are NOT saved yet; nothing committed.**
 - **Smoothness:**
   - **How it was measured:** an editor profile of the whole bedroom flow, with a bot playing on the throwaway save. Tools: Documents/429R_claude_backups/2026-11-19/smooth (prof_tick, bot_tick, smooth_run.py).
@@ -137,6 +151,174 @@ Two PCs: the **K: PC** (has K:/WORK_2026/08_04/_claude/ with the boss round-3 fi
   - **Covers:** all 6 copies (the Bedroom, Living Room, JACK and PlayGround music players, Play_Ground_Z, and Special Stage 3's Song Notes).
   - **Tested:** break forced in Play. Notes held 0.5 size, gone in 2 s, back to 6-7 notes.
   - Backup: Documents/429R_claude_backups/2026-11-19/Music_Notes_Loop_before_puff_out.prefab.
+
+**PC CONTROLS, EDITOR ONLY (K: PC, user 2026-11-19/20): built + Editor-tested (bot profile `_claude_bot`, real saves untouched), not committed.** Play in the Editor with no headset and the game runs on keyboard and mouse. Never in a build (user: "Editor test only, don't build it in PCVR version"): Scripts/Locomotion/PcControls.cs is wrapped in `#if UNITY_EDITOR`, and it adds itself to the XR Origin 0.5 s into Play only when no headset is active.
+- **Keys (user's map):**
+  - WASD walk, the mouse looks, Space jumps.
+  - Left / right mouse button: punch with that hand (a jab), or swing what that hand holds. **Shift**+click: the hard punch (the game's "swing" punch, a hook) or a hard swing. **Ctrl**+click: an uppercut or an upward swing.
+  - **F / G:** grab what the crosshair is on (up to 4.3 m, like the VR far grab) with the left / right hand; press again to drop.
+  - **Q / E:** throw what the left / right hand holds; hold longer to throw harder (0.6 s = full).
+  - **Esc** pause menu, **I** inventory, **B** shop. While a menu is open the mouse is free: the hand carrying the menu comes up in front (the inventory on the left, the shop on the right), the other hand points where the mouse is, and the left button clicks. Esc also turns the view to face the pause menu.
+  - The first click in the Game view only takes the mouse.
+- **On/off:** Tools > 429 Game > Player > PC Controls (Editor) (ticked = on, the default).
+- **Small changes to game scripts (no effect in VR or builds):** Fist.cs got `manualGrip` / `manualTrigger` (-1 = read the controller as before); WristInventoryUI.cs got `forceShow` (false = as before).
+- **How it works:** it switches off the head/hand tracking and moves the camera and hands itself; the hands go through the game's own Fist and XRI grab/throw code, so damage, SMASH, flying punches (with Boxing gloves), throws and hit windows are the real ones.
+  - Walking feeds the move provider; the jump moves the rig and lands on the floor below.
+  - F/G pick what's under the crosshair and select it at once (XRI's own far ray is blocked by the floor in front of a thing lying on it).
+  - Swings chop through the crosshair point and follow through; throws let go after 0.06 s at full speed so XRI's throw (each thing's Throw Velocity Scale, e.g. a book 4.29; Throw Assist caps at 16 m/s) sees the full speed.
+- **Tested (Editor, Boxing gloves, a Spider_Normal held still):**
+  - Jab 4-6 dmg (hard / SMASH); hook 6 SMASH; uppercut 6 SMASH. The right jab came out 2-4 (normal to hard), depending on the distance.
+  - F grabbed a book 2.2 m away on the floor; a swing, a hard swing and an up-swing all hit it into the spider (1-2 dmg; a book is light).
+  - Q full charge: the book landed 8.4-8.9 m away; E tap: 3.8-4.2 m.
+  - G near grab + G drop.
+  - Looking 48° up, Esc: the menu came up on screen and its Resume button clicked.
+  - I shows the inventory; B opens the shop on the right hand, and the left hand clicked its Close button.
+  - Walk 1.0 m/s; jump 0.58 m up, landed back on the floor.
+- **Test hook:** `PcControls.Simulated` (a TestInput: move, look, pointer, punches, grabs, throws, hard, upper, jump, menu, inventory, shop) drives it from scripts. Test script: K:/WORK_2026/08_04/_claude/pc_controls_2026-11-20/pc_test2.cs, run in Play with K:/WORK_2026/08_04/_claude/playtest_2026-11-10/pt.sh (mcp_exec on :8080; start Play with pt_start.cs + pt_god_on.cs).
+- **Not done:** no mouse look while a menu is open (Esc again to close it).
+- **Next, user (2026-11-19):** enemy attacks lock on at the wind-up: DONE 2026-11-20, see AIM LOCK below.
+
+**AIM LOCK AT WIND-UP (K: PC, user 2026-11-19/20: "lock on the position where they are going to land the attack, so Player can have time to actually dodge"): built + Editor-tested (bot profile, real saves untouched), not committed.** When an attack's wind-up starts, the enemy takes the player's spot (floor spot under the head + head height) and keeps it: it faces it, and the lunge / dive / throw / shot / charge goes there. The hit test still checks where the player really is, so standing still is hit as before, stepping away during the wind-up makes it miss. Every script has a **Lock Aim At Wind-Up** tick box (on); untick it for the old "follow the player until the strike".
+- **Changed (backups of every file: Documents/429R_claude_backups/2026-11-20/aim_lock/):**
+  - SpiderBrain: every bug bite / claw / face leap / pounce, bee sting dives (homing now darts at the locked spot), kamikaze dives, web and poison sting shots (no lead any more), Bull Charge, Giant Web.
+  - PumpkinBossBrain: punches L/R (body turn and arm aim), two-arm slam, each pumpkin throw (no lead any more), slide charge (locked at the wind-up's start, not its end). Body slam and butt hops already picked their landing spot at the start.
+  - FatPumpkin: bite and giant stomp. SlimeBomber: holds still through its wind-up, then dives in one straight line at the locked eyes (a fixed spot re-aimed every frame made it jiggle there forever when dodged). BoxBomb: aims at the eyes as it wakes (start of the shake). BowlingPumpkin: the 2 s wind-up. Gates/PumpkinBallBoss: the 1.6 s charge warning (lanes still win).
+- **Tested (stay = player still, dodge = 1.5 m sideways jump at the wind-up's start):**
+  - Spider bite, cockroach (face leap clung), Spider_Boss pounce, Bee_Boss sting dive, kamikaze dive, bee sting shot: stay HIT, dodge missed; bugs end 0.2-0.4 m from the locked spot.
+  - Giant Web: stay hit, dodge missed. Bull Charge: aims 0.0 deg off the locked spot (the dodged player 13 deg off); its run couldn't be tried in the bedroom test spot (something right in front, charge length 0, same with the old code).
+  - Box bomb: stay reached the player (swatted by the PC hands), dodge "missed: goes off in the air". Slime bomber: stay 2/2 hit the face, dodge flew past.
+  - Fat Pumpkin bite: stay 3/3 bitten, dodge 3/3 missed. Bowling pumpkin rolls 0.0 deg off the locked spot (dodged player 35 deg off).
+  - Pumpkin boss (old slide test, cases added): charge stay hit + thrown, charge dodge 3 m at the wind-up start: no hit, slid 0.0 deg off the spot; punch stay hit; throws stay hit, dodge 0 hits in 4.
+- **Facts, not changed:**
+  - **Boss punches:** the fists go to the locked spot (0.1-0.4 m), but the punch clip swings each arm in from its own side, so stepping about 2.5 m TOWARDS the punching arm (right for punch_R) at 3.5 m can still be caught by the swing (2 of 6 test punches); stepping the other way or back always dodged. User (2026-11-20): leave it as it is.
+  - **Body slam / butt hop:** they lock already, but the landing reaches 3.8-3.9 m (1.7 x size), so a 1-2 m step is still hit; about 3.5 m is needed.
+  - **Not wind-up attacks, left as they were:** the boss's cyclone (chases while spinning), the Bee_Boss_PumpkinButt ticking bomb (a 3.2 m blast round the bee after 4 s), cockroach cling bites, Paint Bees, ghost balloons, Ball Valley bots.
+  - **Long wind-ups are now easy to sidestep:** Giant Web 2.3 s, Bull Charge 1.4 s, ball boss 1.6 s, bowling 2 s. Untick the box on any that should go back to aiming at the end.
+- **Later the same day (user asked):** Fat Pumpkin's giant stomp (scaled 2.7, made giant): it lands exactly on the locked spot; stay 2/2 hit (stomp reach 1.31 m), a 1.5 m dodge 2/2 missed (landed 1.50 m away). Gate ball boss (Resize 0.8 m so it fits the bedroom, no arena lanes): stay 2/2 hit, a 2 m dodge 2/2 missed; it charged 0.0 deg off the locked spot (41.5 deg off the dodged player). Test: aim_lock_2026-11-20/aim_stomp_ball.cs. Not tried: the ball boss in its real Ball Valley arena, anything in the headset.
+- **Test scripts:** K:/WORK_2026/08_04/_claude/aim_lock_2026-11-20 (aim_*.cs, run with playtest_2026-11-10/pt.sh in Play after pt_start.cs + pt_god_on.cs; boss/run.sh <case> for the boss: charge_hit, charge_lock_dodge, punch_flight, punch_lock_dodge, punch_sweep, throw_hit, throw_lock_dodge).
+
+**BUGS CONCEPT (user, 2026-11-20): pictures + Gemini prompts ready, nothing built.** The user wants the spider, cockroach
+and bee to look more like pumpkins. Exports/Bugs_Concept/:
+- Bugs_now_overview.jpg (3 x 3: spider, cockroach and bee x normal, boss and pumpkin-butt boss);
+- Spider/Cockroach/Bee_now_sheet.jpg (3 views each);
+- Bugs_now_model_variants.jpg (each bug's 3 random model variants);
+- screenshots/ (every render + _parts.txt);
+- PROMPTS.md (Prompt 1 lineup, 2 turnaround per bug, 3 bosses, 4 pumpkin-butt bosses, optional variants; what has to stay: same body plans so the rigs and animations can be kept).
+
+Renders are real materials in a preview scene, idle pose (bees in flight: their wings fold away in idle). Scripts are in
+K:/WORK_2026/08_04/_claude/bugs_concept_2026-11-20 (bug_pics.cs via pt.sh in Edit mode, then bug_sheets.py). The
+user's Gemini pick goes in as concept_v1.png.
+- **Try 1** (gemini_try1.png): the user said it's fun but far from their pumpkin style (painterly, curly leafy vines).
+  Round 2: Pumpkin_style_sheet.jpg (16 tiles: the game's in-use pumpkins with real materials, plus a carved face and rind
+  close-ups; every render is in pumpkin_style/) and two new prompts in PROMPTS.md: a short follow-up for the same Gemini
+  chat and a full one for a new chat. Both say: match these exact pumpkins, 3D game-model look, olive stem legs, no
+  leaves or curly vines. Script: bugs_concept_2026-11-20/pumpkin_pics.cs (pumpkin_boss_Z alone; it timed out in the batch).
+- **Try 2** (gemini_try2.png): the user likes it (it matches the pumpkins) but it's too cute and chubby; they want menaces that will bite and eat you. Round 3 prompt in PROMPTS.md: lean angular shapes, long thorny legs, narrow slit eyes, jaws torn open with rind teeth and pulp drool, scorched carvings, hunting poses, low camera.
+- **Try 3** (gemini_try3.png, from the round 3b meaner teeth-and-claws prompt): user: "this looks nice". Round 4 in PROMPTS.md asks for the same design in a low-poly style (faceted, about 2-4k triangles each, today's spider render attached for the facet level), plus smooth-shaded and wireframe variations.
+
+**BEDROOM SECRET ROOM + DOOR MOVE + RANDOM PUMPKIN SIZES (user, 2026-11-20): BUILT and PLAY-TESTED in real bot runs (see "Tested" at the end). Prefabs and scene saved; nothing committed.**
+- **User's ask:** move the bedroom's chained door left, closer to the hung shelf + broom, with its welcome mat. Breaking that door pops up a room behind it that mirrors the bedroom (same size and light, no second door or window), with a big smoke puff. Its light comes on when the player walks in. In the middle stands a giant pumpkin almost touching the ceiling, with 2 health. Breaking it gives either 33 random candies or a Giant Spider. The Giant Spider is a variant of the white boss spider, has 33 health, sets no bool when killed, and drops 3 candies. The W/C door "behind the shelf only leads to fall edge". Pumpkin_On_Tree gets a random size, weight and health (bigger = heavier + more health).
+- **Door:** BedroomKitSetupMenu BigSides north = 0.75 m filler, Door_Wide+Chained (doorway centre x -1.5, was -0.75; the shelf is at x -2.94), 3 m wall, 0.75 m filler. The filler `BR_Kit_Wall_0p75m` is cut from the 1.5 m piece with its wallpaper UVs kept, saved as `Assets/Models/Rooms/BR_Kit_Wall_0p75m.asset`. "Use Bedroom Kit Room" moved both mats -0.75 (scene saved 16:12, only those 2 lines).
+- **Secret room:** a third RoomKit set "Secret" on Bedroom_Kit_Base, centre z 7.845, sharing the big room's north wall. The new `Game.Rooms.SecretRoom` on the room root (Scripts/Rooms/SecretRoom.cs) does the rest:
+  - The chained door gone while Big stands opens the room: a puff, kit.Play("Secret", come), Secret_Floor grows in, the Secret Teleport Area turns on, the doorway NavMeshObstacle turns off, and the north fall edge moves to z 13.54 while the E/W edges extend (their NavMesh holes too).
+  - The giant pumpkin pops in at 85% of the come; the light turns on when the head is inside.
+  - On break: 50% (Spider Chance) Giant Spider (ComeAtOnce), else a CandyFountain of 33.
+  - When Big goes (Enemy1 - Wait turns EnemyManager 1 on and plays Bedroom_GO) the secret room BREAKS AWAY whole (user, later the same day: "when the EnemyManager is on, break the secret room"):
+    - big smoke puffs and the whoosh, its walls and roof go and its light goes off, and an unbroken giant pumpkin goes with it;
+    - half way through the go its floor shrinks away, its teleport area turns off, and the fall edges go back to the bedroom's own (stored at Awake), so whatever is left in it (candies, a living Giant Spider) falls.
+    - Before this change the floor stayed until "3 - LivingRoom" destroyed $Bedroom_Base.
+  - Test hook: `SecretRoom.ForceSpider`.
+- **Prefabs** (made by Build Bedroom Kit Room via SecretRoomSetupMenu):
+  - `Prefabs/Items/Breakable/Secret_Giant_Pumpkin` is the tree pumpkin x5.33 = 2.7 m, kinematic, health 2, toughness 1, player hits only. It has no grab, cook, LiveLimit, bowler, Fat Pumpkin or random size; its self-break and small pieces are off.
+  - `Prefabs/Enemies/Enemies_Smarter/Spider_Giant` is a Spider_Boss variant: boss scale x1.6 = 2.0-2.4, health 33, setOnDeath empty, noticeOnSpawn, plus the new `CandiesOnDeath` (3, player kills only). No chaos rebirth: MiniBossChaos has no prefab of that name.
+- **Random pumpkin sizes:** the new `Game.Items.RandomPumpkinSize` on Pumpkin_On_Tree, added by Tools > 429 Game > Items > Random Pumpkin Sizes. Size is 0.75-1.5 (skewed, median ~1, about 1 in 11 at 1.4+). Scale goes x Size (it follows the Health FSM's 0.65 -> 0.85 grow tween for 1.2 s), mass x Size^3 (300 -> 127..1013), health x Size^2 rounded (3 -> 2..7). Test hook: `RandomPumpkinSize.ForceNextSize`.
+- **Rebuilt prefab compared with the old one:** only the north wall pieces changed, plus the new Secret parts and the SecretRoom component.
+- **Backups:** Documents/429R_claude_backups/2026-11-20/secret_room/ (Bedroom_Kit_Base.prefab + meta, Bedroom_Kit_Animator.controller, Pumpkin_On_Tree.prefab, 2 Game Scene.unity).
+- **Tested** (real bot runs from a new game on `_claude_bot`: `run_secret.sh stuffs false` = candies, `run_secret.sh chaos true` = spider; tools also in `Exports/Rooms_2026-11-20/tools/`):
+  - **Door and room:** the doorway is centred at x -1.5, and the room is shut until the door breaks. Then it opens with 16 wall parts and 9 floor tiles, the teleport area on and the doorway NavMesh obstacle off. Fall edges: none at (0, 8) once open, one at (0, 14) and at x ±5 beside it.
+  - **Pumpkin and light:** the giant pumpkin stands 2.70 m tall; the light is off until the player walks in, then on. One blast of 1 takes it to 1 health, a second breaks it.
+  - **Candies outcome:** a candy fountain of exactly 33.
+  - **Spider outcome:** Spider_Giant out with health 33, setOnDeath empty. Killed by the player: a fountain of exactly 3, and no GAMESTAGES / EnemyManager bool changed. Its size was 1.7-1.84 a few seconds out: it grows in from 0.6 over 7 s (SpiderBrain growSeconds), to 2.0-2.4.
+  - **W/C door:** it stands behind furniture (Bedroom_Candy_Basket / Bedroom_Shelf_01 in Stuffs); past its doorway is only the west fall edge (checked at x -4.6 and -6).
+  - **Fight start, old version:** the room folded and its light went off (the floor stayed then).
+  - **Fight start, new break:** see "Break test" below.
+  - **Pictures:** `Exports/Rooms_2026-11-20/7_secret_room_*.jpg`; the single shots are in K:/WORK_2026/08_04/_claude/rooms_2026-11-20/walls/6_*.
+  - **Not tried:** the headset; a real player breaking the 300 hp chained door by hand (the test set its health to 0); the Pumpkin_On_Tree sizes in Play (`tools/pumpkin_sizes.cs` makes 42 and lists size / scale / mass / health).
+  - **Break test** (real run, candies): 29 PASS, 0 FAIL. At Enemy1 - Wait + 5 s: 0 secret wall renderers shown, the light off, 0 floor tiles left, the teleport area off, a fall edge back at (0, 8) and (0, 4.7), and none at (0, 4.3) (the bedroom floor's edge is as before).
+
+**PUMPKIN BOSSES REPAINT (user, 2026-11-20: "now do the same repaint for the bosses"): APPLIED to all 6 boss prefabs, not committed, not seen in the headset.**
+- **White bosses (Spider_Boss, Cockroach_Boss, Bee_Boss) = GHOST PUMPKINS:** the same paint as the normal bugs, but the orange rind is a pale cream-white pumpkin (light grooves, warm grey shadows) and the eyes glow hotter orange. Stems, legs, bee stripes and jaws stay as on the normal bugs (olive).
+  - New textures `Assets/M_Textures/<Bug>_Smol/<Bug>_Enemy_Pumpkin_Ghost_Color.png` + `_Ghost_Glow.png` (they reuse the normal `<Bug>_Enemy_Pumpkin_Normal.png`).
+  - New materials `Assets/Materials/<Bug>_Smol_Pumpkin_Ghost_Mat.mat` (copies of `<Bug>_Smol_Pumpkin_Mat` with the ghost textures), replacing `<Bug>_Smol_White_Painted_Mat` on each white boss's 3 model renderers.
+- **Pumpkin-butt bosses** (Spider/Cockroach/Bee_Boss_PumpkinButt) now use the orange `<Bug>_Smol_Pumpkin_Mat` instead of the old brown `<Bug>_Smol_Mat`. Their pumpkin butt, crown and skull are untouched.
+- **White anomaly bug** (user: "Yes, ghost it"): `<Bug>_Smarter.anomalyMaterial` is now `<Bug>_Smol_Pumpkin_Ghost_Mat` too (was `_White_Painted_Mat`; Normal/Small inherit it; backups in `Documents/429R_claude_backups/2026-11-20/anomaly_ghost_mat/`). It's DORMANT today: `anomalySwap` = Rainbow_Slime on all three bugs, so the rare roll always becomes the rainbow slime and the white bug only shows if Anomaly Swap is cleared.
+- **Kept as they were:** every old material and texture; the Slime_Big/Small prefabs that share Cockroach_Smol_White_Painted_Mat; the legacy Enemies/Spider, Cockroach, Bee... prefabs (not in 2 Game Scene).
+- **To switch back:** put `<Bug>_Smol_White_Painted_Mat` on the white boss's 3 models, `<Bug>_Smol_Mat` on the pumpkin-butt boss's 3 models. Prefab backups: `Documents/429R_claude_backups/2026-11-20/boss_pumpkin_mat/`.
+- **Checked:** Unity prefab renders, before vs after: `Exports/Bugs_Concept/boss_repaint/Bosses_before_after.png`. Scripts: `K:/WORK_2026/08_04/_claude/boss_pumpkin_paint/` (unity_apply.cs, unity_render.cs, compose.py); the ghost paint is `PAINT_VARIANT=ghost` in the spider/cockroach/bee paint.py (added by `_claude/patch_ghost.py`).
+
+**PUMPKIN BEE REPAINT (user, 2026-11-20: "now do the same repaint for the bee"): APPLIED to the normal and small bees, not committed, not seen in the headset.**
+- **The paint** (old model and its shared UVs; bee_smol wins the shared texels):
+  - The abdomen is the game's pumpkin rind with 12 front-to-back ribs and two dark olive bee bands.
+  - The stinger is an olive pumpkin stem with a dark tip; the thorax is fuzzy olive.
+  - The head is orange with dark sockets and RED glowing eyes. The old slit pupils stay dark: the eyes are head texels near the Eye bones that were reddish in the old atlas.
+  - The wings are pale dried-leaf cream with faint veins; the jaws cream; the legs and antennae olive with dark tips.
+- **New files:**
+  - `Assets/M_Textures/Bee_Smol/Bee_Enemy_Pumpkin_Color/_Glow/_Normal.png`.
+  - `Assets/Materials/Bee_Smol_Pumpkin_Mat.mat` (URP Lit, metallic 0, smoothness 0.1, and the old metallic/smoothness map REMOVED so it's matte; glow map x1, normal map).
+- **Where it's used:** assigned on `Enemies_Smarter/Bee_Smarter.prefab` (backup in `K:/WORK_2026/08_04/_claude/backups/bee_pumpkin_mat/`), so Normal and Small use it.
+  - Bee_Boss keeps white; Bee_Boss_PumpkinButt keeps the old Bee_Smol_Mat. **(Changed later the same day: see PUMPKIN BOSSES REPAINT.)**
+  - PaintBeesSetupMenu still copies the old Bee_Smol_Mat as its template (unchanged).
+  - To switch back, put Bee_Smol_Mat on Bee_Smarter's bee_smol, _2 and _3.
+- **Checked:** Blender before/after (flying pose) and Unity prefab renders, in `Exports/Bugs_Concept/bee_repaint/`. Scripts in `K:/WORK_2026/08_04/_claude/bee_pumpkin_paint/` (paint.py is generated by make_paint.py from the cockroach script + bee_body.py.txt).
+
+**PUMPKIN COCKROACH REPAINT (user, 2026-11-20: "now do the same repaint for the cockroach"): APPLIED to the normal and small cockroaches, not committed, not seen in the headset.**
+- **The paint** (old model and its shared UVs, mirror-safe; Cockroach_Smol_3 wins the shared texels):
+  - The wing-lid shell and the abdomen are the game's pumpkin rind, with 12 ribs running front to back (a long pumpkin) and a dark seam where the lids part. The lid undersides are pale pumpkin flesh.
+  - The hind wings are pale cream.
+  - The head is orange with dark sockets and yellow-glowing eyes. The eyes are found by position: no own group, so head texels near the Eye bones that were bright in the old atlas.
+  - The jaws are cream with dark tips; the legs and antennae are olive with dark spines and tips.
+  - No face, nothing busy.
+- **New files:**
+  - `Assets/M_Textures/Cockroach_Smol/Cockroach_Enemy_Pumpkin_Color/_Glow/_Normal.png`.
+  - `Assets/Materials/Cockroach_Smol_Pumpkin_Mat.mat` (URP Lit, metallic 0, smoothness 0.1, glow map x1, normal map).
+- **Where it's used:** assigned on `Enemies_Smarter/Cockroach_Smarter.prefab` (backup in `K:/WORK_2026/08_04/_claude/backups/roach_pumpkin_mat/`), so Normal and Small use it.
+  - Cockroach_Boss keeps white; Cockroach_Boss_PumpkinButt keeps the old Cockroach_Smol_Mat. **(Changed later the same day: see PUMPKIN BOSSES REPAINT.)**
+  - The old material and atlas are untouched. To switch back, put Cockroach_Smol_Mat on Cockroach_Smarter's Cockroach_Smol, _2 and _3.
+- **Checked:** Blender before/after (with the lids open) and Unity prefab renders, in `Exports/Bugs_Concept/roach_repaint/`. Scripts in `K:/WORK_2026/08_04/_claude/roach_pumpkin_paint/`.
+
+**PUMPKIN SPIDER REPAINT (user, 2026-11-20: "keep the base model, re-paint it only"): APPLIED to the normal and small spiders, not committed, not seen in the headset.**
+- **The paint** (on the old model's existing UVs, shared by Spider_Smol/_2/_3, mirror-safe):
+  - The back body is a clean, simple pumpkin, like the game's own pumpkins: bright orange, fine grain, 10 broad ribs with thin dark grooves, and an olive stem cut on top. No face (the user tried a carved face, two versions, and said remove it).
+  - The head is orange with dark sockets and yellow-glowing eyes; cream fangs with dark tips.
+  - The legs are olive stems, darker at the joints, with dark thorns and claw tips.
+- **New files (nothing old overwritten):**
+  - `Assets/M_Textures/Spider_Smol/Spider_Enemy_Pumpkin_Color.png`, `_Glow.png` (only the eyes glow) and `_Normal.png` (ribs pressed in). Import settings are copied from the old texture; the normal is a Normal Map.
+  - `Assets/Materials/Spider_Smol_Pumpkin_Mat.mat`: a URP Lit copy of Spider_Smol_Mat, metallic 0, smoothness 0.1, emission = the glow map x1, normal map on.
+- **Where it's used:** `Enemies_Smarter/Spider_Smarter.prefab`'s 3 renderers (backup in `K:/WORK_2026/08_04/_claude/backups/spider_pumpkin_mat/`), so Spider_Normal and Spider_Small use it.
+  - Spider_Boss keeps the white material; Spider_Boss_PumpkinButt keeps the old brown Spider_Smol_Mat. **(Changed later the same day: see PUMPKIN BOSSES REPAINT.)**
+  - The old material and textures are untouched. To switch back, put Spider_Smol_Mat on Spider_Smarter's Spider_Smol, _2 and _3.
+- **Checked:** Blender before/after and Unity prefab renders (`Exports/Bugs_Concept/spider_repaint_test/`). Not yet seen in a dark room or the headset.
+- **Scripts:** `K:/WORK_2026/08_04/_claude/spider_pumpkin_paint/`:
+  - `paint.py` (FACE = False; set `SPIDER_PAINT_APPLY=1` to write straight into Assets);
+  - `preview.py` / `compose2.py` (Blender before/after);
+  - `unity_apply.cs` (import settings, material, prefab);
+  - `unity_render.cs`.
+- **The earlier new-model try** (`Assets/Blender/Spider_Pumpkin.blend`, below) isn't used by anything; the user went with this repaint instead.
+
+**PUMPKIN SPIDER v1 (user, 2026-11-20: "remodel the spider with the old rig but new look, a new blend file"): built in Blender, NOT in Unity yet, not committed.**
+- **Source:** concept `Exports/Bugs_Concept/gemini_try3.png`; analysis and plan in `Exports/Bugs_Concept/SPIDER_REMODEL_PLAN.md` (user approved).
+- **File:** `Assets/Blender/Spider_Pumpkin.blend`. It holds the old Spider_Armature with its 57 bones and all 15 clips (NLA stash as before), the new mesh `Pumpkin_Spider`, and the old meshes hidden in an `Old_Spider_Reference` collection. `Spider_Enemy_NEW.blend` is untouched (md5 checked).
+- **Mesh:**
+  - 3,029 triangles (old about 1,800); smooth shading baked (sharp above 62°).
+  - **Back body (Butt):** a ribbed pumpkin + stem with scorched cracks.
+  - **Head:** a jack-o'-lantern about 0.25 m wide (1.8x the old head). It has carved eye, nose and mouth holes (dark scorched walls glowing deeper in), 4 small yellow brow eyes on the Eye bones, 13 teeth, 3 drool strands, and 2 sickle fangs on Jaw_Fang.L/R.
+  - **Legs:** 6 thorny olive-stem legs with knobs at the joints and dark claw tips. The front pair is short thorny claws under the mouth.
+  - All 37 vertex groups match bones.
+- **Texture:** `Assets/M_Textures/Pumpkin_Spider/Pumpkin_Spider_Base_Color.png` + `_Emission.png` (1024, own UVs, one material "Pumpkin_Spider").
+- **Checked:** EEVEE previews and a 12-clip pose sheet (`Exports/Bugs_Concept/pumpkin_spider_v1/`). The rig drives everything: Idle, Walk, Run, Alert, Attack, Attack_2 (the leg stretch), Hit, Death, Shoot_Web_Ball, Dodge, Appear and Walk_Back.
+- **Scripts:** `K:/WORK_2026/08_04/_claude/pumpkin_spider/` (build.py rebuilds the whole file from Spider_Enemy_NEW.blend: don't run it after the user edits Spider_Pumpkin.blend by hand).
+- **2026-11-20:** the user is tweaking Spider_Pumpkin.blend by hand ("I am going in to do it myself, you help later"): do NOT rerun build.py on it.
+- **Next:** the user's look check in Blender; then the FBX + Unity prefab swap (the same Spider_Animator); later the 3 variants, the white boss texture, and the pumpkin-butt boss idea.
 
 **0. NEXT (user, 2026-11-18 night: "Make the game run smoother and play fun first", before the remodel; build size left alone):** pick one first: (a) **smoothness**: profile a play session (bedroom bug fights, the 180-pumpkin rooms, bonus round, bosses: frame time, GC per frame, physics/animation/particles), fix the worst spikes, fade 3D smoke puffs right at the head; a code scan found no costly per-frame lookups, so it needs measuring (MCP server on, or Unity closed for a hidden run); (b) **fun**: the 15-point balance list (memory balance-pass-todo; the user died 3 times in the 11-18 recording, so check which points still stand). Also: Gloves.blend has unsaved changes in the user's Blender (thumb fix + chubby; the FBX already has them); nothing from 11-18 is committed.
 

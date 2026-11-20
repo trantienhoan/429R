@@ -793,11 +793,21 @@ namespace Game.Combat
         /// The hand is squeezed into a fist right now (grip, and the trigger if Need Trigger), holding nothing. Unlike
         /// Is Fist it's read from the buttons at once, so it also works while the game is paused (a notice up).
         /// </summary>
-        public bool Squeezing => Read(gripAction) >= squeeze && (!needTrigger || triggerAction == null || Read(triggerAction) >= squeeze) && !Holding();
+        public bool Squeezing => GripNow >= squeeze && (!needTrigger || triggerAction == null || TriggerNow >= squeeze) && !Holding();
+
+        /// <summary>
+        /// Set while the game runs by the Editor's PC controls (Game.Locomotion.PcControls, no headset): the grip and the
+        /// trigger read as these instead of the controller's. Below 0 = the controller's (always, in VR and in builds).
+        /// </summary>
+        [System.NonSerialized] public float manualGrip = -1f;
+        [System.NonSerialized] public float manualTrigger = -1f;
+
+        private float GripNow => manualGrip >= 0f ? manualGrip : Read(gripAction);
+        private float TriggerNow => manualTrigger >= 0f ? manualTrigger : Read(triggerAction);
 
         private void Update()
         {
-            bool squeezing = Read(gripAction) >= squeeze && (!needTrigger || triggerAction == null || Read(triggerAction) >= squeeze);
+            bool squeezing = GripNow >= squeeze && (!needTrigger || triggerAction == null || TriggerNow >= squeeze);
             if (!squeezing || Holding())
             {
                 squeezedSince = -1f;
@@ -1756,7 +1766,7 @@ namespace Game.Combat
         // things within reach.
         public bool Process(IXRSelectInteractor interactor, IXRSelectInteractable interactable)
         {
-            if (noFarGrabTrigger <= 0f || interactor is not NearFarInteractor || Read(triggerAction) < noFarGrabTrigger) return true;
+            if (noFarGrabTrigger <= 0f || interactor is not NearFarInteractor || TriggerNow < noFarGrabTrigger) return true;
             return GentleFarGrab.HandDistance(interactor.transform, interactable) <= Reach;
         }
 
