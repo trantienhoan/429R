@@ -764,6 +764,27 @@ namespace Game.Enemies
         [Tooltip("...and grows to full size over this many seconds. 0 = full size at once.")]
         [Min(0f)]
         [SerializeField] private float growSeconds = 7f;
+
+        [Header("Random size (user, 2026-11-20)")]
+        [Tooltip("Each one comes out a random size on top of its size class's: bigger = more health and slower, smaller = " +
+                 "less health and faster. Off for the secret-room giants and the pumpkin-butt bosses.")]
+        [SerializeField] private bool randomSize = true;
+        [Tooltip("Times its size, random between (even odds of smaller and bigger). Its health goes with it (whole numbers).")]
+        [SerializeField] private Vector2 sizeRoll = new(0.75f, 1.33f);
+        [Tooltip("Times its walking and running speed at the smallest and the biggest roll (1 at size 1).")]
+        [SerializeField] private Vector2 sizeRollSpeed = new(1.2f, 0.8f);
+        [Tooltip("A flier never rolls bigger than this (the rooms are 3 m high).")]
+        [Min(1f)]
+        [SerializeField] private float flierMaxRoll = 1.15f;
+
+        /// <summary>Test hook: the next one made rolls this size (times); null rolls.</summary>
+        public static float? ForceNextSizeRoll;
+        /// <summary>Its random size roll (times its size class's), 1 when off.</summary>
+        public float SizeRoll => sizeRollNow;
+        private float sizeRollNow = 1f, sizeRollPace = 1f;
+        // Its walking and running speed: its size class's, times its size roll's.
+        private float Pace => kind.speed * sizeRollPace;
+
         [Tooltip("Switched on when it's hurt, e.g. a puff of smoke (it switches itself off). Usually empty: Enemy Hit " +
                  "Damage shows the small hit pop from the Hit Settings where a hit hurts it.")]
         [SerializeField] private GameObject hitEffect;
@@ -1321,8 +1342,8 @@ namespace Game.Enemies
         /// <summary>True while its Stun Guard is up: hits hurt but don't stop it (for debugging and FSMs).</summary>
         public bool IsStunGuarded => stunGuardSeconds > 0f && Time.time < stunGuardUntil;
 
-        private float WalkSpeed => walkSpeed * kind.speed * (grounded ? groundSpeed : 1f);
-        private float RunSpeed => runSpeed * kind.speed * (grounded ? groundSpeed : 1f);
+        private float WalkSpeed => walkSpeed * Pace * (grounded ? groundSpeed : 1f);
+        private float RunSpeed => runSpeed * Pace * (grounded ? groundSpeed : 1f);
         private float Rest => kind != null ? kind.rest : 1f;
         // A mini boss that hunts the player down (Aggressive Boss).
         private bool Aggressive => aggressiveBoss && kindName == SizeClass.Boss && !GoesForObject && !anomaly;
@@ -1424,9 +1445,15 @@ namespace Game.Enemies
                 break;
             }
             if (health != null) health.Value = Random.Range(kind.health.x, Mathf.Max(kind.health.x, kind.health.y) + 1);
+            // Its health goes with its random size (whole numbers, at least 1).
+            if (health != null && !Mathf.Approximately(sizeRollNow, 1f)) health.Value = Mathf.Max(1f, Mathf.Round(health.Value * sizeRollNow));
             startHealth = health != null ? Mathf.Max(health.Value, 0.01f) : 1f;
             if (speaker != null) speaker.pitch = kind.pitch;
-            if (TryGetComponent(out EnemyHitDamage hits)) hits.KnockBackDistance *= kind.knockBack;
+            if (TryGetComponent(out EnemyHitDamage hits))
+            {
+                hits.KnockBackDistance *= kind.knockBack;
+                hits.SpareKillingBlow = SpareTooFastKill;
+            }
             // It came back as a chaos one (a mini boss beaten without it hurting the player): after its health is set.
             if (chaosPending) BecomeChaos();
 
@@ -2696,7 +2723,7 @@ namespace Game.Enemies
         {
             // Walking back is slower than running back, so it gets the time to cover the distance.
             bool walkBack = HasAnimationQuiet(walkBackAnimation);
-            float speed = walkBack ? walkBackSpeed * kind.speed : RunSpeed * 0.8f;
+            float speed = walkBack ? walkBackSpeed * Pace : RunSpeed * 0.8f;
             if (walkBack) seconds = Mathf.Max(seconds, distance / speed);
             Enter(State.Retreat, seconds);
             runningAway = false;
@@ -4619,6 +4646,28 @@ namespace Game.Enemies
             settings.PlayRebirth(at, Size());
         }
 
+        // Killed too fast (user, 2026-11-20: "when kill it too fast, the health of miniboss never drop to 0, it stops at 1,
+        // 1 more hit and it gone, 50% chance to turn chaos at that stage, recover full health"): the player's blow that would
+        // kill a mini boss within Fast Kill Seconds of first hurting it leaves it on 1 health (once); Fast Kill Chance of
+        // the time it turns chaos right there, with its full health times Health Times. Not a chaos one, an anomaly, a slime.
+        private bool spared;
+
+        private bool SpareTooFastKill(EnemyHitDamage hits)
+        {
+            if (spared || chaos || anomaly || kindName != SizeClass.Boss || hits.FirstHurtByPlayerAt < 0f) return false;
+            var settings = MiniBossChaos.Settings;
+            if (settings == null || settings.PrefabFor(name) == null || Time.time - hits.FirstHurtByPlayerAt >= settings.FastKillSeconds) return false;
+            spared = true;
+            bool turns = ForceNextChaosRebirth || (settings.FastKillChance > 0f && Random.value < settings.FastKillChance);
+            Debug.Log($"[Mini Boss Chaos] {name} killed in {Time.time - hits.FirstHurtByPlayerAt:F1} s: too fast, left on 1 health" + (turns ? ", turns chaos" : ""));
+            if (!turns) return true;
+            ForceNextChaosRebirth = false;
+            if (health != null) health.Value = startHealth;
+            BecomeChaos();
+            settings.PlayRebirth(transform.position, Size());
+            return true;
+        }
+
         // Made a chaos one (it came back): Health Times the health, Damage Times its blows (Land On Player), EXP Times the
         // EXP, and the red aura round its body.
         private void BecomeChaos()
@@ -5077,7 +5126,28 @@ namespace Game.Enemies
                 _ => normal,
             };
             fullScale = Vector3.one * Random.Range(kind.scale.x, Mathf.Max(kind.scale.x, kind.scale.y));
+            RollSize();
             transform.localScale = fullScale * (growSeconds > 0f ? growFrom : 1f);
+        }
+
+        // Its random size (user, 2026-11-20: "every enemy can have random size and health, range 33%, smaller = faster,
+        // less health, bigger = more health, slower"): even odds of smaller and bigger (spread evenly in log size), its
+        // speed from the roll (1 at size 1, straight to the ends). Health follows in Start. The white bug stays as it is.
+        private void RollSize()
+        {
+            sizeRollNow = 1f;
+            sizeRollPace = 1f;
+            float? forced = ForceNextSizeRoll;
+            ForceNextSizeRoll = null;
+            if (!randomSize || anomaly) return;
+            float lo = Mathf.Min(sizeRoll.x, 1f), hi = Mathf.Max(sizeRoll.y, 1f);
+            if (flies) hi = Mathf.Min(hi, flierMaxRoll);
+            float roll = forced ?? Mathf.Exp(Random.Range(Mathf.Log(lo), Mathf.Log(hi)));
+            sizeRollNow = roll;
+            sizeRollPace = roll >= 1f
+                ? Mathf.Lerp(1f, sizeRollSpeed.y, Mathf.InverseLerp(1f, Mathf.Max(sizeRoll.y, 1.0001f), roll))
+                : Mathf.Lerp(sizeRollSpeed.x, 1f, Mathf.InverseLerp(Mathf.Min(sizeRoll.x, 0.9999f), 1f, roll));
+            fullScale *= roll;
         }
 
         private void PickModel()

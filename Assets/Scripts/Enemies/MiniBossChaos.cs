@@ -6,7 +6,8 @@ namespace Game.Enemies
     /// The mini bosses' chaos rebirth (user, 2026-11-19): a mini boss (a Spider Brain of the Boss size: the spider,
     /// cockroach and bee bosses, plain and Pumpkin Butt) that the player beats without it ever hurting them comes back at
     /// once, Chance of the time, as its chaos version: Health Times the health, Damage Times its blows, EXP Times the EXP
-    /// and a red aura, like the chaos pumpkins and the chaos pumpkin boss. Once only: a chaos one stays dead. It takes
+    /// and a red aura, like the chaos pumpkins and the chaos pumpkin boss. Also (user, 2026-11-20) a blow that would kill one
+    /// too fast (within Fast Kill Seconds of first hurting it) leaves it on 1 health; Fast Kill Chance of the time it turns chaos there, full health. Once only: a chaos one stays dead. It takes
     /// over everything that waited for the first one (its death flags, its waves, a swarm that runs until it's gone), so
     /// a stage goes on only when the chaos one is beaten too. The big slimes (also Boss size) are left out: they split and
     /// get their colour from the cauldron. Lives in Resources as "Mini Boss Chaos"; Tools > 429 Game > Enemies > Set Up
@@ -20,6 +21,13 @@ namespace Game.Enemies
         [Tooltip("The chance a mini boss beaten without hurting the player comes back as its chaos version. 0 = never.")]
         [Range(0f, 1f)]
         [SerializeField] private float chance = 0.75f;
+        [Tooltip("Fast Kill (user, 2026-11-20): the blow that would kill a mini boss within this many seconds of the player " +
+                 "first hurting it leaves it on 1 health instead (once)...")]
+        [Min(0f)]
+        [SerializeField] private float fastKillSeconds = 3f;
+        [Tooltip("...and this share of the time it turns chaos right there, with full health (times Health Times). 0 = never.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float fastKillChance = 0.66f; // user 2026-11-20: "raise chance to 66%"
         [Tooltip("The chaos version has this many times the health...")]
         [Min(1f)]
         [SerializeField] private float healthTimes = 2f;
@@ -67,6 +75,8 @@ namespace Game.Enemies
         }
 
         public float Chance => chance;
+        public float FastKillSeconds => fastKillSeconds;
+        public float FastKillChance => fastKillChance;
         public float HealthTimes => healthTimes;
         public float DamageTimes => damageTimes;
         public float ExpTimes => expTimes;

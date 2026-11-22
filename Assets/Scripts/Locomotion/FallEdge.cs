@@ -243,6 +243,9 @@ namespace Game.Locomotion
             Destroy(thing, fallSeconds);
         }
 
+        /// <summary>Its health runs out (no EXP), as when it falls over an edge.</summary>
+        public static void RunOut(GameObject thing) => RunOutOfHealth(thing);
+
         private static void RunOutOfHealth(GameObject thing)
         {
             foreach (var part in thing.GetComponentsInChildren<Transform>())

@@ -29,6 +29,43 @@ namespace Game.Combat
         [Min(0)]
         [SerializeField] private int thrownBonus = 1;
 
+        [Header("Tricks, while it's held in the hand (user, 2026-11-20)")]
+        [Tooltip("A hit that hurts an enemy stuns it this many seconds, with dizzy stars over its head (a hard hit 1.5x). " +
+                 "0 = none (the enemy's own short stun). The frying pan.")]
+        [Min(0f)]
+        [SerializeField] private float stunSeconds;
+        [Tooltip("A hit that hurts an enemy knocks it back, times its normal knock-back distance and hop (a hard hit 1.5x, " +
+                 "a smash farther still). 0 = as before (only hard hits knock back). The baseball bat.")]
+        [Min(0f)]
+        [SerializeField] private float knockBackTimes;
+        [Tooltip("Played where it hits an enemy, one at random (e.g. the pan's metal clangs).")]
+        [SerializeField] private AudioClip[] hitSounds = System.Array.Empty<AudioClip>();
+        [Range(0f, 1f)]
+        [SerializeField] private float hitVolume = 0.9f;
+
+        /// <summary>Seconds a hit stuns (0 = none).</summary>
+        public float StunSeconds => stunSeconds;
+        /// <summary>Knock-back multiplier on every hit that hurts (0 = none).</summary>
+        public float KnockBackTimes => knockBackTimes;
+
+        /// <summary>Plays one of its hit sounds at a point (if it has any).</summary>
+        public void PlayHitSound(Vector3 at)
+        {
+            if (hitSounds == null || hitSounds.Length == 0) return;
+            var clip = hitSounds[Random.Range(0, hitSounds.Length)];
+            if (clip != null) AudioSource.PlayClipAtPoint(clip, at, hitVolume);
+        }
+
+        /// <summary>The weapon that made this collision, if it's held in the hand and has a trick (a stun, a knock-back or
+        /// hit sounds), else null.</summary>
+        public static WeaponPower HeldTrick(Collision collision)
+        {
+            var weapon = Find(collision);
+            if (weapon == null || (weapon.stunSeconds <= 0f && weapon.knockBackTimes <= 0f && (weapon.hitSounds == null || weapon.hitSounds.Length == 0)))
+                return null;
+            return weapon.TryGetComponent(out XRGrabInteractable grab) && grab.isSelected ? weapon : null;
+        }
+
         public float Power
         {
             get => power;
@@ -90,6 +127,18 @@ namespace Game.Combat
             else if (HeldThings.InUse(grab)) bonus = weapon.thrownBonus + Game.Leveling.PlayerLevel.ThrowDamageBonus;
             else bonus = 0f;
             return Mathf.Max(1f, HitSettings.Whole((own + bonus) * weapon.boost));
+        }
+
+        /// <summary>
+        /// The part of a thrown thing's Damage that's Throw Power's bonus (0 if it isn't thrown). It's added flat after a
+        /// hard or smashing throw's times (user, 2026-11-22: "why Player can easily do 25+ damage with a throw?": the
+        /// times used to multiply the bonus too, (1 + 1 + 6) x 4 = 32).
+        /// </summary>
+        public static float ThrowBonusOf(Collision collision)
+        {
+            var weapon = Find(collision);
+            if (weapon == null || Fist.IsFistBall(weapon) || Fist.IsFlyingFist(weapon) || !IsThrown(weapon)) return 0f;
+            return Mathf.Max(0f, HitSettings.Whole(Game.Leveling.PlayerLevel.ThrowDamageBonus * weapon.boost));
         }
 
         /// <summary>Let go a moment ago and still flying: thrown (not held, not a fist, not a shot).</summary>

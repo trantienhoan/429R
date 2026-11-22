@@ -718,8 +718,8 @@ Transform:
   m_GameObject: {fileID: 745301792919055446}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: -0.00016516447, y: 0, z: 0.18597673}
+  m_LocalScale: {x: 1, y: 1.0415716, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 554043499422134831}
@@ -5422,6 +5422,7 @@ MonoBehaviour:
     roof: {fileID: 6910126494082393682}
   foldAngle: 90
   overshoot: 1.4
+  solidFrom: 0.4
   roofStarts: 0.5
   roofAway: {x: 7, y: 4, z: 2}
   roofSpin: 180
@@ -5705,10 +5706,13 @@ MonoBehaviour:
   comeSeconds: 2.67
   goSeconds: 3.33
   floorGrowSeconds: 0.8
-  fallEdgeNorth: {fileID: 6314109524503766270}
-  fallEdgeEast: {fileID: 383858260593798650}
-  fallEdgeWest: {fileID: 2831379900468586442}
-  newNorthEdge: 13.542
+  alongX: 0
+  farEdge: {fileID: 6314109524503766270}
+  moreFarEdges: []
+  sideEdgeA: {fileID: 383858260593798650}
+  sideEdgeB: {fileID: 2831379900468586442}
+  moreSideEdges: []
+  newFarEdge: 13.542
   openPuff: {fileID: 804983386052247261, guid: 8ab20db805bb89d4b94a3836325db5ad, type: 3}
   openPuffSize: 2.5
   openSound: {fileID: 8300000, guid: 97d2e1dfb0c1d454cb1ef3d2f8ce2511, type: 3}
@@ -5734,6 +5738,10 @@ MonoBehaviour:
   breakPuffSize: 3
   candySound: {fileID: 8300000, guid: 5943196f0a63fe2479f529bd4acc00e5, type: 3}
   spiderSound: {fileID: 8300000, guid: 7b6ab3bcb6f72564eb1ac631a17a02b8, type: 3}
+  shakeEvery: {x: 2, y: 4.5}
+  shakeSeconds: 0.7
+  shakeDegrees: 6
+  shakeRocks: 3
 --- !u!1 &3299155581392866082
 GameObject:
   m_ObjectHideFlags: 0
@@ -12287,8 +12295,8 @@ Transform:
   m_GameObject: {fileID: 3858243869295137225}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: -0.00016498566, y: 0, z: 0.18408488}
+  m_LocalScale: {x: 1, y: 1.0292848, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1065551437778931497}

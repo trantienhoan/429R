@@ -132,8 +132,9 @@ namespace Balls
 
         private void Update()
         {
-            // The rules once the view is back (GAMESTAGES fades in as the valley opens).
-            if (!rulesShown && Time.time - bornAt > 1.5f)
+            // The rules once the view is back (GAMESTAGES fades in as the valley opens), after any other notice that's up
+            // (the gates' WORKING SITE note shows at the same moment: it would be replaced, user 2026-11-20).
+            if (!rulesShown && Time.time - bornAt > 1.5f && !OtherNoticeUp())
             {
                 rulesShown = true;
                 ShowRules();
@@ -308,6 +309,12 @@ namespace Balls
         }
 
         // ---------------------------------------------------------------- the player's view
+
+        private static bool OtherNoticeUp()
+        {
+            var notice = Game.Menus.TutorialNotice.Find();
+            return notice != null && notice.IsShowing;
+        }
 
         private void ShowRules()
         {

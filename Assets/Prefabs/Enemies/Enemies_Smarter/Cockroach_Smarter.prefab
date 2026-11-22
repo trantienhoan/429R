@@ -1927,7 +1927,7 @@ MonoBehaviour:
   small:
     weight: 45
     scale: {x: 0.55, y: 0.75}
-    health: {x: 5, y: 6}
+    health: {x: 6, y: 10}
     speed: 1.1
     windUp: 1
     playerEvent: 
@@ -1941,7 +1941,7 @@ MonoBehaviour:
   normal:
     weight: 45
     scale: {x: 0.85, y: 1.1}
-    health: {x: 7, y: 9}
+    health: {x: 10, y: 16}
     speed: 1.15
     windUp: 1
     playerEvent: 
@@ -2199,6 +2199,10 @@ MonoBehaviour:
   legSpeedRange: {x: 0.6, y: 2.5}
   growFrom: 0.6
   growSeconds: 7
+  randomSize: 1
+  sizeRoll: {x: 0.75, y: 1.33}
+  sizeRollSpeed: {x: 1.2, y: 0.8}
+  flierMaxRoll: 1.15
   hitEffect: {fileID: 0}
   setOnDeath: []
   aggressiveBoss: 1

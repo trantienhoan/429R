@@ -248,6 +248,14 @@ namespace Game.Leveling
                  "numbers are rounded up or down at random, so it really averages this (a 4 heals 1 four times in ten).")]
         [Range(0f, 1f)]
         [SerializeField] private float candySlowHealShare = 0.1f;
+        [Tooltip("Way over the cap (user, 2026-11-22: \"health = maximum health x2, eat candy only heal 5% normal\"): " +
+                 "from this many times max health on, a candy heals only Candy Tiny Heal Share.")]
+        [Min(1f)]
+        [SerializeField] private float candyTinyHealFrom = 2f;
+        [Tooltip("The share of a candy's heal that counts above Candy Tiny Heal From x max health (0.05 = 5%; rounded at " +
+                 "random like the slow share, so it really averages this).")]
+        [Range(0f, 1f)]
+        [SerializeField] private float candyTinyHealShare = 0.05f;
 
         [Header("Flying punches unlocked by Fist Size (own + gloves' points, never candies')")]
         [Tooltip("Fist Size points that unlock the Jab (a fast straight punch flies on). Below it no punch flies. " +
@@ -570,6 +578,12 @@ namespace Game.Leveling
 
         /// <summary>The share of a candy's heal above Candy Slow Heal From x max health (0.1 without a Player Level).</summary>
         public static float CandySlowHealShare => Instance != null ? Instance.candySlowHealShare : 0.1f;
+
+        /// <summary>From this many times max health on, candy heals only Candy Tiny Heal Share (2 without a Player Level).</summary>
+        public static float CandyTinyHealFrom => Instance != null ? Mathf.Max(Instance.candyTinyHealFrom, Instance.candySlowHealFrom) : 2f;
+
+        /// <summary>The share of a candy's heal above Candy Tiny Heal From x max health (0.05 without a Player Level).</summary>
+        public static float CandyTinyHealShare => Instance != null ? Instance.candyTinyHealShare : 0.05f;
 
         /// <summary>
         /// The extra damage weapons do (Weapon Efficiency, user 2026-11-10): +1 a point, eaten candies' whole points

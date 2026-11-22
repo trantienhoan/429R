@@ -221,6 +221,7 @@ namespace Game.EditorTools
                 }
                 so.ApplyModifiedPropertiesWithoutUndo();
 
+                KitDoorFitMenu.Fit(root, notes);
                 PrefabUtility.SaveAsPrefabAsset(root, NewRoom);
             }
             finally
@@ -400,10 +401,11 @@ namespace Game.EditorTools
             so.FindProperty("teleportArea").objectReferenceValue = teleport;
             so.FindProperty("roomLight").objectReferenceValue = secretLight;
             so.FindProperty("inside").boundsValue = new Bounds(new Vector3(0f, Height / 2f, SecretZ), new Vector3(Room - 0.2f, Height, Room - 0.2f));
-            so.FindProperty("fallEdgeNorth").objectReferenceValue = Edge(room, "Fall Edge North");
-            so.FindProperty("fallEdgeEast").objectReferenceValue = Edge(room, "Fall Edge East");
-            so.FindProperty("fallEdgeWest").objectReferenceValue = Edge(room, "Fall Edge West");
-            so.FindProperty("newNorthEdge").floatValue = 13.5f + 0.042f;
+            so.FindProperty("alongX").boolValue = false;
+            so.FindProperty("farEdge").objectReferenceValue = Edge(room, "Fall Edge North");
+            so.FindProperty("sideEdgeA").objectReferenceValue = Edge(room, "Fall Edge East");
+            so.FindProperty("sideEdgeB").objectReferenceValue = Edge(room, "Fall Edge West");
+            so.FindProperty("newFarEdge").floatValue = 13.5f + 0.042f;
             so.FindProperty("openPuff").objectReferenceValue = SecretRoomSetupMenu.Find("Smoke_Puff_Burst_Out");
             so.FindProperty("breakPuff").objectReferenceValue = SecretRoomSetupMenu.Find("Smoke_Flash_Five_Puffs");
             so.FindProperty("openSound").objectReferenceValue = SecretRoomSetupMenu.Sound("whoosh");

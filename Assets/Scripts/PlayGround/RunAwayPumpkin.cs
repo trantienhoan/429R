@@ -90,6 +90,17 @@ namespace Game.PlayGround
         [Tooltip("When the player comes this close (metres, along the floor) it starts running.")]
         [Min(0.1f)]
         [SerializeField] private float fleeRange = 4f;
+        [Tooltip("Seen (user, 2026-11-20: it stood in a corner watching the player, who was too far to make it run): in " +
+                 "the player's view (within View Angle of where they look, nothing in between), Flee Range is this many " +
+                 "times bigger...")]
+        [Min(0.1f)]
+        [SerializeField] private float seenRangeTimes = 2f;
+        [Tooltip("...and out of their sight, this many times (smaller).")]
+        [Min(0.1f)]
+        [SerializeField] private float unseenRangeTimes = 0.75f;
+        [Tooltip("Degrees off where the player looks that still count as in their view.")]
+        [Range(5f, 90f)]
+        [SerializeField] private float viewAngle = 35f;
         [Tooltip("Once at its hiding spot with the player at least this far, it stops running to save its breath.")]
         [Min(0.1f)]
         [SerializeField] private float calmRange = 7f;
@@ -418,10 +429,11 @@ namespace Game.PlayGround
             // Landed and settled after a run: it may tip over again like any other thing.
             if (upright && mood != Mood.Fleeing && stillFor >= 0.5f) KeepUpright(false);
 
+            float range = FleeRangeNow(head);
             switch (mood)
             {
                 case Mood.Watching:
-                    if (distance <= (blending ? BlendFleeRange : fleeRange))
+                    if (distance <= (blending ? BlendFleeRange : range))
                     {
                         if (staminaLeft >= Mathf.Max(1f, stamina * 0.1f)) StartFleeing(head);
                         else GetTired();
@@ -443,9 +455,9 @@ namespace Game.PlayGround
                     bool hidden = head != null && Hidden(head.position, body.position);
                     // Very far, far and out of sight, or at its hiding spot out of sight with the player not right on it:
                     // stop and hide there, saving its breath.
-                    bool safe = distance > calmRange + 3f || (distance > calmRange && hidden) || (arrived && hidden && distance > fleeRange);
+                    bool safe = distance > Mathf.Max(calmRange, range) + 3f || (distance > calmRange && hidden) || (arrived && hidden && distance > range);
                     // At its spot among the pumpkins, or anywhere it picked with the player not on top of it: it settles.
-                    bool settled = arrived && distance > (targetBlends ? BlendFleeRange + 0.5f : fleeRange + 1.5f);
+                    bool settled = arrived && distance > (targetBlends ? BlendFleeRange + 0.5f : range + 1.5f);
                     // Heading in among the pumpkins it keeps going till it's there: halfway, it would stand out.
                     if (targetBlends && !arrived) safe = false;
                     if (safe || settled || (arrived && distance > calmRange))
@@ -605,6 +617,22 @@ namespace Game.PlayGround
         }
 
         private float BlendFleeRange => Mathf.Min(blendFleeRange, fleeRange);
+
+        private float seenCheckAt;
+        private bool seen;
+
+        // Flee Range now: bigger while the player looks at it, smaller out of their sight (checked 5 times a second).
+        private float FleeRangeNow(Transform head)
+        {
+            if (head == null) return fleeRange;
+            if (Time.time >= seenCheckAt)
+            {
+                seenCheckAt = Time.time + 0.2f;
+                var to = body.position + Vector3.up * 0.3f - head.position;
+                seen = Vector3.Angle(head.forward, to) <= viewAngle && !Hidden(head.position, body.position);
+            }
+            return fleeRange * (seen ? seenRangeTimes : unseenRangeTimes);
+        }
 
         // Running, but it hasn't got anywhere since the last look (hopping against a wall or into a corner).
         private bool GettingNowhere()

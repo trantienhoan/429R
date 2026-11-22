@@ -13,7 +13,7 @@ namespace Game.Enemies
     /// then waddles after every candy lying on the floor, nearest first, sucks each one in and gets fatter and slower. With
     /// no candy left that it can get to (Angry After), it gets angry: it goes red and fumes a moment, then waddles after
     /// the player and bites (it squashes down, then hops at them with a chomp: a bug's bite and a little shove). A candy
-    /// it can get to calms it down, and it goes back to eating. The player's hits break it (Health 6, +2 a candy, and Toughness 2, user
+    /// it can get to calms it down, and it goes back to eating. The player's hits break it (Health 6 and Toughness 1 until it turns giant, user 2026-11-20; then Giant Health + 2 a candy it ate, Toughness 2; before: Health 6, +2 a candy, and Toughness 2, user
     /// 2026-11-11; Toughness 2 since 2026-11-10, was 1; weaker hits add up; their blasts too), and it gives back only a few of what it ate
     /// (Drop Share).
     /// Two of them that meet fight (user, 2026-11-04: "make fat pumpkin eat each other, the 1st to bite win and get bonus
@@ -217,12 +217,30 @@ namespace Game.Enemies
                  "Fist Size points; weapons and throws their own). 6 since 2026-11-11 (user; 20 on 2026-11-10, was 5).")]
         [Min(1f)]
         [SerializeField] private float health = 6f;
+
+        [Header("Random size (user, 2026-11-20)")]
+        [Tooltip("It wakes a random size, times the size it woke at: bigger = more health and slower, smaller = less " +
+                 "health and faster (as the bugs' Spider Brain).")]
+        [SerializeField] private bool randomSize = true;
+        [SerializeField] private Vector2 sizeRoll = new(0.75f, 1.33f);
+        [Tooltip("Times its speed at the smallest and the biggest roll (1 at size 1).")]
+        [SerializeField] private Vector2 sizeRollSpeed = new(1.2f, 0.8f);
+        /// <summary>Its random size roll (times), 1 when off.</summary>
+        public float SizeRoll { get; private set; } = 1f;
+        /// <summary>Test hook: the next one rolls this size; null rolls.</summary>
+        public static float? ForceNextSizeRoll;
+
         [Tooltip("How hits turn into damage (the enemies' shared Hit Settings asset). Empty: the default numbers.")]
         [SerializeField] private HitSettings hitSettings;
         [Tooltip("Divides the hit power, like an enemy's Toughness (2 since 2026-11-10, was 1: a punch has to be twice as " +
                  "fast to hurt).")]
         [Min(0.1f)]
         [SerializeField] private float toughness = 2f;
+        [Tooltip("Its Toughness before it turns giant (user, 2026-11-20: \"easy to kill at start, only in the giant phase " +
+                 "its health would boost\"): every punch counts. The giant uses Toughness.")]
+        [Min(0.1f)]
+        [SerializeField] private float smallToughness = 1f;
+        private float Toughness => phase == Phase.Giant ? toughness : smallToughness;
         [Tooltip("After a hit that hurts, more hits by the same fist or thing are ignored this long, in seconds, so one " +
                  "swing counts once (each fist or thing on its own, user 2026-11-19: the other fist's punch still lands).")]
         [Min(0f)]
@@ -442,6 +460,7 @@ namespace Game.Enemies
                 if (part is MeshRenderer || part is SkinnedMeshRenderer) found.Add(part);
             }
             looks = found.ToArray();
+            RollSize();
             fullScale = transform.localScale;
             bornAt = Time.time;
             head = Camera.main != null ? Camera.main.transform : null;
@@ -638,6 +657,23 @@ namespace Game.Enemies
                 other.StartFight(this);
                 return;
             }
+        }
+
+        // Its random size (user, 2026-11-20, as the bugs): even odds of smaller and bigger, health with it (whole
+        // numbers, at least 1), speed the other way (1 at size 1, straight to the ends).
+        private void RollSize()
+        {
+            float? forced = ForceNextSizeRoll;
+            ForceNextSizeRoll = null;
+            if (!randomSize) return;
+            float lo = Mathf.Min(sizeRoll.x, 1f), hi = Mathf.Max(sizeRoll.y, 1f);
+            float roll = forced ?? Mathf.Exp(Random.Range(Mathf.Log(lo), Mathf.Log(hi)));
+            SizeRoll = roll;
+            transform.localScale *= roll;
+            health = Mathf.Max(1f, Mathf.Round(health * roll));
+            walkSpeed *= roll >= 1f
+                ? Mathf.Lerp(1f, sizeRollSpeed.y, Mathf.InverseLerp(1f, Mathf.Max(hi, 1.0001f), roll))
+                : Mathf.Lerp(sizeRollSpeed.x, 1f, Mathf.InverseLerp(Mathf.Min(lo, 0.9999f), 1f, roll));
         }
 
         private void StartFight(FatPumpkin other)
@@ -993,11 +1029,10 @@ namespace Game.Enemies
         private void BecomeGiant()
         {
             phase = Phase.Giant;
-            // A fixed number, so the fights it won before (Winner Health) don't stack on it.
-            // Now what won fights saved up counts (user, 2026-11-11: only the giant is tanky).
-            health += savedHealth;
+            // Only the giant is tanky (user, 2026-11-11, again 2026-11-20): Giant Health, plus what it saved up (+2 a candy
+            // it ate, and the fights it won), on top.
+            health = (giantHealth > 0f ? giantHealth : health) + savedHealth;
             savedHealth = 0f;
-            if (giantHealth > 0f) health = Mathf.Max(health, giantHealth);
             stomp = StompStep.Coming;
             nextStomp = Time.time + 1.2f;
             noCandySince = -1f;
@@ -1180,8 +1215,11 @@ namespace Game.Enemies
         private void Gulp()
         {
             Eaten++;
-            // A little health a candy (user, 2026-11-11: +2), at once.
-            health += candyHealTimes * Random.Range(Mathf.Min(candyHealRoll.x, candyHealRoll.y), Mathf.Max(candyHealRoll.x, candyHealRoll.y) + 1);
+            // A little health a candy (user, 2026-11-11: +2), saved up for the giant (user, 2026-11-20: easy to kill before
+            // it turns giant); a giant (it doesn't eat, but in case) gets it at once.
+            float heal = candyHealTimes * Random.Range(Mathf.Min(candyHealRoll.x, candyHealRoll.y), Mathf.Max(candyHealRoll.x, candyHealRoll.y) + 1);
+            if (phase == Phase.Giant) health += heal;
+            else savedHealth += heal;
             if (jiggle != null) jiggle.Hit(GulpWobble);
             if (eatSound != null && speaker != null && Time.time >= nextGulpSound)
             {
@@ -1219,7 +1257,7 @@ namespace Game.Enemies
             // What hit it: each fist or thing waits out its own Hit Cooldown.
             var hitter = collision.rigidbody != null ? (Object)collision.rigidbody : collision.collider;
             if (hitter != null && nextHurtBy.TryGetValue(hitter, out float next) && Time.time < next) return;
-            var hit = EnemyHitDamage.Judge(collision, toughness, hitSettings, out bool byPlayer);
+            var hit = EnemyHitDamage.Judge(collision, Toughness, hitSettings, out bool byPlayer);
             if (!byPlayer) return;
             if (hit.Damage <= 0f)
             {
@@ -1252,7 +1290,7 @@ namespace Game.Enemies
             if (phase == Phase.Gone) return;
             // No hit pause from a blast (play test 2026-11-11): the Elon Boong's blast went off just before its punch
             // landed, and the pause made the fat pumpkin ignore the punch (1 damage a punch instead of a double one).
-            TakeDamage(Mathf.Max(1f, HitSettings.Whole(strength / toughness)));
+            TakeDamage(Mathf.Max(1f, HitSettings.Whole(strength / Toughness)));
         }
 
         private void TakeDamage(float damage, bool big = false)

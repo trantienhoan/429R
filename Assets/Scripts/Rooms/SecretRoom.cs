@@ -1,7 +1,9 @@
 using System.Collections;
+using System.Linq;
 using Game.Bonus;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.Serialization;
 
 namespace Game.Rooms
 {
@@ -18,6 +20,9 @@ namespace Game.Rooms
     ///   go, then its floor; the fall edges come back over where it was, so anything left in it (candies, a Giant
     ///   Spider) falls. An unbroken giant pumpkin goes with it.
     /// Built by Tools > 429 Game > Rooms > Build Bedroom Kit Room (on Bedroom_Kit_Base).
+    /// The living room has one too (user, 2026-11-20): behind its big double door (east), the same way, with a Giant
+    /// Cockroach instead of the Giant Spider (Giant Spider here means whichever giant boss bug the room lets out); it
+    /// breaks away when EnemyManager 2 starts (LivingRoom_GO). Built by Build Living Room Kit Room.
     /// </summary>
     [DisallowMultipleComponent]
     public class SecretRoom : MonoBehaviour
@@ -48,11 +53,22 @@ namespace Game.Rooms
         [SerializeField] private float floorGrowSeconds = 0.8f;
 
         [Header("Fall edges (moved back when it opens)")]
-        [SerializeField] private BoxCollider fallEdgeNorth;
-        [SerializeField] private BoxCollider fallEdgeEast;
-        [SerializeField] private BoxCollider fallEdgeWest;
-        [Tooltip("The new floor's north edge, this object's space (z).")]
-        [SerializeField] private float newNorthEdge = 13.542f;
+        [Tooltip("The secret room lies along this object's +X (the living room's, east) instead of +Z (the bedroom's, north).")]
+        [SerializeField] private bool alongX;
+        [Tooltip("The fall edge past the host room's wall on the secret room's side: it moves back to the new floor's edge.")]
+        [FormerlySerializedAs("fallEdgeNorth")]
+        [SerializeField] private BoxCollider farEdge;
+        [Tooltip("More fall edges on that side, moved back the same way.")]
+        [SerializeField] private BoxCollider[] moreFarEdges = System.Array.Empty<BoxCollider>();
+        [Tooltip("The fall edges along the two other sides: they reach along to the new floor's edge.")]
+        [FormerlySerializedAs("fallEdgeEast")]
+        [SerializeField] private BoxCollider sideEdgeA;
+        [FormerlySerializedAs("fallEdgeWest")]
+        [SerializeField] private BoxCollider sideEdgeB;
+        [SerializeField] private BoxCollider[] moreSideEdges = System.Array.Empty<BoxCollider>();
+        [Tooltip("The new floor's far edge, this object's space (z, or x when Along X).")]
+        [FormerlySerializedAs("newNorthEdge")]
+        [SerializeField] private float newFarEdge = 13.542f;
 
         [Header("Opening")]
         [Tooltip("The big smoke puff in the doorway when the door breaks.")]
@@ -66,9 +82,10 @@ namespace Game.Rooms
         [SerializeField] private GameObject giantPumpkin;
         [Tooltip("Where it stands (this object's space).")]
         [SerializeField] private Vector3 pumpkinSpot = new(0f, 0f, 7.85f);
-        [Tooltip("Chance (0 to 1) that a Giant Spider climbs out; otherwise it bursts into candies.")]
+        [Tooltip("Chance (0 to 1) that the giant boss bug (Giant Spider / Giant Cockroach) climbs out; otherwise it bursts into candies.")]
         [Range(0f, 1f)]
         [SerializeField] private float spiderChance = 0.5f;
+        [Tooltip("The giant boss bug that can climb out (Spider_Giant in the bedroom, Cockroach_Giant in the living room).")]
         [SerializeField] private GameObject giantSpider;
         [Min(0)]
         [SerializeField] private int candyCount = 33;
@@ -81,6 +98,17 @@ namespace Game.Rooms
         [SerializeField] private float breakPuffSize = 3f;
         [SerializeField] private AudioClip candySound;
         [SerializeField] private AudioClip spiderSound;
+
+        [Header("Hatching shake (user, 2026-11-20: \"like an egg about to hatch\")")]
+        [Tooltip("Seconds between shakes (random in this range); after its first hit, half as long.")]
+        [SerializeField] private Vector2 shakeEvery = new(2f, 4.5f);
+        [Min(0.05f)]
+        [SerializeField] private float shakeSeconds = 0.7f;
+        [Tooltip("How far it rocks on its bottom (degrees), the first rock; the next ones die down.")]
+        [SerializeField] private float shakeDegrees = 6f;
+        [Tooltip("Rocks back and forth in one shake.")]
+        [Min(1)]
+        [SerializeField] private int shakeRocks = 3;
 
         /// <summary>Test hook: the next giant pumpkin gives the spider (true) or the candies (false); null rolls.</summary>
         public static bool? ForceSpider;
@@ -119,7 +147,7 @@ namespace Game.Rooms
             if (teleportArea != null) teleportArea.SetActive(false);
             if (roomLight != null) roomLight.gameObject.SetActive(false);
             // The fall edges as they were, to put back when the room breaks.
-            edgeBoxes = new[] { fallEdgeNorth, fallEdgeEast, fallEdgeWest };
+            edgeBoxes = new[] { farEdge, sideEdgeA, sideEdgeB }.Concat(moreFarEdges).Concat(moreSideEdges).ToArray();
             edgeCenters = new Vector3[edgeBoxes.Length];
             edgeSizes = new Vector3[edgeBoxes.Length];
             for (int i = 0; i < edgeBoxes.Length; i++)
@@ -183,30 +211,44 @@ namespace Game.Rooms
             if (floorColliders != null) foreach (var c in floorColliders) if (c != null) c.enabled = on;
         }
 
-        // The north edge moves back to the new floor's edge; the east and west ones reach along it.
+        // The far edge(s) move back to the new floor's edge; the side ones reach along it. (The fall edges' boxes are
+        // unturned to this object, as all the rooms' are.)
         private void MoveFallEdges()
         {
-            if (fallEdgeNorth != null)
-                SetZ(fallEdgeNorth, newNorthEdge, RoomZ(fallEdgeNorth, fallEdgeNorth.center.z + fallEdgeNorth.size.z / 2f));
-            foreach (var side in new[] { fallEdgeEast, fallEdgeWest })
-                if (side != null) SetZ(side, RoomZ(side, side.center.z - side.size.z / 2f), newNorthEdge);
+            // A far edge keeps its far end, or (a thin one, e.g. the living room's round-1 edge) its depth past the new edge.
+            foreach (var far in new[] { farEdge }.Concat(moreFarEdges))
+            {
+                if (far == null) continue;
+                float near = RoomAlong(far, Along(far.center) - Along(far.size) / 2f);
+                float end = RoomAlong(far, Along(far.center) + Along(far.size) / 2f);
+                SetAlong(far, newFarEdge, Mathf.Max(end, newFarEdge + Mathf.Abs(end - near)));
+            }
+            foreach (var side in new[] { sideEdgeA, sideEdgeB }.Concat(moreSideEdges))
+                if (side != null) SetAlong(side, RoomAlong(side, Along(side.center) - Along(side.size) / 2f), newFarEdge);
             Physics.SyncTransforms();
         }
 
-        // A z on a fall edge's box (its own space) in this object's space.
-        private float RoomZ(BoxCollider b, float z) =>
-            transform.InverseTransformPoint(b.transform.TransformPoint(new Vector3(b.center.x, b.center.y, z))).z;
+        private float Along(Vector3 v) => alongX ? v.x : v.z;
 
-        // Sets a fall edge's box to reach from one z to another (this object's space), and the NavMesh hole it carves.
-        private void SetZ(BoxCollider b, float from, float to)
+        private Vector3 WithAlong(Vector3 v, float a)
+        {
+            if (alongX) v.x = a; else v.z = a;
+            return v;
+        }
+
+        // A point along the secret room's axis on a fall edge's box (its own space), in this object's space.
+        private float RoomAlong(BoxCollider b, float a) =>
+            Along(transform.InverseTransformPoint(b.transform.TransformPoint(WithAlong(b.center, a))));
+
+        // Sets a fall edge's box to reach from one point to another along the axis (this object's space), and the NavMesh
+        // hole it carves.
+        private void SetAlong(BoxCollider b, float from, float to)
         {
             var t = b.transform;
-            float a = t.InverseTransformPoint(transform.TransformPoint(new Vector3(0f, 0f, from))).z;
-            float c = t.InverseTransformPoint(transform.TransformPoint(new Vector3(0f, 0f, to))).z;
-            var center = b.center;
-            var size = b.size;
-            center.z = (a + c) / 2f;
-            size.z = Mathf.Max(0.1f, Mathf.Abs(c - a));
+            float a = Along(t.InverseTransformPoint(transform.TransformPoint(WithAlong(Vector3.zero, from))));
+            float c = Along(t.InverseTransformPoint(transform.TransformPoint(WithAlong(Vector3.zero, to))));
+            var center = WithAlong(b.center, (a + c) / 2f);
+            var size = WithAlong(b.size, Mathf.Max(0.1f, Mathf.Abs(c - a)));
             b.center = center;
             b.size = size;
             if (b.TryGetComponent(out NavMeshObstacle hole))
@@ -224,15 +266,56 @@ namespace Game.Rooms
             var at = transform.TransformPoint(pumpkinSpot);
             pumpkin = Instantiate(giantPumpkin, at, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f), transform);
             pumpkin.name = giantPumpkin.name;
+            // Whole on the floor (user, 2026-11-20: "not half"): its pivot is its middle, so lift its bottom to the spot.
+            if (pumpkin.TryGetComponent(out Renderer look))
+            {
+                pumpkin.transform.position += Vector3.up * (at.y - look.bounds.min.y);
+                Physics.SyncTransforms();
+            }
             pumpkinAt = at;
             foreach (var fsm in pumpkin.GetComponents<PlayMakerFSM>())
             {
                 var h = fsm.FsmVariables.FindFsmFloat("health");
-                if (fsm.FsmName == "Health" && h != null) { pumpkinHealth = h; lastPumpkinHealth = h.Value; }
+                if (fsm.FsmName == "Health" && h != null) { pumpkinHealth = h; lastPumpkinHealth = h.Value; startPumpkinHealth = h.Value; }
             }
             if (breakPuff != null) EffectPool.Play(breakPuff, at + Vector3.up * 0.3f, breakPuffSize * 0.6f);
+            // Its round bottom's edge (it rocks on it, never into the floor), measured before it pops in from small.
+            float rim = pumpkin.TryGetComponent(out Renderer body) ? 0.95f * Mathf.Min(body.bounds.extents.x, body.bounds.extents.z) : 1.2f;
             StartCoroutine(PopIn(pumpkin.transform));
+            StartCoroutine(Hatching(pumpkin.transform, at, rim));
         }
+
+        // Now and then it rocks on its bottom a few times, dying down, as if something inside wants out; more often once hit.
+        private IEnumerator Hatching(Transform t, Vector3 bottom, float rim)
+        {
+            yield return new WaitForSeconds(1f);
+            while (t != null && !folded)
+            {
+                bool hit = HitOnce;
+                float wait = Random.Range(shakeEvery.x, shakeEvery.y) * (hit ? 0.5f : 1f);
+                yield return new WaitForSeconds(wait);
+                if (t == null || folded) yield break;
+                var restPos = t.position;
+                var restRot = t.rotation;
+                // A positive angle tips its top toward "toward", on the edge on that side; a negative one the other way.
+                var toward = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f) * Vector3.forward;
+                var axis = Vector3.Cross(Vector3.up, toward);
+                float degrees = shakeDegrees * (hit ? 1.4f : 1f);
+                for (float time = 0f; time < shakeSeconds && t != null; time += Time.deltaTime)
+                {
+                    float k = time / shakeSeconds;
+                    float angle = Mathf.Sin(k * shakeRocks * 2f * Mathf.PI) * degrees * (1f - k);
+                    t.SetPositionAndRotation(restPos, restRot);
+                    t.RotateAround(bottom + toward * (rim * Mathf.Sign(angle)), axis, angle);
+                    yield return null;
+                }
+                if (t != null) t.SetPositionAndRotation(restPos, restRot);
+            }
+        }
+
+        // Whether the giant pumpkin has been hit once (it starts at 2 health).
+        private bool HitOnce => pumpkinHealth != null && pumpkinHealth.Value < startPumpkinHealth;
+        private float startPumpkinHealth = 2f;
 
         private static IEnumerator PopIn(Transform t)
         {

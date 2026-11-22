@@ -5,7 +5,9 @@ namespace HutongGames.PlayMaker.Actions
     [ActionCategory("Enemies")]
     [Tooltip("Ends a pumpkin's countdown at once, so it turns into its boss now: every pumpkin with the Pumpkin Tag whose " +
              "Countdown FSM is in the Countdown State gets FINISHED (Pumpkin_1's Wait and Transform: Wait 360s, then " +
-             "Create BOSS = pumpkin_boss_Z where it stands). Nothing happens if none is counting down.")]
+             "Create BOSS = pumpkin_boss_Z where it stands). If none is counting down yet (the door was broken before the " +
+             "room's furniture and pumpkin came), the skull is saved: the pumpkin turns as soon as its countdown starts, " +
+             "while this room (the FSM's root object) is still there.")]
     public class HurryPumpkinBoss : FsmStateAction
     {
         [Tooltip("The tag of the pumpkin that turns into the boss.")]
@@ -24,23 +26,12 @@ namespace HutongGames.PlayMaker.Actions
 
         public override void OnEnter()
         {
-            GameObject[] pumpkins;
-            try
+            if (Game.Enemies.SavedPumpkinHurry.HurryNow(pumpkinTag.Value, countdownFsm.Value, countdownState.Value) == 0)
             {
-                pumpkins = GameObject.FindGameObjectsWithTag(pumpkinTag.Value);
-            }
-            catch (UnityException)
-            {
-                // The tag doesn't exist.
-                pumpkins = new GameObject[0];
-            }
-            foreach (var pumpkin in pumpkins)
-            {
-                foreach (var fsm in pumpkin.GetComponents<PlayMakerFSM>())
-                {
-                    if (fsm.FsmName == countdownFsm.Value && fsm.enabled && fsm.ActiveStateName == countdownState.Value)
-                        fsm.Fsm.Event(FsmEvent.Finished);
-                }
+                // Saved for later, on the room (the door itself goes away when it breaks).
+                var room = Owner != null ? Owner.transform.root.gameObject : null;
+                if (room != null)
+                    room.AddComponent<Game.Enemies.SavedPumpkinHurry>().Set(pumpkinTag.Value, countdownFsm.Value, countdownState.Value);
             }
             Finish();
         }

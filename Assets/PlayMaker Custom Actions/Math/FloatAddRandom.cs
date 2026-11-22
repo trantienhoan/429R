@@ -94,8 +94,9 @@ namespace HutongGames.PlayMaker.Actions
         /// What a heal of this amount really adds to health at Start, with this cap (max health), in three bands (user,
         /// 2026-11-10: "+50% above max, +10% above 1.5x max"): up to the cap in full; from the cap to Player Level's Candy
         /// Slow Heal From x the cap (1.5x), Above Share of it (rounded up with whole numbers, so a 1 still heals 1);
-        /// above that only Candy Slow Heal Share (10%; rounded at random with whole numbers, so it really averages 10%).
-        /// A heal that crosses a line is split across the bands.
+        /// above that only Candy Slow Heal Share (10%; rounded at random with whole numbers, so it really averages 10%),
+        /// and from Candy Tiny Heal From x the cap (2x) only Candy Tiny Heal Share (5%; user, 2026-11-22). A heal that
+        /// crosses a line is split across the bands.
         /// </summary>
         public static float AboveCap(float start, float amount, float cap, float aboveShare, bool wholeNumbers)
         {
@@ -111,7 +112,15 @@ namespace HutongGames.PlayMaker.Actions
             float over = half * aboveShare;
             // A hair under, so 10 x 0.7 (7.0000001 in floats) stays 7.
             if (wholeNumbers) over = Mathf.Ceil(over - 0.0001f);
-            float slow = (rest - half) * Game.Leveling.PlayerLevel.CandySlowHealShare;
+            // Past the slow line: Candy Slow Heal Share up to Candy Tiny Heal From x the cap (2x), then only Candy Tiny
+            // Heal Share (5%; user, 2026-11-22). Each point of the heal fills its band's share of health.
+            rest -= half;
+            float slowShare = Game.Leveling.PlayerLevel.CandySlowHealShare;
+            float tinyShare = Game.Leveling.PlayerLevel.CandyTinyHealShare;
+            float slowStart = Mathf.Max(start, cap * Game.Leveling.PlayerLevel.CandySlowHealFrom);
+            float slowRoom = Mathf.Max(0f, cap * Game.Leveling.PlayerLevel.CandyTinyHealFrom - slowStart);
+            float slowPart = slowShare > 0f ? Mathf.Min(rest, slowRoom / slowShare) : rest;
+            float slow = slowPart * slowShare + (rest - slowPart) * tinyShare;
             // Rounded up or down at random by how far it is to the next whole number (0.4: 1 four times in ten, never
             // more), so it really averages Candy Slow Heal Share.
             if (wholeNumbers)

@@ -17,6 +17,9 @@ namespace Game.EditorTools
     /// - Spider_Giant (Assets/Prefabs/Enemies/Enemies_Smarter): a variant of the white boss spider (Spider_Boss), bigger
     ///   (Spider Times Boss), 33 health, no stage flag set when it dies, comes for the player at once, and drops 3 random
     ///   candies when the player kills it (Candies On Death).
+    /// - Cockroach_Giant (same folder, made by Build Living Room Kit Room): the same from the white boss cockroach
+    ///   (Cockroach_Boss), for the living room's secret room.
+    /// Both giants wear the bugs' old look (Spider_Smol_Mat / Cockroach_Smol_Mat), not the pumpkin repaint.
     /// And Tools > 429 Game > Items > Random Pumpkin Sizes: Random Pumpkin Size on Pumpkin_On_Tree.
     /// </summary>
     public static class SecretRoomSetupMenu
@@ -25,6 +28,8 @@ namespace Game.EditorTools
         public const string GiantSpiderPath = "Assets/Prefabs/Enemies/Enemies_Smarter/Spider_Giant.prefab";
         private const string TreePumpkinPath = "Assets/Prefabs/Items/Breakable/Pumpkin_On_Tree.prefab";
         private const string BossSpiderPath = "Assets/Prefabs/Enemies/Enemies_Smarter/Spider_Boss.prefab";
+        public const string GiantCockroachPath = "Assets/Prefabs/Enemies/Enemies_Smarter/Cockroach_Giant.prefab";
+        private const string BossCockroachPath = "Assets/Prefabs/Enemies/Enemies_Smarter/Cockroach_Boss.prefab";
         public const string PiecesPath = "Assets/Prefabs/Items/Broken_Stuffs/pumpkin_2_Drop.prefab";
         private const float PumpkinHeight = 2.7f;
         private const float SpiderTimesBoss = 1.6f;
@@ -142,15 +147,49 @@ namespace Game.EditorTools
         }
 
         /// <summary>Makes (again) the Giant Spider and returns it.</summary>
-        public static GameObject GiantSpider(List<string> notes)
+        public static GameObject GiantSpider(List<string> notes) => GiantBug(BossSpiderPath, GiantSpiderPath, "Spider_Giant", notes);
+
+        /// <summary>Makes (again) the Giant Cockroach (the living room's secret room) and returns it.</summary>
+        public static GameObject GiantCockroach(List<string> notes) => GiantBug(BossCockroachPath, GiantCockroachPath, "Cockroach_Giant", notes);
+
+        // The giant boss bugs wear the bugs' OLD look (user, 2026-11-20: every other bug has the pumpkin repaint; "the
+        // old texture used for bosses in secret room"): <Bug>_Smol_Pumpkin(_Ghost)_Mat -> <Bug>_Smol_Mat.
+        private static int OldLook(GameObject go)
         {
-            var boss = AssetDatabase.LoadAssetAtPath<GameObject>(BossSpiderPath);
-            if (boss == null) { notes.Add("no " + BossSpiderPath + ": no Giant Spider"); return null; }
+            int swapped = 0;
+            foreach (var r in go.GetComponentsInChildren<Renderer>(true))
+            {
+                if (r is ParticleSystemRenderer) continue;
+                var mats = r.sharedMaterials;
+                bool edit = false;
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    if (mats[i] == null) continue;
+                    var name = mats[i].name;
+                    int cut = name.IndexOf("_Pumpkin", System.StringComparison.Ordinal);
+                    if (cut < 0 || !name.EndsWith("_Mat")) continue;
+                    var old = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/" + name.Substring(0, cut) + "_Mat.mat");
+                    if (old == null) continue;
+                    mats[i] = old;
+                    edit = true;
+                }
+                if (!edit) continue;
+                r.sharedMaterials = mats;
+                swapped++;
+            }
+            return swapped;
+        }
+
+        private static GameObject GiantBug(string bossPath, string outPath, string name, List<string> notes)
+        {
+            var boss = AssetDatabase.LoadAssetAtPath<GameObject>(bossPath);
+            if (boss == null) { notes.Add("no " + bossPath + ": no " + name); return null; }
             var scene = EditorSceneManager.NewPreviewScene();
             try
             {
                 var go = (GameObject)PrefabUtility.InstantiatePrefab(boss, scene);
-                go.name = "Spider_Giant";
+                go.name = name;
+                int looks = OldLook(go);
                 var brain = go.GetComponent<SpiderBrain>();
                 var so = new SerializedObject(brain);
                 so.FindProperty("boss.health").vector2IntValue = new Vector2Int(SpiderHealth, SpiderHealth);
@@ -169,8 +208,8 @@ namespace Game.EditorTools
                 list.arraySize = candies.Length;
                 for (int i = 0; i < candies.Length; i++) list.GetArrayElementAtIndex(i).objectReferenceValue = candies[i];
                 dso.ApplyModifiedPropertiesWithoutUndo();
-                var saved = PrefabUtility.SaveAsPrefabAsset(go, GiantSpiderPath);
-                notes.Add($"Giant Spider (Spider_Boss x{SpiderTimesBoss}: scale {bossScale.x:0.00}-{bossScale.y:0.00} -> {bossScale.x * SpiderTimesBoss:0.00}-{bossScale.y * SpiderTimesBoss:0.00}), {SpiderHealth} health, no flag, {SpiderCandies} candies");
+                var saved = PrefabUtility.SaveAsPrefabAsset(go, outPath);
+                notes.Add($"{name} ({boss.name} x{SpiderTimesBoss}: scale {bossScale.x:0.00}-{bossScale.y:0.00} -> {bossScale.x * SpiderTimesBoss:0.00}-{bossScale.y * SpiderTimesBoss:0.00}), {SpiderHealth} health, no flag, {SpiderCandies} candies, old look on {looks} part(s)");
                 return saved;
             }
             finally

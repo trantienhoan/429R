@@ -197,6 +197,21 @@ namespace Game.Combat
         public bool LastHurtFromAbove { get; private set; }
         public float LastHurtAt { get; private set; } = -1f;
 
+        /// <summary>When the player first hurt it (Time.time; -1 before): a mini boss killed fast after it may come back as
+        /// its chaos version (Mini Boss Chaos's Fast Kill).</summary>
+        public float FirstHurtByPlayerAt { get; private set; } = -1f;
+
+        private void NoteHurtByPlayer() { if (FirstHurtByPlayerAt < 0f) FirstHurtByPlayerAt = Time.time; }
+
+        /// <summary>Asked when the player's blow would take its last health: true leaves it on 1 health instead (a mini
+        /// boss killed too fast, Spider Brain; it may have turned chaos with full health meanwhile).</summary>
+        public Func<EnemyHitDamage, bool> SpareKillingBlow;
+
+        private void MaybeSpare(bool wasAlive)
+        {
+            if (wasAlive && health.Value <= 0f && SpareKillingBlow != null && SpareKillingBlow(this)) health.Value = Mathf.Max(health.Value, 1f);
+        }
+
         /// <summary>
         /// The player's hit, blast or knock-out took the last of its health (false for a fall, a crush, a stage clean-up,
         /// a blast that wasn't theirs). Read it in Died, e.g. a mini boss's chaos rebirth.
@@ -385,7 +400,7 @@ namespace Game.Combat
             if (thrown) power /= Game.Leveling.PlayerLevel.HardThrowShare;
             // A flying jab: the skill move, its hard hit one more (not twice).
             bool flyingFist = Fist.IsFlyingFist(collision.rigidbody);
-            var judged = Settings.Evaluate(power, WeaponPower.DamageOf(collision), thrown, flyingFist);
+            var judged = Settings.Evaluate(power, WeaponPower.DamageOf(collision), thrown ? WeaponPower.ThrowBonusOf(collision) : 0f, thrown, flyingFist);
             // Every Hit Counts: the player's hit too soft to hurt (but more than a touch) takes its weapon's damage.
             if (everyHitCounts && byPlayer && !furniture && judged.Damage <= 0f && power >= MinFlinchPower)
                 judged = new HitResult(power, Mathf.Max(1f, HitSettings.Whole(WeaponPower.DamageOf(collision))), false);
@@ -426,6 +441,8 @@ namespace Game.Combat
             bool wasAlive = health.Value > 0f;
             health.Value -= hit.Damage;
             LastHurtAt = Time.time;
+            if (byPlayer && hit.Damage > 0f) NoteHurtByPlayer();
+            if (byPlayer) MaybeSpare(wasAlive);
             LastHurtFromAbove = byPlayer && FromAbove(collision);
             WaitOut(hitter);
             bool killed = wasAlive && health.Value <= 0f;
@@ -456,9 +473,26 @@ namespace Game.Combat
             }
             // The player's hit stops it dead a moment (before any knock-back, which waits for it).
             if (byPlayer && !furniture) Freeze(hit, killed);
+            // A held weapon's trick (user, 2026-11-20): its hit sound, and on every hit that hurts, its own stun (the frying
+            // pan: dizzy stars) and knock-back (the baseball bat); a hard hit 1.5x, a smash farther still.
+            var trick = byPlayer && !furniture ? WeaponPower.HeldTrick(collision) : null;
+            if (trick != null) trick.PlayHitSound(at);
+            bool tricked = trick != null && knockBack && !stray && (trick.StunSeconds > 0f || trick.KnockBackTimes > 0f);
             // A thrown thing that hurt it on the head: a headshot (it's knocked out, instead of the big hit's knock-back).
             bool headshot = !furniture && !stray && Settings.Headshots && IsThrown(collision) && (IsHead(at) || IsFace(at));
             if (headshot) Headshot();
+            else if (tricked)
+            {
+                float hard = hit.IsBig ? 1.5f : 1f;
+                float times = trick.KnockBackTimes > 0f ? trick.KnockBackTimes : 0.4f;
+                scaledUntil = Time.time + 0.1f;
+                scaledDistance = times * hard * (hit.IsSmash ? 1.5f : 1f);
+                scaledHop = Mathf.Max(0.5f, times) * (hit.IsSmash ? 1.4f : 1f);
+                scaledStun = Mathf.Max(knockBackStun, trick.StunSeconds * hard);
+                KnockBackFromPlayer();
+                // Any enemy it stuns sees stars (Knock Back shows them on mini bosses only).
+                if (trick.StunSeconds > 0f && !dead && brain != null && !brain.IsBoss) ShowStunned(knockBackTime + scaledStun);
+            }
             // Any punch that hurt knocks it back (a hard one farther, a smash farther still), for longer.
             else if (punch)
             {
@@ -597,7 +631,7 @@ namespace Game.Combat
             float power = collision.relativeVelocity.magnitude * WeaponPower.Of(collision) / Mathf.Max(0.1f, toughness);
             bool thrown = IsThrown(collision);
             if (thrown) power /= Game.Leveling.PlayerLevel.HardThrowShare;
-            var hit = settings.Evaluate(power, WeaponPower.DamageOf(collision), thrown, Fist.IsFlyingFist(collision.rigidbody));
+            var hit = settings.Evaluate(power, WeaponPower.DamageOf(collision), thrown ? WeaponPower.ThrowBonusOf(collision) : 0f, thrown, Fist.IsFlyingFist(collision.rigidbody));
             // A bare fist (no gloves on) only taps (user, 2026-11-18).
             if (Fist.IsBareFist(collision.rigidbody)) return BareTap(hit);
             int bonus = hit.Damage > 0f && byPlayer ? HotHandsBonus(collision) : 0;
@@ -649,6 +683,8 @@ namespace Game.Combat
             {
                 bool wasAlive = health.Value > 0f;
                 health.Value -= amount;
+                if (byPlayer && amount > 0f) NoteHurtByPlayer();
+                if (byPlayer) MaybeSpare(wasAlive);
                 Send(hitEvent);
                 BlinkRed(hit);
                 if (health.Value <= 0f)
@@ -828,6 +864,8 @@ namespace Game.Combat
             {
                 bool wasAlive = health.Value > 0f;
                 health.Value -= hit.Damage;
+                NoteHurtByPlayer();
+                MaybeSpare(wasAlive);
                 // A knock-out blow's damage number shows big, and so does its pop.
                 DamageNumbers.NoteBigHit(gameObject);
                 Send(hitEvent);

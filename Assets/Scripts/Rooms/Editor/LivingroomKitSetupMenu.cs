@@ -147,17 +147,20 @@ namespace Game.EditorTools
 
                 var living = MakeLiving(root.transform, notes);
                 var play = MakePlay(root.transform, notes);
+                var secret = MakeSecret(root.transform, living.root, lightParent.Find("Point Light"), kit, notes);
 
                 var so = new SerializedObject(kit);
                 var sets = so.FindProperty("sets");
-                sets.arraySize = 2;
+                sets.arraySize = 3;
                 SetEntry(sets.GetArrayElementAtIndex(0), "Living", living);
                 SetEntry(sets.GetArrayElementAtIndex(1), "Play", play);
+                SetEntry(sets.GetArrayElementAtIndex(2), "Secret", secret);
                 var puffGuid = AssetDatabase.FindAssets("Smoke_Flash_Small_Puff t:Prefab").FirstOrDefault();
                 if (puffGuid != null)
                     so.FindProperty("puff").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(puffGuid));
                 so.ApplyModifiedPropertiesWithoutUndo();
 
+                KitDoorFitMenu.Fit(root, notes);
                 PrefabUtility.SaveAsPrefabAsset(root, NewRoom);
             }
             finally
@@ -249,11 +252,17 @@ namespace Game.EditorTools
                 {
                     var names = entry.Split('+');
                     var part = Piece(names[0], set, start + run * along, turn);
-                    Solid(part, names[0]);
+                    // The X and double doors break (their own box blocks the doorway till then); the shortcut door's
+                    // doorway keeps its stop behind the leaf, as the old room's.
+                    Solid(part, names[0], names.Length < 2 || names[1] == "Shortcut");
                     if (names.Length > 1)
                     {
                         if (names[1] == "Shortcut") ShortcutDoor(part, notes);
-                        else Piece(names[1] == "X" ? "LR_Kit_Leaf_X" : "LR_Kit_Leaf_Double", part.transform, Vector3.zero, Quaternion.identity);
+                        // The X door (user, 2026-11-20: "the other door leads to fall edge"): the bedroom's W/C door's
+                        // parts; behind it is only the north fall edge.
+                        else if (names[1] == "X") LeafDoor(part, "LR_Kit_Leaf_X", "Locked_Door", "X_Door", notes);
+                        // The double door: the bedroom's chained door's parts; behind it is the secret room.
+                        else LeafDoor(part, "LR_Kit_Leaf_Double", "Chained_Door", "Double_Door", notes);
                     }
                     along += names[0] == "LR_Kit_Wall_1p5m" ? 1.5f : 3f;
                 }
@@ -373,7 +382,7 @@ namespace Game.EditorTools
 
         // Walls block like the old ones: a kinematic body, box colliders (round a doorway: its sides, its head, and a
         // stop behind the leaf in the opening, as the old room's "outholes" boxes) and a carving NavMesh obstacle.
-        private static void Solid(GameObject part, string kind)
+        private static void Solid(GameObject part, string kind, bool stop = true)
         {
             var b = part.GetComponent<MeshFilter>().sharedMesh.bounds;
             var body = part.AddComponent<Rigidbody>();
@@ -387,7 +396,7 @@ namespace Game.EditorTools
                 Box(part, new Vector3(-3f, 0f, -Wall), new Vector3(a, Height, 0f));
                 Box(part, new Vector3(c, 0f, -Wall), new Vector3(0f, Height, 0f));
                 Box(part, new Vector3(a, top, -Wall), new Vector3(c, Height, 0f));
-                Box(part, new Vector3(a, 0f, -Wall), new Vector3(c, top, -Wall + 0.08f));
+                if (stop) Box(part, new Vector3(a, 0f, -Wall), new Vector3(c, top, -Wall + 0.08f));
             }
             else
             {
@@ -457,6 +466,159 @@ namespace Game.EditorTools
                 box.size = oldBox.size;
             }
             notes.Add("shortcut door (old door's parts on the kit leaf)");
+        }
+
+        // A breakable door on a kit leaf: the bedroom kit room's door (Health 300, Damage, break pieces, wobble) with this
+        // leaf's look and box. The leaf is in the doorway's frame, so the door shares the doorway's pivot.
+        private static GameObject LeafDoor(GameObject doorway, string leafName, string from, string name, List<string> notes)
+        {
+            var bedroom = AssetDatabase.LoadAssetAtPath<GameObject>(BedroomKitPath);
+            var src = bedroom != null ? bedroom.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == from) : null;
+            if (src == null || !meshes.TryGetValue(leafName, out var leaf))
+            {
+                notes.Add("no " + from + " in " + BedroomKitPath + " (build the bedroom kit room first): " + leafName + " doesn't break");
+                Piece(leafName, doorway.transform, Vector3.zero, Quaternion.identity);
+                return null;
+            }
+            var door = Object.Instantiate(src.gameObject, doorway.transform);
+            door.name = name;
+            door.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+            door.transform.localScale = Vector3.one;
+            door.GetComponent<MeshFilter>().sharedMesh = leaf;
+            if (materials.TryGetValue(leafName, out var looks)) door.GetComponent<MeshRenderer>().sharedMaterials = looks;
+            var b = leaf.bounds;
+            if (door.TryGetComponent(out BoxCollider box))
+            {
+                box.center = b.center;
+                box.size = b.size;
+            }
+            var spot = door.transform.Find("Door_Break_Drop_Pos");
+            if (spot != null) spot.localPosition = new Vector3(b.center.x, b.min.y + 0.01f, b.center.z);
+            notes.Add(name + " breaks (" + from + "'s parts on " + leafName + ")");
+            return door;
+        }
+
+        // ---------------------------------------------------------------------------------------------------------
+        // The secret room (user, 2026-11-20: "a another secret room for livingroom also, located behind that double
+        // doors. Reward = 33 candies or giant cockroach boss with 33 health ... EnemyManager On = break secret room"):
+        // the bedroom's, east of the living room, sharing its east wall (the double door's), the same size (9 x 9 m),
+        // no door or window of its own. A Secret set the Secret Room shows, its floor, teleport area and light.
+
+        private const string BedroomKitPath = "Assets/Prefabs/Bases/Bedroom_Kit_Base.prefab";
+        private const float SecretX = Room + Wall;
+        private static readonly string[][] SecretSides =
+        {
+            new[] { "LR_Kit_Wall_3m", "LR_Kit_Wall_3m", "LR_Kit_Wall_3m" },
+            new[] { "LR_Kit_Wall_3m", "LR_Kit_Wall_3m", "LR_Kit_Wall_3m" },
+            new[] { "LR_Kit_Wall_3m", "LR_Kit_Wall_3m", "LR_Kit_Wall_3m" },
+            null,
+        };
+
+        private static (Transform root, Transform roof) MakeSecret(Transform room, Transform living, Transform roomLight, RoomKit kit, List<string> notes)
+        {
+            int layer = room.gameObject.layer;
+            var set = Child(room, "Secret", layer);
+            set.localPosition = new Vector3(SecretX, 0f, 0f);
+            for (int i = 0; i < Sides.Length; i++)
+            {
+                if (SecretSides[i] == null) continue;
+                var (inside, start) = Sides[i];
+                var turn = Quaternion.LookRotation(inside, Vector3.up);
+                var run = Vector3.Cross(inside, Vector3.up);
+                float along = 0f;
+                foreach (var piece in SecretSides[i])
+                {
+                    Solid(Piece(piece, set, start + run * along, turn), piece);
+                    along += 3f;
+                }
+            }
+            // Its roof: the living room's, not reaching over the shared wall (the living room's roof covers that).
+            var roof = Child(set, "Roof", layer);
+            float half = (Room / 2f + Wall) / OldRoofHalf, halfX = ((Room + Wall) / 2f) / OldRoofHalf;
+            var top = Piece("LR_Kit_Roof", roof, new Vector3(Wall / 2f, 0f, 0f), Quaternion.identity);
+            top.transform.localScale = new Vector3(halfX, 1f, half);
+            top.AddComponent<BoxCollider>();
+            Piece("LR_Kit_Lamp", roof, Vector3.zero, Quaternion.identity);
+
+            // Its floor: 3 x 3 tiles from the living room's floor edge (x 4.5) to the secret room's outer wall, so the
+            // doorway under the shared wall has floor too (tiles stretched 7%).
+            var floor = Child(room, "Secret_Floor", layer);
+            float x0 = Room / 2f, x1 = SecretX + Room / 2f + Wall;
+            if (meshes.TryGetValue("LR_Kit_Floor_3m", out var tile))
+            {
+                var tb = tile.bounds;
+                float k = (x1 - x0) / 3f / tb.size.x;
+                for (int i = 0; i < 3; i++)
+                    foreach (float z in new[] { -1.5f, 1.5f, 4.5f })
+                    {
+                        float lo = x0 + i * (x1 - x0) / 3f;
+                        var t = Piece("LR_Kit_Floor_3m", floor, new Vector3(lo - tb.min.x * k, 0f, z), Quaternion.identity);
+                        t.transform.localScale = new Vector3(k, 1f, 1f);
+                    }
+            }
+            GameObject teleport = null;
+            var livingTeleport = room.Find("Teleport Area");
+            if (livingTeleport != null)
+            {
+                teleport = Object.Instantiate(livingTeleport.gameObject, room);
+                teleport.name = "Secret Teleport Area";
+                teleport.transform.localPosition = livingTeleport.localPosition + new Vector3(SecretX, 0f, 0f);
+            }
+            Light secretLight = null;
+            if (roomLight != null)
+            {
+                var copy = Object.Instantiate(roomLight.gameObject, room);
+                copy.name = "Secret Room Light";
+                copy.transform.localPosition = new Vector3(SecretX, Height - 0.35f, 0f);
+                foreach (var fsm in copy.GetComponents<PlayMakerFSM>()) Object.DestroyImmediate(fsm);
+                secretLight = copy.GetComponent<Light>();
+            }
+
+            var door = living.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == "Double_Door");
+            var secretRoom = room.gameObject.AddComponent<SecretRoom>();
+            var so = new SerializedObject(secretRoom);
+            so.FindProperty("kit").objectReferenceValue = kit;
+            so.FindProperty("hostSet").stringValue = "Living";
+            so.FindProperty("secretSet").stringValue = "Secret";
+            so.FindProperty("door").objectReferenceValue = door != null ? door.gameObject : null;
+            so.FindProperty("doorwayObstacle").objectReferenceValue = door != null && door.parent != null ? door.parent.GetComponent<NavMeshObstacle>() : null;
+            so.FindProperty("floor").objectReferenceValue = floor;
+            so.FindProperty("teleportArea").objectReferenceValue = teleport;
+            so.FindProperty("roomLight").objectReferenceValue = secretLight;
+            so.FindProperty("inside").boundsValue = new Bounds(new Vector3(SecretX, Height / 2f, 0f), new Vector3(Room - 0.2f, Height, Room - 0.2f));
+            // Its fall edges: the east ones move back past it, the round-1 north and south ones reach along it.
+            so.FindProperty("alongX").boolValue = true;
+            so.FindProperty("farEdge").objectReferenceValue = Edge(room, "Fall Edge Round 1 East");
+            var more = so.FindProperty("moreFarEdges");
+            more.arraySize = 1;
+            more.GetArrayElementAtIndex(0).objectReferenceValue = Edge(room, "Fall Edge East");
+            so.FindProperty("sideEdgeA").objectReferenceValue = Edge(room, "Fall Edge Round 1 North");
+            so.FindProperty("sideEdgeB").objectReferenceValue = Edge(room, "Fall Edge Round 1 South");
+            so.FindProperty("moreSideEdges").arraySize = 0;
+            so.FindProperty("newFarEdge").floatValue = x1 + 0.03f;
+            so.FindProperty("openPuff").objectReferenceValue = SecretRoomSetupMenu.Find("Smoke_Puff_Burst_Out");
+            so.FindProperty("breakPuff").objectReferenceValue = SecretRoomSetupMenu.Find("Smoke_Flash_Five_Puffs");
+            so.FindProperty("openSound").objectReferenceValue = SecretRoomSetupMenu.Sound("whoosh");
+            so.FindProperty("candySound").objectReferenceValue = SecretRoomSetupMenu.Sound("Clear,_resonant_bell_1");
+            so.FindProperty("spiderSound").objectReferenceValue = SecretRoomSetupMenu.Sound("cockroach_screech");
+            var pumpkin = AssetDatabase.LoadAssetAtPath<GameObject>(SecretRoomSetupMenu.GiantPumpkinPath);
+            so.FindProperty("giantPumpkin").objectReferenceValue = pumpkin != null ? pumpkin : SecretRoomSetupMenu.GiantPumpkin(notes);
+            so.FindProperty("giantSpider").objectReferenceValue = SecretRoomSetupMenu.GiantCockroach(notes);
+            so.FindProperty("pumpkinSpot").vector3Value = new Vector3(SecretX, 0f, 0f);
+            so.FindProperty("brokenPieces").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(SecretRoomSetupMenu.PiecesPath);
+            var candies = SecretRoomSetupMenu.Candies();
+            var list = so.FindProperty("candies");
+            list.arraySize = candies.Length;
+            for (int i = 0; i < candies.Length; i++) list.GetArrayElementAtIndex(i).objectReferenceValue = candies[i];
+            so.ApplyModifiedPropertiesWithoutUndo();
+            notes.Add("secret room behind the double door" + (door == null ? " (NO breakable double door)" : ""));
+            return (set, roof);
+        }
+
+        private static BoxCollider Edge(Transform room, string name)
+        {
+            var t = room.Find("Fall Edges/" + name);
+            return t != null ? t.GetComponent<BoxCollider>() : null;
         }
 
         private static Transform Child(Transform parent, string name, int layer)

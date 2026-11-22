@@ -209,8 +209,26 @@ namespace Game.Rooms
                     lookScale = look.localScale;
                     look.localScale = lookScale * 0.001f;
                 }
-                if (cfg.openSound != null) AudioSource.PlayClipAtPoint(cfg.openSound, transform.position, cfg.openVolume);
+                if (cfg.openSound != null) Play(cfg.openSound, cfg.openVolume);
                 StartCoroutine(Go());
+            }
+
+            private float nextNom;
+
+            // At the hole, but heard across the room: half 3D and fading only past 8 m (Play Clip At Point fades
+            // from 1 m, so at the room's middle it was barely there).
+            private void Play(AudioClip clip, float volume)
+            {
+                var go = new GameObject("Purple_Hole_Sound");
+                go.transform.position = transform.position;
+                var source = go.AddComponent<AudioSource>();
+                source.clip = clip;
+                source.volume = volume;
+                source.spatialBlend = 0.5f;
+                source.minDistance = 8f;
+                source.maxDistance = 40f;
+                source.Play();
+                Destroy(go, clip.length + 0.2f);
             }
 
             private IEnumerator Go()
@@ -272,8 +290,8 @@ namespace Game.Rooms
                     yield return null;
                 }
 
-                // Close with a gulp.
-                if (cfg.closeSound != null) AudioSource.PlayClipAtPoint(cfg.closeSound, transform.position, cfg.closeVolume);
+                // Close with a gulp (unless one is still playing).
+                if (cfg.closeSound != null && Time.time >= nextNom - 0.1f) Play(cfg.closeSound, cfg.closeVolume);
                 for (float t = 0f; t < cfg.closeSeconds; t += Time.deltaTime)
                 {
                     if (look != null) look.localScale = lookScale * Mathf.Max(0.001f, 1f - Ease(t / cfg.closeSeconds));
@@ -313,6 +331,12 @@ namespace Game.Rooms
                         f.done = true;
                         Destroy(f.ghost.gameObject);
                         pulse = 1f;
+                        // Om nom nom as it swallows (user, 2026-11-20: "give it om nom nom sound"), one at a time.
+                        if (cfg.closeSound != null && now >= nextNom)
+                        {
+                            Play(cfg.closeSound, cfg.closeVolume);
+                            nextNom = now + cfg.closeSound.length + 0.1f;
+                        }
                     }
                 }
                 // Open, then bulge a little with each gulp.

@@ -246,6 +246,17 @@ namespace Game.Combat
         /// normal hit does the Damage, a hard hit Hard Hit Times it (and knocks the enemy back), or Hard Throw Times it when
         /// a thrown thing is in it (Thrown); a smash (Smash Hit Power) Smash Hit Times or Smash Throw Times.
         /// </summary>
+        /// <summary>
+        /// Evaluate, with Flat of the Damage (Throw Power's bonus on a throw) kept out of a hard hit's or a smash's times
+        /// and added after: only the thing's own damage is multiplied (user, 2026-11-22).
+        /// </summary>
+        public HitResult Evaluate(float power, float damage, float flat, bool thrown, bool flyingFist)
+        {
+            flat = Mathf.Clamp(flat, 0f, Mathf.Max(0f, damage - 1f));
+            var hit = Evaluate(power, damage - flat, thrown, flyingFist);
+            return hit.Damage > 0f && flat > 0f ? hit.WithDamage(hit.Damage + Whole(flat)) : hit;
+        }
+
         public HitResult Evaluate(float power, float damage, bool thrown = false, bool flyingFist = false)
         {
             if (power < minHitPower) return new HitResult(power, 0f, false);

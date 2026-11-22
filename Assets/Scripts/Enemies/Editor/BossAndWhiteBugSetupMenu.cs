@@ -68,11 +68,11 @@ namespace Game.EditorTools
             // Stun guard (user, 2026-10-27): white bosses 0.5 s, Pumpkin Butt bosses 2 s. Health as on the prefabs: halved
             // for whole-number damage (2026-10-27), then the white bosses raised on the other PC (f4ad1289, 2026-11-05).
             // Speed (user, 2026-11-10): the spider and cockroach bosses +30% (0.9 -> 1.17, 0.95 -> 1.235); their Pumpkin
-            // Butt variants inherit it.
-            new() { name = "Spider_Boss", minion = "Spider_Small", walks = true, health = new Vector2Int(67, 84), toughness = 3f, stunGuard = 0.5f, speed = 1.17f, minionShare = 0.5f },
-            new() { name = "Spider_Boss_PumpkinButt", minion = "Spider_Small", walks = true, health = new Vector2Int(87, 95), toughness = 2.5f, stunGuard = 2f },
-            new() { name = "Cockroach_Boss", minion = "Cockroach_Small", walks = true, health = new Vector2Int(77, 86), toughness = 2.5f, stunGuard = 0.5f, speed = 1.235f, minionShare = 0.5f },
-            new() { name = "Cockroach_Boss_PumpkinButt", minion = "Cockroach_Small", walks = true, health = new Vector2Int(132, 147), toughness = 2.5f, stunGuard = 2f },
+            // Butt variants inherit it. Health x1.5 (user, 2026-11-22: "increase mini boss health too"; the bees on their prefabs).
+            new() { name = "Spider_Boss", minion = "Spider_Small", walks = true, health = new Vector2Int(100, 126), toughness = 3f, stunGuard = 0.5f, speed = 1.17f, minionShare = 0.5f },
+            new() { name = "Spider_Boss_PumpkinButt", minion = "Spider_Small", walks = true, health = new Vector2Int(130, 142), toughness = 2.5f, stunGuard = 2f },
+            new() { name = "Cockroach_Boss", minion = "Cockroach_Small", walks = true, health = new Vector2Int(116, 129), toughness = 2.5f, stunGuard = 0.5f, speed = 1.235f, minionShare = 0.5f },
+            new() { name = "Cockroach_Boss_PumpkinButt", minion = "Cockroach_Small", walks = true, health = new Vector2Int(198, 220), toughness = 2.5f, stunGuard = 2f },
             new() { name = "Bee_Boss", minion = "Bee_Small", minionShare = 0.5f },
             new() { name = "Bee_Boss_PumpkinButt", minion = "Bee_Small" },
         };

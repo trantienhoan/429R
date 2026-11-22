@@ -113,6 +113,9 @@ namespace Game.Menus
         [SerializeField] private string slamState = "jump_slam";
         [Min(0f)]
         [SerializeField] private float slamStopsShort = 5f;
+        [Tooltip("How much higher than its clip's own jump the body slam goes, in metres (at the top of its arc).")]
+        [Min(0f)]
+        [SerializeField] private float slamExtraHeight = 8f;
         [Tooltip("The bones that hold the pumpkin in those throws.")]
         [SerializeField] private string throwingHand = "Hand.R";
         [SerializeField] private string throwingHandLeft = "Hand.L";
@@ -1418,7 +1421,9 @@ namespace Game.Menus
                     roared = true;
                     Roar();
                 }
-                body.position = Vector3.Lerp(from, to, Mathf.InverseLerp(SlamLeaves, SlamLands, t));
+                // Way up into the sky (user, 2026-11-20: "I want it jumps way higher"), on top of its clip's own jump.
+                float k = Mathf.InverseLerp(SlamLeaves, SlamLands, t);
+                body.position = Vector3.Lerp(from, to, k) + Vector3.up * (4f * k * (1f - k) * slamExtraHeight);
                 yield return null;
             }
             body.position = to;

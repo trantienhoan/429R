@@ -45,6 +45,10 @@ namespace Game.Rooms
         [Tooltip("How hard the walls overshoot as they stand (0 = none; the old clips had a little).")]
         [Min(0f)]
         [SerializeField] private float overshoot = 1.4f;
+        [Tooltip("Share of the come time after which the walls are solid (user, 2026-11-20: a stage pumpkin hopped out of " +
+                 "the living room while its walls were still coming). The roof is solid once it lands.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float solidFrom = 0.4f;
         [Tooltip("Share of the come time before the roof starts flying in.")]
         [Range(0f, 0.95f)]
         [SerializeField] private float roofStarts = 0.5f;
@@ -153,9 +157,15 @@ namespace Game.Rooms
             Pose(s, 0f, true);
             Show(s, true, true);
             int puffs = 0;
+            bool solid = false;
             for (float t = 0f; t < seconds; t += Time.deltaTime)
             {
                 Pose(s, t / seconds, true);
+                if (!solid && t / seconds >= solidFrom)
+                {
+                    solid = true;
+                    WallsSolid(s);
+                }
                 yield return null;
             }
             Pose(s, 1f, true);
@@ -250,6 +260,14 @@ namespace Game.Rooms
             s.shown = on;
             foreach (var (r, was, floor) in s.renderers)
                 if (r != null && !(keepFloors && floor)) r.enabled = on && was;
+        }
+
+        // The walls' colliders on early (mostly up by then); the roof's and the NavMesh blocks wait for Block.
+        private static void WallsSolid(SetState s)
+        {
+            var roof = s.set.roof;
+            foreach (var (c, was) in s.colliders)
+                if (c != null && was && (roof == null || !c.transform.IsChildOf(roof))) c.enabled = true;
         }
 
         private static void Block(SetState s, bool on)
