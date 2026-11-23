@@ -1,224 +1,222 @@
-using System.Collections.Generic;
+using System.Collections;
 using Game.Gates;
-using TMPro;
 using UnityEngine;
 
 namespace Balls
 {
     /// <summary>
-    /// 429R gate 3 (user, 2026-11-18): Ball Valley as the gate's stage. "Running around, surviving, eating candy, pushing
-    /// balls into holes; make it 15 balls; all 15 balls drop into holes or the last phase comes: the field reaches its final
-    /// small stage, drop a giant boss ball, a pumpkin head ball ... only attack, punch, special move decrease the giant boss
-    /// health; break the pumpkin boss to drop the seed to get out of here and move to defend tree stage like the main game."
-    /// - Balls (15) drop into the valley; pocketed, a ball is gone for good (Ball Valley Stage's gate rules). The player
-    ///   (Ball Valley Player) punches them, walks into them, dashes into them, eats the field's candies, and stays out of
-    ///   the holes.
-    /// - The valley shrinks in Phases on its clock (First Shrink, then evenly over Shrink Span) down to Smallest.
-    /// - Every ball pocketed, or the last phase reached: the finale. The valley goes straight to its smallest (Finale
-    ///   Shrink Seconds), and Boss Delay later the giant pumpkin (Boss Prefab, a Pumpkin Ball Boss) drops in, away from the
-    ///   player. Balls still left stay in (it can knock them into the holes).
-    /// - The boss broken: The_Seed drops where it broke (Gate Exit): eaten, GAMESTAGES takes the player to the rooftop
-    ///   (the tree defence, as in the main game).
-    /// A short line floats under the player's view: the balls left, what's happening, the boss's health.
-    /// Set up by Tools > 429 Game > Ball Valley > Set Up Ball Valley (on Prefabs/BallValley/Ball_Valley).
+    /// 429R gate 3, Ball Valley: "running and snookering" (user, 2026-11-23: one flow for all three gates, only the
+    /// gameplay differs a bit). The shared Gate Run on this object does the card, the chests, the HUD line, the rounds'
+    /// time limits and the finale hand-off; this component plays the valley's part (Gate Run's IGateGame):
+    /// - Start (the Bracer seed eaten): the valley is open, its candies out, no balls yet.
+    /// - Round 1, 2, 3: Balls Per Round balls drop in (tempers a bit harder each round) and, from round 2, the valley shrinks
+    ///   a step; the goal is to pocket that many (any pocket counts; the player's own also pops candy out of the hole).
+    ///   Bots don't hunt each other here, only the player, a few at a time: the pocketing is the player's. A round's time
+    ///   limit ends it anyway; its leftover balls stay for the next round.
+    /// - Finale: the leftover balls go (a puff each), the valley shrinks to its smallest and the giant pumpkin (Gate Run's
+    ///   Finale Boss) drops in on the far half from the player; broken, The_Seed and Gate Exit (shared) take the player to
+    ///   the rooftop. The valley stays (out of Currently Spawned Stuffs, which GAMESTAGES clears as the seed is eaten)
+    ///   until the player is on the rooftop.
+    /// The 11-18 version (15 balls at once on a shrink clock, its own rules notice and HUD line, the gear bools flipped at
+    /// the end) is gone. Set up by Tools > 429 Game > Ball Valley > Set Up Ball Valley (on Prefabs/BallValley/Ball_Valley).
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(BallValleyStage))]
-    public class BallValleyGate : MonoBehaviour
+    public class BallValleyGate : MonoBehaviour, IGateGame
     {
-        [Header("The balls")]
-        [Tooltip("Balls (bots) in the valley; each pocketed one is gone for good.")]
-        [Min(1)] public int balls = 15;
-        [Tooltip("Their tempers, x = least to y = most (0 = grazes and rarely fights, 1 = hunts nonstop).")]
-        public Vector2 temper = new Vector2(0.5f, 0.75f);
-        [Tooltip("Most balls hunting the player at once (the rest hunt each other). Play test 2026-11-18: all 15 going for a " +
-                 "player standing still was a death in a minute.")]
-        [Min(0)] public int maxHunters = 1;
+        [Header("The balls (rounds 1, 2, 3)")]
+        [Tooltip("Balls dropped in at each round's start; pocketing this many wins the round.")]
+        [Min(1)] public int ballsPerRound = 5;
+        [Tooltip("Their tempers each round, x = least to y = most (0 = grazes and rarely fights, 1 = hunts nonstop).")]
+        public Vector2[] tempers = { new Vector2(0.35f, 0.55f), new Vector2(0.45f, 0.65f), new Vector2(0.55f, 0.8f) };
+        [Tooltip("Most balls hunting the player at once, each round (the rest graze: here they never hunt each other).")]
+        public int[] maxHuntersPerRound = { 1, 1, 2 };
+        [Tooltip("Seconds over which a round's balls drop in.")]
+        [Min(0f)] public float dropInSeconds = 3f;
+        [Tooltip("A ball the player pocketed pops this many candies out of the hole onto the lawn (0 = none).")]
+        [Min(0)] public int pocketCandies = 3;
+        [Tooltip("A punched (knocked) ball's braking while it rolls out (m/s^2; BALLS: 5): lower = it rolls further, like a " +
+                 "snooker ball, before its bot steers it again.")]
+        [Min(0f)] public float punchedBallBraking = 1.5f;
+        [Tooltip("...and the speed under which its bot has it back (m/s; BALLS: 5).")]
+        [Min(0f)] public float punchedBallControlBelow = 2.5f;
 
-        [Header("The valley")]
-        [Tooltip("Seconds before the valley first shrinks.")]
-        [Min(5f)] public float firstShrink = 40f;
-        [Tooltip("Seconds from the first shrink to the last (the phases evenly between).")]
-        [Min(5f)] public float shrinkSpan = 150f;
-        [Tooltip("How many sizes the valley has, full size first, Smallest last.")]
-        [Range(2, 8)] public int phases = 5;
-        [Tooltip("Its last, smallest size (share of full size): the boss's arena. 0.5 = 25 x 12.5 m.")]
+        [Header("The valley (these replace the Ball Valley Stage's own Tuning when the gate starts)")]
+        [Tooltip("Its smallest size (share of the full 50 x 25 m), the giant pumpkin's arena. Rounds 1, 2, 3 and the finale " +
+                 "go evenly from full size to this: 0.5 = 1, 0.83, 0.67, 0.5.")]
         [Range(0.3f, 1f)] public float smallest = 0.5f;
-        [Tooltip("All balls pocketed early: seconds the valley takes to shrink straight to its smallest.")]
+        [Tooltip("Seconds one shrink step takes (rounds 2 and 3).")]
+        [Min(0.5f)] public float shrinkSeconds = 4f;
+        [Tooltip("Seconds the valley takes to shrink to its smallest for the finale.")]
         [Min(0.5f)] public float finaleShrinkSeconds = 6f;
+        [Tooltip("A new candy on the lawn at most this often (seconds) while there are fewer than its cap (2026-11-23: was " +
+                 "0.16 s; each is a whole candy prefab, three FSMs).")]
+        [Min(0.05f)] public float candyEvery = 0.3f;
 
-        [Header("The boss")]
-        [Tooltip("The giant pumpkin (Prefabs/Gates/Pumpkin_Ball_Boss).")]
-        public GameObject bossPrefab;
+        [Header("The boss (Gate Run's Finale Boss)")]
         [Tooltip("Seconds after the valley is at its smallest before it drops in.")]
         [Min(0f)] public float bossDelay = 2f;
-        [Tooltip("What it leaves when it breaks (Items/Chest/The_Seed): eaten, GAMESTAGES goes to the rooftop.")]
-        public GameObject seedPrefab;
         [Tooltip("A ball the boss runs into is knocked on at least this fast (m/s).")]
         [Min(0f)] public float bossKnock = 9f;
 
-        [Header("The player's view")]
-        [Tooltip("The rules when the valley opens (pauses until a trigger or a punch). Empty title: none.")]
-        public string rulesTitle = "BALL VALLEY";
-        public string rulesBody = "Punch all 15 balls into the holes.\nDon't fall in!";
-        [Tooltip("The line floating under the view: metres ahead, metres under the eyes.")]
-        public Vector2 hudPlace = new Vector2(1.8f, 0.55f);
-        [Min(0.1f)] public float hudSize = 0.9f;
-
-        public enum Step { Balls, Finale, Boss, Won }
-
-        /// <summary>Where the gate is.</summary>
-        public Step Now { get; private set; } = Step.Balls;
-        /// <summary>Balls still in play (in the valley, or still to drop in).</summary>
-        public int BallsLeft { get; private set; }
-        /// <summary>The boss, once it's in.</summary>
-        public PumpkinBallBoss Boss => boss;
+        /// <summary>The giant pumpkin, once it's in.</summary>
+        public PumpkinBallBoss Boss => run != null && run.FinaleRun != null ? run.FinaleRun.Boss : null;
+        /// <summary>Balls pocketed this round.</summary>
+        public int Pocketed { get; private set; }
+        /// <summary>The round being played (1-3), 0 before, 4 in the finale.</summary>
+        public int Round => round;
 
         private BallValleyStage stage;
-        private PumpkinBallBoss boss;
-        private float bossAt = -1f;
-        private bool rulesShown;
-        private TextMeshPro hud;
-        private Transform hudRoot;
-        private Transform head;
-        private string hudLine = "";
-        private string hudFlash = "";
-        private float hudFlashUntil;
-        private float hudPulse;
+        private GateRun run;
+        private int round;
+        private bool leaving;
 
         private void Awake()
         {
             stage = GetComponent<BallValleyStage>();
-            // The gate's own clock and sizes, read by the stage as it runs (its Tuning's numbers are BALLS' rounds).
+            run = GetComponent<GateRun>();
+            // The gate drives the valley's sizes itself (no clock); BALLS' gifts, crumbling and Moment of Truth off (the
+            // finale is the giant pumpkin's); its candy speed; punched balls roll on like snooker balls.
             var t = stage.tune;
-            t.shrinkDelay = firstShrink;
-            t.shrinkDuration = shrinkSpan;
-            t.phases = phases;
+            t.phases = 4;
             t.minMapScale = smallest;
+            t.shrinkDelay = 1e6f;
             t.selfPocketGift = 0;
-            t.momentOfTruthCrumble = false;   // the border stays: the boss can't roll out, nor the player fall off an edge
+            t.momentOfTruth = false;
+            t.momentOfTruthCrumble = false;
+            t.pelletSpawnInterval = candyEvery * Mathf.Max(0.1f, t.foodBoost);   // (the stage divides it by Food Boost)
+            t.knockFriction = punchedBallBraking;
+            t.knockRecoverSpeed = punchedBallControlBelow;
+            stage.botsHuntBots = false;
+            stage.startBalls = 0;   // they drop in round by round
+            SetRoundTemper(1);
         }
 
         private void OnEnable()
         {
             stage = GetComponent<BallValleyStage>();
             stage.BallPocketed += OnPocketed;
-            stage.LastPhaseReached += OnLastPhase;
-            stage.Shrinks += OnShrinks;
         }
 
         private void OnDisable()
         {
-            if (stage == null) return;
-            stage.BallPocketed -= OnPocketed;
-            stage.LastPhaseReached -= OnLastPhase;
-            stage.Shrinks -= OnShrinks;
+            if (stage != null) stage.BallPocketed -= OnPocketed;
         }
-
-        private void OnDestroy()
-        {
-            if (hudRoot != null) Destroy(hudRoot.gameObject);
-        }
-
-        private float bornAt;
 
         private void Start()
         {
-            bornAt = Time.time;
-            MakeHud();
-            CountBalls();
-            Line($"BALLS {BallsLeft}");
+            if (run == null)
+            {
+                Debug.LogError("[BallValley] No Gate Run on the Ball Valley (Set Up Ball Valley adds it): no rounds, no chests.", this);
+                return;
+            }
+            run.chestSpot = ChestSpot;
         }
 
         private void Update()
         {
-            // The rules once the view is back (GAMESTAGES fades in as the valley opens), after any other notice that's up
-            // (the gates' WORKING SITE note shows at the same moment: it would be replaced, user 2026-11-20).
-            if (!rulesShown && Time.time - bornAt > 1.5f && !OtherNoticeUp())
+            // The exit has begun (the seed is out): the valley stands alone until the player is on the rooftop.
+            if (!leaving && GateExit.Running)
             {
-                rulesShown = true;
-                ShowRules();
+                leaving = true;
+                transform.SetParent(null, true);
+                StartCoroutine(GoWhenOnTheRoof());
             }
-            switch (Now)
-            {
-                case Step.Balls:
-                    CountBalls();
-                    Line($"BALLS {BallsLeft}");
-                    // Every ball gone (once they've all dropped in): the finale, early.
-                    if (BallsLeft == 0 && stage.players.Count > 0) Finale("ALL IN!");
-                    break;
-                case Step.Finale:
-                    CountBalls();
-                    if (bossAt < 0f && stage.AtLastPhase) bossAt = Time.time + bossDelay;
-                    if (bossAt >= 0f && Time.time >= bossAt) DropBoss();
-                    break;
-                case Step.Boss:
-                    if (boss != null && !boss.IsBroken) Line($"BOSS {Mathf.Max(0f, boss.Health):0}");
-                    break;
-            }
-            UpdateHud();
         }
 
-        private void CountBalls()
+        // ---------------------------------------------------------------- Gate Run's calls
+
+        public void GateStart(GateRun gateRun) { }   // (the valley is open from the start; round 1 drops the balls in)
+
+        public void RoundBegin(GateRun gateRun, int r)
         {
-            int left = 0;
-            foreach (var p in stage.players)
+            round = r;
+            Pocketed = 0;
+            SetRoundTemper(r);
+            if (r > 1)
             {
-                if (p == null || p.isHuman) continue;
-                if (p.alive || p.CanDropIn) left++;
+                stage.ShrinkToPhase(r - 1, shrinkSeconds);
+                Sfx.Play(Sfx.Sound.Shrink, PlayerFeet());
             }
-            BallsLeft = left;
+            stage.DropBalls(ballsPerRound, dropInSeconds);
+            run.Goal("BALLS", ballsPerRound);
+            run.Progress(0);
+        }
+
+        public void RoundTimeUp(GateRun gateRun, int r) { }   // (its leftover balls stay for the next round)
+
+        public void FinaleBegin(GateRun gateRun)
+        {
+            round = 4;
+            ClearBalls();
+            float shrink = stage.AtLastPhase ? 0f : finaleShrinkSeconds;
+            stage.ShrinkToLast(finaleShrinkSeconds);
+            if (shrink > 0f) Sfx.Play(Sfx.Sound.Shrink, PlayerFeet());
+            run.Finale(BossSpot(), shrink + bossDelay, SetUpBoss, SeedSpot);
+        }
+
+        // ---------------------------------------------------------------- the rounds
+
+        private void SetRoundTemper(int r)
+        {
+            int i = Mathf.Clamp(r - 1, 0, Mathf.Max(0, tempers.Length - 1));
+            var tm = tempers.Length > 0 ? tempers[i] : new Vector2(0.4f, 0.6f);
+            stage.tune.botAggressionMin = Mathf.Clamp01(Mathf.Min(tm.x, tm.y));
+            stage.tune.botAggressionMax = Mathf.Clamp01(Mathf.Max(tm.x, tm.y));
+            stage.maxHunters = maxHuntersPerRound.Length > 0 ? Mathf.Max(0, maxHuntersPerRound[Mathf.Clamp(r - 1, 0, maxHuntersPerRound.Length - 1)]) : 1;
         }
 
         private void OnPocketed(BallPlayer p, BallPlayer by)
         {
             if (p == null || p.isHuman) return;
-            CountBalls();
-            hudPulse = 1f;
-            if (Now == Step.Balls && BallsLeft > 0) Flash(BallsLeft == 1 ? "1 BALL LEFT!" : $"{BallsLeft} LEFT!", 1.2f);
+            if (by != null && by.isHuman) PocketCandy(p);
+            if (round < 1 || round > 3 || run == null || run.Now != GateRun.Step.Round) return;
+            Pocketed++;
+            run.Progress(Pocketed);
+            if (Pocketed >= ballsPerRound) run.RoundWon();
         }
 
-        private void OnShrinks(int toPhase, bool last)
+        // The player's own pocket: a ka-ching and candies popping out of the hole onto the lawn.
+        private void PocketCandy(BallPlayer p)
         {
-            if (Now != Step.Balls) return;
-            Flash(last ? "LAST STAND!" : "FIELD SHRINKS!", 2f);
-        }
-
-        private void OnLastPhase()
-        {
-            if (Now == Step.Balls) Finale("BOSS INCOMING!");
-        }
-
-        /// <summary>The finale: the valley to its smallest, then the boss (Boss Delay after it's there).</summary>
-        private void Finale(string say)
-        {
-            if (Now != Step.Balls) return;
-            Now = Step.Finale;
-            stage.ShrinkToLast(finaleShrinkSeconds);
-            Flash(say, 2.5f);
-            stage.AddFeed("Gate 3: the finale (" + BallsLeft + " balls left)", new Color(1f, 0.5f, 0.2f));
-        }
-
-        private void DropBoss()
-        {
-            Now = Step.Boss;
-            if (bossPrefab == null)
-            {
-                Debug.LogError("[BallValley] No Boss Prefab on the Ball Valley Gate (Set Up Ball Valley sets it): the seed drops now.", this);
-                Won(Vector3.zero);
-                return;
-            }
-            // In the middle of the field's far half from the player, so it doesn't land on them.
-            var playerAt = PlayerFeet();
             var valley = stage.valley;
-            float side = playerAt.x > 0f ? -1f : 1f;
-            var at = new Vector3(side * valley.HalfX * 0.35f, 0f, 0f);
-            boss = PumpkinBallBoss.Spawn(bossPrefab, at, transform);
-            if (boss == null)
+            var cave = valley != null ? valley.NearestCave(p.lastPosition) : null;
+            var from = cave != null ? cave.mouth + cave.openingOffset : p.lastPosition;
+            from.y = 0.6f;
+            Sfx.Play(Sfx.Sound.PlayerPocket, from);
+            var inward = cave != null ? -BallValleyStage.Flat(cave.outward).normalized : Vector3.zero;
+            for (int i = 0; i < pocketCandies; i++)
             {
-                Won(Vector3.zero);
-                return;
+                float a = (i - (pocketCandies - 1) * 0.5f) * 25f;
+                var dir = Quaternion.Euler(0f, a, 0f) * inward;
+                var fly = dir * Random.Range(3.5f, 5f) + Vector3.up * Random.Range(5f, 6.5f);
+                stage.SpawnPellet(from, fly, stage.RandomBerryColor());
             }
+        }
+
+        // The finale: the balls still in the valley go (a puff where each was).
+        private void ClearBalls()
+        {
+            foreach (var p in stage.players.ToArray())
+            {
+                if (p == null || p.isHuman) continue;
+                if (p.alive) Gfx.Puff(p.Position, new Color(0.88f, 0.88f, 0.88f, 0.8f), 14, p.radius * 2f, 4f);
+                stage.RemovePlayer(p);
+            }
+        }
+
+        // ---------------------------------------------------------------- the boss
+
+        // In the middle of the smallest field's far half from the player, so it doesn't land on them.
+        private Vector3 BossSpot()
+        {
+            var playerAt = PlayerFeet();
+            float side = playerAt.x > 0f ? -1f : 1f;
+            return new Vector3(side * stage.tune.halfX * smallest * 0.35f, 0f, 0f);
+        }
+
+        private void SetUpBoss(PumpkinBallBoss boss)
+        {
             boss.floorY = 0f;   // the lawn's top
             boss.arenaCentre = Vector3.zero;
             // On the lawn, all of it inside the border (so never into a hole's gap either).
@@ -229,15 +227,12 @@ namespace Balls
                 float r = boss.radius;
                 return Mathf.Abs(p.x) <= v.HalfX - r && Mathf.Abs(p.z) <= v.HalfZ - r;
             };
-            boss.touched = BossTouched;
+            boss.touched = (c, velocity) => BossTouched(boss, c, velocity);
             boss.landed = BossLanded;
-            boss.Broken += OnBossBroken;
-            Flash("BREAK IT!", 2.5f);
-            stage.AddFeed("Gate 3: the giant pumpkin drops in", new Color(1f, 0.5f, 0.2f));
         }
 
-        // The boss ran into one of the valley's balls: it flies off, knocked (no steering until it rolls out).
-        private void BossTouched(Collider c, Vector3 bossVelocity)
+        // The boss ran into one of the valley's balls (or slimes): it flies off, knocked.
+        private void BossTouched(PumpkinBallBoss boss, Collider c, Vector3 bossVelocity)
         {
             if (boss == null || c == null) return;
             Rigidbody rb = null;
@@ -258,7 +253,7 @@ namespace Balls
             Sfx.Play(Sfx.Sound.SpecialHit, rb.position, 0.7f);
         }
 
-        // Its landing throws the valley's balls round it outwards.
+        // Its landing throws what's round it outwards.
         private void BossLanded(Vector3 middle, float reach)
         {
             foreach (var p in stage.players)
@@ -283,99 +278,56 @@ namespace Balls
             rb.linearVelocity = away * speed + Vector3.up * Mathf.Min(rb.linearVelocity.y, 0f);
         }
 
-        private void OnBossBroken(PumpkinBallBoss b)
+        // The seed: on the lawn, clear of the holes.
+        private Vector3 SeedSpot(Vector3 at)
         {
-            var at = b != null ? new Vector3(b.transform.position.x, 0f, b.transform.position.z) : Vector3.zero;
-            Won(at);
-        }
-
-        // The seed drops (kept on the lawn, clear of the holes), and Gate Exit takes it from there.
-        private void Won(Vector3 at)
-        {
-            Now = Step.Won;
             var valley = stage.valley;
             if (valley)
             {
                 float lx = Mathf.Max(0.5f, valley.HalfX - 2f), lz = Mathf.Max(0.5f, valley.HalfZ - 2f);
                 at.x = Mathf.Clamp(at.x, -lx, lx);
                 at.z = Mathf.Clamp(at.z, -lz, lz);
-                // Pulled towards the middle until it's well clear of every pit.
                 for (int i = 0; i < 20 && valley.DistanceToNearestPit(at) < 2.5f; i++) at *= 0.85f;
             }
             at.y = 0f;
-            Flash("TAKE THE SEED!", 4f);
-            Line("");
-            GateExit.Begin(gameObject, seedPrefab, at, "[BallValley]");
+            return at;
         }
 
-        // ---------------------------------------------------------------- the player's view
+        // ---------------------------------------------------------------- the chests and the way out
 
-        private static bool OtherNoticeUp()
+        // A chest drops on the lawn in front of the player, clear of the holes and the border (inside the size it's
+        // shrinking to).
+        private Vector3 ChestSpot()
         {
-            var notice = Game.Menus.TutorialNotice.Find();
-            return notice != null && notice.IsShowing;
-        }
-
-        private void ShowRules()
-        {
-            if (string.IsNullOrEmpty(rulesTitle)) return;
-            var notice = Game.Menus.TutorialNotice.Find();
-            if (notice == null) return;
-            notice.Show(new[] { new Game.Menus.TutorialNotice.Page(rulesTitle, rulesBody.Replace("15", balls.ToString()), null) },
-                "Pull a trigger to play");
-        }
-
-        private void MakeHud()
-        {
-            hudRoot = new GameObject("Ball Valley Line").transform;   // not under the stage: it follows the head, unscaled
-            var go = new GameObject("Text");
-            go.transform.SetParent(hudRoot, false);
-            hud = go.AddComponent<TextMeshPro>();
-            hud.alignment = TextAlignmentOptions.Center;
-            hud.textWrappingMode = TextWrappingModes.NoWrap;
-            hud.fontSize = hudSize;
-            hud.fontStyle = FontStyles.Bold;
-            hud.color = new Color(1f, 0.85f, 0.35f);
-            hud.outlineWidth = 0.2f;
-            hud.outlineColor = new Color32(30, 10, 0, 255);
-            hud.rectTransform.sizeDelta = new Vector2(3f, 0.6f);
-            hud.text = "";
-        }
-
-        private void Line(string text) => hudLine = text ?? "";
-
-        private void Flash(string text, float seconds)
-        {
-            hudFlash = text;
-            hudFlashUntil = Time.time + seconds;
-            hudPulse = 1f;
-        }
-
-        private void UpdateHud()
-        {
-            if (hud == null) return;
-            if (head == null || !head.gameObject.activeInHierarchy)
+            var cam = Camera.main;
+            var at = Vector3.zero;
+            if (cam != null)
             {
-                var cam = Camera.main;
-                head = cam != null ? cam.transform : null;
+                var fwd = BallValleyStage.Flat(cam.transform.forward);
+                if (fwd.sqrMagnitude < 0.0001f) fwd = Vector3.forward;
+                at = BallValleyStage.Flat(cam.transform.position) + fwd.normalized * 1.6f;
             }
-            bool flashing = Time.time < hudFlashUntil && !string.IsNullOrEmpty(hudFlash);
-            hud.text = flashing ? hudFlash : hudLine;
-            hudPulse = Mathf.MoveTowards(hudPulse, 0f, Time.deltaTime * 2.5f);
-            hud.transform.localScale = Vector3.one * ((flashing ? 1.6f : 1f) * (1f + 0.25f * hudPulse));
-            if (head == null) return;
-            // Lazily under the view: follows the head's turn, never jumps.
-            var fwd = Vector3.ProjectOnPlane(head.forward, Vector3.up);
-            if (fwd.sqrMagnitude < 0.0001f) fwd = hudRoot.forward;
-            fwd.Normalize();
-            var want = head.position + fwd * hudPlace.x - Vector3.up * hudPlace.y;
-            float k = 1f - Mathf.Exp(-4f * Time.unscaledDeltaTime);
-            hudRoot.position = Vector3.Lerp(hudRoot.position == Vector3.zero ? want : hudRoot.position, want, k);
-            var look = hudRoot.position - head.position;
-            if (look.sqrMagnitude > 0.0001f) hudRoot.rotation = Quaternion.LookRotation(look, Vector3.up);
+            var valley = stage.valley;
+            if (valley)
+            {
+                float lx = Mathf.Max(0.5f, valley.SafeHalfX - 1.5f), lz = Mathf.Max(0.5f, valley.SafeHalfZ - 1.5f);
+                at.x = Mathf.Clamp(at.x, -lx, lx);
+                at.z = Mathf.Clamp(at.z, -lz, lz);
+                for (int i = 0; i < 20 && valley.DistanceToNearestPit(at) < 2f; i++) at *= 0.85f;
+            }
+            at.y = 0.05f;
+            return at;
         }
 
-        private Vector3 PlayerFeet()
+        // Gate Exit has the player: the valley goes as soon as they're on the rooftop (its fade-in has just begun, so the
+        // house's fog and far plane come back unseen), or when a Game Over took them.
+        private IEnumerator GoWhenOnTheRoof()
+        {
+            while (GateExit.Running && Game.GameStages.ActiveState() != "Game Over") yield return null;
+            Destroy(gameObject);
+        }
+
+        private static Vector3 PlayerFeet()
         {
             var cam = Camera.main;
             return cam != null ? new Vector3(cam.transform.position.x, 0f, cam.transform.position.z) : Vector3.zero;

@@ -15,8 +15,9 @@ namespace Game.Bowling.EditorTools
     /// Prefabs/Bowling/Bowling_Arena from BowlingLayout: a 5 x 5 m dirt island (the only teleport area, with a spot light
     /// over it) in the middle of an X of 4 lanes (20 m long, 2 m wide, dark metal rails, 6 pin slots, hover, aim and tip
     /// points, a counter, and a lit part: deck spot, deck ring, 2 fire columns, sparkles), 12 Fall Edges round it, 8 ball
-    /// sprouts with the Bowling Ball Supply, the vines, the rules sign, and the Bowling Stage wired to the slimes, pins,
-    /// flyers, divers, showdown slimes, chests and The_Seed. Also Bowling_Rail_Mat and Bowling_Lane_Mat's tiling.
+    /// sprouts with the Bowling Ball Supply, the vines, the Bowling Stage wired to the slimes, pins, flyers and divers, and
+    /// (2026-11-23) the shared gate flow, Gate Run (as Gate 2: Use Gate Run: card, chests, rounds, the giant pumpkin). Also
+    /// Bowling_Rail_Mat and Bowling_Lane_Mat's tiling. A re-run keeps the stage's and the Gate Run's own values.
     /// Run Set Up Bowling Look, Set Up Slime Pins and Set Up Giant Slime And Showdown first. Safe to run again (builds the
     /// arena anew; the prefab keeps its file, so GAMESTAGES keeps pointing at it). Never touches the scene.
     /// </summary>
@@ -35,19 +36,7 @@ namespace Game.Bowling.EditorTools
         private const string VinesPath = PrefabFolder + "/Bowling_Vines.prefab";
         private const string DirtMeshPath = "Assets/Models/Bowling/Bowling_Dirt.asset";
         private const string DirtMatPath = MatFolder + "/Bowling_Dirt_Mat.mat";
-        private static readonly string[] ShowdownPaths =
-        {
-            PrefabFolder + "/Slime_Showdown_Red.prefab", PrefabFolder + "/Slime_Showdown_Blue.prefab",
-            PrefabFolder + "/Slime_Showdown_Green.prefab", PrefabFolder + "/Slime_Showdown_Yellow.prefab",
-        };
         private const string DiverPath = "Assets/Prefabs/Enemies/Daruma_Bomber.prefab";
-        private const string StartChestPath = "Assets/Prefabs/Items/Chest/Treasure_Chest_and_Seed_Bracer.prefab";
-        private static readonly string[] PhaseChestPaths =
-        {
-            "Assets/Prefabs/PlayGround/PG_Wood/PG_Treasure_Chest_and_Seed_Chest.prefab",
-            "Assets/Prefabs/PlayGround/PG_Wood/PG_Treasure_Chest_and_Seed_Head.prefab",
-            "Assets/Prefabs/PlayGround/PG_Wood/PG_Treasure_Chest_and_Seed_Shield.prefab",
-        };
         private const string SeedPath = "Assets/Prefabs/Items/Chest/The_Seed.prefab";
         private const string PuffPath = "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab";
         private const string Sfx = "Assets/Audio/SFX/";
@@ -57,7 +46,17 @@ namespace Game.Bowling.EditorTools
         private const string RingTexture = "Assets/Lana Studio/Hyper Casual FX/Textures/Circle06.png";
         private const string NoFogShader = "429/Particles/Unlit No Fog";
 
-        private const string RulesText = "STRIKE THE SLIMES\n<size=80%>3 strikes in a row hurts one</size>";
+
+        // Bowling Stage fields this menu builds (the arena's own parts and the prefabs it finds); every other value is kept
+        // from the arena as it was on a re-run (Keep Tuning). The hooks (Unity events) are left empty.
+        private static readonly HashSet<string> Built = new()
+        {
+            "m_Script", "lanes", "centre", "padHalfSize", "balls", "vines", "pinsRoot", "slimePrefab", "pinPrefab",
+            "flyerPrefab", "diverPrefab", "seedPrefab", "puff", "onLaneLit", "onPhase", "onWon",
+        };
+
+        // Gate Run values never copied from the old arena (the script).
+        private static readonly HashSet<string> NotKept = new() { "m_Script" };
         private const int MaxLights = 5;
         private const int MaxParticles = 650;
         private const float NavHalf = 20f;   // LiveNavMesh's world box is +-20 m
@@ -82,12 +81,7 @@ namespace Game.Bowling.EditorTools
             var vines = Load<GameObject>(VinesPath);
             var dirtMesh = Load<Mesh>(DirtMeshPath);
             var dirtMat = Load<Material>(DirtMatPath);
-            var showdown = new GameObject[ShowdownPaths.Length];
-            for (int i = 0; i < showdown.Length; i++) showdown[i] = Load<GameObject>(ShowdownPaths[i]);
             var diver = Load<GameObject>(DiverPath);
-            var startChest = Load<GameObject>(StartChestPath);
-            var phaseChests = new GameObject[PhaseChestPaths.Length];
-            for (int i = 0; i < phaseChests.Length; i++) phaseChests[i] = Load<GameObject>(PhaseChestPaths[i]);
             var seed = Load<GameObject>(SeedPath);
             var puff = Load<GameObject>(PuffPath);
             var whoosh = Load<AudioClip>(Sfx + "whoosh.wav");
@@ -107,11 +101,7 @@ namespace Game.Bowling.EditorTools
             if (vines == null || vines.GetComponent<VineGrow>() == null) missing.Add(VinesPath + " (with Vine Grow; run Set Up Bowling Look)");
             if (dirtMesh == null) missing.Add(DirtMeshPath + " (run Set Up Bowling Look)");
             if (dirtMat == null) missing.Add(DirtMatPath + " (run Set Up Bowling Look)");
-            for (int i = 0; i < showdown.Length; i++)
-                if (showdown[i] == null || showdown[i].GetComponent<SpiderBrain>() == null) missing.Add(ShowdownPaths[i] + " (with Spider Brain; run Set Up Giant Slime And Showdown)");
             if (diver == null || diver.GetComponent<SlimeBomber>() == null) missing.Add(DiverPath + " (with Slime Bomber)");
-            if (startChest == null) missing.Add(StartChestPath);
-            for (int i = 0; i < phaseChests.Length; i++) if (phaseChests[i] == null) missing.Add(PhaseChestPaths[i]);
             if (seed == null) missing.Add(SeedPath);
             if (puff == null) missing.Add(PuffPath);
             if (whoosh == null) missing.Add(Sfx + "whoosh.wav");
@@ -137,6 +127,9 @@ namespace Game.Bowling.EditorTools
             var ringMat = RingMaterial();
 
             var notes = new List<string>();
+            // The arena as it is now (a re-run keeps its stage's tuning).
+            var oldArena = Load<GameObject>(ArenaPath);
+            var oldStage = oldArena != null ? oldArena.GetComponent<BowlingStage>() : null;
             // Built in a preview scene: the open scene (or a prefab open in Prefab Mode) is never touched.
             var build = UnityEditor.SceneManagement.EditorSceneManager.NewPreviewScene();
             var root = new GameObject("Bowling_Arena");
@@ -218,10 +211,6 @@ namespace Game.Bowling.EditorTools
                 vineGo.transform.localRotation = Quaternion.identity;
                 foreach (var c in vineGo.GetComponentsInChildren<Collider>(true)) c.enabled = false;
 
-                // The rules sign over lane 0's mouth, facing the centre (the stage shows it).
-                var rules = Text(x, "Rules Sign", new Vector3(0f, BowlingLayout.RulesHeight, BowlingLayout.RulesAt), Vector3.zero, RulesText, 2f, new Vector2(4f, 1.2f));
-                rules.gameObject.SetActive(false);
-
                 var pins = new GameObject("Pins").transform;
                 pins.SetParent(root.transform, false);
 
@@ -232,21 +221,25 @@ namespace Game.Bowling.EditorTools
                 SetFloat(so, "padHalfSize", BowlingLayout.DirtHalf);
                 Set(so, "balls", supply);
                 Set(so, "vines", vineGo.GetComponent<VineGrow>());
-                Set(so, "rulesSign", rules);
                 Set(so, "pinsRoot", pins);
                 Set(so, "slimePrefab", slime.GetComponent<GiantFlyingSlime>());
                 Set(so, "pinPrefab", pin.GetComponent<SlimePin>());
                 Set(so, "flyerPrefab", flyer);
                 Set(so, "diverPrefab", diver);
-                SetArray(so, "showdownPrefabs", showdown);
                 Set(so, "seedPrefab", seed);
                 Set(so, "puff", puff);
-                Set(so, "startChest", startChest);
-                SetArray(so, "phaseChests", phaseChests);
                 var fog = Prop(so, "fog");
                 if (fog != null) fog.vector2Value = new Vector2(14f, 38f);
-                SetString(so, "rulesText", RulesText);
                 so.ApplyModifiedPropertiesWithoutUndo();
+                // A re-run keeps the stage's own tuning (2026-11-23): before, it emptied Finale Boss and the gate went back
+                // to phase 3 + the showdown, and the sign said "in a row" again.
+                int kept = KeepTuning(oldStage, stage);
+                if (kept > 0) notes.Add("kept " + kept + " Bowling Stage values from the arena as it was (finale, rules, numbers)");
+                // The shared gate flow (2026-11-23): the old arena's Gate Run values are kept too (card, sounds, numbers,
+                // the giant pumpkin), then Gate 2: Use Gate Run fills in what's missing.
+                var oldRun = oldArena != null ? oldArena.GetComponent<Game.Gates.GateRun>() : null;
+                if (oldRun != null) KeepValues(oldRun, root.AddComponent<Game.Gates.GateRun>(), NotKept);
+                Gate2RunMenu.Configure(root, notes);
 
                 // Quest: no shadows anywhere.
                 foreach (var r in root.GetComponentsInChildren<Renderer>(true))
@@ -292,6 +285,8 @@ namespace Game.Bowling.EditorTools
 
             AssetDatabase.SaveAssets();
             Debug.Log("[Bowling] Set Up Bowling Arena:\n" + string.Join("\n", notes));
+            // The arena is built anew with the placeholder look: the SlimeBowl kit goes back on when it's been exported.
+            if (AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Gates/SlimeBowl/SlimeBowl_Kit.fbx") != null) SlimeBowlKitMenu.Build();
             return true;
         }
 
@@ -403,6 +398,34 @@ namespace Game.Bowling.EditorTools
         }
 
         private static Vector3 Swap(Vector3 size) => new(size.z, size.y, size.x);
+
+        // Copies every Bowling Stage value this menu doesn't build (Built) from the old arena's stage onto the new one:
+        // the finale (Pumpkin Finale, Finale Boss: a gate's own variant too), strikes add up, the rules and win texts, the
+        // phase numbers. References into the old arena itself are skipped (they'd point at the old prefab's insides).
+        private static int KeepTuning(BowlingStage from, BowlingStage to) => KeepValues(from, to, Built);
+
+        // Copies every serialized value of From that isn't in Skip onto To (the same component type), skipping references
+        // into the old arena itself.
+        private static int KeepValues(Component from, Component to, HashSet<string> skip)
+        {
+            if (from == null || to == null) return 0;
+            var src = new SerializedObject(from);
+            var dst = new SerializedObject(to);
+            int n = 0;
+            var it = src.GetIterator();
+            bool enter = true;
+            while (it.NextVisible(enter))
+            {
+                enter = false;
+                if (skip.Contains(it.name)) continue;
+                if (it.propertyType == SerializedPropertyType.ObjectReference && it.objectReferenceValue != null &&
+                    AssetDatabase.GetAssetPath(it.objectReferenceValue) == ArenaPath) continue;
+                dst.CopyFromSerializedProperty(it);
+                n++;
+            }
+            dst.ApplyModifiedPropertiesWithoutUndo();
+            return n;
+        }
 
         // Under one of the lanes' "Lit" roots (on only while the lane is lit).
         private static bool UnderLit(Transform t)

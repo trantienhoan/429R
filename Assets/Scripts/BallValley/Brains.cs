@@ -232,6 +232,7 @@ namespace Balls
                 {
                     if (p == me || !p.alive || p.Shielded || p.Invincible) continue;   // (no use hunting a ball that can't be knocked)
                     if (p.isHuman && (Time.time < humanRestUntil || !g.HumanHuntable())) continue;   // 429R: gate 3: only a few at a time go for the player
+                    if (!p.isHuman && !g.botsHuntBots) continue;   // 429R: gate 3: bots don't pocket each other (that's the player's job)
                     float d = Vector3.Distance(Flat(p.Position), pos);
                     if (d > sight) continue;
                     if (p.BabyCount > me.BabyCount * 1.5f + 4 && aggression < 0.75f) continue;

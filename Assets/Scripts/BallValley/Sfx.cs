@@ -19,6 +19,7 @@ namespace Balls
         {
             Charge, Launch, BallHit, SpecialHit, RockHit, WoodHit, Pocket, EatBerry, EatSlime, GainBall, Respawn,
             SlimeEmerge, SlimeHit, SlimeLaugh, RockBreak, TreeBreak, FireworkLaunch, FireworkBang, Dizzy,
+            Ready, PlayerPocket, Shrink,   // 429R gate 3: the special move is charged; the player put a ball in a hole; the valley shrinks
         }
 
         // Clip variants for each sound (one is picked at random), and a base volume.
@@ -30,10 +31,10 @@ namespace Balls
             (new[] { "fist_bump_punch" }, 0.55f),                                   // SpecialHit (was 1)
             (new[] { "rock_hit_1", "rock_hit_2", "rock_hit_3", "rock_hit_4" }, 0.9f), // RockHit
             (new[] { "wood_get_hit_1", "wood_get_hit_2" }, 0.9f),                   // WoodHit
-            (new[] { "Cartoon_fall_1", "Cartoon_fall_2" }, 0.9f),                   // Pocket
+            (new[] { "lowDown" }, 0.8f),                                            // Pocket (429R 2026-11-23: was the player's own fall whistle)
             (new[] { "om_nom_nom" }, 0.3f),                                         // EatBerry: a small, quick nom (higher pitch, see Pitch)
             (new[] { "om_nom_nom" }, 0.7f),                                         // EatSlime
-            (new[] { "levelup" }, 0.4f),                                            // GainBall
+            (new[] { "pluck_001", "pluck_002" }, 0.3f),                             // GainBall (429R 2026-11-23: was 429R's "levelup")
             (new[] { "revive_sound_1" }, 0.7f),                                     // Respawn
             (new[] { "Balloon_Pop" }, 0.5f),                                        // SlimeEmerge
             (new[] { "pumpkin_face_splat" }, 0.5f),                                 // SlimeHit
@@ -43,6 +44,9 @@ namespace Balls
             (new[] { "firework_launch" }, 0.5f),                                    // FireworkLaunch (429R win fireworks)
             (new[] { "firework_bang_1", "firework_bang_2" }, 0.8f),                 // FireworkBang
             (new[] { "Cartoon_dizzy_stun1" }, 0.55f),                               // Dizzy: knocked out of control (429R's stun stars)
+            (new[] { "highUp" }, 0.5f),                                             // Ready (429R gate 3: the fists' charge is full)
+            (new[] { "ka_ching" }, 0.8f),                                           // PlayerPocket (429R gate 3: the player's own pocket pays candy)
+            (new[] { "earth_rumble" }, 0.7f),                                       // Shrink (429R gate 3: the valley closes in a step)
         };
 
         public static float masterVolume = 0.85f;

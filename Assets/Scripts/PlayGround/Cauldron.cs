@@ -256,7 +256,7 @@ namespace Game.PlayGround
         public static event Action<Cauldron> CookDone;
 
         /// <summary>
-        /// Test only: cooking runs this many times faster (e.g. 20 makes the defence's 10 minutes 30 s). Back to 1 on
+        /// Test only: cooking runs this many times faster (e.g. 10 makes the defence's 5 minutes 30 s). Back to 1 on
         /// every Play.
         /// </summary>
         public static float TestSpeed = 1f;
@@ -414,6 +414,23 @@ namespace Game.PlayGround
         public bool RecipeKnown => recipeKnown;
         /// <summary>The middle of the pot's opening.</summary>
         public Vector3 Mouth => MouthPoint();
+        /// <summary>Ingredients in the pot now (for this recipe).</summary>
+        public int InPot => count;
+        /// <summary>It takes ingredients now (not cooking, boiling, waiting for the fire or the next round, not done).</summary>
+        public bool TakingIngredients => !potBroken && !waitingForNext && !boiling && !cooking && !waitingForFire && !AllCooked && !InMystery;
+        /// <summary>The tree pumpkin recipes ask for (Pumpkin_On_Tree), and its ingredient id ("" without one).</summary>
+        public GameObject PumpkinPrefab => pumpkin;
+        public string PumpkinId => pumpkin == null ? "" : pumpkin.TryGetComponent<CookingIngredient>(out var ingredient) ? ingredient.Id : CookingIngredient.BaseName(pumpkin.name);
+
+        /// <summary>How many more of this ingredient the recipe asks for than the pot holds (0: none asked, or enough in).</summary>
+        public int Missing(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return 0;
+            int need = 0;
+            foreach (var line in recipe) if (line.id == id) need += line.count;
+            contents.TryGetValue(id, out int had);
+            return Mathf.Max(0, need - had);
+        }
 
         /// <summary>The cauldron nearest to 'point', within 'reach' metres; null if there's none.</summary>
         public static Cauldron Nearest(Vector3 point, float reach)
@@ -538,6 +555,13 @@ namespace Game.PlayGround
         /// </summary>
         public void UseOneDish(int dishCandies, int dishPumpkins, float seconds)
         {
+            // A dish before it (the gate flow cooks one each round) is over: nothing cooks, boils or waits on.
+            cooking = false;
+            waitingForFire = false;
+            waitingForNext = false;
+            progress = 0f;
+            hitShowUntil = 0f;
+            taken.Clear();
             rounds = new[] { new Round { candies = Mathf.Max(0, dishCandies), pumpkins = Mathf.Max(0, dishPumpkins), result = null, results = 1, cookSeconds = Mathf.Max(1f, seconds) } };
             oneDish = true;
             round = 0;
@@ -619,6 +643,22 @@ namespace Game.PlayGround
             foreach (var shape in GetComponentsInChildren<Renderer>(true)) shape.enabled = false;
             foreach (var effect in GetComponentsInChildren<ParticleSystem>(true)) effect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             foreach (var part in GetComponentsInChildren<Collider>(true)) part.enabled = false;
+        }
+
+        /// <summary>
+        /// The dish is dropped (the gate flow's round ran out of time): nothing cooks or waits for the fire, the pot is
+        /// emptied and takes nothing until the next dish (Use One Dish).
+        /// </summary>
+        public void StopDish()
+        {
+            if (potBroken) return;
+            cooking = false;
+            waitingForFire = false;
+            waitingForNext = true;
+            progress = 0f;
+            contents.Clear();
+            count = 0;
+            RefreshRecipePanel();
         }
 
         /// <summary>Test only: jumps the cooking dish to this share done (0 to 1).</summary>

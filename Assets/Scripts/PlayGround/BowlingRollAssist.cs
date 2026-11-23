@@ -65,6 +65,23 @@ namespace Game.PlayGround
         /// </summary>
         public static System.Func<Vector3, Vector3, Vector3?> AimFinder;
 
+        /// <summary>
+        /// Set by a stage while it runs, before Aim Finder (gate 2, 2026-11-23): given the ball's position and its flat
+        /// rolling direction, the point to steer toward and how much (0..1; below 0: this ball's Straighten), or null for
+        /// none. The stage has already checked the bowl heads that lane's way (no Aim Angle check here), so it can steer a
+        /// ball bowled from beside a lane's mouth into the lane instead of off the dirt.
+        /// </summary>
+        public static System.Func<Vector3, Vector3, (Vector3 point, float steer)?> LaneAim;
+
+        /// <summary>
+        /// Set by a stage while it runs (gate 2's giant pumpkin, 2026-11-23): a ball ran into something (its body, the
+        /// collision, its velocity just before the hit), whoever let it go and however long ago.
+        /// </summary>
+        public static System.Action<Rigidbody, Collision, Vector3> BallHit;
+
+        // Its velocity at the last physics step (the collision has already changed it by the time it's reported).
+        private Vector3 lastVelocity;
+
         // Most spin after a let-go that isn't a bowl, in radians per second.
         private const float HeavySpin = 6f;
 
@@ -133,12 +150,15 @@ namespace Game.PlayGround
                 return;
             }
             var direction = along / speed;
-            var aim = AimFinder?.Invoke(body.position, direction) ?? (aimAt != null ? aimAt.position : (Vector3?)null);
+            var lane = LaneAim?.Invoke(body.position, direction);
+            var aim = lane.HasValue ? lane.Value.point
+                : AimFinder?.Invoke(body.position, direction) ?? (aimAt != null ? aimAt.position : (Vector3?)null);
             if (aim.HasValue)
             {
+                float steer = lane.HasValue && lane.Value.steer >= 0f ? Mathf.Clamp01(lane.Value.steer) : straighten;
                 var toPins = Vector3.ProjectOnPlane(aim.Value - body.position, floorNormal);
-                if (toPins.sqrMagnitude > 0.01f && Vector3.Angle(direction, toPins) <= aimAngle)
-                    direction = Vector3.Slerp(direction, toPins.normalized, straighten);
+                if (toPins.sqrMagnitude > 0.01f && (lane.HasValue || Vector3.Angle(direction, toPins) <= aimAngle))
+                    direction = Vector3.Slerp(direction, toPins.normalized, steer).normalized;
             }
             speed = Mathf.Clamp(speed, minRollSpeed, Mathf.Max(minRollSpeed, maxRollSpeed));
 
@@ -148,6 +168,16 @@ namespace Game.PlayGround
             if (body.maxAngularVelocity < spin.magnitude) body.maxAngularVelocity = spin.magnitude;
             body.linearVelocity = direction * speed;
             body.angularVelocity = spin;
+        }
+
+        private void FixedUpdate()
+        {
+            if (body != null) lastVelocity = body.isKinematic ? Vector3.zero : body.linearVelocity;
+        }
+
+        private void OnCollisionEnter(Collision collision)
+        {
+            if (BallHit != null && body != null) BallHit(body, collision, lastVelocity);
         }
 
         // Too heavy to throw: it leaves the hand slowly and never upward.

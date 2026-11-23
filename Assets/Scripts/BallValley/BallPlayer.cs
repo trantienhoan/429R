@@ -633,7 +633,7 @@ namespace Balls
                 // Struck by a special move: it carries the shot on (for what was left of the striker's burst), then brakes
                 // like a shot rolling out - the same cloth for every ball.
                 if (Time.time < knockBurstUntil) rollDamping = Mathf.Min(rollDamping, T.dashDamping);
-                else { rollDamping = Mathf.Max(rollDamping, T.shotDamping); friction = T.shotFriction; }
+                else { rollDamping = Mathf.Max(rollDamping, T.shotDamping); friction = T.knockFriction >= 0f ? T.knockFriction : T.shotFriction; }   // 429R: Knock Friction
             }
             else if (Dashing) rollDamping = Mathf.Min(rollDamping, T.dashDamping);
             else if (shotRolling) { rollDamping = Mathf.Max(rollDamping, T.shotDamping); friction = T.shotFriction; }
@@ -656,7 +656,7 @@ namespace Balls
                 if (shotRolling) shotTravel += flatSpeed * dt;
                 else shotSpinLive = false;
             }
-            if (knocked && Time.time > knockTime + 0.25f && flatSpeed < T.shotRecoverSpeed) knocked = false;
+            if (knocked && Time.time > knockTime + 0.25f && flatSpeed < (T.knockRecoverSpeed >= 0f ? T.knockRecoverSpeed : T.shotRecoverSpeed)) knocked = false;   // 429R: Knock Recover Speed
 
             if (Locked)
             {

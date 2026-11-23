@@ -12,8 +12,9 @@ namespace Game.PlayGround
     /// (ShowOnce, like the tutorials). The round chests' own candy + EXP bursts are in their Open_Chest states (Play End
     /// Game Jackpot + Spill Candies). Goes on the cauldron (Fire_Woods_n_Cauldron); Tools > 429 Game > PlayGround >
     /// Set Up Cooking Rewards sets it all up.
-    /// The broken pot starts the Daruma game (Special Stage 3 Trigger), so the notice (user, 2026-11-07) waits for it and
-    /// shows only after a win, on the rooftop; after a loss (a death and a new run) there's none. The point is kept.
+    /// The notice pauses the game, so it never comes in the middle of a fight (user, 2026-11-07): after the gate's giant
+    /// pumpkin (Gate Boss Finale, since 2026-11-18) it waits until the player stands on the rooftop (Gate Exit done), and
+    /// after the old Daruma game only for a win. After a loss (a death and a new run) there's none. The point is kept.
     /// </summary>
     public class CookingRewards : MonoBehaviour
     {
@@ -78,6 +79,21 @@ namespace Game.PlayGround
                 // The pot's break starts the Daruma game in the same frame (whichever hears Pot Broken first): known by now.
                 yield return null;
                 bool daruma = DarumaStage.Running != null;
+                // The gate's giant pumpkin is on its way (the cauldron defence starts its finale as the pot swells): the
+                // notice waits until the fight is over and the player stands on the rooftop; none after a Game Over.
+                if (GateFinaleOn())
+                {
+                    while (GateFinaleOn())
+                    {
+                        if (GameStages.ActiveState() == "Game Over")
+                        {
+                            Destroy(gameObject);
+                            yield break;
+                        }
+                        yield return null;
+                    }
+                    yield return new WaitForSeconds(afterDaruma);
+                }
                 yield return new WaitForSeconds(delay);
                 // The Daruma game the pot started: only a win shows the notice, once the player stands on the rooftop. A
                 // loss (death, a new run) or the stage cleared by a Game Over (gone without an end, even before now): none.
@@ -103,6 +119,11 @@ namespace Game.PlayGround
                     notice.Show(new List<Game.Menus.TutorialNotice.Page> { new Game.Menus.TutorialNotice.Page(title, body, null) }, closeLine);
                 Destroy(gameObject);
             }
+
+            // A gate's giant pumpkin finale or its exit to the rooftop is under way.
+            private static bool GateFinaleOn() =>
+                Game.Gates.GateExit.Running || FindAnyObjectByType<Game.Gates.GateBossFinale>() != null ||
+                FindAnyObjectByType<Game.Gates.PumpkinBallBoss>() != null;
         }
     }
 }

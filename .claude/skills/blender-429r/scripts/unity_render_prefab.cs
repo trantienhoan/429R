@@ -3,7 +3,8 @@
 // Edit the settings below first. Writes OUT (keep it outside AppData if Blender/other apps must see it; the
 // session scratchpad is fine for reading it back yourself).
 string PREFAB = "Assets/Prefabs/Enemies/Cockroach.prefab";
-string OUT = "K:/WORK_2026/08_04/_claude/unity_render.png";
+string OUT = System.IO.Directory.Exists("K:/") ? "K:/WORK_2026/08_04/_claude/unity_render.png"
+    : System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments) + "/429R_claude_backups/blender/unity_render.png";
 string[] ONLY_RENDERERS = { "Cockroach_Smol" };          // renderer objects to show (empty = all); others hidden
 var BONE_TURNS = new System.Collections.Generic.Dictionary<string, Vector3> // local euler degrees added to bones
 {

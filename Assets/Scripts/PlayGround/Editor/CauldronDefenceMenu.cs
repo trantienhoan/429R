@@ -1,9 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using HutongGames.PlayMaker;
-using HutongGames.PlayMaker.Actions;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -11,25 +9,21 @@ using UnityEngine;
 namespace Game.PlayGround.Editor
 {
     /// <summary>
-    /// Tools > 429 Game > PlayGround > Use Defend The Cauldron (user, 2026-11-16): gate 1 becomes "defend the cauldron"
-    /// (see Cauldron Defence), and its win goes through the Daruma game straight to the Pumpkin Boss, with no rooftop and
-    /// no tree defence.
-    /// 1. Fire_Woods_n_Cauldron.prefab (copied to Documents/429R_claude_backups/2026-11-16/gate1_defend/ first; a later run
-    ///    keeps that first copy): PlayGround Rounds is switched off (kept, with its waves), a Cauldron Health and a Cauldron
-    ///    Defence are added (or switched on) and filled in: the 4 monster phases, the 3 mini bosses with their PG_ chests,
-    ///    the chaos boss, the smoke, sounds and numbers below. A component that's already there keeps its numbers (tune
-    ///    them in the Inspector); only its empty references are filled. The Cauldron gets its fire's whoosh if it has none.
-    ///    The chaos boss is a new prefab variant, Prefabs/Enemies/pumpkin_boss_Z_Doom (made once: pumpkin_boss_Z with Wake Up
-    ///    Seconds 4 instead of 33 and Chaos Chance 1), so it rises out of the broken pot at once.
-    /// 2. The open scene's GAMESTAGES: three new states after the gate 1 seed, "Tween PlayGroundZ To Boss" and "Destroy
-    ///    PlayGroundZ To Boss" (copies of Tween PlayGroundZ and Destroy PlayGroundZ) and "Boss PG" (Rooftop_ON PG without
-    ///    the rooftop, plus the CP Boss checkpoint), which goes on to "clean it" and "BOSS". "Path 1 ON" next1 goes there
-    ///    instead of "Enemy 4 - Get the Seed". Gate 2 (bowling) still uses the old states, untouched. The scene is marked
-    ///    changed, never saved: save it yourself.
-    /// The Daruma stage (Special_Stage_3) needs nothing: its new settings (Candies Per Kind 8, Feed Leftovers, Boss States)
-    /// come from the code.
-    /// "Use Cooking Rounds (Old Gate 1)" switches back: Cauldron Defence off, PlayGround Rounds on, Path 1 ON next1 back to
-    /// "Enemy 4 - Get the Seed" (the new states stay, unused).
+    /// Tools > 429 Game > PlayGround > Use Defend The Cauldron (user, 2026-11-16): gate 1 is "defend the cauldron" (see
+    /// Cauldron Defence). Since 2026-11-18 every gate ends the same way (its giant pumpkin, The_Seed, the rooftop's tree
+    /// defence: GAMESTAGES "Path 1 ON" next1 -> "Tween PlayGroundZ" -> ... -> "Rooftop_ON PG").
+    /// Fire_Woods_n_Cauldron.prefab only (copied to Documents/429R_claude_backups/2026-11-16/gate1_defend/ first; a later
+    /// run keeps that first copy): PlayGround Rounds is switched off (kept, with its waves), a Cauldron Health and a
+    /// Cauldron Defence are added (or switched on) and filled in: the monster phases, the mini bosses with their PG_
+    /// chests, the chaos boss, the smoke, sounds and numbers below. A component that's already there keeps its numbers
+    /// (tune them in the Inspector); only its empty references are filled. The Cauldron gets its fire's whoosh if it has
+    /// none. The chaos boss is a prefab variant, Prefabs/Enemies/pumpkin_boss_Z_Doom (made once: pumpkin_boss_Z with Wake
+    /// Up Seconds 4 instead of 33 and Chaos Chance 1), so it rises out of the broken pot at once.
+    /// GAMESTAGES is NOT touched any more (2026-11-23): until then this menu re-pointed "Path 1 ON" next1 to "Tween
+    /// PlayGroundZ To Boss" (straight to the boss, the 11-16 design), which silently dropped the rooftop's tree defence
+    /// on every re-run. The gate flow belongs to the gates' shared set-up (Scripts/Gates/Editor, the coordinator's).
+    /// "Use Cooking Rounds (Old Gate 1)" switches the prefab back (Cauldron Defence off, PlayGround Rounds on); it no
+    /// longer touches GAMESTAGES either. The old "To Boss" / "Boss PG" states it once made are left as they are (unused).
     /// </summary>
     public static class CauldronDefenceMenu
     {
@@ -47,21 +41,13 @@ namespace Game.PlayGround.Editor
         private const string DoomBossPath = "Assets/Prefabs/Enemies/pumpkin_boss_Z_Doom.prefab";
         private const float DoomWakeUp = 4f;
         private const string LogPath = "Assets/Prefabs/PlayGround/Dropped_Wood_Fuel.prefab";
+        private const string HatPath = "Assets/Prefabs/PlayGround/Recipe_Hat.prefab";
         private const string FontPath = "Assets/Fonts/socake/Socake SDF.asset";
 
-        // GAMESTAGES.
+        // GAMESTAGES (only read: where the gate 1 seed leads).
         private const string StagesFsm = "GAMESTAGES";
         private const string On1 = "Path 1 ON";
-        private const string OldSeed = "Enemy 4 - Get the Seed";
-        private const string TweenOld = "Tween PlayGroundZ";
-        private const string DestroyOld = "Destroy PlayGroundZ";
-        private const string RoofPg = "Rooftop_ON PG";
-        private const string LidState = "Damage The Lid";
-        private const string CleanIt = "clean it";
-        private const string TweenNew = "Tween PlayGroundZ To Boss";
-        private const string DestroyNew = "Destroy PlayGroundZ To Boss";
-        private const string BossPg = "Boss PG";
-        private const string RoofSpawner = "Rooftop_Base_Pos";
+        private const string RooftopRoute = "Tween PlayGroundZ";
 
         // The monsters by share of the cook: label, from, the bugs (Enemies_Smarter), most alive, seconds between.
         private static readonly (string label, float from, string[] bugs, int maxAlive, Vector2 wait)[] Phases =
@@ -96,9 +82,6 @@ namespace Game.PlayGround.Editor
             ("Smoke_Puff_Burst_Out", 1.2f, 0.6f),
         };
 
-        private static readonly MethodInfo CloneMethod =
-            typeof(object).GetMethod("MemberwiseClone", BindingFlags.NonPublic | BindingFlags.Instance);
-
         [MenuItem("Tools/429 Game/PlayGround/Use Defend The Cauldron")]
         public static void UseDefence()
         {
@@ -106,9 +89,9 @@ namespace Game.PlayGround.Editor
             if (OpenInPrefabMode()) return;
             var notes = new List<string>();
             if (!SetUpCauldron(notes)) return;
-            RouteStages(true, notes);
+            CheckStages(notes);
             AssetDatabase.SaveAssets();
-            Debug.Log($"{Log} Gate 1 = defend the cauldron: {string.Join("; ", notes)}. Save the scene (2 Game Scene).");
+            Debug.Log($"{Log} Gate 1 = defend the cauldron (the prefab only; GAMESTAGES untouched): {string.Join("; ", notes)}.");
         }
 
         [MenuItem("Tools/429 Game/PlayGround/Use Defend The Cauldron", true)]
@@ -140,9 +123,9 @@ namespace Game.PlayGround.Editor
             {
                 PrefabUtility.UnloadPrefabContents(root);
             }
-            RouteStages(false, notes);
+            CheckStages(notes);
             AssetDatabase.SaveAssets();
-            Debug.Log($"{Log} Gate 1 = the cooking rounds again: {string.Join("; ", notes)}. Save the scene (2 Game Scene).");
+            Debug.Log($"{Log} Gate 1 = the cooking rounds again (the prefab only; GAMESTAGES untouched): {string.Join("; ", notes)}.");
         }
 
         [MenuItem("Tools/429 Game/PlayGround/Use Cooking Rounds (Old Gate 1)", true)]
@@ -190,6 +173,16 @@ namespace Game.PlayGround.Editor
 
                 var c = new SerializedObject(cauldron);
                 if (SetIfEmpty(c.FindProperty("lightSound"), Load<AudioClip>(Sfx + "whoosh.wav", notes))) notes.Add("fire whoosh set");
+                // A wrong recipe costs less (2026-11-23, the gate 1 brief): one small slime in the colour of a candy the
+                // recipe still needs (it drops that candy), not a big one that splits. Only replaces the old big slime.
+                var wrong = c.FindProperty("wrongResult");
+                var bigSlime = Load<GameObject>(SlimeFolder + "Slime_Big.prefab", notes);
+                var smallSlime = Load<GameObject>(SlimeFolder + "Slime_Small.prefab", notes);
+                if (wrong != null && smallSlime != null && (wrong.objectReferenceValue == null || wrong.objectReferenceValue == bigSlime))
+                {
+                    wrong.objectReferenceValue = smallSlime;
+                    notes.Add("a wrong recipe spits a small slime (was the big one)");
+                }
                 c.ApplyModifiedPropertiesWithoutUndo();
 
                 PrefabUtility.SaveAsPrefabAsset(root, CauldronPath);
@@ -301,6 +294,7 @@ namespace Game.PlayGround.Editor
 
             var smallPuff = Load<GameObject>(SmokeFolder + "Smoke_Flash_Small_Puff.prefab", notes);
             SetIfEmpty(d.FindProperty("spareLog"), Load<GameObject>(LogPath, notes));
+            if (SetIfEmpty(d.FindProperty("hatPrefab"), Load<GameObject>(HatPath, notes))) notes.Add("spare magic hat set");
             SetIfEmpty(d.FindProperty("popSound"), Load<AudioClip>(Sfx + "pumpkin_explode_2.wav", notes));
             SetIfEmpty(d.FindProperty("spawnEffect"), smallPuff);
             SetIfEmpty(d.FindProperty("bossSound"), Load<AudioClip>(Sfx + "creepy_laugh_1.wav", notes));
@@ -370,138 +364,26 @@ namespace Game.PlayGround.Editor
             }
         }
 
-        // ------------------------------------------------------------------ 2. GAMESTAGES
+        // ------------------------------------------------------------------ 2. GAMESTAGES (read only)
 
-        // Defence: Path 1 ON next1 -> the new states (made if missing) -> clean it -> BOSS. Back: next1 -> Enemy 4.
-        private static void RouteStages(bool defence, List<string> notes)
+        // Says where the gate 1 seed leads now; changes nothing (the flow is the gates' shared set-up's).
+        private static void CheckStages(List<string> notes)
         {
             var gs = Object.FindObjectsByType<PlayMakerFSM>(FindObjectsInactive.Include, FindObjectsSortMode.None)
                 .FirstOrDefault(f => f.FsmName == StagesFsm && f.gameObject.scene.IsValid());
             if (gs == null)
             {
-                Debug.LogError($"{Log} No GAMESTAGES FSM in the open scene (open 2 Game Scene): GAMESTAGES not changed.");
-                notes.Add("GAMESTAGES NOT CHANGED (no scene)");
+                notes.Add("no GAMESTAGES in the open scene to check");
                 return;
             }
             if (!gs.Fsm.Initialized) gs.Fsm.Init(gs);
-            var f = gs.Fsm;
-            var on1 = f.GetState(On1);
-            var next1 = on1?.Transitions.FirstOrDefault(t => t.EventName == "next1");
-            if (next1 == null)
-            {
-                Debug.LogError($"{Log} GAMESTAGES has no '{On1}' with a next1 transition: GAMESTAGES not changed.", gs);
-                notes.Add("GAMESTAGES NOT CHANGED");
-                return;
-            }
-
-            if (!defence)
-            {
-                if (next1.ToState == OldSeed) { notes.Add($"'{On1}' already goes to '{OldSeed}'"); return; }
-                Undo.RecordObject(gs, "Use Cooking Rounds");
-                next1.ToState = OldSeed;
-                EditorUtility.SetDirty(gs);
-                EditorSceneManager.MarkSceneDirty(gs.gameObject.scene);
-                notes.Add($"'{On1}' next1 -> '{OldSeed}' (rooftop + tree again)");
-                return;
-            }
-
-            // What the new states are copied from, all fully loaded before anything changes.
-            var tweenOld = Loaded(f, TweenOld);
-            var destroyOld = Loaded(f, DestroyOld);
-            var roofPg = Loaded(f, RoofPg);
-            var lid = Loaded(f, LidState);
-            if (tweenOld == null || destroyOld == null || roofPg == null || lid == null || f.GetState(CleanIt) == null)
-            {
-                Debug.LogError($"{Log} GAMESTAGES is missing '{TweenOld}', '{DestroyOld}', '{RoofPg}', '{LidState}' or '{CleanIt}', or " +
-                               "one of their actions couldn't be read: GAMESTAGES not changed.", gs);
-                notes.Add("GAMESTAGES NOT CHANGED");
-                return;
-            }
-            var checkpoint = lid.Actions.FirstOrDefault(a => a.GetType().Name == "SetCheckpoint");
-            foreach (var name in new[] { TweenNew, DestroyNew, BossPg })
-            {
-                var s = f.GetState(name);
-                if (s == null) continue;
-                s.LoadActions();
-                if (s.ActionData.ActionCount != s.Actions.Length)
-                {
-                    Debug.LogError($"{Log} GAMESTAGES '{name}' has {s.ActionData.ActionCount} actions saved but only {s.Actions.Length} loaded: GAMESTAGES not changed.", gs);
-                    notes.Add("GAMESTAGES NOT CHANGED");
-                    return;
-                }
-            }
-
-            Undo.RecordObject(gs, "Use Defend The Cauldron");
-            var changed = new List<FsmState>();
-            int made = 0;
-            var near = roofPg.Position;
-
-            // The PlayGround sinks, as in Tween PlayGroundZ.
-            if (f.GetState(TweenNew) == null)
-            {
-                changed.Add(NewState(f, TweenNew, near, 260f, DestroyNew, tweenOld.Actions.Select(Clone).ToArray()));
-                made++;
-            }
-            // It's gone with everything it spawned, as in Destroy PlayGroundZ.
-            if (f.GetState(DestroyNew) == null)
-            {
-                changed.Add(NewState(f, DestroyNew, near, 320f, BossPg, destroyOld.Actions.Select(Clone).ToArray()));
-                made++;
-            }
-            // Rooftop_ON PG without the rooftop (the rooms go, the sky comes back, smoke), and the boss checkpoint as
-            // Damage The Lid sets it; then clean it (the Fairy Shield) and BOSS.
-            if (f.GetState(BossPg) == null)
-            {
-                var actions = new List<FsmStateAction>();
-                if (checkpoint != null) actions.Add(Clone(checkpoint));
-                foreach (var a in roofPg.Actions)
-                {
-                    if (a is ActivateGameObject act && act.gameObject != null && act.gameObject.GameObject != null &&
-                        act.gameObject.GameObject.Value != null && act.gameObject.GameObject.Value.name == RoofSpawner) continue;
-                    actions.Add(Clone(a));
-                }
-                changed.Add(NewState(f, BossPg, near, 380f, CleanIt, actions.ToArray()));
-                made++;
-            }
-            bool rerouted = next1.ToState != TweenNew;
-            if (rerouted) next1.ToState = TweenNew;
-
-            if (made == 0 && !rerouted)
-            {
-                notes.Add("GAMESTAGES already goes from the gate 1 seed straight to the boss");
-                return;
-            }
-            foreach (var s in changed) s.SaveActions();
-            EditorUtility.SetDirty(gs);
-            EditorSceneManager.MarkSceneDirty(gs.gameObject.scene);
-            notes.Add($"GAMESTAGES: {made} new state(s) ('{TweenNew}' -> '{DestroyNew}' -> '{BossPg}' -> '{CleanIt}'), '{On1}' next1 -> '{TweenNew}'" +
-                      (checkpoint == null ? $" (no Set Checkpoint found in '{LidState}': none in '{BossPg}')" : ""));
+            var next1 = gs.Fsm.GetState(On1)?.Transitions.FirstOrDefault(t => t.EventName == "next1");
+            string to = next1 != null ? next1.ToState : "(none)";
+            notes.Add($"GAMESTAGES untouched: '{On1}' next1 -> '{to}'");
+            if (to != RooftopRoute)
+                Debug.LogWarning($"{Log} GAMESTAGES '{On1}' next1 goes to '{to}', not '{RooftopRoute}' (the rooftop's tree " +
+                                 "defence, like every gate). This menu no longer changes it: ask for the gates' flow set-up.", gs);
         }
-
-        // The state with its actions loaded, or null if it's missing or an action couldn't be read (saving would drop it).
-        private static FsmState Loaded(Fsm f, string name)
-        {
-            var state = f.GetState(name);
-            if (state == null) return null;
-            state.LoadActions();
-            return state.ActionData.ActionCount == state.Actions.Length ? state : null;
-        }
-
-        private static FsmState NewState(Fsm f, string name, Rect near, float down, string finishedTo, FsmStateAction[] actions)
-        {
-            var state = new FsmState(f)
-            {
-                Name = name,
-                Position = new Rect(near.x + 220f, near.y + down, near.width, near.height),
-                Actions = actions,
-                Transitions = new[] { new FsmTransition { FsmEvent = FsmEvent.Finished, ToState = finishedTo } },
-            };
-            f.States = f.States.Append(state).ToArray();
-            return state;
-        }
-
-        // A copy of an action with the same settings (shallow: fields changed later get new objects).
-        private static FsmStateAction Clone(FsmStateAction action) => (FsmStateAction)CloneMethod.Invoke(action, null);
 
         // ------------------------------------------------------------------ helpers
 

@@ -134,9 +134,10 @@ def new_image(name, w, h, color=(0.0, 0.0, 0.0, 0.0), non_color=False):
 
 def backup(path, folder=None):
     """Copies a file (e.g. the texture PNG) aside with a time stamp before it's overwritten. Returns the copy's
-    path. Default folder: K:/WORK_2026/08_04/_claude/backups (outside AppData: the Claude app is an MSIX package,
+    path. Default folder: K:/WORK_2026/08_04/_claude/backups, or Documents/429R_claude_backups/blender/backups on
+    a PC without K: (outside AppData: the Claude app is an MSIX package,
     so its AppData writes are invisible to other programs)."""
-    folder = folder or r"K:/WORK_2026/08_04/_claude/backups"
+    folder = folder or ((r"K:/WORK_2026/08_04/_claude" if os.path.isdir("K:/") else os.path.join(os.path.expanduser("~"), "Documents", "429R_claude_backups", "blender")) + "/backups")
     os.makedirs(folder, exist_ok=True)
     stem, ext = os.path.splitext(os.path.basename(path))
     copy = os.path.join(folder, f"{stem}_{time.strftime('%Y%m%d_%H%M%S')}{ext}")

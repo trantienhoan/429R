@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 2336074395021610029}
   - component: {fileID: 8262284768485154091}
   - component: {fileID: 1423455340067669913}
+  - component: {fileID: 3904428590821533855}
   m_Layer: 0
   m_Name: Ball_Valley
   m_TagString: Untagged
@@ -104,6 +105,8 @@ MonoBehaviour:
     shotMaxLock: 7
     shotDamping: 0.6
     shotFriction: 5
+    knockFriction: -1
+    knockRecoverSpeed: -1
     knockChainSpeed: 8
     ballBounce: 0.92
     rimBounce: 0.8
@@ -188,6 +191,104 @@ MonoBehaviour:
   sunIntensity: 1.15
   sunShadows: 1
   ambient: {r: 0.36, g: 0.31, b: 0.48, a: 1}
+  kitMaterial: {fileID: 2100000, guid: 2aca69eeef4597f4faa649fe6456400d, type: 2}
+  kitRim: {fileID: 351748469280785491, guid: 9d3ada26c98cf9444ad264aec9faf9fa, type: 3}
+  kitHoleCorner: {fileID: 4071562826335433887, guid: d5ba1370c05371845b3f515b8cf75218,
+    type: 3}
+  kitHoleSide: {fileID: 1803350784526329270, guid: 462299068a371b54aace6be0bbc4e1d1,
+    type: 3}
+  kitTrees:
+  - {fileID: 1291415129016446256, guid: a680c44d85c328846b1be420bf893912, type: 3}
+  kitRocks:
+  - {fileID: 2764536420442885307, guid: d01ad7740a5554f40ab4e3fc8d33df18, type: 3}
+  - {fileID: 2764536420442885307, guid: d01ad7740a5554f40ab4e3fc8d33df18, type: 3}
+  - {fileID: 6929340573606330957, guid: 309cb0fc8cbd05743bfbae95c36155b5, type: 3}
+  kitDecor:
+  - piece: {fileID: 3166214527975188636, guid: b3c8abcbfe53f8640b85d070d2528293, type: 3}
+    at: {x: 31, y: 18}
+    turn: -120.14139
+    size: 1
+  - piece: {fileID: 3166214527975188636, guid: b3c8abcbfe53f8640b85d070d2528293, type: 3}
+    at: {x: -31, y: 18}
+    turn: 120.14139
+    size: 1
+  - piece: {fileID: 3166214527975188636, guid: b3c8abcbfe53f8640b85d070d2528293, type: 3}
+    at: {x: 31, y: -18}
+    turn: -59.858616
+    size: 1
+  - piece: {fileID: 3166214527975188636, guid: b3c8abcbfe53f8640b85d070d2528293, type: 3}
+    at: {x: -31, y: -18}
+    turn: 59.858616
+    size: 1
+  - piece: {fileID: 3166214527975188636, guid: b3c8abcbfe53f8640b85d070d2528293, type: 3}
+    at: {x: 12, y: 17.5}
+    turn: -145.56102
+    size: 1
+  - piece: {fileID: 3166214527975188636, guid: b3c8abcbfe53f8640b85d070d2528293, type: 3}
+    at: {x: -12, y: -17.5}
+    turn: 34.438988
+    size: 1
+  - piece: {fileID: 8081449623460912113, guid: 604425357f141e244a56392973ab8c0f, type: 3}
+    at: {x: -33, y: 3}
+    turn: 40
+    size: 1
+  - piece: {fileID: 8081449623460912113, guid: 604425357f141e244a56392973ab8c0f, type: 3}
+    at: {x: 33.5, y: -6}
+    turn: 200
+    size: 1
+  - piece: {fileID: 8081449623460912113, guid: 604425357f141e244a56392973ab8c0f, type: 3}
+    at: {x: -19, y: 20.5}
+    turn: 120
+    size: 1
+  - piece: {fileID: 8081449623460912113, guid: 604425357f141e244a56392973ab8c0f, type: 3}
+    at: {x: 24, y: 20}
+    turn: 300
+    size: 1
+  - piece: {fileID: 2420152198540722254, guid: 18a825a05d0c83a47be31cc2d1fdff57, type: 3}
+    at: {x: 22, y: -19}
+    turn: 15
+    size: 1
+  - piece: {fileID: 2724968330599341676, guid: c0a797228462a2941acedca084f53b89, type: 3}
+    at: {x: 29, y: 6}
+    turn: 250
+    size: 1.4
+  - piece: {fileID: 2724968330599341676, guid: c0a797228462a2941acedca084f53b89, type: 3}
+    at: {x: -29.5, y: -7}
+    turn: 80
+    size: 1.4
+  - piece: {fileID: 2724968330599341676, guid: c0a797228462a2941acedca084f53b89, type: 3}
+    at: {x: 8, y: 19.5}
+    turn: 170
+    size: 1.4
+  - piece: {fileID: 2724968330599341676, guid: c0a797228462a2941acedca084f53b89, type: 3}
+    at: {x: -8, y: 20}
+    turn: 190
+    size: 1.4
+  - piece: {fileID: 2724968330599341676, guid: c0a797228462a2941acedca084f53b89, type: 3}
+    at: {x: 17, y: -20}
+    turn: 340
+    size: 1.4
+  - piece: {fileID: 2724968330599341676, guid: c0a797228462a2941acedca084f53b89, type: 3}
+    at: {x: -18, y: -20.5}
+    turn: 10
+    size: 1.4
+  - piece: {fileID: 2724968330599341676, guid: c0a797228462a2941acedca084f53b89, type: 3}
+    at: {x: 0, y: -20.5}
+    turn: 0
+    size: 1.4
+  - piece: {fileID: 2724968330599341676, guid: c0a797228462a2941acedca084f53b89, type: 3}
+    at: {x: 33, y: 12}
+    turn: 230
+    size: 1.4
+  - piece: {fileID: 2724968330599341676, guid: c0a797228462a2941acedca084f53b89, type: 3}
+    at: {x: -33, y: -13}
+    turn: 60
+    size: 1.4
+  - piece: {fileID: 2724968330599341676, guid: c0a797228462a2941acedca084f53b89, type: 3}
+    at: {x: -3, y: 21}
+    turn: 175
+    size: 1.4
+  nightPalette: {fileID: 2800000, guid: 37402e665a1d3f34b8529131bb73d9e6, type: 3}
   sounds:
   - name: choo_choo
     clip: {fileID: 8300000, guid: c89ca9af279ae154ca895c0ef6a0057a, type: 3}
@@ -211,14 +312,14 @@ MonoBehaviour:
     clip: {fileID: 8300000, guid: be9beca93dc0f514c8220a12fd387f63, type: 3}
   - name: wood_get_hit_2
     clip: {fileID: 8300000, guid: 1ab0a3a1ae573ae4a83eec9c81323797, type: 3}
-  - name: Cartoon_fall_1
-    clip: {fileID: 8300000, guid: 3358e64fa152195488f438ce5256cc06, type: 3}
-  - name: Cartoon_fall_2
-    clip: {fileID: 8300000, guid: 4a1621518813a244bb355d4b0444a86b, type: 3}
+  - name: lowDown
+    clip: {fileID: 8300000, guid: abc12f86ddad3e54d9d1c124c6ef6ab7, type: 3}
   - name: om_nom_nom
     clip: {fileID: 8300000, guid: 6fdf6f77440580b4c9cebaffaef7b0a0, type: 3}
-  - name: levelup
-    clip: {fileID: 8300000, guid: b5a8281a35f408f4881abd0e15f2b5a4, type: 3}
+  - name: pluck_001
+    clip: {fileID: 8300000, guid: 5afe4d05433549d45a9becd11c1ff64d, type: 3}
+  - name: pluck_002
+    clip: {fileID: 8300000, guid: 1d11f0e411430324485d06fd09b89b85, type: 3}
   - name: revive_sound_1
     clip: {fileID: 8300000, guid: acc48719f08184843a98e7d5e8a904f3, type: 3}
   - name: Balloon_Pop
@@ -243,6 +344,12 @@ MonoBehaviour:
     clip: {fileID: 8300000, guid: e648e3d4c12bff04eba0bbb2d8cb2762, type: 3}
   - name: Cartoon_dizzy_stun1
     clip: {fileID: 8300000, guid: 4fdf60d739155c145bcee62525d45c08, type: 3}
+  - name: highUp
+    clip: {fileID: 8300000, guid: b66715f52f2067e4a84ff531cd3b6215, type: 3}
+  - name: ka_ching
+    clip: {fileID: 8300000, guid: 3ae182f9a76f7254c807bac526197c35, type: 3}
+  - name: earth_rumble
+    clip: {fileID: 8300000, guid: 66f2cc9112289f94caf4de5330633e10, type: 3}
   logFeed: 1
   momentOfTruthRampSeconds: 15
 --- !u!114 &8262284768485154091
@@ -257,26 +364,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 311b2dea5db0e7949816973532876e44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Balls.BallValleyGate
-  balls: 15
-  temper: {x: 0.5, y: 0.75}
-  maxHunters: 1
-  firstShrink: 40
-  shrinkSpan: 150
-  phases: 5
+  ballsPerRound: 5
+  tempers:
+  - {x: 0.35, y: 0.55}
+  - {x: 0.45, y: 0.65}
+  - {x: 0.55, y: 0.8}
+  maxHuntersPerRound: 010000000100000002000000
+  dropInSeconds: 3
+  pocketCandies: 3
+  punchedBallBraking: 1.5
+  punchedBallControlBelow: 2.5
   smallest: 0.5
+  shrinkSeconds: 4
   finaleShrinkSeconds: 6
-  bossPrefab: {fileID: 5024745174123825868, guid: b13714af67e2bd14583d1eb4d4b3b2be,
-    type: 3}
+  candyEvery: 0.3
   bossDelay: 2
-  seedPrefab: {fileID: 3101255149643869238, guid: 23249313e7cb0cf489370b4ecb4416fe,
-    type: 3}
   bossKnock: 9
-  rulesTitle: BALL VALLEY
-  rulesBody: 'Punch all 15 balls into the holes.
-
-    Don''t fall in!'
-  hudPlace: {x: 1.8, y: 0.55}
-  hudSize: 0.9
 --- !u!114 &1423455340067669913
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -311,11 +414,16 @@ MonoBehaviour:
   secondsBack: 2
   fallDamageEvent: FallDamage
   keepFromRim: 1.5
+  bossThrowGrace: 2.5
+  shrinkPushFromRim: 0.6
   fallSounds:
   - {fileID: 8300000, guid: 3358e64fa152195488f438ce5256cc06, type: 3}
   - {fileID: 8300000, guid: 4a1621518813a244bb355d4b0444a86b, type: 3}
   fallVolume: 0.9
-  fistsTogether: 0.3
+  fistsClose: 0.16
+  chargeBelowEyes: 0.22
+  pullApart: 0.32
+  releaseSeconds: 0.6
   chargeSeconds: 1
   dashSpeed: 12
   dashSeconds: 0.35
@@ -323,3 +431,56 @@ MonoBehaviour:
   dashKnockSpeed: 16
   dashReach: 0.8
   dashBossDamage: 10
+--- !u!114 &3904428590821533855
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7863378838843977471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42835ec96d2d2754c852ddb2d4b4a68a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Gates.GateRun
+  cardTitle: RUN AND SNOOKER
+  cardLine: Punch the balls into the holes.
+  cardCloseLine: Pull a trigger to play
+  cardDelay: 2.5
+  startChest: {fileID: 1466195575395978692, guid: 86bd80f99c2ca804588745e9eaf064cc,
+    type: 3}
+  roundChests:
+  - {fileID: 5004806074365477220, guid: 0d672aeee51ec0f4384a940ebac911cb, type: 3}
+  - {fileID: 8518339275496821638, guid: 1cfdbf71c85721e4daaa8295b4b11fab, type: 3}
+  - {fileID: 1076085778901865882, guid: 671fc05d320fdd0478535c70a7973b98, type: 3}
+  gearBools:
+  - Bracer_Gear
+  - Chest_Gear
+  - Head_Gear
+  - Shield_Gear
+  startChestDelay: 1
+  chestAhead: 1.4
+  chestWaitMax: 25
+  chestPuff: {fileID: 431296081563789977, guid: 7d85674d137626445accce4cef7fe159,
+    type: 3}
+  chestPuffScale: 0.12
+  roundSeconds:
+  - 120
+  - 120
+  - 120
+  roundBreak: 3
+  roundLine: ROUND {0}/{1}   {2}
+  roundFlash: ROUND {0}
+  showTimeUnder: 30
+  finaleBoss: {fileID: 6678587135689816530, guid: 7313d3483956b83418cb07926e5de589,
+    type: 3}
+  finaleSeed: {fileID: 3101255149643869238, guid: 23249313e7cb0cf489370b4ecb4416fe,
+    type: 3}
+  finaleFlash: BREAK IT!
+  finaleLine: GIANT PUMPKIN {0}
+  hudPlace: {x: 1.8, y: 0.55}
+  hudSize: 2.2
+  hudColour: {r: 1, g: 0.85, b: 0.35, a: 1}
+  roundStartSound: {fileID: 0}
+  roundWonSound: {fileID: 0}
+  soundVolume: 0.8

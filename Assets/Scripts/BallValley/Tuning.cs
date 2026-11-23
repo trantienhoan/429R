@@ -133,6 +133,12 @@ namespace Balls
         [Tooltip("Extra braking (m/s^2) on your own ball after the launch burst, so you recover quickly.")]
         public float shotFriction = 5f;
 
+        [Tooltip("429R gate 3: a knocked ball's braking (m/s^2) while it rolls out; below 0 = Shot Friction (BALLS). Lower = " +
+                 "a punched ball rolls further (a real snooker shot) before its bot steers it again.")]
+        public float knockFriction = -1f;
+        [Tooltip("429R gate 3: a knocked ball is back in its bot's control below this speed; below 0 = Shot Recover Speed (BALLS).")]
+        public float knockRecoverSpeed = -1f;
+
         [Header("Knock (ball hit by a special move)")]
         // (A struck ball takes the push like a real snooker ball - into an equal ball on a full hit, nearly all your
         // speed; your swallowed tail's weight makes it more - carries the shot's burst on, then brakes like a shot.)

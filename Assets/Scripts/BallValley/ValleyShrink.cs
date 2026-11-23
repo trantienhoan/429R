@@ -14,7 +14,27 @@ namespace Balls
     public partial class Valley
     {
         // Palette (BALLS_Palette.png) spots the map model uses: the two lawn stripes and the dark rock of the pits.
-        static readonly Vector2 StripeA = new Vector2(0.094f, 0.938f), StripeB = new Vector2(0.031f, 0.938f), PitRock = new Vector2(0.28f, 0.81f);
+        // 429R: or the kit's palette (BallValley_Palette.png, 32 swatches of 32 px, dark at the bottom: moss, moss_dark,
+        // earth are columns 0, 1 and 6 in Exports/Gates/gate3/tools/ballvalley_kit.py), see UsePaletteSpots.
+        static Vector2 StripeA = new Vector2(0.094f, 0.938f), StripeB = new Vector2(0.031f, 0.938f), PitRock = new Vector2(0.28f, 0.81f);
+
+        /// <summary>429R: the lawn's and the cliffs' colour spots in the kit's palette (true) or BALLS' (false).</summary>
+        static void UsePaletteSpots(bool kit)
+        {
+            if (kit)
+            {
+                const float col = 1f / 32f;
+                StripeA = new Vector2(col * 0.5f, 0.62f);
+                StripeB = new Vector2(col * 1.5f, 0.62f);
+                PitRock = new Vector2(col * 6.5f, 0.35f);
+            }
+            else
+            {
+                StripeA = new Vector2(0.094f, 0.938f);
+                StripeB = new Vector2(0.031f, 0.938f);
+                PitRock = new Vector2(0.28f, 0.81f);
+            }
+        }
         const float BallsStripeWidth = 10f;   // the lawn stripes, as modelled
         static float StripeWidth = BallsStripeWidth;   // 429R: set by Build for this valley's size (the static helpers use it)
         const float ChasmDepth = 30f;
@@ -68,7 +88,7 @@ namespace Balls
             madeMeshes.Add(fieldMesh);   // 429R
             fieldMesh.MarkDynamic();
             field.AddComponent<MeshFilter>().sharedMesh = fieldMesh;
-            field.AddComponent<MeshRenderer>().sharedMaterial = Gfx.PaletteMaterial();
+            field.AddComponent<MeshRenderer>().sharedMaterial = OwnMaterial;   // 429R: the kit's palette when it's on
             RebuildField();
         }
 
@@ -78,7 +98,9 @@ namespace Balls
             // 429R: split at the model's own size (BALLS' full-size mouths: the map isn't scaled yet), then each hole is
             // sized to this valley's caves (Tuning.HoleScale / MiddleHoleScale), its opening and edges measured first.
             var design = new Tuning { halfX = Tuning.BallsHalfX, halfZ = Tuning.BallsHalfZ };
-            var meshes = SplitHoleMeshes(pockets, transform, design);
+            // 429R: the kit's holes (already at this valley's size, each turned to its own corner or side), else BALLS'.
+            var kitMeshes = KitHoleMeshes();
+            var meshes = kitMeshes ?? SplitHoleMeshes(pockets, transform, design);
             foreach (var mf in pockets) Destroy(mf.gameObject);
             for (int c = 0; c < 6; c++)
             {
@@ -88,9 +110,9 @@ namespace Balls
                 holes[c] = go.transform;
                 if (!meshes[c]) continue;
                 madeMeshes.Add(meshes[c]);   // 429R
-                float s = caves[c].corner ? t.HoleScale : t.MiddleHoleScale;   // 429R: the hole model's size here
+                float s = kitMeshes != null ? 1f : caves[c].corner ? t.HoleScale : t.MiddleHoleScale;   // 429R: the hole model's size here
                 go.AddComponent<MeshFilter>().sharedMesh = meshes[c];
-                go.AddComponent<MeshRenderer>().sharedMaterial = Gfx.PaletteMaterial();
+                go.AddComponent<MeshRenderer>().sharedMaterial = OwnMaterial;
                 var opening = FindOpening(meshes[c]);   // the lawn and the floor get cut out there
                 caves[c].openingOffset = opening.offset * s;   // 429R: * s
                 caves[c].openingRadius = opening.radius * s;
@@ -137,6 +159,55 @@ namespace Balls
                 box.sharedMaterial = Gfx.WallPhys;
                 BallPhysics.RegisterPocketBack(box);   // dead: a ball that hits it drops instead of bouncing back out
             }
+        }
+
+        /// <summary>
+        /// 429R: the kit's hole meshes, one per cave, relative to its mouth (the kit piece's pivot is the lawn's corner, or
+        /// the middle of its long edge): each turned so its collar (the bulk of it, round the back of its pit) points out of
+        /// the valley there. Null when the kit isn't on or its holes can't be read (then BALLS' pockets are used).
+        /// </summary>
+        Mesh[] KitHoleMeshes()
+        {
+            var kit = Kit;
+            if (!kit || !kit.kitHoleCorner || !kit.kitHoleSide) return null;
+            var meshes = new Mesh[6];
+            for (int c = 0; c < 6; c++)
+            {
+                var piece = caves[c].corner ? kit.kitHoleCorner : kit.kitHoleSide;
+                var mf = piece.GetComponentInChildren<MeshFilter>();
+                var src = mf ? mf.sharedMesh : null;
+                if (!src || !src.isReadable)
+                {
+                    Debug.LogWarning("[BallValley] The kit's hole " + piece.name + " has no readable mesh (Read/Write off?): BALLS' holes are used.", this);
+                    return null;
+                }
+                var piv = mf.transform;   // (the mesh as placed in its prefab)
+                var toPiece = piece.transform.worldToLocalMatrix * piv.localToWorldMatrix;
+                var bulk = src.bounds.center;
+                bulk = toPiece.MultiplyPoint3x4(bulk);
+                bulk.y = 0f;
+                var outward = caves[c].outward;
+                outward.y = 0f;
+                float yaw = bulk.sqrMagnitude > 0.0001f ? Vector3.SignedAngle(bulk.normalized, outward.normalized, Vector3.up) : 0f;
+                var turn = Matrix4x4.Rotate(Quaternion.AngleAxis(yaw, Vector3.up)) * toPiece;
+                var vs = src.vertices;
+                var ns = src.normals;
+                for (int i = 0; i < vs.Length; i++)
+                {
+                    vs[i] = turn.MultiplyPoint3x4(vs[i]);
+                    if (i < ns.Length) ns[i] = turn.MultiplyVector(ns[i]).normalized;
+                }
+                var mesh = new Mesh { name = "Hole " + c + " (kit)" };
+                if (vs.Length > 65000) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+                mesh.vertices = vs;
+                if (ns.Length == vs.Length) mesh.normals = ns;
+                mesh.uv = src.uv;
+                mesh.triangles = src.triangles;
+                if (ns.Length != vs.Length) mesh.RecalculateNormals();
+                mesh.RecalculateBounds();
+                meshes[c] = mesh;
+            }
+            return meshes;
         }
 
         const float RockTuck = 0.25f;   // the first border rock tucks this far into the hole's collar: no seam
@@ -384,7 +455,7 @@ namespace Balls
             var chasm = mb.ToMesh("Chasm");
             madeMeshes.Add(chasm);   // 429R
             go.AddComponent<MeshFilter>().sharedMesh = chasm;
-            go.AddComponent<MeshRenderer>().sharedMaterial = Gfx.PaletteMaterial();
+            go.AddComponent<MeshRenderer>().sharedMaterial = OwnMaterial;   // 429R: the kit's palette when it's on
         }
 
         readonly List<Wall> lipWalls = new List<Wall>();

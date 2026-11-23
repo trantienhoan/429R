@@ -1,46 +1,49 @@
 using System.Collections;
 using System.Collections.Generic;
+using Game.Bonus;
 using Game.Enemies;
-using Game.Inventory;
+using Game.Gates;
 using Game.Locomotion;
 using Game.PlayGround;
-using TMPro;
 using Unity.XR.CoreUtils;
 using UnityEngine;
-using UnityEngine.AI;
 using UnityEngine.Events;
 using UnityEngine.XR.Interaction.Toolkit.Locomotion.Movement;
 
 namespace Game.Bowling
 {
     /// <summary>
-    /// Gate 2, "Strike the Slimes" (2026-11-08): the player stands on a small dirt island in the middle of an X of 4 long
-    /// lanes. Punch the start chest and eat its seed: vines grow bowling pumpkins and a Giant Flying Slime comes down and
-    /// circles overhead. It flies to a lane (which lights up), poops a 6-pin rack of slime pins that grow fat and then hatch
-    /// small flying slimes. A strike raises that slime's streak; 3 in a row hurts it (phase 1 and 2: it splits in two;
-    /// phase 3: it loses a wing). 6 racks without being hurt and it rains 6 divers on the player instead (also its hurt).
-    /// Each phase end drops a chest (more balls). When all 4 have lost a wing, each drops onto a lane as a big ground slime;
-    /// beat them and The_Seed shows, then GAMESTAGES brings up the rooftop and the player is put near the Lid, in the black.
-    /// While it runs (until the showdown): thumbstick and arm-swing moving are off, a fall goes back to the centre, the fog
-    /// is lifted. Made by GAMESTAGES (Path 2 ON) under Currently Spawned Stuffs at [LevelManager].
-    /// Tools > 429 Game > Bowling > Set Up Bowling Arena builds it (Prefabs/Bowling/Bowling_Arena).
+    /// Gate 2, "Bowl and Fight" (2026-11-08; on the shared gate flow, Gate Run, since 2026-11-23). The player stands on a
+    /// small dirt island in the middle of an X of 4 long lanes. Gate Run does what every gate does (the card, the start
+    /// chest and the 3 round chests, the rounds' time limits, the HUD line, the hand-off to the finale); this plays the
+    /// bowling (Gate Run calls it through <see cref="IGateGame"/>):
+    /// - the start chest's seed: vines grow bowling pumpkins and a Giant Flying Slime comes down from the sky;
+    /// - a slime flies to a lane (it lights up) and poops a 6-pin rack of slime pins; the pins grow fat and hatch small
+    ///   flying slimes (fight them). A strike counts for that rack's slime; Round Strikes strikes hurt it (they add up);
+    ///   6 racks without being hurt and it rains divers on the player instead (that also counts as its hurt);
+    /// - round 1: one slime (3 strikes), hurt it splits in two; round 2: the two (2 strikes each), each splits; round 3:
+    ///   four small slimes, one strike pops each. Every chest seed grows more vines (more balls);
+    /// - the finale: the giant pumpkin (Gate Run's Finale Boss, through Gate Boss Finale) drops on a lane's far end, bowls
+    ///   itself down the lane at the player, stops dizzy at the dirt's edge, leaps to another lane; punch it or bowl at it.
+    ///   Broken: its candies on the dirt, then Gate Exit (The_Seed, the rooftop).
+    /// While it runs (until the giant pumpkin): thumbstick and arm-swing moving are off, a fall goes back to the centre, the
+    /// fog is lifted. Made by GAMESTAGES (Path 2 ON) under Currently Spawned Stuffs at [LevelManager]. Built by
+    /// Tools > 429 Game > Bowling > Set Up Bowling Arena; Gate 2: Use Gate Run sets its Gate Run up.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class BowlingStage : MonoBehaviour
+    public sealed class BowlingStage : MonoBehaviour, IGateGame
     {
         [Header("Arena")]
         [Tooltip("The 4 lanes (lane 0 is in front of the player at the start).")]
         [SerializeField] private BowlingLane[] lanes = System.Array.Empty<BowlingLane>();
         [Tooltip("The middle of the dirt (a fall puts the player back here). Its X/Z run along the lanes (the X frame).")]
         [SerializeField] private Transform centre;
-        [Tooltip("Half the dirt's side (metres): the seed is kept this far from the centre, less a little.")]
+        [Tooltip("Half the dirt's side (metres): chests, the seed and candies are kept this far from the centre, less a little.")]
         [SerializeField] private float padHalfSize = 2.5f;
         [Tooltip("Grows the bowling pumpkins on the vine tips.")]
         [SerializeField] private BowlingBallSupply balls;
-        [Tooltip("The vines that pop out of the dirt with each seed.")]
+        [Tooltip("The vines that pop out of the dirt with each chest seed.")]
         [SerializeField] private VineGrow vines;
-        [Tooltip("The rules sign over lane 0 (later the win sign).")]
-        [SerializeField] private TMP_Text rulesSign;
         [Tooltip("Where the pin sets go (the arena's \"Pins\" child).")]
         [SerializeField] private Transform pinsRoot;
 
@@ -51,41 +54,30 @@ namespace Game.Bowling
         [SerializeField] private SlimePin pinPrefab;
         [Tooltip("What a full-grown pin hatches into (Prefabs/Bowling/Slime_Pin_Flyer).")]
         [SerializeField] private GameObject flyerPrefab;
-        [Tooltip("The 7th poop's divers (Prefabs/Enemies/Daruma_Bomber).")]
+        [Tooltip("The divers a slime rains after 6 racks unhurt (Prefabs/Enemies/Daruma_Bomber).")]
         [SerializeField] private GameObject diverPrefab;
-        [Tooltip("The showdown ground slimes: Red, Blue, Green, Yellow.")]
-        [SerializeField] private GameObject[] showdownPrefabs = new GameObject[4];
-        [Tooltip("For each phase-3 slime (Red, Yellow, Blue, Green), which showdown prefab it becomes.")]
-        [SerializeField] private int[] showdownOf = { 0, 3, 1, 2 };
-        [Tooltip("Shown in front of the player on a win (Items/Chest/The_Seed).")]
-        [SerializeField] private GameObject seedPrefab;
         [Tooltip("The puff (Smoke_Flash_Small_Puff).")]
         [SerializeField] private GameObject puff;
+        [Tooltip("Only without a Gate Run (a test): what the giant pumpkin leaves (Gate Run's Finale Seed otherwise).")]
+        [SerializeField] private GameObject seedPrefab;
 
-        [Header("Chests")]
-        [Tooltip("Dropped at the start (Treasure_Chest_and_Seed_Bracer): its seed brings the slime.")]
-        [SerializeField] private GameObject startChest;
-        [Tooltip("Dropped at the end of phase 1, 2 and 3 (PG chests: Chest, Head, Shield).")]
-        [SerializeField] private GameObject[] phaseChests = new GameObject[3];
-        [Tooltip("GAMESTAGES bools the start chest and the 3 phase chests' seeds set.")]
-        [SerializeField] private string[] gearBools = { "Bracer_Gear", "Chest_Gear", "Head_Gear", "Shield_Gear" };
-        [Tooltip("Seconds after arriving before the start chest drops.")]
-        [SerializeField] private float startChestDelay = 1f;
-        [Tooltip("A chest drops this far in front of the head (metres), kept on the dirt.")]
+        [Header("Where Gate Run drops the chests (on the dirt)")]
+        [Tooltip("This far in front of the head (metres), kept on the dirt, clear of balls and open sprouts.")]
         [SerializeField] private float chestAhead = 1.2f;
-        [Tooltip("A chest is kept this close to the centre (X frame, metres).")]
+        [Tooltip("Kept this close to the centre (X frame, metres).")]
         [SerializeField] private float chestKeep = 1.9f;
-        [Tooltip("A chest keeps this far from balls and open sprouts (metres).")]
+        [Tooltip("Kept this far from balls and open sprouts (metres).")]
         [SerializeField] private float chestClear = 0.5f;
-        [SerializeField] private float chestPuffScale = 0.12f;
 
-        [Header("Phases (1, 2, 3)")]
+        [Header("Rounds (1, 2, 3)")]
+        [Tooltip("Strikes on one slime's racks that hurt it (they add up): one slime, then two, then four small ones.")]
+        [SerializeField] private int[] roundStrikes = { 3, 2, 1 };
         [Tooltip("The slimes' root scale.")]
         [SerializeField] private float[] sizes = { 7f, 5.5f, 4.5f };
         [Tooltip("Fly speed (metres a second).")]
         [SerializeField] private float[] speeds = { 6f, 6.5f, 7f };
-        [Tooltip("Least seconds between one slime's poops.")]
-        [SerializeField] private float[] poopEvery = { 12f, 14f, 18f };
+        [Tooltip("Least seconds between one slime's poops (2026-11-23: was 12/14/18; round 1 then had a rack every 16 s).")]
+        [SerializeField] private float[] poopEvery = { 8f, 12f, 16f };
         [Tooltip("Seconds a pin takes from landing to full fat (then it hatches).")]
         [SerializeField] private float[] growSeconds = { 24f, 22f, 20f };
         [Tooltip("At most this many of the stage's flyers alive.")]
@@ -94,7 +86,7 @@ namespace Game.Bowling
         [SerializeField] private float[] pitches = { 0.55f, 0.65f, 0.75f };
         [Tooltip("Wing loop volume.")]
         [SerializeField] private float[] volumes = { 0.8f, 0.65f, 0.5f };
-        [Tooltip("Colours, phase after phase: 1 (phase 1), 2 (phase 2), 4 (phase 3). Slime i splits into 2i and 2i+1.")]
+        [Tooltip("Colours, round after round: 1 (round 1), 2 (round 2), 4 (round 3). Slime i splits into 2i and 2i+1.")]
         [SerializeField] private Color[] colours =
         {
             new(0.45f, 0.85f, 0.25f),
@@ -103,10 +95,9 @@ namespace Game.Bowling
         };
 
         [Header("Rules")]
-        [Tooltip("Strikes in a row on one slime's racks that hurt it.")]
-        [Min(1)]
-        [SerializeField] private int strikesToHit = 3;
-        [Tooltip("Racks a slime poops without being hurt; the next time it rains divers instead.")]
+        [Tooltip("Strikes count up and a miss doesn't reset them (user, 2026-11-18: \"make it simple\"). Off: in a row.")]
+        [SerializeField] private bool strikesAddUp = true;
+        [Tooltip("Racks a slime poops without being hurt; the next time it rains divers instead (and that counts as its hurt).")]
         [Min(1)]
         [SerializeField] private int poopsBeforeDive = 6;
         [Tooltip("Divers it rains, and the seconds between them.")]
@@ -115,6 +106,11 @@ namespace Game.Bowling
         [SerializeField] private float diverGap = 0.3f;
         [Tooltip("A bowl is steered to a lane whose direction is this close (degrees).")]
         [SerializeField] private float aimAngle = 25f;
+        [Tooltip("A bowl whose line to the head pin crosses the lane's mouth further than this from its middle (metres; the " +
+                 "rails are 0.9 m out, the ball 0.16 m round) would roll off the dirt beside the lane: it's steered into the " +
+                 "lane instead, at a point on its middle line Mouth Lead metres past the mouth (or past the ball).")]
+        [Min(0.1f)] [SerializeField] private float mouthSafe = 0.6f;
+        [Min(0.5f)] [SerializeField] private float mouthLead = 1.0f;
         [Tooltip("Seconds a pin flies from the slime to its slot, and between pins.")]
         [SerializeField] private float pinFlightSeconds = 0.7f;
         [SerializeField] private float pinStagger = 0.1f;
@@ -131,86 +127,58 @@ namespace Game.Bowling
         [SerializeField] private float entranceHeight = 30f;
         [SerializeField] private float entranceAhead = 8f;
         [Tooltip("Seconds of its descent, and laps it flies over the head before its first poop.")]
-        [SerializeField] private float entranceSeconds = 6f;
+        [SerializeField] private float entranceSeconds = 5f;
         [Min(0)]
-        [SerializeField] private int entranceLaps = 2;
-        [Tooltip("Seconds after the start seed before the slime comes (the balls grow meanwhile).")]
-        [SerializeField] private float slimeDelay = 4f;
-        [Tooltip("Seconds after the start seed before the balls start growing.")]
+        [SerializeField] private int entranceLaps = 0;
+        [Tooltip("Seconds after the start chest's seed before the slime comes down (the balls grow meanwhile).")]
+        [SerializeField] private float slimeDelay = 1f;
+        [Tooltip("Seconds after the start chest's seed before the balls start growing.")]
         [SerializeField] private float ballsDelay = 0.6f;
         [Tooltip("A slime with nothing to do this long goes back to circling the head.")]
         [SerializeField] private float idleReturnSeconds = 4f;
-        [Tooltip("Strain seconds: before a rack, before the divers, before the showdown drop.")]
+        [Tooltip("Strain seconds: before a rack, before the divers.")]
         [SerializeField] private float poopStrain = 0.6f;
         [SerializeField] private float diveStrain = 0.8f;
-        [SerializeField] private float dropStrain = 1f;
-        [Tooltip("Seconds between phases (the slimes circle).")]
-        [SerializeField] private float breatherSeconds = 5f;
-        [Tooltip("Seconds after the phase-3 chest before the showdown.")]
-        [SerializeField] private float finaleWait = 1.5f;
 
-        [Header("Split")]
-        [Tooltip("Seconds from the bonk to the split.")]
+        [Header("Hurt")]
+        [Tooltip("Seconds from the bonk to the split (rounds 1 and 2) or the pop (round 3).")]
         [SerializeField] private float splitDelay = 0.4f;
         [Tooltip("The two halves grow from this share over these seconds, flung apart this fast (m/s).")]
         [SerializeField] private float splitGrowFrom = 0.6f;
         [SerializeField] private float splitGrowSeconds = 0.5f;
         [SerializeField] private float splitFling = 2f;
 
-        [Header("Showdown")]
-        [Tooltip("Seconds a slime falls onto its lane, and between drops.")]
-        [SerializeField] private float dropSeconds = 0.9f;
-        [SerializeField] private float dropGap = 0.6f;
-        [Tooltip("Seconds after the last ground slime has landed before they all set off together.")]
-        [SerializeField] private float holdOffBase = 0.5f;
-        [Tooltip("Unused: the ground slimes all set off together once the last has landed (their speeds space them).")]
-        [SerializeField] private float holdOffStep = 1f;
-
-        [Header("Signs, look and sounds")]
-        [TextArea]
-        [SerializeField] private string rulesText = "STRIKE THE SLIMES\n<size=80%>3 strikes in a row hurts one</size>";
-        [TextArea]
-        [SerializeField] private string winText = "YOU WIN!\n<size=80%>Eat the seed</size>";
-        [Tooltip("The rules sign hides after the first strike or this many seconds.")]
-        [SerializeField] private float rulesSeconds = 25f;
+        [Header("Look")]
         [Tooltip("While the stage runs, the fog starts and ends this far (metres).")]
         [SerializeField] private Vector2 fog = new(14f, 38f);
+        [Tooltip("While the stage runs the fog takes this colour (the house's is near black: a dark band at the horizon); " +
+                 "given back with the fog.")]
+        [SerializeField] private bool tintFog = true;
+        [SerializeField] private Color fogColour = new(0.16f, 0.1f, 0.25f);
 
-        [Header("After a win: the seed and the rooftop")]
-        [Tooltip("Not eaten after this many seconds: it's eaten for them.")]
-        [Min(1f)]
-        [SerializeField] private float seedSeconds = 20f;
-        [Tooltip("Seconds in the black waiting for the rooftop before the view comes back (with a warning; it keeps waiting).")]
-        [Min(1f)]
-        [SerializeField] private float roofWaitSeconds = 20f;
-        [Tooltip("The player is put this far from the Lid (metres), facing it.")]
-        [Min(0.5f)]
-        [SerializeField] private float lidStandOff = 4f;
-
-        [Header("The giant pumpkin (user, 2026-11-18: gates end like gate 3)")]
-        [Tooltip("On: after Boss After Phase's chest the slimes fly off and the giant pumpkin (Finale Boss) drops onto a " +
-                 "lane's far end: it bowls itself down the lane at the player, stops dizzy at the dirt's edge (punch it, or " +
-                 "bowl at it), then leaps to another lane. Broken, it's the win: The_Seed, then the rooftop's tree defence. " +
-                 "Off: phase 3 and the showdown, as before.")]
-        [SerializeField] private bool pumpkinFinale = true;
-        [Tooltip("Prefabs/Gates/Pumpkin_Ball_Boss.")]
-        [SerializeField] private GameObject finaleBoss;
-        [Tooltip("It comes after this phase's chest (1 to 3).")]
-        [Range(1, 3)] [SerializeField] private int bossAfterPhase = 2;
+        [Header("The giant pumpkin (Gate Run's Finale Boss)")]
+        [Tooltip("Seconds after the finale starts before it drops onto a lane's far end.")]
+        [Min(0f)] [SerializeField] private float finaleDelay = 1.5f;
         [Tooltip("Its size here (metres): the lanes are 2 m wide.")]
         [Min(0.5f)] [SerializeField] private float finaleRadius = 1.3f;
         [Tooltip("Its health here (the prefab's own if 0).")]
         [Min(0f)] [SerializeField] private float finaleHealth = 100f;
-        [Tooltip("Strikes count up and a miss doesn't reset them (user, 2026-11-18: \"make it simple\"). Off: Strikes To " +
-                 "Hit in a row, as before.")]
-        [SerializeField] private bool strikesAddUp = true;
+        [Tooltip("Bowl at the giant pumpkin: a bowling ball and it meeting at least Ball Boss Speed (metres a second; it " +
+                 "rolled into it, or it ran over a ball in its way) hurts it by Ball Boss Damage (twice while it's dizzy), on " +
+                 "top of what the hit itself does (a ball let go less than 2.5 s ago counts as the player's throw: 1, 2 " +
+                 "dizzy). Play test 2026-11-23: a ball alone did 2 to its 100 health.")]
+        [Min(0f)] [SerializeField] private float ballBossSpeed = 3f;
+        [Min(0f)] [SerializeField] private float ballBossDamage = 4f;
+
+        [Tooltip("Only without a Gate Run (a test): the giant pumpkin (Gate Run's Finale Boss otherwise).")]
+        [SerializeField] private GameObject finaleBoss;
 
         [Header("Hooks")]
         [Tooltip("A lane lit (its index).")]
         [SerializeField] private UnityEvent<int> onLaneLit = new();
-        [Tooltip("A phase started (1..3, 4 = showdown).")]
+        [Tooltip("A round started (1..3, 4 = the giant pumpkin).")]
         [SerializeField] private UnityEvent<int> onPhase = new();
-        [Tooltip("The stage won (before the seed shows).")]
+        [Tooltip("The stage won (the giant pumpkin broke).")]
         [SerializeField] private UnityEvent onWon = new();
 
         /// <summary>The stage being played (only one at a time).</summary>
@@ -219,7 +187,7 @@ namespace Game.Bowling
         /// <summary>Raised when it's over: won (the player is on the rooftop), or not (cleared away, e.g. Game Over).</summary>
         public static event System.Action<BowlingStage, bool> Ended;
 
-        /// <summary>0 waiting for the start seed, 1..3 the phases, 4 the showdown, 5 won.</summary>
+        /// <summary>0 before round 1, 1..3 the rounds, 4 the giant pumpkin, 5 won.</summary>
         public int Phase { get; private set; }
 
         public bool Won => won;
@@ -232,72 +200,49 @@ namespace Game.Bowling
         private sealed class Flyer
         {
             public GiantFlyingSlime slime;
-            public int gen;              // the phase it belongs to (1..3)
-            public int slot;             // its place in that phase (colour, what it splits into, its showdown slime)
+            public int gen;              // the round it belongs to (1..3)
+            public int slot;             // its place in that round (colour, what it splits into)
             public int streak, poops;
             public int lastLane = -1;
             public readonly int[] uses = new int[4];
             public float nextPoopAt, retryAt, idleSince;
-            public bool hurt;            // hit this phase (split coming, or a wing gone)
-            public bool acting;          // the stage has it busy (entrance, a rack, the divers, the showdown)
+            public bool hurt;            // hurt this round (a split or a pop coming)
+            public bool acting;          // the stage has it busy (the entrance, a rack, the divers, a split)
             public bool circling;
             public int targetLane = -1;  // the lane it's flying to or pooping on
-            public int ticket;           // goes up on a hit: its jobs stop
+            public int ticket;           // goes up on a hurt: its jobs stop
             public Coroutine job;
         }
 
-        // A chest dropped and the gear bool its seed sets.
-        private sealed class Chest
-        {
-            public GameObject chest;
-            public string gear;
-            public int index;            // 0 start, 1..3 the phases
-            public bool eaten;
-        }
-
+        private GateRun run;
         private XROrigin origin;
         private Transform head;
         private bool started, restored, won, endedSent;
         private readonly Dictionary<ContinuousMoveProvider, bool> moveWas = new();
+        private readonly List<ContinuousMoveProvider> movers = new();
         private float nextMoveCheck;
         private bool lockMoves;
-        private System.Func<Vector3, Vector3, Vector3?> aimFinder;
+        private System.Func<Vector3, Vector3, (Vector3 point, float steer)?> laneAim;
+        private System.Action<Rigidbody, Collision, Vector3> ballHit;
         private Vector3 returnSpot;
         private bool returnSet;
         private float fogStartWas, fogEndWas;
+        private Color fogColourWas;
         private bool fogSet;
-        private bool rulesShowing;
-        private float rulesUntil;
         private int strikes;
 
         private readonly List<Flyer> flyers = new();
         private readonly List<GiantFlyingSlime> slimeList = new();
         private readonly List<PinSet> sets = new();
-        private readonly List<Chest> pendingChests = new();
         private int seedsEaten;
-        private bool ballsBegun;
-        private bool inventoryHooked;
-        private float nextSeedCheck;
-        private bool phaseEnding;
-        private Coroutine playJob, phaseJob;
+        private bool ballsBegun, entranceStarted, roundOver;
+        private int roundDone;
+        private Coroutine playJob;
         private readonly GiantFlyingSlime[] counterOwner = new GiantFlyingSlime[4];
         private readonly int[] counterStreak = { -1, -1, -1, -1 };
 
-        // The showdown.
-        private bool finaleStarted;
-        private int showdownCount, showdownLanded, dropTurn;
-        // The ground slimes landed so far, held until the last one is down.
-        private readonly List<SpiderBrain> showdownBrains = new();
-        private float nextDropAt, lastLandedAt;
-
         // The player's health (PlayerHealth FSM), for "knocked down".
         private HutongGames.PlayMaker.FsmFloat playerHealth;
-        // GAMESTAGES' bool the seed sets, and its seed FSM's state and event.
-        private const string SeedBool = "The_Seed";
-        private const string SeedWaitState = "Rotate and Wait";
-        private const string SeedEatenEvent = "next";
-        // The item every chest seed gives (the fallback without GAMESTAGES).
-        private const string SeedItem = "Yellow_Seed";
 
         private void Start()
         {
@@ -305,8 +250,8 @@ namespace Game.Bowling
             Running = this;
             started = true;
             EnemyWave.Start(this);
-            aimFinder = FindAim;
-            BowlingRollAssist.AimFinder = aimFinder;
+            laneAim = FindLaneAim;
+            BowlingRollAssist.LaneAim = laneAim;
 
             origin = FindAnyObjectByType<XROrigin>();
             head = origin != null && origin.Camera != null ? origin.Camera.transform : (Camera.main != null ? Camera.main.transform : null);
@@ -319,95 +264,159 @@ namespace Game.Bowling
             FallOutOfWorld.ReturnYaw = lanes.Length > 0 && lanes[0] != null ? Quaternion.LookRotation(lanes[0].Direction).eulerAngles.y : transform.eulerAngles.y + 45f;
             Fog(true);
 
-            // All lanes dark (floors and rails still show), no counters, no sign yet. The vines hide themselves.
+            // All lanes dark (floors and rails still show), no counters. The vines hide themselves.
             foreach (var lane in lanes)
             {
                 if (lane == null) continue;
                 lane.SetLit(false, false);
                 lane.SetCounter(null);
             }
-            if (rulesSign != null) rulesSign.gameObject.SetActive(false);
             Phase = 0;
-            playJob = StartCoroutine(Play());
+            run = GetComponent<GateRun>();
+            if (run != null) run.chestSpot = ChestSpot;
+            else
+            {
+                Debug.LogWarning("[Bowling] No Gate Run on the arena (Tools > 429 Game > Bowling > Gate 2: Use Gate Run): " +
+                                 "the rounds run on their own, without the card, the chests or the HUD line.", this);
+                playJob = StartCoroutine(OnItsOwn());
+            }
         }
 
         private void Update()
         {
             if (!started || restored) return;
-            // The pause menu or a fall may switch a mover back on (not in the showdown: they may walk then).
+            // The pause menu or a fall may switch a mover back on (not in the finale: they may walk then).
             if (lockMoves && Time.unscaledTime >= nextMoveCheck)
             {
                 nextMoveCheck = Time.unscaledTime + 0.5f;
                 MovementOff();
             }
-            if (rulesShowing && !won && (strikes > 0 || Time.time >= rulesUntil))
-            {
-                rulesShowing = false;
-                if (rulesSign != null) rulesSign.gameObject.SetActive(false);
-            }
             if (won) return;
-
-            // The inventory may come up after this; hook it as soon as it's there (seeds without GAMESTAGES).
-            if (!inventoryHooked && PlayerInventory.Instance != null)
-            {
-                PlayerInventory.Instance.Changed += OnInventory;
-                inventoryHooked = true;
-            }
-            if (Time.time >= nextSeedCheck)
-            {
-                nextSeedCheck = Time.time + 0.2f;
-                WatchSeeds();
-            }
-
             Prune();
             var floor = HeadFloor();
             foreach (var f in flyers) if (f.slime != null) f.slime.SetCircleCentre(floor);
-            if (Phase >= 1 && Phase <= 3 && !phaseEnding && !PlayerDown())
+            if (Phase >= 1 && Phase <= 3 && !PlayerDown())
             {
                 // Think never adds or removes slimes (it only starts their jobs).
                 for (int i = 0; i < flyers.Count; i++) Think(flyers[i]);
             }
             UpdateCounters();
-
-            if (Phase == 4 && finaleStarted && showdownLanded >= showdownCount && Time.time >= lastLandedAt + 1f && EnemyWave.Alive(this) == 0)
-                Win();
         }
 
         private void OnDestroy()
         {
-            // Cleared away (Game Over) or done: give everything back. Never moves the player (Game Over has them).
+            // Cleared away (Game Over), or Gate Exit is done with it (the player is on the rooftop): give everything back.
+            // Never moves the player (Game Over or Gate Exit has them).
             Restore();
             if (started && !endedSent)
             {
                 endedSent = true;
-                Ended?.Invoke(this, false);
+                Ended?.Invoke(this, won);
             }
             if (Running == this) Running = null;
         }
 
-        // ------------------------------------------------------------------ the game
+        // ------------------------------------------------------------------ Gate Run (IGateGame)
 
-        // The start chest; its seed (vines, balls); the slime's entrance. Then the slimes run themselves (Think), the
-        // phases end on hits (Phase End), and the showdown ends in Win.
-        private IEnumerator Play()
+        /// <summary>The start chest's seed is eaten (or its wait ran out): the first vines and balls grow and the Giant
+        /// Flying Slime comes down.</summary>
+        public void GateStart(GateRun gateRun)
         {
-            yield return Wait(startChestDelay);
-            if (won) yield break;
-            var start = DropChest(startChest, Gear(0), 0);
-            while (start != null && !start.eaten) yield return null;
-            if (start == null) SeedEaten(new Chest { gear = Gear(0), index = 0 });
-
-            yield return Wait(slimeDelay);
-            if (won || slimePrefab == null)
-            {
-                if (slimePrefab == null) Debug.LogError("[Bowling] No Giant Flying Slime prefab: the stage can't go on.", this);
-                yield break;
-            }
-            ShowRules();
-            yield return Entrance();
+            if (gateRun != null) run = gateRun;
+            if (restored || won) return;
+            GrowMore();
+            StartEntrance();
         }
 
-        // The phase-1 slime comes down from high over lane 0 (louder and louder), then laps the head before its first poop.
+        /// <summary>Round 1, 2 or 3: that round's slimes (1, 2, 4) start pooping; the HUD counts its strikes. From round 2 on
+        /// the last chest's seed is in (or its wait ran out): more vines, more balls.</summary>
+        public void RoundBegin(GateRun gateRun, int round)
+        {
+            if (gateRun != null) run = gateRun;
+            if (restored || won) return;
+            if (round >= 2) GrowMore();
+            StartEntrance();
+            Phase = Mathf.Clamp(round, 1, 3);
+            roundOver = false;
+            roundDone = 0;
+            EnsureSlimes(Phase);
+            int i = 0;
+            foreach (var f in flyers)
+            {
+                if (f.gen != Phase) continue;
+                f.hurt = false;
+                f.streak = 0;
+                f.poops = 0;
+                f.lastLane = -1;
+                System.Array.Clear(f.uses, 0, f.uses.Length);
+                f.nextPoopAt = Time.time + 1f + 1.5f * i;
+                f.retryAt = 0f;
+                f.idleSince = Time.time;
+                i++;
+            }
+            if (run != null)
+            {
+                run.Goal("STRIKES", Need(Phase) * SlimesIn(Phase));
+                run.Progress(0);
+            }
+            onPhase?.Invoke(Phase);
+            Debug.Log("[Bowling] Round " + Phase + ": " + i + " slimes, " + Need(Phase) + " strikes each.", this);
+        }
+
+        /// <summary>The round's time ran out: its slimes still flying are hurt anyway (split or popped), so the next round
+        /// has its slimes; every rack melts.</summary>
+        public void RoundTimeUp(GateRun gateRun, int round)
+        {
+            if (restored || won || round != Phase) return;
+            Debug.Log("[Bowling] Round " + round + " ran out of time: its slimes are hurt anyway.", this);
+            foreach (var f in flyers.ToArray())
+                if (f.gen == Phase && !f.hurt) Hit(f, "time up");
+            MeltAll();
+        }
+
+        /// <summary>Round 3's chest seed is in: the giant pumpkin.</summary>
+        public void FinaleBegin(GateRun gateRun)
+        {
+            if (gateRun != null) run = gateRun;
+            if (restored || won || Phase >= 4) return;
+            PumpkinFinale();
+        }
+
+        // Without a Gate Run (an old arena, a test): the rounds on their time limits, then the finale.
+        private IEnumerator OnItsOwn()
+        {
+            yield return Wait(1f);
+            GateStart(null);
+            for (int r = 1; r <= 3; r++)
+            {
+                yield return Wait(r == 1 ? 0.5f : 3f);
+                RoundBegin(null, r);
+                for (float until = Time.time + 150f; !roundOver && Time.time < until;) yield return null;
+                if (!roundOver) RoundTimeUp(null, r);
+            }
+            FinaleBegin(null);
+        }
+
+        private static readonly int[] SlimesPerRound = { 1, 2, 4 };
+        private static int SlimesIn(int round) => SlimesPerRound[Mathf.Clamp(round, 1, 3) - 1];
+        private int Need(int round) => Mathf.Max(1, Pick(roundStrikes, round, 1));
+
+        // ------------------------------------------------------------------ the game
+
+        private void StartEntrance()
+        {
+            if (entranceStarted) return;
+            entranceStarted = true;
+            if (slimePrefab == null)
+            {
+                Debug.LogError("[Bowling] No Giant Flying Slime prefab: the stage can't go on.", this);
+                return;
+            }
+            playJob = StartCoroutine(Entrance());
+        }
+
+        // The round-1 slime is made at once (high over lane 0, far above the fog), comes down after Slime Delay (louder
+        // and louder), laps the head Entrance Laps times, then goes to its first lane.
         private IEnumerator Entrance()
         {
             var c = CentrePoint();
@@ -419,9 +428,9 @@ namespace Game.Bowling
             slime.Setup(ColourOf(1, 0), Pick(sizes, 1, 7f), Pick(pitches, 1, 0.55f), Pick(volumes, 1, 0.8f));
             var f = AddFlyer(slime, 1, 0);
             f.acting = true;
-            Phase = 1;
-            onPhase?.Invoke(1);
-            Debug.Log("[Bowling] Phase 1: the Giant Flying Slime comes.", this);
+            Debug.Log("[Bowling] The Giant Flying Slime comes.", this);
+            if (slimeDelay > 0f) yield return Wait(slimeDelay);
+            if (slime == null || f.ticket != 0) yield break;
 
             // Its circle over the head, phased so it comes in on its own side (the circle's phase runs with time).
             var feet = HeadFloor();
@@ -444,6 +453,27 @@ namespace Game.Bowling
             f.acting = false;
             f.nextPoopAt = Time.time;
             f.idleSince = Time.time;
+        }
+
+        // The round's slimes are all there (1, 2, 4): any missing (gone without a split, a test) is made over the head.
+        private void EnsureSlimes(int round)
+        {
+            if (slimePrefab == null) return;
+            int n = SlimesIn(round);
+            var have = new bool[n];
+            foreach (var f in flyers)
+                if (f.slime != null && f.gen == round && f.slot >= 0 && f.slot < n) have[f.slot] = true;
+            for (int slot = 0; slot < n; slot++)
+            {
+                if (have[slot]) continue;
+                var slime = Instantiate(slimePrefab, CirclePoint(slot, n), Quaternion.identity, transform);
+                slime.Setup(ColourOf(round, slot), Pick(sizes, round, 5f), Pick(pitches, round, 0.65f), Pick(volumes, round, 0.65f));
+                slime.GrowIn(splitGrowFrom, splitGrowSeconds, Vector3.zero);
+                AddFlyer(slime, round, slot);
+                Debug.Log("[Bowling] Round " + round + " was missing slime " + slot + ": made over the head.", this);
+            }
+            RefreshSlimes();
+            Respace();
         }
 
         // One slime's turn (every frame while it's free): poop on a free lane, rain divers, or circle.
@@ -471,7 +501,7 @@ namespace Game.Bowling
             f.job = StartCoroutine(PoopJob(f, k));
         }
 
-        // A free lane that isn't its last one: the one it used least this phase, then the one nearest the player's facing.
+        // A free lane that isn't its last one: the one it used least this round, then the one nearest the player's facing.
         private int PickLane(Flyer f)
         {
             int best = -1, bestUses = int.MaxValue;
@@ -577,7 +607,7 @@ namespace Game.Bowling
             f.nextPoopAt = Time.time + Pick(poopEvery, Phase, 12f);
         }
 
-        // The 7th poop: to its circle place over the head, strain, 6 divers; that's its hurt.
+        // The 7th poop: to its circle place over the head, strain, the divers; that's its hurt.
         private IEnumerator DiveJob(Flyer f)
         {
             f.acting = true;
@@ -640,12 +670,16 @@ namespace Game.Bowling
                 strikes++;
                 if (owner == null || owner.hurt || owner.gen != Phase) return;
                 owner.streak++;
-                Debug.Log("[Bowling] Strike on lane " + set.Lane + ": " + owner.slime.name + " streak " + owner.streak + "/" + strikesToHit + ".", this);
-                if (owner.streak >= strikesToHit) Hit(owner, strikesToHit + " strikes");
+                roundDone++;
+                ReportProgress();
+                Debug.Log("[Bowling] Strike on lane " + set.Lane + ": " + owner.slime.name + " " + owner.streak + "/" + Need(owner.gen) + ".", this);
+                if (owner.streak >= Need(owner.gen)) Hit(owner, Need(owner.gen) + " strikes");
             }
-            else if (owner != null && !strikesAddUp)
+            else if (owner != null && !strikesAddUp && !owner.hurt && owner.gen == Phase)
             {
+                roundDone -= owner.streak;
                 owner.streak = 0;
+                ReportProgress();
             }
         }
 
@@ -657,33 +691,36 @@ namespace Game.Bowling
             sets.Remove(set);
         }
 
-        // A slime is hurt: bonk, its racks melt; phase 1/2 it splits in two (they wait for the next phase), phase 3 it
-        // loses a wing. When every slime of the phase is hurt, the phase ends.
+        private void ReportProgress()
+        {
+            if (run != null) run.Progress(Mathf.Max(0, roundDone));
+        }
+
+        // A slime is hurt: bonk, its racks melt; rounds 1 and 2 it splits in two (they wait for the next round), round 3 it
+        // pops. Hurt any other way than by strikes (divers, time up), its missing strikes count on the HUD. When every slime
+        // of the round is hurt, the round is won (Gate Run drops its chest).
         private void Hit(Flyer f, string why)
         {
             if (f == null || f.slime == null || f.hurt || won || restored || f.gen != Phase) return;
+            int need = Need(f.gen);
+            if (f.streak < need)
+            {
+                roundDone += need - f.streak;
+                ReportProgress();
+            }
             f.hurt = true;
             f.ticket++;
             if (f.job != null) StopCoroutine(f.job);
             f.job = null;
-            f.acting = false;
             f.targetLane = -1;
-            Debug.Log("[Bowling] " + f.slime.name + " hurt (" + why + ") in phase " + Phase + ".", this);
+            Debug.Log("[Bowling] " + f.slime.name + " hurt (" + why + ") in round " + Phase + ".", this);
             f.slime.Bonk(head != null ? head.position : CentrePoint());
             MeltSetsOf(f.slime);
             f.streak = 0;
             f.poops = 0;
-            if (f.gen < 3)
-            {
-                f.acting = true;
-                StartCoroutine(Split(f));
-            }
-            else
-            {
-                f.slime.LoseWing();
-                Circle(f);
-            }
-            CheckPhaseEnd();
+            f.acting = true;
+            StartCoroutine(f.gen < 3 ? Split(f) : Pop(f));
+            CheckRoundOver();
         }
 
         private IEnumerator Split(Flyer f)
@@ -717,7 +754,7 @@ namespace Game.Bowling
                 record.acting = true;
                 made.Add(record);
             }
-            Debug.Log("[Bowling] " + s.name + " split in two (phase " + next + " slimes).", this);
+            Debug.Log("[Bowling] " + s.name + " split in two (round " + next + " slimes).", this);
             yield return new WaitForSeconds(splitGrowSeconds + 0.05f);
             foreach (var record in made)
             {
@@ -727,96 +764,120 @@ namespace Game.Bowling
             Respace();
         }
 
-        private void CheckPhaseEnd()
+        // Round 3: a small slime pops (its burst, gone).
+        private IEnumerator Pop(Flyer f)
         {
-            if (phaseEnding || won || restored || Phase < 1 || Phase > 3) return;
+            yield return new WaitForSeconds(splitDelay);
+            flyers.Remove(f);
+            if (f.slime != null) f.slime.Burst();
+            RefreshSlimes();
+            Respace();
+            CheckRoundOver();
+        }
+
+        // Every slime of the round hurt (or gone): the round is won, its racks melt, Gate Run drops its chest.
+        private void CheckRoundOver()
+        {
+            if (roundOver || won || restored || Phase < 1 || Phase > 3) return;
             foreach (var f in flyers)
                 if (f.slime != null && f.gen == Phase && !f.hurt) return;
-            phaseJob = StartCoroutine(PhaseEnd(Phase));
-        }
-
-        // Every rack melts, the phase's chest drops, a breather, then the next phase (they leave one by one). After phase 3:
-        // the showdown.
-        private IEnumerator PhaseEnd(int p)
-        {
-            phaseEnding = true;
-            Debug.Log("[Bowling] Phase " + p + " over.", this);
+            roundOver = true;
             MeltAll();
-            yield return Wait(0.5f);
-            if (p - 1 < phaseChests.Length) DropChest(phaseChests[p - 1], Gear(p), p);
-            if (pumpkinFinale && finaleBoss != null && p >= bossAfterPhase)
-            {
-                // 2026-11-18: the giant pumpkin instead of the rest (phase 3, the showdown).
-                yield return Wait(finaleWait);
-                yield return PumpkinFinale();
-                yield break;
-            }
-            if (p >= 3)
-            {
-                yield return Wait(finaleWait);
-                yield return Finale();
-                yield break;
-            }
-            yield return Wait(Mathf.Max(0f, breatherSeconds - 0.5f));
-            Phase = p + 1;
-            int i = 0;
-            foreach (var f in flyers)
-            {
-                if (f.gen != Phase) continue;
-                f.hurt = false;
-                f.streak = 0;
-                f.poops = 0;
-                f.lastLane = -1;
-                System.Array.Clear(f.uses, 0, f.uses.Length);
-                f.nextPoopAt = Time.time + 1f + 1.5f * i;
-                f.retryAt = 0f;
-                f.idleSince = Time.time;
-                i++;
-            }
-            phaseEnding = false;
-            onPhase?.Invoke(Phase);
-            Debug.Log("[Bowling] Phase " + Phase + ": " + i + " slimes.", this);
+            Debug.Log("[Bowling] Round " + Phase + " won.", this);
+            if (run != null) run.RoundWon();
         }
 
-        // ------------------------------------------------------------------ the giant pumpkin (2026-11-18)
+        // ------------------------------------------------------------------ the giant pumpkin
 
-        private Game.Gates.PumpkinBallBoss finalePumpkin;
+        private PumpkinBallBoss finalePumpkin;
+        private GateBossFinale finale;
         private int finaleLane = -1;
+        private int finaleCandies;
 
         /// <summary>The giant pumpkin, once it's in (Play tests).</summary>
-        public Game.Gates.PumpkinBallBoss FinalePumpkin => finalePumpkin;
+        public PumpkinBallBoss FinalePumpkin => finalePumpkin;
 
-        // The slimes fly off, every rack melts, and the giant pumpkin drops onto a lane's far end; broken, it's the win.
-        private IEnumerator PumpkinFinale()
+        // The slimes fly off, every rack melts, the last vines grow, the thumbstick comes back (dodge its charges), and the
+        // giant pumpkin drops onto a lane's far end (Gate Run's Finale: Gate Boss Finale, then Gate Exit). The arena rides
+        // with the finale's object: Gate Exit takes that out of Currently Spawned Stuffs (GAMESTAGES' clean-up must not take
+        // the floor from under the player) and removes it once the player is on the rooftop.
+        private void PumpkinFinale()
         {
             Phase = 4;
-            phaseEnding = false;
             onPhase?.Invoke(4);
+            if (playJob != null) StopCoroutine(playJob);
+            playJob = null;
             MeltAll();
-            foreach (var f in flyers) if (f.slime != null) f.slime.Leave();
+            foreach (var f in flyers)
+            {
+                f.ticket++;
+                if (f.job != null) StopCoroutine(f.job);
+                if (f.slime != null) f.slime.Leave();
+            }
             flyers.Clear();
             RefreshSlimes();
             EnemyWave.KillAll(this);
+            GrowMore();
+            lockMoves = false;
+            MovementBack();
             finaleLane = PickFinaleLane(-1);
-            var at = LaneEnd(finaleLane);
-            finalePumpkin = Game.Gates.PumpkinBallBoss.Spawn(finaleBoss, at, transform);
-            if (finalePumpkin == null)
-            {
-                Win();
-                yield break;
-            }
-            finalePumpkin.Resize(finaleRadius);
-            if (finaleHealth > 0f) finalePumpkin.health = finaleHealth;
-            finalePumpkin.arenaCentre = at;
-            finalePumpkin.canBeAt = OnALane;
-            finalePumpkin.chargeAlong = TowardsTheDirt;
-            finalePumpkin.hopTo = () =>
+            var landAt = LaneEnd(finaleLane);
+            finale = run != null
+                ? run.Finale(landAt, finaleDelay, SetUpFinaleBoss, _ => SeedSpot())
+                : GateBossFinale.Begin(finaleBoss, seedPrefab, landAt, finaleDelay, SetUpFinaleBoss, _ => SeedSpot(), "[Bowling]");
+            if (finale != null) transform.SetParent(finale.transform, true);
+            Debug.Log("[Bowling] The giant pumpkin comes to lane " + finaleLane + ".", this);
+        }
+
+        // Gate Boss Finale's set-up: the lanes are its arena (it charges down them at the dirt and leaps between them).
+        private void SetUpFinaleBoss(PumpkinBallBoss boss)
+        {
+            finalePumpkin = boss;
+            boss.Resize(finaleRadius);
+            if (finaleHealth > 0f) boss.health = finaleHealth;
+            // From a lane its candies would fly past the fall edges: it breaks without them and the stage drops them on the
+            // dirt (the same number).
+            finaleCandies = boss.breakCandies;
+            boss.breakCandies = 0;
+            boss.arenaCentre = LaneEnd(finaleLane);
+            boss.canBeAt = OnALane;
+            boss.chargeAlong = TowardsTheDirt;
+            boss.hopTo = () =>
             {
                 finaleLane = PickFinaleLane(finaleLane);
-                return LaneEnd(finaleLane);
+                var end = LaneEnd(finaleLane);
+                boss.arenaCentre = end;
+                return end;
             };
-            finalePumpkin.Broken += _ => Win();
+            boss.Broken += OnFinaleBroken;
+            ballHit ??= OnBallHit;
+            BowlingRollAssist.BallHit = ballHit;
             Debug.Log("[Bowling] The giant pumpkin drops onto lane " + finaleLane + ".", this);
+        }
+
+        // A bowling ball and the giant pumpkin ran into each other at least Ball Boss Speed (the ball rolled into it, or it
+        // ran over a ball lying in its way): Ball Boss Damage (Special Hit: twice while it's dizzy, and nothing while it's in
+        // the air), once per ball in a short while.
+        private void OnBallHit(Rigidbody ball, Collision collision, Vector3 before)
+        {
+            if (finalePumpkin == null || finalePumpkin.IsBroken || collision == null || collision.collider == null || ball == null) return;
+            if (collision.collider.GetComponentInParent<PumpkinBallBoss>() != finalePumpkin) return;
+            var flat = before;
+            flat.y = 0f;
+            if (Mathf.Max(flat.magnitude, collision.relativeVelocity.magnitude) < ballBossSpeed) return;
+            if (lastBallHit.TryGetValue(ball, out float at) && Time.time - at < 0.5f) return;
+            lastBallHit[ball] = Time.time;
+            finalePumpkin.SpecialHit(ballBossDamage);
+        }
+
+        private readonly Dictionary<Rigidbody, float> lastBallHit = new();
+
+        private void OnFinaleBroken(PumpkinBallBoss boss)
+        {
+            var candies = boss != null ? boss.candies : null;
+            if (finaleCandies > 0 && candies != null && candies.Length > 0)
+                CandyFountain.Play(CandySpot(), finaleCandies, candies, 1.2f, new Vector2(3.5f, 5f), new Vector2(0.4f, 1.4f));
+            Win();
         }
 
         // On a lane's middle line, all of it off the dirt, short of the lane's end.
@@ -859,160 +920,6 @@ namespace Game.Bowling
             return ok.Count > 0 ? ok[Random.Range(0, ok.Count)] : 0;
         }
 
-        // ------------------------------------------------------------------ the showdown
-
-        // Each one-winged slime flies to its own lane, strains, loses the other wing and drops; each landing becomes a
-        // ground slime coming down the lane. Moving comes back when the last has landed.
-        private IEnumerator Finale()
-        {
-            Phase = 4;
-            phaseEnding = false;
-            onPhase?.Invoke(4);
-            var group = new List<Flyer>();
-            foreach (var f in flyers) if (f.slime != null && f.gen == 3) group.Add(f);
-            group.Sort((a, b) => a.slot.CompareTo(b.slot));
-            showdownCount = group.Count;
-            showdownLanded = 0;
-            dropTurn = 0;
-            nextDropAt = 0f;
-            finaleStarted = true;
-            Debug.Log("[Bowling] Showdown: " + showdownCount + " slimes.", this);
-
-            var c = CentrePoint();
-            var taken = new bool[lanes.Length];
-            for (int i = 0; i < group.Count; i++)
-            {
-                var f = group[i];
-                var flat = f.slime.transform.position - c;
-                flat.y = 0f;
-                int best = -1;
-                float bestAngle = float.MaxValue;
-                for (int k = 0; k < lanes.Length; k++)
-                {
-                    if (taken[k] || lanes[k] == null) continue;
-                    float angle = flat.sqrMagnitude > 0.0001f ? Vector3.Angle(flat, lanes[k].Direction) : k;
-                    if (angle < bestAngle) { bestAngle = angle; best = k; }
-                }
-                if (best < 0) best = i % Mathf.Max(1, lanes.Length);
-                else taken[best] = true;
-                f.job = StartCoroutine(ShowdownRun(f, best, i));
-            }
-            if (showdownCount == 0) lastLandedAt = Time.time;
-            yield break;
-        }
-
-        private IEnumerator ShowdownRun(Flyer f, int k, int order)
-        {
-            f.ticket++;
-            f.acting = true;
-            f.circling = false;
-            f.targetLane = k;
-            var s = f.slime;
-            var lane = lanes[k];
-            if (lane != null && !lane.Lit) LightLane(k);
-
-            if (s != null && lane != null)
-            {
-                bool arrived = false;
-                s.LookAt(CentrePoint());
-                s.FlyTo(HoverPoint(k, s.Size), Pick(speeds, 3, 7f), () => arrived = true);
-                for (float giveUp = Time.time + 20f; !arrived && s != null && Time.time < giveUp;) yield return null;
-            }
-            if (s != null)
-            {
-                bool strained = false;
-                s.Strain(dropStrain, () => strained = true);
-                for (float giveUp = Time.time + dropStrain + 2f; !strained && s != null && Time.time < giveUp;) yield return null;
-            }
-            if (s != null && s.WingsLeft > 0)
-            {
-                bool lost = false;
-                s.LoseWing(() => lost = true);
-                for (float giveUp = Time.time + 3f; !lost && s != null && Time.time < giveUp;) yield return null;
-            }
-
-            // In slime order, Drop Gap apart.
-            while (dropTurn < order || Time.time < nextDropAt)
-            {
-                if (won || restored) yield break;
-                yield return null;
-            }
-            dropTurn = order + 1;
-            nextDropAt = Time.time + dropGap;
-
-            var ground = lane != null ? lane.SlotPosition(0) : CentrePoint();
-            bool landed = false;
-            if (s != null)
-            {
-                s.Drop(ground, dropSeconds, at =>
-                {
-                    if (landed) return;
-                    landed = true;
-                    Landed(f, k, order, at);
-                });
-                for (float giveUp = Time.time + dropSeconds + 3f; !landed && Time.time < giveUp;) yield return null;
-            }
-            if (!landed && !won && !restored)
-            {
-                // The puppet went missing: its ground slime comes anyway.
-                landed = true;
-                Landed(f, k, order, ground);
-            }
-        }
-
-        private void Landed(Flyer f, int k, int order, Vector3 at)
-        {
-            if (won || restored) return;
-            flyers.Remove(f);
-            RefreshSlimes();
-            int kind = f.slot >= 0 && f.slot < showdownOf.Length ? showdownOf[f.slot] : f.slot;
-            var ground = lanes[k] != null ? lanes[k].SlotPosition(0) : at;
-            SpawnShowdown(kind, ground, order);
-            showdownLanded++;
-            lastLandedAt = Time.time;
-            if (showdownLanded >= showdownCount)
-            {
-                foreach (var brain in showdownBrains)
-                    if (brain != null) brain.HoldOff(holdOffBase);
-                showdownBrains.Clear();
-                lockMoves = false;
-                MovementBack();
-                Debug.Log("[Bowling] All " + showdownCount + " ground slimes down: moving is back.", this);
-            }
-        }
-
-        // A ground slime on the NavMesh near the head pin, facing the centre; it always comes (the EnemyLimit is ignored).
-        private void SpawnShowdown(int kind, Vector3 at, int order)
-        {
-            var prefab = showdownPrefabs != null && kind >= 0 && kind < showdownPrefabs.Length ? showdownPrefabs[kind] : null;
-            if (prefab == null)
-            {
-                Debug.LogWarning("[Bowling] No showdown prefab " + kind + ": that slime is skipped.", this);
-                return;
-            }
-            var filter = new NavMeshQueryFilter
-            {
-                agentTypeID = prefab.TryGetComponent(out NavMeshAgent agent) ? agent.agentTypeID : 0,
-                areaMask = NavMesh.AllAreas,
-            };
-            var pos = at;
-            if (NavMesh.SamplePosition(at, out var hit, 2.5f, filter)) pos = hit.position;
-            else Debug.LogWarning("[Bowling] No NavMesh within 2.5 m of " + at + " for " + prefab.name + ".", this);
-            var look = CentrePoint() - pos;
-            look.y = 0f;
-            var go = Instantiate(prefab, pos, look.sqrMagnitude > 0.0001f ? Quaternion.LookRotation(look) : Quaternion.identity, Spawned());
-            EnemyLimit.TryTakeSlot();
-            EnemyWave.Add(this, go);
-            if (go.TryGetComponent(out SpiderBrain brain))
-            {
-                brain.ComeAtOnce();
-                // It waits until the last has landed; then they all set off together, so each one's own pace
-                // (fastest first: Green, Blue, Red, Yellow) brings them to the player one by one.
-                brain.HoldOff(60f);
-                showdownBrains.Add(brain);
-            }
-        }
-
         // ------------------------------------------------------------------ slimes, racks, lanes
 
         private Flyer AddFlyer(GiantFlyingSlime slime, int gen, int slot)
@@ -1043,11 +950,11 @@ namespace Game.Bowling
         // Slimes gone by themselves and racks done are forgotten.
         private void Prune()
         {
-            bool gone = flyers.RemoveAll(f => f.slime == null && !(Phase == 4 && f.acting)) > 0;
+            bool gone = flyers.RemoveAll(f => f.slime == null) > 0;
             sets.RemoveAll(s => s == null || s.Done);
             if (!gone) return;
             RefreshSlimes();
-            CheckPhaseEnd();
+            CheckRoundOver();
         }
 
         // Circles the head in its place (each a little wider, higher and further round than the one before).
@@ -1061,7 +968,7 @@ namespace Game.Bowling
             f.idleSince = Time.time;
         }
 
-        // Every circling slime takes its new place (after a split).
+        // Every circling slime takes its new place (after a split or a pop).
         private void Respace()
         {
             foreach (var f in flyers)
@@ -1110,7 +1017,7 @@ namespace Game.Bowling
             foreach (var s in sets.ToArray()) if (s != null && !s.Done) s.Melt();
         }
 
-        // Each lane's counter: its rack owner's streak, in its colour; hidden with no rack.
+        // Each lane's counter: its rack owner's strikes out of what hurts it, in its colour; hidden with no rack.
         private void UpdateCounters()
         {
             for (int k = 0; k < lanes.Length && k < counterOwner.Length; k++)
@@ -1124,7 +1031,7 @@ namespace Game.Bowling
                 counterOwner[k] = slime;
                 counterStreak[k] = streak;
                 if (owner == null) lanes[k].SetCounter(null);
-                else lanes[k].SetCounter(owner.streak + "/" + strikesToHit, slime.Colour);
+                else lanes[k].SetCounter(owner.streak + "/" + Need(owner.gen), slime.Colour);
             }
         }
 
@@ -1135,13 +1042,28 @@ namespace Game.Bowling
             return colours != null && i >= 0 && i < colours.Length ? colours[i] : Color.white;
         }
 
-        private void ShowRules()
+        // A chest seed is in (or its wait ran out): more vines and more balls (the first one starts them).
+        private void GrowMore()
         {
-            if (rulesSign == null) return;
-            rulesSign.text = rulesText;
-            rulesSign.gameObject.SetActive(true);
-            rulesShowing = true;
-            rulesUntil = Time.time + rulesSeconds;
+            if (won || restored) return;
+            seedsEaten++;
+            if (vines != null) vines.GrowNext();
+            if (balls == null) return;
+            int open = 0;
+            for (int i = 0; i < seedsEaten && i < BowlingLayout.SproutGroups.Length; i++) open += BowlingLayout.SproutGroups[i];
+            balls.OpenSpots = open;
+            balls.MaxOnPad = 1 + seedsEaten;
+            if (!ballsBegun)
+            {
+                ballsBegun = true;
+                StartCoroutine(BeginBalls());
+            }
+        }
+
+        private IEnumerator BeginBalls()
+        {
+            yield return new WaitForSeconds(ballsDelay);
+            if (balls != null && !won && !restored && !balls.Running) balls.Begin();
         }
 
         // Waits these seconds, longer while the player is down or the game stopped.
@@ -1159,8 +1081,11 @@ namespace Game.Bowling
         private static int Pick(int[] values, int n, int fallback) =>
             values == null || values.Length == 0 ? fallback : values[Mathf.Clamp(n - 1, 0, values.Length - 1)];
 
-        // The roll assist asks where a bowl going this way should go: the nearest lane within Aim Angle, its aim point.
-        private Vector3? FindAim(Vector3 from, Vector3 flatDir)
+        // The roll assist asks where a bowl going this way should go: the nearest lane within Aim Angle. Its line to the head
+        // pin passing through the lane's mouth: the head pin, steered by the ball's own Straighten. Bowled from beside the
+        // mouth (that line would roll off the dirt next to the lane): steered all the way to a point on the lane's middle
+        // line just past the mouth, so it rolls into the lane (the rails keep it there).
+        private (Vector3 point, float steer)? FindLaneAim(Vector3 from, Vector3 flatDir)
         {
             if (won) return null;
             flatDir.y = 0f;
@@ -1176,40 +1101,24 @@ namespace Game.Bowling
                 best = lane;
             }
             if (best == null) return null;
-            return best.Aim.position;
+            var d = best.Direction;
+            var rel = from - CentrePoint();
+            rel.y = 0f;
+            float along = Vector3.Dot(rel, d);
+            float side = Vector3.Dot(rel, Vector3.Cross(Vector3.up, d));
+            float mouthSide = along >= BowlingLayout.FoulLine
+                ? side
+                : side * (BowlingLayout.HeadPin - BowlingLayout.FoulLine) / Mathf.Max(0.5f, BowlingLayout.HeadPin - along);
+            if (Mathf.Abs(mouthSide) <= mouthSafe) return (best.Aim.position, -1f);
+            float into = Mathf.Max(along, BowlingLayout.FoulLine) + mouthLead;
+            var point = CentrePoint() + d * into;
+            point.y = best.Aim.position.y;
+            return (point, 1f);
         }
 
-        // ------------------------------------------------------------------ chests and seeds
+        // ------------------------------------------------------------------ where Gate Run drops the chests
 
-        private string Gear(int i) => gearBools != null && i >= 0 && i < gearBools.Length ? gearBools[i] : null;
-
-        // A chest 1.2 m in front of the head, on the dirt, clear of balls and open sprouts, under Currently Spawned Stuffs.
-        private Chest DropChest(GameObject prefab, string gear, int index)
-        {
-            if (prefab == null)
-            {
-                Debug.LogWarning("[Bowling] No chest " + index + ": its seed's gain is given at once.", this);
-                if (!string.IsNullOrEmpty(gear) && GameStages.Fsm() != null) GameStages.SetBool(gear, true, this);
-                var none = new Chest { gear = gear, index = index };
-                SeedEaten(none);
-                return none;
-            }
-            var at = ChestSpot();
-            var made = Instantiate(prefab, at, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f), Spawned());
-            if (made.TryGetComponent<Rigidbody>(out var body) && !body.isKinematic) body.linearVelocity = Vector3.zero;
-            if (puff != null) EffectPool.Play(puff, at, chestPuffScale);
-            var chest = new Chest { chest = made, gear = gear, index = index };
-            Debug.Log("[Bowling] Chest " + prefab.name + " dropped (" + gear + ").", this);
-            if (!string.IsNullOrEmpty(gear) && GameStages.Fsm() != null && GameStages.GetBool(gear))
-            {
-                Debug.Log("[Bowling] " + gear + " was already true when its chest dropped: going on.", this);
-                SeedEaten(chest);
-                return chest;
-            }
-            pendingChests.Add(chest);
-            return chest;
-        }
-
+        // A chest in front of the head, on the dirt, clear of balls and open sprouts.
         private Vector3 ChestSpot()
         {
             var frame = centre != null ? centre : transform;
@@ -1255,79 +1164,25 @@ namespace Game.Bowling
             return x * x + z * z;
         }
 
-        // The chests' gear bools going true = their seed eaten (also the seed's own timeout path, which gives no item).
-        private void WatchSeeds()
-        {
-            if (pendingChests.Count == 0 || GameStages.Fsm() == null) return;
-            foreach (var chest in pendingChests.ToArray())
-                if (!string.IsNullOrEmpty(chest.gear) && GameStages.GetBool(chest.gear)) SeedEaten(chest);
-        }
-
-        // No GAMESTAGES (a test scene): a Yellow_Seed gained = the oldest chest's seed eaten.
-        private void OnInventory(ItemDefinition item, int change, int newCount)
-        {
-            if (won || restored || GameStages.Fsm() != null || change <= 0 || item == null || item.Id != SeedItem) return;
-            if (pendingChests.Count > 0) SeedEaten(pendingChests[0]);
-        }
-
-        // A seed eaten: more vines and more balls (the first one starts them).
-        private void SeedEaten(Chest chest)
-        {
-            if (chest == null || chest.eaten) return;
-            chest.eaten = true;
-            pendingChests.Remove(chest);
-            if (won || restored) return;
-            seedsEaten++;
-            Debug.Log("[Bowling] Seed eaten (" + chest.gear + "): " + seedsEaten + " so far.", this);
-            if (vines != null) vines.GrowNext();
-            if (balls != null)
-            {
-                int open = 0;
-                for (int i = 0; i < seedsEaten && i < BowlingLayout.SproutGroups.Length; i++) open += BowlingLayout.SproutGroups[i];
-                balls.OpenSpots = open;
-                balls.MaxOnPad = 1 + seedsEaten;
-                if (!ballsBegun)
-                {
-                    ballsBegun = true;
-                    StartCoroutine(BeginBalls());
-                }
-            }
-        }
-
-        private IEnumerator BeginBalls()
-        {
-            yield return new WaitForSeconds(ballsDelay);
-            if (balls != null && !won && !restored && !balls.Running) balls.Begin();
-        }
-
-        // Our chest seeds under Currently Spawned Stuffs (Seed_Bracer for Bracer_Gear, ...).
-        private static void DestroySeeds(string gear)
-        {
-            if (string.IsNullOrEmpty(gear)) return;
-            var spawned = Global("CurrentlySpawnedStuffs");
-            if (spawned == null) return;
-            string prefix = "Seed_" + gear.Replace("_Gear", "");
-            foreach (Transform child in spawned.transform)
-                if (child != null && child.name.StartsWith(prefix)) Destroy(child.gameObject);
-        }
-
         // ------------------------------------------------------------------ tests
 
-        /// <summary>The oldest pending chest's seed counts as eaten: the chest or seed goes (no item), its gear bool is set.</summary>
-        [ContextMenu("Eat The Seed")]
+        /// <summary>A chest seed lying about is eaten, as the player would (its item, heal and gear bool).</summary>
+        [ContextMenu("Eat The Chest Seed")]
         public void DebugEatSeed()
         {
-            if (!started || restored || won) return;
-            if (pendingChests.Count == 0)
+            var spawned = Global("CurrentlySpawnedStuffs");
+            if (spawned == null) return;
+            foreach (var fsm in spawned.GetComponentsInChildren<PlayMakerFSM>())
             {
-                Debug.Log("[Bowling] No chest seed waiting.", this);
+                if (fsm == null || fsm.ActiveStateName != "Rotate and Wait") continue;
+                bool seed = false;
+                for (var t = fsm.transform; t != null && t != spawned.transform; t = t.parent) seed |= t.name.StartsWith("Seed_");
+                if (!seed) continue;
+                Debug.Log("[Bowling] Test: " + fsm.gameObject.name + " eaten.", this);
+                fsm.SendEvent("next");
                 return;
             }
-            var chest = pendingChests[0];
-            if (chest.chest != null) Destroy(chest.chest);
-            DestroySeeds(chest.gear);
-            if (!string.IsNullOrEmpty(chest.gear) && GameStages.Fsm() != null) GameStages.SetBool(chest.gear, true, this);
-            SeedEaten(chest);
+            Debug.Log("[Bowling] No chest seed waiting.", this);
         }
 
         /// <summary>The live rack on that lane resolves as a strike.</summary>
@@ -1355,7 +1210,7 @@ namespace Game.Bowling
             Debug.Log("[Bowling] No live rack.", this);
         }
 
-        /// <summary>Hurts Slimes[slime] (as 3 strikes would).</summary>
+        /// <summary>Hurts Slimes[slime] (as its strikes would).</summary>
         public void DebugHit(int slime)
         {
             if (!started || restored || won) return;
@@ -1367,7 +1222,7 @@ namespace Game.Bowling
             var f = Find(slimeList[slime]);
             if (f == null || f.gen != Phase || f.hurt)
             {
-                Debug.Log("[Bowling] Slime " + slime + " can't be hurt now (phase " + Phase + ").", this);
+                Debug.Log("[Bowling] Slime " + slime + " can't be hurt now (round " + Phase + ").", this);
                 return;
             }
             Hit(f, "test");
@@ -1376,78 +1231,34 @@ namespace Game.Bowling
         [ContextMenu("Hit Slime 0")]
         private void HitFirst() => DebugHit(0);
 
-        /// <summary>Hurts every slime of the phase (the phase ends).</summary>
-        [ContextMenu("Next Phase")]
-        public void DebugNextPhase()
+        /// <summary>Hurts every slime of the round (the round is won).</summary>
+        [ContextMenu("Win This Round")]
+        public void DebugWinRound()
         {
             if (!started || restored || won) return;
             if (Phase < 1 || Phase > 3)
             {
-                Debug.Log("[Bowling] Not in a phase (phase " + Phase + ").", this);
+                Debug.Log("[Bowling] Not in a round (phase " + Phase + ").", this);
                 return;
             }
             foreach (var f in flyers.ToArray())
                 if (f.gen == Phase && !f.hurt) Hit(f, "test");
         }
 
-        /// <summary>Jumps to the showdown: the phase-3 slimes (made if needed) lose a wing, the Shield chest drops, they drop.</summary>
-        [ContextMenu("Showdown Now")]
-        public void DebugShowdown()
-        {
-            if (!started || restored || won || Phase >= 4 || slimePrefab == null) return;
-            if (playJob != null) StopCoroutine(playJob);
-            if (phaseJob != null) StopCoroutine(phaseJob);
-            playJob = phaseJob = null;
-            MeltAll();
-            if (balls != null && !balls.Running)
-            {
-                ballsBegun = true;
-                balls.Begin();
-            }
-            var have = new Flyer[4];
-            foreach (var f in flyers.ToArray())
-            {
-                f.ticket++;
-                if (f.job != null) StopCoroutine(f.job);
-                f.job = null;
-                f.acting = false;
-                f.targetLane = -1;
-                if (f.slime != null && f.gen == 3 && f.slot >= 0 && f.slot < 4 && have[f.slot] == null) have[f.slot] = f;
-                else
-                {
-                    if (f.slime != null) Destroy(f.slime.gameObject);
-                    flyers.Remove(f);
-                }
-            }
-            for (int slot = 0; slot < 4; slot++)
-            {
-                if (have[slot] != null) continue;
-                var at = CirclePoint(slot, 4);
-                var slime = Instantiate(slimePrefab, at, Quaternion.identity, transform);
-                slime.Setup(ColourOf(3, slot), Pick(sizes, 3, 4.5f), Pick(pitches, 3, 0.75f), Pick(volumes, 3, 0.5f));
-                have[slot] = AddFlyer(slime, 3, slot);
-            }
-            Phase = 3;
-            foreach (var f in flyers)
-            {
-                f.hurt = true;
-                if (f.slime != null && f.slime.WingsLeft >= 2) f.slime.LoseWing();
-            }
-            RefreshSlimes();
-            Respace();
-            Debug.Log("[Bowling] Test: straight to the showdown.", this);
-            phaseJob = StartCoroutine(PhaseEnd(3));
-        }
-
-        /// <summary>Wins at once (tests).</summary>
+        /// <summary>Breaks the giant pumpkin (tests; Gate Run's "Test: Skip To The Finale" brings it).</summary>
         [ContextMenu("Win Now")]
         public void DebugWin()
         {
             if (!started || restored || won) return;
-            Win();
+            if (finalePumpkin != null && !finalePumpkin.IsBroken)
+            {
+                finalePumpkin.SpecialHit(100000f);
+                return;
+            }
+            Debug.Log("[Bowling] Win Now works once the giant pumpkin is in (Gate Run: Test: Skip To The Finale).", this);
         }
 
-        /// <summary>The slime's current streak (0 if it isn't one of ours).</summary>
+        /// <summary>The slime's current strikes (0 if it isn't one of ours).</summary>
         public int StreakOf(GiantFlyingSlime s)
         {
             var f = Find(s);
@@ -1471,6 +1282,9 @@ namespace Game.Bowling
 
         // ------------------------------------------------------------------ the win
 
+        // The giant pumpkin broke: everything left goes. Gate Exit (every gate's one exit, started by Gate Boss Finale) does
+        // the rest: the chest seeds still lying about and any gear bool still false, The_Seed at Seed Spot, the black, the
+        // rooftop, the player by the Pumpkin Tree.
         private void Win()
         {
             if (won) return;
@@ -1478,241 +1292,73 @@ namespace Game.Bowling
             Phase = 5;
             Debug.Log("[Bowling] Won.", this);
             StopAllCoroutines();
-            StartCoroutine(ToTheRooftop());
-        }
-
-        // The slimes leave, everything left goes, any chest gear still missing is given, the seed shows. Once it's eaten
-        // (or after Seed Seconds) GAMESTAGES clears what it spawned and brings up the rooftop: this arena stands alone
-        // meanwhile (so it isn't cleared from under the player), fades to black, waits for the rooftop, puts the player
-        // near the Lid facing it, fades in.
-        private IEnumerator ToTheRooftop()
-        {
-            // Before anything can set The_Seed: GAMESTAGES' Clear Spawned Stuffs must not take the arena.
-            transform.SetParent(null, true);
             if (balls != null) balls.StopAndClear();
             MeltAll();
             foreach (var f in flyers) if (f.slime != null) f.slime.Leave();
             flyers.Clear();
             RefreshSlimes();
             EnemyWave.KillAll(this);
-            if (BowlingRollAssist.AimFinder == aimFinder) BowlingRollAssist.AimFinder = null;
+            if (BowlingRollAssist.LaneAim == laneAim) BowlingRollAssist.LaneAim = null;
+            if (ballHit != null && BowlingRollAssist.BallHit == ballHit) BowlingRollAssist.BallHit = null;
             onWon?.Invoke();
-            GearGuard();
+            StartCoroutine(OffToTheRooftop());
+        }
 
+        // The new rooftop is up (the player waits in the black on the dirt, held by Gate Exit): the arena's Fall Edges go off
+        // (they overlap the roof's arms: they'd kill what's there and hole its NavMesh) and everything is given back
+        // (moving, the fog, the fall's return spot). Gate Exit removes the arena once the player is on the rooftop.
+        private IEnumerator OffToTheRooftop()
+        {
             var oldRoof = Global("Rooftop_Base");
-
-            var seed = SpawnSeed();
-            WinSign();
-            if (GameStages.Fsm() == null)
-            {
-                // A test scene: nothing goes on from here; the player may move again.
-                Debug.LogWarning("[Bowling] No GAMESTAGES: the arena stays (no rooftop).", this);
-                Restore();
-                endedSent = true;
-                Ended?.Invoke(this, true);
-                yield break;
-            }
-
-            float autoAt = Time.time + seedSeconds;
-            bool given = false;
-            while (!GameStages.GetBool(SeedBool))
-            {
-                if (GameOver()) yield break;
-                if (seed == null && !given)
-                {
-                    // No seed (none set, or gone): the bool is set for them.
-                    if (seedPrefab == null) Debug.LogWarning("[Bowling] No seed prefab: GAMESTAGES The_Seed set directly.", this);
-                    GameStages.SetBool(SeedBool, true, this);
-                    given = true;
-                }
-                else if (seed != null && !given && Time.time >= autoAt)
-                {
-                    // Not eaten in time: eaten for them (its Activate Stuffs: the item, the heal, The_Seed).
-                    foreach (var seedFsm in seed.GetComponentsInChildren<PlayMakerFSM>())
-                    {
-                        if (seedFsm.ActiveStateName != SeedWaitState) continue;
-                        seedFsm.SendEvent(SeedEatenEvent);
-                        given = true;
-                        break;
-                    }
-                }
-                yield return null;
-            }
-
-            if (rulesSign != null) rulesSign.gameObject.SetActive(false);
-            // The seed's sound and shrink, then the black (not over a notice: it would hide it).
-            yield return new WaitForSeconds(1f);
-            while (Paused()) yield return null;
-            var fade = HeadsetFade.Find();
-            if (fade != null) fade.FadeOut(0.8f);
-            yield return new WaitForSeconds(0.9f);
-
-            // In the black until the new rooftop is there.
-            GameObject roof;
-            float waited = 0f;
-            bool warned = false;
             while (true)
             {
-                if (GameOver()) yield break;
-                bool down = PlayerDown();
-                roof = Global("Rooftop_Base");
-                if (!down && roof != null && roof != oldRoof) break;
-                if (!down && Paused())
-                {
-                    // A notice or the menu: shown, not hidden in the black; black again after.
-                    if (fade != null) fade.FadeIn(0.3f);
-                    while (Paused()) yield return null;
-                    if (fade != null && !warned) fade.FadeOut(0.5f);
-                }
-                else if (!down && !warned && (waited += Time.deltaTime) > roofWaitSeconds)
-                {
-                    Debug.LogWarning("[Bowling] The rooftop hasn't come " + roofWaitSeconds + " s after the seed (GAMESTAGES is in '" +
-                                     GameStages.ActiveState() + "'): waiting on the arena.", this);
-                    if (fade != null) fade.FadeIn(0.8f);
-                    warned = true;
-                }
+                var roof = Global("Rooftop_Base");
+                if (roof != null && roof != oldRoof) break;
                 yield return null;
             }
-            // The rooftop is here: the arena's Fall Edges go off now. They overlap the roof's arms (killing what's there,
-            // holing its NavMesh) and the spot by the Lid (a fall right after the move: black again).
             foreach (var edge in GetComponentsInChildren<FallEdge>(true))
                 if (edge != null) edge.gameObject.SetActive(false);
-            // A moment for the rooftop's animator to place its Lid.
-            yield return new WaitForSeconds(0.3f);
-            // Not while down, flying from a push, or off the pad in the black: Fall Out Of World would pull them back
-            // here after the move. A fall's put-back (or a notice) shows the view: black again.
-            var launch = origin != null ? origin.GetComponent<Game.Combat.PlayerLaunch>() : null;
-            for (float until = Time.time + 6f; Time.time < until;)
-            {
-                if (GameOver()) yield break;
-                if (!PlayerDown() && Paused())
-                {
-                    if (fade != null) fade.FadeIn(0.3f);
-                    while (Paused()) yield return null;
-                    continue;
-                }
-                if (PlayerDown() || (launch != null && launch.Flying) || !OverStage())
-                {
-                    yield return null;
-                    continue;
-                }
-                if (fade == null || fade.Alpha >= 0.99f) break;
-                fade.FadeOut(0.5f);
-                yield return new WaitForSeconds(0.6f);
-            }
-            roof = Global("Rooftop_Base");
-            var (spot, yaw) = RooftopSpot(roof);
-
             Restore();
-            MovePlayer(spot, yaw);
-            endedSent = true;
-            Ended?.Invoke(this, true);
-            if (Running == this) Running = null;
-            if (fade != null) fade.FadeIn(0.8f);
-            Destroy(gameObject, 0.2f);
         }
 
-        // Before The_Seed: our chest seeds still waiting are eaten for the player (item, heal, gear bool), then any gear
-        // bool still false is set (GAMESTAGES' Path 2 ON waits for all 4 and The_Seed; it would stall in the black).
-        private void GearGuard()
+        // The seed's floor spot: 0.8 m in front of the head, kept on the dirt (Gate Exit shows it 1 m over it).
+        private Vector3 SeedSpot() => OnPad(HeadFloor() + HeadForward() * 0.8f, 0.3f);
+
+        // Where the giant pumpkin's candies pop out: over the dirt 1.2 m in front of the head and 1 m to the right, clear of
+        // The_Seed (0.8 m in front: candies made inside its collider were shoved off the dirt, play test 2026-11-23).
+        private Vector3 CandySpot()
         {
-            var spawned = Global("CurrentlySpawnedStuffs");
-            if (spawned != null)
-            {
-                foreach (var fsm in spawned.GetComponentsInChildren<PlayMakerFSM>())
-                {
-                    if (fsm == null || fsm.ActiveStateName != SeedWaitState || !IsChestSeed(fsm.transform, spawned.transform)) continue;
-                    Debug.Log("[Bowling] " + fsm.gameObject.name + " not eaten: eaten for the player.", this);
-                    fsm.SendEvent(SeedEatenEvent);
-                }
-            }
-            pendingChests.Clear();
-            if (GameStages.Fsm() == null || gearBools == null) return;
-            foreach (var gear in gearBools)
-            {
-                if (string.IsNullOrEmpty(gear) || GameStages.GetBool(gear)) continue;
-                GameStages.SetBool(gear, true, this);
-                Debug.LogWarning("[Bowling] " + gear + " was still false at the win (chest skipped?): set so GAMESTAGES goes on.", this);
-            }
+            var forward = HeadForward();
+            var right = Vector3.Cross(Vector3.up, forward);
+            return OnPad(HeadFloor() + forward * 1.2f + right * 1f, 0.7f) + Vector3.up * 1.3f;
         }
 
-        // The FSM's object, or one of its parents below Currently Spawned Stuffs, is a "Seed_" (our chest seeds).
-        private static bool IsChestSeed(Transform t, Transform spawned)
+        // A point kept on the dirt (Inset metres in from its edge), on its top.
+        private Vector3 OnPad(Vector3 p, float inset)
         {
-            for (; t != null && t != spawned; t = t.parent)
-                if (t.name.StartsWith("Seed_")) return true;
-            return false;
-        }
-
-        // Died meanwhile: Game Over has the player; the arena (no longer under Currently Spawned Stuffs) just goes.
-        private bool GameOver()
-        {
-            if (GameStages.ActiveState() != "Game Over") return false;
-            Destroy(gameObject);
-            return true;
-        }
-
-        // The seed 0.8 m in front of the head, 1 m up, kept on the pad. A child of the arena, so it goes with it.
-        private GameObject SpawnSeed()
-        {
-            if (seedPrefab == null) return null;
             var frame = centre != null ? centre : transform;
-            var at = HeadFloor() + HeadForward() * 0.8f;
-            var local = frame.InverseTransformPoint(at);
-            float keep = Mathf.Max(0.2f, padHalfSize - 0.3f);
+            var local = frame.InverseTransformPoint(p);
+            float keep = Mathf.Max(0.2f, padHalfSize - inset);
             local.x = Mathf.Clamp(local.x, -keep, keep);
             local.z = Mathf.Clamp(local.z, -keep, keep);
-            at = frame.TransformPoint(local);
-            at.y = (origin != null ? origin.transform.position.y : transform.position.y) + 1f;
-            return Instantiate(seedPrefab, at, Quaternion.identity, transform);
-        }
-
-        // The rules sign becomes the win sign, 2.5 m in front of the head, facing it.
-        private void WinSign()
-        {
-            if (rulesSign == null) return;
-            var forward = HeadForward();
-            var at = HeadFloor() + forward * 2.5f;
-            at.y = (origin != null ? origin.transform.position.y : transform.position.y) + 1.8f;
-            rulesSign.transform.SetPositionAndRotation(at, Quaternion.LookRotation(forward));
-            rulesSign.text = winText;
-            rulesSign.gameObject.SetActive(true);
-            rulesShowing = false;
-        }
-
-        // Lid Stand Off metres from the rooftop's Pumpkin Tree (2026-11-18: the tree defence comes next, as in the main game;
-        // else its Lid, or its middle), towards the south gate, on its floor, facing it.
-        private (Vector3 spot, float yaw) RooftopSpot(GameObject roof)
-        {
-            var roofAt = roof != null ? roof.transform.position : Vector3.zero;
-            var lid = Global("Lid");
-            var middle = lid != null && roof != null && lid.transform.IsChildOf(roof.transform) ? lid.transform.position : roofAt;
-            foreach (var tree in GameObject.FindGameObjectsWithTag("PumpkinTree"))
-            {
-                if (tree == null || (roof != null && !tree.transform.IsChildOf(roof.transform))) continue;
-                middle = tree.transform.position;
-                break;
-            }
-            var back = roof != null ? -roof.transform.forward : Vector3.back;
-            back.y = 0f;
-            if (back.sqrMagnitude < 0.0001f) back = Vector3.back;
-            var spot = middle + back.normalized * lidStandOff;
-            spot.y = roofAt.y + 0.03f;
-            if (Physics.Raycast(spot + Vector3.up * 3f, Vector3.down, out var hit, 6f, ~0, QueryTriggerInteraction.Ignore) &&
-                Mathf.Abs(hit.point.y - roofAt.y) < 1.5f)
-                spot.y = hit.point.y;
-            var look = middle - spot;
-            look.y = 0f;
-            float yaw = look.sqrMagnitude > 0.0001f ? Quaternion.LookRotation(look).eulerAngles.y : 0f;
-            return (spot, yaw);
+            local.y = BowlingLayout.DirtTop;
+            return frame.TransformPoint(local);
         }
 
         // ------------------------------------------------------------------ the player and the world
 
-        // Thumbstick and arm-swing moving off (each one's own state remembered once, given back by Restore).
+        // Thumbstick and arm-swing moving off (each one's own state remembered once, given back by Restore). The movers are
+        // looked up once (again only if one is gone), not every half second.
         private void MovementOff()
         {
-            foreach (var mover in FindObjectsByType<ContinuousMoveProvider>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            bool gone = movers.Count == 0;
+            foreach (var mover in movers) gone |= mover == null;
+            if (gone)
+            {
+                movers.Clear();
+                movers.AddRange(FindObjectsByType<ContinuousMoveProvider>(FindObjectsInactive.Include, FindObjectsSortMode.None));
+            }
+            foreach (var mover in movers)
             {
                 if (mover == null) continue;
                 if (!moveWas.ContainsKey(mover)) moveWas[mover] = mover.enabled;
@@ -1732,32 +1378,34 @@ namespace Game.Bowling
             {
                 fogStartWas = RenderSettings.fogStartDistance;
                 fogEndWas = RenderSettings.fogEndDistance;
+                fogColourWas = RenderSettings.fogColor;
                 RenderSettings.fogStartDistance = fog.x;
                 RenderSettings.fogEndDistance = fog.y;
+                if (tintFog) RenderSettings.fogColor = fogColour;
                 fogSet = true;
                 return;
             }
             if (!fogSet) return;
             RenderSettings.fogStartDistance = fogStartWas;
             RenderSettings.fogEndDistance = fogEndWas;
+            RenderSettings.fogColor = fogColourWas;
             fogSet = false;
         }
 
-        // Everything given back (once): moving, the fall's return spot, the fog, the roll assist's aim, the flyers.
+        // Everything given back (once): moving, the fall's return spot, the fog, the roll assist's hooks, the flyers.
         private void Restore()
         {
             if (!started || restored) return;
             restored = true;
             lockMoves = false;
-            if (inventoryHooked && PlayerInventory.Instance != null) PlayerInventory.Instance.Changed -= OnInventory;
-            inventoryHooked = false;
             foreach (var set in sets)
             {
                 if (set == null) continue;
                 set.OnResolved -= OnSetResolved;
                 set.OnCleared -= OnSetCleared;
             }
-            if (BowlingRollAssist.AimFinder == aimFinder) BowlingRollAssist.AimFinder = null;
+            if (BowlingRollAssist.LaneAim == laneAim) BowlingRollAssist.LaneAim = null;
+            if (ballHit != null && BowlingRollAssist.BallHit == ballHit) BowlingRollAssist.BallHit = null;
             MovementBack();
             if (returnSet && FallOutOfWorld.ReturnSpot.HasValue && (FallOutOfWorld.ReturnSpot.Value - returnSpot).sqrMagnitude < 0.01f)
                 FallOutOfWorld.ReturnSpot = null;
@@ -1781,30 +1429,6 @@ namespace Game.Bowling
             return f.sqrMagnitude > 0.0001f ? f.normalized : Vector3.forward;
         }
 
-        private float HeadYaw()
-        {
-            if (head == null) return 0f;
-            var f = Vector3.ProjectOnPlane(head.forward, Vector3.up);
-            return f.sqrMagnitude > 0.0001f ? Quaternion.LookRotation(f).eulerAngles.y : 0f;
-        }
-
-        // The head over Spot, the feet on its floor, facing Yaw.
-        private void MovePlayer(Vector3 spot, float yaw)
-        {
-            if (origin == null) return;
-            var body = origin.GetComponent<CharacterController>();
-            if (body != null) body.enabled = false;
-            var launch = origin.GetComponent<Game.Combat.PlayerLaunch>();
-            if (launch != null) launch.Stop();
-            origin.RotateAroundCameraUsingOriginUp(Mathf.DeltaAngle(HeadYaw(), yaw));
-            var feet = HeadFloor();
-            var to = origin.transform.position + new Vector3(spot.x - feet.x, 0f, spot.z - feet.z);
-            to.y = spot.y;
-            origin.transform.position = to;
-            Physics.SyncTransforms();
-            if (body != null) body.enabled = true;
-        }
-
         // The player is down: health out, the lucky coins under way, or getting back up from a revive.
         private bool PlayerDown()
         {
@@ -1818,20 +1442,6 @@ namespace Game.Bowling
             return Game.Saving.Checkpoints.IsDying ||
                    (Game.Combat.PlayerRevive.Instance != null && Game.Combat.PlayerRevive.Instance.IsReviving) ||
                    (playerHealth != null && playerHealth.Value <= 0f);
-        }
-
-        private static readonly RaycastHit[] floorHits = new RaycastHit[8];
-
-        // The head is over this arena's floor (the pad or a lane), not off its edge or mid fall.
-        private bool OverStage()
-        {
-            if (head == null) return true;
-            int count = Physics.RaycastNonAlloc(head.position, Vector3.down, floorHits, 6f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
-            for (int i = 0; i < count; i++)
-            {
-                if (floorHits[i].collider != null && floorHits[i].collider.transform.IsChildOf(transform)) return true;
-            }
-            return false;
         }
 
         // The game is stopped: the pause menu, a level-up or other notice, the lucky coins (Pause Menu holds), lost focus.

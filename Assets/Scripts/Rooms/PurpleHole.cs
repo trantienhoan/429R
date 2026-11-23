@@ -56,7 +56,7 @@ namespace Game.Rooms
         [Tooltip("Names (their start) never eaten, besides candy, the player and what they hold. Bosses: when the " +
                  "player dies in a boss fight, the boss gets the old shield treatment, not the hole.")]
         [SerializeField] private string[] keepNames = { "Fairy", "Knight" };
-        [Tooltip("Names (anywhere in them) never eaten: bosses, and the rooms and stages themselves.")]
+        [Tooltip("Names (anywhere in them, any upper/lower case) never eaten: bosses, and the rooms and stages themselves.")]
         [SerializeField] private string[] keepNamesContaining = { "Boss", "_Base", "Skydome", "Valley", "Island" };
         [Tooltip("Bigger than this (m, any side) is never eaten: rooms, valleys, islands, the stage's own parts.")]
         [Min(1f)]
@@ -124,17 +124,23 @@ namespace Game.Rooms
         /// player's or in their hand, not a keeper, not a big structure.</summary>
         public bool Eats(GameObject thing)
         {
+            // Marked to keep (2026-11-23): e.g. a gate's chests still waiting to be opened.
+            if (thing.GetComponentInParent<KeepFromPurpleHole>(true) != null) return false;
+            bool gate = Game.Gates.GateRun.Current != null;
             for (var t = thing.transform; t != null; t = t.parent)
             {
                 string n = t.name;
                 if (IsCandy(n) || n.StartsWith("XR Origin")) return false;
+                // While a gate runs, its seeds are its progress: a death there must not eat them.
+                if (gate && (n.StartsWith("Seed_") || n.StartsWith("The_Seed"))) return false;
                 foreach (var keep in keepNames)
                 {
                     if (!string.IsNullOrEmpty(keep) && n.StartsWith(keep)) return false;
                 }
                 foreach (var keep in keepNamesContaining)
                 {
-                    if (!string.IsNullOrEmpty(keep) && n.Contains(keep)) return false;
+                    // Any case (2026-11-22): "pumpkin_boss_Z_Doom" is a boss too.
+                    if (!string.IsNullOrEmpty(keep) && n.IndexOf(keep, System.StringComparison.OrdinalIgnoreCase) >= 0) return false;
                 }
             }
             var grab = thing.GetComponentInChildren<XRGrabInteractable>();

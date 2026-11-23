@@ -1,8 +1,96 @@
 # Gates plan: 3 gates, 1 ending, then replay (2026-11-22)
 
-Plan only: nothing built, nothing installed, nothing committed. **Ask the user before starting the 3 gate sessions.**
+**Status 2026-11-23:** Phase 0 and Phase 1 done: all 3 gates run on GateRun with their kits in Unity, each tested
+to Whack 6; the end-to-end check (E6, all 3 routes to the boss and a new run) passed; E7 fine (no bee swarm).
+Nothing committed after the user's baseline b568870; no scene change. Open: the headset runs, the kits' fixes, and
+the user's calls (E2, E3, E4, E5 and each gate's questions in `gateN/NOTES.md`).
 Made from: `Assets/NOTES_Next_Time.md`, Claude's memory, the gate code, and GAMESTAGES read from the saved scene
 (`2 Game Scene.unity` on disk, last saved 2026-11-20 21:48; unsaved editor changes, if any, are not in it).
+
+## 0. UPDATE 2026-11-23 (the user's go): read this first
+
+User: "For each gate create a kit for easy change and fix. Make the flow simple and resemble for 3 gates, only the
+gameplay is different a bit for each gate: cook and defend, bowling and fighting, running and snookering. Feel good and
+having fun is what I want for players."
+
+**Concepts (approved by the user):** gate 1 `Exports/PlayGround_Concept/concept_v1.png`, gate 2
+`Exports/Bowling_Concept/concept_v1.png` (the Slime Bowl), gate 3 `Exports/BallValley_Concept/concept_v1.png` (the
+haunted pool table). The concepts set the look; the game's real layout and sizes win where they differ (e.g. Ball
+Valley's 6 holes stay at the 4 corners + the 2 long-side middles).
+
+### One flow for all three gates (the gate template)
+
+```
+ARRIVE   fade in; the gate's card: title + one short line (after any other notice)
+START    the start chest drops in front of the player; its seed (Bracer) starts the gate
+ROUND 1  the gate's verb, with one goal counting up on the HUD line  -> the Chest gear chest
+ROUND 2  the same verb, a bit harder                                  -> the Head gear chest
+ROUND 3  the same verb, hardest                                       -> the Shield gear chest
+FINALE   the gate's giant pumpkin (its own look) drops in: break it
+EXIT     The_Seed -> GateExit -> the rooftop (shared)
+```
+- The same in every gate: the card, the HUD line (one line under the view, a short flash on big moments), the chests
+  (the same chest prefabs = the same candy + EXP), a round starts when the last chest's seed is eaten (or after 20 s),
+  every round has a time limit that ends it anyway (never stuck), a whole gate takes about 6-8 minutes.
+- Only the verb differs:
+  - **Gate 1, cook and defend:** the cook is split into 3 rounds; each round ends with its slime mini boss; beat it for
+    the chest. The pot bursts after round 3.
+  - **Gate 2, bowl and fight:** round 1 one slime (3 strikes splits it), round 2 two slimes, round 3 four small slimes
+    (1 strike each: fast and fun); fight what hatches. Then the giant pumpkin bowls down the lanes.
+  - **Gate 3, run and snooker:** pocket 5 balls a round (15 in all) while the field shrinks a step each round; the
+    round's timer ends it anyway. Then the field shrinks to its smallest for the giant pumpkin.
+- Feel good: quick start (something to do within 10 s), clear goal, juicy hits and pops (the user's own clips), candy
+  bursts, no long waits, readable from eye height, comfort first in VR.
+- **Shared code:** the coordinator builds `Scripts/Gates/GateRun.cs` (card, HUD line, start + round chests and their
+  seeds, rounds and their timers, the finale hand-off). Each gate keeps its own gameplay and calls GateRun for the
+  rest; the coordinator messages each gate session when it is ready (with the API).
+
+### GateRun: the shared flow (`Assets/Scripts/Gates/GateRun.cs`, ready 2026-11-23)
+
+Put `GateRun` on the gate's stage root (your own prefab) and implement `IGateGame` on your stage component:
+
+| Your method | When | You do |
+|---|---|---|
+| `GateStart(run)` | the start chest's seed is eaten (or 25 s passed) | set the gate up (must also work if the seed was never eaten) |
+| `RoundBegin(run, round)` | round 1, 2, 3 starts | start its play: `run.Goal("STRIKES", 3)`, `run.Progress(n)`, `run.RoundWon()` |
+| `RoundTimeUp(run, round)` | its time limit ran out | tidy up (it counts as won, the chest still drops) |
+| `FinaleBegin(run)` | round 3's chest seed eaten | `run.Finale(landAt, delay, setUp, seedSpot)` (GateBossFinale + GateExit inside) |
+
+- Fields on GateRun: the card (title + one line), the start chest and the 3 round chests (added in the editor: the
+  shared Bracer chest and the PG Chest/Head/Shield chests), the gear bools, round time limits (150 s each), the finale
+  boss (set YOUR variant) and The_Seed, the HUD line, the user's sounds for round start/won.
+- Optional: `run.chestSpot = () => floorPoint` (e.g. keep chests on the island), `run.Flash(text)`, `run.Line(text)`
+  (your own HUD text; null = back to the round line), events `RoundStarted`, `RoundEnded`, `FinaleStarted`.
+- Right-click GateRun in Play: "Test: Win This Round", "Test: Stop Waiting For This Chest", "Test: Skip To The Finale".
+- Remove from your gate what GateRun now does: your own rules notice, HUD line, start/phase chest drops and seed
+  watching, your own exit copy (gate 2) and gear guard. Keep your gameplay.
+- Never stuck: a round that runs out ends anyway; a chest seed not eaten in 25 s lets the gate go on (Gate Exit eats it
+  for the player at the end); a missing finale drops the giant pumpkin in front of the player; a giant pumpkin that
+  vanishes without breaking still drops the seed (GateBossFinale).
+
+### A kit per gate (easy to change and fix)
+
+- `Exports/Gates/gateN/<Name>_Kit.blend` (Name: PlayGround / SlimeBowl / BallValley), built by
+  `Exports/Gates/gateN/tools/<name>_kit.py`: re-runnable, never overwrites the .blend without `--force` (once the user
+  edits it, it's theirs). One collection per piece, pieces named `<Name>_Kit_<Piece>`, pivots on snap points, real
+  metres from the game. One palette texture + material per gate (`Exports/Remodel/tools/palette_kit.py` method). The
+  user's clean mesh style (closed, fewest quads round openings, separate trim pieces).
+- A `Sample_Arena` collection (not exported) lays the pieces out like the concept, and renders (`kit_sheet.png`, and the
+  arena from the concept's angle) go next to the .blend for the user to compare with the concept.
+- Piece lists: Prompt 3 in each gate's PROMPTS file (gate 1: `Exports/PlayGround_Concept/PROMPTS.md` Prompt 3 and
+  `BUILD_LIST.md`).
+- Export by script to `Assets/Models/Gates/<Name>/` (textures `Assets/M_Textures/Gates/<Name>/`); then a re-runnable
+  `Tools > 429 Game > Gates > Build <Name> Kit` menu makes one prefab per piece and dresses the stage with them,
+  keeping the gameplay colliders and sizes.
+- Headless Blender (`blender -b`) for builds and renders; the live Blender only with `BLENDER_LOCK.txt`.
+
+### New order for each gate session
+1. The kit: script, .blend, renders; show the user and take their fixes.
+2. Logic fixes from your brief that don't depend on the flow (measure first if Unity is free).
+3. When the coordinator says GateRun is ready: move your gate onto it (card, chests, rounds, HUD, finale).
+4. The rest of your brief (fun and pacing) on the new rounds.
+5. The kit into Unity (export, prefabs, dress the stage), then the full run to Whack 6.
+New folders each gate owns: `Assets/Models/Gates/<Name>/`, `Assets/M_Textures/Gates/<Name>/`, `Exports/Gates/gateN/`.
 
 ## 1. Where the gates stand
 
@@ -16,8 +104,9 @@ Made from: `Assets/NOTES_Next_Time.md`, Claude's memory, the gate code, and GAME
 | **Worst problems** | A setup menu re-run silently drops the rooftop finale; no first-step hint; logs bunch all 4 mini bosses | Its own copy of the exit (not GateExit); the Shield chest never drops; a setup menu re-run brings back the old finale; ~30 s idle start; particles ~2x budget | Pockets don't matter (the boss comes at ~194 s anyway); holes hard to see; no gear chests; no fallback if the boss vanishes |
 
 None of the three has been played through in the headset. Full findings (code facts with line numbers) for each gate:
-`gate1_findings.md`, `gate2_findings.md`, `gate3_findings.md` in the shared notes folder
-(`C:/Users/ADMIN/AppData/Local/Claude-Data/claude_pzs8sxrjxfjjc/side-session-notes/local_a92177a0-83c6-4fb5-af73-83935012cefe/`).
+`gate1_findings.md`, `gate2_findings.md`, `gate3_findings.md` in the shared notes folder ("the notes folder" below),
+copied with its `README.md` and `requests/done/` to `Exports/Gates/session_notes/` on 2026-11-23 (the folder itself is
+on the second PC only).
 
 ## 2. The one ending (every route)
 
@@ -64,11 +153,12 @@ Every gate session keeps these. The coordinator checks them in Phase 2.
 ### What to improve in the ending (owner: the coordinating session)
 
 - **E1 Three looks for the giant pumpkin.** All 3 gates point their `finaleBoss` at the same
-  `Prefabs/Gates/Pumpkin_Ball_Boss` (the bowling pumpkin, grown). Make 3 prefab variants, one per gate, so it doesn't
-  feel like the final boss twice: e.g. gate 1 a stew pumpkin dripping slime, gate 2 a bowling-ball pumpkin with finger
-  holes, gate 3 a grassy rolling pumpkin. The coordinator makes `Prefabs/Gates/Pumpkin_Ball_Boss_PlayGround`,
-  `_Bowling` and `_Valley` in Phase 0; each gate session then owns its variant (tint, hat, model child, its own health
-  and radius); the base prefab and `PumpkinBallBoss.cs` stay with the coordinator.
+  `Prefabs/Gates/Pumpkin_Ball_Boss` (the bowling pumpkin, grown). Each gate session makes ITS OWN prefab variant of it
+  in its own prefab folder (`Prefabs/PlayGround/`, `Prefabs/Bowling/`, `Prefabs/BallValley/`) and points its stage's
+  `finaleBoss` at it, so it doesn't feel like the final boss twice: e.g. gate 1 a stew pumpkin dripping slime, gate 2 a
+  bowling-ball pumpkin with finger holes, gate 3 a grassy rolling pumpkin. Done in Phase 0: `GateFinalesMenu` keeps a
+  finale boss that is a variant of the giant pumpkin (and no longer rewrites the cook time or a custom rules sign). The
+  base prefab and `PumpkinBallBoss.cs` stay with the coordinator.
 - **E2 One reward budget.** Today the giant pumpkin breaks into 14 candies (gate 1: 42) and 30 EXP. Pick one number
   for all three (the user's call), set in one place (`GateFinalesMenu`).
 - **E3 Ending length.** After a gate the player still has Whack 6 + Whack 7 (2 bee bosses), the lid and
@@ -85,8 +175,9 @@ Every gate session keeps these. The coordinator checks them in Phase 2.
 - **E7 Enemy Manager 4 on the way out.** Gates 2 and 3 leave through "Enemy 4 - Get the Seed", which switches on
   `-EnemyManager 4` (recursive). Gate 1 skips that state. Check in E6 that no bee swarm follows the player onto the
   rooftop; if it does, gates 2/3 go straight to "Tween PlayGroundZ" like gate 1.
-- **E8 Traps in old menus.** `Paths/Editor/Gate3PickMenu` would silently send gate 3 to gates 1/2 again: retire it.
-  The purple hole's "Boss" keep rule is case-sensitive (`pumpkin_boss_Z_Doom` doesn't match): fix in the shared code.
+- **E8 Traps in old menus (done in Phase 0).** `Paths/Editor/Gate3PickMenu`'s two menus are greyed out and refuse to
+  run (either would cut Ball Valley out again). The purple hole's keep names now match in any case
+  (`pumpkin_boss_Z_Doom` counts as a boss).
   `GateExit` waits for the rooftop forever (it only warns and shows the view): fine, but log the GAMESTAGES state.
 - **Already the user's rule, keep it:** killing a real Pumpkin_Boss_Z anywhere sends GAMESTAGES' global "Win" ->
   "wait" -> Thank For Playing -> a new run. Gate 1's Doom boss (the wrecked-pot punishment) is one; the gate 1 session
@@ -98,15 +189,14 @@ Every gate session keeps these. The coordinator checks them in Phase 2.
 
 0. **Before:** the user saves the scene in Unity and OKs one baseline commit (101 files changed since the last
    commit, 2026-11-20 17:14). Then each session's changes are easy to see and undo.
-1. **Phase 0 (coordinating session, short):**
-   - E1: the 3 giant pumpkin variants, each gate's `finaleBoss` re-pointed by `GateFinalesMenu`.
-   - E8: retire Gate3PickMenu; fix the purple hole's case-sensitive "Boss" rule.
-   - A shared test harness in `Exports/Gates/tools/` (C# 6 snippets for the pt.sh runner): start a test on
-     `_claude_test`, jump to Path N, skip to the finale, skip to the rooftop, kill the boss, check the replay.
-   - The notes folder gets `UNITY_LOCK.txt` (empty = free) and a `requests/` folder.
-   - If the user OKs §5 items 1-2: the two project skills and MCP for Unity's skill, so every gate session tests the
-     same way.
-   - Then `Scripts/Gates/**` is frozen until Phase 2.
+1. **Phase 0 (coordinating session): DONE 2026-11-22.**
+   - Unity's "Script Changes While Playing" = "Recompile After Finished Playing" (user OK'd).
+   - Skills in `.claude/skills/`: `unity-429r-playtest` (the test kit + snippets + `scripts/csc_check.py`, the offline
+     compile check), `playmaker-429r` (+ `scripts/gamestages.py`, the GAMESTAGES reader), `unity-mcp-orchestrator`
+     (MCP for Unity's own skill, v10.3.0); `blender-429r` now works on both PCs.
+   - E1 menu guard and E8 fixes (above). Compile-checked (Roslyn, 0 errors) and compiled in Unity.
+   - The notes folder has `UNITY_LOCK.txt`, `BLENDER_LOCK.txt` (empty = free) and `requests/`.
+   - `Scripts/Gates/**` is frozen until Phase 2.
 2. **Phase 1:** the 3 gate sessions in parallel (design, code, art). Unity in turns (lock below).
 3. **Phase 2 (coordinating session):** all GAMESTAGES/scene edits the gates asked for, in one go; E4/E5; the user
    saves the scene; E6 for all 3 routes.
@@ -340,8 +430,8 @@ user's OK.
 
 | # | What | Link | Install | Fit for 429R |
 |---|---|---|---|---|
-| 1 | **Our own project skills** (made with skill-creator, already installed): `unity-429r-playtest` (the §4 test kit and the memory's test gotchas) and `playmaker-429r` (how to read/edit GAMESTAGES and FSMs safely: the scene dump script, SerializedObject for FSM variables, re-runnable menus, the user saves the scene). Also fix `blender-429r`'s old paths (it still says G:/steam and K:/). | (local) `.claude/skills/` | Claude writes them in the repo; the user reads them first | **Highest**: every gate session runs the same tests the same way |
-| 2 | **MCP for Unity's own skill** `unity-mcp-skill` (how to use the MCP well: read editor state first, batch calls, compile and console checks, screenshots, several editors) | https://github.com/CoplayDev/unity-mcp/tree/v10.3.0/unity-mcp-skill (the tag matching the project's package; MIT) | Copy that folder (SKILL.md + references) into `.claude/skills/`; take a newer copy only after updating the package | **High**: the MCP the project already uses |
+| 1 | **INSTALLED 2026-11-22. Our own project skills** (made with skill-creator, already installed): `unity-429r-playtest` (the §4 test kit and the memory's test gotchas) and `playmaker-429r` (how to read/edit GAMESTAGES and FSMs safely: the scene dump script, SerializedObject for FSM variables, re-runnable menus, the user saves the scene). Also fix `blender-429r`'s old paths (it still says G:/steam and K:/). | (local) `.claude/skills/` | Claude writes them in the repo; the user reads them first | **Highest**: every gate session runs the same tests the same way |
+| 2 | **INSTALLED 2026-11-22 (as `unity-mcp-orchestrator`). MCP for Unity's own skill** `unity-mcp-skill` (how to use the MCP well: read editor state first, batch calls, compile and console checks, screenshots, several editors) | https://github.com/CoplayDev/unity-mcp/tree/v10.3.0/unity-mcp-skill (the tag matching the project's package; MIT) | Copy that folder (SKILL.md + references) into `.claude/skills/`; take a newer copy only after updating the package | **High**: the MCP the project already uses |
 | 3 | **Unity's official plugin** (33 skills: physics collisions, AI navigation, audio, URP post, XR...) | https://github.com/Unity-Technologies/unity-agent-plugin | `/plugin marketplace add Unity-Technologies/unity-agent-plugin`, then `/plugin install unity@unity-agent-plugin` | **Medium**: use its skills as advice only. Acting in the editor needs the beta Unity CLI plus a package in the project (a second editor bridge next to MCP for Unity); `create-xr` changes XR/graphics settings: never on the shipped project. Unity Companion License |
 | 4 | **MCP for Unity custom tool** for PlayMaker: a C# editor class marked `[McpForUnityTool("...")]` that lists/edits FSM states, transitions and variables through PlayMaker's API | https://coplaydev.github.io/unity-mcp/guides/custom-tools | Claude writes it in an `Editor/` folder (later, after skill 1) | **High, but it must be built** |
 | 5 | **superpowers** (brainstorming, writing-plans, systematic-debugging, verification-before-completion, parallel agents) | https://github.com/obra/superpowers | `/plugin install superpowers@claude-plugins-official` | **Medium-low**: good habits, but heavy process that triggers itself (clashes with "keep it simple"); its TDD/worktree steps don't know Unity |
@@ -355,13 +445,8 @@ the awesome lists (no Unity, Blender or game-design entries). Built-in git workt
 
 ## 6. Questions for the user
 
-Before the gate sessions start:
-1. **Start them?** Phase 0 first, then the 3 gate sessions together (recommended), or one gate at a time.
-2. **Baseline commit** of today's 101 changed files (after you save the scene), so each session's work is easy to
-   see and undo?
-3. **Unity sharing:** OK to set Preferences > General > Script Changes While Playing = "Recompile After Finished
-   Playing", and the one-at-a-time Unity lock?
-4. **Skills:** which of §5 to add? Recommended: 1 (our own project skills) and 2 (MCP for Unity's skill).
+Answered 2026-11-22: start (Phase 0, then the 3 together); baseline committed by the user; Unity preference set by
+Claude; skills 1 and 2 added.
 
 Can wait until Phase 2:
 5. **Ending length (E3):** keep Whack 6 + Whack 7 after every gate, as you chose on 2026-11-18?

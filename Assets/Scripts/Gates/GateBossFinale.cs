@@ -23,6 +23,7 @@ namespace Game.Gates
         private Action<PumpkinBallBoss> setup;
         private Func<Vector3, Vector3> seedAt;
         private string log = "[Gate]";
+        private bool exited;
 
         /// <summary>
         /// The finale: <paramref name="delay"/> seconds from now the boss drops onto <paramref name="landAt"/> (a floor
@@ -65,6 +66,20 @@ namespace Game.Gates
             setup?.Invoke(Boss);
             Boss.Broken += OnBroken;
             Debug.Log($"{log} The giant pumpkin drops in.", this);
+            // Never stuck (2026-11-23): gone without breaking (destroyed by something else), the seed still drops where it
+            // was last seen.
+            var last = Boss.transform.position;
+            while (!exited && Boss != null)
+            {
+                last = Boss.transform.position;
+                yield return null;
+            }
+            if (!exited)
+            {
+                Debug.LogWarning($"{log} The giant pumpkin vanished without breaking: the seed drops where it was.", this);
+                last.y = floorPoint.y;
+                Exit(last);
+            }
         }
 
         private void OnBroken(PumpkinBallBoss boss)
@@ -76,6 +91,8 @@ namespace Game.Gates
 
         private void Exit(Vector3 at)
         {
+            if (exited) return;
+            exited = true;
             if (seedAt != null) at = seedAt(at);
             GateExit.Begin(gameObject, seedPrefab, at, log);
         }

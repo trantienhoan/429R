@@ -16119,7 +16119,7 @@ MonoBehaviour:
   - {fileID: 8300000, guid: bdaf5f6e3901b474f9ea00411277f5d9, type: 3}
   successSound: {fileID: 8300000, guid: 6d26084b16a750844979a825f69e9b01, type: 3}
   cookedBool: 
-  wrongResult: {fileID: 8163673524177615910, guid: cca6a220c06c53c4c969c444d9a4c7d5,
+  wrongResult: {fileID: 4227265222926718965, guid: 4e81a9d3d99ef754fb8041c7c8149066,
     type: 3}
   candyColours: {fileID: 11400000, guid: 984529a2143b0844da804f2f441b022c, type: 2}
   minBadPumpkins: 1
@@ -16927,6 +16927,10 @@ MonoBehaviour:
   spareLog: {fileID: 3078483929477014812, guid: f7983ab7340866148894de292c188122,
     type: 3}
   countdownTitle: DEFEND THE CAULDRON!
+  sparePumpkinAfter: 40
+  newHatAfter: 4
+  hatPrefab: {fileID: 8351971571453308031, guid: efcaa2d6654686e45b0c9c41ea2d5f30,
+    type: 3}
   popEffects:
   - effect: {fileID: 3026262276578176907, guid: 8928595719cc9994993b1189ce3c4067,
       type: 3}
@@ -16984,6 +16988,11 @@ MonoBehaviour:
   nearRadius: 7
   farRadius: 8.5
   standOff: 1.05
+  spawnFromGates: 1
+  openGates: 01000000020000000200000003000000
+  gateSwitchSeconds: 25
+  gateInset: 1.2
+  gateSpread: 1.2
   miniBosses:
   - label: '2:30 Slime_Big_Blue (Sticky): Chest gear'
     at: 0.25
@@ -17016,13 +17025,14 @@ MonoBehaviour:
   startGearBool: Bracer_Gear
   burstDelay: 2.5
   pumpkinFinale: 1
-  finaleBoss: {fileID: 5024745174123825868, guid: b13714af67e2bd14583d1eb4d4b3b2be,
+  finaleBoss: {fileID: 1169478436359851679, guid: 96da84354417c3844b2d6524f22ca643,
     type: 3}
   finaleSeed: {fileID: 3101255149643869238, guid: 23249313e7cb0cf489370b4ecb4416fe,
     type: 3}
   finaleDelay: 4
   finaleCandies: 42
   finaleHealth: 0
+  finaleRadius: 1.5
   chaosBoss: {fileID: 1311611032248163501, guid: 022dafcfb46152645a387cc42919ea2b,
     type: 3}
   bossDelay: 1.5

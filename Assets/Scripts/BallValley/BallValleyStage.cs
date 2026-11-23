@@ -29,6 +29,9 @@ namespace Balls
     {
         public static BallValleyStage I { get; private set; }
 
+        [Tooltip("BALLS' numbers. 429R gate 3: with a Ball Valley Gate on this object, the gate's own numbers replace some " +
+                 "of these when it starts (the shrink clock and sizes, gifts, crumble, candy speed): change those on the Ball " +
+                 "Valley Gate, editing them here does nothing.")]
         public Tuning tune = new Tuning();
         [Tooltip("BALLS/VertexColorLit, only for the code-built terrain used if the map model is missing (empty: plain Lit).")]
         public Shader vertexColorShader;
@@ -71,6 +74,35 @@ namespace Balls
         public LightShadows sunShadows = LightShadows.Hard;
         [Tooltip("Flat ambient light while the stage runs: dusk violet, so the shadow sides stay readable.")]
         public Color ambient = new Color(0.36f, 0.31f, 0.48f);
+
+        [Header("429R: kit (gate 3's own look; Tools > 429 Game > Ball Valley > Build Ball Valley Kit fills these; empty = BALLS' models)")]
+        [Tooltip("BallValley_Kit_Mat (the kit's palette): with it set the valley wears the kit. The lawn, its cliffs and the " +
+                 "holes take their colours from it.")]
+        public Material kitMaterial;
+        [Tooltip("The rim between the holes (BallValley_Kit_Rim_Straight_4m): laid side by side and stretched to fit each wall.")]
+        public GameObject kitRim;
+        [Tooltip("The corner and side holes (their pit, rune ring, collar and lanterns); each turned to its own corner or side.")]
+        public GameObject kitHoleCorner, kitHoleSide;
+        [Tooltip("Trees on the lawn (one picked per tree), and rocks (boulders, gravestones: one picked per rock).")]
+        public GameObject[] kitTrees = new GameObject[0], kitRocks = new GameObject[0];
+        [Tooltip("Pieces dressing the ground round the valley (outside its full size, no colliders).")]
+        public KitPlace[] kitDecor = new KitPlace[0];
+        [Tooltip("A night re-tint of BALLS_Palette for BALLS' models still in the valley with the kit on (the mountains, the " +
+                 "ground round it, the grass tufts). Empty: their day colours.")]
+        public Texture2D nightPalette;
+
+        /// <summary>429R: a kit piece and where it stands (x, z in metres, turn in degrees, size).</summary>
+        [System.Serializable]
+        public struct KitPlace
+        {
+            public GameObject piece;
+            public Vector2 at;
+            public float turn;
+            [Min(0.05f)] public float size;
+        }
+
+        /// <summary>429R: the valley wears the kit (its material is set).</summary>
+        public bool KitOn => kitMaterial != null;
 
         [Header("429R: sounds and log")]
         [Tooltip("The clips BALLS' sound table names, found by Set Up Ball Valley (429R's Audio/SFX, and BallValley/Sfx).")]
@@ -118,8 +150,18 @@ namespace Balls
             int hunting = 0;
             foreach (var p in players)
                 if (p && !p.isHuman && p.alive && p.brain is BotBrain b && b.HuntsHuman) hunting++;
-            return hunting < Mathf.Max(0, gate.maxHunters);
+            return hunting < Mathf.Max(0, maxHunters);
         }
+
+        /// <summary>429R gate 3: most bots hunting the VR player at once (the gate sets it each round).</summary>
+        [System.NonSerialized] public int maxHunters = 1;
+        /// <summary>
+        /// 429R gate 3: may bots hunt each other? Off in the gate (2026-11-23 baseline: the bots pocketed 14 of 15 balls
+        /// themselves): they graze and go for the player, so the pocketing is the player's.
+        /// </summary>
+        [System.NonSerialized] public bool botsHuntBots = true;
+        /// <summary>429R gate 3: bots at the first round's start (below 0: the round's own number); the gate drops its balls in later.</summary>
+        [System.NonSerialized] public int startBalls = -1;
 
         /// <summary>
         /// 429R: the layers the valley's physics queries look at. Everything it makes is on Default; this keeps its bots,
@@ -219,6 +261,7 @@ namespace Balls
             QueryMask = 1 << 0;   // Default: everything the valley makes
             if (vertexColorShader) Gfx.VertexColorShader = vertexColorShader;
             Gfx.Init(transform);
+            if (KitOn && nightPalette) Gfx.PaletteMaterial().SetTexture("_BaseMap", nightPalette);   // 429R: kit: BALLS' leftovers at night
             BallPhysics.Hook(tune.ballBounce, tune.rimBounce);
         }
 
@@ -293,9 +336,39 @@ namespace Balls
             Physics.SyncTransforms();
             Random.state = savedRandom;
 
-            for (int i = 0; i < PelletCap; i++) SpawnPellet(FindClearPoint(3f, 0.6f, HoleM(8f)) + Vector3.up * 0.4f, Vector3.zero, RandomPelletColor());
+            // 429R: a third of the candies at once (each is a whole candy prefab: a long first frame in the headset), the
+            // spawner fills the rest within seconds.
+            int firstCandies = candyPrefabs != null && candyPrefabs.Length > 0 ? Mathf.Min(PelletCap, Mathf.Max(6, PelletCap / 3)) : PelletCap;
+            for (int i = 0; i < firstCandies; i++) SpawnPellet(FindClearPoint(3f, 0.6f, HoleM(8f)) + Vector3.up * 0.4f, Vector3.zero, RandomPelletColor());
             for (int i = 0; i < tune.maxGrass / 2; i++) SpawnGrass();
             for (int i = 0; i < tune.slimeCount / 2; i++) SpawnSlime();
+            if (KitOn) PlaceKitDecor();   // 429R
+        }
+
+        /// <summary>429R: the kit's dressing round the valley (looks only), under the world so it goes with it.</summary>
+        void PlaceKitDecor()
+        {
+            if (kitDecor == null) return;
+            var holder = NewWorldObject("Decor").transform;
+            foreach (var d in kitDecor)
+            {
+                if (!d.piece) continue;
+                var go = Instantiate(d.piece, holder, false);
+                go.name = d.piece.name;
+                go.transform.SetLocalPositionAndRotation(new Vector3(d.at.x, 0f, d.at.y), Quaternion.Euler(0f, d.turn, 0f));
+                go.transform.localScale = Vector3.one * (d.size > 0f ? d.size : 1f);
+                foreach (var c in go.GetComponentsInChildren<Collider>()) Destroy(c);
+                Gfx.NoShadows(go.transform);
+            }
+        }
+
+        /// <summary>429R: a kit piece placed under <paramref name="parent"/> with its own pivot (its colliders taken off).</summary>
+        static Transform PlaceKit(GameObject piece, Transform parent)
+        {
+            var go = Instantiate(piece, parent, false);
+            go.name = piece.name;
+            foreach (var c in go.GetComponentsInChildren<Collider>()) Destroy(c);
+            return go.transform;
         }
 
         /// <summary>
@@ -808,8 +881,8 @@ namespace Balls
         void StartRound(int r, bool announce)
         {
             Round = Mathf.Max(1, r);
-            int bots = GateMode ? Mathf.Max(1, gate.balls) : BotsFor(Round);              // 429R: gate 3: its balls
-            Vector2 temper = GateMode ? gate.temper : TemperFor(Round);
+            int bots = GateMode ? Mathf.Max(0, startBalls) : startBalls >= 0 ? startBalls : BotsFor(Round);   // 429R: gate 3 drops its balls round by round
+            Vector2 temper = GateMode ? new Vector2(tune.botAggressionMin, tune.botAggressionMax) : TemperFor(Round);   // (gate 3 sets them)
             tune.botAggressionMin = temper.x;   // (each bot keeps its own temper inside the range: BotBrain reads it live)
             tune.botAggressionMax = temper.y;
             while (BotCount > bots) RemoveOneBot();
@@ -875,14 +948,36 @@ namespace Balls
         /// 429R (gate 3): straight to the last, smallest phase from wherever it is, over <paramref name="seconds"/> (the gate's
         /// balls are all gone early: its boss comes on the smallest field). Nothing if it's there or on its way already.
         /// </summary>
-        public void ShrinkToLast(float seconds)
+        public void ShrinkToLast(float seconds) => ShrinkToPhase(PhaseCount - 1, seconds);
+
+        /// <summary>
+        /// 429R gate 3: to phase <paramref name="k"/> (0-based: 1 is the first step smaller) from wherever it is, over
+        /// <paramref name="seconds"/> (the gate shrinks it a step each round itself). Nothing if it's there, past it, or on
+        /// its way already.
+        /// </summary>
+        public void ShrinkToPhase(int k, float seconds)
         {
             int last = PhaseCount - 1;
-            if (!valley || phase >= last || roundOver) return;
-            if (borderPending > 0f && Mathf.Approximately(borderPending, Phases[last])) return;
-            phase = last - 1;   // (from where it is now, mid-shrink too: Begin Shrink starts at the size it has)
+            k = Mathf.Clamp(k, 1, last);
+            if (!valley || phase >= k || roundOver) return;
+            if (borderPending > 0f && Mathf.Approximately(borderPending, Phases[k])) return;
+            phase = k - 1;   // (from where it is now, mid-shrink too: Begin Shrink starts at the size it has)
             BeginShrink();
             forcedShrinkSeconds = Mathf.Max(0.2f, seconds);
+        }
+
+        /// <summary>
+        /// 429R gate 3: <paramref name="n"/> new balls drop in from the sky over <paramref name="within"/> seconds (a round's
+        /// balls); pocketed, each is gone for good.
+        /// </summary>
+        public void DropBalls(int n, float within)
+        {
+            for (int i = 0; i < n; i++)
+            {
+                var bot = CreateBot();
+                bot.freeDrop = true;
+                QueueRevive(bot, Random.Range(0.2f, Mathf.Max(0.3f, within)));
+            }
         }
 
         // 429R: Shrink To Last's own speed for the shrink going on (0: the usual Shrink Seconds).
@@ -1189,7 +1284,7 @@ namespace Balls
             var line = new FeedLine { text = text, color = c, time = Time.time };
             feed.Add(line);
             if (feed.Count > 6) feed.RemoveAt(0);
-            if (logFeed) Debug.Log("[BallValley] " + text, this);
+            if (logFeed && (Application.isEditor || Debug.isDebugBuild)) Debug.Log("[BallValley] " + text, this);   // 429R: not in release builds
         }
 
         // ---------- spawning helpers ----------
@@ -1271,6 +1366,7 @@ namespace Balls
         /// <summary>A boulder from BALLS_Map.blend (some are slime rocks with a hole slimes come out of), or the code-built rock if the models are missing.</summary>
         void SpawnRock(Vector3 p)
         {
+            if (KitOn && kitRocks != null && kitRocks.Length > 0) { SpawnKitRock(p); return; }   // 429R: the kit's rocks
             if (!ModelLib.HasPath(SlimeRockModel)) { SpawnCodeRock(p); return; }
             bool slimeRock = Random.value < tune.slimeRockShare;
             string model = slimeRock ? SlimeRockModel : BoulderModels[Random.Range(0, BoulderModels.Length)];
@@ -1300,6 +1396,36 @@ namespace Balls
             if (slimeRock)
                 foreach (var t in inst.GetComponentsInChildren<Transform>())
                     if (t.name.StartsWith("SlimeExit")) { slimeExits.Add(t); break; }
+            AddProp(root.transform, pivot, false, s);
+        }
+
+        /// <summary>429R: a kit rock (a mossy boulder or a gravestone): its own mesh is its collider, it wobbles on a pivot.</summary>
+        void SpawnKitRock(Vector3 p)
+        {
+            var piece = kitRocks[Random.Range(0, kitRocks.Length)];
+            if (!piece) { SpawnCodeRock(p); return; }
+            float s = Random.Range(0.85f, 1.25f);
+            var root = NewWorldObject("Rock");
+            root.transform.SetPositionAndRotation(p, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f));
+            root.transform.localScale = Vector3.one * s;
+            var pivot = new GameObject("Jiggle").transform;
+            pivot.SetParent(root.transform, false);
+            var inst = PlaceKit(piece, pivot);
+            foreach (var mf in inst.GetComponentsInChildren<MeshFilter>())
+            {
+                if (!mf.sharedMesh) continue;
+                var col = new GameObject("Collider").transform;
+                col.SetParent(root.transform, false);
+                Matrix4x4 m = root.transform.worldToLocalMatrix * mf.transform.localToWorldMatrix;
+                col.localPosition = m.GetColumn(3);
+                col.localRotation = m.rotation;
+                col.localScale = m.lossyScale;
+                var mc = col.gameObject.AddComponent<MeshCollider>();
+                mc.sharedMesh = mf.sharedMesh;
+                mc.sharedMaterial = Gfx.RockPhys;
+                col.gameObject.AddComponent<Hazard>();
+                fieldRocks.Add(mc);
+            }
             AddProp(root.transform, pivot, false, s);
         }
 
@@ -1335,6 +1461,18 @@ namespace Balls
             root.AddComponent<Hazard>().wood = true;   // trees sound like wood
             var pivot = new GameObject("Jiggle").transform;   // the tree sways on this; its trunk collider stays put
             pivot.SetParent(root.transform, false);
+            // 429R: the kit's tree (a jelly-bubble tree on a licorice trunk), one picked per tree.
+            if (KitOn && kitTrees != null && kitTrees.Length > 0)
+            {
+                var piece = kitTrees[Random.Range(0, kitTrees.Length)];
+                if (piece)
+                {
+                    var t = PlaceKit(piece, pivot);
+                    t.localRotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
+                    AddProp(root.transform, pivot, true, s);
+                    return;
+                }
+            }
             // The pine from BALLS_Map.blend.
             string pineModel = Random.value < 0.6f ? "Map/Pine_Tall" : "Map/Pine_Short";
             float yaw = Random.Range(0f, 360f);
@@ -1443,6 +1581,7 @@ namespace Balls
         public void SpawnLooseBall(Vector3 pos, Vector3 vel, float r, BallPlayer from)
         {
             Color c = LooseColor;
+            looseBalls.RemoveAll(l => !l);   // 429R: one taken away by something else (the purple hole, a clean-up) leaves a gap
             if (looseBalls.Count > tune.maxLooseBalls) looseBalls[0].Expire();   // 429R: Max Loose Balls (BALLS: 400, phones 150)
             var go = NewWorldObject("Loose Ball");
             go.transform.position = pos;
@@ -1707,7 +1846,7 @@ namespace Balls
             }
             foreach (var l in looseBalls)
             {
-                if (!l.CanEat(me)) continue;
+                if (!l || !l.CanEat(me)) continue;   // 429R: (one taken away by something else)
                 Vector3 d = Flat(l.transform.position - pos);
                 float s = d.sqrMagnitude * 0.6f;   // loose balls are worth more
                 if (s < bestD) { bestD = s; best = l; }

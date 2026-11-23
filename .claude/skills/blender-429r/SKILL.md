@@ -7,7 +7,8 @@ description: Blender work for the 429R VR game ("Four Twenty Knight - 429"). Cov
 
 The user (a PlayMaker developer, not a 3D programmer) models in Blender and hands over texturing, fixes and
 animation. Work happens either live in their open Blender through the Blender MCP (`execute_blender_code`, `look`),
-or headless (`G:/steam/steamapps/common/Blender/blender.exe -b <file.blend> --python <script.py>`). Explain
+or headless (`<blender> -b <file.blend> --python <script.py>`; `<blender>` is
+`E:/Steam/steamapps/common/Blender/blender.exe` on the second PC; check the K: PC's own Steam folder). Explain
 results in plain words and show pictures, not code.
 
 ## Ground rules (the user set these; each cost a redo when missed)
@@ -32,8 +33,9 @@ results in plain words and show pictures, not code.
 
 - Blender 5.2 LTS (Steam), path above. No system Python; numpy is available inside Blender.
 - The Claude app is an MSIX package: files it writes under `%APPDATA%` / `AppData\Local` (including the session
-  scratchpad) are invisible to Blender and Unity. Put scripts, test copies and backups under
-  `K:/WORK_2026/08_04/_claude/` (the job folder; backups in `_claude/backups/`).
+  scratchpad) are invisible to Blender and Unity. Put scripts, test copies and backups in the job folder:
+  `K:/WORK_2026/08_04/_claude/` on the K: PC, `C:/Users/ADMIN/Documents/429R_claude_backups/<date>/` on the
+  second PC (it has no K: drive; the repo there is `C:/Github_Repository/429R`). `backup()` picks the right one.
 - **Edit Mode:** `ob.data` UV data reads as empty while a mesh is in Edit Mode. Read through
   `bmesh.from_edit_mesh` (the skill's `mesh_of()` does this), or switch to Object Mode and back. Hidden faces are
   still in the bmesh. For previews of a hidden or tweaked model, use a temporary copy.
@@ -89,7 +91,8 @@ results in plain words and show pictures, not code.
    steps. Offer, don't do, changes that affect the whole model.
 
 `scripts/uvpaint.py` holds the helpers (load with
-`exec(open(r"K:/Repository/429R/.claude/skills/blender-429r/scripts/uvpaint.py", encoding="utf-8").read())`):
+`exec(open(r"<repo>/.claude/skills/blender-429r/scripts/uvpaint.py", encoding="utf-8").read())`, where `<repo>` is
+`K:/Repository/429R` on the K: PC and `C:/Github_Repository/429R` on the second PC):
 `mesh_of/done`, `objects_using`, the face filters (`selected_faces`, `faces_in_group`, `faces_with_material`,
 `any_of`, `invert`), `pixels/write_image/new_image/backup`, `bake_layout` (a `Layout` with `mask`, `obj`, `face`,
 `pos`, `nrm`, `stacked`, `any_face`), `dilate`, `height_to_normal`, and pattern helpers (`hex_color`, `lerp`,

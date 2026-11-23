@@ -97,9 +97,16 @@ namespace Balls
             madeMeshes.Clear();
         }
 
+        /// <summary>429R: the stage, when it wears gate 3's kit (null: BALLS' models).</summary>
+        BallValleyStage Kit => BallValleyStage.I && BallValleyStage.I.KitOn ? BallValleyStage.I : null;
+
+        /// <summary>429R: the material of what the valley draws itself (the lawn, its cliffs, the chasm, the holes).</summary>
+        Material OwnMaterial => Kit ? Kit.kitMaterial : Gfx.PaletteMaterial();
+
         public void Build(Tuning tune)
         {
             t = tune;
+            UsePaletteSpots(Kit != null);   // 429R: the lawn's and the cliffs' colours in the kit's palette or BALLS'
             StripeWidth = BallsStripeWidth * t.LayoutScale;   // 429R: the lawn's stripes shrink with the valley (BALLS: 10 m)
             float hx = t.halfX, hz = t.halfZ;
             AddCave(new Vector3(-hx, 0f, hz), true);   // 0 top-left
@@ -111,7 +118,7 @@ namespace Balls
 
             // The modelled map (mountains, ground ring; its field and pockets become the shrinking island and six solid
             // holes, see ValleyShrink.cs), otherwise the code-built terrain (which doesn't shrink).
-            var map = ModelLib.Place(MapModel, transform, Gfx.PaletteMaterial());
+            var map = ModelLib.Place(MapModel, transform, Gfx.PaletteMaterial());   // (429R kit: at night, see the stage's Night Palette)
             if (map) SetupModelMap(map);
             else BuildTerrain();
             BuildFloor();   // after the map: the floor is cut around the holes' pits
@@ -137,8 +144,21 @@ namespace Balls
                 c.pitCenter = c.mouth + c.outward * 5f;
             }
             MoveHoles();
-            RebuildFloor();
+            // 429R: the floor's colliders (the floor and the teleport lawn) are cooked again at most every Floor Every
+            // seconds while it moves (every frame cost milliseconds on Quest); Update builds the last size.
+            if (Time.time >= nextFloorAt) RebuildFloor();
+            else floorDirty = true;
             UpdateWalls();   // (rebuilds the lawn too)
+        }
+
+        // 429R: see SetScale.
+        const float FloorEvery = 0.1f;
+        float nextFloorAt;
+        bool floorDirty;
+
+        void Update()
+        {
+            if (floorDirty && Time.time >= nextFloorAt) RebuildFloor();
         }
 
         void AddCave(Vector3 mouth, bool corner)
@@ -214,6 +234,8 @@ namespace Balls
         /// <summary>The floor at the valley's size now (its edges and the pits move with the border).</summary>
         void RebuildFloor()
         {
+            floorDirty = false;                         // 429R: (see SetScale)
+            nextFloorAt = Time.time + FloorEvery;
             if (!floorCol) return;
             FloorMesh(floorMesh, HalfX, HalfZ, Cuts());
             floorCol.sharedMesh = null;   // assigning it again makes the collider take the new shape
@@ -249,7 +271,9 @@ namespace Balls
         {
             var rimMat = Gfx.Lit(new Color(0.36f, 0.33f, 0.30f), 0.1f);
             rimModel = ModelLib.HasPath(RockBorderModel) ? RockBorderModel : ModelLib.HasPath(RimBlockModel) ? RimBlockModel : null;
-            rimBlocks = rimModel != null && MeasureRim();
+            rimKit = Kit ? Kit.kitRim : null;   // 429R: the kit's rim piece instead of BALLS' rocks
+            rimBlocks = rimKit ? MeasureKitRim() : rimModel != null && MeasureRim();
+            if (!rimBlocks) rimKit = null;
             for (int i = 0; i < 6; i++)
             {
                 var col = new GameObject("Rim Wall " + i);
@@ -351,7 +375,8 @@ namespace Balls
             liveWalls[i] = new Wall { a = ra, b = rocksOn ? rb : ra, outward = outward };
             if (wallCol[i].gameObject.activeSelf != on) wallCol[i].gameObject.SetActive(on);
             if (!rimBlocks && wallVis[i].gameObject.activeSelf != on) wallVis[i].gameObject.SetActive(on);
-            if (rimBlocks) LayBlocks(i, ra, rocksOn ? rb : ra, outward);   // (none if the collars meet)
+            if (rimKit) LayKitPieces(i, ra, rocksOn ? rb : ra, outward);   // 429R: the kit's rim
+            else if (rimBlocks) LayBlocks(i, ra, rocksOn ? rb : ra, outward);   // (none if the collars meet)
             if (!on) return;
             Vector3 mid = (a + b) * 0.5f + outward * (WallT * 0.5f);
             float len = Mathf.Max(0.1f, Vector3.Distance(a, b));
@@ -423,6 +448,68 @@ namespace Balls
                 Vector3 c = a + dir * (seg * (k + 0.5f)) + outward * (rimSize.z * 0.5f);
                 p.SetPositionAndRotation(new Vector3(c.x, rimCenter.y, c.z), along * RockTurns[turn]);
                 p.localScale = new Vector3(stretch, 1f, 1f);
+            }
+        }
+
+        // ---------- 429R: the kit's rim ----------
+
+        GameObject rimKit;
+        float rimKitOut = 1f;   // which way the kit piece's outside is along its own Z (+1 or -1): it's modelled from its lawn side
+
+        /// <summary>429R: measures the kit's rim piece as it comes (its size, its middle, which way its outside is).</summary>
+        bool MeasureKitRim()
+        {
+            var probe = Instantiate(rimKit, transform, false);
+            probe.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+            bool any = false;
+            var b = new Bounds();
+            foreach (var r in probe.GetComponentsInChildren<Renderer>())
+            {
+                if (!any) { b = r.bounds; any = true; }
+                else b.Encapsulate(r.bounds);
+            }
+            probe.SetActive(false);
+            Destroy(probe);
+            if (!any || b.size.x < 0.5f) return false;
+            rimSize = b.size;
+            rimCenter = b.center;
+            rimKitOut = b.center.z >= 0f ? 1f : -1f;
+            rimTurns = false;
+            return true;
+        }
+
+        /// <summary>
+        /// 429R: the kit's rim along a wall: pieces side by side, each stretched a little along its length to fill the wall
+        /// exactly, the outside of each away from the lawn.
+        /// </summary>
+        void LayKitPieces(int i, Vector3 a, Vector3 b, Vector3 outward)
+        {
+            float len = Vector3.Distance(a, b);
+            var list = blocks[i];
+            int n = len < 1f ? 0 : Mathf.Max(1, Mathf.RoundToInt(len / rimSize.x));
+            while (list.Count < n)
+            {
+                var pivot = new GameObject("Rim Piece").transform;
+                pivot.SetParent(wallVis[i], false);
+                var piece = Instantiate(rimKit, pivot, false);
+                piece.name = rimKit.name;
+                piece.transform.SetLocalPositionAndRotation(-rimCenter, Quaternion.identity);   // the pivot is the piece's middle
+                foreach (var c in piece.GetComponentsInChildren<Collider>()) Destroy(c);
+                list.Add(pivot);
+            }
+            if (n == 0) { foreach (var p in list) p.gameObject.SetActive(false); return; }
+            Vector3 dir = (b - a) / len;
+            float seg = len / n;
+            var turn = Quaternion.LookRotation(outward * rimKitOut, Vector3.up);   // its Z out (or in), its length along the wall
+            for (int k = 0; k < list.Count; k++)
+            {
+                var p = list[k];
+                bool on = k < n;
+                if (p.gameObject.activeSelf != on) p.gameObject.SetActive(on);
+                if (!on) continue;
+                Vector3 c = a + dir * (seg * (k + 0.5f)) + outward * (rimSize.z * 0.5f);
+                p.SetPositionAndRotation(new Vector3(c.x, rimCenter.y, c.z), turn);
+                p.localScale = new Vector3(seg / rimSize.x, 1f, 1f);
             }
         }
 

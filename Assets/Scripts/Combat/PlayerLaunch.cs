@@ -105,7 +105,7 @@ namespace Game.Combat
             if (body != null && body.enabled) EndFlight(false);
             // The body is off (something else is moving the rig): the flight just ends; what it passed through is made
             // solid again when the next flight ends.
-            else { flying = false; velocity = Vector3.zero; Hurt(); }
+            else { flying = false; velocity = Vector3.zero; Game.Locomotion.ScriptedMoveVignette.End(this); Hurt(); }
         }
 
         // Sends the Hurt On Landing event, once, unless the player is already down.
@@ -173,6 +173,8 @@ namespace Game.Combat
             velocity = launch;
             flightStarted = Time.time;
             flying = true;
+            // The comfort vignette while flying, in gates (2026-11-23; the main game only once the user says so).
+            if (Game.Locomotion.ScriptedMoveVignette.Launches) Game.Locomotion.ScriptedMoveVignette.Begin(this);
             if (shake) Shake(launchShake);
         }
 
@@ -265,6 +267,7 @@ namespace Game.Combat
         {
             flying = false;
             velocity = Vector3.zero;
+            Game.Locomotion.ScriptedMoveVignette.End(this);
             // Solid again once the flight is over.
             foreach (var c in passedThrough)
             {

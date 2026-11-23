@@ -24,7 +24,7 @@ namespace Game.PlayGround
         [Header("Health")]
         [Tooltip("Its health. A small bug's bite takes Small Bite, a normal one's Normal Bite. With two bugs biting at a " +
                  "time (the bugs' attack turns) it loses about 1-1.5 a second while the player is away, so 150 lasts about " +
-                 "two minutes of nobody minding it, spread over the 10 minutes.")]
+                 "two minutes of nobody minding it, spread over the 5-minute cook.")]
         [Min(1f)] [SerializeField] private float maxHealth = 150f;
         [Min(0f)] [SerializeField] private float smallBite = 1f;
         [Min(0f)] [SerializeField] private float normalBite = 2f;

@@ -138,6 +138,7 @@ namespace Game.PlayGround
         // Shaking and turning its hole up after a hit: the card waits for it.
         private bool tricking;
         private bool trickWasKinematic;
+        private float ignoreHitsUntil;
         // Turned hole up by a hit and held there (kinematic) until it's hidden again.
         private bool standing;
         // Whether the aura has been switched on or off yet (since it was enabled), and which.
@@ -243,6 +244,17 @@ namespace Game.PlayGround
             if (state != CardState.Spitting && !tricking) StartCoroutine(HatTrick());
         }
 
+        /// <summary>
+        /// The card goes back into the hat at once, without showing anything new (the hat is moved for a new round of the
+        /// gate flow: the next recipe must be read off it again, not shown by a card still out from the last one).
+        /// </summary>
+        public void CardIn()
+        {
+            if (cardShown == null || state == CardState.Inside) return;
+            cardShown.gameObject.SetActive(false);
+            SetState(CardState.Inside);
+        }
+
         /// <summary>Rocks and hops the hat with a giggle, so the player notices it.</summary>
         public void Shake()
         {
@@ -252,10 +264,21 @@ namespace Game.PlayGround
         // Hit by something the player holds or threw, or by the player.
         private void OnCollisionEnter(Collision collision)
         {
+            // Just moved (hidden for a new round): it settles first, so landing on something lying there shows nothing.
+            if (Time.time < ignoreHitsUntil) return;
             if (collision.relativeVelocity.magnitude < hitSpeed) return;
             bool byPlayer = collision.collider.GetComponentInParent<XROrigin>() != null;
-            bool byItem = collision.rigidbody != null && collision.rigidbody.GetComponentInParent<XRGrabInteractable>() != null;
+            // A thing the player holds or just threw (2026-11-23: a candy or log lying about that it bumps into doesn't
+            // count, or a new round's recipe showed by itself).
+            bool byItem = collision.rigidbody != null && collision.rigidbody.GetComponentInParent<XRGrabInteractable>() != null &&
+                          Game.Combat.HeldThings.ByPlayer(collision);
             if (byPlayer || byItem) ShowRecipe();
+        }
+
+        /// <summary>Hits don't count for this many seconds (it was just moved and lands).</summary>
+        public void IgnoreHitsFor(float seconds)
+        {
+            ignoreHitsUntil = Mathf.Max(ignoreHitsUntil, Time.time + seconds);
         }
 
         private void Update()

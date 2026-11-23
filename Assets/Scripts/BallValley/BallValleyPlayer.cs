@@ -82,13 +82,27 @@ namespace Balls
         public string fallDamageEvent = "FallDamage";
         [Tooltip("Spots this close to a hole's rim (metres) aren't kept as places to put the player back.")]
         [Min(0f)] public float keepFromRim = 1.5f;
+        [Tooltip("Thrown into a hole by the giant pumpkin (within this many seconds of its throw): put back without the fall's " +
+                 "damage (2026-11-23: a charge into a pit cost its heavy hit and then 55 more).")]
+        [Min(0f)] public float bossThrowGrace = 2.5f;
+        [Tooltip("While the valley shrinks, a hole moving onto the player pushes them along, keeping them this far (metres) " +
+                 "from its rim (2026-11-23: the last shrink moved the bottom-middle hole under the start spot: a fall nobody " +
+                 "could dodge). Walking into a hole is still a fall.")]
+        [Min(0f)] public float shrinkPushFromRim = 0.6f;
         [Tooltip("The falling whistles (Cartoon_fall_1/2, as Fall Out Of World's); one plays as the view drops.")]
         public AudioClip[] fallSounds = new AudioClip[0];
         [Range(0f, 1f)] public float fallVolume = 0.9f;
 
         [Header("Special move")]
-        [Tooltip("Both fists made and held this close together (metres, knuckles) charge it.")]
-        [Min(0.05f)] public float fistsTogether = 0.3f;
+        [Tooltip("Both fists made and held this close together (metres, knuckles) charge it (2026-11-23: was 0.3 m, a " +
+                 "boxing guard charged it by mistake)...")]
+        [Min(0.05f)] public float fistsClose = 0.16f;
+        [Tooltip("...with their middle at least this far under the eyes (metres): fists up by the chin (a guard) don't charge.")]
+        [Min(0f)] public float chargeBelowEyes = 0.22f;
+        [Tooltip("A full charge dashes when the fists are pulled apart this far (metres) within Release Seconds, both still " +
+                 "made. Opening a hand, or holding them in between, lets it fizzle.")]
+        [Min(0.1f)] public float pullApart = 0.32f;
+        [Min(0.1f)] public float releaseSeconds = 0.6f;
         [Min(0.1f)] public float chargeSeconds = 1f;
         [Min(1f)] public float dashSpeed = 12f;
         [Min(0.05f)] public float dashSeconds = 0.35f;
@@ -133,6 +147,9 @@ namespace Balls
         private bool bodyWasOn;
         private bool moverWasOn;
         private bool placed;
+        private float releasedAt = -1f;
+        private bool wasFlying;
+        private float bossThrowUntil = -1f;
 
         private sealed class StillBrain : IBallBrain
         {
@@ -147,7 +164,22 @@ namespace Balls
 
         private void OnEnable() => Fist.Landed += OnPunch;
 
-        private void OnDisable() => Fist.Landed -= OnPunch;
+        private void OnDisable()
+        {
+            Fist.Landed -= OnPunch;
+            // Switched off (not destroyed) mid-fall or mid-dash: the body and the mover back on, the view back
+            // (2026-11-23: the fall's coroutine would stop with the view black and the rig unable to move).
+            StopAllCoroutines();
+            if (falling)
+            {
+                var fade = HeadsetFade.Find();
+                if (fade != null) fade.FadeIn(0.3f);
+            }
+            Hold(false);
+            falling = dashing = false;
+            ScriptedMoveVignette.End(this);   // (a dash cut short)
+            ResetCharge();
+        }
 
         private void OnDestroy()
         {
@@ -222,8 +254,13 @@ namespace Balls
             if (down || falling) vr.shieldUntil = Time.time + 0.5f;
             if (!vr.alive && !down && !falling) stage.SpawnAt(vr, BodyCentre());
 
+            // Thrown by the giant pumpkin (a launch starting right next to it): a hole they land in is forgiven for a moment.
+            bool flyingNow = launch != null && launch.Flying;
+            if (flyingNow && !wasFlying && NearBoss(HeadFloor(), 2.5f)) bossThrowUntil = Time.time + bossThrowGrace;
+            wasFlying = flyingNow;
             KeepStood(down);
             KeepInside(down);
+            KeepOffMovingPits(down);
             if (!down && !falling && !GateExit.Running && stage.valley != null)
             {
                 var feet = HeadFloor();
@@ -347,23 +384,48 @@ namespace Balls
                 if (a == null) a = f;
                 else if (b == null) b = f;
             }
-            bool together = a != null && b != null && a.IsMadeFist && b.IsMadeFist &&
-                            Vector3.Distance(a.Knuckles, b.Knuckles) < fistsTogether;
+            bool both = a != null && b != null && a.IsMadeFist && b.IsMadeFist;
+            float apart = both ? Vector3.Distance(a.Knuckles, b.Knuckles) : float.MaxValue;
+            var mid = both ? (a.Knuckles + b.Knuckles) * 0.5f : Vector3.zero;
+            // 2026-11-23: close together (touching) and low (the chest, not a guard by the chin).
+            bool low = head == null || mid.y < head.position.y - chargeBelowEyes;
+            bool together = both && apart < fistsClose && low;
             bool can = !down && !falling && !dashing && DashReady && !(launch != null && launch.Flying) && !GateExit.Running;
             if (together && can)
             {
+                releasedAt = -1f;
                 bool was = charged;
                 charge01 = Mathf.Min(1f, charge01 + Time.deltaTime / chargeSeconds);
                 charged = charge01 >= 1f;
-                var mid = (a.Knuckles + b.Knuckles) * 0.5f;
                 ShowGlow(mid, charge01);
                 if (chargeSound == null) chargeSound = Sfx.Begin(Sfx.Sound.Charge, mid);
                 else Sfx.Follow(chargeSound, Sfx.Sound.Charge, mid);
-                if (charged && !was) Sfx.Play(Sfx.Sound.GainBall, mid);
+                if (charged && !was) Sfx.Play(Sfx.Sound.Ready, mid);
                 return;
             }
-            // Let go (pulled apart or opened): a full charge dashes; a part one just fades.
-            if (charged && can) StartCoroutine(Dash());
+            // A full charge, both fists still made, on their way apart: pulled Pull Apart metres = the dash; meanwhile the
+            // glow stays. Opening a hand, or no pull within Release Seconds, lets it fizzle (a part charge just fades).
+            if (charged && can && both)
+            {
+                if (releasedAt < 0f) releasedAt = Time.time;
+                if (apart >= pullApart)
+                {
+                    StartCoroutine(Dash());
+                    ResetCharge();
+                    return;
+                }
+                if (Time.time - releasedAt < releaseSeconds)
+                {
+                    ShowGlow(mid, 1f);
+                    return;
+                }
+            }
+            ResetCharge();
+        }
+
+        private void ResetCharge()
+        {
+            releasedAt = -1f;
             charge01 = 0f;
             charged = false;
             ShowGlow(Vector3.zero, 0f);
@@ -372,6 +434,21 @@ namespace Balls
                 Sfx.Stop(chargeSound);
                 chargeSound = null;
             }
+        }
+
+        /// <summary>
+        /// Where the head faces, on the flat (2026-11-23: looking down at the fists, the flat part of the gaze gets small
+        /// and jumpy: the top of the head points the way the player faces then, and takes over).
+        /// </summary>
+        private Vector3 GazeFlat()
+        {
+            if (head == null) return BallValleyStage.Flat(origin.transform.forward).normalized;
+            var f = head.forward;
+            var flat = BallValleyStage.Flat(f);
+            float m = flat.magnitude;
+            if (m < 0.75f) flat += BallValleyStage.Flat(head.up) * (Mathf.Sign(-f.y) * (1f - m));
+            if (flat.sqrMagnitude < 0.0001f) flat = BallValleyStage.Flat(origin.transform.forward);
+            return flat.normalized;
         }
 
         private void ShowGlow(Vector3 at, float amount)
@@ -398,9 +475,8 @@ namespace Balls
         {
             dashing = true;
             dashReadyAt = Time.time + dashCooldown;
-            var dir = head != null ? BallValleyStage.Flat(head.forward) : Vector3.zero;
-            if (dir.sqrMagnitude < 0.0001f) dir = BallValleyStage.Flat(origin.transform.forward);
-            dir.Normalize();
+            ScriptedMoveVignette.Begin(this);   // the comfort vignette closes in while it carries the player (their level; Off = none)
+            var dir = GazeFlat();
             var start = HeadFloor();
             Sfx.Play(Sfx.Sound.Launch, start, 0.8f);
             Gfx.Puff(start + Vector3.up * 0.2f, new Color(0.9f, 0.85f, 0.75f, 0.7f), 12, 1.2f, 4f);
@@ -439,6 +515,7 @@ namespace Balls
                 yield return null;
             }
             dashing = false;
+            ScriptedMoveVignette.End(this);
         }
 
         private void DashInto(Rigidbody rb, float r, Vector3 c, Vector3 dir, BallPlayer owner)
@@ -489,6 +566,34 @@ namespace Balls
             if (bodyOn) body.enabled = true;
         }
 
+        // While the valley shrinks its holes move in with the border: one coming onto the player pushes them along at
+        // Shrink Push From Rim from its rim (2026-11-23 baseline run: the last shrink dropped a player standing still into
+        // the bottom-middle hole). Walking into a hole stays a fall: this only works while the valley moves.
+        private void KeepOffMovingPits(bool down)
+        {
+            var v = stage.valley;
+            if (v == null || !stage.shrinking || down || falling || GateExit.Running || (launch != null && launch.Flying)) return;
+            var feet = HeadFloor();
+            Vector3 centre = Vector3.zero;
+            float radius = 0f, gap = float.MaxValue;
+            foreach (var c in v.caves)
+            {
+                var at = c.openingRadius > 0f ? c.mouth + c.openingOffset : c.mouth;
+                float r = c.openingRadius > 0f ? c.openingRadius : c.width * 0.5f;
+                float d = BallValleyStage.Flat(feet - at).magnitude - r;
+                if (d < gap) { gap = d; centre = at; radius = r; }
+            }
+            if (gap >= shrinkPushFromRim || gap < -pitMargin) return;   // (already over it: the fall check has them)
+            var away = BallValleyStage.Flat(feet - centre);
+            away = away.sqrMagnitude > 0.0001f ? away.normalized : BallValleyStage.Flat(-centre).normalized;
+            var to = centre + away * (radius + shrinkPushFromRim);
+            bool bodyOn = body != null && body.enabled;
+            if (bodyOn) body.enabled = false;
+            origin.transform.position += new Vector3(to.x - feet.x, 0f, to.z - feet.z);
+            Physics.SyncTransforms();
+            if (bodyOn) body.enabled = true;
+        }
+
         // Keeps a spot every 0.2 s while they stand on the lawn, clear of the holes, not flying.
         private void KeepStood(bool down)
         {
@@ -520,13 +625,14 @@ namespace Balls
                 origin.transform.position = from + Vector3.down * (fallDrop * k * k);
                 yield return null;
             }
-            stage.AddFeed("You fell into a hole!", new Color(1f, 0.5f, 0.4f));
+            bool forgiven = Time.time < bossThrowUntil;   // the giant pumpkin threw them in: its hit was the price
+            stage.AddFeed(forgiven ? "Thrown into a hole by the giant pumpkin (no fall damage)" : "You fell into a hole!", new Color(1f, 0.5f, 0.4f));
             var back = SpotBeforeFall();
             stood.Clear();
             Hold(false);
             MovePlayer(back, HeadYaw());
             if (fade != null) fade.FadeIn(0.6f);
-            SendPlayer(fallDamageEvent);
+            if (!forgiven) SendPlayer(fallDamageEvent);
             yield return new WaitForSeconds(0.6f);
             falling = false;
         }
@@ -549,10 +655,10 @@ namespace Balls
             return SafeSpot();
         }
 
-        private bool NearBoss(Vector3 at)
+        private bool NearBoss(Vector3 at, float margin = 1.5f)
         {
             var boss = gate != null ? gate.Boss : null;
-            return boss != null && !boss.IsBroken && BallValleyStage.Flat(boss.transform.position - at).magnitude < boss.radius + 1.5f;
+            return boss != null && !boss.IsBroken && BallValleyStage.Flat(boss.transform.position - at).magnitude < boss.radius + margin;
         }
 
         // Spot, or the nearest place round it with room to stand (no tree, boulder or ball there), on the lawn.

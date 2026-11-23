@@ -14,6 +14,8 @@ namespace Game.EditorTools
     /// to a new state "Gate 3 Pick", whose Send Random Event sends next1 (-> where gate 1 goes) or next2 (-> where
     /// gate 2 goes). Running it again only re-points those. The open scene is marked changed, not saved: save it.
     /// "Gate 3 Back To Gate 1" points next3 straight at gate 1's stage again (as before; the pick state stays, unused).
+    /// RETIRED 2026-11-22 (gates plan): gate 3 has its own stage since 2026-11-18 (Ball Valley, "Clean for Path 3"), so
+    /// both menus are greyed out and refuse to run: either one would cut Ball Valley out of the game again.
     /// </summary>
     public static class Gate3PickMenu
     {
@@ -25,6 +27,7 @@ namespace Game.EditorTools
         [MenuItem("Tools/429 Game/Paths/Gate 3 Picks Gate 1 Or 2")]
         public static void PickOneOrTwo()
         {
+            if (Retired()) return;
             if (EditorApplication.isPlaying) { Debug.LogError($"{Log} Stop play mode first; nothing changed."); return; }
             var gs = FindStages();
             if (gs == null) return;
@@ -89,12 +92,19 @@ namespace Game.EditorTools
         }
 
         [MenuItem("Tools/429 Game/Paths/Gate 3 Picks Gate 1 Or 2", true)]
-        private static bool CanPick() => !EditorApplication.isPlaying;
+        private static bool CanPick() => false;   // retired 2026-11-22: gate 3 is Ball Valley
+
+        private static bool Retired()
+        {
+            Debug.LogError($"{Log} Retired 2026-11-22: gate 3 has its own stage (Ball Valley, \"Clean for Path 3\"); this would cut it. Nothing changed.");
+            return true;
+        }
 
         /// <summary>Gate 3 goes straight to gate 1's stage again (next3 -> where next1 goes); the pick state stays.</summary>
         [MenuItem("Tools/429 Game/Paths/Gate 3 Back To Gate 1")]
         public static void BackToGateOne()
         {
+            if (Retired()) return;
             if (EditorApplication.isPlaying) { Debug.LogError($"{Log} Stop play mode first; nothing changed."); return; }
             var gs = FindStages();
             if (gs == null) return;
@@ -119,7 +129,7 @@ namespace Game.EditorTools
         }
 
         [MenuItem("Tools/429 Game/Paths/Gate 3 Back To Gate 1", true)]
-        private static bool CanGoBack() => !EditorApplication.isPlaying;
+        private static bool CanGoBack() => false;   // retired 2026-11-22: gate 3 is Ball Valley
 
         // The pick state's transition on this event goes to this state (made or re-pointed).
         private static System.Collections.Generic.IEnumerable<string> PointAt(FsmState pick, FsmEvent e, string to)

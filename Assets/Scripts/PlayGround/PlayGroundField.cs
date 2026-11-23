@@ -661,8 +661,24 @@ namespace Game.PlayGround
             }
             // A magician's hat: it lands any way up, its hole pointing anywhere, until a hit turns it to the sky.
             hat.LieAnyWay();
+            // Landing next to things lying there isn't a hit.
+            hat.IgnoreHitsFor(2f);
             Puff(spot + Vector3.up * 0.3f, 1f);
             Sound(growSound, spot);
+        }
+
+        /// <summary>
+        /// The magic hat hides somewhere new now, next to a tree, bush or tall grass on the field (the gate flow: each
+        /// round has a new recipe to read off it).
+        /// </summary>
+        public void HideHatNow()
+        {
+            // Its card goes back in first: the new recipe must be read off the hat again.
+            var hat = FindAnyObjectByType<MagicHat>();
+            if (hat != null) hat.CardIn();
+            if (!measured) FitArena();
+            if (!measured) return;
+            HideHat(Covers(), Taken());
         }
 
         // ------------------------------------------------------------------ helpers

@@ -12,9 +12,10 @@ how many texels each pair of meshes shares. Changes nothing.
 """
 
 
+import os
 import numpy as np
 
-exec(open(r"K:/Repository/429R/.claude/skills/blender-429r/scripts/uvpaint.py", encoding="utf-8").read())
+exec(open(next(p for p in (r"K:/Repository/429R/.claude/skills/blender-429r/scripts/uvpaint.py", r"C:/Github_Repository/429R/.claude/skills/blender-429r/scripts/uvpaint.py") if os.path.exists(p)), encoding="utf-8").read())
 
 image = bpy.data.images[IMAGE]
 W, H = image.size
