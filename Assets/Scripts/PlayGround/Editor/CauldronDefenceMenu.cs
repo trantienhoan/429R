@@ -18,7 +18,8 @@ namespace Game.PlayGround.Editor
     /// chests, the chaos boss, the smoke, sounds and numbers below. A component that's already there keeps its numbers
     /// (tune them in the Inspector); only its empty references are filled. The Cauldron gets its fire's whoosh if it has
     /// none. The chaos boss is a prefab variant, Prefabs/Enemies/pumpkin_boss_Z_Doom (made once: pumpkin_boss_Z with Wake
-    /// Up Seconds 4 instead of 33 and Chaos Chance 1), so it rises out of the broken pot at once.
+    /// Up Seconds 4 instead of 33 and Chaos Chance 1), so it rises out of the broken pot at once; its Game Stages Event and
+    /// Bool are empty (user, 2026-11-23): killing it only ends the gate, never the whole game (no Win, no BOSS).
     /// GAMESTAGES is NOT touched any more (2026-11-23): until then this menu re-pointed "Path 1 ON" next1 to "Tween
     /// PlayGroundZ To Boss" (straight to the boss, the 11-16 design), which silently dropped the rooftop's tree defence
     /// on every re-run. The gate flow belongs to the gates' shared set-up (Scripts/Gates/Editor, the coordinator's).
@@ -311,13 +312,18 @@ namespace Game.PlayGround.Editor
         // Set by Set Up Cauldron for Fill Defence: the doom boss variant (null if it couldn't be made).
         private static GameObject doomBoss;
 
-        // pumpkin_boss_Z_Doom: a prefab variant of pumpkin_boss_Z (so it follows every change to the boss) with only two
-        // overrides: it wakes Doom Wake Up seconds after it comes up (not 33) and is a chaos boss every time. Made once;
-        // an existing one is kept as it is (tune it in the Inspector).
+        // pumpkin_boss_Z_Doom: a prefab variant of pumpkin_boss_Z (so it follows every change to the boss) with only these
+        // overrides: it wakes Doom Wake Up seconds after it comes up (not 33), is a chaos boss every time, and sends
+        // GAMESTAGES no Win and sets no BOSS (killing it only ends the gate). Made once; an existing one is kept as it is
+        // (tune it in the Inspector), apart from the Win and BOSS.
         private static GameObject MakeDoomBoss(List<string> notes)
         {
             var made = AssetDatabase.LoadAssetAtPath<GameObject>(DoomBossPath);
-            if (made != null) return made;
+            if (made != null)
+            {
+                DoomBossEndsGateOnly(notes);
+                return made;
+            }
             var source = AssetDatabase.LoadAssetAtPath<GameObject>(ChaosBossPath);
             if (source == null || source.GetComponent<Game.Enemies.PumpkinBossBrain>() == null)
             {
@@ -332,9 +338,11 @@ namespace Game.PlayGround.Editor
                 var brain = new SerializedObject(instance.GetComponent<Game.Enemies.PumpkinBossBrain>());
                 brain.FindProperty("wakeUpSeconds").floatValue = DoomWakeUp;
                 brain.FindProperty("chaosChance").floatValue = 1f;
+                brain.FindProperty("gameStagesEvent").stringValue = "";
+                brain.FindProperty("gameStagesBool").stringValue = "";
                 brain.ApplyModifiedPropertiesWithoutUndo();
                 made = PrefabUtility.SaveAsPrefabAsset(instance, DoomBossPath);
-                notes.Add(made != null ? "made " + DoomBossPath + " (variant: wakes after " + DoomWakeUp + " s, always chaos)" : "doom boss variant NOT made");
+                notes.Add(made != null ? "made " + DoomBossPath + " (variant: wakes after " + DoomWakeUp + " s, always chaos, only ends the gate)" : "doom boss variant NOT made");
             }
             catch (System.Exception e)
             {
@@ -348,6 +356,47 @@ namespace Game.PlayGround.Editor
                 EditorSceneManager.ClosePreviewScene(scene);
             }
             return made;
+        }
+
+        /// <summary>
+        /// pumpkin_boss_Z_Doom sends GAMESTAGES no Win and sets no BOSS (user, 2026-11-23: killing the chaos boss of a broken
+        /// pot only ends the gate; Cauldron Defence then drops The_Seed and Gate Exit takes the player to the rooftop). A
+        /// BOSS left true would also skip the rooftop's real boss later in the run. Re-runnable.
+        /// </summary>
+        internal static void DoomBossEndsGateOnly(List<string> notes)
+        {
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(DoomBossPath) == null)
+            {
+                notes.Add("no " + DoomBossPath);
+                return;
+            }
+            var root = PrefabUtility.LoadPrefabContents(DoomBossPath);
+            try
+            {
+                var brain = root.GetComponent<Game.Enemies.PumpkinBossBrain>();
+                if (brain == null)
+                {
+                    notes.Add(DoomBossPath + " has no Pumpkin Boss Brain");
+                    return;
+                }
+                var so = new SerializedObject(brain);
+                var winEvent = so.FindProperty("gameStagesEvent");
+                var bossBool = so.FindProperty("gameStagesBool");
+                if (string.IsNullOrEmpty(winEvent.stringValue) && string.IsNullOrEmpty(bossBool.stringValue))
+                {
+                    notes.Add("doom boss already only ends the gate");
+                    return;
+                }
+                winEvent.stringValue = "";
+                bossBool.stringValue = "";
+                so.ApplyModifiedPropertiesWithoutUndo();
+                PrefabUtility.SaveAsPrefabAsset(root, DoomBossPath);
+                notes.Add("doom boss now only ends the gate (no Win, no BOSS)");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
         }
 
         private static void FillBursts(SerializedProperty list, (string smoke, float scale, float height)[] bursts, bool fresh, List<string> notes)

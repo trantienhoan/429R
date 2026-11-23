@@ -13,7 +13,8 @@ namespace Game.PlayGround.Editor
     /// line, the finale with gate 1's stew pumpkin) and a Play Ground Game (cook and defend in 3 rounds: their recipes, monsters and mini
     /// bosses), and its old start chest spawner (Cauldron_Pos, whose seed made the cauldron) is switched off. Numbers
     /// already there are kept (tune them in the Inspector); only empty slots are filled. A copy of the prefab from before
-    /// the first run goes to Documents/429R_claude_backups/2026-11-23/gate1/.
+    /// the first run goes to Documents/429R_claude_backups/2026-11-23/gate1/. The broken pot's chaos boss
+    /// (pumpkin_boss_Z_Doom) sends no Win and sets no BOSS: killing it only ends the gate (user, 2026-11-23).
     /// "Back To One Dish (No Gate Run)" switches both off and the old start chest back on.
     /// Never touches the scene (GAMESTAGES' Path 1 ON spawns Play_Ground_Z).
     /// </summary>
@@ -79,6 +80,7 @@ namespace Game.PlayGround.Editor
             {
                 PrefabUtility.UnloadPrefabContents(root);
             }
+            CauldronDefenceMenu.DoomBossEndsGateOnly(notes);
             AssetDatabase.SaveAssets();
             Debug.Log($"{Log} Gate 1 = the gates' one flow, 3 rounds: {string.Join("; ", notes)}.");
         }

@@ -38,9 +38,11 @@ namespace Game.PlayGround
     ///    GAMESTAGES takes the player to the rooftop's tree defence. Off: the pot's burst takes the player to the Daruma
     ///    game (Special Stage 3 Trigger), whose win hands over The_Seed, as before.
     /// 7. Lost (its health runs out): the pot is smashed, the chaos Pumpkin Boss climbs out where it stood, the monsters keep
-    ///    coming, all for the player now, and the teleport ground breaks (no teleporting until the run is over). It's
+    ///    coming, all for the player now, and the teleport ground breaks (no teleporting until that boss is beaten). It's
     ///    meant to be the end (user: "make it a sure death situation"); the normal death chain takes it from there, and a
-    ///    lucky coin only gets the player up in the same mess. Killing that boss after all is the boss's own win.
+    ///    lucky coin only gets the player up in the same mess. Killing that boss after all only ends the gate (user,
+    ///    2026-11-23; it used to win the whole game): The_Seed drops where it burst and Gate Exit takes the player to the
+    ///    rooftop, as after the giant pumpkin.
     /// While this is on, the cauldron's own rounds, laughing pumpkins, wild bell slimes and candy pot are off, and the
     /// PlayGround Rounds director next to it must be off (it's switched off here if it isn't). Goes on the cauldron's root
     /// (Fire_Woods_n_Cauldron) with a Cauldron Health; Tools > 429 Game > PlayGround > Use Defend The Cauldron sets it up,
@@ -243,7 +245,8 @@ namespace Game.PlayGround
 
         [Header("Lost: the cauldron breaks")]
         [Tooltip("What climbs out where the pot stood, always as a chaos boss: pumpkin_boss_Z_Doom (made by the setup menu: " +
-                 "a variant of pumpkin_boss_Z that rises out of the floor after 4 s instead of 33, chaos every time).")]
+                 "a variant of pumpkin_boss_Z that rises out of the floor after 4 s instead of 33, chaos every time). Killing " +
+                 "it only ends the gate (The_Seed, then the rooftop): the variant sends GAMESTAGES no Win and sets no BOSS.")]
         [SerializeField] private GameObject chaosBoss;
         [Tooltip("Seconds from the smash to the boss.")]
         [Min(0f)] [SerializeField] private float bossDelay = 1.5f;
@@ -1102,6 +1105,57 @@ namespace Game.PlayGround
             chaosBossMade = Instantiate(chaosBoss, spot, look.sqrMagnitude > 0.0001f ? Quaternion.LookRotation(look) : Quaternion.identity, SpawnedStuff());
             PumpkinBossBrain.ForceNextChaos = false;
             Debug.Log("[Cauldron Defence] " + chaosBossMade.name + " climbed out of the broken cauldron.", this);
+            StartCoroutine(WatchChaosBoss(chaosBossMade));
+        }
+
+        // Killing the chaos boss only ends the gate (user, 2026-11-23; it used to win the whole game). Once it has burst
+        // and gone: the gate's monsters go, the teleport ground comes back, Gate Run's rounds stop, and The_Seed drops where
+        // it fell (inside the field); Gate Exit takes the player to the rooftop, as after the giant pumpkin. Gone in a Game
+        // Over: nothing (the new run clears everything). The giant pumpkin already out, or a Gate Exit under way: that ends
+        // the gate instead.
+        private IEnumerator WatchChaosBoss(GameObject boss)
+        {
+            if (boss == null) yield break;
+            var last = boss.transform.position;
+            while (boss != null)
+            {
+                last = boss.transform.position;
+                yield return null;
+            }
+            if (over || GameStages.ActiveState() == "Game Over") yield break;
+            var run = GateRun.Current;
+            if (GateExit.Running || (run != null && run.FinaleRun != null)) yield break;
+            EndGateByChaosBoss(last, run);
+        }
+
+        private void EndGateByChaosBoss(Vector3 at, GateRun run)
+        {
+            over = true;
+            step = RoundStep.Done;
+            foreach (var boss in roundBosses)
+            {
+                if (!EnemyWave.IsAlive(boss)) continue;
+                Game.Leveling.PlayerLevel.NoRewardFor(boss);
+                EnemyWave.Kill(boss);
+            }
+            bossesToCome.Clear();
+            StopWaves(true);
+            SlimeBody.ClearAll();
+            GiveTeleportBack();
+            // Gate Run's flow (its rounds' clocks, chests and finale) stops: the gate is over. Its HUD hides while Gate Exit
+            // runs, and it goes with the PlayGround.
+            if (run != null) run.StopAllCoroutines();
+            FinaleSpot(out _, out var area, out var middle);
+            if (area != null && !area.ContainsFlat(at, 1f)) at = new Vector3(middle.x, at.y, middle.z);
+            if (NavMesh.SamplePosition(at, out var onMesh, 3f, NavMesh.AllAreas)) at = onMesh.position;
+            var seed = finaleSeed != null ? finaleSeed : run != null ? run.finaleSeed : null;
+            // Its own object under Currently Spawned Stuffs (a Game Over clears it) until Gate Exit makes it stand alone.
+            var end = new GameObject("Chaos Boss Exit");
+            var spawned = SpawnedStuff();
+            if (spawned != null) end.transform.SetParent(spawned, false);
+            end.transform.position = at;
+            GateExit.Begin(end, seed, at, "[Cauldron Defence]");
+            Debug.Log("[Cauldron Defence] The chaos boss is beaten: the gate is over (The_Seed, then the rooftop).", this);
         }
 
         // The teleport ground breaks (user, 2026-11-16): the player's teleport is switched off, its ray hidden and the

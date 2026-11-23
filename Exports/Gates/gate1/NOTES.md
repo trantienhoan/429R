@@ -162,8 +162,11 @@ Path: buy gate 1 on the start rooftop, stand in its circle 3 s.
 
 ## 3. Open questions for the user
 
-1. **Doom boss:** if the pot breaks, the chaos Pumpkin_Boss_Z comes; killing it today counts as beating the whole game
-   (Thank For Playing). Keep, or should it only end the gate (on to the giant pumpkin / the rooftop)?
+1. **Doom boss: ANSWERED 2026-11-23 "Only end the gate", built.** pumpkin_boss_Z_Doom now sends no Win and sets no BOSS
+   (Use Gate Run (3 Rounds) set it; a BOSS left true would also skip the rooftop's real boss). When it has burst, Cauldron
+   Defence stops the waves and Gate Run's rounds (StopAllCoroutines on the gate's Gate Run), gives the teleport back and
+   drops The_Seed where it fell: Gate Exit, then the rooftop. Compiled and menu run; NOT play-tested yet. Test: round 1
+   cooking -> Cauldron Defence "Test: Break The Cauldron" -> kill the boss -> Whack 6 comes, BOSS stays false.
 2. **Hats:** round 1 where the PlayGround puts it, rounds 2-3 hidden next to a tree, bush or tall grass at random. Keep,
    or will you place fixed spots?
 3. **Cook length:** 45 / 60 / 75 s of cooking (logs make it faster) with round limits 150 / 165 / 180 s: the whole gate
