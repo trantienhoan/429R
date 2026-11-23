@@ -33,6 +33,8 @@ namespace Game.Bowling.EditorTools
         };
         private const string SeedPath = "Assets/Prefabs/Items/Chest/The_Seed.prefab";
         private const string PuffPath = "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab";
+        private const string StrikeSoundPath = "Assets/Audio/SFX/Clear,_resonant_bell_1.wav";
+        private const string MissSoundPath = "Assets/Audio/Kenney Audio/kenney_digital-audio/Audio/lowThreeTone.ogg";
 
         [MenuItem(MenuPath)]
         public static void Menu()
@@ -108,6 +110,15 @@ namespace Game.Bowling.EditorTools
                 moved += Move(so, "entranceSeconds", 6f, 5f);
                 moved += Move(so, "slimeDelay", 4f, 1f);
                 moved += Move(so, "poopEvery", new[] { 12f, 14f, 18f }, new[] { 8f, 12f, 16f });
+                // Strike / miss sounds (user, 2026-11-23): the user's bell for a strike, Kenney's low tone for a miss; only
+                // where empty (a sound picked by hand stays).
+                foreach (var (field, path) in new[] { ("strikeSound", StrikeSoundPath), ("missSound", MissSoundPath) })
+                {
+                    var p = so.FindProperty(field);
+                    if (p == null || p.objectReferenceValue != null) continue;
+                    p.objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+                    notes.Add(field + (p.objectReferenceValue != null ? " = " + System.IO.Path.GetFileName(path) : ": MISSING " + path));
+                }
                 so.ApplyModifiedPropertiesWithoutUndo();
                 if (moved > 0) notes.Add($"{moved} values moved to the new pace (no laps, 5 s descent, 1 s delay, racks every 8/12/16 s)");
             }

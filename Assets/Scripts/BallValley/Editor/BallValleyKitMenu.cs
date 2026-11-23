@@ -63,9 +63,12 @@ namespace Balls.EditorTools
             Folder("Assets/Prefabs/BallValley", "Kit");
             int pieces = 0;
             GameObject giant = null;
+            glowCopies.Clear();
+            SetUpTexture(HouseGlow, false, notes);
+            var wears = ReadMaterialList(notes);
             foreach (var path in fbx)
             {
-                var piece = PiecePrefab(path, mat);
+                var piece = PiecePrefab(path, mat, wears, notes);
                 if (piece == null) continue;
                 pieces++;
                 if (piece.name == GiantPiece) giant = piece;
@@ -146,6 +149,15 @@ namespace Balls.EditorTools
                     stage.kitRocks = new[] { P("Boulder_Mossy"), P("Boulder_Mossy"), P("Gravestone") }.Where(g => g != null).ToArray();
                     stage.nightPalette = AssetDatabase.LoadAssetAtPath<Texture2D>(NightPalette);
                     stage.kitDecor = Decor(P);
+                    // 2026-11-23: gate 3's jello volcanoes (BallValley_Kit_Volcano.blend) and the Black Pumpkin Ball's look.
+                    stage.kitVolcanoes = new[] { P("Jello_Volcano") }.Where(g => g != null).ToArray();
+                    var valleyGate = root.GetComponent<BallValleyGate>();
+                    if (valleyGate != null)
+                    {
+                        valleyGate.blackPumpkinLook = P("Giant_Jack_O_Lantern");
+                        EditorUtility.SetDirty(valleyGate);
+                    }
+                    notes.Add($"{stage.kitVolcanoes.Length} volcano piece(s)");
                     notes.Add($"Ball_Valley wears the kit ({stage.kitDecor.Length} pieces round it" +
                               (stage.kitRim && stage.kitHoleCorner && stage.kitHoleSide ? "" : "; SOME PIECES MISSING") + ")");
                     // Its giant pumpkin: gate 3's own (the kit's jack-o'-lantern).
@@ -241,8 +253,79 @@ namespace Balls.EditorTools
             mi.SaveAndReimport();
         }
 
-        // A prefab of the piece: its mesh with the kit material, looks only.
-        private static GameObject PiecePrefab(string fbxPath, Material mat)
+        // Which Blender material each piece wears (written by export_ballvalley_kit.py next to the kit): the user's remodel
+        // of 2026-11-23 moved most pieces onto the house's furniture texture.
+        public const string MaterialList = "Exports/Gates/gate3/kit_materials.json";
+        // Blender material -> Unity material. BallValley_Palette (or nothing listed) = the kit's own palette material;
+        // any other name: a Unity material of that exact name, else the palette one (said in the log).
+        private static readonly Dictionary<string, string> KnownMaterials = new Dictionary<string, string>
+        {
+            { "Bedroom_Furniture_Set1", "Assets/Materials/Bedroom_Set_1_Mat.mat" },   // the house's furniture (shared: never edited here)
+        };
+
+        private static Dictionary<string, string[]> ReadMaterialList(List<string> notes)
+        {
+            var list = new Dictionary<string, string[]>();
+            var file = Path.Combine(Path.GetDirectoryName(Application.dataPath) ?? "", MaterialList);
+            if (!File.Exists(file)) { notes.Add("no " + MaterialList + ": every piece on the palette material"); return list; }
+            // {"BallValley_Kit_X": ["Mat", ...], ...}: small enough for a pattern.
+            foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(
+                         File.ReadAllText(file), "\"([^\"]+)\"\\s*:\\s*\\[([^\\]]*)\\]"))
+            {
+                list[m.Groups[1].Value] = System.Text.RegularExpressions.Regex.Matches(m.Groups[2].Value, "\"([^\"]*)\"")
+                    .Cast<System.Text.RegularExpressions.Match>().Select(x => x.Groups[1].Value).ToArray();
+            }
+            return list;
+        }
+
+        private static Material UnityMaterial(string blenderName, Material palette, List<string> notes)
+        {
+            if (string.IsNullOrEmpty(blenderName) || blenderName == "BallValley_Palette") return palette;
+            Material found = null;
+            if (KnownMaterials.TryGetValue(blenderName, out var known)) found = AssetDatabase.LoadAssetAtPath<Material>(known);
+            if (found == null)
+                found = AssetDatabase.FindAssets(blenderName + " t:Material").Select(AssetDatabase.GUIDToAssetPath)
+                    .Select(AssetDatabase.LoadAssetAtPath<Material>).FirstOrDefault(x => x != null && x.name == blenderName);
+            if (found != null) return blenderName == "Bedroom_Furniture_Set1" ? GlowCopy(found, notes) : found;
+            notes.Add($"NO Unity material for Blender's {blenderName}: the palette one used");
+            return palette;
+        }
+
+        // Gate 3's glow on the house's furniture texture (user 2026-11-23: "glow them"): the house's material glows its
+        // whole texture at 13%, so the kit's pit rings, lantern glass and pumpkin faces went dark. Gate 3 wears its own
+        // copy of it (refreshed from the house's on every run, so it follows the house's changes) whose glow map is
+        // BallValley_House_Glow.png, painted by Exports/Gates/gate3/tools/glow_mask.py: black but for those faces' texels.
+        // No glow map: the house's material itself. The house's material is never edited.
+        public const string HouseGlow = Textures + "/BallValley_House_Glow.png";
+        public const string HouseGlowMaterial = Textures + "/BallValley_House_Glow_Mat.mat";
+        private const float HouseGlowStrength = 1.4f;   // as the palette kit's glow
+        private static readonly Dictionary<Material, Material> glowCopies = new Dictionary<Material, Material>();
+
+        private static Material GlowCopy(Material house, List<string> notes)
+        {
+            if (glowCopies.TryGetValue(house, out var made)) return made;
+            var glowMap = AssetDatabase.LoadAssetAtPath<Texture2D>(HouseGlow);
+            if (glowMap == null) { notes.Add("no " + HouseGlow + ": the house's material as it is (no glow)"); return glowCopies[house] = house; }
+            var copy = AssetDatabase.LoadAssetAtPath<Material>(HouseGlowMaterial);
+            if (copy == null)
+            {
+                copy = new Material(house) { name = Path.GetFileNameWithoutExtension(HouseGlowMaterial) };
+                AssetDatabase.CreateAsset(copy, HouseGlowMaterial);
+                notes.Add("glow copy of " + house.name + " made");
+            }
+            copy.shader = house.shader;
+            copy.CopyPropertiesFromMaterial(house);
+            copy.SetTexture("_EmissionMap", glowMap);
+            copy.SetColor("_EmissionColor", Color.white * HouseGlowStrength);
+            copy.EnableKeyword("_EMISSION");
+            copy.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+            EditorUtility.SetDirty(copy);
+            notes.Add($"{copy.name}: {house.name} + gate 3's glow map");
+            return glowCopies[house] = copy;
+        }
+
+        // A prefab of the piece: its mesh with the Unity material for what it wears in Blender, looks only.
+        private static GameObject PiecePrefab(string fbxPath, Material mat, Dictionary<string, string[]> wears, List<string> notes)
         {
             var name = Path.GetFileNameWithoutExtension(fbxPath);
             var mesh = AssetDatabase.LoadAllAssetsAtPath(fbxPath).OfType<Mesh>().FirstOrDefault();
@@ -253,7 +336,11 @@ namespace Balls.EditorTools
             {
                 go.AddComponent<MeshFilter>().sharedMesh = mesh;
                 var r = go.AddComponent<MeshRenderer>();
-                r.sharedMaterial = mat;
+                wears.TryGetValue(name, out var names);
+                names = names != null && names.Length > 0 ? names : new[] { "" };
+                int subs = Mathf.Max(1, mesh.subMeshCount);
+                r.sharedMaterials = Enumerable.Range(0, subs)
+                    .Select(i => UnityMaterial(names[names.Length == subs ? i : 0], mat, notes)).ToArray();
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
                 return PrefabUtility.SaveAsPrefabAsset(go, path);
             }
@@ -281,13 +368,14 @@ namespace Balls.EditorTools
             {
                 var boss = root.GetComponent<Game.Gates.PumpkinBallBoss>();
                 boss.model = giant;
-                boss.modelRadius = GiantRadius;
+                boss.modelRadius = ModelRadius(giant);
                 boss.modelOffset = Vector3.zero;
                 boss.modelEuler = new Vector3(0f, FaceYaw(giant), 0f);
                 EditorUtility.SetDirty(boss);
                 root.name = Path.GetFileNameWithoutExtension(BossVariantPath);
                 PrefabUtility.SaveAsPrefabAsset(root, BossVariantPath);
-                notes.Add((fresh ? "boss variant made" : "boss variant refreshed") + $" (face turned {boss.modelEuler.y:0} degrees)");
+                notes.Add((fresh ? "boss variant made" : "boss variant refreshed") +
+                          $" (model radius {boss.modelRadius:0.00} m, face turned {boss.modelEuler.y:0} degrees)");
             }
             finally
             {
@@ -296,8 +384,22 @@ namespace Balls.EditorTools
             }
         }
 
-        // The turn that brings the pumpkin's glowing face (its vertices on the face swatch) to +Z, whatever way the FBX
-        // import turned it.
+        // How far the giant's model reaches round its pivot (the boss grows it to its own radius): the widest way across,
+        // so it never pokes out of the ball (the user's 2026-11-23 jack-o'-lantern: 2.55 m; the first one was 2.6).
+        private static float ModelRadius(GameObject piece)
+        {
+            var filter = piece.GetComponent<MeshFilter>();
+            var mesh = filter != null ? filter.sharedMesh : null;
+            if (mesh == null) return GiantRadius;
+            var b = mesh.bounds;
+            float r = Mathf.Max(Mathf.Max(-b.min.x, b.max.x), Mathf.Max(-b.min.z, b.max.z));
+            return r > 0.1f ? r : GiantRadius;
+        }
+
+        // The turn that brings the pumpkin's glowing face (its vertices on the palette's face swatch) to +Z, whatever way
+        // the FBX import turned it. No face swatch (a pumpkin on another texture, like the user's 2026-11-23 one on the
+        // house's furniture texture): 0, its modelled front (Blender's -Y, the front view), which is where both the
+        // palette pumpkin's and the 2026-11-23 one's faces point.
         private static float FaceYaw(GameObject piece)
         {
             var filter = piece.GetComponent<MeshFilter>();

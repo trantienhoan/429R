@@ -142,6 +142,8 @@ namespace Game.Bowling
         public bool Landed { get; private set; }
         /// <summary>All landed and standing, none knocked yet: a strike is still possible.</summary>
         public bool Full => Landed && !knocked;
+        /// <summary>Some pin was knocked (a ball got there): a no-strike answer then means a miss, not a rack left alone.</summary>
+        public bool Knocked => knocked;
         /// <summary>OnResolved has fired.</summary>
         public bool Resolved { get; private set; }
         /// <summary>No pins left (the lane's spot is free).</summary>
@@ -165,11 +167,12 @@ namespace Game.Bowling
         /// <summary>
         /// Makes a "Pin Set" under Parent and drops one Prefab pin from From onto each of Slots (floor points), Stagger
         /// seconds apart, each flying Flight Seconds. The lane (origin + direction, flat) is where balls are watched;
-        /// Balls is the supply whose live balls count.
+        /// Balls is the supply whose live balls count. Hand set up (2026-11-23): the head pin's distance is slot 0's and
+        /// the lane's half width is Lane Half Width (its floor's), not fixed numbers.
         /// </summary>
         public static PinSet Spawn(SlimePin prefab, Transform parent, Vector3 from, Vector3[] slots, Vector3 laneOrigin,
                                    Vector3 laneDirection, Color colour, PinGrowth growth, BowlingBallSupply balls,
-                                   float flightSeconds = 0.7f, float stagger = 0.1f)
+                                   float flightSeconds = 0.7f, float stagger = 0.1f, float laneHalfWidth = 1f)
         {
             var go = new GameObject("Pin Set");
             go.transform.SetParent(parent, false);
@@ -186,6 +189,13 @@ namespace Game.Bowling
             var dir = Vector3.ProjectOnPlane(laneDirection, Vector3.up);
             set.laneDir = dir.sqrMagnitude > 0.0001f ? dir.normalized : Vector3.forward;
             set.laneRight = Vector3.Cross(Vector3.up, set.laneDir);
+            set.laneHalfWidth = Mathf.Max(0.1f, laneHalfWidth);
+            if (points.Length > 0)
+            {
+                var head = points[0] - laneOrigin;
+                head.y = 0f;
+                set.headAlong = Vector3.Dot(head, set.laneDir);
+            }
             set.slots = new Slot[points.Length];
             for (int i = 0; i < points.Length; i++) set.slots[i] = new Slot { at = points[i], state = PinState.Waiting };
             if (prefab == null)

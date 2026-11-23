@@ -87,6 +87,9 @@ namespace Balls
         public GameObject[] kitTrees = new GameObject[0], kitRocks = new GameObject[0];
         [Tooltip("Pieces dressing the ground round the valley (outside its full size, no colliders).")]
         public KitPlace[] kitDecor = new KitPlace[0];
+        [Tooltip("Gate 3's jello volcanoes (BallValley_Kit_Jello_Volcano): they stand on the lawn like boulders, never break " +
+                 "and spit candy (Jello Volcano). How many: the Ball Valley Gate's Volcanoes. Empty: a code-built jelly cone.")]
+        public GameObject[] kitVolcanoes = new GameObject[0];
         [Tooltip("A night re-tint of BALLS_Palette for BALLS' models still in the valley with the kit on (the mountains, the " +
                  "ground round it, the grass tufts). Empty: their day colours.")]
         public Texture2D nightPalette;
@@ -162,6 +165,19 @@ namespace Balls
         [System.NonSerialized] public bool botsHuntBots = true;
         /// <summary>429R gate 3: bots at the first round's start (below 0: the round's own number); the gate drops its balls in later.</summary>
         [System.NonSerialized] public int startBalls = -1;
+        /// <summary>
+        /// 429R gate 3 (2026-11-23: one long shrink over the gate's song): above 0, the valley is this size, set by the gate
+        /// every frame (the round clock's phases are skipped); <see cref="drivePending"/> is where it's heading in a few
+        /// seconds (bots, drop-ins and candy keep inside that).
+        /// </summary>
+        [System.NonSerialized] public float driveScale = -1f;
+        [System.NonSerialized] public float drivePending = -1f;
+        /// <summary>429R gate 3: trees stand anywhere on the lawn (BALLS: near its edges).</summary>
+        [System.NonSerialized] public bool treesAnywhere;
+        /// <summary>429R gate 3: jello volcanoes on the lawn (Kit Volcanoes).</summary>
+        [System.NonSerialized] public int volcanoCount;
+        /// <summary>429R gate 3: candies each tree's hits knock out of it (Field Prop's Hit Candies Left).</summary>
+        [System.NonSerialized] public int treeHitCandies;
 
         /// <summary>
         /// 429R: the layers the valley's physics queries look at. Everything it makes is on Default; this keeps its bots,
@@ -332,7 +348,9 @@ namespace Balls
             Random.InitState(worldSeed);
             for (int i = 0; i < tune.rockCount; i++) SpawnRock(FindClearPoint(FieldM(10f), 4f, HoleM(22f)));   // 429R: scaled
             Physics.SyncTransforms();
-            for (int i = 0; i < tune.treeCount; i++) SpawnTree(EdgePoint());
+            for (int i = 0; i < tune.treeCount; i++) SpawnTree(treesAnywhere ? FindClearPoint(FieldM(10f), 4f, HoleM(22f)) : EdgePoint());   // 429R gate 3: anywhere
+            Physics.SyncTransforms();
+            for (int i = 0; i < volcanoCount; i++) SpawnVolcano(FindClearPoint(FieldM(10f), 5f, HoleM(22f)));   // 429R gate 3
             Physics.SyncTransforms();
             Random.state = savedRandom;
 
@@ -793,6 +811,21 @@ namespace Balls
         void UpdateRound()
         {
             float t = Time.time - roundStart;
+            // 429R gate 3 (2026-11-23): the gate drives the valley's size itself (one long shrink over its song).
+            if (driveScale > 0f)
+            {
+                if (!Mathf.Approximately(mapScale, driveScale)) SetMapScale(driveScale);
+                borderPending = -1f;
+                shrinking = drivePending > 0f && drivePending < mapScale - 0.001f;
+                if (valley)
+                {
+                    valley.SetPending(shrinking ? drivePending : -1f);
+                    valley.SetBorders(true);
+                }
+                UpdatePropsShown();
+                roundSeconds = 0f;
+                return;
+            }
             float regrow = Mathf.Max(0.01f, tune.regrowDuration);
             if (t < regrow) SetMapScale(Mathf.Lerp(roundStartScale, 1f, Smooth(t / regrow)));   // a new round: back from the last phase to the first
             else if (borderPending > 0f)
@@ -978,6 +1011,17 @@ namespace Balls
                 bot.freeDrop = true;
                 QueueRevive(bot, Random.Range(0.2f, Mathf.Max(0.3f, within)));
             }
+        }
+
+        /// <summary>
+        /// 429R gate 3 (2026-11-23): <paramref name="p"/>, pocketed (not by the player), drops back in from the sky after
+        /// <paramref name="delay"/> seconds: only the player's pockets count.
+        /// </summary>
+        public void DropBackIn(BallPlayer p, float delay)
+        {
+            if (!p || p.alive) return;
+            p.freeDrop = true;
+            QueueRevive(p, delay);
         }
 
         // 429R: Shrink To Last's own speed for the shrink going on (0: the usual Shrink Seconds).
@@ -1196,6 +1240,7 @@ namespace Balls
             pr.maxHp = pr.hp = (tree ? tune.treeHealth : tune.rockHealth) * size;
             pr.shakeHp = (tree ? 8f : 12f) * size;   // the wobble a hit gives stays the same whatever the hit points
             pr.food = tree ? tune.treeFood : tune.rockFood;
+            if (tree) pr.hitCandiesLeft = treeHitCandies;   // 429R gate 3: candy trees
             pr.chipColor = tree ? new Color(0.45f, 0.3f, 0.16f) : new Color(0.62f, 0.6f, 0.56f);
             pr.basePos = root.position;
             pr.baseScale = root.localScale;
@@ -1427,6 +1472,45 @@ namespace Balls
                 fieldRocks.Add(mc);
             }
             AddProp(root.transform, pivot, false, s);
+        }
+
+        /// <summary>
+        /// 429R gate 3 (2026-11-23): a jello volcano (a Kit Volcanoes piece, else a code-built jelly cone): it stands like a
+        /// boulder (its own mesh is its collider, it wobbles on a pivot), never breaks and spits candy (Jello Volcano).
+        /// </summary>
+        void SpawnVolcano(Vector3 p)
+        {
+            var piece = kitVolcanoes != null && kitVolcanoes.Length > 0 ? kitVolcanoes[Random.Range(0, kitVolcanoes.Length)] : null;
+            float s = Random.Range(0.9f, 1.15f);
+            var root = NewWorldObject("Jello Volcano");
+            root.transform.SetPositionAndRotation(p, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f));
+            root.transform.localScale = Vector3.one * s;
+            var pivot = new GameObject("Jiggle").transform;
+            pivot.SetParent(root.transform, false);
+            var inst = piece ? PlaceKit(piece, pivot)
+                : Gfx.Visual("Volcano", Gfx.Cone, Gfx.Lit(new Color(0.8f, 0.35f, 0.85f), 0.85f), pivot,
+                    new Vector3(0f, 0.9f, 0f), new Vector3(4f, 1.8f, 4f), Quaternion.identity);
+            foreach (var mf in inst.GetComponentsInChildren<MeshFilter>())
+            {
+                if (!mf.sharedMesh) continue;
+                var col = new GameObject("Collider").transform;
+                col.SetParent(root.transform, false);
+                Matrix4x4 m = root.transform.worldToLocalMatrix * mf.transform.localToWorldMatrix;
+                col.localPosition = m.GetColumn(3);
+                col.localRotation = m.rotation;
+                col.localScale = m.lossyScale;
+                var mc = col.gameObject.AddComponent<MeshCollider>();
+                mc.sharedMesh = mf.sharedMesh;
+                mc.sharedMaterial = Gfx.RockPhys;
+                col.gameObject.AddComponent<Hazard>();
+                fieldRocks.Add(mc);
+            }
+            var pr = AddProp(root.transform, pivot, false, s);
+            pr.maxHp = pr.hp = 1e9f;   // never breaks
+            pr.food = 0;
+            pr.chipColor = new Color(0.9f, 0.45f, 0.85f);
+            pr.jiggle.squash = 0.22f;   // jelly
+            root.AddComponent<JelloVolcano>().Init(this, pr);
         }
 
         void SpawnCodeRock(Vector3 p)

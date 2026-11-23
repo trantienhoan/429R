@@ -16,9 +16,8 @@ namespace Game.Bowling.EditorTools
     /// - Giant_Flying_Slime: a variant of Prefabs/Enemies/Flying_Slime (the look only), slower wing beats, brighter glow,
     ///   fewer drips, plus a looping wing sound (bee_fly) and the Giant Flying Slime puppet. No collider, no brain, no
     ///   Enemy tag. Root scale 1 (the stage sizes it).
-    /// - Slime_Showdown_Red / Blue / Green / Yellow: variants of the PlayGround's Slime_Big_Red, Slime_Big_Blue and
-    ///   Slime_Big (Green, and Yellow in Slime_Yellow_Mat), bigger, with their own health and no small splits. The
-    ///   PlayGround's own slimes are never changed.
+    /// - (Until 2026-11-23 also Slime_Showdown_Red / Blue / Green / Yellow for the old showdown: no longer made, and the
+    ///   unused prefabs were deleted at the user's word.)
     /// </summary>
     public static class GiantSlimeSetupMenu
     {
@@ -93,7 +92,7 @@ namespace Game.Bowling.EditorTools
         [MenuItem(MenuPath, true)]
         private static bool MenuCheck() => !EditorApplication.isPlaying;
 
-        /// <summary>Makes Giant_Flying_Slime and the 4 Slime_Showdown_* prefabs. True when all 5 were saved.</summary>
+        /// <summary>Makes Giant_Flying_Slime (the showdown slimes are gone, 2026-11-23). True when saved.</summary>
         public static bool Run()
         {
             if (EditorApplication.isPlaying)
@@ -120,16 +119,12 @@ namespace Game.Bowling.EditorTools
 
             int made = 0;
             if (Build(GiantPath, FlyingSlimePath, "Giant_Flying_Slime", root => FillGiant(root, notes), notes)) made++;
-            foreach (var showdown in Showdowns)
-            {
-                var path = string.Format(ShowdownPath, showdown.colour);
-                var name = "Slime_Showdown_" + showdown.colour;
-                if (Build(path, showdown.parent, name, root => FillShowdown(root, showdown, notes), notes)) made++;
-            }
+            // The 4 Slime_Showdown_* prefabs (the old showdown) are no longer made: the gate's rounds replaced the
+            // showdown and the user had them deleted (2026-11-23). FillShowdown stays for reference.
             AssetDatabase.SaveAssets();
 
-            bool ok = made == 1 + Showdowns.Length;
-            var text = "[Bowling] Set Up Giant Slime And Showdown: " + made + "/" + (1 + Showdowns.Length) + " prefabs saved.\n" + string.Join("\n", notes);
+            bool ok = made == 1;
+            var text = "[Bowling] Set Up Giant Slime And Showdown: " + made + "/1 prefab saved.\n" + string.Join("\n", notes);
             if (ok) Debug.Log(text);
             else Debug.LogError(text);
             return ok;

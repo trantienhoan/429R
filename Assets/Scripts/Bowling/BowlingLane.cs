@@ -11,6 +11,10 @@ namespace Game.Bowling
     /// Lighting one plays a short reveal: the deck spot comes up, the fires ignite with a puff at each base, a whoosh at the
     /// mouth and a fire roar a few metres out. The transform sits at the arena's centre with +Z along the lane.
     /// Built by Tools > 429 Game > Bowling > Set Up Bowling Arena.
+    /// Hand set up (2026-11-23): the lane's size is read from its Floor collider (width, where it starts and ends) and its
+    /// points (Aim = the head pin, the slots, Hover, Tip), never from fixed numbers, so a lane widened or lengthened by hand
+    /// in Unity (the Lane prefab, Prefabs/Bowling/Bowling_Lane) still counts strikes, steers bowls and guides the giant
+    /// pumpkin right. Select a lane to see its size in the Scene view (green: floor edges, yellow: head pin line).
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class BowlingLane : MonoBehaviour
@@ -18,6 +22,10 @@ namespace Game.Bowling
         [Header("Places")]
         [Tooltip("Which lane this is (0..3; 0 is in front of the player at the start).")]
         [SerializeField] private int index;
+        [Tooltip("The lane's floor collider (its Floor child). Its width is the lane's width; its two ends are where the " +
+                 "lane starts and ends. The strike watch, the roll help, the giant pumpkin's runs and the Fit Fall Edges " +
+                 "menu read them. Empty: the Floor child.")]
+        [SerializeField] private BoxCollider floor;
         [Tooltip("Where the roll assist steers a bowl (over the head pin).")]
         [SerializeField] private Transform aim;
         [Tooltip("The lane's far end, on the floor.")]
@@ -80,6 +88,84 @@ namespace Game.Bowling
                 if (d.sqrMagnitude < 0.0001f) d = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
                 return d.sqrMagnitude > 0.0001f ? d.normalized : Vector3.forward;
             }
+        }
+
+        /// <summary>The flat unit direction to the lane's right (looking from the centre down the lane).</summary>
+        public Vector3 Right => Vector3.Cross(Vector3.up, Direction);
+
+        /// <summary>The floor collider (the Floor child if none is set).</summary>
+        public BoxCollider Floor
+        {
+            get
+            {
+                if (floor == null)
+                {
+                    var t = transform.Find("Floor");
+                    if (t != null) floor = t.GetComponent<BoxCollider>();
+                }
+                return floor;
+            }
+        }
+
+        /// <summary>Half the floor's width across the lane (metres; 1 for the first 2 m lanes).</summary>
+        public float HalfWidth { get { Measure(); return halfWidth; } }
+
+        /// <summary>How far from the lane's origin (the arena's centre) the floor starts, along the lane (metres).</summary>
+        public float StartAlong { get { Measure(); return startAlong; } }
+
+        /// <summary>How far from the lane's origin the floor ends, along the lane (metres; past it is the fall edge).</summary>
+        public float EndAlong { get { Measure(); return endAlong; } }
+
+        /// <summary>The head pin's distance along the lane (the Aim point, or slot 0).</summary>
+        public float HeadPinAlong => Along(aim != null ? aim.position : SlotPosition(0));
+
+        /// <summary>A point's flat distance along the lane from its origin (the arena's centre).</summary>
+        public float Along(Vector3 point)
+        {
+            var d = point - transform.position;
+            d.y = 0f;
+            return Vector3.Dot(d, Direction);
+        }
+
+        /// <summary>A point's flat distance to the right of the lane's middle line.</summary>
+        public float Side(Vector3 point)
+        {
+            var d = point - transform.position;
+            d.y = 0f;
+            return Vector3.Dot(d, Right);
+        }
+
+        private float halfWidth = 1f, startAlong = 2.4f, endAlong = 22.6f;
+        private bool measured;
+
+        // The floor box's corners along and across the lane. Once in Play (the arena doesn't change then); every time in
+        // the editor (so it follows hand edits).
+        private void Measure()
+        {
+            if (measured && Application.isPlaying) return;
+            measured = true;
+            var box = Floor;
+            if (box == null)
+            {
+                halfWidth = 1f;
+                startAlong = 2.4f;
+                endAlong = tip != null ? Along(tip.position) : 22.6f;
+                return;
+            }
+            float minA = float.MaxValue, maxA = float.MinValue, side = 0f;
+            var t = box.transform;
+            for (int i = 0; i < 8; i++)
+            {
+                var c = box.center + Vector3.Scale(box.size * 0.5f, new Vector3((i & 1) == 0 ? -1f : 1f, (i & 2) == 0 ? -1f : 1f, (i & 4) == 0 ? -1f : 1f));
+                var p = t.TransformPoint(c);
+                float a = Along(p);
+                minA = Mathf.Min(minA, a);
+                maxA = Mathf.Max(maxA, a);
+                side = Mathf.Max(side, Mathf.Abs(Side(p)));
+            }
+            halfWidth = Mathf.Max(0.1f, side);
+            startAlong = minA;
+            endAlong = maxA;
         }
 
         /// <summary>Where the roll assist steers a bowl on this lane.</summary>
@@ -196,5 +282,28 @@ namespace Game.Bowling
                 deckLight.enabled = k > 0f;
             }
         }
+
+#if UNITY_EDITOR
+        // The lane's size as the game reads it (select the lane): green = the floor's edges and ends, yellow = the head pin
+        // line (Aim), white dots = the pin slots.
+        private void OnDrawGizmosSelected()
+        {
+            measured = false;
+            var o = transform.position;
+            var d = Direction;
+            var r = Right;
+            float y = Floor != null ? Floor.bounds.max.y + 0.02f : o.y;
+            Vector3 P(float along, float side) => new Vector3(o.x, y, o.z) + d * along + r * side;
+            Gizmos.color = Color.green;
+            Gizmos.DrawLine(P(StartAlong, -HalfWidth), P(EndAlong, -HalfWidth));
+            Gizmos.DrawLine(P(StartAlong, HalfWidth), P(EndAlong, HalfWidth));
+            Gizmos.DrawLine(P(StartAlong, -HalfWidth), P(StartAlong, HalfWidth));
+            Gizmos.DrawLine(P(EndAlong, -HalfWidth), P(EndAlong, HalfWidth));
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawLine(P(HeadPinAlong, -HalfWidth), P(HeadPinAlong, HalfWidth));
+            Gizmos.color = Color.white;
+            for (int i = 0; i < SlotCount; i++) Gizmos.DrawSphere(SlotPosition(i), 0.05f);
+        }
+#endif
     }
 }

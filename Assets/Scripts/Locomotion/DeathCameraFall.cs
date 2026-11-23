@@ -116,9 +116,32 @@ namespace Game.Locomotion
             if (fade == null && head != null) fade = head.GetComponentInChildren<HeadsetFade>(true);
         }
 
+        // The game (or Play mode) closing switches everything off: the hands can't be moved back then (Unity refuses a
+        // new parent for a child of an object being switched off: "Cannot set the parent of 'Left/Right Controller' while
+        // activating or deactivating 'DeadCam'", seen at Play exit, 2026-11-23), and there's no need.
+        private static bool quitting;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            quitting = false;
+            Application.quitting -= OnQuitting;
+            Application.quitting += OnQuitting;
+        }
+
+        private static void OnQuitting() => quitting = true;
+
         private void OnDisable()
         {
-            if (fallen) GetUp(true);
+            if (!fallen) return;
+            if (quitting)
+            {
+                fallen = false;
+                rising = false;
+                hands.Clear();
+                return;
+            }
+            GetUp(true);
         }
 
         private void LateUpdate()

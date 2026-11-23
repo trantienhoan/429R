@@ -1,7 +1,75 @@
 # Gate 1 (PlayGround, "cook and defend"): hand-over notes
 
-Work folder (tests, backups): `C:/Users/ADMIN/Documents/429R_claude_backups/2026-11-23/gate1/`.
+Work folder (tests, backups): `C:/Users/ADMIN/Documents/429R_claude_backups/2026-11-23/gate1/` (second PC);
+`K:/WORK_2026/08_04/_claude/gate1_2026-11-23/` (K: PC: g1_jump.cs, g1_shot.cs, shots/).
 Plan and rules: `Exports/Gates/GATES_PLAN.md` (§0 the 2026-11-23 order, §2 the gate contract).
+
+## 0. K: PC gate 1 session, 2026-11-23 morning: in-game look vs the concept (no changes made)
+
+- Picture: `kit_renders/ingame_vs_concept_2026-11-23.jpg` = the concept, then the game rendered from the concept's
+  camera (24 m back, 10.5 m up, 22 mm lens) in round 1: hat search (walls up), the cook (walls down), from above.
+- Mean brightness of the picture (0-1): concept 0.27; game 0.088 (hat search), 0.083 (cook), 0.099 with no fog.
+- The field is 10.8 x 12 m inside the stone walls. During the hat search the walls are up and hide the 60 kit pieces
+  outside them at eye level. Inside the walls: the cauldron, 4 slime puddles, 3-4 monster gates, the old props (2 bubble
+  trees, table, barrel). In the concept the toys (seesaws, sandbox, merry-go-round, rocking horse, skull, slime
+  boulder) stand in the open play area round the cauldron, behind low picket fences.
+- The MOVE / TELEPORT boards seen in test pictures are a test-jump leftover: in a real run they hide at the Fairy
+  (OncePerInstall), before any gate.
+- User's choice (look first): "I want to edit and choose my own model, after that you help me put them in unity, I may
+  edit, move them and set them if feel need to" + brighter + swap the old props + toys in the field.
+- **Brighter (built, compile-checked, Play-tested):** PlayGroundGame Lift Light: while Play_Ground_Z is out, the house's
+  ambient x Light Times (default 2; Unity makes the ambient probe from it: probe 0.073 -> 0.319), optional Fog Colour
+  (alpha 0 = the house's); both put back in OnDisable with the fog. Choices rendered:
+  `kit_renders/brightness_choices_2026-11-23.jpg` (concept angle during the cook: x1 0.08, x2 0.13, x3 0.17, x2 + purple
+  fog (0.16, 0.12, 0.22) 0.14, x3 + purple fog 0.19; eye height x1 0.12, x2 0.18, x3 0.25; the concept 0.27).
+  User: "Keep B (x2)". Exit checked (09:25, `_claude_bot`, gate 1 by test hooks, `K:/WORK_2026/08_04/_claude/gate1_2026-11-23/g1_exit.cs`):
+  before ambient 0.30 / probe 0.073 / fog 6-22; in the gate 0.60 / 0.319 / 12-36; at Whack 6 0.30 / 0.073 / 6-22 again;
+  fountains 8, 12, 16, 42; Whack 6 at 71 s; 0 game errors.
+  Test gotcha: the opening cutscene sets ambient 0.42 for ~35 s after a run starts and puts 0.30 back when it ends: jump
+  to a gate only after that, or the PlayGround remembers the opening's light.
+- **Kit menus keep hand edits now:** Build PlayGround Kit only refreshes the meshes of a piece prefab that's already
+  there (the user's colliders, scripts, materials kept; broken-set chunks by name). Dress PlayGround With Kit builds
+  Kit_Dressing ONCE and then leaves it alone; Reset Kit Dressing (Loses Hand Changes) and Remove Kit Dressing ask first
+  and back up the prefab.
+- Next (after the user's models): swap the old field props' looks (keep their jobs), toys inside the field (solid on the
+  Wall layer so LiveNavMesh cuts them out and monsters walk round), export + Build, before/after pictures, full run.
+- **User 11:20: "reuse my model in Bedroom_Walls.blend for the PlayGround Kit".** Checked headless (the .blend not
+  changed; 1,139 objects, 10 collections). 76 outdoor-fit models rendered: `kit_renders/bedroom_walls_models_2026-11-23.jpg`
+  (+ `.txt`: size, verts, materials, Unity status). 34 already have a Unity prefab (most are breakables with Health +
+  Damage FSMs and EnemyHitDamage), 21 have an FBX only, 21 are not in Unity yet. Of those 21, 11 have no material
+  (white: Bush_01-03, big Tree_Of_Light, Pot_Plant_05, Flower_1, Out_Door_Chair, Stool, Small_Chair, Water_Machine,
+  XMas_Toy_05) and Tank_03 + Dino_Rex use textures outside the project (`G:\New Model\...`, the Rex at 4096).
+  Unity never imports Bedroom_Walls.blend itself (no prefab/scene uses its guid): each prop is its own FBX.
+  Scripts: `K:/WORK_2026/08_04/_claude/gate1_2026-11-23/bedroom/` (list.py, render.py, sheet.py).
+- **User: "Use your suggestion" -> BUILT (12:40, compile-checked, Play-tested):** the 21 picks (sheet numbers 2, 5, 7, 18,
+  19, 20, 22, 33, 38, 40, 43, 47, 50, 52, 53, 63, 65, 66, 72, 75, 76) = 27 copies in `Play_Ground_Z/Bedroom_Models`, by
+  **Tools > 429 Game > PlayGround > Place Bedroom Models** (`Scripts/PlayGround/Editor/PlayGroundBedroomModelsMenu.cs`;
+  ONCE, then left alone for hand edits; Reset Bedroom Models (Loses Hand Changes) / Remove Bedroom Models ask first and
+  back up to `Documents/429R_claude_backups/2026-11-23/gate1/`). The layout list is in the menu (metres, PlayGround space).
+  - **The PlayGround's only floor collider is Teleport Area: x -7.6..7.6, z -7.8..8.9** (the painted ground further out
+    has none). So the 13 breakables (house prefabs, free Rigidbodies: 2 Wood_Barrel, Wood_Box, Bedroom_Candy_Basket,
+    2 pumpkin_bag, Skull_2, Livingroom_Clock_Tower, 2 Rooftop_Pole_Light, Bat_Candle_Holder on the stone block,
+    Spider_Web on its side) stand in the strip between the field walls and that edge (punchable after GO), and the
+    Pumpkin_Tree vine (kinematic) further out in place of Tree_Mushroom.
+  - They are **spawn spots** (new runtime script `Scripts/PlayGround/SpawnPropHere.cs`), like the PlayGround's own
+    `*_Pos` Create Object markers: the prop is made at the spot under CurrentlySpawnedStuffs when the PlayGround comes
+    out (a free body can't ride the PlayGround). Each spot has a child "Look (editor only)" (EditorOnly tag, switched
+    off in Awake) so the prop shows in Prefab Mode: move/turn the SPOT.
+  - Looks-only, placed directly: toys in the field x2 with a box collider per mesh + Wall layer (LiveNavMesh cuts them
+    out): Tank (-3.6, 3.4), Dino_Rex (3.4, 4.6), Sleigh (2.9, 1.9) = the gate 2 session's House_Pieces prefabs
+    (`Prefabs/PlayGround/House_Pieces/House_Tank_03/Dino_Rex/Sleigh`, final 11:58, names kept). Outside: pumpkin_bucket,
+    Stone_Cube2 (south-west corner), Stone_Pumpkin_2 (for Totem_Pumpkin), 2 Armour_Stand_Sign1 (for the Lollipop_Signs),
+    2 Jenga_Block (for the Toy_Blocks), The_Cage, House_Magical_Tree_Big (for Tree_Jelly_B), and the textured tree #2 x2
+    (for 2 Tree_Dead): `Assets/Models/Gates/PlayGround/PG_Big_Tree_Textured.fbx` by `tools/export_house_tree.py`
+    (headless, never saves the .blend; remapped to Bedroom_Set_1_Mat by the menu). 9 kit pieces switched off + renamed
+    `..._off` (not deleted).
+  - Play test (`_claude_bot`, `bedroom/bm_check.cs`, `bm_shots.cs`, `g1_exit.cs`): 13/13 spawned on the floor and stayed
+    (the skull rolled 1.2 m), looks hidden, toys on Wall; full gate by test hooks -> Whack 6 in 67 s, fountains 8, 16, 12,
+    42; at Whack 6 none of the props left (cleared with the stage); scene not dirty; 0 game errors.
+  - Pictures: `kit_renders/bedroom_models_before_after_2026-11-23.jpg`.
+  - Known: the Pumpkin_Tree vine grows its ~15 tree pumpkins off the floor (unreachable; a roach that picks one to hide
+    in gives up after its time limit). The 2 pole lights add 4 point lights (no shadows). The breakables are the house's
+    (their Health/Damage FSMs; smoke and their own pieces only).
 
 ## 1. The kit (2026-11-23)
 

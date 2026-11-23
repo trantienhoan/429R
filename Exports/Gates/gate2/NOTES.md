@@ -103,14 +103,58 @@ Measured (editor, `_claude_test`, deleted after):
 
 ## 5. Open
 
-- Ask the user: strike/miss sounds (the user's clips: e.g. Clear_resonant_bell for a strike, Kenney lowThreeTone for a
-  miss)? Delete the 4 unused `Slime_Showdown_*` prefabs?
+- DONE 2026-11-23 (K: PC, user: "add sounds, clean up"): strike = `Clear,_resonant_bell_1`, miss (a ball reached the rack,
+  no strike) = Kenney `lowThreeTone`, played at the player (BowlingStage Strike/Miss Sound; Gate 2: Use Gate Run fills them).
+  The 4 `Slime_Showdown_*` deleted (GiantSlimeSetupMenu no longer makes them). Giant pumpkin candies 42 (E2).
 - The user's fixes to the kit (look, colours, sizes), then export + Build SlimeBowl Kit again.
 - The deck's stone reaches 23.3 m but the lane's floor collider ends at 22.6 m (a ball rolling past the pins drops
   through the stone's last 0.7 m into the fall edge). Small; fix with a deck collider if it shows in the headset.
 - (Done 01:40) Full GAMESTAGES run with the kit, `_claude_test`, strikes simulated 3 s after each rack: round 1 36 s,
   round 2 26 s, round 3 12 s; gate 2's own giant pumpkin; seed -> Rooftop_ON PG -> Whack 6; arrival to seed 109 s;
   fog back to 6-22 and the house colour; 4 gears set; 0 errors.
+
+## 6. K: PC gate 2 session, 2026-11-23 morning: groundwork (no edits to the game)
+
+- Pictures: `compare_concept_kit_unity.png` (concept | kit in Blender | Unity from the concept's camera | Unity from the
+  island), `unity_concept_angle.png`, `deck_gap.png` (green = lane floor collider to 22.6 m, red = stone with no floor
+  22.6-23.3 m, right in front of the pumpkin arch's portal). Scripts: `K:/WORK_2026/08_04/_claude/gate2_2026-11-23/`
+  (`g2_look.cs` run by `gates_2026-11-23/run_test.sh`, `deck_gap.py` headless, `side_by_side.py`).
+- Measured (editor, `_claude_bot`, chests skipped by the hook): card 2.5 s, start chest 3.0 s, round 1 at 4.8 s, first rack
+  9.2 s into round 1 (14.0 s after arriving). Round 1 at 22 s: 59 particles, 3 lights, 2 racks. Round 3 at 20 s: 167
+  particles, 5 lights, 4 racks, 5 flyers; at 35 s: 284 particles (budget 650), 4 racks, 4 balls; editor frame 8-9 ms avg.
+- Brightness (0-1 mean): concept 0.30, Blender kit 0.17, Unity same camera 0.08 (fog off), Unity from the island 0.13.
+- Seen: the start rooftop's tutorial boards stand on lanes 2/3 about 8 m out (thin slivers from above; the TELEPORT board
+  behind the giant pumpkin in `unity_giant_pumpkin.png`): shared scene, the coordinator's. Gate Run's round start/won
+  sounds are empty in all 3 gates.
+- Waiting for the user's choices (model, flow, rewards, saving, ending).
+
+## 7. Hand set up (2026-11-23 morning, K: PC; user: "no portals at the end, only fall edge, ball goes to fall edge =
+## break ... wider path, bigger pins ... I set them up my style"; "Yes, one lane prefab")
+
+- **One lane prefab:** `Prefabs/Bowling/Bowling_Lane.prefab` (made from lane 0 by `Tools > 429 Game > Bowling > Hand Set
+  Up > Make One Lane Prefab`); the arena's 4 lanes are its instances (each keeps its turn, index and rune ring colour:
+  Red/Blue/Yellow as overrides). The 4 lanes now share lane 0's small decorations. Undo: `Back To 4 Separate Lanes`.
+  Arena prefab 704 KB -> 213 KB. Backups: `Exports/Gates/gate2/backups/` (the menus make one before each change).
+- **Hand Set Up tick** on Bowling Stage (on): `Set Up Bowling Arena`, `Build SlimeBowl Kit` and `Remove SlimeBowl Kit`
+  refuse to run (tested). Kit shapes now come in with `Hand Set Up > Import SlimeBowl Kit Pieces (no placing)`: import
+  settings, the palette material, a prefab for every NEW piece; nothing placed or moved (the placed pieces are prefab
+  instances whose mesh is the FBX's, so they change by themselves).
+- **The lane's size is read from Unity, not from fixed numbers** (`BowlingLane`: Floor collider = width, start, end;
+  Aim/slot 0 = head pin): the strike watch (PinSet: head pin = slot 0, half width = the floor's), the roll help
+  (BowlingStage `mouthMargin` 0.4 m inside the floor's edge replaces `mouthSafe` 0.6), the giant pumpkin's lane runs and
+  landing spot. Select a lane: green = its floor as the game reads it, yellow = the head pin line.
+- **Fall edge = break:** a ball (not held) over any Fall Edge breaks at once (`BowlingBallSupply` Break At Fall Edge: a
+  puff x1 and `pumpkin_explode_1`), a new one grows in a cup. `Fit Fall Edges To Lanes` re-fits the 12 boxes round the
+  lanes' floors and the dirt (same boxes as before for 2 m lanes: checked).
+- **Export fix:** `tools/export_slimebowl_kit.py` keeps a piece's Object Mode size/turn (was reset to 1/0 and lost).
+  Tested: Lane_4m scaled 1.5 in X came out 3.0 m wide.
+- Compile-checked (0 errors, runtime + editor). Play test (`_claude_bot`, `g2_hand.cs`, GAMESTAGES "Clean for Path 2"):
+  lanes read 2.00 m, 2.40-22.60 m, head pin 20.80 m; a real ball rolled down lane 0 at 8 m/s reached the rack (miss: 0
+  strikes, miss tone), ran on and broke at 22.6 m (`pumpkin_explode_1`, 4.9 s after the roll); a ball dropped beside lane
+  0 broke in 0.11 s; rounds by the hook -> giant pumpkin -> 42 fountain -> Whack 6, 67 s; 0 game errors.
+- **Next:** the user edits `SlimeBowl_Kit.blend` (wider lane, no portal, deck end), then: export -> `Import SlimeBowl Kit
+  Pieces` -> the user sets the lane up by hand (Floor width, rails, slots, `Slime_Pin` Start/Full Size) -> `Fit Fall
+  Edges To Lanes` -> Play test. Then the user's details on the flow.
 
 ## Headset checklist (draft)
 

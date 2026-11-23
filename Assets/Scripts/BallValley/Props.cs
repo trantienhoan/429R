@@ -27,6 +27,15 @@ namespace Balls
         public float baseRadius;
         /// <summary>When it last lost hit points (its health bar shows for a few seconds after).</summary>
         [System.NonSerialized] public float lastHit = -99f;
+        /// <summary>
+        /// 429R gate 3 (user 2026-11-23: "candy tree drop candy or fly candy out when it gets hit"): candies its hits still
+        /// knock out of it (one a hit, at most every Hit Candy Every seconds); breaking it still bursts its Food.
+        /// </summary>
+        [System.NonSerialized] public int hitCandiesLeft;
+        [System.NonSerialized] public float hitCandyEvery = 0.35f;
+        /// <summary>429R gate 3: told of every hit (its damage, where), e.g. a jello volcano spits candy.</summary>
+        [System.NonSerialized] public System.Action<float, Vector3> onHit;
+        float nextHitCandy;
 
         public bool Broken { get; private set; }
         /// <summary>Hidden until the field reaches it (a new match: the valley grows back, or it was moved), see <see cref="Arrive"/>.</summary>
@@ -41,7 +50,24 @@ namespace Balls
             lastHit = Time.time;
             if (jiggle) jiggle.Hit(Mathf.Clamp(dmg / Mathf.Max(1f, shakeHp), 0.35f, 1.25f), dir);
             Gfx.Sparks(point, chipColor, Mathf.Clamp(Mathf.RoundToInt(dmg * 0.6f), 3, 14), 6f);
+            if (hitCandiesLeft > 0 && dmg >= 2f && Time.time >= nextHitCandy) KnockCandyOut(dir);   // 429R gate 3
+            onHit?.Invoke(dmg, point);   // 429R gate 3
             if (hp <= 0f) Break(true, by);
+        }
+
+        // 429R gate 3: one candy out of its top, flying on the way the hit went (a little to either side).
+        void KnockCandyOut(Vector3 dir)
+        {
+            var g = ValleyGame.I;
+            if (!g) return;
+            hitCandiesLeft--;
+            nextHitCandy = Time.time + hitCandyEvery;
+            var away = new Vector3(dir.x, 0f, dir.z);
+            if (away.sqrMagnitude < 1e-4f) away = new Vector3(Random.value - 0.5f, 0f, Random.value - 0.5f);
+            away = Quaternion.Euler(0f, Random.Range(-50f, 50f), 0f) * away.normalized;
+            float size = transform.localScale.x;
+            var from = transform.position + Vector3.up * ((tree ? 3.4f : 1.2f) * size) + away * 0.6f;
+            g.SpawnPellet(from, away * Random.Range(2.5f, 5f) + Vector3.up * Random.Range(4f, 6.5f), g.RandomBerryColor());
         }
 
         /// <summary>Breaks it: a crunch, a cloud of chips and (if <paramref name="dropFood"/>) a burst of berries.</summary>

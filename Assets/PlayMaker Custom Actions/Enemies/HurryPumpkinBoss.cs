@@ -28,8 +28,15 @@ namespace HutongGames.PlayMaker.Actions
         {
             if (Game.Enemies.SavedPumpkinHurry.HurryNow(pumpkinTag.Value, countdownFsm.Value, countdownState.Value) == 0)
             {
-                // Saved for later, on the room (the door itself goes away when it breaks).
-                var room = Owner != null ? Owner.transform.root.gameObject : null;
+                // Saved for later, on the room (the door itself goes away when it breaks): the kit room the door is in, so
+                // it goes with it. Its top object would be the scene's ---GameManager--- (play test 2026-11-23): there it
+                // would outlive the room and turn the NEXT run's runner pumpkin at once after a Game Over.
+                GameObject room = null;
+                if (Owner != null)
+                {
+                    var kit = Owner.GetComponentInParent<Game.Rooms.RoomKit>(true);
+                    room = kit != null ? kit.gameObject : Owner.transform.root.gameObject;
+                }
                 if (room != null)
                     room.AddComponent<Game.Enemies.SavedPumpkinHurry>().Set(pumpkinTag.Value, countdownFsm.Value, countdownState.Value);
             }

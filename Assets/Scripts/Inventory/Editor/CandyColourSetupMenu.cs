@@ -76,13 +76,8 @@ namespace Game.Inventory.Editor
         };
 
         // Variants of those slimes that keep their own look (the bowling showdown, user 2026-11-08).
-        private static readonly string[] KeepLook =
-        {
-            "Assets/Prefabs/Bowling/Slime_Showdown_Blue.prefab",
-            "Assets/Prefabs/Bowling/Slime_Showdown_Green.prefab",
-            "Assets/Prefabs/Bowling/Slime_Showdown_Red.prefab",
-            "Assets/Prefabs/Bowling/Slime_Showdown_Yellow.prefab",
-        };
+        // (The 4 Slime_Showdown_* were here; deleted 2026-11-23 at the user's word: nothing used them.)
+        private static readonly string[] KeepLook = System.Array.Empty<string>();
 
         // Only ever split off a big one, which hands it its own colour candy (Slime Body's Made By Split): its own stays
         // empty, so a split off a slime with no colour drops random candies (white/rainbow/no colour = random).

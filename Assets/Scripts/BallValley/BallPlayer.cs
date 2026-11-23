@@ -83,6 +83,15 @@ namespace Balls
         public System.Action<Collider, bool> vrContact;
         /// <summary>429R: a fixed main-ball radius (0: by its number of balls, as in BALLS), e.g. the VR body.</summary>
         public float fixedRadius;
+        /// <summary>429R gate 3 (2026-11-23): times this ball's weight (the Black Pumpkin Ball: 3, the same size, 3 times as heavy).</summary>
+        [System.NonSerialized] public float massTimes = 1f;
+        /// <summary>
+        /// 429R gate 3 (2026-11-23): when the VR player last touched this ball (a punch, the dash, their body, or a ball they
+        /// hit): it's the player's pocket if it goes down soon after (Ball Valley Gate's Credit Seconds).
+        /// </summary>
+        [System.NonSerialized] public float lastHumanTouch = -99f;
+        /// <summary>429R gate 3 (2026-11-23): dresses the main ball as it spawns, instead of its face and spots (the Black Pumpkin Ball).</summary>
+        [System.NonSerialized] public System.Action<BallPart> dressHead;
 
         public void VrContact(Collider other, bool entered) => vrContact?.Invoke(other, entered);
 
@@ -179,7 +188,7 @@ namespace Balls
         public float DashCooldown01 => DashReady ? 1f : 1f - (dashReadyAt - Time.time) / T.dashCooldown;
         /// <summary>Hitting weight: grows with head size, keeps growing with ball count; the special move adds the swallowed tail.</summary>
         public float Mass => HeadMass + (absorbed ? TailMass() : 0f);
-        float HeadMass => T.baseMass * Sq(targetRadius / T.headRadius) + T.massPerBaby * babies.Count;
+        float HeadMass => (T.baseMass * Sq(targetRadius / T.headRadius) + T.massPerBaby * babies.Count) * massTimes;   // 429R: Mass Times
         public float Size01 => Mathf.InverseLerp(T.headRadius, T.headMaxRadius, radius);
         public int NextCost => Mathf.RoundToInt(T.baseCost + babies.Count * T.costPerBaby);
         /// <summary>Top rolling speed: more balls and a bigger main ball both make you faster.</summary>
@@ -244,6 +253,7 @@ namespace Balls
             shieldUntil = Time.time + T.spawnShield;
             invincibleUntil = 0f;   // a new life starts without the Rainbow Slime's power
             lastAttacker = null;
+            lastHumanTouch = -99f;   // 429R
             hitBy.Clear();
             hitAt.Clear();
             killedBy = null;
@@ -253,7 +263,8 @@ namespace Balls
             aimDir = toCenter.sqrMagnitude > 1f ? toCenter.normalized : Vector3.forward;
 
             head = CreatePart(true, pos, radius);
-            if (!vrBody)   // 429R: the VR body has no face or smoke (nobody sees it)
+            if (!vrBody && dressHead != null) dressHead(head);   // 429R gate 3: its own look (no face)
+            else if (!vrBody)   // 429R: the VR body has no face or smoke (nobody sees it)
             {
                 if (!face) face = BuildFace();
                 face.gameObject.SetActive(true);
@@ -292,6 +303,9 @@ namespace Balls
         {
             lastAttacker = enemy;
             lastAttackTime = Time.time;
+            // 429R gate 3: the VR player's body bumped it, or a ball they sent off did (snooker: their shot). A chain keeps
+            // the time of the player's own touch, so the credit still runs out (Ball Valley Gate's Credit Seconds).
+            if (enemy) lastHumanTouch = Mathf.Max(lastHumanTouch, enemy.isHuman ? Time.time : enemy.lastHumanTouch);
             for (int i = hitBy.Count - 1; i >= 0; i--)   // forget old hits and the one being renewed
                 if (!hitBy[i] || hitBy[i] == enemy || Time.time - hitAt[i] >= T.killCreditWindow)
                 {
@@ -1341,7 +1355,7 @@ namespace Balls
             if (!alive || !head) return;
             Vector3 p = head.transform.position;
             lastPosition = p;
-            if (vrBody) return;   // 429R: no face or smoke on the VR body
+            if (vrBody || !face || !smoke) return;   // 429R: no face or smoke on the VR body (or a ball dressed its own way)
             Vector3 v = Velocity;
             v.y = 0f;
             Vector3 look = charging ? aimDir : (v.sqrMagnitude > 2f ? v.normalized : aimDir);

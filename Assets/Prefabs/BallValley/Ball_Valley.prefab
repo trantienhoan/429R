@@ -12,7 +12,6 @@ GameObject:
   - component: {fileID: 2336074395021610029}
   - component: {fileID: 8262284768485154091}
   - component: {fileID: 1423455340067669913}
-  - component: {fileID: 3904428590821533855}
   m_Layer: 0
   m_Name: Ball_Valley
   m_TagString: Untagged
@@ -288,6 +287,8 @@ MonoBehaviour:
     at: {x: -3, y: 21}
     turn: 175
     size: 1.4
+  kitVolcanoes:
+  - {fileID: 816852456416909765, guid: dbd3525f556f609408d65796cb31d6c4, type: 3}
   nightPalette: {fileID: 2800000, guid: 37402e665a1d3f34b8529131bb73d9e6, type: 3}
   sounds:
   - name: choo_choo
@@ -364,22 +365,56 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 311b2dea5db0e7949816973532876e44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Balls.BallValleyGate
-  ballsPerRound: 5
-  tempers:
-  - {x: 0.35, y: 0.55}
-  - {x: 0.45, y: 0.65}
-  - {x: 0.55, y: 0.8}
-  maxHuntersPerRound: 010000000100000002000000
+  cardTitle: RUN AND SNOOKER
+  cardLine: Push all 15 balls in before the holes meet.
+  cardCloseLine: Pull a trigger to play
+  cardDelay: 2
+  balls: 15
   dropInSeconds: 3
+  temperStart: {x: 0.45, y: 0.65}
+  temperEnd: {x: 0.8, y: 1}
+  huntersStartEnd: {x: 1, y: 3}
+  creditSeconds: 6
+  backInSeconds: {x: 3, y: 6}
   pocketCandies: 3
   punchedBallBraking: 1.5
   punchedBallControlBelow: 2.5
-  smallest: 0.5
-  shrinkSeconds: 4
-  finaleShrinkSeconds: 6
+  songSeconds: 300
+  endScale: 0.1
+  shrinkEase: 2.2
+  song:
+  - {fileID: 8300000, guid: 2cf0e5802c600e84c9a256eafb577ff6, type: 3}
+  - {fileID: 8300000, guid: 0c671191f411b5a449bdbca9b35c13e2, type: 3}
+  songVolume: 0.5
+  songPitch: {x: 0.92, y: 1.3}
   candyEvery: 0.3
-  bossDelay: 2
-  bossKnock: 9
+  trees: 5
+  boulders: 6
+  volcanoes: 3
+  treeHealth: 90
+  boulderHealth: 160
+  treeHitCandies: 10
+  slimes: {x: 5, y: 8}
+  blackPumpkinLook: {fileID: 8738432897051054182, guid: 9642afb8c5dd0d240a0c19592fc4236e,
+    type: 3}
+  blackTint: {r: 0.13, g: 0.1, b: 0.15, a: 1}
+  blackRadius: 1.2
+  blackWeight: 3
+  blackHealth: 150
+  voiceFrom: {fileID: 485055048410894695, guid: 7313d3483956b83418cb07926e5de589,
+    type: 3}
+  rainCandies: 42
+  rainSeconds: 3
+  exp: 30
+  seedChest: {fileID: 1466195575395978692, guid: 427aa1a2ebba00e48b4bae069e3f8558,
+    type: 3}
+  seedGiveUpSeconds: 90
+  ballsLine: BALLS {0}/{1}
+  blackLine: BLACK PUMPKIN {0}
+  showTimeUnder: 60
+  hudPlace: {x: 1.8, y: 0.55}
+  hudSize: 2.2
+  hudColour: {r: 1, g: 0.85, b: 0.35, a: 1}
 --- !u!114 &1423455340067669913
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -392,7 +427,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65240faff71fa4742a2b8ca89ef422b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Balls.BallValleyPlayer
-  startSpot: {x: 0, y: 0, z: -4}
+  startSpot: {x: 0, y: 0, z: 0}
   startYaw: 0
   teleportLawn: 1
   bodyRadius: 0.45
@@ -408,6 +443,8 @@ MonoBehaviour:
   sameBallEvery: 0.8
   walkPush: 1.2
   punchSlide: 0.35
+  propPunchDamage: 40
+  dashPropDamage: 120
   pitMargin: 0.25
   fallDrop: 1
   fallSeconds: 0.45
@@ -431,56 +468,3 @@ MonoBehaviour:
   dashKnockSpeed: 16
   dashReach: 0.8
   dashBossDamage: 10
---- !u!114 &3904428590821533855
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7863378838843977471}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 42835ec96d2d2754c852ddb2d4b4a68a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Gates.GateRun
-  cardTitle: RUN AND SNOOKER
-  cardLine: Punch the balls into the holes.
-  cardCloseLine: Pull a trigger to play
-  cardDelay: 2.5
-  startChest: {fileID: 1466195575395978692, guid: 86bd80f99c2ca804588745e9eaf064cc,
-    type: 3}
-  roundChests:
-  - {fileID: 5004806074365477220, guid: 0d672aeee51ec0f4384a940ebac911cb, type: 3}
-  - {fileID: 8518339275496821638, guid: 1cfdbf71c85721e4daaa8295b4b11fab, type: 3}
-  - {fileID: 1076085778901865882, guid: 671fc05d320fdd0478535c70a7973b98, type: 3}
-  gearBools:
-  - Bracer_Gear
-  - Chest_Gear
-  - Head_Gear
-  - Shield_Gear
-  startChestDelay: 1
-  chestAhead: 1.4
-  chestWaitMax: 25
-  chestPuff: {fileID: 431296081563789977, guid: 7d85674d137626445accce4cef7fe159,
-    type: 3}
-  chestPuffScale: 0.12
-  roundSeconds:
-  - 120
-  - 120
-  - 120
-  roundBreak: 3
-  roundLine: ROUND {0}/{1}   {2}
-  roundFlash: ROUND {0}
-  showTimeUnder: 30
-  finaleBoss: {fileID: 6678587135689816530, guid: 7313d3483956b83418cb07926e5de589,
-    type: 3}
-  finaleSeed: {fileID: 3101255149643869238, guid: 23249313e7cb0cf489370b4ecb4416fe,
-    type: 3}
-  finaleFlash: BREAK IT!
-  finaleLine: GIANT PUMPKIN {0}
-  hudPlace: {x: 1.8, y: 0.55}
-  hudSize: 2.2
-  hudColour: {r: 1, g: 0.85, b: 0.35, a: 1}
-  roundStartSound: {fileID: 0}
-  roundWonSound: {fileID: 0}
-  soundVolume: 0.8

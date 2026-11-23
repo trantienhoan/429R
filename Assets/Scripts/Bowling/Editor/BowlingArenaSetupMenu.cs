@@ -71,6 +71,8 @@ namespace Game.Bowling.EditorTools
         public static bool Run()
         {
             if (EditorApplication.isPlaying) { Debug.LogError("[Bowling] Stop play mode first."); return false; }
+            // Hand set up (2026-11-23): this menu builds the arena anew and would throw the hand work away.
+            if (BowlingHandSetUpMenu.Refuse("Set Up Bowling Arena")) return false;
 
             var ball = Load<GameObject>(BallPath);
             var slime = Load<GameObject>(SlimePath);

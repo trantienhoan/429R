@@ -94,6 +94,16 @@ namespace Game.Bowling
             new(0.89f, 0.15f, 0.18f), new(1f, 0.85f, 0.12f), new(0.2f, 0.45f, 1f), new(0.45f, 0.85f, 0.25f),
         };
 
+        [Header("Strike / miss sounds")]
+        [Tooltip("Played at the player when a rack goes down in one ball (a strike). Empty: none.")]
+        [SerializeField] private AudioClip strikeSound;
+        [Range(0f, 1f)]
+        [SerializeField] private float strikeVolume = 0.9f;
+        [Tooltip("Played at the player when a ball knocks some of a rack but not all (a miss). Empty: none.")]
+        [SerializeField] private AudioClip missSound;
+        [Range(0f, 1f)]
+        [SerializeField] private float missVolume = 0.6f;
+
         [Header("Rules")]
         [Tooltip("Strikes count up and a miss doesn't reset them (user, 2026-11-18: \"make it simple\"). Off: in a row.")]
         [SerializeField] private bool strikesAddUp = true;
@@ -106,10 +116,11 @@ namespace Game.Bowling
         [SerializeField] private float diverGap = 0.3f;
         [Tooltip("A bowl is steered to a lane whose direction is this close (degrees).")]
         [SerializeField] private float aimAngle = 25f;
-        [Tooltip("A bowl whose line to the head pin crosses the lane's mouth further than this from its middle (metres; the " +
-                 "rails are 0.9 m out, the ball 0.16 m round) would roll off the dirt beside the lane: it's steered into the " +
-                 "lane instead, at a point on its middle line Mouth Lead metres past the mouth (or past the ball).")]
-        [Min(0.1f)] [SerializeField] private float mouthSafe = 0.6f;
+        [Tooltip("A bowl whose line to the head pin crosses the lane's mouth closer than this to the floor's edge (metres; " +
+                 "the ball is 0.16 m round, the rails stand on the edge; 0.4 on a 2 m lane = 0.6 m from its middle) would roll " +
+                 "off the dirt beside the lane: it's steered into the lane instead, at a point on its middle line Mouth Lead " +
+                 "metres past the mouth (or past the ball). The lane's width is its Floor's (hand set up, 2026-11-23).")]
+        [Min(0f)] [SerializeField] private float mouthMargin = 0.4f;
         [Min(0.5f)] [SerializeField] private float mouthLead = 1.0f;
         [Tooltip("Seconds a pin flies from the slime to its slot, and between pins.")]
         [SerializeField] private float pinFlightSeconds = 0.7f;
@@ -173,6 +184,12 @@ namespace Game.Bowling
         [Tooltip("Only without a Gate Run (a test): the giant pumpkin (Gate Run's Finale Boss otherwise).")]
         [SerializeField] private GameObject finaleBoss;
 
+        [Header("Hand set up")]
+        [Tooltip("On: the arena is set up by hand in Unity (the 4 lanes are one Lane prefab, Prefabs/Bowling/Bowling_Lane; " +
+                 "Tools > 429 Game > Bowling > Hand Set Up). The old builder menus (Set Up Bowling Arena, Build / Remove " +
+                 "SlimeBowl Kit) then refuse to touch the arena, so hand work is never overwritten.")]
+        [SerializeField] private bool handSetUp;
+
         [Header("Hooks")]
         [Tooltip("A lane lit (its index).")]
         [SerializeField] private UnityEvent<int> onLaneLit = new();
@@ -192,6 +209,9 @@ namespace Game.Bowling
 
         public bool Won => won;
         public IReadOnlyList<BowlingLane> Lanes => lanes;
+
+        /// <summary>Set up by hand (the builder menus leave it alone).</summary>
+        public bool HandSetUp => handSetUp;
 
         /// <summary>The giant slimes flying now (in their order: circle places, Debug Hit).</summary>
         public IReadOnlyList<GiantFlyingSlime> Slimes => slimeList;
@@ -590,7 +610,8 @@ namespace Game.Bowling
                 flyerParent = Spawned(),
             };
             var set = PinSet.Spawn(pinPrefab, pinsRoot != null ? pinsRoot : transform, f.slime.BottomPoint, lane.SlotPositions(),
-                                   lane.transform.position, lane.Direction, f.slime.Colour, growth, balls, pinFlightSeconds, pinStagger);
+                                   lane.transform.position, lane.Direction, f.slime.Colour, growth, balls, pinFlightSeconds, pinStagger,
+                                   lane.HalfWidth);
             if (set == null)
             {
                 Debug.LogWarning("[Bowling] No rack made on lane " + k + ".", this);
@@ -664,6 +685,10 @@ namespace Game.Bowling
         private void OnSetResolved(PinSet set, bool strike)
         {
             if (set == null || won || restored) return;
+            // Strike / miss sounds (user, 2026-11-23): at the player, so they're heard from 18 m away; a rack left alone
+            // (no ball reached it) stays quiet.
+            if (strike) PlayAtPlayer(strikeSound, strikeVolume);
+            else if (set.Knocked) PlayAtPlayer(missSound, missVolume);
             var owner = Find(set.Owner as GiantFlyingSlime);
             if (strike)
             {
@@ -689,6 +714,14 @@ namespace Game.Bowling
             set.OnResolved -= OnSetResolved;
             set.OnCleared -= OnSetCleared;
             sets.Remove(set);
+        }
+
+        private static void PlayAtPlayer(AudioClip clip, float volume)
+        {
+            if (clip == null || volume <= 0f) return;
+            var cam = Camera.main;
+            var at = cam != null ? cam.transform.position + cam.transform.forward * 0.4f : Vector3.zero;
+            AudioSource.PlayClipAtPoint(clip, at, volume);
         }
 
         private void ReportProgress()
@@ -895,7 +928,8 @@ namespace Game.Bowling
                 var d = lane.Direction;
                 float along = Vector3.Dot(flat, d);
                 float across = Mathf.Abs(Vector3.Dot(flat, Vector3.Cross(Vector3.up, d)));
-                if (across > 0.25f || along < BowlingLayout.LaneStart + r + 0.1f || along > BowlingLayout.LaneEnd - 0.3f) continue;
+                // The lane's own floor (hand set up): from its start (+ the pumpkin's size) to just short of its end.
+                if (across > 0.25f || along < lane.StartAlong + r + 0.1f || along > lane.EndAlong - 0.3f) continue;
                 dir = d;
                 return true;
             }
@@ -909,8 +943,9 @@ namespace Game.Bowling
         private Vector3 LaneEnd(int k)
         {
             var c = CentrePoint();
-            var dir = k >= 0 && k < lanes.Length && lanes[k] != null ? lanes[k].Direction : Vector3.forward;
-            return c + dir * (BowlingLayout.LaneEnd - 1.5f);
+            bool ok = k >= 0 && k < lanes.Length && lanes[k] != null;
+            var dir = ok ? lanes[k].Direction : Vector3.forward;
+            return c + dir * ((ok ? lanes[k].EndAlong : BowlingLayout.LaneEnd) - 1.5f);
         }
 
         private int PickFinaleLane(int not)
@@ -1106,11 +1141,16 @@ namespace Game.Bowling
             rel.y = 0f;
             float along = Vector3.Dot(rel, d);
             float side = Vector3.Dot(rel, Vector3.Cross(Vector3.up, d));
-            float mouthSide = along >= BowlingLayout.FoulLine
+            // The lane's own sizes (hand set up): the foul line at the dirt's edge (or the floor's start past it), the head
+            // pin at its Aim, safe within Mouth Margin of its floor's edge.
+            float foul = Mathf.Max(best.StartAlong, padHalfSize);
+            float headPin = Mathf.Max(foul + 1f, best.HeadPinAlong);
+            float mouthSafe = Mathf.Max(0.1f, best.HalfWidth - mouthMargin);
+            float mouthSide = along >= foul
                 ? side
-                : side * (BowlingLayout.HeadPin - BowlingLayout.FoulLine) / Mathf.Max(0.5f, BowlingLayout.HeadPin - along);
+                : side * (headPin - foul) / Mathf.Max(0.5f, headPin - along);
             if (Mathf.Abs(mouthSide) <= mouthSafe) return (best.Aim.position, -1f);
-            float into = Mathf.Max(along, BowlingLayout.FoulLine) + mouthLead;
+            float into = Mathf.Max(along, foul) + mouthLead;
             var point = CentrePoint() + d * into;
             point.y = best.Aim.position.y;
             return (point, 1f);

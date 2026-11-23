@@ -112,7 +112,7 @@ namespace Balls
                 madeMeshes.Add(meshes[c]);   // 429R
                 float s = kitMeshes != null ? 1f : caves[c].corner ? t.HoleScale : t.MiddleHoleScale;   // 429R: the hole model's size here
                 go.AddComponent<MeshFilter>().sharedMesh = meshes[c];
-                go.AddComponent<MeshRenderer>().sharedMaterial = OwnMaterial;
+                go.AddComponent<MeshRenderer>().sharedMaterial = kitMeshes != null ? KitHoleMaterial(caves[c].corner) : OwnMaterial;
                 var opening = FindOpening(meshes[c]);   // the lawn and the floor get cut out there
                 caves[c].openingOffset = opening.offset * s;   // 429R: * s
                 caves[c].openingRadius = opening.radius * s;
@@ -166,6 +166,16 @@ namespace Balls
         /// the middle of its long edge): each turned so its collar (the bulk of it, round the back of its pit) points out of
         /// the valley there. Null when the kit isn't on or its holes can't be read (then BALLS' pockets are used).
         /// </summary>
+        // 429R (2026-11-23): the kit hole piece's own material (the user's remodel wears the house's furniture texture), or
+        // the kit's palette when it has none.
+        Material KitHoleMaterial(bool corner)
+        {
+            var kit = Kit;
+            var piece = kit ? (corner ? kit.kitHoleCorner : kit.kitHoleSide) : null;
+            var r = piece ? piece.GetComponentInChildren<MeshRenderer>() : null;
+            return r && r.sharedMaterial ? r.sharedMaterial : OwnMaterial;
+        }
+
         Mesh[] KitHoleMeshes()
         {
             var kit = Kit;

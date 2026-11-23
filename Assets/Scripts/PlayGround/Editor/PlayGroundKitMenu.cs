@@ -151,7 +151,9 @@ namespace Game.PlayGround.Editor
         }
 
         // A prefab of the piece with the kit material, looks only. One mesh: on the prefab's root; several (a broken
-        // set): one child each, placed as in the FBX.
+        // set): one child each, placed as in the FBX. A piece prefab that is already there is only REFRESHED (user
+        // 2026-11-23: "I may edit, move them and set them"): its meshes come anew from the FBX, everything the user added
+        // or changed on it (colliders, scripts, other materials, its own place) is kept.
         private static GameObject PiecePrefab(string fbxPath, Material mat)
         {
             var name = Path.GetFileNameWithoutExtension(fbxPath);
@@ -160,6 +162,7 @@ namespace Game.PlayGround.Editor
             var filters = model.GetComponentsInChildren<MeshFilter>(true).Where(f => f.sharedMesh != null).ToArray();
             if (filters.Length == 0) return null;
             var path = PieceFolder + "/" + name + ".prefab";
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(path) != null) return RefreshPiece(path, model, filters, mat);
             var go = new GameObject(name);
             try
             {
@@ -187,6 +190,67 @@ namespace Game.PlayGround.Editor
             {
                 Object.DestroyImmediate(go);
             }
+        }
+
+        // The meshes of a piece prefab that's already there, new from the FBX; the rest is the user's and stays. One mesh:
+        // the root's mesh. A broken set: each chunk child by its name (its place inside the set from the FBX too, as the
+        // set is laid out in Blender); a new chunk is added; a chunk gone from the FBX (its mesh missing now) is removed.
+        // A renderer keeps its material unless it has none.
+        private static GameObject RefreshPiece(string path, GameObject model, MeshFilter[] filters, Material mat)
+        {
+            var root = PrefabUtility.LoadPrefabContents(path);
+            try
+            {
+                var toRoot = model.transform.worldToLocalMatrix;
+                if (filters.Length == 1 && (toRoot * filters[0].transform.localToWorldMatrix).isIdentity
+                    && root.TryGetComponent(out MeshFilter own))
+                {
+                    own.sharedMesh = filters[0].sharedMesh;
+                    Wear(root, mat);
+                }
+                else
+                {
+                    foreach (var filter in filters)
+                    {
+                        var rel = toRoot * filter.transform.localToWorldMatrix;
+                        var child = root.transform.Find(filter.name);
+                        if (child == null)
+                        {
+                            child = new GameObject(filter.name).transform;
+                            child.SetParent(root.transform, false);
+                        }
+                        child.localPosition = rel.GetColumn(3);
+                        child.localRotation = rel.rotation;
+                        child.localScale = rel.lossyScale;
+                        if (!child.TryGetComponent(out MeshFilter mf)) mf = child.gameObject.AddComponent<MeshFilter>();
+                        mf.sharedMesh = filter.sharedMesh;
+                        Wear(child.gameObject, mat);
+                    }
+                    var names = new HashSet<string>(filters.Select(f => f.name));
+                    for (int i = root.transform.childCount - 1; i >= 0; i--)
+                    {
+                        var c = root.transform.GetChild(i);
+                        if (!names.Contains(c.name) && c.TryGetComponent(out MeshFilter gone) && gone.sharedMesh == null)
+                            Object.DestroyImmediate(c.gameObject);
+                    }
+                }
+                return PrefabUtility.SaveAsPrefabAsset(root, path);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        private static void Wear(GameObject go, Material mat)
+        {
+            var r = go.GetComponent<MeshRenderer>();
+            if (r == null)
+            {
+                r = go.AddComponent<MeshRenderer>();
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+            }
+            if (r.sharedMaterial == null) r.sharedMaterial = mat;
         }
 
         // Gate 1's giant pumpkin: the shared one wearing the kit's stew pumpkin, its face towards its front (+Z).
@@ -317,23 +381,52 @@ namespace Game.PlayGround.Editor
 
         /// <summary>
         /// Tools > 429 Game > PlayGround > Dress PlayGround With Kit: Play_Ground_Z.prefab gets a child Kit_Dressing with the
-        /// kit's pieces round its field (made again on every run: change the list above or the pieces, run it again).
-        /// Looks only (no colliders): the field, its walls, its props and their gameplay are untouched. Its own scale
-        /// cancels the PlayGround's (x1.5), so the pieces are their real size. A copy of the prefab from before the first
-        /// run goes to Documents/429R_claude_backups/2026-11-23/gate1/. Never touches the scene.
+        /// kit's pieces round its field, laid out from the list above. ONCE: when Kit_Dressing is already there it is left
+        /// alone (user 2026-11-23: "I may edit, move them and set them"), so moving, adding (drag a prefab from
+        /// Prefabs/PlayGround/Kit under Kit_Dressing) or deleting pieces by hand in Prefab Mode is kept. Start over from the
+        /// list: Reset Kit Dressing. Looks only (no colliders): the field, its walls, its props and their gameplay are
+        /// untouched. Its own scale cancels the PlayGround's (x1.5), so the pieces are their real size. A copy of the
+        /// prefab from before the first run goes to Documents/429R_claude_backups/2026-11-23/gate1/. Never touches the scene.
         /// </summary>
         [MenuItem(Root + "Dress PlayGround With Kit")]
-        public static void Dress()
+        public static void Dress() => DressFromList(false);
+
+        /// <summary>
+        /// Tools > 429 Game > PlayGround > Reset Kit Dressing (Loses Hand Changes): Kit_Dressing made again from the list,
+        /// after a yes in a dialog; what was moved, added or deleted by hand is lost (a copy of the prefab goes to the
+        /// backup folder first).
+        /// </summary>
+        [MenuItem(Root + "Reset Kit Dressing (Loses Hand Changes)")]
+        public static void ResetDressing()
+        {
+            if (!EditorUtility.DisplayDialog("Reset Kit Dressing",
+                    "Kit_Dressing in Play_Ground_Z is made again from the list. Every piece you moved, added or deleted by hand " +
+                    "goes back to the list's layout. A copy of the prefab goes to the backup folder first.", "Reset", "Cancel"))
+                return;
+            DressFromList(true);
+        }
+
+        [MenuItem(Root + "Reset Kit Dressing (Loses Hand Changes)", true)]
+        private static bool CanResetDressing() => !EditorApplication.isPlaying;
+
+        private static void DressFromList(bool reset)
         {
             if (EditorApplication.isPlaying) { Debug.LogError($"{Log} Stop play mode first; nothing changed."); return; }
             if (!AssetDatabase.IsValidFolder(PieceFolder)) { Debug.LogError($"{Log} No kit prefabs: run Build PlayGround Kit first; nothing changed."); return; }
             BackupPlayGround("Play_Ground_Z_before_dressing.prefab");
+            if (reset) BackupPlayGround($"Play_Ground_Z_before_reset_{System.DateTime.Now:yyyyMMdd_HHmmss}.prefab");
             var root = PrefabUtility.LoadPrefabContents(PlayGroundPath);
             int placed = 0;
             var missing = new List<string>();
             try
             {
                 var old = root.transform.Find(DressingName);
+                if (old != null && !reset)
+                {
+                    Debug.Log($"{Log} Dress PlayGround With Kit: {DressingName} is already there ({old.childCount} pieces): left as it " +
+                              "is, with your hand changes. To lay it out from the list again: Reset Kit Dressing (Loses Hand Changes).");
+                    return;
+                }
                 if (old != null) Object.DestroyImmediate(old.gameObject);
                 var holder = new GameObject(DressingName).transform;
                 holder.SetParent(root.transform, false);
@@ -362,7 +455,7 @@ namespace Game.PlayGround.Editor
             {
                 PrefabUtility.UnloadPrefabContents(root);
             }
-            Debug.Log($"{Log} Dress PlayGround With Kit: {placed} pieces round the field in {PlayGroundPath} ({DressingName})" +
+            Debug.Log($"{Log} {(reset ? "Reset Kit Dressing" : "Dress PlayGround With Kit")}: {placed} pieces round the field in {PlayGroundPath} ({DressingName})" +
                       (missing.Count > 0 ? "; MISSING " + string.Join(", ", missing) : "") + ".");
         }
 
@@ -374,6 +467,11 @@ namespace Game.PlayGround.Editor
         public static void Undress()
         {
             if (EditorApplication.isPlaying) { Debug.LogError($"{Log} Stop play mode first; nothing changed."); return; }
+            if (!EditorUtility.DisplayDialog("Remove Kit Dressing",
+                    "Kit_Dressing (every kit piece round the PlayGround, with your hand changes) is removed from Play_Ground_Z. " +
+                    "A copy of the prefab goes to the backup folder first.", "Remove", "Cancel"))
+                return;
+            BackupPlayGround($"Play_Ground_Z_before_remove_{System.DateTime.Now:yyyyMMdd_HHmmss}.prefab");
             var root = PrefabUtility.LoadPrefabContents(PlayGroundPath);
             bool had = false;
             try

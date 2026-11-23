@@ -56,6 +56,13 @@ namespace Game.PlayGround
                  "Game Over). Off: the house fog.")]
         public bool liftFog = true;
         public Vector2 fog = new(12f, 36f);
+        [Tooltip("The house's ambient light (flat and dark) is raised while the PlayGround is out (user 2026-11-23: brighter, " +
+                 "like the concept): the house's ambient x Light Times. Put back when the PlayGround goes (the exit, a Game " +
+                 "Over). No lamps are added, so it costs nothing. Off (or 1): the house light.")]
+        public bool liftLight = true;
+        [Range(1f, 5f)] public float lightTimes = 2f;
+        [Tooltip("The fog's colour while the PlayGround is out (far things fade into this). Alpha 0: the house's fog colour.")]
+        public Color fogColour = new(0f, 0f, 0f, 0f);
 
         /// <summary>The cauldron's defence once it has popped out (null before).</summary>
         public CauldronDefence Defence => defence;
@@ -65,26 +72,52 @@ namespace Game.PlayGround
         private string shownGoal;
         private int shownNeed = -1, shownDone = -1;
         private float nextGoal, nextCheck;
-        private bool fogSet;
+        private bool fogSet, lightSet;
         private float fogStartWas, fogEndWas;
+        private Color fogColourWas, ambientWas;
+        private UnityEngine.Rendering.SphericalHarmonicsL2 probeWas;
 
         private void OnEnable()
         {
-            if (!liftFog || fogSet) return;
-            fogStartWas = RenderSettings.fogStartDistance;
-            fogEndWas = RenderSettings.fogEndDistance;
-            RenderSettings.fogStartDistance = Mathf.Max(fogStartWas, fog.x);
-            RenderSettings.fogEndDistance = Mathf.Max(fogEndWas, fog.y);
-            fogSet = true;
+            if (liftFog && !fogSet)
+            {
+                fogStartWas = RenderSettings.fogStartDistance;
+                fogEndWas = RenderSettings.fogEndDistance;
+                fogColourWas = RenderSettings.fogColor;
+                RenderSettings.fogStartDistance = Mathf.Max(fogStartWas, fog.x);
+                RenderSettings.fogEndDistance = Mathf.Max(fogEndWas, fog.y);
+                if (fogColour.a > 0f) RenderSettings.fogColor = new Color(fogColour.r, fogColour.g, fogColour.b, 1f);
+                fogSet = true;
+            }
+            if (liftLight && !lightSet && lightTimes > 1f)
+            {
+                // The ambient colour and the probe the lit shaders read (scaled the same, whatever the ambient mode).
+                ambientWas = RenderSettings.ambientLight;
+                probeWas = RenderSettings.ambientProbe;
+                var lifted = ambientWas * lightTimes;
+                lifted.a = 1f;
+                RenderSettings.ambientLight = lifted;   // (Unity makes the probe from it too, in the house's Flat mode)
+                RenderSettings.ambientProbe = probeWas * lightTimes;
+                lightSet = true;
+            }
         }
 
         private void OnDisable()
         {
-            // The house fog back (the PlayGround goes at the exit, or with a Game Over).
-            if (!fogSet) return;
-            RenderSettings.fogStartDistance = fogStartWas;
-            RenderSettings.fogEndDistance = fogEndWas;
-            fogSet = false;
+            // The house fog and light back (the PlayGround goes at the exit, or with a Game Over).
+            if (fogSet)
+            {
+                RenderSettings.fogStartDistance = fogStartWas;
+                RenderSettings.fogEndDistance = fogEndWas;
+                RenderSettings.fogColor = fogColourWas;
+                fogSet = false;
+            }
+            if (lightSet)
+            {
+                RenderSettings.ambientLight = ambientWas;
+                RenderSettings.ambientProbe = probeWas;
+                lightSet = false;
+            }
         }
 
         private void Awake()

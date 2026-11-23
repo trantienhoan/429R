@@ -169,6 +169,11 @@ namespace Balls.EditorTools
         }
 
         public const string SeedPath = "Assets/Prefabs/Items/Chest/The_Seed.prefab";
+        /// <summary>The main game's chest with The Seed inside (Whack 7's barrel pumpkin drops it): gate 3's end.</summary>
+        public const string SeedChestPath = "Assets/Prefabs/Items/Chest/Treasure_Chest_and_Seed.prefab";
+        // Gate 3's song (2026-11-23: "a 5 minutes song that slow at first ... then keep getting faster and faster"): no song
+        // is 5 minutes yet, so a chill one (2.5 min) then a fast one (3 min), both sped up as the field closes.
+        private static readonly string[] SongParts = { "Pumpkin_Playroom", "Spider_Queen_Rampage" };
 
         // 429R gate 3 (2026-11-18, 2026-11-23): the Ball Valley Gate and Ball Valley Player on the stage, the shared Gate Run
         // (card, chests, rounds, HUD line, finale), the field's candies, the boss and the seed (numbers already tuned on
@@ -181,40 +186,33 @@ namespace Balls.EditorTools
                 gate = root.AddComponent<BallValleyGate>();
                 notes.Add("Ball Valley Gate added");
             }
+            // 2026-11-23 (user's gate 3: 15 balls, a 5-minute song, the Black Pumpkin Ball, the main game's seed chest; "no
+            // need for other seeds in this gate game"): no Gate Run (its start chest, rounds and gear chests). The gate does
+            // its own card and HUD line; Gate Exit (shared) sets the gear bools on the way out.
             var run = root.GetComponent<Game.Gates.GateRun>();
-            bool freshRun = run == null;
-            if (freshRun)
+            if (run != null)
             {
-                run = root.AddComponent<Game.Gates.GateRun>();
-                // Gate 3's card and round limits (user 2026-11-23: "running and snookering"; a title and one short line).
-                run.cardTitle = "RUN AND SNOOKER";
-                run.cardLine = "Punch the balls into the holes.";
-                run.roundSeconds = new[] { 120f, 120f, 120f };
-                notes.Add("Gate Run added (card, chests, rounds, finale)");
+                Object.DestroyImmediate(run, true);
+                notes.Add("Gate Run removed (gate 3 runs its own flow)");
             }
-            // The shared chests, the puff, the giant pumpkin (gate 3's own when the kit made it) and The_Seed, when missing.
             GameObject Load(string path) => AssetDatabase.LoadAssetAtPath<GameObject>(path);
-            if (run.startChest == null) run.startChest = Load("Assets/Prefabs/Items/Chest/Treasure_Chest_and_Seed_Bracer.prefab");
-            if (run.roundChests == null || run.roundChests.Length < 3 || run.roundChests.Any(c => c == null))
-                run.roundChests = new[]
-                {
-                    Load("Assets/Prefabs/PlayGround/PG_Wood/PG_Treasure_Chest_and_Seed_Chest.prefab"),
-                    Load("Assets/Prefabs/PlayGround/PG_Wood/PG_Treasure_Chest_and_Seed_Head.prefab"),
-                    Load("Assets/Prefabs/PlayGround/PG_Wood/PG_Treasure_Chest_and_Seed_Shield.prefab"),
-                };
-            if (run.chestPuff == null) run.chestPuff = Load("Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab");
+            if (gate.seedChest == null) gate.seedChest = Load(SeedChestPath);
             var ownBoss = Load(BallValleyKitMenu.BossVariantPath);
-            if (ownBoss != null) run.finaleBoss = ownBoss;
-            else if (run.finaleBoss == null) run.finaleBoss = boss;
-            if (run.finaleSeed == null) run.finaleSeed = seed;
-            if (run.startChest == null || run.roundChests.Any(c => c == null)) notes.Add("SOME CHEST PREFABS MISSING");
-            notes.Add("giant pumpkin: " + (run.finaleBoss != null ? run.finaleBoss.name : "NONE"));
+            var voice = ownBoss != null ? ownBoss : boss;
+            if (gate.voiceFrom == null && voice != null) gate.voiceFrom = voice.GetComponent<Game.Gates.PumpkinBallBoss>();
+            if (gate.blackPumpkinLook == null) gate.blackPumpkinLook = Load(BallValleyKitMenu.PieceFolder + "/BallValley_Kit_Giant_Jack_O_Lantern.prefab");
+            if (gate.song == null || gate.song.Length == 0 || gate.song.Any(c => c == null))
+                gate.song = SongParts.Select(n => AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx429 + n + ".wav")).Where(c => c != null).ToArray();
+            notes.Add($"seed chest {(gate.seedChest != null ? gate.seedChest.name : "MISSING")}, song {gate.song.Length} parts " +
+                      $"({string.Join(" + ", gate.song.Select(c => c.name))}), black pumpkin look {(gate.blackPumpkinLook != null ? "kit" : "NONE: a black ball")}");
             var player = root.GetComponent<BallValleyPlayer>();
             if (player == null)
             {
                 player = root.AddComponent<BallValleyPlayer>();
                 notes.Add("Ball Valley Player added");
             }
+            // "We open our eyes in the middle of a field" (the old start spot was 4 m south of it).
+            if (player.startSpot == new Vector3(0f, 0f, -4f)) player.startSpot = Vector3.zero;
             // A fall into a hole whistles like any fall (Fall Out Of World's Cartoon_fall_1/2).
             player.fallSounds = new[] { "Cartoon_fall_1", "Cartoon_fall_2" }
                 .Select(n => AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx429 + n + ".wav")).Where(c => c != null).ToArray();
@@ -322,6 +320,13 @@ namespace Balls.EditorTools
                 // (the gate's Awake has already put its own clock and sizes on the stage: BALLS' numbers back, 2026-11-23)
                 var asMade = prefab.GetComponent<BallValleyStage>();
                 if (gateOn != null && asMade != null) stage.tune = JsonUtility.FromJson<Tuning>(JsonUtility.ToJson(asMade.tune));
+                // (and its other settings: BALLS' phases, trees by the edges, no volcanoes; 2026-11-23)
+                stage.driveScale = stage.drivePending = -1f;
+                stage.botsHuntBots = true;
+                stage.startBalls = -1;
+                stage.treesAnywhere = false;
+                stage.volcanoCount = 0;
+                stage.treeHitCandies = 0;
                 var vrOn = go.GetComponent<BallValleyPlayer>();
                 if (vrOn != null) vrOn.enabled = false;
                 stage.watchMode = true;

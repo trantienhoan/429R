@@ -69,6 +69,13 @@ namespace Balls
         [Tooltip("A punched ball rolls on freely (the special move's slide) for this long before it brakes (seconds).")]
         [Min(0f)] public float punchSlide = 0.35f;
 
+        [Header("Trees, boulders, volcanoes (2026-11-23)")]
+        [Tooltip("A punch on a tree, boulder or jello volcano takes this off it (a perfect jab x1.5; trees knock a candy out, " +
+                 "volcanoes spit one, a broken tree or boulder bursts into candy). Their health: the Ball Valley Gate's.")]
+        [Min(0f)] public float propPunchDamage = 40f;
+        [Tooltip("The dash running into one takes this off it.")]
+        [Min(0f)] public float dashPropDamage = 120f;
+
         [Header("Holes")]
         [Tooltip("The point under the head this far past a pit's rim (metres) is a fall.")]
         [Min(0f)] public float pitMargin = 0.25f;
@@ -133,6 +140,7 @@ namespace Balls
         private readonly List<Fist> fists = new();
         private readonly Dictionary<Rigidbody, float> nextShoveBy = new();
         private readonly HashSet<Rigidbody> dashHits = new();
+        private readonly HashSet<FieldProp> dashProps = new();
         private Vector3 lastCentre;
         private Vector3 bodyVel;
         private float nextHurt;
@@ -339,6 +347,8 @@ namespace Balls
                 else part.freeUntil = Time.time + 0.6f;
                 Credit(part.owner);
                 Sfx.Play(Sfx.Sound.BallHit, hit.transform.position, 0.8f);
+                // A heavy ball (the Black Pumpkin Ball) takes only its share of the fist's push (the fist sets a speed).
+                if (part.isHead && part.owner.massTimes > 1.01f && part.rb != null) StartCoroutine(Heavy(part.rb, part.owner.massTimes));
                 return;
             }
             if (hit.TryGetComponent(out LooseBall loose))
@@ -346,7 +356,36 @@ namespace Balls
                 loose.Knock(Time.time + punchSlide);
                 return;
             }
-            if (hit.TryGetComponent(out Slime slime)) PopSlime(slime);
+            if (hit.TryGetComponent(out Slime slime))
+            {
+                PopSlime(slime);
+                return;
+            }
+            // A tree, boulder or jello volcano (2026-11-23): the punch hurts it.
+            var hz = hit.GetComponentInParent<Hazard>();
+            if (hz != null && hz.prop != null && !hz.prop.Broken && propPunchDamage > 0f)
+            {
+                var at = hit.ClosestPoint(head != null ? head.position : hit.transform.position);
+                var dir = BallValleyStage.Flat(hz.prop.transform.position - at);
+                hz.prop.Hit(propPunchDamage * (landed.Perfect ? 1.5f : 1f), at, dir.sqrMagnitude > 1e-4f ? dir.normalized : Vector3.forward, vr);
+                Sfx.Play(hz.wood ? Sfx.Sound.WoodHit : Sfx.Sound.RockHit, at, 0.8f);
+            }
+        }
+
+        // The fist set the heavy ball's speed as for any ball (it pushes up to 1,000 kg in full): it keeps 1 / Times of the
+        // change, once the push has landed (within a few physics steps).
+        private IEnumerator Heavy(Rigidbody rb, float times)
+        {
+            var before = rb.linearVelocity;
+            for (int i = 0; i < 3; i++)
+            {
+                yield return new WaitForFixedUpdate();
+                if (rb == null) yield break;
+                var gain = rb.linearVelocity - before;
+                if (gain.sqrMagnitude < 0.25f) continue;
+                rb.linearVelocity = before + gain / times;
+                yield break;
+            }
         }
 
         // A punched (or dashed) slime pops into candy.
@@ -371,6 +410,7 @@ namespace Balls
             if (owner == null || vr == null) return;
             owner.lastAttacker = vr;
             owner.lastAttackTime = Time.time;
+            owner.lastHumanTouch = Time.time;   // (gate 3 counts only the player's pockets)
         }
 
         // ---------------------------------------------------------------- the special move
@@ -481,6 +521,7 @@ namespace Balls
             Sfx.Play(Sfx.Sound.Launch, start, 0.8f);
             Gfx.Puff(start + Vector3.up * 0.2f, new Color(0.9f, 0.85f, 0.75f, 0.7f), 12, 1.2f, 4f);
             dashHits.Clear();
+            dashProps.Clear();
             var boss = gate != null ? gate.Boss : null;
             bool bossHit = false;
             for (float t = 0f; t < dashSeconds; t += Time.deltaTime)
@@ -502,6 +543,16 @@ namespace Balls
                 {
                     var s = i < stage.slimes.Count ? stage.slimes[i] : null;
                     if (s != null && BallValleyStage.Flat(s.transform.position - c).magnitude < s.Radius + bodyRadius + dashReach) PopSlime(s);
+                }
+                // Trees, boulders, jello volcanoes in the way (2026-11-23): hurt once a dash (their collider stops the body).
+                foreach (var pr in stage.props)
+                {
+                    if (pr == null || pr.Broken || pr.Waiting || dashProps.Contains(pr) || dashPropDamage <= 0f) continue;
+                    var to = BallValleyStage.Flat(pr.transform.position - c);
+                    if (to.magnitude > pr.baseRadius * 0.8f + bodyRadius + 0.3f) continue;
+                    dashProps.Add(pr);
+                    pr.Hit(dashPropDamage, c + dir * bodyRadius, to.sqrMagnitude > 1e-4f ? to.normalized : dir, vr);
+                    Sfx.Play(Sfx.Sound.SpecialHit, c + dir * bodyRadius, 0.8f);
                 }
                 if (!bossHit && boss != null && !boss.IsBroken && boss.Now != PumpkinBallBoss.State.Dropping &&
                     BallValleyStage.Flat(boss.transform.position - c).magnitude < boss.radius + bodyRadius + 0.3f)
@@ -526,12 +577,15 @@ namespace Balls
             if (d > r + bodyRadius + dashReach || Vector3.Dot(to, dir) < -0.3f * d) return;
             dashHits.Add(rb);
             var away = d > 0.01f ? to / d : dir;
-            var v = (away * 0.35f + dir * 0.65f).normalized * dashKnockSpeed;
+            float knock = dashKnockSpeed / Mathf.Max(1f, owner != null ? owner.massTimes : 1f);   // a heavy ball flies less far
+            var v = (away * 0.35f + dir * 0.65f).normalized * knock;
             rb.linearVelocity = new Vector3(v.x, Mathf.Min(rb.linearVelocity.y, 0f), v.z);
             if (owner != null)
             {
                 owner.Knock(Time.time + 0.4f);
                 Credit(owner);
+                // The Black Pumpkin Ball (2026-11-23): the dash hurts it like the giant pumpkin's.
+                if (owner.head != null && owner.head.TryGetComponent(out BlackPumpkinBall black)) black.SpecialHit(dashBossDamage);
             }
             else if (rb.TryGetComponent(out LooseBall loose)) loose.Knock(Time.time + 0.4f);
             var at = rb.position - away * r;

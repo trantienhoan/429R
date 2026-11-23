@@ -1,0 +1,112 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3418908380540996565
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7301647793194293958}
+  - component: {fileID: 5776440830120541607}
+  m_Layer: 0
+  m_Name: Whack_Round
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7301647793194293958
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3418908380540996565}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5776440830120541607
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3418908380540996565}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9fca7a8494a94ef469ff611d070b13db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Bonus.WhackRound
+  stageSky: {fileID: 5936307086787590551, guid: 23c0623fbfde4004ea28b1e0397c399a,
+    type: 3}
+  chest: {fileID: 1466195575395978692, guid: 56a228db4bdba664180bf375b1c350cb, type: 3}
+  machine: {fileID: 4189216760183176266, guid: 8f52e3a56c890e34a92993a815099708, type: 3}
+  hammer: {fileID: 4748707294992369656, guid: 8f21d0dd9faf9f74cac0629758b5ea1a, type: 3}
+  puffEffect: {fileID: 431296081563789977, guid: 7d85674d137626445accce4cef7fe159,
+    type: 3}
+  puffSize: 1
+  riseSound: {fileID: 8300000, guid: 3b726b2cac4693747bbae56f01b234e5, type: 3}
+  seconds: 60
+  warnSeconds: 10
+  tickSound: {fileID: 8300000, guid: 18b247bf43ebeb6459aa30fee226ba0d, type: 3}
+  tickVolume: 0.6
+  goSound: {fileID: 8300000, guid: 97d2e1dfb0c1d454cb1ef3d2f8ce2511, type: 3}
+  timeUpSound: {fileID: 8300000, guid: 04c2a14122865664fa3d4422fecd23f9, type: 3}
+  startPopEvery: 1
+  startUpSeconds: 1.4
+  fasterPerWhack: 0.04
+  fastestPopEvery: 0.3
+  shortestUpSeconds: 0.55
+  startAtOnce: 2
+  oneMoreEvery: 6
+  mostAtOnce: 6
+  minWhackSpeed: 1.2
+  goldChance: 0.1
+  rainbowChance: 0.025
+  clockChance: 0.06
+  skullChance: 0.1
+  normalCandies: 1
+  goldCandies: 5
+  rainbowCandies: 15
+  clockSeconds: 3
+  skullCost: 3
+  upTimes: {x: 0.8, y: 0.5, z: 0.8, w: 1.2}
+  plainFirst: 4
+  popSound: {fileID: 8300000, guid: 5afe4d05433549d45a9becd11c1ff64d, type: 3}
+  popVolume: 0.35
+  whackSounds:
+  - {fileID: 8300000, guid: 91ee0fb710467fa47b637aeee96a5649, type: 3}
+  - {fileID: 8300000, guid: 0bab81a9dcd291a4890520fb3dbc2625, type: 3}
+  - {fileID: 8300000, guid: a7dbe31763e93d4478f2e12bbf3907fa, type: 3}
+  goldSound: {fileID: 8300000, guid: 3ae182f9a76f7254c807bac526197c35, type: 3}
+  rainbowSound: {fileID: 8300000, guid: 0acdbd19a1f27d249a4a9ff855bacf39, type: 3}
+  clockSound: {fileID: 8300000, guid: 12b7f71d1b1e6ba46a065a94cab11e4a, type: 3}
+  skullSound: {fileID: 8300000, guid: 5559a9c98e6c15148b6eb31df62d8b20, type: 3}
+  missSound: {fileID: 8300000, guid: 44a2ecb9a555e0149b89e79193263a19, type: 3}
+  missVolume: 0.5
+  comboSound: {fileID: 8300000, guid: a56cd51311da2df43a0220acff0c521f, type: 3}
+  comboEvery: 10
+  font: {fileID: 11400000, guid: cb4516ac98eb5854ea4d7a8f558eb4da, type: 2}
+  popupScale: 0.02
+  sparkleEffect: {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57,
+    type: 3}
+  candies:
+  - {fileID: 8690403555129543112, guid: cdc38a3b62c4ce74599d6cfed8d6c696, type: 3}
+  - {fileID: 8690403555129543112, guid: 69a17a112506bd2499387184d87d5fc2, type: 3}
+  - {fileID: 8690403555129543112, guid: f4484be4d3c9d8c4298c6f277b0e1307, type: 3}
+  - {fileID: 8690403555129543112, guid: 095b3a6dbb3314a4aa1260a5b1e49c40, type: 3}
+  - {fileID: 8690403555129543112, guid: ec76c087b6f2f7e449bd46ac0079ccba, type: 3}
+  - {fileID: 8690403555129543112, guid: 423da62656a4eb74a94fb73d5dce640f, type: 3}
+  payoutSeconds: 3.5
+  candyWaitSeconds: 20
+  boardSeconds: 4
+  winFireworks: {fileID: 4548967686171113116, guid: e2b054e1d95dfe547ac42206f83eed23,
+    type: 3}
+  fireworkScale: 1

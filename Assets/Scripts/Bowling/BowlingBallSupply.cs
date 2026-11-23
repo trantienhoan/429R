@@ -71,6 +71,19 @@ namespace Game.Bowling
         [Range(0f, 1f)]
         [SerializeField] private float volume = 0.7f;
 
+        [Header("Fall edge")]
+        [Tooltip("A ball (not held) that reaches a Fall Edge (past a lane's end, off the dirt or a lane's side) breaks at " +
+                 "once: a puff and this sound (user, 2026-11-23: \"ball goes to fall edge = break\"); a new one grows in a cup. " +
+                 "Off: it falls out of sight as anything else does.")]
+        [SerializeField] private bool breakAtFallEdge = true;
+        [Tooltip("The break (pumpkin_explode_1). Empty: the pop sound.")]
+        [SerializeField] private AudioClip breakSound;
+        [Range(0f, 1f)]
+        [SerializeField] private float breakVolume = 0.8f;
+        [Tooltip("Size of the break's puff.")]
+        [Min(0f)]
+        [SerializeField] private float breakPuffScale = 1f;
+
         private sealed class Ball
         {
             public GameObject go;
@@ -203,6 +216,13 @@ namespace Game.Bowling
                 var ball = balls[i];
                 if (ball.growing || ball.body == null) continue;
                 bool held = ball.grab != null && ball.grab.isSelected;
+                if (!held && breakAtFallEdge && Game.Locomotion.FallEdge.Covers(ball.body.worldCenterOfMass))
+                {
+                    Break(ball.go.transform.position);
+                    Destroy(ball.go);
+                    balls.RemoveAt(i);
+                    continue;
+                }
                 var v = ball.body.linearVelocity;
                 if (held || ball.body.isKinematic || IsOnPad(ball.go.transform.position) ||
                     new Vector2(v.x, v.z).magnitude >= stallSpeed)
@@ -376,6 +396,14 @@ namespace Game.Bowling
         {
             if (grab == null || !grab.isSelected || grab.interactionManager == null) return;
             grab.interactionManager.CancelInteractableSelection((IXRSelectInteractable)grab);
+        }
+
+        // A ball breaking at a fall edge: a bigger puff and the break sound.
+        private void Break(Vector3 at)
+        {
+            if (puff != null && breakPuffScale > 0f) EffectPool.Play(puff, at, breakPuffScale);
+            var clip = breakSound != null ? breakSound : popSound;
+            if (clip != null && breakVolume > 0f) AudioSource.PlayClipAtPoint(clip, at, breakVolume);
         }
 
         private void Puff(Vector3 at)

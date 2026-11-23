@@ -116,7 +116,7 @@ namespace Game.Gates
         public GameObject stunStars;
         [Tooltip("Candies that burst out of it (the candies in the game).")]
         public GameObject[] candies = Array.Empty<GameObject>();
-        [Min(0)] public int breakCandies = 14;
+        [Min(0)] public int breakCandies = 42;
 
         /// <summary>It burst (health 0): the gate drops The_Seed (Gate Exit).</summary>
         public event Action<PumpkinBallBoss> Broken;

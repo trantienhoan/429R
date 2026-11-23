@@ -51,6 +51,7 @@ namespace Game.Bowling.EditorTools
         public static void Build()
         {
             if (EditorApplication.isPlaying) { Debug.LogError($"{Log} Stop play mode first; nothing changed."); return; }
+            if (BowlingHandSetUpMenu.Refuse("Build SlimeBowl Kit")) return;
             var notes = new List<string>();
             if (!Imports(notes)) return;
             var mat = Material(notes);
@@ -66,6 +67,7 @@ namespace Game.Bowling.EditorTools
         public static void Remove()
         {
             if (EditorApplication.isPlaying) { Debug.LogError($"{Log} Stop play mode first; nothing changed."); return; }
+            if (BowlingHandSetUpMenu.Refuse("Remove SlimeBowl Kit")) return;
             var root = PrefabUtility.LoadPrefabContents(ArenaPath);
             int n;
             try
@@ -88,7 +90,7 @@ namespace Game.Bowling.EditorTools
 
         // ---------------------------------------------------------------- imports, material, pieces
 
-        private static bool Imports(List<string> notes)
+        internal static bool Imports(List<string> notes)
         {
             if (AssetImporter.GetAtPath(FbxPath) is not ModelImporter model)
             {
@@ -139,7 +141,7 @@ namespace Game.Bowling.EditorTools
             return true;
         }
 
-        private static Material Material(List<string> notes)
+        internal static Material Material(List<string> notes)
         {
             var mat = AssetDatabase.LoadAssetAtPath<Material>(MatPath);
             if (mat == null)

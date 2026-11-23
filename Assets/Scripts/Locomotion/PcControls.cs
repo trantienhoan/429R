@@ -24,7 +24,8 @@ namespace Game.Locomotion
     /// It plays the VR hands instead of adding PC attacks: the hands are moved in front of the view and their grip pressed,
     /// so the game's own rules decide everything (a punch's damage from how fast the fist moves, normal/hard/smash, flying
     /// punches, Hot Hands, the hit window, throws from how fast the hand lets go).
-    /// Keys (user, 2026-11-20): WASD walk (the thumbstick's move, so Move Speed and slows count), mouse look, Space jump.
+    /// Keys (user, 2026-11-20): WASD walk (the thumbstick's move, so Move Speed and slows count), mouse look (at once, no
+    /// click needed: the Game view takes the mouse when Play starts and when it's clicked back into), Space jump.
     /// Left/right mouse button: the left/right hand punches (a jab), or swings what it holds. With Shift: the hard punch,
     /// a hook (the "swing" punch), or a hard swing; with Ctrl: an uppercut, or an upward swing. Flying punches come as in VR
     /// once Fist Size unlocks them. F/G: the left/right hand grabs what the crosshair is on and holds it (far things are
@@ -159,7 +160,11 @@ namespace Game.Locomotion
         private bool lastJump, lastMenu, lastInventory, lastShop;
         private bool inventoryShown;
         private bool wasInMenu;
+        private bool wasPaused;
         private bool swallowClick;
+        private bool hadFocus;
+        private int quietFrames;
+        private bool holding;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
@@ -259,7 +264,7 @@ namespace Game.Locomotion
             Active = this;
             Debug.Log("[PC Controls] On (no headset): WASD walk, mouse look, Space jump; left/right click punch or swing " +
                       "(Shift hard hook, Ctrl uppercut); F/G grab or drop; Q/E throw (hold = harder); Esc menu, I inventory, " +
-                      "B shop. Click the Game view to take the mouse.");
+                      "B shop. The view follows the mouse at once; Esc frees the mouse (pause menu).");
         }
 
         private void OnDisable()
@@ -316,23 +321,35 @@ namespace Game.Locomotion
                 input.leftPunch = mouse.leftButton.isPressed;
                 return input;
             }
-            if (Cursor.lockState != CursorLockMode.Locked)
+            // The view follows the mouse from the start (user, 2026-11-23: "head cam view move with mouse point"): the mouse
+            // is taken as soon as the Game view has it, when Play starts and each time the Game view is clicked back into,
+            // with no click needed first. Esc lets it go (the pause menu); a click in the Game view takes it back.
+            // Focused = the Game view has the keys AND Unity is the front app (behind another app the mouse is left alone;
+            // it's taken again when Unity comes back to the front).
+            bool focused = Application.isFocused && UnityEditorInternal.InternalEditorUtility.isApplicationActive;
+            bool cameBack = focused && !hadFocus;
+            hadFocus = focused;
+            if (keys.escapeKey.wasPressedThisFrame) LetGoOfMouse();
+            if (cameBack || !holding)
             {
-                // The first click only takes the mouse.
-                if (mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame)
-                {
-                    Cursor.lockState = CursorLockMode.Locked;
-                    Cursor.visible = false;
-                    swallowClick = true;
-                }
+                if (cameBack || mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame) TakeMouse();
                 return input;
             }
+            if (!focused) return input;
             if (swallowClick)
             {
+                // The click that brought the mouse back isn't a punch.
                 if (mouse.leftButton.isPressed || mouse.rightButton.isPressed) return input;
                 swallowClick = false;
             }
             input.look = mouse.delta.ReadValue();
+            if (Cursor.lockState != CursorLockMode.Locked) PinPointer(mouse);
+            // The jump of the pointer to the middle as the mouse is taken isn't a look.
+            if (quietFrames > 0)
+            {
+                quietFrames--;
+                input.look = Vector2.zero;
+            }
             input.leftPunch = mouse.leftButton.isPressed;
             input.rightPunch = mouse.rightButton.isPressed;
             input.leftGrab = keys.fKey.isPressed;
@@ -357,19 +374,26 @@ namespace Game.Locomotion
             lastMenu = input.menu;
             lastInventory = input.inventory;
             lastShop = input.shop;
-            if (menu)
+            // The keyboard's Esc is already the pause menu's own key (its Pause Menu action binds <Keyboard>/escape), so
+            // only a test's pretend Esc opens or closes it here: both together opened and shut it in one press (found
+            // 2026-11-23; the 11-20 test only used pretend keys).
+            if (menu && Simulated != null)
             {
                 var pause = FindAnyObjectByType<PauseMenu>(FindObjectsInactive.Include);
                 if (pause != null)
                 {
                     if (PauseMenu.IsPaused) pause.Resume();
-                    else
-                    {
-                        pause.Pause();
-                        FacePauseMenu(pause);
-                    }
+                    else pause.Pause();
                 }
             }
+            // However it opened, the eyes turn to it.
+            bool paused = PauseMenu.IsPaused;
+            if (paused && !wasPaused)
+            {
+                var pause = FindAnyObjectByType<PauseMenu>(FindObjectsInactive.Include);
+                if (pause != null) FacePauseMenu(pause);
+            }
+            wasPaused = paused;
             if (inventory)
             {
                 inventoryShown = !inventoryShown;
@@ -398,8 +422,35 @@ namespace Game.Locomotion
                 Press(hand, false);
             }
             if (Simulated != null) return;
-            Cursor.lockState = inMenu ? CursorLockMode.None : CursorLockMode.Locked;
-            Cursor.visible = inMenu;
+            if (inMenu) LetGoOfMouse();
+            else TakeMouse();
+        }
+
+        // The mouse is held in the Game view and hidden: from now on it turns the view.
+        private void TakeMouse()
+        {
+            holding = true;
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+            swallowClick = true;
+            quietFrames = 2;
+        }
+
+        private void LetGoOfMouse()
+        {
+            holding = false;
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+
+        // The Editor doesn't always lock the mouse when asked (play test 2026-11-23: Unity in front, the Game view focused,
+        // still refused until it saw a real click in it). The look still comes from the mouse's own movement (Mouse.delta,
+        // which a warp doesn't change: tested); the pointer is only put back in the middle of the Game view each frame so
+        // it can't wander off it and click the Editor around it.
+        private void PinPointer(Mouse mouse)
+        {
+            var middle = new Vector2(Mathf.Round(Screen.width * 0.5f), Mathf.Round(Screen.height * 0.5f));
+            if ((mouse.position.ReadValue() - middle).sqrMagnitude > 4f) mouse.WarpCursorPosition(middle);
         }
 
         // The pause menu opens level in front of the head, whatever its up/down tilt (in VR you just look at it); the

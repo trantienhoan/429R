@@ -48,6 +48,8 @@ namespace Game.Saving
             public Checkpoints.SavedCheckpoint checkpoint = new();
             // The bonus round's leaderboard, best first (see BonusScores).
             public List<BonusScores.Entry> bonusScores = new();
+            // The whack-a-pumpkin bonus's leaderboard, best first (see WhackScores).
+            public List<WhackScores.Entry> whackScores = new();
             // The tutorials this save's player has seen (see ShowOnce): a new save has seen none, so they all show.
             public List<string> tutorialsSeen = new();
             // False in saves from before Tutorials Seen was kept: their player is taken to have seen every tutorial.
@@ -440,6 +442,7 @@ namespace Game.Saving
             PlayerLevel.Load(null);
             Checkpoints.Reset();
             BonusScores.Reset();
+            WhackScores.Reset();
             PicturePuzzle.LoadPlays(0);
 
             int slot = CurrentSlot;
@@ -479,6 +482,7 @@ namespace Game.Saving
                 level = PlayerLevel.Save(),
                 checkpoint = Checkpoints.ToSaveData(),
                 bonusScores = BonusScores.ToSaveData(),
+                whackScores = WhackScores.ToSaveData(),
                 tutorialsSeen = ShowOnce.SlotToSaveData(),
                 tutorialsKept = true,
                 puzzlePlays = PicturePuzzle.Plays,
@@ -538,6 +542,7 @@ namespace Game.Saving
             Checkpoints.Changed += MarkChanged;
             Checkpoints.Reached += OnCheckpointReached;
             BonusScores.Changed += MarkChanged;
+            WhackScores.Changed += MarkChanged;
             ShowOnce.Changed += MarkChanged;
             PicturePuzzle.PlaysChanged += MarkChanged;
             PauseMenu.PauseChanged += OnPauseChanged;
@@ -589,6 +594,7 @@ namespace Game.Saving
             Unlocks.LoadSaveData(data?.unlocks);
             PlayerBoosts.LoadSaveData(data != null ? data.healthCapBonus : 0f);
             BonusScores.LoadSaveData(data?.bonusScores);
+            WhackScores.LoadSaveData(data?.whackScores);
             PicturePuzzle.LoadPlays(data != null ? data.puzzlePlays : 0);
 
             // The health the player had when they picked Get a Rest, once the cap bonuses are in (they heal).

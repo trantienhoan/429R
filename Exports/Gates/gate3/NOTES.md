@@ -127,20 +127,122 @@ Last edit after it (compile-checked, not played): the valley goes the moment Gat
 - ~850 ms hitches every few minutes in the Editor (also before any change): likely the Editor's garbage collection;
   check with the profiler in a build.
 
+## 3d. K: PC session, 2026-11-23 morning (groundwork, nothing changed in Assets)
+
+- Pictures (Unity, `_claude_bot`, GAMESTAGES Clean for Path 3 at 60 s into a run, the Blender render's camera
+  (-19, 21, -42) -> (4.5, -3, 8), 56 deg): `kit_renders/status_2026-11-23_look.png` (concept / Blender kit / Unity round 1),
+  `status_2026-11-23_play.png` (eyes at the start spot, the nearest hole at 9 m, finale from above and from the eyes),
+  `unity_kit_v1_concept_angle.png`. Script: `K:/WORK_2026/08_04/_claude/gate3_2026-11-23/g3_shots2.cs`.
+- Test gotcha: jumping to Clean for Path 3 in the first ~25 s of a run shows the opening's fires, smoke and a near-black
+  lawn; wait until Time.time > 60. The MOVE/TELEPORT boards stay in the valley after a test jump (known).
+- BALLS' `Map_Static` keeps the mountains as their own part `Mountains` (3,108 tris, 590 x 145 x 507 at BALLS scale =
+  up to 36 m tall in the game): they can be darkened, lowered or hidden for kit hills on their own.
+- Kit pieces used in Unity: 11 of 18 (not used: Ball_Small/Medium/Big/Tail, Lawn_Tile_5m, Cliff_Straight_4m, Rim_End).
+- **The user's remodel of BallValley_Kit.blend (started 2026-11-23 ~09:00).** Before: everything backed up in
+  `K:/WORK_2026/08_04/_claude/gate3_2026-11-23/backup_before_remodel/` (.blend, 18 FBX + metas, 20 prefabs, palette);
+  baseline `kit_before.json` + `check_before/` renders there. After the user saves:
+  1. `blender -b Exports/Gates/gate3/BallValley_Kit.blend --python Exports/Gates/gate3/tools/check_kit.py -- <out.json>
+     --before K:/WORK_2026/08_04/_claude/gate3_2026-11-23/kit_before.json --render <folder>`: what changed, problems
+     (left-out objects, other materials, faces off the palette, hole openings, the giant's face), sheet + arena renders.
+  2. Faces off the palette: ask the user which swatch, UVs in their live Blender with their OK (they save).
+  3. `tools/export_ballvalley_kit.py` (now joins visible meshes parented to a piece and applies rotation/scale on a
+     temporary copy; a plain piece exports byte-for-byte as before), then Unity: refresh, Build Ball Valley Kit, pictures
+     with `g3_shots2.cs` (same camera) for before/after.
+  Game-critical shapes (baseline): holes' pivot = the lawn corner / long-edge middle, pit opening r 2.70 (corner) /
+  2.51 (side) centred 0.75 m out, wall from lawn level down to -6.3 m; Rim_Straight_4m 3.94 m along X, bulk on +Y
+  (outside); giant jack-o'-lantern r 2.60 round its pivot, 52 faces on glow_face (its front); decor/trees/rocks: origin
+  at the bottom middle.
+- **Remodel set up (2026-11-23 10:31 save -> Unity 10:47):** the user moved 14 pieces onto the house's furniture
+  texture (Blender material `Bedroom_Furniture_Set1`, its PNGs in `Assets/M_Textures/BedRoom_Set_1/NEW/`, linked by an
+  absolute K: path: on the second PC the .blend shows them pink, the export is unaffected); balls + candy stay on the
+  palette. New: stone border with vines, angry jack-o'-lantern (r 2.55, face to Blender -Y), orange jelly trees, stone
+  gazebo, 1,146-tri pumpkin lanterns (were 200; 10 round the field), holes 1,512 / 1,104 tris (were 2,080 / 1,640), pits
+  unchanged (r 2.70 / 2.51). Code: the export writes `kit_materials.json` (piece -> Blender material); Build Ball
+  Valley Kit puts the Unity material on each piece (Bedroom_Furniture_Set1 -> `Assets/Materials/Bedroom_Set_1_Mat`,
+  the house's, never edited here; BallValley_Palette -> BallValley_Kit_Mat), measures the giant's model radius (was a
+  fixed 2.6) and falls back to the modelled front for its face; `ValleyShrink` draws the 6 holes with their piece's
+  material (was always the palette one). The code-built lawn, cliffs and chasm stay on the palette. Compiled 0 errors,
+  menu run, Play pictures `kit_renders/remodel_2026-11-23_unity.png` + `_blender.png`. Lost with the palette: every
+  glow (pit rings, lantern glass, pumpkin faces): the house material's emission is the whole atlas at 13%.
+- **Glow back (user: "Yes, glow them", 11:15):** `tools/glow_mask.py` paints
+  `Assets/M_Textures/Gates/BallValley/BallValley_House_Glow.png` (2048, black but for the texels of the glow faces:
+  the purple ring at lawn level in both holes -> lavender 0.80/0.55/1.00, Lantern_Post's yellow glass -> 1.00/0.82/0.45,
+  the yellow face cut-outs of Pumpkin_Lantern + the giant -> 1.00/0.78/0.30; 295 texels + 3 px spread, never on texels
+  a non-glowing kit face uses: 3 left dark). The export runs it by itself when Bedroom_Furniture_Set1 is in the .blend.
+  Build Ball Valley Kit makes `BallValley_House_Glow_Mat` (a copy of the house's Bedroom_Set_1_Mat refreshed from it
+  on every run, emission = that map x 1.4 like the palette kit) and puts it on the house-textured pieces. The house's
+  own material is untouched (git: no diff). Play pictures: `kit_renders/glow_2026-11-23_unity.png`; zoom of the map
+  on the texture: `glow_2026-11-23_map_zoom.png`.
+- Border hugging (the giant pumpkin skips its charge when pressed against the border towards the player,
+  PumpkinBallBoss.cs:485) can be fixed on gate 3's side: `boss.chargeAlong` in BallValleyGate.SetUpBoss (charge along
+  the wall). Not built: waiting for the user.
+
+## 3e. THE NEW FLOW (user, 2026-11-23 afternoon, K: PC): replaces sections 3's rounds, chests and giant pumpkin
+
+User: "we open our eyes in middle of a field, crazy balls ... candy tree, jello volcano, boulder ... The field gets
+smaller as time go ... a 5 minutes song ... faster and faster till ... 6 holes meet each others and kill the Player ...
+push all the balls ... the last boss Black Pumpkin Ball only comes out when all other 15 balls are pocketed ... at least 3
+times heavier ... broken by Player or push into hole ... rain candies and create chest that contains The Seed inside ...
+No need for other seeds in this gate game." Built, compiled (0 errors), Play-tested through GAMESTAGES; not in the headset.
+- **No Gate Run on Ball_Valley** (Set Up Ball Valley removes it): its start chest, rounds and gear chests aren't this
+  gate's. `BallValleyGate` does the card ("RUN AND SNOOKER / Push all 15 balls in before the holes meet."), its own HUD
+  line (BALLS n/15, then BLACK PUMPKIN hp; seconds left under 60), ScriptedMoveVignette.Launches while it runs, and keeps
+  The_Seed from the purple hole (KeepFromPurpleHole). Gate Exit (shared) sets the 4 gear bools on the way out.
+- **The flow:** card -> 15 balls drop in at once (4 s) -> the song: the field shrinks over 300 s from 1 to 0.1
+  (size = lerp(1, 0.1, k^2.2): 150 s 0.80, 240 s 0.44, 270 s 0.29), bots hunt each other (botsHuntBots on) and the
+  player (hunters 1 -> 3, tempers 0.45-0.65 -> 0.8-1); a pocket counts if the player touched the ball within 6 s
+  (punch, dash, body, or a ball they hit: BallPlayer.lastHumanTouch, a chain keeps the first touch's time): gone + 3
+  candies out of the hole; else it drops back in after 3-6 s (stage.DropBackIn) -> all 15: loose tail balls puff away,
+  the Black Pumpkin Ball drops in (the kit's jack-o'-lantern x tint 0.13/0.1/0.15, r 1.2, Mass Times 3 = 6.75 vs 2.25,
+  150 health by EnemyHitDamage.Judge like the giant pumpkins, the dash 10, a punch keeps 1/3 of the fist's push) ->
+  broken or pocketed: the clock stops, the music fades, 30 EXP, 42 candies rain on the lawn over 3 s, the main game's
+  `Items/Chest/Treasure_Chest_and_Seed` drops 1.6 m in front of the player -> The Seed eaten (or after 90 s set for
+  them) -> GateExit -> Rooftop_ON PG -> Whack 6. The song runs out first: the holes have met (lawn 5 x 2.5 m, all pit),
+  the player dies with no revive (Daruma's way: UseAllRevives, PlayerHealth 0, DamageToPlayer), waiting while a revive
+  or coin toss is under way, retried up to 3 times -> Game Over -> a new run.
+- **Song:** `Pumpkin_Playroom` (150 s, chill) then `Spider_Queen_Rampage` (180 s; the last part loops), pitch 0.92 ->
+  1.3 with k^1.4, volume 0.5, paused with the game. No 5-minute song exists yet: swap it in on Ball Valley Gate's Song.
+- **The field:** 5 candy trees anywhere (90 health x size; each hit knocks a candy out, 10 per tree; broken: 5),
+  6 boulders (160 x size; broken: 8 candies), 3 jello volcanoes (`BallValley_Kit_Volcano.blend` by
+  `tools/volcano_piece.py`, 256 tris, palette; never break; spit 2-4 candies every 7-13 s / Hurry 1 -> 2.2, and 1 when
+  hit), slimes 5 -> 8. Player punches hurt trees/boulders/volcanoes 40 (perfect x1.5), the dash 120.
+- **Code (gate 3 files only):** BallValleyGate.cs (rewritten), new JelloVolcano.cs + BlackPumpkinBall.cs;
+  BallValleyStage (driveScale/drivePending, DropBackIn, treesAnywhere, volcanoCount, treeHitCandies, kitVolcanoes,
+  SpawnVolcano), BallPlayer (massTimes, lastHumanTouch, dressHead, face-less LateUpdate guard), Props (hit candies,
+  onHit), BallValleyPlayer (prop punches/dash, Heavy, credit), menus (Set Up removes Gate Run and fills the gate;
+  Build Kit gives the volcano + black look; Watch resets the gate's settings). Backups:
+  `K:/WORK_2026/08_04/_claude/gate3_2026-11-23/backup_before_flow/` (prefabs, the old BallValleyGate from HEAD).
+- **Tests** (`K:/WORK_2026/08_04/_claude/gate3_2026-11-23/flow/`, `_claude_bot`): `g3_flow.cs` (god mode): Clean for
+  Path 3 -> card -> 15 balls (5 trees, 6 boulders, 3 volcanoes) -> a bots' pocket back in after 3.5 s, not counted -> tree
+  +1 candy, boulder broken by 4 punches +8, volcano +1 -> clock 150: 0.799, pitch 1.07 -> clock 240: 0.441, hunters 3 ->
+  15 pocketed -> black ball r 1.20 mass 6.75, look on, loose balls 0 -> hit 50 -> 99 -> broken -> +38 candies on the lawn,
+  EXP +30 (level 0 -> 1), chest at (-5.1, 0.1, 3.2) -> opened -> seed eaten -> Whack 6 in 5.4 s: gears TTTT, The_Seed,
+  valley + gate gone, fog on, far 40, vignette off. Frames (Editor) 12.3 ms average, 3 over 100 ms (the clock jumps).
+  `g3_collapse.cs` (no god mode): clock to 290 -> falls took the player to -5 at 299.5 s (coin revive) -> at 300 the kill
+  waited, then Game Over -> Recreate -> Walk Tuttorial (a new run). The first try (kill during the revive) stuck at health
+  0 with no Game Over: fixed by the wait + retry. Pictures: `kit_renders/flow_2026-11-23_gate3.png`.
+- **Seen, kept:** the seed chest opens on any bump (a slime or falling candy opened it once): the seed still waits.
+  Black ball damage 51 for a hit of 50 (HitSettings.Whole rounding).
+- **Not done / open:** the headset run; a real 5-minute song; the user's balance calls (15 balls in 300 s, hunters 1-3,
+  the kill at the end); the mountains (M1/M2/M3); the old giant-pumpkin code paths in BallValleyPlayer (gate.Boss is
+  always null now) are harmless; `gates_2026-11-23/t4_gate.cs` TG_PATH 3 uses Gate Run's hooks: use `flow/g3_flow.cs`.
+
 ## 4. Requests to the coordinator
 
 - `requests/gate3-dash-vignette.md`: the comfort vignette during scripted moves (gate 3's dash, PlayerLaunch throws).
+- `requests/gate3-gateexit-timeout.md` (2026-11-23): a hard timeout on GateExit's rooftop wait (GAMESTAGES to
+  Rooftop_ON PG after 45 s).
+- `requests/gate3-new-flow-info.md` (2026-11-23): gate 3 no longer uses Gate Run (the user's flow; contract #2 and #8
+  changed by the user); nothing to apply, information for Phase 2 and the end-to-end check.
 
-## 5. Headset checklist (for the user)
+## 5. Headset checklist (for the user, the new flow)
 
-1. Start: the card, the Bracer chest in front of you (punch it open, eat the seed): is round 1 starting quickly?
-2. Snooker: punch a ball towards a hole: does it roll far enough to go in? Does your own pocket feel good (ka-ching,
-   3 candies out of the hole)? Is "BALLS n/5" readable?
-3. The dash: fists touching at the chest for 1 s (a glow, then a "ready" tone), pull them apart: does it fire when you
-   mean it and never from a boxing guard? Looking down at your fists: does it still go where you face? The vignette
-   during the dash and shoves (your comfort level): enough, too much?
-4. Shoves: a ball crashing into you, the giant pumpkin's charge: too far, too often?
-5. Holes from the lawn: rune rings and jack-o'-lanterns readable? The shrink between rounds (earth rumble): does the
-   push away from a moving hole feel fair?
-6. The giant jack-o'-lantern in the small field: dodge its charge so it slams the border (dizzy), punch it.
-7. Look: the kit at night in the headset (too dark? the mountains?), and the frame rate on Quest.
+1. Arrival: black-out, eyes open in the middle of the field, the card: is the chaos (15 balls, slimes) fun or too much?
+2. Snooker: punch a ball (or send one into another) towards a hole: does BALLS n/15 count it, and does a ball the others
+   knock in coming back from the sky read clearly?
+3. Candy trees (a candy flies out per hit), boulders (4 punches), jello volcanoes (spit every 7-13 s): readable, fun?
+4. The song and the shrink: chill at first, faster at the end? Is 5 minutes for 15 balls fair? The holes meeting.
+5. The Black Pumpkin Ball: does it feel 3 times heavier (punches move it a third as far)? 150 health by punches; or
+   pocket it.
+6. The end: candy rain, the chest in front of you (punch it open), eat The Seed: to the rooftop.
+7. The dash and its comfort vignette; shoves; the frame rate on Quest (15 balls + tails, slimes, 3 volcanoes).

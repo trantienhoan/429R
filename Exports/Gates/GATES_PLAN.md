@@ -159,7 +159,7 @@ Every gate session keeps these. The coordinator checks them in Phase 2.
   bowling-ball pumpkin with finger holes, gate 3 a grassy rolling pumpkin. Done in Phase 0: `GateFinalesMenu` keeps a
   finale boss that is a variant of the giant pumpkin (and no longer rewrites the cook time or a custom rules sign). The
   base prefab and `PumpkinBallBoss.cs` stay with the coordinator.
-- **E2 One reward budget.** Today the giant pumpkin breaks into 14 candies (gate 1: 42) and 30 EXP. Pick one number
+- **E2 One reward budget. DONE 2026-11-23 (user: 42 for all): the base Pumpkin_Ball_Boss Break Candies = 42 (the 3 variants inherit it), 30 EXP.** Before: 14 candies (gate 1: 42). Pick one number
   for all three (the user's call), set in one place (`GateFinalesMenu`).
 - **E3 Ending length.** After a gate the player still has Whack 6 + Whack 7 (2 bee bosses), the lid and
   Pumpkin_Boss_Z. The user chose this on 2026-11-18 ("like the main game"). Measure it once from the gate's seed to
@@ -447,6 +447,8 @@ the awesome lists (no Unity, Blender or game-design entries). Built-in git workt
 
 Answered 2026-11-22: start (Phase 0, then the 3 together); baseline committed by the user; Unity preference set by
 Claude; skills 1 and 2 added.
+
+Answered 2026-11-23: E2 = 42 candies each; E4 replay marks = not now; E5 = keep WORKING SITE until the gates are done; gate tuning = keep the numbers, gate 2 gets strike/miss sounds, the old showdown slimes deleted.
 
 Can wait until Phase 2:
 5. **Ending length (E3):** keep Whack 6 + Whack 7 after every gate, as you chose on 2026-11-18?
