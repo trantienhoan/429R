@@ -64,3 +64,43 @@ The 3 gates (PlayGround, Bowling, Ball Valley) are not in the story; they stay a
    slot (Fight Voice in Story Seed Settings) until the user records it.
 
 Voice lines needed from the user: "please find me" (the girl), "Fight", the happy congratulation, the girl's thank you.
+
+## NEXT: the WHY (user 2026-11-24 night, to do next session)
+
+> "I want my story more vivid in the game, like why we fight, why the pumpkin laughing, why bugs, I want my game
+> answer those questions"
+
+Parts 1-5 tell WHAT happens. Next, the game must show WHY. Nothing is decided yet: the answers are the user's to write.
+
+**Questions the game must answer:**
+1. Why do we fight?
+2. Why does the pumpkin laugh?
+3. Why are there bugs (the pumpkin spiders, the cockroaches)?
+4. Maybe also: who is the tiny green girl, what is the Green, why these rooms, why it starts again.
+
+**What the story already hints at:**
+- The laugh "is calling" something to the room, and the bugs come once the laughing pumpkin breaks.
+- The bugs hurt the Tree.
+- The barrels are a seal.
+- The seed pieces carry the girl's light.
+
+**Plan:**
+1. The user writes the answers, in their own words.
+2. Map each answer to the moment the player learns it: the start rooftop, room 1's laugh, a wall drop, the rooftop seal, the tree, the boss, or the ending.
+3. Show it with action first, the user's voice second, and few words last (a title plus one line).
+4. Build the smallest PlayMaker-friendly pieces, test them in the editor, then in the headset.
+
+**Ideas to pick from (not decided):**
+- The laugh visibly calls the bugs: bug eyes light up in the dark, or bugs answer each laugh.
+- The bugs go for the seed pieces and the tree.
+- The girl's light dims while bugs are near and grows when a room is cleared.
+- A short picture-page board at the start or at a few key moments, like the start tutorial's two pages.
+
+**Rules:**
+- Main game only. The gates stay as mini games for relaxing.
+- Voices are the user's own recordings (ElevenLabs only when the user asks).
+- No pop-up effect words.
+
+**Still open from parts 1-5:**
+- Headset test.
+- Recordings: "please find me" (a stand-in plays for now), "Fight" (empty slot), "you protected the Green" (empty slot), and the girl's thank-you.
