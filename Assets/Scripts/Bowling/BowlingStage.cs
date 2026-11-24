@@ -173,7 +173,7 @@ namespace Game.Bowling
         [Tooltip("Its size here (metres): the lanes are 2 m wide.")]
         [Min(0.5f)] [SerializeField] private float finaleRadius = 1.3f;
         [Tooltip("Its health here (the prefab's own if 0).")]
-        [Min(0f)] [SerializeField] private float finaleHealth = 100f;
+        [Min(0f)] [SerializeField] private float finaleHealth = 150f;   // user, 2026-11-23: 150, as the other gates' (was 100)
         [Tooltip("Bowl at the giant pumpkin: a bowling ball and it meeting at least Ball Boss Speed (metres a second; it " +
                  "rolled into it, or it ran over a ball in its way) hurts it by Ball Boss Damage (twice while it's dizzy), on " +
                  "top of what the hit itself does (a ball let go less than 2.5 s ago counts as the player's throw: 1, 2 " +

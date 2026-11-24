@@ -300,6 +300,12 @@ namespace Game.PlayGround
             new Vector3(1f, 0f, -1f).normalized, new Vector3(-1f, 0f, -1f).normalized,
         };
 
+        /// <summary>A runner laughed from hiding (the story's laugh that calls something: Story Laugh Chill hears it).</summary>
+        public static event System.Action<RunAwayPumpkin> Laughed;
+
+        /// <summary>Whether its laugh is still sounding (stops at once when the player sees it).</summary>
+        public bool IsLaughing => Time.time < laughingUntil;
+
         public Mood Current => mood;
         public float StaminaLeft => staminaLeft;
         public float MaxStamina => stamina;
@@ -522,6 +528,7 @@ namespace Game.PlayGround
             laughingUntil = Time.time + lastLaugh.length;
             nextLaugh = Time.time + Mathf.Max(laughGap, lastLaugh.length);
             laughAfter = Random.Range(laughAfterHidden.x, laughAfterHidden.y);
+            Laughed?.Invoke(this);
         }
 
         // Its Health FSM laughed on a timer wherever the player was: those laugh sounds are switched off (on this pumpkin

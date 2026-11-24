@@ -85,6 +85,48 @@ namespace Balls
         public float fixedRadius;
         /// <summary>429R gate 3 (2026-11-23): times this ball's weight (the Black Pumpkin Ball: 3, the same size, 3 times as heavy).</summary>
         [System.NonSerialized] public float massTimes = 1f;
+        /// <summary>429R gate 3 (2026-11-23 evening): times this ball's size, its tail's too (the seed balls: a little bigger).</summary>
+        [System.NonSerialized] public float sizeTimes = 1f;
+        /// <summary>429R gate 3 (2026-11-23 evening): a pulsing glow on this ball with sparks flying off it (the seed balls: red; alpha 0 = none).</summary>
+        [System.NonSerialized] public Color aura;
+        float nextAuraSpark;
+        /// <summary>429R gate 3 (2026-11-23 evening): an aura effect that follows this ball, upright and sized to it (the seed balls: the game's red Chaos_Aura).</summary>
+        [System.NonSerialized] public GameObject auraLook;
+        GameObject auraMade;
+        // The aura's width for the ball's (the pumpkin boss wears it at 1.15: here its glow must show round a solid ball).
+        const float AuraWidth = 1.6f;
+
+        // The valley is bright where the boss room is dark: this ball's own copy of the aura gets its glow and wisps more
+        // solid and its wisps thicker (the prefab stays as the boss wears it). Its big soft Glow is smaller and lifted: at
+        // full size, on a ball sitting on the lawn, it cut a hard line where it met the ground (play test 2026-11-23).
+        static void LouderAura(GameObject made)
+        {
+            foreach (var ps in made.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                bool glow = ps.name == "Glow";
+                if (glow)
+                {
+                    ps.transform.localPosition += Vector3.up * 0.25f;
+                    var gm = ps.main;
+                    gm.startSizeMultiplier *= 0.7f;
+                }
+                var col = ps.colorOverLifetime;
+                if (col.enabled && col.color.mode == ParticleSystemGradientMode.Gradient && col.color.gradient != null)
+                {
+                    var src = col.color.gradient;
+                    var alphas = src.alphaKeys;
+                    for (int i = 0; i < alphas.Length; i++) alphas[i].alpha = Mathf.Clamp01(alphas[i].alpha * (glow ? 2f : 3f));
+                    var louder = new Gradient { mode = src.mode };
+                    louder.SetKeys(src.colorKeys, alphas);
+                    col.color = new ParticleSystem.MinMaxGradient(louder);
+                }
+                if (glow) continue;
+                var main = ps.main;
+                main.maxParticles = Mathf.CeilToInt(main.maxParticles * 3f);
+                var em = ps.emission;
+                em.rateOverTimeMultiplier *= 2.5f;
+            }
+        }
         /// <summary>
         /// 429R gate 3 (2026-11-23): when the VR player last touched this ball (a punch, the dash, their body, or a ball they
         /// hit): it's the player's pocket if it goes down soon after (Ball Valley Gate's Credit Seconds).
@@ -199,7 +241,8 @@ namespace Balls
         static float Sq(float x) => x * x;
 
         /// <summary>Radius of ball number k (1-based): S1 * (1 + step * (k - 1)), capped at the max size.</summary>
-        public float SizeRadius(int k) => fixedRadius > 0f ? fixedRadius : Mathf.Min(T.headMaxRadius, T.headRadius * (1f + T.sizeStep * (k - 1)));
+        public float SizeRadius(int k) => fixedRadius > 0f ? fixedRadius * sizeTimes
+            : Mathf.Min(T.headMaxRadius, T.headRadius * (1f + T.sizeStep * (k - 1)) * sizeTimes);   // 429R: Size Times (never past the max: the pits still take it)
 
         float TailBallMass(float r) => T.babyMass * Sq(r / T.headRadius);
 
@@ -1290,7 +1333,11 @@ namespace Balls
         void Update()
         {
             UpdateChargeSound();
-            if (!alive || !head || vrBody) return;   // 429R: nothing to show on the VR body
+            if (!alive || !head || vrBody)   // 429R: nothing to show on the VR body
+            {
+                if (auraMade != null && auraMade.activeSelf) auraMade.SetActive(false);   // 429R: down a hole: its aura waits
+                return;
+            }
             float dt = Time.deltaTime;
             radius = Mathf.MoveTowards(radius, targetRadius, dt * 0.8f);
             head.transform.localScale = Vector3.one * (radius * 2f);
@@ -1325,6 +1372,30 @@ namespace Balls
                     Vector3 at = hp + Random.insideUnitSphere * (radius * 0.9f);
                     Gfx.Sparks(at, Slime.Rainbow(Time.time * 0.8f + Random.value * 0.5f), 2, 3f, false);
                 }
+            }
+            if (aura.a > 0f)
+            {
+                // 429R gate 3: a seed ball's glow: a slow pulse of its colour, sparks off its skin now and then.
+                glow += new Color(aura.r, aura.g, aura.b) * (0.9f + 0.4f * Mathf.Sin(Time.time * 5f));
+                if (Time.time >= nextAuraSpark)
+                {
+                    nextAuraSpark = Time.time + 0.1f;
+                    Gfx.Sparks(hp + Random.onUnitSphere * radius, aura, 1, 1.8f, false);
+                }
+            }
+            if (auraLook != null)
+            {
+                // 429R gate 3: its aura round it, upright (the ball rolls, its wisps rise), as wide as the ball and a bit
+                // (as the pumpkin boss wears its Chaos Aura).
+                if (auraMade == null)
+                {
+                    auraMade = Instantiate(auraLook, transform);
+                    auraMade.name = auraLook.name;
+                    LouderAura(auraMade);
+                }
+                if (!auraMade.activeSelf) auraMade.SetActive(true);
+                auraMade.transform.SetPositionAndRotation(hp, Quaternion.identity);
+                auraMade.transform.localScale = Vector3.one * (radius * 2f * AuraWidth / Mathf.Max(0.0001f, Mathf.Abs(transform.lossyScale.x)));
             }
             headMat.SetColor("_EmissionColor", glow);
         }

@@ -3,6 +3,22 @@
 Session: "Gate 3: Ball Valley" (2026-11-22/23). Plan: `Exports/Gates/GATES_PLAN.md` (§0 order, §2 contract, §4 brief).
 Work files and backups: `C:/Users/ADMIN/Documents/429R_claude_backups/2026-11-22/gate3/`.
 
+## 0. 2026-11-23 evening (coordinator, second PC): seed balls
+
+- The user: "make some balls bigger a little and have red aura, push that ball into hole and the hole will spit out a seed".
+- Built: 4 of the 15 balls (picked at random) are Seed Ball Size (1.25x) bigger, with a red aura: Seed Ball Aura Look
+  = Effects/Chaos_Aura (the pumpkin boss's red aura), a louder copy per ball (`BallPlayer.LouderAura`: wisps more solid
+  and thicker; its glow smaller and lifted, as at full size it cut a hard line on the lawn), plus a red glow pulse and
+  sparks (`BallPlayer.sizeTimes`, `aura`, `auraLook`). The player's own pocket of one spits its gear seed (Seed_Bracer,
+  Seed_Chest, Seed_Head, Seed_Shield, in that order) out of the hole in a red streak onto the lawn, half way to the middle.
+  The seed moves in if the holes come near it; Gate Exit eats any still waiting. `BallValleyGate` (Seed Balls header);
+  `BallValleyStage.DropBalls` now returns the balls; `Ball_Valley.prefab` has the 4 seeds; Set Up Ball Valley fills them
+  if empty.
+- Editor-tested 2026-11-23 evening (`_claude_test`, 0 errors): seed balls r 1.0-1.1 m (others 0.83); each pocket spat
+  its seed 4-12 m clear of the holes; eating each set its gear bool (all 4); a seed ball knocked in by the others drops
+  back still big and red. Not tried in the headset. Test hook: BallValleyGate's "Test: Pocket A Seed Ball (Mine)".
+- Gate 3's fix list: `../GATES_REVIEW_2026-11-23.md` §5.
+
 ## 1. The kit (step 1, 2026-11-23)
 
 - `Exports/Gates/gate3/BallValley_Kit.blend`, built by `tools/ballvalley_kit.py` (headless Blender; never overwrites the

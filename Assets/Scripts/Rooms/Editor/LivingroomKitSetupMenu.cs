@@ -42,8 +42,10 @@ namespace Game.EditorTools
         private const string BrickName = "Brick_Wall_Breakable";
         private const float Room = 9f, Square = 7.5f, ArmHalf = 0.75f, Wall = 0.31f, Height = 3f, PlayScale = 1.5f;
         private const float Doorway = 3f, OldRoofHalf = 4.63f;
-        // The old ceiling's underside was at 3.39 m (1x); the kit's walls are 3 m.
-        private const float CeilingDrop = 0.39f;
+        // The old ceiling's underside is at 3.47 m (1x), only its lamp panel hangs to 3.39; the kit's walls are 3 m. The
+        // underside sits on the walls, the lamp panel 8 cm below like the living room's lamp (user, 2026-11-24: with 0.39 the
+        // ceiling floated 8 cm over the playroom's walls). Fit Playroom Arms checks it from the mesh.
+        private const float CeilingDrop = 0.47f;
         // The brick wall's middle above the floor and half its thickness.
         private const float BrickMiddle = 1.69f, BrickHalfDepth = 0.139f;
 
@@ -159,8 +161,13 @@ namespace Game.EditorTools
                 if (puffGuid != null)
                     so.FindProperty("puff").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(puffGuid));
                 so.ApplyModifiedPropertiesWithoutUndo();
+                // The wallpaper runs on across the wall joints (user, 2026-11-24).
+                if (KitWallpaperMenu.Apply(kit, KitWallpaperMenu.LivingroomPaperMetres,
+                        AssetDatabase.LoadAssetAtPath<Material>(KitWallpaperMenu.LivingroomPaper))) notes.Add("wallpaper runs on");
 
                 KitDoorFitMenu.Fit(root, notes);
+                // The playroom arms' floors on the grid and their end walls' wallpaper (user, 2026-11-24).
+                PlayroomArmsMenu.Fit(root, notes);
                 PrefabUtility.SaveAsPrefabAsset(root, NewRoom);
             }
             finally

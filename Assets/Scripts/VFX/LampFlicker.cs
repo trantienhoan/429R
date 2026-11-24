@@ -44,6 +44,14 @@ namespace Game.VFX
             if (lamp != null) lamp.intensity = baseIntensity;
         }
 
+        /// <summary>Stutters now (the story's laugh makes the lamp go weird: Laugh Chill calls it).</summary>
+        public void Stutter()
+        {
+            if (dipsLeft > 0) return;
+            dipsLeft = Random.Range(dips.x, dips.y + 1);
+            dipUntil = Time.unscaledTime;
+        }
+
         private void Update()
         {
             float now = Time.unscaledTime;

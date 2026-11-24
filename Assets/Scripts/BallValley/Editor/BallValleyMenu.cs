@@ -171,6 +171,12 @@ namespace Balls.EditorTools
         public const string SeedPath = "Assets/Prefabs/Items/Chest/The_Seed.prefab";
         /// <summary>The main game's chest with The Seed inside (Whack 7's barrel pumpkin drops it): gate 3's end.</summary>
         public const string SeedChestPath = "Assets/Prefabs/Items/Chest/Treasure_Chest_and_Seed.prefab";
+        /// <summary>The seed balls' gear seeds, in order (Ball Valley Gate's Gear Seeds).</summary>
+        public static readonly string[] GearSeedPaths =
+        {
+            "Assets/Prefabs/Items/Chest/Seed_Bracer.prefab", "Assets/Prefabs/Items/Chest/Seed_Chest.prefab",
+            "Assets/Prefabs/Items/Chest/Seed_Head.prefab", "Assets/Prefabs/Items/Chest/Seed_Shield.prefab",
+        };
         // Gate 3's song (2026-11-23: "a 5 minutes song that slow at first ... then keep getting faster and faster"): no song
         // is 5 minutes yet, so a chill one (2.5 min) then a fast one (3 min), both sped up as the field closes.
         private static readonly string[] SongParts = { "Pumpkin_Playroom", "Spider_Queen_Rampage" };
@@ -197,6 +203,10 @@ namespace Balls.EditorTools
             }
             GameObject Load(string path) => AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if (gate.seedChest == null) gate.seedChest = Load(SeedChestPath);
+            // The seed balls' gear seeds (user, 2026-11-23 evening); kept as they are once set.
+            if (gate.gearSeeds == null || gate.gearSeeds.Length == 0)
+                gate.gearSeeds = GearSeedPaths.Select(Load).Where(s => s != null).ToArray();
+            if (gate.seedBallAuraLook == null) gate.seedBallAuraLook = Load("Assets/Prefabs/Effects/Chaos_Aura.prefab");
             var ownBoss = Load(BallValleyKitMenu.BossVariantPath);
             var voice = ownBoss != null ? ownBoss : boss;
             if (gate.voiceFrom == null && voice != null) gate.voiceFrom = voice.GetComponent<Game.Gates.PumpkinBallBoss>();

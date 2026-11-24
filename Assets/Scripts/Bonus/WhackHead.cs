@@ -1,4 +1,5 @@
 using System;
+using TMPro;
 using UnityEngine;
 
 namespace Game.Bonus
@@ -9,6 +10,7 @@ namespace Game.Bonus
     /// then goes back down. A mallet (WhackHammer) striking it while it's up, quickly enough (Min Whack Speed) and not
     /// upward, whacks it: it squashes and drops at once (Whacked). Gone down without a whack: Went Down. Hands and
     /// anything else do nothing. Its hit zone is a trigger, on only while it's up.
+    /// The gold head spins all the time it's up; the clock (time) head shows the seconds it gives, "+2s" (user, 2026-11-23).
     /// </summary>
     [DisallowMultipleComponent]
     public class WhackHead : MonoBehaviour
@@ -17,6 +19,10 @@ namespace Game.Bonus
 
         [Tooltip("One look per kind, in this order: Normal, Gold, Rainbow, Clock, Skull (only the one popped is on).")]
         [SerializeField] private GameObject[] looks = new GameObject[5];
+        [Tooltip("The time head's label (on the Clock look): it shows the seconds that head gives, e.g. \"+2s\", and turns to the player.")]
+        [SerializeField] private TMP_Text clockLabel;
+        [Tooltip("How fast the gold head spins round while it's up (degrees per second).")]
+        [SerializeField] private float goldSpin = 300f;
         [Tooltip("The moving part (the looks and the hit zone): this object's child, at the hole's top when up.")]
         [SerializeField] private Transform body;
         [Tooltip("The hit zone (a trigger), on only while the head is up.")]
@@ -56,6 +62,9 @@ namespace Game.Bonus
         /// <summary>The kind it popped up as.</summary>
         public Kind Current { get; private set; }
 
+        /// <summary>The seconds a time (clock) head gives, as its label shows them (0 for the other kinds).</summary>
+        public int ClockSeconds { get; private set; }
+
         /// <summary>Busy: up, or on its way up or down (it can't pop again yet).</summary>
         public bool Busy => state != State.Down;
 
@@ -77,14 +86,22 @@ namespace Game.Bonus
             ShowLook(-1);
         }
 
-        /// <summary>Pops up as 'kind' for 'seconds' (then goes down unless whacked). Whacks need a blow this fast (m/s).</summary>
-        public void Pop(Kind kind, float seconds, float whackSpeed)
+        /// <summary>
+        /// Pops up as 'kind' for 'seconds' (then goes down unless whacked). Whacks need a blow this fast (m/s). A time
+        /// (clock) head gives 'clockSeconds' and shows them on its label.
+        /// </summary>
+        public void Pop(Kind kind, float seconds, float whackSpeed, int clockSeconds = 0)
         {
             if (Busy) return;
             Current = kind;
+            ClockSeconds = kind == Kind.Clock ? Mathf.Max(0, clockSeconds) : 0;
+            if (kind == Kind.Clock && clockLabel != null) clockLabel.text = "+" + ClockSeconds + "s";
             upFor = Mathf.Max(0.1f, seconds);
             minWhackSpeed = whackSpeed;
+            spun = 0f;
+            Spin();
             ShowLook((int)kind);
+            if (kind == Kind.Clock) FaceLabel();
             if (body != null) body.localScale = bodyScale;
             state = State.Rising;
             since = Time.time;
@@ -160,7 +177,37 @@ namespace Game.Bonus
                     break;
                 }
             }
-            if (state != State.Down && Current == Kind.Rainbow) Rainbow();
+            if (state != State.Down)
+            {
+                if (Current == Kind.Rainbow) Rainbow();
+                else if (Current == Kind.Gold)
+                {
+                    spun = Mathf.Repeat(spun + goldSpin * Time.deltaTime, 360f);
+                    Spin();
+                }
+                else if (Current == Kind.Clock) FaceLabel();
+            }
+        }
+
+        private float spun;
+
+        // The gold head turns round its own upright axis (its look is centred on it).
+        private void Spin()
+        {
+            int gold = (int)Kind.Gold;
+            if (looks != null && looks.Length > gold && looks[gold] != null)
+                looks[gold].transform.localRotation = Quaternion.Euler(0f, spun, 0f);
+        }
+
+        // The time head's "+2s" turns to the player's eyes, so it reads from wherever they stand.
+        private void FaceLabel()
+        {
+            if (clockLabel == null) return;
+            var eyes = Camera.main;
+            if (eyes == null) return;
+            var t = clockLabel.transform;
+            var away = t.position - eyes.transform.position;
+            if (away.sqrMagnitude > 0.0001f) t.rotation = Quaternion.LookRotation(away, Vector3.up);
         }
 
         private void OnTriggerEnter(Collider other) => TryWhack(other);

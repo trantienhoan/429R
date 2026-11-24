@@ -1,9 +1,10 @@
 # Gates plan: 3 gates, 1 ending, then replay (2026-11-22)
 
-**Status 2026-11-23:** Phase 0 and Phase 1 done: all 3 gates run on GateRun with their kits in Unity, each tested
-to Whack 6; the end-to-end check (E6, all 3 routes to the boss and a new run) passed; E7 fine (no bee swarm).
-Nothing committed after the user's baseline b568870; no scene change. Open: the headset runs, the kits' fixes, and
-the user's calls (E2, E3, E4, E5 and each gate's questions in `gateN/NOTES.md`).
+**Status 2026-11-23 evening:** Phases 0-1 done and committed by the user (1221c04, 3650787). The K: PC day (3a5765e)
+moved gate 3 off GateRun (the user's redesign: `session_notes/requests/gate3-new-flow-info.md`), so parts of this plan
+are out of date. **Read `GATES_REVIEW_2026-11-23.md` first:** what changed in each gate and the fix list (nothing fixed
+yet). Open: those fixes, E6 again after gate 3's redesign, the headset runs, and the user's calls (review §7 and each
+`gateN/NOTES.md`).
 Made from: `Assets/NOTES_Next_Time.md`, Claude's memory, the gate code, and GAMESTAGES read from the saved scene
 (`2 Game Scene.unity` on disk, last saved 2026-11-20 21:48; unsaved editor changes, if any, are not in it).
 

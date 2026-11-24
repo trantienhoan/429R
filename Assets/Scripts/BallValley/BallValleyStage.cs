@@ -1001,16 +1001,19 @@ namespace Balls
 
         /// <summary>
         /// 429R gate 3: <paramref name="n"/> new balls drop in from the sky over <paramref name="within"/> seconds (a round's
-        /// balls); pocketed, each is gone for good.
+        /// balls); pocketed, each is gone for good. Returns them (not in yet: they drop in over that time).
         /// </summary>
-        public void DropBalls(int n, float within)
+        public List<BallPlayer> DropBalls(int n, float within)
         {
+            var made = new List<BallPlayer>(n);
             for (int i = 0; i < n; i++)
             {
                 var bot = CreateBot();
                 bot.freeDrop = true;
                 QueueRevive(bot, Random.Range(0.2f, Mathf.Max(0.3f, within)));
+                made.Add(bot);
             }
+            return made;
         }
 
         /// <summary>

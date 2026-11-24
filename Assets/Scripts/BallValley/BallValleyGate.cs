@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Game.Gates;
 using TMPro;
 using Unity.XR.CoreUtils;
@@ -29,6 +30,10 @@ namespace Balls
     ///   rooftop (defend the tree, then the boss). Never stuck: The_Seed is set for them after Seed Give Up Seconds.
     /// - Trees (candy trees: a hit knocks a candy out), boulders (break into candy) and jello volcanoes (spit candy) stand
     ///   anywhere on the lawn; slimes run about (a punch pops one into candy).
+    /// - Seed balls (user, 2026-11-23 evening: "make some balls bigger a little and have red aura, push that ball into hole
+    ///   and the hole will spit out a seed"): one ball per Gear Seed is Seed Ball Size bigger and glows red; the player's
+    ///   pocket of one spits its gear seed (Bracer, Chest, Head, Shield: the heal, health bonus and gear bool a gear chest
+    ///   gives) out of the hole onto the lawn. Gate Exit eats any still waiting for the player.
     /// No Gate Run: its start chest, rounds and gear chests aren't part of this gate (the user's call); this does the card,
     /// the HUD line and what Gate Run does while a gate runs (the comfort vignette on launches, seeds kept from the purple
     /// hole). Set up by Tools > 429 Game > Ball Valley > Set Up Ball Valley (Prefabs/BallValley/Ball_Valley).
@@ -124,6 +129,17 @@ namespace Balls
         [Tooltip("The Seed not eaten this many seconds after the chest drops: The_Seed is set for them (never stuck).")]
         [Min(5f)] public float seedGiveUpSeconds = 90f;
 
+        [Header("Seed balls (bigger, a red aura: the player's pocket spits out a gear seed)")]
+        [Tooltip("The gear seeds, one seed ball each, in this order (Items/Chest/Seed_Bracer, Seed_Chest, Seed_Head, " +
+                 "Seed_Shield). Empty: no seed balls.")]
+        public GameObject[] gearSeeds = new GameObject[0];
+        [Tooltip("Times a seed ball's size (a little bigger than the others).")]
+        [Range(1f, 1.6f)] public float seedBallSize = 1.25f;
+        [Tooltip("A seed ball's glow and sparks, and the streak of the seed the hole spits out.")]
+        public Color seedBallAura = new Color(1f, 0.12f, 0.08f);
+        [Tooltip("The aura round a seed ball (Effects/Chaos_Aura: the game's red aura, as the pumpkin boss wears it).")]
+        public GameObject seedBallAuraLook;
+
         [Header("The HUD line")]
         public string ballsLine = "BALLS {0}/{1}";
         public string blackLine = "BLACK PUMPKIN {0}";
@@ -159,6 +175,9 @@ namespace Balls
         private int songIndex;
         private bool songOn, songPaused;
         private Vector3 chestAt;
+        private readonly Dictionary<BallPlayer, int> seedBalls = new Dictionary<BallPlayer, int>();
+        private readonly List<GameObject> spatSeeds = new List<GameObject>();
+        private float nextSeedKeep;
 
         // ---------------------------------------------------------------- set up
 
@@ -234,7 +253,7 @@ namespace Balls
             }
 
             Now = Step.Balls;
-            stage.DropBalls(balls, dropInSeconds);
+            MarkSeedBalls(stage.DropBalls(balls, dropInSeconds));
             clockAt = Time.time;
             clockOn = true;
             StartSong();
@@ -264,6 +283,7 @@ namespace Balls
             }
             if (clockOn) Drive(Mathf.Clamp01(Clock / songSeconds));
             UpdateSong();
+            KeepGearSeeds();
         }
 
         // The song's share k (0..1): the field's size, where it's heading, the balls' tempers, the volcanoes, the music.
@@ -314,6 +334,11 @@ namespace Balls
             Pocketed++;
             hudPulse = 1f;
             PocketCandy(p);
+            if (seedBalls.TryGetValue(p, out int seed))
+            {
+                seedBalls.Remove(p);
+                StartCoroutine(SpitSeed(p.lastPosition, seed));
+            }
             stage.RemovePlayer(p);   // gone for good
             Debug.Log($"[BallValley] The player pocketed {p.displayName}: {Pocketed}/{balls} ({Clock:0.0} s).", this);
         }
@@ -333,6 +358,91 @@ namespace Balls
                 var dir = Quaternion.Euler(0f, a, 0f) * inward;
                 var fly = dir * Random.Range(3.5f, 5f) + Vector3.up * Random.Range(5f, 6.5f);
                 stage.SpawnPellet(from, fly, stage.RandomBerryColor());
+            }
+        }
+
+        // ---------------------------------------------------------------- the seed balls
+
+        // One ball per gear seed (picked at random) is a little bigger and glows red. It keeps that through a drop back in.
+        private void MarkSeedBalls(List<BallPlayer> dropped)
+        {
+            seedBalls.Clear();
+            if (dropped == null || gearSeeds == null) return;
+            var pick = new List<BallPlayer>(dropped);
+            for (int i = 0; i < gearSeeds.Length && pick.Count > 0; i++)
+            {
+                if (gearSeeds[i] == null) continue;
+                var b = pick[Random.Range(0, pick.Count)];
+                pick.Remove(b);
+                b.sizeTimes = seedBallSize;
+                b.aura = seedBallAura;
+                b.auraLook = seedBallAuraLook;
+                seedBalls[b] = i;
+            }
+            if (seedBalls.Count > 0)
+                Debug.Log($"[BallValley] {seedBalls.Count} seed ball(s): bigger, a red aura; the player's pocket spits out a gear seed.", this);
+        }
+
+        // A seed ball the player pocketed: its hole spits the gear seed out (a red streak arcing onto the lawn), where it
+        // pops up and waits to be eaten.
+        private IEnumerator SpitSeed(Vector3 pocketedAt, int index)
+        {
+            var prefab = gearSeeds != null && index >= 0 && index < gearSeeds.Length ? gearSeeds[index] : null;
+            if (prefab == null) yield break;
+            var valley = stage.valley;
+            var cave = valley != null ? valley.NearestCave(pocketedAt) : null;
+            var from = cave != null ? cave.mouth + cave.openingOffset : pocketedAt;
+            from.y = 0.6f;
+            var to = SeedSpot(from);
+            const float fly = 0.6f;
+            for (float t = 0f; t < fly; t += Time.deltaTime)
+            {
+                float k = t / fly;
+                Gfx.Sparks(Vector3.Lerp(from, to, k) + Vector3.up * (Mathf.Sin(k * Mathf.PI) * 2.5f), seedBallAura, 2, 1.2f, false);
+                yield return null;
+            }
+            if (GateExit.Running || Game.GameStages.ActiveState() == "Game Over") yield break;
+            var seed = Instantiate(prefab, to, Quaternion.identity, Holder());
+            seed.AddComponent<Game.Rooms.KeepFromPurpleHole>();   // a death meanwhile mustn't let the purple hole eat it
+            spatSeeds.Add(seed);
+            Gfx.Sparks(to, seedBallAura, 12, 3f, false);
+            Debug.Log($"[BallValley] The hole spat out {prefab.name} at {to}.", this);
+        }
+
+        // Where a spat seed waits: half way from its hole to the middle, on the lawn, clear of the holes, about head-high.
+        private Vector3 SeedSpot(Vector3 from)
+        {
+            var at = BallValleyStage.Flat(from) * 0.5f;
+            var valley = stage.valley;
+            if (valley)
+            {
+                float lx = Mathf.Max(0.5f, valley.SafeHalfX - 1.5f), lz = Mathf.Max(0.5f, valley.SafeHalfZ - 1.5f);
+                at.x = Mathf.Clamp(at.x, -lx, lx);
+                at.z = Mathf.Clamp(at.z, -lz, lz);
+                for (int i = 0; i < 20 && valley.DistanceToNearestPit(at) < 2.5f; i++) at *= 0.85f;
+            }
+            at.y = 1f;
+            return at;
+        }
+
+        // The field keeps shrinking: a spat seed the holes come near (or the border passes) moves in toward the middle.
+        private void KeepGearSeeds()
+        {
+            if (spatSeeds.Count == 0 || Time.time < nextSeedKeep) return;
+            nextSeedKeep = Time.time + 0.5f;
+            spatSeeds.RemoveAll(s => s == null);
+            var valley = stage.valley;
+            if (!valley || leaving || GateExit.Running) return;
+            foreach (var s in spatSeeds)
+            {
+                var at = s.transform.position;
+                var flat = BallValleyStage.Flat(at);
+                bool outside = Mathf.Abs(flat.x) > valley.SafeHalfX - 1f || Mathf.Abs(flat.z) > valley.SafeHalfZ - 1f;
+                if (!outside && valley.DistanceToNearestPit(flat) >= 1.5f) continue;
+                var to = SeedSpot(flat);
+                to.y = at.y;
+                s.transform.position = to;
+                Gfx.Sparks(to, seedBallAura, 8, 2f, false);
             }
         }
 
@@ -758,6 +868,20 @@ namespace Balls
             foreach (var p in stage.players.ToArray())
             {
                 if (p == null || p.isHuman || !p.alive || p == Black) continue;
+                p.lastHumanTouch = Time.time;
+                p.Die(stage.valley != null ? stage.valley.NearestCave(p.Position) : null);
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>Test: a seed ball on the lawn goes down the nearest hole as the player's pocket (its seed is spat out).</summary>
+        [ContextMenu("Test: Pocket A Seed Ball (Mine)")]
+        public bool TestPocketSeedBall()
+        {
+            foreach (var p in new List<BallPlayer>(seedBalls.Keys))   // (a copy: the pocket takes it off the list)
+            {
+                if (p == null || !p.alive) continue;
                 p.lastHumanTouch = Time.time;
                 p.Die(stage.valley != null ? stage.valley.NearestCave(p.Position) : null);
                 return true;

@@ -27959,6 +27959,7 @@ GameObject:
   - component: {fileID: 8662578162601690573}
   - component: {fileID: 8647544325187888860}
   - component: {fileID: 5142383036287992066}
+  - component: {fileID: 8173798025062919701}
   m_Layer: 0
   m_Name: Fairy
   m_TagString: Fairy
@@ -29353,6 +29354,7 @@ MonoBehaviour:
         colorIndex: 0
       actionData:
         actionNames:
+        - HutongGames.PlayMaker.Actions.GreenShower
         - HutongGames.PlayMaker.Actions.ActivateGameObject
         - HutongGames.PlayMaker.Actions.ActivateGameObject
         - HutongGames.PlayMaker.Actions.AnimatorPlay
@@ -29362,10 +29364,11 @@ MonoBehaviour:
         - 
         - 
         - 
-        actionEnabled: 01010101
-        actionIsOpen: 01010101
-        actionStartIndex: 00000000050000000a0000000f000000
-        actionHashCodes: b2cf1000b2cf1000c34b410581294e04
+        - 
+        actionEnabled: 0101010101
+        actionIsOpen: 0101010101
+        actionStartIndex: 0000000000000000050000000a0000000f000000
+        actionHashCodes: 00000000b2cf1000b2cf1000c34b410581294e04
         unityObjectParams: []
         fsmGameObjectParams: []
         fsmOwnerDefaultParams:
@@ -29791,6 +29794,31 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &8173798025062919701
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6784639141768068051}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d645fd25756aa3f49a9d574ce23758d7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Story.StoryWeakFairy
+  weakStates:
+  - Move to Fairy
+  glow: 0.35
+  breathSeconds: 2.4
+  breath: 0.4
+  stutterEvery: {x: 0.8, y: 2.6}
+  stutterSeconds: 0.12
+  stutterGlow: 0.05
+  fadePerCall: 0.85
+  quietest: 0.35
+  callStates:
+  - State 1
+  - State 2
 --- !u!1 &7002749361934176184
 GameObject:
   m_ObjectHideFlags: 0

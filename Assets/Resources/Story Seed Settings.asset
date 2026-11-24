@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de86760e2579a9d48b4fce3133b9d2d6, type: 3}
+  m_Name: Story Seed Settings
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Story.StorySeedSettings
+  glow: {r: 0.55, g: 1, b: 0.45, a: 1}
+  glowParts:
+  - circles
+  - GrowthParticles
+  - stars
+  - shadow
+  lightColor: {r: 0.87, g: 1, b: 0.81, a: 1}
+  voice: {fileID: 8300000, guid: afd4bf8c33d6fbe4e9ccde5e73733079, type: 3}
+  voiceVolume: 0.8
+  lightIn: 0.35
+  lightOut: 1.6
+  mostSeconds: 9
+  mainStates:
+  - Stage 1 - The Start
+  - Mini Enemy
+  - Enemy1 - Wait
+  - Enemy2 - Wait
+  - Enemy 3 Stuffs
+  - Thank For Playing
+  endVoice: {fileID: 0}
+  endTitle: THE GREEN PROTECTOR
+  endLine: I will do it again and again.
+  titleFont: {fileID: 11400000, guid: cb4516ac98eb5854ea4d7a8f558eb4da, type: 2}
+  titleColor: {r: 0.1, g: 0.32, b: 0.12, a: 1}
+  endHoldSeconds: 5
+  showerLook: {fileID: 3101255149643869238, guid: 2efabac11fcfbf9478953e814c4b3a2e,
+    type: 3}
+  showerSeconds: 5
+  showerRadius: 1.2
+  showerHeight: 1.4
+  showerRate: 30
+  showerRing: 0.3
+  showerStarSize: 0.6
+  showerGlowSize: 0.25

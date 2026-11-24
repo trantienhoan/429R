@@ -3,6 +3,13 @@
 Session: gate 2, started 2026-11-22 night. New order from the coordinator 2026-11-23 (`../GATES_PLAN.md` §0):
 1 kit, 2 logic fixes, 3 GateRun (waits for the coordinator), 4 fun and pacing, 5 kit into Unity + full run.
 
+## 0. 2026-11-23 evening (coordinator, second PC)
+
+- The giant pumpkin's health is now 150 (was 100), the user's call: `Bowling_Arena.prefab` finaleHealth (and the code
+  default). Editor-tested: it came in with 150.
+- **The user wants to add something to this gate's game later; they haven't decided what.** Ask them first.
+- Gate 2's fix list: `../GATES_REVIEW_2026-11-23.md` §4.
+
 ## 1. The SlimeBowl kit (step 1, done, waiting for the user's fixes)
 
 - `SlimeBowl_Kit.blend`, built by `tools/slimebowl_kit.py` (headless, ~10 s):

@@ -68,17 +68,25 @@ MonoBehaviour:
   oneMoreEvery: 6
   mostAtOnce: 6
   minWhackSpeed: 1.2
-  goldChance: 0.1
+  speedUpByTheEnd: 0.25
+  rushHeads: 1
+  goldChance: 0.04
   rainbowChance: 0.025
-  clockChance: 0.06
+  clockChance: 0.03
   skullChance: 0.1
   normalCandies: 1
-  goldCandies: 5
+  goldCandies: 10
   rainbowCandies: 15
-  clockSeconds: 3
+  leastClockSeconds: 1
+  mostClockSeconds: 3
   skullCost: 3
   upTimes: {x: 0.8, y: 0.5, z: 0.8, w: 1.2}
   plainFirst: 4
+  frenzySeconds: 3
+  frenzyCandies: 3
+  frenzyPopEvery: 0.5
+  frenzyHeads: 2
+  frenzySound: {fileID: 8300000, guid: 6c1f355a1875edf4fb720dadc9b62880, type: 3}
   popSound: {fileID: 8300000, guid: 5afe4d05433549d45a9becd11c1ff64d, type: 3}
   popVolume: 0.35
   whackSounds:
@@ -93,6 +101,10 @@ MonoBehaviour:
   missVolume: 0.5
   comboSound: {fileID: 8300000, guid: a56cd51311da2df43a0220acff0c521f, type: 3}
   comboEvery: 10
+  music:
+  - {fileID: 8300000, guid: dc3cbc1f0389910409680679dfe027bd, type: 3}
+  - {fileID: 8300000, guid: 9ab98f82a6cbffd4dad4524f8bac41b3, type: 3}
+  musicVolume: 0.6
   font: {fileID: 11400000, guid: cb4516ac98eb5854ea4d7a8f558eb4da, type: 2}
   popupScale: 0.02
   sparkleEffect: {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57,

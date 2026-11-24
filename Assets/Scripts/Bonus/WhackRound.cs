@@ -18,9 +18,13 @@ namespace Game.Bonus
     ///   a spot to stand on, two mallets waiting on posts and a scoreboard behind it.
     /// - Taking BOTH mallets starts the countdown (Seconds). Walking and teleporting stay off until it's over.
     /// - Pumpkin heads pop up and go back down. A quick downward blow with a mallet whacks one (hands do nothing):
-    ///   normal 1 candy, gold 5, rainbow 15, clock +3 seconds, skull: don't (it takes 3 candies and the combo).
+    ///   normal 1 candy, gold 10 (rare, spinning), rainbow 15, time +1 to +3 seconds (rare, the head shows how many),
+    ///   skull: don't (it takes 3 candies and the combo). A gold head whacked starts a gold frenzy: for 3 s every head
+    ///   is gold (3 candies each, faster, more at once, missing one costs nothing).
     /// - Every whack in a row makes the heads come faster, stay up shorter, and more at once. A head that goes back
-    ///   down unwhacked (not a skull) is a miss: the combo and the speed start over.
+    ///   down unwhacked (not a skull) is a miss: the combo and the speed start over. Whatever the combo, the round gets
+    ///   quicker towards its end, with one more head at once in the last (ticking) seconds.
+    /// - The song (the jigsaw's 90 s songs, user 2026-11-23) plays from GO and ends with the countdown.
     /// - Time's up: the heads drop, the mallets go, the round goes on the leaderboard (saved, WhackScores) and the
     ///   machine pours out every candy won, which the Candy Helmet feeds the player; then it sinks and the round is over
     ///   (Finished), and Play Bonus Round goes on.
@@ -82,25 +86,36 @@ namespace Game.Bonus
         [Tooltip("A blow counts as a whack from this speed (the mallet's head, metres per second) and not going up.")]
         [Min(0f)]
         [SerializeField] private float minWhackSpeed = 1.2f;
+        [Tooltip("Whatever the combo, by the end of the countdown the heads come this much faster and stay up this much " +
+                 "shorter (0.25 = 25%, growing evenly from GO), so the round builds up with the song.")]
+        [Range(0f, 0.6f)]
+        [SerializeField] private float speedUpByTheEnd = 0.25f;
+        [Tooltip("More heads up at once in the last Warn Seconds (while the time ticks): a rush to the end.")]
+        [Min(0)]
+        [SerializeField] private int rushHeads = 1;
 
         [Header("Heads (the rest are normal ones)")]
+        [Tooltip("Gold and time heads come rarely (user, 2026-11-23).")]
         [Range(0f, 1f)]
-        [SerializeField] private float goldChance = 0.1f;
+        [SerializeField] private float goldChance = 0.04f;
         [Range(0f, 1f)]
         [SerializeField] private float rainbowChance = 0.025f;
         [Range(0f, 1f)]
-        [SerializeField] private float clockChance = 0.06f;
+        [SerializeField] private float clockChance = 0.03f;
         [Range(0f, 1f)]
         [SerializeField] private float skullChance = 0.1f;
         [Min(0)]
         [SerializeField] private int normalCandies = 1;
+        [Tooltip("A gold head is rare, so it gives a lot.")]
         [Min(0)]
-        [SerializeField] private int goldCandies = 5;
+        [SerializeField] private int goldCandies = 10;
         [Min(0)]
         [SerializeField] private int rainbowCandies = 15;
-        [Tooltip("Seconds a clock head adds.")]
-        [Min(0f)]
-        [SerializeField] private float clockSeconds = 3f;
+        [Tooltip("Seconds a time (clock) head adds: a whole number from Least to Most at random, shown on the head (\"+2s\").")]
+        [Min(0)]
+        [SerializeField] private int leastClockSeconds = 1;
+        [Min(0)]
+        [SerializeField] private int mostClockSeconds = 3;
         [Tooltip("Candies a skull head takes away (never below 0); it also ends the combo.")]
         [Min(0)]
         [SerializeField] private int skullCost = 3;
@@ -109,6 +124,22 @@ namespace Game.Bonus
         [Tooltip("No skulls (and no specials) in the first heads, so the start is plain.")]
         [Min(0)]
         [SerializeField] private int plainFirst = 4;
+
+        [Header("Gold frenzy (user, 2026-11-23): a gold head whacked makes every head gold for a while")]
+        [Tooltip("Seconds of frenzy after a gold head is whacked (0: none). Every head that pops meanwhile is gold, they come " +
+                 "faster and more at once, each gives Frenzy Candies, and one going down unwhacked isn't a miss. Its gold " +
+                 "heads don't start another frenzy (a real gold whacked during one starts it over).")]
+        [Min(0f)]
+        [SerializeField] private float frenzySeconds = 3f;
+        [Min(0)]
+        [SerializeField] private int frenzyCandies = 3;
+        [Tooltip("In a frenzy the heads come this much more often (0.5 = twice as often).")]
+        [Range(0.1f, 1f)]
+        [SerializeField] private float frenzyPopEvery = 0.5f;
+        [Tooltip("More heads up at once in a frenzy.")]
+        [Min(0)]
+        [SerializeField] private int frenzyHeads = 2;
+        [SerializeField] private AudioClip frenzySound;
 
         [Header("Sounds")]
         [SerializeField] private AudioClip popSound;
@@ -126,6 +157,14 @@ namespace Game.Bonus
         [SerializeField] private AudioClip comboSound;
         [Min(2)]
         [SerializeField] private int comboEvery = 10;
+
+        [Header("Music")]
+        [Tooltip("The round's song, one at random (user, 2026-11-23: the jigsaw puzzle's 90 s songs). It starts at GO, from " +
+                 "where it ends just as the countdown does (like the jigsaw's); a time head's extra seconds put it back as " +
+                 "many. Other music playing (a radio) is muted meanwhile. Empty: no song.")]
+        [SerializeField] private AudioClip[] music = System.Array.Empty<AudioClip>();
+        [Range(0f, 1f)]
+        [SerializeField] private float musicVolume = 0.6f;
 
         [Header("Look")]
         [SerializeField] private TMP_FontAsset font;
@@ -157,6 +196,8 @@ namespace Game.Bonus
         private static readonly Color Red = new(1f, 0.3f, 0.25f, 1f);
         private static readonly Color Pale = new(1f, 1f, 1f, 1f);
         private const float CandyReach = 15f;
+        // Music this long or longer that's playing when the song starts (a radio) is muted meanwhile (as Paint Bees does).
+        private const float OtherMusicLength = 30f;
         private const float PopupSeconds = 0.9f;
         private const float PopupRise = 0.3f;
 
@@ -204,7 +245,17 @@ namespace Game.Bonus
         private int lastTick = -1;
         private float messageUntil = -1f;
         private float nextStill;
+        private float playedFor;
         private Transform head;
+        private AudioSource song;
+        private float nextHush;
+        private readonly List<AudioSource> hushed = new();
+        private float frenzyUntil = -1f;
+        // Heads up now as a frenzy's gold (worth Frenzy Candies, no miss, no new frenzy).
+        private readonly HashSet<WhackHead> frenzyGold = new();
+
+        /// <summary>A gold frenzy is on: every head that pops is gold.</summary>
+        public bool Frenzy => playing && Time.time < frenzyUntil;
 
         private void Awake()
         {
@@ -221,6 +272,8 @@ namespace Game.Bonus
         {
             if (Running == this) Running = null;
             MovementBack();
+            if (song != null) song.Stop();
+            Unhush();
             foreach (var p in popups) if (p.text != null) Destroy(p.text.gameObject);
             popups.Clear();
             // Gone before it was over (e.g. a game over): its things go with it.
@@ -294,13 +347,18 @@ namespace Game.Bonus
             messageUntil = Time.time + 1f;
             Play(goSound, made.transform.position, 1f);
             timeLeft = seconds;
+            playedFor = 0f;
             playing = true;
             nextPop = Time.time + 0.5f;
             KeepStill(true);
+            StartMusic();
             while (timeLeft > 0f)
             {
                 timeLeft -= Time.deltaTime;
+                playedFor += Time.deltaTime;
                 Tick();
+                // Music started meanwhile (a radio's next song) is muted too.
+                if (song != null && Time.unscaledTime >= nextHush) Hush();
                 made.ShowTime(timeLeft, timeLeft <= warnSeconds);
                 if (messageUntil > 0f && Time.time > messageUntil)
                 {
@@ -316,8 +374,11 @@ namespace Game.Bonus
             // 5. Time's up.
             playing = false;
             timeLeft = 0f;
+            frenzyUntil = -1f;
+            frenzyGold.Clear();
             made.ShowTime(0f, true);
             foreach (var h in made.Heads) if (h != null) h.Hide();
+            StartCoroutine(FadeMusic(1f));
             Play(timeUpSound, made.transform.position, 1f);
             made.ShowMessage("TIME'S UP!", Red);
             made.ShowRing(false);
@@ -401,11 +462,17 @@ namespace Game.Bonus
 
         private float Faster => Mathf.Pow(1f - fasterPerWhack, Combo);
 
-        private float PopEvery() => Mathf.Max(fastestPopEvery, startPopEvery * Faster);
+        // Whatever the combo: evenly quicker from GO to the end of the countdown (Speed Up By The End).
+        private float Later => 1f - speedUpByTheEnd * Mathf.Clamp01(playedFor / Mathf.Max(1f, seconds));
 
-        private float UpSeconds() => Mathf.Max(shortestUpSeconds, startUpSeconds * Faster);
+        // A gold frenzy makes them come Frenzy Pop Every as often.
+        private float PopEvery() => Mathf.Max(fastestPopEvery, startPopEvery * Faster * Later) * (Frenzy ? frenzyPopEvery : 1f);
 
-        private int AtOnce() => Mathf.Min(mostAtOnce, startAtOnce + Combo / Mathf.Max(1, oneMoreEvery));
+        private float UpSeconds() => Mathf.Max(shortestUpSeconds, startUpSeconds * Faster * Later);
+
+        // The last Warn Seconds (the ticking) bring Rush Heads more at once, a gold frenzy Frenzy Heads more.
+        private int AtOnce() => Mathf.Min(mostAtOnce, startAtOnce + Combo / Mathf.Max(1, oneMoreEvery)) +
+                                (timeLeft <= warnSeconds ? rushHeads : 0) + (Frenzy ? frenzyHeads : 0);
 
         private int UpNow()
         {
@@ -438,7 +505,13 @@ namespace Game.Bonus
                 WhackHead.Kind.Skull => upTimes.w,
                 _ => 1f,
             };
-            heads[index].Pop(kind, up, minWhackSpeed);
+            // A time head gives a whole number of seconds, Least to Most, and shows it ("+2s").
+            int extra = kind == WhackHead.Kind.Clock
+                ? Random.Range(Mathf.Min(leastClockSeconds, mostClockSeconds), Mathf.Max(leastClockSeconds, mostClockSeconds) + 1)
+                : 0;
+            heads[index].Pop(kind, up, minWhackSpeed, extra);
+            if (Frenzy) frenzyGold.Add(heads[index]);
+            else frenzyGold.Remove(heads[index]);
             popped++;
             Play(popSound, heads[index].transform.position, popVolume);
             return true;
@@ -446,6 +519,7 @@ namespace Game.Bonus
 
         private WhackHead.Kind PickKind()
         {
+            if (Frenzy) return WhackHead.Kind.Gold;
             if (popped < plainFirst) return WhackHead.Kind.Normal;
             float r = Random.value;
             if ((r -= rainbowChance) < 0f) return WhackHead.Kind.Rainbow;
@@ -478,11 +552,17 @@ namespace Game.Bonus
             switch (whacked.Current)
             {
                 case WhackHead.Kind.Gold:
-                    Candies += goldCandies;
+                {
+                    // A real gold head starts a frenzy (or starts it over); a frenzy's own gold heads give Frenzy Candies.
+                    bool fromFrenzy = frenzyGold.Remove(whacked);
+                    int got = fromFrenzy ? frenzyCandies : goldCandies;
+                    Candies += got;
                     Play(goldSound, top, 1f);
                     Sparkle(top);
-                    ShowPopup(top, "+" + goldCandies, Gold, 1.4f);
+                    ShowPopup(top, "+" + got, Gold, fromFrenzy ? 1.1f : 1.4f);
+                    if (!fromFrenzy) StartFrenzy();
                     break;
+                }
                 case WhackHead.Kind.Rainbow:
                     Candies += rainbowCandies;
                     Play(rainbowSound, top, 1f);
@@ -490,12 +570,17 @@ namespace Game.Bonus
                     ShowPopup(top, "+" + rainbowCandies, Color.HSVToRGB(Random.value, 0.6f, 1f), 1.8f);
                     break;
                 case WhackHead.Kind.Clock:
-                    timeLeft += clockSeconds;
+                {
+                    // Exactly the seconds its label showed.
+                    int extra = whacked.ClockSeconds;
+                    timeLeft += extra;
+                    StartCoroutine(MusicBack(extra));
                     Play(clockSound, top, 1f);
-                    ShowPopup(top, "+" + Mathf.RoundToInt(clockSeconds) + "s", Green, 1.4f);
-                    made.ShowMessage("+" + Mathf.RoundToInt(clockSeconds) + " SECONDS", Green);
+                    ShowPopup(top, "+" + extra + "s", Green, 1.4f);
+                    made.ShowMessage("+" + extra + (extra == 1 ? " SECOND" : " SECONDS"), Green);
                     messageUntil = Time.time + 1f;
                     break;
+                }
                 default:
                     Candies += normalCandies;
                     ShowPopup(top, "+" + normalCandies, Pale, 1f);
@@ -505,16 +590,35 @@ namespace Game.Bonus
             if (Combo % comboEvery == 0)
             {
                 Play(comboSound, top, 1f);
-                made.ShowMessage("COMBO " + Combo + "!", Gold);
-                messageUntil = Time.time + 1f;
+                // (The board keeps "GOLD FRENZY!" while one is on.)
+                if (!Frenzy)
+                {
+                    made.ShowMessage("COMBO " + Combo + "!", Gold);
+                    messageUntil = Time.time + 1f;
+                }
             }
             made.ShowCandies(Candies);
             made.ShowCombo(Combo);
         }
 
+        // A real gold head whacked: Frenzy Seconds of nothing but gold heads, coming faster and more at once; the first
+        // comes at once. The board says so and the bell rings (not again when a frenzy is started over).
+        private void StartFrenzy()
+        {
+            if (frenzySeconds <= 0f || !playing) return;
+            bool already = Frenzy;
+            frenzyUntil = Time.time + frenzySeconds;
+            nextPop = Mathf.Min(nextPop, Time.time + 0.05f);
+            made.ShowMessage("GOLD FRENZY!", Gold);
+            messageUntil = frenzyUntil;
+            if (!already) Play(frenzySound, made.transform.position, 1f);
+        }
+
         // A head went back down unwhacked: a miss (not a skull: leaving those is right). The combo and speed start over.
         private void OnWentDown(WhackHead head)
         {
+            // A frenzy's gold head missed costs nothing.
+            if (frenzyGold.Remove(head)) return;
             if (!playing || head.Current == WhackHead.Kind.Skull) return;
             Misses++;
             Combo = 0;
@@ -531,6 +635,87 @@ namespace Game.Bonus
             if (whole == lastTick || whole <= 0) return;
             lastTick = whole;
             Play(tickSound, made.transform.position, tickVolume);
+        }
+
+        // ---------- The song ----------
+
+        // One of Music at random, from where it ends just as the countdown does (like the jigsaw's songs; one shorter
+        // than the countdown loops from its start). Other music playing is muted meanwhile.
+        private void StartMusic()
+        {
+            var songs = new List<AudioClip>();
+            foreach (var clip in music) if (clip != null) songs.Add(clip);
+            if (songs.Count == 0) return;
+            var pick = songs[Random.Range(0, songs.Count)];
+            if (song == null)
+            {
+                song = gameObject.AddComponent<AudioSource>();
+                song.playOnAwake = false;
+                song.spatialBlend = 0f;
+                song.priority = 16;
+            }
+            song.clip = pick;
+            song.loop = pick.length < seconds;
+            song.volume = musicVolume;
+            Hush();
+            song.Play();
+            // (Set once playing: a streamed song ignores it before.)
+            if (!song.loop && pick.length - seconds > 0.05f) song.time = pick.length - seconds;
+        }
+
+        // A time head's extra seconds: the song goes back as many (with a quick dip), so it still ends with the countdown.
+        private IEnumerator MusicBack(float extra)
+        {
+            if (song == null || !song.isPlaying || song.loop || extra <= 0f) yield break;
+            const float down = 0.08f, up = 0.15f;
+            for (float t = 0f; t < down && song != null; t += Time.unscaledDeltaTime)
+            {
+                song.volume = musicVolume * (1f - t / down);
+                yield return null;
+            }
+            if (song == null) yield break;
+            song.time = Mathf.Max(0f, song.time - extra);
+            for (float t = 0f; t < up && song != null; t += Time.unscaledDeltaTime)
+            {
+                song.volume = musicVolume * (t / up);
+                yield return null;
+            }
+            if (song != null) song.volume = musicVolume;
+        }
+
+        // Time's up: whatever is left of the song fades out, and the other music comes back.
+        private IEnumerator FadeMusic(float fade)
+        {
+            if (song != null && song.isPlaying)
+            {
+                float from = song.volume;
+                for (float t = 0f; t < fade && song != null; t += Time.unscaledDeltaTime)
+                {
+                    song.volume = from * (1f - t / fade);
+                    yield return null;
+                }
+                if (song != null) song.Stop();
+            }
+            Unhush();
+        }
+
+        // Other music playing is muted (not paused: a radio's FSM would take a paused song for finished and play the next).
+        private void Hush()
+        {
+            nextHush = Time.unscaledTime + 1f;
+            foreach (var source in FindObjectsByType<AudioSource>(FindObjectsSortMode.None))
+            {
+                if (source == null || source == song || source.mute || !source.isPlaying || source.clip == null ||
+                    source.clip.length < OtherMusicLength) continue;
+                source.mute = true;
+                hushed.Add(source);
+            }
+        }
+
+        private void Unhush()
+        {
+            foreach (var source in hushed) if (source != null) source.mute = false;
+            hushed.Clear();
         }
 
         // ---------- The player stays put ----------

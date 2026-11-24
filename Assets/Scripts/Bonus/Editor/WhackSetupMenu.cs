@@ -16,7 +16,8 @@ namespace Game.EditorTools
     /// Tools > 429 Game > Bonus > Set Up Whack-a-Pumpkin (Special Stage Type 4, user 2026-11-23). Re-runnable. It builds:
     /// - Prefabs/Bonus/Whack/Whack_Machine: a STAND-IN machine until the user's model: a half-ring cabinet (PlayGround
     ///   wood and metal) round the stand spot, 20 holes (8 near at 0.6 m, 12 far at 0.94 m, tops at 0.82 m), a pumpkin
-    ///   head in each (looks: pumpkin_0, gold, rainbow, clock, Skull), two mallet posts, a scoreboard and a glowing ring.
+    ///   head in each (looks: pumpkin_0, gold, rainbow, time = green with its "+2s" label, Skull), two mallet posts, a
+    ///   scoreboard and a glowing ring.
     /// - Prefabs/Bonus/Whack/Whack_Hammer: the tool hammer without its breaking, damage and effects (a stand-in mallet).
     /// - Prefabs/Bonus/Whack/Whack_Round: the round (its tuned numbers are kept on a re-run; parts and sounds refilled).
     /// - The scene: GAMESTAGES "Bonus Round PR" (after the Playroom) plays Whack_Round instead of the slime game
@@ -393,9 +394,8 @@ namespace Game.EditorTools
             var holeMat = MakeMaterial("Whack_Hole_Mat", null, new Color(0.03f, 0.02f, 0.04f), true);
             var clockMat = MakeMaterial("Whack_Pumpkin_Clock_Mat", pumpkinMat, new Color(0.55f, 1f, 0.7f), false);
             var rainbowMat = MakeMaterial("Whack_Pumpkin_Rainbow_Mat", pumpkinMat, Color.white, false);
-            var faceMat = MakeMaterial("Whack_Clock_Face_Mat", null, new Color(1f, 0.97f, 0.85f), true);
-            var handMat = MakeMaterial("Whack_Clock_Hand_Mat", null, new Color(0.08f, 0.05f, 0.05f), true);
             var font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/Fonts/socake/Socake SDF.asset");
+            var labelMat = LabelMaterial(font);
             var pumpkin = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Bedroom_Stuffs/pumpkin_0.fbx");
             var skull = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Bedroom_Stuffs/Skull.fbx");
 
@@ -451,7 +451,7 @@ namespace Game.EditorTools
                     if (modelRoot != null && fromModel == null) log.Add("the model has no Hole_" + n.ToString("00") + ": the stand-in spot is used");
                     var at = fromModel ?? new Vector3(Mathf.Sin(a * Mathf.Deg2Rad) * radius, TableHeight, Mathf.Cos(a * Mathf.Deg2Rad) * radius);
                     heads.Add(BuildHead(holes, "Hole_" + n.ToString("00"), at, pumpkin, skull, pumpkinMat, gold, rainbowMat, clockMat,
-                                        faceMat, handMat, metal, holeMat, modelRoot == null));
+                                        font, labelMat, metal, holeMat, modelRoot == null));
                     n++;
                 }
             }
@@ -540,7 +540,7 @@ namespace Game.EditorTools
 
         private static WhackHead BuildHead(Transform parent, string name, Vector3 at, GameObject pumpkin, GameObject skull,
                                            Material pumpkinMat, Material gold, Material rainbow, Material clock,
-                                           Material face, Material hand, Material metal, Material hole, bool discs = true)
+                                           TMP_FontAsset font, Material labelMat, Material metal, Material hole, bool discs = true)
         {
             var root = Child(parent, name, at);
             // Facing the stand spot.
@@ -565,16 +565,26 @@ namespace Game.EditorTools
             looks[2] = Look(body, "Look_Rainbow", pumpkin, rainbow);
             looks[3] = Look(body, "Look_Clock", pumpkin, clock);
             looks[4] = Look(body, "Look_Skull", skull, null);
-            // The clock's face, on its front.
+            // The time head shows the seconds it gives ("+2s", set as it pops) on its front, instead of a clock (user,
+            // 2026-11-23). It turns to the player's eyes while up; here it faces the stand spot, tilted up to eye height.
+            TextMeshPro label = null;
             if (looks[3] != null)
             {
-                var c = looks[3].transform;
-                var dial = Primitive(PrimitiveType.Cylinder, c, "Clock_Face", new Vector3(0f, 0.075f, 0.072f), new Vector3(0.075f, 0.004f, 0.075f), face, false);
-                dial.localRotation = Quaternion.Euler(90f, 0f, 0f);
-                var h1 = Primitive(PrimitiveType.Cube, c, "Clock_Hand_Long", new Vector3(0f, 0.09f, 0.077f), new Vector3(0.006f, 0.03f, 0.004f), hand, false);
-                var h2 = Primitive(PrimitiveType.Cube, c, "Clock_Hand_Short", new Vector3(0.008f, 0.075f, 0.077f), new Vector3(0.02f, 0.006f, 0.004f), hand, false);
-                h1.name = "Clock_Hand_Long";
-                h2.name = "Clock_Hand_Short";
+                var go = new GameObject("Time_Label");
+                go.transform.SetParent(looks[3].transform, false);
+                go.transform.localPosition = new Vector3(0f, 0.035f, 0.1f);
+                go.transform.localRotation = Quaternion.LookRotation(new Vector3(0f, -0.7f, -0.75f).normalized, Vector3.up);
+                label = go.AddComponent<TextMeshPro>();
+                if (font != null) label.font = font;
+                if (labelMat != null) label.fontSharedMaterial = labelMat;
+                label.text = "+2s";
+                label.fontSize = 0.75f;
+                label.fontStyle = FontStyles.Bold;
+                label.color = new Color(1f, 0.97f, 0.8f);
+                label.alignment = TextAlignmentOptions.Center;
+                label.textWrappingMode = TextWrappingModes.NoWrap;
+                label.overflowMode = TextOverflowModes.Overflow;
+                label.rectTransform.sizeDelta = new Vector2(0.3f, 0.12f);
             }
 
             var zone = body.gameObject.AddComponent<SphereCollider>();
@@ -589,8 +599,33 @@ namespace Game.EditorTools
             for (int i = 0; i < looks.Length; i++) looksProp.GetArrayElementAtIndex(i).objectReferenceValue = looks[i];
             so.FindProperty("body").objectReferenceValue = body;
             so.FindProperty("hitZone").objectReferenceValue = zone;
+            so.FindProperty("clockLabel").objectReferenceValue = label;
             so.ApplyModifiedPropertiesWithoutUndo();
             return head;
+        }
+
+        // The time head's label material: the game's font (Socake) with a dark outline, so "+2s" reads on the green
+        // pumpkin and in the dark stage (a TextMeshPro material preset next to the other Whack materials).
+        private static Material LabelMaterial(TMP_FontAsset font)
+        {
+            if (font == null || font.material == null) return null;
+            const string name = "Whack_Time_Label_SDF_Mat";
+            string path = MaterialFolder + "/" + name + ".mat";
+            var m = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (m == null)
+            {
+                m = new Material(font.material);
+                AssetDatabase.CreateAsset(m, path);
+            }
+            else m.CopyPropertiesFromMaterial(font.material);
+            m.name = name;
+            m.SetFloat(ShaderUtilities.ID_FaceDilate, 0.1f);
+            m.SetFloat(ShaderUtilities.ID_OutlineWidth, 0.25f);
+            m.SetColor(ShaderUtilities.ID_OutlineColor, new Color(0.06f, 0.1f, 0.04f, 1f));
+            m.EnableKeyword(ShaderUtilities.Keyword_Outline);
+            ShaderUtilities.UpdateShaderRatios(m);
+            EditorUtility.SetDirty(m);
+            return m;
         }
 
         // The user's mallet model with the game's wood on it (Blender names Wood_Furniture / Wood_Furniture_Mat), or null.
@@ -743,12 +778,37 @@ namespace Game.EditorTools
             Ref("skullSound", Load<AudioClip>(Sfx + "laughing_pumpkin_1.wav"));
             Ref("missSound", Load<AudioClip>(Sfx + "Pumpkin_leuleu1.wav"));
             Ref("comboSound", Load<AudioClip>(Sfx + "fairy_yippy.wav"));
+            // The gold frenzy's start (user, 2026-11-23: "Golden frenzy"): the user's bell.
+            Ref("frenzySound", Load<AudioClip>(Sfx + "Clear,_resonant_bell_2.wav"));
             Ref("font", Load<TMP_FontAsset>("Assets/Fonts/socake/Socake SDF.asset"));
             Ref("sparkleEffect", Load<GameObject>("Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Hit_Blast.prefab"));
             Ref("winFireworks", Load<GameObject>("Assets/Prefabs/Light/Firework_Win.prefab"));
             var whacks = so.FindProperty("whackSounds");
             whacks.arraySize = 3;
             for (int i = 0; i < 3; i++) whacks.GetArrayElementAtIndex(i).objectReferenceValue = Load<AudioClip>(Sfx + "pumpkin_get_hit_" + (i + 1) + ".wav");
+
+            // The song (user, 2026-11-23): the jigsaw puzzle's two 90 s songs (streamed), one at random.
+            var songs = new[] { Load<AudioClip>(Sfx + "Puzzle_Countdown_90_1.wav"), Load<AudioClip>(Sfx + "Last_Piece_Standing_90_2.wav") }
+                .Where(c => c != null).ToArray();
+            if (songs.Length == 0) log.Add("MISSING the jigsaw's 90 s songs (music)");
+            var music = so.FindProperty("music");
+            music.arraySize = songs.Length;
+            for (int i = 0; i < songs.Length; i++) music.GetArrayElementAtIndex(i).objectReferenceValue = songs[i];
+
+            // 2026-11-23 (user: "time and gold pumpkin should be rare to come"): moved once from the first numbers. A gold
+            // head now gives 10 (was 5) so the candy total stays generous (user rule). Numbers tuned since are kept.
+            void Migrate(string field, float from, float to)
+            {
+                var p = so.FindProperty(field);
+                if (p == null) return;
+                if (p.propertyType == SerializedPropertyType.Float && Mathf.Abs(p.floatValue - from) < 0.0001f) p.floatValue = to;
+                else if (p.propertyType == SerializedPropertyType.Integer && p.intValue == Mathf.RoundToInt(from)) p.intValue = Mathf.RoundToInt(to);
+                else return;
+                log.Add($"{field} {from} -> {to}");
+            }
+            Migrate("goldChance", 0.1f, 0.04f);
+            Migrate("clockChance", 0.06f, 0.03f);
+            Migrate("goldCandies", 5f, 10f);
 
             // The candies: the nesting round's.
             var nesting = Load<GameObject>("Assets/Prefabs/Bases/Bonus_Round.prefab");

@@ -192,6 +192,8 @@ namespace Game.Weapons
                 {
                     // The chase pumpkins block blasts (only the player running into them hurts them).
                     if (Game.Combat.TouchOnlyDamage.Blocks(t, point)) return;
+                    // Things the player only hurts weakly (the rooftop's Pumpkin Tree): their blast is one weak hit.
+                    if (byPlayer && damage > 0f && Game.Combat.PlayerHitsWeak.TakeBlast(t)) return;
                     // Whole numbers, at least 1 (a blast with no damage only pushes).
                     if (damage > 0f) health.Value -= Mathf.Max(1f, Game.Combat.HitSettings.Whole(damage));
                 }

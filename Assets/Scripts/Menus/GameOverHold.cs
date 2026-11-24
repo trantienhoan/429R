@@ -9,7 +9,8 @@ namespace Game.Menus
     /// and the first room takes a few seconds more to come: about 9 s of empty sky. Now:
     /// - the black stays on until GAMESTAGES has left those states and After Restart seconds more (the room has come),
     ///   then fades out over Fade Seconds; never longer than Most Seconds in all;
-    /// - GAMESTAGES' Game Over wait (4.29 s, the black already hides it) is cut to Game Over Seconds.
+    /// - GAMESTAGES' Game Over wait (4.29 s, the black already hides it) is cut to Game Over Seconds;
+    /// - the HEE HEE words go after Words Seconds; only the black stays.
     /// Made by itself in any scene with GAMESTAGES; nothing to set up.
     /// </summary>
     public class GameOverHold : MonoBehaviour
@@ -19,6 +20,11 @@ namespace Game.Menus
         [SerializeField] private float fadeSeconds = 0.8f;
         [SerializeField] private float mostSeconds = 25f;
         [SerializeField] private float gameOverSeconds = 0.5f;
+        // 2026-11-23 user: "I feel annoyed by the HeeHee, make it better". The 20-13-49 record: the shaking HEE HEE
+        // stayed about 9.5 s per death (grey while dying, then red on the black). Now the words fade out after
+        // Words Seconds (0 = keep them on) and the black alone stays until the room has come.
+        [SerializeField] private float wordsSeconds = 2.5f;
+        [SerializeField] private float wordsFadeSeconds = 0.5f;
 
         private GameObject over;
         private CanvasGroup fade;
@@ -73,6 +79,7 @@ namespace Game.Menus
             if (!holding)
             {
                 if (over.activeSelf && !shown) { shown = true; shownAt = now; fade.alpha = 1f; }
+                if (shown && over.activeSelf) fade.alpha = WordsAlpha(now);
                 // Dying... took it off: keep it on through the restart.
                 if (shown && !over.activeSelf)
                 {
@@ -86,7 +93,6 @@ namespace Game.Menus
             }
 
             if (!over.activeSelf) over.SetActive(true);
-            SetBlack(fadeFrom < 0f ? 1f : fade.alpha);
             bool restartingNow = Restarting(state);
             if (restartingNow) restarted = true;
             if (restarted && !restartingNow && leftRestartAt < 0f) leftRestartAt = now;
@@ -94,16 +100,25 @@ namespace Game.Menus
             bool stray = !restarted && now - shownAt > 12f;
             if (fadeFrom < 0f && leftRestartAt >= 0f && now >= leftRestartAt + afterRestart) fadeFrom = now;
             if (fadeFrom < 0f && (stray || now - shownAt > mostSeconds)) fadeFrom = now;
-            if (fadeFrom < 0f) { fade.alpha = 1f; return; }
-            float endAt = fadeFrom;
-            fade.alpha = fadeSeconds > 0f ? Mathf.Clamp01(1f - (now - endAt) / fadeSeconds) : 0f;
-            SetBlack(fade.alpha);
-            if (fade.alpha > 0f) return;
+            // The black (and any words still up) fades out at the end.
+            float endAlpha = fadeFrom < 0f ? 1f
+                : fadeSeconds > 0f ? Mathf.Clamp01(1f - (now - fadeFrom) / fadeSeconds) : 0f;
+            SetBlack(endAlpha);
+            fade.alpha = Mathf.Min(endAlpha, WordsAlpha(now));
+            if (endAlpha > 0f) return;
             holding = false;
             fadeFrom = -1f;
             over.SetActive(false);
             fade.alpha = 1f;
             SetBlack(0f);
+        }
+
+        // The HEE HEE words: on for Words Seconds from the death, then faded out over Words Fade Seconds.
+        private float WordsAlpha(float now)
+        {
+            if (wordsSeconds <= 0f) return 1f;
+            float past = now - shownAt - wordsSeconds;
+            return wordsFadeSeconds > 0f ? Mathf.Clamp01(1f - past / wordsFadeSeconds) : (past < 0f ? 1f : 0f);
         }
 
         // Full black behind the HEE HEE (user, 2026-11-20: "the color still comes too soon after dying"): the

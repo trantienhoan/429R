@@ -220,6 +220,9 @@ namespace Game.EditorTools
                     notes.Add("puff " + AssetDatabase.GUIDToAssetPath(puffGuid));
                 }
                 so.ApplyModifiedPropertiesWithoutUndo();
+                // The wallpaper runs on across the wall joints (user, 2026-11-24).
+                if (KitWallpaperMenu.Apply(kit, KitWallpaperMenu.BedroomPaperMetres,
+                        AssetDatabase.LoadAssetAtPath<Material>(KitWallpaperMenu.BedroomPaper))) notes.Add("wallpaper runs on");
 
                 KitDoorFitMenu.Fit(root, notes);
                 PrefabUtility.SaveAsPrefabAsset(root, NewRoom);

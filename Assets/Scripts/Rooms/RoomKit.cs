@@ -10,10 +10,13 @@ namespace Game.Rooms
     /// How a kit room comes and goes (user, 2026-11-19: "the walls come, form a room ... then to go the next room, the
     /// rooftop and all the walls go, the floor still stays, and new walls and rooftop come"). It replaces the old rigged
     /// Bedroom_Base_Z's clips with the same look and timing:
-    /// - Come: every wall piece (with its posts, windows, door frames and door leaves) starts lying flat on the floor and
-    ///   tiny, then unfolds upright and grows, all together, with a little overshoot (the old clips' pop-up-book look);
-    ///   the roof comes last, flying in from the side and landing on the walls.
+    /// - Come: every wall piece (with its posts, windows, door frames and door leaves) starts lying flat on the floor with
+    ///   no height, then unfolds upright and grows up, all together, with a little overshoot (the old clips' pop-up-book
+    ///   look); the roof comes last, flying in from the side and landing on the walls. Pieces keep their length, so the
+    ///   pieces of a side move as one wall (user, 2026-11-24: grown from their own ends they parted and overlapped).
     /// - Go: the roof lifts off and flies away first; the walls hop, fold back down flat and shrink to nothing.
+    /// - Wallpaper: each piece's paper is shifted by where it stands along its side, so the picture runs on across the
+    ///   joints instead of starting again at every piece (Wallpaper Metres; 0 = off).
     /// - The floor is never touched. Walls don't block (colliders, NavMesh carving) while they move or are gone.
     /// - A set that isn't there is hidden, not switched off (the old room shrank it to nothing), waiting folded and tiny:
     ///   its doors' FSMs run from the start, so the secret door shuts as the player stands on the floor, as it always did.
@@ -77,7 +80,17 @@ namespace Game.Rooms
         [Min(0)]
         [SerializeField] private int maxPuffs = 6;
 
+        [Header("Wallpaper")]
+        [Tooltip("Metres of wall the wallpaper picture spans across in the kit's UVs (bedroom kit 6, living room kit 3). " +
+                 "Each wall piece's paper is shifted by where it stands along its side, so the picture runs on across " +
+                 "the joints instead of starting again at every piece. 0 = off.")]
+        [Min(0f)]
+        [SerializeField] private float wallpaperMetres;
+        [Tooltip("The wallpaper materials that run on across the joints; other slots (wood, trim) are left alone.")]
+        [SerializeField] private Material[] wallpapers = System.Array.Empty<Material>();
+
         private const float Tiny = 0.001f;
+        private static readonly int BaseMapSt = Shader.PropertyToID("_BaseMap_ST");
 
         private class Part
         {
@@ -125,6 +138,7 @@ namespace Game.Rooms
                 foreach (var c in set.root.GetComponentsInChildren<Collider>(true)) s.colliders.Add((c, c.enabled));
                 foreach (var o in set.root.GetComponentsInChildren<NavMeshObstacle>(true)) s.obstacles.Add((o, o.enabled));
                 states[set.name] = s;
+                RunWallpaperOn(s);
                 // START: the floor only; the sets wait folded and tiny, as a come starts.
                 Pose(s, 0f, true);
                 Show(s, false, false);
@@ -231,14 +245,43 @@ namespace Game.Rooms
         }
 
         // A wall piece folded outward about its foot (its pivot is the inner face's bottom edge; its local +Z faces the
-        // room, so outward is a turn of the top towards -Z about the local X axis). A floor part ("Floor...": an arm's
-        // floor that comes with its walls) only grows and shrinks. A part broken away in the game is skipped.
+        // room, so outward is a turn of the top towards -Z about the local X axis). It grows in height and thickness
+        // only: the pieces of a side share that foot line, so they fold and grow as one wall (grown along their length,
+        // each grew from its own end and they parted, then overlapped at the overshoot). A floor part ("Floor...": an
+        // arm's floor that comes with its walls) only grows and shrinks. A part broken away in the game is skipped.
         private static void Wall(Part w, float angle, float size, float lift)
         {
             if (w.t == null) return;
             w.t.localPosition = w.pos + (w.flat ? Vector3.zero : Vector3.up * lift);
             w.t.localRotation = w.flat ? w.rot : w.rot * Quaternion.AngleAxis(-angle, Vector3.right);
-            w.t.localScale = w.scale * size;
+            w.t.localScale = w.flat ? w.scale * size : new Vector3(w.scale.x, w.scale.y * size, w.scale.z * size);
+        }
+
+        // A kit piece's wallpaper UVs start the picture at its own pivot (u = -local x / Wallpaper Metres), so each piece
+        // started it again. Shifting each piece by where its pivot stands along its side (in the set's space) makes the
+        // picture run on across the joints of a side; the corners are covered by the posts.
+        private void RunWallpaperOn(SetState s)
+        {
+            if (wallpaperMetres <= 0f || wallpapers == null || wallpapers.Length == 0) return;
+            MaterialPropertyBlock block = null;
+            foreach (var w in s.walls)
+            {
+                if (w.flat || w.t == null) continue;
+                var r = w.t.GetComponent<Renderer>();
+                if (r == null) continue;
+                float along = Vector3.Dot(w.pos, w.rot * Vector3.right);
+                var materials = r.sharedMaterials;
+                for (int i = 0; i < materials.Length; i++)
+                {
+                    var m = materials[i];
+                    if (m == null || System.Array.IndexOf(wallpapers, m) < 0 || !m.HasProperty(BaseMapSt)) continue;
+                    var st = m.GetVector(BaseMapSt);
+                    block ??= new MaterialPropertyBlock();
+                    r.GetPropertyBlock(block, i);
+                    block.SetVector(BaseMapSt, new Vector4(st.x, st.y, st.z - along / wallpaperMetres * st.x, st.w));
+                    r.SetPropertyBlock(block, i);
+                }
+            }
         }
 
         // The roof flying in (q 0 -> 1 = away -> landed) or off (q 0 -> 1 = on -> away), on an arc, turning.
@@ -254,12 +297,13 @@ namespace Game.Rooms
             r.t.localScale = r.scale * size;
         }
 
-        // Shows or hides a set's looks; keepFloors leaves its floor parts as they are (they stay after a go).
+        // Shows or hides a set's looks; keepFloors leaves its floor parts showing when it hides (they stay after a go).
+        // Showing always shows them (user, 2026-11-24: the playroom arms' floors never showed, so the arms were a void).
         private static void Show(SetState s, bool on, bool keepFloors)
         {
             s.shown = on;
             foreach (var (r, was, floor) in s.renderers)
-                if (r != null && !(keepFloors && floor)) r.enabled = on && was;
+                if (r != null && !(keepFloors && floor && !on)) r.enabled = on && was;
         }
 
         // The walls' colliders on early (mostly up by then); the roof's and the NavMesh blocks wait for Block.
