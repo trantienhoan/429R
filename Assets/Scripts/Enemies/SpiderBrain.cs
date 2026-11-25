@@ -1404,6 +1404,32 @@ namespace Game.Enemies
             makingWhite = false;
             ForceKamikaze = false;
             ForceNextChaosRebirth = false;
+            Started = null;
+        }
+
+        /// <summary>
+        /// An enemy has started: its size and health are set and it is about to appear. Story Boss Escape uses it to
+        /// bring a room's mini boss up out of the hole it dug, carrying its seed piece. Moving it here is safe.
+        /// </summary>
+        public static event Action<SpiderBrain> Started;
+
+        // ---- For a look-only copy (Story Boss Escape: the room's mini boss running off before its fight) ----
+        public Transform LookModels => models;
+        public Animator LookAnimator => animator;
+        public string LookRun => runAnimation;
+        public float LookRunSpeed => runAnimationSpeed;
+        public string LookAppear => appearAnimation;
+        public string LookAlert => alertAnimation;
+        public AudioClip[] LookNoticeSounds => noticeSounds;
+
+        /// <summary>Its middle size for its Size setting (a Random one counts as Normal).</summary>
+        public float LookScale
+        {
+            get
+            {
+                var k = size == SizeClass.Boss ? boss : size == SizeClass.Small ? small : normal;
+                return 0.5f * (k.scale.x + Mathf.Max(k.scale.x, k.scale.y));
+            }
         }
 
         private void Awake()
@@ -1456,6 +1482,8 @@ namespace Game.Enemies
             }
             // It came back as a chaos one (a mini boss beaten without it hurting the player): after its health is set.
             if (chaosPending) BecomeChaos();
+            // Story Boss Escape may move it to its hole here (before its home is taken).
+            Started?.Invoke(this);
 
             home = transform.position;
             bornAt = Time.time;

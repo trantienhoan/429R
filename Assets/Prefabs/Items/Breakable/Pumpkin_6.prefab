@@ -601,6 +601,7 @@ GameObject:
   - component: {fileID: 7951501261130004134}
   - component: {fileID: 3511384846509869325}
   - component: {fileID: 4976639820628702567}
+  - component: {fileID: 4401886415437519666}
   m_Layer: 0
   m_Name: Pumpkin_6
   m_TagString: Weapon
@@ -4025,6 +4026,9 @@ MonoBehaviour:
   startDelay: 3.2
   spinWhileRunning: 720
   fleeRange: 1.7
+  seenRangeTimes: 2
+  unseenRangeTimes: 0.75
+  viewAngle: 35
   calmRange: 3
   faceRange: 1
   turnAwayAfterRun: 1
@@ -4166,6 +4170,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d50fe9783cd54c42a63d942aeab00aa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.HeldStill
+--- !u!114 &4401886415437519666
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8690403555129543112}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a49a47c5c2db108438930d30f3c5d4a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Story.StoryPumpkinGlow
 --- !u!1 &9121067748849260547
 GameObject:
   m_ObjectHideFlags: 0

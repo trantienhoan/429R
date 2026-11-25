@@ -303,6 +303,11 @@ namespace Game.PlayGround
         /// <summary>A runner laughed from hiding (the story's laugh that calls something: Story Laugh Chill hears it).</summary>
         public static event System.Action<RunAwayPumpkin> Laughed;
 
+        /// <summary>Where a runner last broke, and when (Time.time; -1 = none yet this Play). Story Boss Escape: the
+        /// room's mini boss pops out there.</summary>
+        public static Vector3 LastBrokeAt { get; private set; }
+        public static float LastBrokeTime { get; private set; } = -1f;
+
         /// <summary>Whether its laugh is still sounding (stops at once when the player sees it).</summary>
         public bool IsLaughing => Time.time < laughingUntil;
 
@@ -379,6 +384,8 @@ namespace Game.PlayGround
             {
                 // Broken: its FSM plays the crack and the drop; it bursts into guts and its extra candies.
                 bool caught = mood == Mood.Tired;
+                LastBrokeAt = body != null ? body.position : transform.position;
+                LastBrokeTime = Time.time;
                 Hurt(lastHealth != float.MaxValue ? lastHealth - healthNow : 1f, true);
                 Burst(caught);
                 mood = Mood.Done;
@@ -1146,6 +1153,7 @@ namespace Game.PlayGround
         {
             Crowd.Clear();
             crowdAt = -10f;
+            LastBrokeTime = -1f;
         }
 
         private static void RefreshCrowd(string[] names)

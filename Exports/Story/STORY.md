@@ -104,3 +104,52 @@ Parts 1-5 tell WHAT happens. Next, the game must show WHY. Nothing is decided ye
 **Still open from parts 1-5:**
 - Headset test.
 - Recordings: "please find me" (a stand-in plays for now), "Fight" (empty slot), "you protected the Green" (empty slot), and the girl's thank-you.
+
+## The WHY: the user's answers (2026-11-25, their words, unedited)
+
+> I want the answers to be in the game, in the furnitures, in the decorations of the rooms. We Fight because it feels
+> right, protecting the helpless, fighting off the evil. As the game goes on, we know that the Green Fairy is kidnapped
+> by the evil pumpkin, who want to keep Power of the Green Fairy for itself, with the Green Power, the evil pumpkin can
+> keep getting bigger and bigger and gain more power for itself. With the influent of the evil pumpkin's power getting
+> stronger, it make normal spiders and cockroaches and mosquitoes (yes not bee, mosquitoes, this is going to need some
+> re-modeling) in the house evolve to something pumpkin related, make them look part pumpkin. All the rooms we get moved
+> to are the lair of those evil pumpkins, there are small one laughing pumpkin, who only get a small piece of the Green
+> Seed, mostly harmless and have to run and hide until they can fully absorb the power of the Green and turn them self
+> to a giant pumpkin monster (we need to change our game a bit, right now when we break the laughing pumpkin then the
+> room's walls sink or fall and bugs come out, now I want that when the laughing pumpkin of that room break, the
+> miniboss of that room will pop out of that laughing pumpkin and quickly run away, dig to the ground even, then
+> EnemyManager starts normally and the flow is kept the same). And yeah, I want to change the room concept somehow to
+> make it look more like pumpkin's room, bugs infested also.
+
+**In short:**
+- We fight: it feels right; protect the helpless, fight off the evil.
+- The evil pumpkin kidnapped the Green Fairy to keep her Green Power; with it, it grows bigger and stronger.
+- Its power makes the house's spiders, cockroaches and MOSQUITOES (not bees: re-model) turn part pumpkin.
+- Every room is a lair of the evil pumpkins. A room's small laughing pumpkin holds a small piece of the Green Seed; it
+  runs and hides until it has absorbed it, then it turns into a giant pumpkin monster (= the runners' existing 300/360 s
+  "Wait and Transform").
+- Game change: when a room's laughing pumpkin breaks, that room's mini boss pops out of it, runs away and digs into the
+  ground; then the room goes on as now (walls drop, EnemyManager, boss at the end).
+- Rooms: the answers live in the furniture and decorations; rooms look like pumpkin lairs, bug infested.
+
+**Rooms, their laughing pumpkin and mini boss (read from GAMESTAGES + the scene, 2026-11-25):**
+
+| Room | Furnish states (wait for) | Wall drop + manager | Mini boss |
+|---|---|---|---|
+| Storage | Mini Stuffs / Mini Stuffs Chaos / Mini Pumpkins (`Pumpkin_1`) | Mini Enemy, EM0 | Spider_Boss |
+| Bedroom | BR_Stuffs / BR_Chaos / BR_Pumpkins (`Pumpkin_2`) | Enemy1 - Wait, EM1 | Spider_Boss_PumpkinButt |
+| Living room | LR - Stuffs / LR - Chaos (`Pumpkin_4`) | Enemy2 - Wait, EM2 | Cockroach_Boss |
+| Playroom (Jenga) | Jenga Tower / Jenga Tower 2 (`Pumpkin_6`) | Enemy 3 Stuffs, EM3 | Cockroach_Boss_PumpkinButt |
+
+Status 2026-11-25: answers recorded. Built first (user's pick): **the boss escape** (the mini boss pops out of the broken laughing pumpkin with its seed piece, runs off and digs in; it climbs back out of that hole for the fight). Details in Assets/NOTES_Next_Time.md "BOSS ESCAPE". Then built **the laughing pumpkin's green glow** (its candle-lit eyes and grin turn green and the seed's glow seeps out around it, faint at first and full when it turns giant, flaring with each laugh). Next: the rooms as lairs (concept art first), then mosquitoes.
+
+
+## The start rooftop three ways (user 2026-11-25, BUILT)
+
+User's plan: the first time (a new save) the rooftop path is barely visible, no guide Knight, only the Fairy's light from
+afar and her calls for help; near her the pumpkin drops from the sky and laughs, and the rooftop lights up. After that, if
+the player has not beaten the final boss, the Fairy is missing, only the empty purple jail; the path lights up slowly and
+the guide Knight stands there to give power; near the jail the pumpkin drops as normal. Once the boss is beaten, the Fairy
+is there again with no jail lock: touch her and pick Gate 1, 2, 3 (seeds as now, she opens the way) or the first chest's
+seed (no pumpkin; the game starts). Old saves with progress count as having met her. How it is built:
+`Assets/NOTES_Next_Time.md`, "STORY START".

@@ -64,8 +64,11 @@ namespace Game.Story
         /// <summary>Her calls so far (for tests).</summary>
         public int Calls { get; private set; }
 
-        /// <summary>Her glow now, against normal (for tests).</summary>
+        /// <summary>Her glow now, against normal (for tests; Story Dark Walk follows it with her light).</summary>
         public float GlowNow { get; private set; } = 1f;
+
+        /// <summary>Her weak glow between breaths, against normal (Glow).</summary>
+        public float BaseGlow => glow;
 
         private void Start()
         {
@@ -91,6 +94,19 @@ namespace Game.Story
             }
             block = new MaterialPropertyBlock();
             nextStutter = Time.time + Random.Range(stutterEvery.x, stutterEvery.y);
+        }
+
+        /// <summary>
+        /// She is free (the player has beaten the final boss, user 2026-11-25): her full glow and her voice's reach back,
+        /// no more weak breathing.
+        /// </summary>
+        public void Free()
+        {
+            weak = false;
+            if (body != null) body.SetPropertyBlock(null);
+            if (voice != null && fullReach > 0f) voice.minDistance = fullReach;
+            GlowNow = 1f;
+            enabled = false;
         }
 
         private void Update()

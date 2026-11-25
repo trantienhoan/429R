@@ -72,7 +72,7 @@ namespace Game.Story
 
         // A seed prefab that only shows its glow: its FSM would give gear and could be taken, so it never starts; its
         // spawn smoke and shadow stay off.
-        private static void OnlyShows(GameObject go, string[] glowParts)
+        internal static void OnlyShows(GameObject go, string[] glowParts)
         {
             foreach (var particles in go.GetComponentsInChildren<ParticleSystem>(true))
             {

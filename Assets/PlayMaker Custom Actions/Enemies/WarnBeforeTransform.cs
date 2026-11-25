@@ -61,6 +61,7 @@ namespace HutongGames.PlayMaker.Actions
         private float elapsed;
         private float nextLaugh;
         private float nextTremble;
+        private Game.Story.StoryPumpkinGlow glow;
 
         public override void Reset()
         {
@@ -97,6 +98,8 @@ namespace HutongGames.PlayMaker.Actions
                     break;
                 }
             }
+            // Its green glow (the piece of the Green Seed it is taking in) follows this countdown.
+            glow = pumpkin != null ? pumpkin.GetComponent<Game.Story.StoryPumpkinGlow>() : null;
             if (pumpkin == null || total <= 0f || warnLast.Value <= 0f) return;
 
             jiggle = pumpkin.GetComponentInChildren<Jiggle>();
@@ -106,8 +109,10 @@ namespace HutongGames.PlayMaker.Actions
 
         public override void OnUpdate()
         {
-            if (pumpkin == null || total <= 0f || warnLast.Value <= 0f) return;
+            if (pumpkin == null || total <= 0f) return;
             elapsed += realTime ? Time.unscaledDeltaTime : Time.deltaTime;
+            if (glow != null) glow.Countdown(elapsed / total, total - elapsed);
+            if (warnLast.Value <= 0f) return;
             float left = total - elapsed;
             if (left > warnLast.Value || left <= 0f) return;
 

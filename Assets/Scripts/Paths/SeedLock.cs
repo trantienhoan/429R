@@ -137,6 +137,9 @@ namespace Game.Paths
 
         public bool IsOpen => opened;
 
+        /// <summary>The GAMESTAGES bool it turns on when paid for (e.g. Cube_1).</summary>
+        public string CubeBool => cubeBool;
+
         private void Awake()
         {
             colliders = GetComponentsInChildren<Collider>();
