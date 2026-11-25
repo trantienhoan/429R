@@ -6887,7 +6887,7 @@ PrefabInstance:
         type: 3}
       propertyPath: fsm.states.Array.data[0].actionData.fsmObjectParams.Array.data[0].value
       value: 
-      objectReference: {fileID: 8300000, guid: 2a7bd8da8a39cdb40ba90aefa1fff9c8, type: 3}
+      objectReference: {fileID: 8300000, guid: 5ed8090a8bdfecb4293c7b675a7259f0, type: 3}
     - target: {fileID: 8349689458179680509, guid: 0030dcf570a4b2f469bf29eb41f204cb,
         type: 3}
       propertyPath: fsm.states.Array.data[0].actionData.fsmOwnerDefaultParams.Array.data[0].gameObject.value
@@ -82192,6 +82192,9 @@ MonoBehaviour:
   volumeUpButton: {fileID: 1376027157}
   volumeText: {fileID: 1824092131}
   volumeTick: {fileID: 8300000, guid: b7c0d58b264c8b845adf4b98d5536932, type: 3}
+  openSound: {fileID: 8300000, guid: 08c2418187e3fe04ebc35ec69080804c, type: 3}
+  closeSound: {fileID: 8300000, guid: 22833d42de74eaf46b7616f6f627ccf7, type: 3}
+  menuSoundVolume: 0.8
   armSwing: {fileID: 827096605}
   playerHeight: {fileID: 8317466445825997484}
   resetHold: {fileID: 1005472701}
@@ -116260,8 +116263,9 @@ MonoBehaviour:
   beatsPerSecondNearZero: 2.2
   healPop: 0.2
   healPopSeconds: 0.3
-  heartbeatSound: {fileID: 0}
+  heartbeatSound: {fileID: 8300000, guid: 13a2619e4dc8b6a43b09199fdcaa3beb, type: 3}
   heartbeatVolume: {x: 0.35, y: 0.8}
+  heartbeatClipBeat: 0.95
   dubShare: 0.6
   alwaysShow: 0
   showSeconds: 3
@@ -121604,7 +121608,7 @@ PrefabInstance:
         type: 3}
       propertyPath: fsm.states.Array.data[0].actionData.fsmObjectParams.Array.data[0].value
       value: 
-      objectReference: {fileID: 8300000, guid: 2a7bd8da8a39cdb40ba90aefa1fff9c8, type: 3}
+      objectReference: {fileID: 8300000, guid: 5ed8090a8bdfecb4293c7b675a7259f0, type: 3}
     - target: {fileID: 8349689458179680509, guid: 0030dcf570a4b2f469bf29eb41f204cb,
         type: 3}
       propertyPath: fsm.states.Array.data[0].actionData.fsmOwnerDefaultParams.Array.data[0].gameObject.value
@@ -139388,7 +139392,7 @@ PrefabInstance:
         type: 3}
       propertyPath: fsm.states.Array.data[0].actionData.fsmObjectParams.Array.data[0].value
       value: 
-      objectReference: {fileID: 8300000, guid: 2a7bd8da8a39cdb40ba90aefa1fff9c8, type: 3}
+      objectReference: {fileID: 8300000, guid: a35a36f4921ea934abea75a33427d246, type: 3}
     - target: {fileID: 8349689458179680509, guid: 0030dcf570a4b2f469bf29eb41f204cb,
         type: 3}
       propertyPath: fsm.states.Array.data[0].actionData.fsmOwnerDefaultParams.Array.data[0].gameObject.value
@@ -250428,7 +250432,7 @@ PrefabInstance:
         type: 3}
       propertyPath: fsm.states.Array.data[0].actionData.fsmObjectParams.Array.data[0].value
       value: 
-      objectReference: {fileID: 8300000, guid: 2a7bd8da8a39cdb40ba90aefa1fff9c8, type: 3}
+      objectReference: {fileID: 8300000, guid: a35a36f4921ea934abea75a33427d246, type: 3}
     - target: {fileID: 8349689458179680509, guid: 0030dcf570a4b2f469bf29eb41f204cb,
         type: 3}
       propertyPath: fsm.states.Array.data[0].actionData.fsmOwnerDefaultParams.Array.data[0].gameObject.value
@@ -253148,6 +253152,8 @@ MonoBehaviour:
   mostGrowth: 3
   pageSound: {fileID: 8300000, guid: c00193f69f150124cbf3f5671b986b63, type: 3}
   pageVolume: 0.6
+  showSound: {fileID: 8300000, guid: 9be48ffb00035614f92979d9561412a5, type: 3}
+  showVolume: 0.7
 --- !u!4 &2083182417
 Transform:
   m_ObjectHideFlags: 0
@@ -272193,6 +272199,7 @@ GameObject:
   - component: {fileID: 8317466445825997495}
   - component: {fileID: 8317466445825997496}
   - component: {fileID: 8317466445825997497}
+  - component: {fileID: 8317466445825997498}
   m_Layer: 3
   m_Name: XR Origin
   m_TagString: Player
@@ -275323,7 +275330,7 @@ MonoBehaviour:
   - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}
   - {fileID: 431296081563789977, guid: 7d85674d137626445accce4cef7fe159, type: 3}
   boongBlastEffectSize: 0.3
-  boongBlastSound: {fileID: 8300000, guid: 0c38739de2059ac40ab5b60a42fd1c5f, type: 3}
+  boongBlastSound: {fileID: 8300000, guid: 67ab9e4b9cd6b6b47818c00a1d118b84, type: 3}
   boongBlastVolume: 0.45
   boongBlastRadius: 0.6
   boongBlastDamage: 1
@@ -276749,6 +276756,31 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Locomotion.HeldPassThrough
   pushStrength: 4
   strainWear: 0.5
+--- !u!114 &8317466445825997498
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4959017627811525935}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80a70a2c85bba244c9ccdd9763b5d616, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.PlayerHurtSounds
+  healthFsm: PlayerHealth
+  healthVariable: PlayerHealth
+  lightHurts:
+  - {fileID: 8300000, guid: f1f3c414b16eb5e4b86db3f848d703f0, type: 3}
+  - {fileID: 8300000, guid: d6a9af70db827e240862d4fd40d885ce, type: 3}
+  - {fileID: 8300000, guid: 51f8526ed943d2b4896c6181c20a0719, type: 3}
+  heavyHurts:
+  - {fileID: 8300000, guid: 86d3771bf4ecb3e42a4490da6df82d12, type: 3}
+  - {fileID: 8300000, guid: 355deaea70708b7409635ba8f9523cb5, type: 3}
+  heavyFrom: 15
+  lightVolume: 0.8
+  heavyVolume: 1
+  minGap: 0.15
 --- !u!4 &8385630121836801222
 Transform:
   m_ObjectHideFlags: 0
@@ -277317,7 +277349,7 @@ MonoBehaviour:
   - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}
   - {fileID: 431296081563789977, guid: 7d85674d137626445accce4cef7fe159, type: 3}
   boongBlastEffectSize: 0.3
-  boongBlastSound: {fileID: 8300000, guid: 0c38739de2059ac40ab5b60a42fd1c5f, type: 3}
+  boongBlastSound: {fileID: 8300000, guid: 67ab9e4b9cd6b6b47818c00a1d118b84, type: 3}
   boongBlastVolume: 0.45
   boongBlastRadius: 0.6
   boongBlastDamage: 1

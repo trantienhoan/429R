@@ -96,6 +96,10 @@ namespace Game.Menus
         [SerializeField] private AudioClip pageSound;
         [Range(0f, 1f)]
         [SerializeField] private float pageVolume = 0.6f;
+        [Tooltip("Played as it pops up and the game stops (ui_notice_pop). Empty = none.")]
+        [SerializeField] private AudioClip showSound;
+        [Range(0f, 1f)]
+        [SerializeField] private float showVolume = 0.7f;
 
         private readonly List<Page> pages = new();
         // The last page's line telling how to close it: Last Page Line, or the one Show was given.
@@ -167,6 +171,8 @@ namespace Game.Menus
         public void Show(IList<Page> newPages, string lastLine = null)
         {
             if (panel == null || newPages == null || newPages.Count == 0) return;
+            // Its pop, only when it comes up (not when new pages replace the ones showing).
+            if (!showing && sound != null && showSound != null) sound.PlayOneShot(showSound, showVolume);
             closeLine = string.IsNullOrEmpty(lastLine) ? lastPageLine : lastLine;
             pages.Clear();
             pages.AddRange(newPages);

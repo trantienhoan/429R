@@ -22,6 +22,10 @@ namespace Game.Story
     ///   a gate. With gates: small dots under the card show which choice of how many is up.
     /// The pictures are in Resources/FairyBoard (made by Exports/Story/make_fairy_board_pictures.py): Path, Gate_1-3,
     /// Stone, Arrow. Swap a PNG to change a card. Added by Story Start (Dress) when she is made free.
+    /// Since 2026-11-25 (user): pointing at her and clicking from close by (Story Fairy Settings' Click Reach) also brings
+    /// the board up; the card can be pulled sideways to change it (Story Fairy Card Drag); she looks at the card while
+    /// the board is up and at the player when it closes; a pick = her send-off line, her teleport (Story Fairy Acts), and
+    /// the seed is left behind (The Path) or the gate starts.
     /// </summary>
     public class StoryFairyBoard : MonoBehaviour
     {
@@ -89,21 +93,81 @@ namespace Game.Story
         private bool seedGiven;
         private bool placed;
         private int shownMask = -1;
+        private StoryFairyActs acts;
+        private StoryFairyCardDrag cardDrag;
+        private RectTransform touchTarget;
+        private bool picked;
+
+        private void Awake()
+        {
+            acts = GetComponent<StoryFairyActs>();
+            if (acts == null) acts = gameObject.AddComponent<StoryFairyActs>();
+        }
 
         private void Update()
         {
             if (head == null && Camera.main != null) head = Camera.main.transform;
             if (head == null) return;
             if (hands == null) hands = FindHands();
+            if (acts.Gone || picked)
+            {
+                if (board != null) board.gameObject.SetActive(false);
+                if (touchTarget != null) touchTarget.gameObject.SetActive(false);
+                return;
+            }
             var middle = Middle();
             if (Touching(middle)) Show();
             if (board != null && board.gameObject.activeSelf)
             {
                 var flat = head.position - middle;
                 flat.y = 0f;
-                if (flat.magnitude > hideDistance) board.gameObject.SetActive(false);
-                Refresh();
+                if (flat.magnitude > hideDistance) Hide();
+                else Refresh();
             }
+            UpdateTouchTarget(middle);
+        }
+
+        // The board goes: she goes back to her idle and looks at the player.
+        private void Hide()
+        {
+            board.gameObject.SetActive(false);
+            acts.LookTarget = null;
+            acts.PlayIdle();
+        }
+
+        // An invisible button on her (the same pointer as the board's buttons): pointing at her and clicking from close by
+        // brings the board up. Only there while the board is down and the player is near.
+        private void UpdateTouchTarget(Vector3 middle)
+        {
+            if (touchTarget == null) BuildTouchTarget();
+            var flat = head.position - middle;
+            flat.y = 0f;
+            bool on = (board == null || !board.gameObject.activeSelf) && flat.magnitude < StoryFairySettings.Instance.ClickReach;
+            if (touchTarget.gameObject.activeSelf != on) touchTarget.gameObject.SetActive(on);
+            if (!on) return;
+            touchTarget.position = middle;
+            var away = middle - head.position;
+            if (away.sqrMagnitude > 0.0001f) touchTarget.rotation = Quaternion.LookRotation(away, Vector3.up);
+        }
+
+        private void BuildTouchTarget()
+        {
+            var root = new GameObject("Fairy Touch", typeof(RectTransform), typeof(Canvas), typeof(TrackedDeviceGraphicRaycaster));
+            int uiLayer = LayerMask.NameToLayer("UI");
+            if (uiLayer >= 0) root.layer = uiLayer;
+            touchTarget = (RectTransform)root.transform;
+            // About 0.5 m wide and 0.8 m tall round her (she is small, and flies up and down a little).
+            touchTarget.sizeDelta = new Vector2(0.5f, 0.8f) / boardScale;
+            touchTarget.pivot = new Vector2(0.5f, 0.5f);
+            touchTarget.localScale = Vector3.one * boardScale;
+            root.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
+            var hit = MakeImage("Hit", touchTarget, new Color(1f, 1f, 1f, 0f));
+            hit.raycastTarget = true;
+            Fill(hit.rectTransform, 0f);
+            var button = hit.gameObject.AddComponent<Button>();
+            button.transition = Selectable.Transition.None;
+            button.onClick.AddListener(Show);
+            root.SetActive(false);
         }
 
         private void LateUpdate()
@@ -122,6 +186,7 @@ namespace Game.Story
         private void OnDestroy()
         {
             if (board != null) Destroy(board.gameObject);
+            if (touchTarget != null) Destroy(touchTarget.gameObject);
         }
 
         private bool Touching(Vector3 middle)
@@ -135,24 +200,7 @@ namespace Game.Story
             return false;
         }
 
-        // Where she really is: her skinned body's bounds, kept up to date (the stored bounds stay where the model was
-        // made, about 1 m from where her animation flies her, so the board and hand touches missed her).
-        private Vector3 Middle()
-        {
-            bool any = false;
-            var bounds = new Bounds(transform.position, Vector3.zero);
-            foreach (Transform child in transform)
-            {
-                if (!child.name.StartsWith("Fairy_Girl")) continue;
-                foreach (var look in child.GetComponentsInChildren<Renderer>())
-                {
-                    if (look is SkinnedMeshRenderer skin && !skin.updateWhenOffscreen) skin.updateWhenOffscreen = true;
-                    if (!any) { bounds = look.bounds; any = true; }
-                    else bounds.Encapsulate(look.bounds);
-                }
-            }
-            return any ? bounds.center : transform.position + Vector3.up * 0.3f;
-        }
+        private Vector3 Middle() => acts.Middle();
 
         private static Transform[] FindHands()
         {
@@ -167,9 +215,13 @@ namespace Game.Story
 
         private void Show()
         {
+            if (acts.Gone || picked) return;
             if (board == null) Build();
             if (board.gameObject.activeSelf) return;
             board.gameObject.SetActive(true);
+            // She says hello and looks at the card (and follows it while it is pulled).
+            acts.LookTarget = cardPicture.transform;
+            acts.Greet();
             placed = false;
             shownMask = -1;
             showing = 0;
@@ -240,25 +292,37 @@ namespace Game.Story
 
         private void OnPick(int index)
         {
+            if (picked || (cardDrag != null && cardDrag.WasPulled)) return;
             if (index == 0)
             {
-                GiveSeed();
+                // She says her send-off line, teleports away and leaves the seed behind: it appears with her flash
+                // (user: "say good luck, teleport away and leave behind the seed"), where she offered it.
+                picked = true;
+                var spot = SeedSpot();
+                acts.LeaveWithLine(() => GiveSeed(spot));
                 return;
             }
-            // The teleport: the gate starts at once, as if the player had stood on its portal for its 3 seconds.
-            if (GameStages.GetBool("Cube_" + index)) GameStages.SetBool("Gate_" + index, true, this);
+            // The teleport: the gate starts as soon as she has said her line, as if the player had stood on its portal
+            // for its 3 seconds.
+            if (!GameStages.GetBool("Cube_" + index)) return;
+            picked = true;
+            acts.LeaveWithLine(() => GameStages.SetBool("Gate_" + index, true, this));
         }
 
-        private void GiveSeed()
+        // In front of her, toward the player, at hand height.
+        private Vector3 SeedSpot()
         {
-            if (seedGiven || SeedPrefab == null) return;
-            seedGiven = true;
-            // In front of her, toward the player, at hand height.
             var middle = Middle();
             var toward = head.position - middle;
             toward.y = 0f;
             toward = toward.sqrMagnitude > 0.0001f ? toward.normalized : Vector3.forward;
-            var at = new Vector3(middle.x, Mathf.Max(middle.y, transform.position.y) + 0.9f, middle.z) + toward * 0.5f;
+            return new Vector3(middle.x, Mathf.Max(middle.y, transform.position.y) + 0.9f, middle.z) + toward * 0.5f;
+        }
+
+        private void GiveSeed(Vector3 at)
+        {
+            if (seedGiven || SeedPrefab == null) return;
+            seedGiven = true;
             Instantiate(SeedPrefab, at, Quaternion.identity);
             // No start pumpkin this time: it counts as broken, so taking the seed starts the game.
             GameStages.SetBool("Pumpkin_0", true, this);
@@ -290,8 +354,15 @@ namespace Game.Story
             frame.raycastTarget = true;
             Place(frame.rectTransform, CardLeft, CardTop, CardWidth, CardHeight);
             Clickable(frame.gameObject, frame, FrameColor, () => OnPick(showing));
+            frame.gameObject.AddComponent<RectMask2D>();
             cardPicture = MakePicture("Picture", frame.transform, null);
             Fill(cardPicture.rectTransform, Border);
+            cardDrag = frame.gameObject.AddComponent<StoryFairyCardDrag>();
+            cardDrag.Board = board;
+            cardDrag.Picture = cardPicture.rectTransform;
+            cardDrag.CardWidth = CardWidth;
+            cardDrag.Step = Step;
+            cardDrag.CanPull = () => choices.Count > 1;
             var band = MakeImage("Name Band", cardPicture.transform, BandColor);
             band.rectTransform.anchorMin = Vector2.zero;
             band.rectTransform.anchorMax = new Vector2(1f, 0.2f);

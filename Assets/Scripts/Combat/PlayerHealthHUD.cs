@@ -109,6 +109,11 @@ namespace Game.Combat
         [SerializeField] private AudioClip heartbeatSound;
         [Tooltip("How loud the heartbeat is when health has just got low (x) and near 0 health (y). 0 and 0 = no heartbeat.")]
         [SerializeField] private Vector2 heartbeatVolume = new(0.35f, 0.8f);
+        [Tooltip("When Heartbeat Sound holds several heartbeats in a row (heartbeat_loop: 5 lub-dubs, 1 s each): the " +
+                 "seconds of its start that make one lub-dub. Only that much is played at each heartbeat, and the small " +
+                 "beat gives no thump of its own. 0 = the sound is a single thump, played at the big and the small beat.")]
+        [Min(0f)]
+        [SerializeField] private float heartbeatClipBeat;
         [Tooltip("How loud the softer second beat (dub) is, as a share of the first (lub).")]
         [Range(0f, 1f)]
         [SerializeField] private float dubShare = 0.6f;
@@ -558,8 +563,11 @@ namespace Game.Combat
             }
 
             if (Mathf.Floor(beatClock) > Mathf.Floor(was)) Thump(1f, danger);
-            if (Mathf.Floor(beatClock - DubAt) > Mathf.Floor(was - DubAt)) Thump(dubShare, danger);
+            if (!WholeBeats && Mathf.Floor(beatClock - DubAt) > Mathf.Floor(was - DubAt)) Thump(dubShare, danger);
         }
+
+        // The sound is a whole lub-dub (Heartbeat Clip Beat): one piece of it per heartbeat, no thump for the small beat.
+        private bool WholeBeats => heartbeatClipBeat > 0f && heartbeatSound != null;
 
         private void Thump(float loudness, float danger)
         {
@@ -567,7 +575,19 @@ namespace Game.Combat
             // pile up and play all at once afterwards.
             if (heartbeatSource == null || heartbeatClip == null || !Shown || Time.timeScale <= 0f || AudioListener.pause) return;
             float volume = Mathf.Lerp(heartbeatVolume.x, heartbeatVolume.y, danger) * loudness;
-            if (volume > 0.001f) heartbeatSource.PlayOneShot(heartbeatClip, volume);
+            if (volume <= 0.001f) return;
+            if (!WholeBeats)
+            {
+                heartbeatSource.PlayOneShot(heartbeatClip, volume);
+                return;
+            }
+            // One lub-dub from the start of the sound, cut where it has died away (or by the next heartbeat, faster).
+            double start = AudioSettings.dspTime + 0.02;
+            heartbeatSource.Stop();
+            heartbeatSource.clip = heartbeatClip;
+            heartbeatSource.volume = volume;
+            heartbeatSource.PlayScheduled(start);
+            heartbeatSource.SetScheduledEndTime(start + heartbeatClipBeat);
         }
 
         // A soft, deep thump (about 0.16 s): a low tone falling in pitch with a quick start and a fast fade, plus a

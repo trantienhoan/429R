@@ -3546,6 +3546,10 @@ MonoBehaviour:
   power: 1.6
   damage: 1
   thrownBonus: 1
+  stunSeconds: 0
+  knockBackTimes: 0
+  hitSounds: []
+  hitVolume: 0.9
 --- !u!114 &4991937432670639671
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3562,6 +3566,8 @@ MonoBehaviour:
   seconds: 3
   warnFrom: 5
   fuse: 1.5
+  shotSound: {fileID: 8300000, guid: 6fef55837f357e14a88862b6c6bfab8e, type: 3}
+  shotVolume: 0.9
   shakePart: {fileID: 1425142191270027977}
   shake: 0.008
   warningSound: {fileID: 8300000, guid: 6ffd5f3eee896794fa17506c74259fe3, type: 3}
@@ -3576,7 +3582,7 @@ MonoBehaviour:
   - {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
   - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}
   - {fileID: 431296081563789977, guid: 7d85674d137626445accce4cef7fe159, type: 3}
-  sound: {fileID: 8300000, guid: 0c38739de2059ac40ab5b60a42fd1c5f, type: 3}
+  sound: {fileID: 8300000, guid: 5e3e14546cdd67f47ab3e5f386b413d1, type: 3}
   volume: 1
   rumbleStrength: 1
   rumbleDuration: 0.4
@@ -3595,6 +3601,7 @@ MonoBehaviour:
   settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
   toughness: 6.6666665
   hitCooldown: 0.3
+  everyHitCounts: 0
   knockBack: 0
   knockBackDistance: 2
   knockBackTime: 0.45
@@ -3611,6 +3618,7 @@ MonoBehaviour:
   weakHitEvent: ShakeSmall
   oldDamageFsm: 
   furniture: 1
+  playerHitsOnly: 0
   bumpShare: 1
   wieldedShare: 1
   settleSeconds: 0

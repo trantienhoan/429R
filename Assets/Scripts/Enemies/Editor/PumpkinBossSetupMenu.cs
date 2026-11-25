@@ -250,6 +250,8 @@ namespace Game.EditorTools
                     .Select(n => (Object)AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + n + ".wav")).ToArray());
                 so.FindProperty("attackSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "pumpkin_boss_attack.wav");
                 so.FindProperty("hurtSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "ouch_pumpkin_2.wav");
+                SetArray(so.FindProperty("hurtSounds"), new[] { "ouch_pumpkin_1", "ouch_pumpkin_2", "ouch_pumpkin_3", "ouch_pumpkin_4" }
+                    .Select(n => (Object)AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + n + ".wav")).ToArray());
                 so.FindProperty("roarSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "pumpkin_boss_COME.wav");
                 SetArray(so.FindProperty("deathScreams"), new[] { "boss_scream_1", "boss_scream_2" }
                     .Select(n => (Object)AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + n + ".wav")).ToArray());

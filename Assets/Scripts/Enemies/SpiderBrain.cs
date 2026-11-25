@@ -1539,8 +1539,79 @@ namespace Game.Enemies
             EnemyHitDamage.Died -= OnEnemyDied;
         }
 
+        // ---- Walking and flying sound (Resources/Bug Sounds, user 2026-11-25) ----
+
+        private AudioSource loopSource;
+        private bool loopFlies;
+
+        // A skitter loop while it walks (louder the faster) and a buzz loop while it flies: fades out when it stops or
+        // dies, and swaps (after fading out) when it takes off or lands. No Bug Sounds asset: silent, as before.
+        private void UpdateLoopSound()
+        {
+            var sounds = BugSoundSettings.Instance;
+            if (sounds == null || Time.timeScale <= 0f) return;
+            bool flying = IsFlying;
+            float want = 0f;
+            if (state != State.Dead)
+            {
+                if (flying) want = sounds.FlyVolume;
+                else if (agent != null && agent.enabled && agent.isOnNavMesh)
+                {
+                    var velocity = agent.velocity;
+                    velocity.y = 0f;
+                    want = sounds.WalkVolume * Mathf.Clamp01(velocity.magnitude / sounds.WalkFullSpeed);
+                }
+            }
+            if (loopSource != null && loopSource.clip != null && loopFlies != flying)
+            {
+                if (loopSource.volume > 0.01f)
+                {
+                    loopSource.volume = Mathf.MoveTowards(loopSource.volume, 0f, Time.deltaTime * 6f);
+                    return;
+                }
+                loopSource.Stop();
+                loopSource.clip = null;
+            }
+            if (loopSource == null || loopSource.clip == null)
+            {
+                var clips = flying ? sounds.FlyLoops : sounds.WalkLoops;
+                if (want <= 0.001f || !BugSoundSettings.Has(clips)) return;
+                if (loopSource == null) loopSource = MakeLoopSource(sounds);
+                loopSource.clip = BugSoundSettings.Pick(clips);
+                loopFlies = flying;
+                loopSource.volume = 0f;
+                // Each bug starts somewhere in the loop, so a crowd doesn't skitter in step.
+                loopSource.time = Random.Range(0f, loopSource.clip.length * 0.9f);
+                loopSource.Play();
+            }
+            loopSource.volume = Mathf.MoveTowards(loopSource.volume, want, Time.deltaTime * 4f);
+            bool silent = loopSource.volume <= 0.001f && want <= 0.001f;
+            if (silent && loopSource.isPlaying) loopSource.Pause();
+            else if (!silent && !loopSource.isPlaying) loopSource.UnPause();
+        }
+
+        private AudioSource MakeLoopSource(BugSoundSettings sounds)
+        {
+            var source = gameObject.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.loop = true;
+            source.spatialBlend = 1f;
+            source.rolloffMode = AudioRolloffMode.Linear;
+            source.minDistance = sounds.NearDistance;
+            source.maxDistance = sounds.FarDistance;
+            source.dopplerLevel = 0f;
+            source.priority = sounds.Priority;
+            if (speaker != null) source.outputAudioMixerGroup = speaker.outputAudioMixerGroup;
+            float pitch = Random.Range(sounds.PitchRange.x, sounds.PitchRange.y);
+            if (kindName == SizeClass.Boss) pitch *= sounds.BossPitch;
+            else if (kindName == SizeClass.Small) pitch *= sounds.SmallPitch;
+            source.pitch = pitch;
+            return source;
+        }
+
         private void Update()
         {
+            UpdateLoopSound();
             if (state == State.Dead) return;
             if (IsDying())
             {

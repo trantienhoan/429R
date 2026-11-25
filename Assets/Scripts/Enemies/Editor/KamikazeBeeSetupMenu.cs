@@ -48,7 +48,7 @@ namespace Game.EditorTools
         private static readonly string[] BossPaths = { Smarter + "Bee_Boss.prefab", Smarter + "Bee_Boss_PumpkinButt.prefab" };
 
         private const string StingSoundPath = "Assets/Audio/SFX/bug_Attack.wav";
-        private const string BangSoundPath = "Assets/Audio/SFX/explosion-312361.wav";
+        private const string BangSoundPath = "Assets/Audio/SFX/explosion_medium_2.wav";   // the user's ElevenLabs bang (2026-11-25)
         private const string BeepPath = "Assets/Audio/SFX/elon_boong_beep_beep.wav";
         // The box bomb's bang pair (never Smoke_Blast).
         private static readonly string[] EffectPaths =

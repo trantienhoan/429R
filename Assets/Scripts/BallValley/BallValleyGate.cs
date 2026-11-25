@@ -474,7 +474,7 @@ namespace Balls
             stage.TryRevive(b);   // dropped in from the sky, clear of the holes
             if (b.head != null) Gfx.Puff(b.Position, new Color(0.12f, 0.08f, 0.16f, 0.9f), 24, blackRadius * 3f, 5f);
             if (voiceFrom != null && voiceFrom.laughSounds != null && voiceFrom.laughSounds.Length > 0)
-                AudioSource.PlayClipAtPoint(voiceFrom.laughSounds[Random.Range(0, voiceFrom.laughSounds.Length)], b.Position, 1f);
+                PlayWide(voiceFrom.laughSounds[Random.Range(0, voiceFrom.laughSounds.Length)], b.Position, 1f);
             hudPulse = 1f;
             Debug.Log($"[BallValley] All {balls} balls in: the Black Pumpkin Ball drops in ({Clock:0.0} s; mass {(b.head != null ? b.head.rb.mass : 0f):0.0}).", this);
         }
@@ -532,7 +532,7 @@ namespace Balls
             StopClock();
             if (broken && voiceFrom != null)
             {
-                if (voiceFrom.breakSound != null) AudioSource.PlayClipAtPoint(voiceFrom.breakSound, at, 1f);
+                if (voiceFrom.breakSound != null) PlayWide(voiceFrom.breakSound, at, 1f);
                 foreach (var fx in voiceFrom.breakEffects)
                 {
                     if (fx == null) continue;
@@ -915,5 +915,23 @@ namespace Balls
 
         [ContextMenu("Test: Clock To The Last 20 s")]
         private void TestLast20() => TestClockTo(songSeconds - 20f);
+
+        // A one-shot heard across the field: Unity's default 3D fade (PlayClipAtPoint) is near silent a few metres away.
+        private static void PlayWide(AudioClip clip, Vector3 at, float volume)
+        {
+            if (clip == null) return;
+            var go = new GameObject("Wide Sound: " + clip.name);
+            go.transform.position = at;
+            var src = go.AddComponent<AudioSource>();
+            src.clip = clip;
+            src.volume = volume;
+            src.spatialBlend = 1f;
+            src.rolloffMode = AudioRolloffMode.Logarithmic;
+            src.minDistance = 8f;
+            src.maxDistance = 80f;
+            src.dopplerLevel = 0f;
+            src.Play();
+            Destroy(go, clip.length + 0.1f);
+        }
     }
 }

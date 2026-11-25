@@ -35,7 +35,7 @@ namespace Game.EditorTools
             ("rattle", "Assets/Audio/SFX/poision_bottle_shake.wav"),
             ("beep", "Assets/Audio/SFX/elon_boong_beep_beep.wav"),
             ("launchSound", "Assets/Audio/SFX/whoosh.wav"),
-            ("bangSound", "Assets/Audio/SFX/explosion-312361.wav"),
+            ("bangSound", "Assets/Audio/SFX/explosion_small_2.wav"),   // the user's ElevenLabs bang (2026-11-25)
         };
         // The books' bang pair, smaller (never Smoke_Blast).
         private static readonly string[] EffectPaths =

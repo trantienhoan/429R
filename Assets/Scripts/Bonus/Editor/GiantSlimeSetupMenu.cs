@@ -43,7 +43,7 @@ namespace Game.EditorTools
         };
         private static readonly string[] BurstSounds =
         {
-            "Assets/Audio/SFX/explosion-312361.wav",
+            "Assets/Audio/SFX/explosion_big_1.wav",   // the user's ElevenLabs bang (2026-11-25)
             "Assets/Audio/SFX/balloon_explode_1.wav",
         };
         private static readonly string[] HopSounds =

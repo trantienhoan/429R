@@ -55,7 +55,9 @@ namespace Game.EditorTools
             new Spec { name = "Weapon_Baseball_Bat", display = "Baseball Bat", power = 2.2f, damage = 2f, thrownBonus = 1,
                 health = 24f, toughness = 5f, mass = 500f, twoHanded = true, twoHandBoost = 1.6f, gripY = 0.12f, headFrom = 0.45f, price = 18,
                 subMaterials = new[] { WoodMat },
-                stunSeconds = 0f, knockBackTimes = 2.5f },
+                stunSeconds = 0f, knockBackTimes = 2.5f,
+                // The user's ElevenLabs bat hits (2026-11-25, Wire ElevenLabs Sounds).
+                hitSounds = new[] { "Assets/Audio/SFX/bat_hit_1.wav", "Assets/Audio/SFX/bat_hit_2.wav", "Assets/Audio/SFX/bat_hit_3.wav" } },
         };
 
         [MenuItem("Tools/429 Game/Weapons/Set Up Frying Pan And Baseball Bat")]

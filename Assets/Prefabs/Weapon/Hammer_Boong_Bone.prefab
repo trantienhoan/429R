@@ -5071,6 +5071,7 @@ GameObject:
   - component: {fileID: 5134683125254144010}
   - component: {fileID: 6460556640500290498}
   - component: {fileID: 5556192202936586094}
+  - component: {fileID: 1267510807012978455}
   m_Layer: 0
   m_Name: Hammer_Boong_Bone
   m_TagString: Weapon
@@ -6941,6 +6942,10 @@ MonoBehaviour:
   power: 2
   damage: 2
   thrownBonus: 1
+  stunSeconds: 0
+  knockBackTimes: 0
+  hitSounds: []
+  hitVolume: 0.9
 --- !u!114 &6460556640500290498
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6988,7 +6993,7 @@ MonoBehaviour:
   - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}
   - {fileID: 431296081563789977, guid: 7d85674d137626445accce4cef7fe159, type: 3}
   effectSize: 0.6
-  sound: {fileID: 8300000, guid: 0c38739de2059ac40ab5b60a42fd1c5f, type: 3}
+  sound: {fileID: 8300000, guid: 5e3e14546cdd67f47ab3e5f386b413d1, type: 3}
   volume: 0.9
 --- !u!114 &5556192202936586094
 MonoBehaviour:
@@ -7022,9 +7027,30 @@ MonoBehaviour:
   weakHitEvent: ShakeSmall
   oldDamageFsm: 
   furniture: 1
+  playerHitsOnly: 0
   bumpShare: 1
   wieldedShare: 1
   settleSeconds: 0
+--- !u!114 &1267510807012978455
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4337052619155732277}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0de1faa3acc57c8499dae80964d11a49, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Weapons.WeaponSwingSound
+  swings:
+  - {fileID: 8300000, guid: 60417ed87d4e7c84f9d6f7c9e7e8cf75, type: 3}
+  - {fileID: 8300000, guid: 4c28d216bfe58024ea7429dd26bf3e6c, type: 3}
+  - {fileID: 8300000, guid: 7fa0c95e3ea66e948bb2ce0febda9b09, type: 3}
+  swingSpeed: 4.5
+  fullSpeed: 9
+  volume: 0.8
+  gap: 0.25
 --- !u!1 &4599184892867418748
 GameObject:
   m_ObjectHideFlags: 0

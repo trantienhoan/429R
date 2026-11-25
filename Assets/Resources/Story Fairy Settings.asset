@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee3b276a9fc4fec4795c9cadac5eed1e, type: 3}
+  m_Name: Story Fairy Settings
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Story.StoryFairySettings
+  flashPrefab: {fileID: 6331275906715107345, guid: fa5a1f87c037d83468455338b790e1c3,
+    type: 3}
+  flashScale: 1
+  flashColour: {r: 0.45, g: 1, b: 0.5, a: 1}
+  flashIntensity: 6
+  flashRange: 7
+  flashSeconds: 0.7
+  teleportSound: {fileID: 8300000, guid: db082a42b98f54146b4305df4d5be5db, type: 3}
+  teleportSounds:
+  - {fileID: 8300000, guid: 556d199a259adc84f85da0b1bc12a091, type: 3}
+  - {fileID: 8300000, guid: 20f29c1743822d741aee386fd6e2242a, type: 3}
+  teleportVolume: 1
+  sendOffLines:
+  - {fileID: 8300000, guid: ff4a259548bb5f548b2e2a33187007ab, type: 3}
+  - {fileID: 8300000, guid: 29891753b372a8641b8e072018505b84, type: 3}
+  - {fileID: 8300000, guid: 2d67f20133e7aab4abc65ed1f8333813, type: 3}
+  lineVolume: 1
+  lineLead: 0.6
+  lineTail: 0.2
+  helloLines:
+  - {fileID: 8300000, guid: 82a0ccad18c32194e8dfa162cb486ca5, type: 3}
+  - {fileID: 8300000, guid: f84acff5287a2904ebb5f33ffe47ad16, type: 3}
+  helloEvery: 20
+  thankYouLines:
+  - {fileID: 8300000, guid: b51505f7edf64174da864db394c27b34, type: 3}
+  talkLines:
+  - {fileID: 8300000, guid: 8aad8ebe0bfa81448943d6388bd97521, type: 3}
+  - {fileID: 8300000, guid: 7880d7ec6c6c85944b52c1fc08a657c2, type: 3}
+  talkGap: 0.4
+  dodgeLead: 0.35
+  dodgeHeight: 0.9
+  dodgeReach: 2.5
+  turnSpeed: 6
+  faceYaw: 0
+  headTilt: 35
+  headBone: head
+  headTiltSign: -1
+  idleState: free_idle
+  helloState: hello
+  goodLuckState: goodluck
+  teleportState: teleport
+  goodLuckClip: Fairy_Girl_GoodLuck
+  teleportClip: Fairy_Girl_Teleport
+  fade: 0.15
+  hideBolts: 1
+  boltBone: Sound_Bone
+  clickReach: 3.5

@@ -58,6 +58,12 @@ namespace Game.Menus
         [SerializeField] private TMP_Text volumeText;
         [Tooltip("Played at the new volume on each press, so it can be heard while the game's sound is paused.")]
         [SerializeField] private AudioClip volumeTick;
+        [Tooltip("Played as the menu opens and closes (ui_menu_open / ui_menu_close), heard while the game's sound is " +
+                 "paused. Empty = none.")]
+        [SerializeField] private AudioClip openSound;
+        [SerializeField] private AudioClip closeSound;
+        [Range(0f, 1f)]
+        [SerializeField] private float menuSoundVolume = 0.8f;
         [Tooltip("Left empty, the one in the scene is used.")]
         [SerializeField] private ArmSwingMoveProvider armSwing;
         [Tooltip("Left empty, the one on the XR Origin is used.")]
@@ -295,6 +301,7 @@ namespace Game.Menus
             HideQuitChoice();
             PlacePanel();
             if (panel != null) panel.SetActive(true);
+            PlayUi(openSound, menuSoundVolume);
             PauseChanged?.Invoke();
         }
 
@@ -319,6 +326,7 @@ namespace Game.Menus
             HideResetConfirm();
             HideQuitChoice();
             if (panel != null) panel.SetActive(false);
+            PlayUi(closeSound, menuSoundVolume);
             PauseChanged?.Invoke();
         }
 
@@ -479,18 +487,22 @@ namespace Game.Menus
         {
             GameVolume.Level += steps * GameVolume.Step;
             // The game's sound is paused while the menu is open: this one plays anyway, at the new volume.
-            if (volumeTick != null)
-            {
-                if (tickVoice == null)
-                {
-                    tickVoice = gameObject.AddComponent<AudioSource>();
-                    tickVoice.playOnAwake = false;
-                    tickVoice.spatialBlend = 0f;
-                    tickVoice.ignoreListenerPause = true;
-                }
-                tickVoice.PlayOneShot(volumeTick);
-            }
+            PlayUi(volumeTick, 1f);
             ShowOptions();
+        }
+
+        // A menu sound, heard even while the game's sound is paused.
+        private void PlayUi(AudioClip clip, float volume)
+        {
+            if (clip == null) return;
+            if (tickVoice == null)
+            {
+                tickVoice = gameObject.AddComponent<AudioSource>();
+                tickVoice.playOnAwake = false;
+                tickVoice.spatialBlend = 0f;
+                tickVoice.ignoreListenerPause = true;
+            }
+            tickVoice.PlayOneShot(clip, volume);
         }
 
         private void ShowOptions()

@@ -530,6 +530,8 @@ namespace Game.Enemies
         [SerializeField] private float laughVolume = 1f;
         [SerializeField] private AudioClip attackSound;
         [SerializeField] private AudioClip hurtSound;
+        [Tooltip("Its hurt yelps, one at random and never the same twice in a row (ouch_pumpkin_1-4). Empty: Hurt Sound.")]
+        [SerializeField] private AudioClip[] hurtSounds = System.Array.Empty<AudioClip>();
         [SerializeField] private AudioClip roarSound;
         [Tooltip("Its scream as it dies (one of these, at random): arms up, shaking, until its pumpkins burst (about 2.5 s). " +
                  "Empty: its hurt yelp.")]
@@ -936,7 +938,7 @@ namespace Game.Enemies
             {
                 hitsTaken++;
                 PlayState(GetHit, true);
-                Say(hurtSound);
+                Say(HurtClip());
                 Puff();
                 int step = Mathf.Min(hitsTaken, buried.Length - 1);
                 targetBuried = buried[step];
@@ -949,7 +951,7 @@ namespace Game.Enemies
             if (act != Act.None && act != Act.Taunt && act != Act.Dizzy) return;
             if (Time.time < nextFlinch || phase == Phase.Transforming || phase == Phase.Rising) return;
             nextFlinch = Time.time + 1.8f;
-            Say(hurtSound);
+            Say(HurtClip());
         }
 
         private void Update()
@@ -1063,7 +1065,7 @@ namespace Game.Enemies
         {
             daze = 0f;
             Begin(Act.Dizzy, state, seconds, SinkDown(PumpkinBossFx.Blast.Small));
-            Say(hurtSound);
+            Say(HurtClip());
             Puff();
             // Stars circling over its head while it reels.
             if (TryGetComponent(out Game.Combat.EnemyHitDamage hits)) hits.ShowStunned(seconds, head, dizzyStars.x, dizzyStars.y);
@@ -1982,7 +1984,7 @@ namespace Game.Enemies
             quickBury = true;
             PlayState(Death, true);
             var scream = deathScreams.Length > 0 ? deathScreams[Random.Range(0, deathScreams.Length)] : null;
-            Say(scream != null ? scream : hurtSound);
+            Say(scream != null ? scream : HurtClip());
             phaseUntil = Time.time + DeathPoseSeconds;
             if (model != null) modelHome = new Vector3(modelRestPosition.x, model.localPosition.y, modelRestPosition.z);
         }
@@ -2178,6 +2180,18 @@ namespace Game.Enemies
 
         // A yelp or a roar: the laugh stops for it and comes back Laugh Gap after it ends (one mouth, one sound). Even
         // dying (its last yelp; nothing laughs after that until it bursts).
+        private int lastHurt = -1;
+
+        // One of its hurt yelps at random (not the last one again), or Hurt Sound when there is no list.
+        private AudioClip HurtClip()
+        {
+            if (hurtSounds == null || hurtSounds.Length == 0) return hurtSound;
+            int i = UnityEngine.Random.Range(0, hurtSounds.Length);
+            if (hurtSounds.Length > 1 && i == lastHurt) i = (i + 1) % hurtSounds.Length;
+            lastHurt = i;
+            return hurtSounds[i] != null ? hurtSounds[i] : hurtSound;
+        }
+
         private void Say(AudioClip clip)
         {
             if (clip == null) return;

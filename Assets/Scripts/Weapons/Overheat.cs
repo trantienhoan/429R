@@ -33,6 +33,12 @@ namespace Game.Weapons
         [Min(0f)]
         [SerializeField] private float fuse = 1.5f;
 
+        [Header("Shot")]
+        [Tooltip("Played on every trigger pull (the shot itself), e.g. elon_boong_shoot. Empty: none.")]
+        [SerializeField] private AudioClip shotSound;
+        [Range(0f, 1f)]
+        [SerializeField] private float shotVolume = 0.9f;
+
         [Header("About to blow")]
         [Tooltip("Optional: the part that shakes, e.g. its model. Empty: nothing shakes.")]
         [SerializeField] private Transform shakePart;
@@ -118,7 +124,14 @@ namespace Game.Weapons
 
         private void OnShot(ActivateEventArgs args)
         {
-            if (!isActiveAndEnabled || blowAt >= 0f || exploded) return;
+            if (!isActiveAndEnabled || exploded) return;
+            // The gun still fires while it burns (the shot is the launcher's), so the shot is heard then too.
+            if (shotSound != null)
+            {
+                if (speaker != null) speaker.PlayOneShot(shotSound, shotVolume);
+                else AudioSource.PlayClipAtPoint(shotSound, transform.position, shotVolume);
+            }
+            if (blowAt >= 0f) return;
             if (args.interactorObject is XRBaseInputInteractor hand) lastHand = hand;
 
             // The times of the last 'shots' shots: all of them within 'seconds' overheats it.

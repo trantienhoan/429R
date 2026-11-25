@@ -479,6 +479,7 @@ MonoBehaviour:
   weakHitEvent: ShakeSmall
   oldDamageFsm: 
   furniture: 0
+  playerHitsOnly: 0
   bumpShare: 0.35
   wieldedShare: 0.15
   settleSeconds: 2
@@ -682,9 +683,11 @@ MonoBehaviour:
   diveSpeed: 3.5
   homingSting: 1
   homingReach: 0.7
+  lockAimAtWindUp: 1
   highWait: {x: 2, y: 4}
   bob: 0.08
   groundBelowHealth: 0.4
+  winglessToughness: 1
   wingBones: []
   wingsOffAnimation: 
   wingsOffSeconds: 0.8
@@ -711,6 +714,24 @@ MonoBehaviour:
   rushSound: {fileID: 0}
   rushShake: ShakeMed
   staysHigh: 0
+  kamikazeChance: 0
+  kamikazeEvent: DamageHeavy
+  kamikazeShare: 0.5
+  kamikazeNearEvent: Damage
+  kamikazeRadius: 0.9
+  kamikazePoisonPerSecond: 2
+  kamikazePoisonSeconds: 5
+  kamikazeShove: {x: 0.15, y: 0.6}
+  kamikazeBugDamage: 1
+  kamikazeMaxSeconds: 8
+  kamikazeEffects: []
+  kamikazeEffectSize: 0.5
+  kamikazeSound: {fileID: 0}
+  kamikazeVolume: 0.8
+  kamikazeWarning: {fileID: 0}
+  kamikazeFlash: 1
+  kamikazeFlashColour: {r: 1, g: 0.35, b: 0.1, a: 1}
+  kamikazeBlinks: 5
   flinchSeconds: 0.4
   flinchCooldown: 1
   stunGuardSeconds: 2
@@ -733,6 +754,10 @@ MonoBehaviour:
   legSpeedRange: {x: 0.6, y: 2.5}
   growFrom: 0.7
   growSeconds: 2
+  randomSize: 1
+  sizeRoll: {x: 0.75, y: 1.33}
+  sizeRollSpeed: {x: 1.2, y: 0.8}
+  flierMaxRoll: 1.15
   hitEffect: {fileID: 0}
   setOnDeath: []
   aggressiveBoss: 1
@@ -784,8 +809,8 @@ MonoBehaviour:
   - {fileID: 4774269423018728791, guid: 3c4f55c5d9be4b346857052d93e47c57, type: 3}
   - {fileID: 431296081563789977, guid: 7d85674d137626445accce4cef7fe159, type: 3}
   bombEffectSize: 2.5
-  bombSound: {fileID: 8300000, guid: 0c38739de2059ac40ab5b60a42fd1c5f, type: 3}
-  bombBeep: {fileID: 8300000, guid: f862ab6ceb450994698a6e281bcfe6c4, type: 3}
+  bombSound: {fileID: 8300000, guid: 8109ec59586952c47859ade132f9607e, type: 3}
+  bombBeep: {fileID: 8300000, guid: 00b96157229e8264796c92bf3dbc6312, type: 3}
   bombFlash: {r: 1, g: 0.12, b: 0.05, a: 1}
   bombBlinks: {x: 2, y: 10}
   bombSwell: 0.15

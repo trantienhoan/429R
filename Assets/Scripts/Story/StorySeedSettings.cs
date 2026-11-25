@@ -21,6 +21,8 @@ namespace Game.Story
         [SerializeField] private Color lightColor = new Color(0.87f, 1f, 0.81f, 1f);
         [Tooltip("The girl's voice when a seed is taken: \"please find me\". Put the user's recording here.")]
         [SerializeField] private AudioClip voice;
+        [Tooltip("More takes of that voice (e.g. \"I am here\"): one of all of them is said at random.")]
+        [SerializeField] private AudioClip[] moreVoices = new AudioClip[0];
         [Range(0f, 1f)]
         [SerializeField] private float voiceVolume = 0.8f;
         [Tooltip("Seconds the light takes to fill the view.")]
@@ -102,6 +104,22 @@ namespace Game.Story
         public Color LightColor => lightColor;
         public AudioClip Voice => voice;
         public float VoiceVolume => voiceVolume;
+
+        /// <summary>The voice or one of its other takes, at random (null when there are none).</summary>
+        public AudioClip RandomVoice()
+        {
+            int count = voice != null ? 1 : 0;
+            if (moreVoices != null) foreach (var take in moreVoices) if (take != null) count++;
+            if (count == 0) return null;
+            int pick = Random.Range(0, count);
+            if (voice != null && pick-- == 0) return voice;
+            foreach (var take in moreVoices)
+            {
+                if (take == null) continue;
+                if (pick-- == 0) return take;
+            }
+            return voice;
+        }
         public float LightIn => lightIn;
         public float LightOut => lightOut;
         public float MostSeconds => mostSeconds;

@@ -238,6 +238,7 @@ GameObject:
   - component: {fileID: 3480408339557966089}
   - component: {fileID: 70002593860310617}
   - component: {fileID: 8614681626744030814}
+  - component: {fileID: 2568659479301208165}
   m_Layer: 0
   m_Name: Weapon_Baseball_Bat
   m_TagString: Weapon
@@ -1731,7 +1732,10 @@ MonoBehaviour:
   thrownBonus: 1
   stunSeconds: 0
   knockBackTimes: 2.5
-  hitSounds: []
+  hitSounds:
+  - {fileID: 8300000, guid: 44416c3980da3634d952b7c30375e4eb, type: 3}
+  - {fileID: 8300000, guid: 2e8155904c178154d9c8cb07960804d7, type: 3}
+  - {fileID: 8300000, guid: 419ba95b6ac812c4188d6c5116df789f, type: 3}
   hitVolume: 0.9
 --- !u!114 &3480408339557966089
 MonoBehaviour:
@@ -1808,6 +1812,26 @@ MonoBehaviour:
   bumpShare: 1
   wieldedShare: 1
   settleSeconds: 0
+--- !u!114 &2568659479301208165
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4337052619155732277}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0de1faa3acc57c8499dae80964d11a49, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Weapons.WeaponSwingSound
+  swings:
+  - {fileID: 8300000, guid: 60417ed87d4e7c84f9d6f7c9e7e8cf75, type: 3}
+  - {fileID: 8300000, guid: 4c28d216bfe58024ea7429dd26bf3e6c, type: 3}
+  - {fileID: 8300000, guid: 7fa0c95e3ea66e948bb2ce0febda9b09, type: 3}
+  swingSpeed: 4.5
+  fullSpeed: 9
+  volume: 0.8
+  gap: 0.25
 --- !u!1 &5853063292150961962
 GameObject:
   m_ObjectHideFlags: 0

@@ -58,7 +58,7 @@ namespace Game.EditorTools
         private const string PlayroomStageName = "--Playroom--MiniGame--";
         // Its name in the first version (the Playroom is the Livingroom base's second room).
         private const string OldPlayroomStageName = "--Livingroom--MiniGame--";
-        private const string BlastSoundPath = "Assets/Audio/SFX/explosion-312361.wav";
+        private const string BlastSoundPath = "Assets/Audio/SFX/explosion_big_2.wav";   // the user's ElevenLabs bang (2026-11-25)
         private static readonly string[] BlastEffectPaths =
         {
             "Assets/Lana Studio/Hyper Casual FX/Prefabs/Flash/Flash_round_yellow.prefab",

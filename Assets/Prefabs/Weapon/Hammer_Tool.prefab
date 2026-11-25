@@ -73,6 +73,7 @@ GameObject:
   - component: {fileID: 4084030493251924205}
   - component: {fileID: 8073363461685121463}
   - component: {fileID: 4301678564488558157}
+  - component: {fileID: 3760119149168831327}
   m_Layer: 0
   m_Name: Hammer_Tool
   m_TagString: Weapon
@@ -1814,6 +1815,10 @@ MonoBehaviour:
   power: 2
   damage: 2
   thrownBonus: 1
+  stunSeconds: 0
+  knockBackTimes: 0
+  hitSounds: []
+  hitVolume: 0.9
 --- !u!114 &8073363461685121463
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1846,6 +1851,7 @@ MonoBehaviour:
   settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
   toughness: 10
   hitCooldown: 0.3
+  everyHitCounts: 0
   knockBack: 0
   knockBackDistance: 2
   knockBackTime: 0.45
@@ -1862,9 +1868,30 @@ MonoBehaviour:
   weakHitEvent: ShakeSmall
   oldDamageFsm: 
   furniture: 1
+  playerHitsOnly: 0
   bumpShare: 1
   wieldedShare: 1
   settleSeconds: 0
+--- !u!114 &3760119149168831327
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4337052619155732277}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0de1faa3acc57c8499dae80964d11a49, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Weapons.WeaponSwingSound
+  swings:
+  - {fileID: 8300000, guid: 60417ed87d4e7c84f9d6f7c9e7e8cf75, type: 3}
+  - {fileID: 8300000, guid: 4c28d216bfe58024ea7429dd26bf3e6c, type: 3}
+  - {fileID: 8300000, guid: 7fa0c95e3ea66e948bb2ce0febda9b09, type: 3}
+  swingSpeed: 4.5
+  fullSpeed: 9
+  volume: 0.8
+  gap: 0.25
 --- !u!1 &5546693805270308101
 GameObject:
   m_ObjectHideFlags: 0

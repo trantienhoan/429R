@@ -97,6 +97,8 @@ namespace Game.Gates
         [Header("Sounds (the user's own clips; empty = none)")]
         public AudioClip roundStartSound;
         public AudioClip roundWonSound;
+        [Tooltip("A round's time ran out (in place of Round Won Sound; the round still counts).")]
+        public AudioClip roundTimeUpSound;
         [Range(0f, 1f)] public float soundVolume = 0.8f;
 
         /// <summary>A round started (1-3).</summary>
@@ -269,17 +271,19 @@ namespace Game.Gates
             Flash(string.Format(roundFlash, r, Rounds), 1.5f);
             RoundStarted?.Invoke(this, r);
             Call(g => g.RoundBegin(this, r), "RoundBegin");
+            bool timeUp = false;
             while (!roundWon && !toFinale)
             {
                 if (Time.time >= roundEndsAt)
                 {
                     Debug.Log($"[{name}] Round {r} ran out of time: it ends anyway.", this);
                     Call(g => g.RoundTimeUp(this, r), "RoundTimeUp");
+                    timeUp = true;
                     break;
                 }
                 yield return null;
             }
-            Play(roundWonSound);
+            Play(timeUp && roundTimeUpSound != null ? roundTimeUpSound : roundWonSound);
             RoundEnded?.Invoke(this, r);
         }
 

@@ -32,7 +32,7 @@ namespace Game.EditorTools
         private const string FlashPath = "Assets/Lana Studio/Hyper Casual FX/Prefabs/Flash/Flash_round_yellow.prefab";
         private const string HitBlastPath = "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Hit_Blast.prefab";
         private const string SmallPuffPath = "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab";
-        private const string BlastSoundPath = "Assets/Audio/SFX/explosion-312361.wav";
+        private const string BlastSoundPath = "Assets/Audio/SFX/explosion_medium_1.wav";   // the user's ElevenLabs bang (2026-11-25)
         private const float RoachGiveUpRange = 30f;
         // Blocks with this much health or more never break (the brass ones: 9999).
         private const float Unbreakable = 999f;

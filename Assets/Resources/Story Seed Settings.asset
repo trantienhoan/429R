@@ -19,7 +19,9 @@ MonoBehaviour:
   - stars
   - shadow
   lightColor: {r: 0.87, g: 1, b: 0.81, a: 1}
-  voice: {fileID: 8300000, guid: afd4bf8c33d6fbe4e9ccde5e73733079, type: 3}
+  voice: {fileID: 8300000, guid: 6d06e901cbce2c748a906b5c2e6c27fc, type: 3}
+  moreVoices:
+  - {fileID: 8300000, guid: 332a3e07fff1d4e4c840978c78b82af1, type: 3}
   voiceVolume: 0.8
   lightIn: 0.35
   lightOut: 1.6
@@ -31,7 +33,9 @@ MonoBehaviour:
   - Enemy2 - Wait
   - Enemy 3 Stuffs
   - Thank For Playing
-  endVoice: {fileID: 0}
+  fightVoice: {fileID: 8300000, guid: a0848d8f12d96f64b9f10626bb7cc0c7, type: 3}
+  fightVolume: 1
+  endVoice: {fileID: 8300000, guid: fd765384b9ef36e45abdcaded1d225f9, type: 3}
   endTitle: THE GREEN PROTECTOR
   endLine: I will do it again and again.
   titleFont: {fileID: 11400000, guid: cb4516ac98eb5854ea4d7a8f558eb4da, type: 2}
@@ -44,5 +48,5 @@ MonoBehaviour:
   showerHeight: 1.4
   showerRate: 30
   showerRing: 0.3
-  showerStarSize: 0.6
-  showerGlowSize: 0.25
+  showerStarScale: 2
+  showerGlowScale: 1

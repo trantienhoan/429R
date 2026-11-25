@@ -50,7 +50,7 @@ namespace Game.Story
             var light = Get();
             if (light == null) return;
             light.endHold = -1f;
-            light.Begin(settings, settings.Voice);
+            light.Begin(settings, settings.RandomVoice());
         }
 
         /// <summary>The whole seed: the light holds a set time with the story's last words in it.</summary>

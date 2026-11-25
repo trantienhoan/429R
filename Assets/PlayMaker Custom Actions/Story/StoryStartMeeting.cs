@@ -6,7 +6,7 @@ namespace HutongGames.PlayMaker.Actions
     [ActionCategory("Story")]
     [Tooltip("The start rooftop by the story (Story Start): put FIRST in GAMESTAGES \"Move to Fairy\". First meeting: no " +
              "guide Knight (Knight Point off). Later runs: the Knight is back; the Fairy made in this state is dressed a " +
-             "frame later: missing (only the empty jail) until the final boss is beaten, then free (no cage, no lock " +
+             "frame later (first meeting: she will dodge the first pumpkin by teleporting): missing (only the empty jail) until the final boss is beaten, then free (no cage, no lock " +
              "tower, her board), and in that case Freed Event is sent (to \"Stage 1 - The Start\": no walk to a cage, no " +
              "Send death). Otherwise it finishes and the state goes on as before.")]
     public class StoryStartMeeting : FsmStateAction
@@ -35,7 +35,6 @@ namespace HutongGames.PlayMaker.Actions
             mode = StoryStart.Current;
             frames = 0;
             if (knightPoint.Value != null) knightPoint.Value.SetActive(mode != StoryStart.Mode.FirstMeeting);
-            if (mode == StoryStart.Mode.FirstMeeting) Finish();
         }
 
         // The Fairy is made by this state's later actions: dress her once she is there.

@@ -24,7 +24,7 @@ namespace Game.EditorTools
             "Assets/Lana Studio/Hyper Casual FX/Prefabs/Confetti/Hit_Blast.prefab",
             "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab",
         };
-        internal const string Sound = "Assets/Audio/SFX/explosion-312361.wav";
+        internal const string Sound = "Assets/Audio/SFX/explosion_small_1.wav";   // the user's ElevenLabs bang (2026-11-25)
         // A bottle about to go off in the hand warns with the Boong gun's overheat beep; while shaken, it rattles.
         private const string WarningSound = "Assets/Audio/SFX/elon_boong_beep_beep.wav";
         private const string ShakeSound = "Assets/Audio/SFX/poision_bottle_shake.wav";

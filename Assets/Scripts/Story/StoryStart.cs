@@ -6,7 +6,8 @@ namespace Game.Story
     /// <summary>
     /// The start rooftop told by the story, three ways (user 2026-11-25):
     /// - First Meeting (a new save; the player has never met the Fairy): the dark walk, no guide Knight, only her light
-    ///   from afar and her calls for help; near her the pumpkin drops and laughs and the rooftop lights up.
+    ///   from afar and her calls for help; the pumpkin drops on her, she barely dodges it by teleporting (a green flash,
+    ///   Story Fairy Acts), it laughs and the rooftop lights up.
     /// - Fairy Gone (met her, the final boss not beaten yet): she is missing, only the empty purple jail; the rooftop path
     ///   lights up slowly, the guide Knight stands on it; near the jail the pumpkin drops as normal.
     /// - Fairy Free (the final boss beaten once): she is there with no cage and no lock tower; touching her brings up her
@@ -58,7 +59,13 @@ namespace Game.Story
         /// </summary>
         public static void Dress(GameObject fairy, Mode mode, GameObject seed)
         {
-            if (fairy == null || mode == Mode.FirstMeeting) return;
+            if (fairy == null) return;
+            if (mode == Mode.FirstMeeting)
+            {
+                // She dodges the first pumpkin by teleporting (user 2026-11-25).
+                Acts(fairy).WatchForPumpkin();
+                return;
+            }
             foreach (var voice in fairy.GetComponents<AudioSource>()) voice.mute = true;
             if (mode == Mode.FairyGone)
             {
@@ -81,6 +88,14 @@ namespace Game.Story
             var board = fairy.GetComponent<StoryFairyBoard>();
             if (board == null) board = fairy.AddComponent<StoryFairyBoard>();
             board.SeedPrefab = seed;
+            // Her free idle; she looks at the player, or at her board's card (user 2026-11-25).
+            Acts(fairy).BeFree();
+        }
+
+        private static StoryFairyActs Acts(GameObject fairy)
+        {
+            var acts = fairy.GetComponent<StoryFairyActs>();
+            return acts != null ? acts : fairy.AddComponent<StoryFairyActs>();
         }
 
         /// <summary>The Fairy made on the start rooftop (the one with the weak-glow script, or by name).</summary>

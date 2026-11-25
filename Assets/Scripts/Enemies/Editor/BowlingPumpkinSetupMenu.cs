@@ -110,7 +110,7 @@ namespace Game.EditorTools
                 so.FindProperty("rollSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "giant_ball_rolling.wav");
                 so.FindProperty("trailPuff").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Enemies/Boss_FX/Boss_Scrape_Dust.prefab");
                 SetList(so.FindProperty("blastEffects"), Lana + "Flash/Flash_round_yellow.prefab", Lana + "Confetti/Hit_Blast.prefab", "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab");
-                so.FindProperty("blastSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "explosion-312361.wav");
+                so.FindProperty("blastSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "explosion_medium_2.wav");   // the user's ElevenLabs bang (2026-11-25)
                 so.ApplyModifiedPropertiesWithoutUndo();
                 return PrefabUtility.SaveAsPrefabAsset(root, BowlerPath);
             }

@@ -32,6 +32,8 @@ namespace Game.EditorTools
         // A gloopy bubbling loop (4.7 s), and a whoosh when the bowl catches.
         private const string BubbleSound = "Assets/Audio/Kenney Audio/kenney_sci-fi-sounds/Audio/slime_001.ogg";
         private const string IgniteSound = "Assets/Audio/SFX/whoosh.wav";
+        // A smoked boong blowing up: the user's medium ElevenLabs bang, like the Boong gun's overheat (2026-11-25).
+        private const string BlastSound = "Assets/Audio/SFX/explosion_medium_1.wav";
         // The new flame's size (like the bone boong's CandleFlame, 0.15).
         private const float NewFlameScale = 0.15f;
         // The Burn point sits this far above the bowl's cup (along the way the cup faces), where a flame is held.
@@ -122,7 +124,7 @@ namespace Game.EditorTools
             var assets = new Shared
             {
                 Effects = effects,
-                Sound = Load<AudioClip>(GrenadeSetupMenu.Sound),
+                Sound = Load<AudioClip>(BlastSound),
                 Smoke = Load<GameObject>(SmokePrefab),
                 Bubbles = Load<AudioClip>(BubbleSound),
                 Ignite = Load<AudioClip>(IgniteSound),
@@ -151,7 +153,7 @@ namespace Game.EditorTools
                 }
             }
 
-            int preloaded = GrenadeSetupMenu.PreloadSounds(BubbleSound, IgniteSound, GrenadeSetupMenu.Sound);
+            int preloaded = GrenadeSetupMenu.PreloadSounds(BubbleSound, IgniteSound, BlastSound);
             Debug.Log("[Boong Smoke] " + string.Join("; ", done) + "." +
                       (preloaded > 0 ? $" {preloaded} sound(s) now load with the scene." : "") +
                       " Points, reaches, tilt, fire time and blast are on each boong's Boong Smoke (the Scene view shows the" +

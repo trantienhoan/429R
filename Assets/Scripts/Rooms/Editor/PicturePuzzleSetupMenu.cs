@@ -633,7 +633,7 @@ namespace Game.EditorTools
                 Sound(so, "snapSound", "wood_get_hit_1.wav");
                 Sound(so, "turnSound", "wood_get_hit_2.wav");
                 Sound(so, "wrongSound", "shop_buy_fail.wav");
-                Sound(so, "tickSound", "bomb_beep.wav");
+                Sound(so, "tickSound", "bomb_beep2.wav");   // the user's ElevenLabs beep (bomb_beep.wav was made up)
                 Sound(so, "winSound", "A_gentle_miracle_sound_2.wav");
                 Sound(so, "breakSound", "wood_furniture_break_complete.wav");
                 Sound(so, "buzzSound", "bee_fly.wav");

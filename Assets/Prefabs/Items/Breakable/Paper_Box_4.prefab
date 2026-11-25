@@ -1496,6 +1496,10 @@ MonoBehaviour:
   power: 1
   damage: 1
   thrownBonus: 1
+  stunSeconds: 0
+  knockBackTimes: 0
+  hitSounds: []
+  hitVolume: 0.9
 --- !u!114 &5099334771320963228
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1528,6 +1532,7 @@ MonoBehaviour:
   weakHitEvent: ShakeSmall
   oldDamageFsm: 
   furniture: 1
+  playerHitsOnly: 0
   bumpShare: 1
   wieldedShare: 1
   settleSeconds: 0
@@ -1570,6 +1575,7 @@ MonoBehaviour:
   calmDistance: 3.2
   lastHop: 1.5
   hopSeconds: 0.15
+  lockAimAtWindUp: 1
   flySpeed: {x: 3, y: 5.5}
   speedUpSeconds: 0.25
   tumble: 2
@@ -1598,7 +1604,7 @@ MonoBehaviour:
   - {fileID: 431296081563789977, guid: 7d85674d137626445accce4cef7fe159, type: 3}
   - {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
   effectSize: 0.6
-  bangSound: {fileID: 8300000, guid: 0c38739de2059ac40ab5b60a42fd1c5f, type: 3}
+  bangSound: {fileID: 8300000, guid: 35c5562e9f2ca0541a862a77bc565469, type: 3}
   bangVolume: 0.8
   swatSpeed: 1
   healthFsm: Health
