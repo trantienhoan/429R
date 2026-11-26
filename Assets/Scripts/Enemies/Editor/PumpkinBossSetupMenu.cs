@@ -247,7 +247,7 @@ namespace Game.EditorTools
                 SetArray(so.FindProperty("bugs"), BugPaths.Select(p => (Object)AssetDatabase.LoadAssetAtPath<GameObject>(p)).ToArray());
                 // Only its own deep laughs: the others are the small pumpkins'.
                 SetArray(so.FindProperty("laughs"), new[] { "pumpkin_boss_laugh", "pumpkin_boss_laugh_2" }
-                    .Select(n => (Object)AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + n + ".wav")).ToArray());
+                    .Select(n => (Object)AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + n + ".mp3")).ToArray());
                 so.FindProperty("attackSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "pumpkin_boss_attack.wav");
                 so.FindProperty("hurtSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "ouch_pumpkin_2.wav");
                 SetArray(so.FindProperty("hurtSounds"), new[] { "ouch_pumpkin_1", "ouch_pumpkin_2", "ouch_pumpkin_3", "ouch_pumpkin_4" }

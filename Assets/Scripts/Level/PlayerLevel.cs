@@ -791,7 +791,7 @@ namespace Game.Leveling
         // Candy Max Points (10). Not saved here: candies are gone after a reload, the gloves come back with the run
         // (Checkpoints keeps them).
         private float RunPoints(Stat stat) =>
-            TakesCandy(stat) ? Mathf.Min(candyPoints[(int)stat] + Gloves.PointsFor(stat), candyMaxPoints) : 0f;
+            TakesCandy(stat) ? Mathf.Min(candyPoints[(int)stat] + Gloves.PointsFor(stat) + Game.Combat.KnightArmor.PointsFor(stat), candyMaxPoints) : 0f;
 
         // The points that unlock things in a stat (user, 2026-11-12): the player's own (and a boong's), and the gloves'
         // while they're worn (none in a special stage); never eaten candies' (they'd come and go with every death).

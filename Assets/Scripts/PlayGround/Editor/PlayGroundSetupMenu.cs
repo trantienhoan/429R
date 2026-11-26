@@ -139,7 +139,7 @@ namespace Game.EditorTools
                     foreach (var path in BossPaths) bosses.Add(Load<GameObject>(path));
                     SetArray(pumpkin, "bosses", bosses);
                     var cackles = new List<Object>();
-                    for (int n = 1; n <= 4; n++) cackles.Add(Load<AudioClip>($"{Sfx}pumpkin_laugh_{n}.wav"));
+                    for (int n = 1; n <= 4; n++) cackles.Add(Load<AudioClip>($"{Sfx}pumpkin_laugh_{n}.mp3"));
                     SetArray(pumpkin, "cackles", cackles);
                     SetArray(pumpkin, "burstSounds", new List<Object> { Load<AudioClip>(Sfx + "pumpkin_explode_1.wav"), Load<AudioClip>(Sfx + "pumpkin_explode_2.wav") });
                     Set(pumpkin, "burstEffect", smoke);
@@ -168,7 +168,7 @@ namespace Game.EditorTools
                 SetArray(cauldron, "lollipops", lollipops);
                 Set(cauldron, "pumpkin", Load<GameObject>(PumpkinOnTreePath));
                 var laughs = new List<Object>();
-                for (int n = 1; n <= 5; n++) laughs.Add(Load<AudioClip>($"{Sfx}laughing_pumpkin_{n}.wav"));
+                for (int n = 1; n <= 5; n++) laughs.Add(Load<AudioClip>($"{Sfx}laughing_pumpkin_{n}.mp3"));
                 SetArray(cauldron, "laughs", laughs);
                 Set(cauldron, "addSound", Load<AudioClip>(Sfx + "Bug_Pop.wav"));
                 Set(cauldron, "fuelSound", Load<AudioClip>("Assets/Audio/Kenney Audio/kenney_sci-fi-sounds/Audio/thrusterFire_000.ogg"));

@@ -376,7 +376,7 @@ namespace Game.EditorTools
                 so.FindProperty("flySound").objectReferenceValue = Clip("whoosh.wav");
                 so.FindProperty("splatSound").objectReferenceValue = Clip("pumpkin_explode_1.wav");
                 // Only its own deep laughs: the others are the small pumpkins'.
-                SetClips(so.FindProperty("bossLaughs"), Clip("pumpkin_boss_laugh.wav"), Clip("pumpkin_boss_laugh_2.wav"));
+                SetClips(so.FindProperty("bossLaughs"), Clip("pumpkin_boss_laugh.mp3"), Clip("pumpkin_boss_laugh_2.mp3"));
                 SetClips(so.FindProperty("hitSounds"), Clip("pumpkin_explode_1.wav"), Clip("bone_bonk_1.wav"));
                 var clangs = new AudioClip[ClangCount];
                 for (int i = 0; i < ClangCount; i++) clangs[i] = AssetDatabase.LoadAssetAtPath<AudioClip>(string.Format(Clangs, i));

@@ -43,10 +43,29 @@ namespace Game.EditorTools
             "fairy_have_fun.wav", "fairy_be_careful_out_there.wav", "fairy_hello.mp3", "fairy_hello_there.wav",
             "fairy_thank_you.wav", "fairy_talk_1.mp3", "fairy_talk_2.mp3", "voice_fight.mp3",
             "voice_protected_the_green.mp3",
+            // The new laughing pumpkin voices (2026-11-26).
+            "pumpkin_laugh_1.mp3", "pumpkin_laugh_2.mp3", "pumpkin_laugh_3.mp3", "pumpkin_laugh_4.mp3",
+            "laughing_pumpkin_1.mp3", "laughing_pumpkin_2.mp3", "laughing_pumpkin_3.mp3", "laughing_pumpkin_4.mp3",
+            "laughing_pumpkin_5.mp3", "pumpkin_boss_laugh.mp3", "pumpkin_boss_laugh_2.mp3",
+            "player_death_hee_hee_1.mp3", "player_death_hee_hee_2.mp3",
         };
         // Heard in the head (not placed in the world): they keep their stereo.
         private static readonly string[] KeepStereo =
-            { "ui_menu_close.wav", "ui_menu_open.wav", "ui_notice_pop.wav", "heartbeat_loop.wav" };
+            { "ui_menu_close.wav", "ui_menu_open.wav", "ui_notice_pop.wav", "heartbeat_loop.wav",
+              "player_death_hee_hee_1.mp3", "player_death_hee_hee_2.mp3" };
+
+        // The new laughing pumpkin voices (user 2026-11-26, Exports/Audio/PUMPKIN_LAUGH_PROMPTS.md), saved as .mp3 next to
+        // the old .wav laughs: every prefab that played an old one plays the new one (the boss's two loud copies too).
+        private static readonly (string old, string now)[] LaughSwaps =
+        {
+            ("pumpkin_laugh_1.wav", "pumpkin_laugh_1.mp3"), ("pumpkin_laugh_2.wav", "pumpkin_laugh_2.mp3"),
+            ("pumpkin_laugh_3.wav", "pumpkin_laugh_3.mp3"), ("pumpkin_laugh_4.wav", "pumpkin_laugh_4.mp3"),
+            ("laughing_pumpkin_1.wav", "laughing_pumpkin_1.mp3"), ("laughing_pumpkin_2.wav", "laughing_pumpkin_2.mp3"),
+            ("laughing_pumpkin_3.wav", "laughing_pumpkin_3.mp3"), ("laughing_pumpkin_4.wav", "laughing_pumpkin_4.mp3"),
+            ("laughing_pumpkin_5.wav", "laughing_pumpkin_5.mp3"),
+            ("pumpkin_boss_laugh.wav", "pumpkin_boss_laugh.mp3"), ("pumpkin_boss_laugh_2.wav", "pumpkin_boss_laugh_2.mp3"),
+            ("pumpkin_boss_laugh_loud.wav", "pumpkin_boss_laugh.mp3"), ("pumpkin_boss_laugh_2_loud.wav", "pumpkin_boss_laugh_2.mp3"),
+        };
 
         private static List<string> done;
         private static bool sceneChanged;
@@ -67,6 +86,8 @@ namespace Game.EditorTools
             Explosions();
             PlayerSounds();
             StageSmoke();
+            Laughs();
+            DeathLaughs();
 
             AssetDatabase.SaveAssets();
             if (sceneChanged) EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
@@ -543,6 +564,75 @@ namespace Game.EditorTools
                 names.Add(go.name);
             }
             if (names.Count > 0) done.Add($"stage-change poof on {names.Count} smokes ({string.Join(", ", names)})");
+        }
+
+        // ---- 10. The new laughing pumpkin voices ----
+
+        private static void Laughs()
+        {
+            var pairs = new List<(Object old, Object now)>();
+            foreach (var (oldFile, newFile) in LaughSwaps)
+            {
+                var now = Clip(newFile, false);
+                var old = Clip(oldFile, false);
+                if (now == null)
+                {
+                    Debug.LogWarning($"{Tag} Missing {Sfx}{newFile}: {oldFile} stays.");
+                    continue;
+                }
+                if (old != null) pairs.Add((old, now));
+            }
+            if (pairs.Count == 0) return;
+            var guids = pairs.Select(p => AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(p.old))).ToArray();
+            var paths = new List<string>();
+            foreach (var g in AssetDatabase.FindAssets("t:Prefab", new[] { "Assets" }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(g);
+                string text = System.IO.File.ReadAllText(path);
+                if (guids.Any(text.Contains)) paths.Add(path);
+            }
+            // Bases first, so their variants take the new laugh from them (no needless overrides).
+            paths = paths.OrderBy(p => PrefabUtility.GetPrefabAssetType(AssetDatabase.LoadAssetAtPath<GameObject>(p)) == PrefabAssetType.Variant ? 1 : 0)
+                .ThenBy(p => p).ToList();
+            int prefabs = 0, slots = 0;
+            foreach (var path in paths)
+            {
+                var stage = PrefabStageUtility.GetCurrentPrefabStage();
+                if (stage != null && stage.assetPath == path)
+                {
+                    Debug.LogWarning($"{Tag} {path} is open in Prefab Mode: close it and run this again (skipped).");
+                    continue;
+                }
+                var root = PrefabUtility.LoadPrefabContents(path);
+                try
+                {
+                    int n = 0;
+                    foreach (var (old, now) in pairs) n += SwapClip(root, old, now);
+                    if (n == 0) continue;
+                    PrefabUtility.SaveAsPrefabAsset(root, path);
+                    prefabs++;
+                    slots += n;
+                }
+                finally
+                {
+                    PrefabUtility.UnloadPrefabContents(root);
+                }
+            }
+            if (prefabs > 0) done.Add($"new pumpkin laughs in {prefabs} prefabs ({slots} slots)");
+        }
+
+        // When the player dies, the laughing pumpkin's HEE HEE (Story Laugh Settings, Game Over Hold plays it).
+        private static void DeathLaughs()
+        {
+            var settings = AssetDatabase.LoadAssetAtPath<StoryLaughSettings>("Assets/Resources/Story Laugh Settings.asset");
+            if (settings == null)
+            {
+                Debug.LogWarning($"{Tag} No Assets/Resources/Story Laugh Settings.asset (death laugh skipped).");
+                return;
+            }
+            var so = new SerializedObject(settings);
+            Fill(so, "deathLaughs", "death HEE HEE", "player_death_hee_hee_1.mp3", "player_death_hee_hee_2.mp3");
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
 
         // ---- Helpers ----

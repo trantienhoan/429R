@@ -20,8 +20,8 @@ namespace Game.EditorTools
         private const string FsmName = "Wait and Transform";
         private static readonly string[] LaughPaths =
         {
-            "Assets/Audio/SFX/pumpkin_laugh_1.wav", "Assets/Audio/SFX/pumpkin_laugh_2.wav",
-            "Assets/Audio/SFX/pumpkin_laugh_3.wav", "Assets/Audio/SFX/pumpkin_laugh_4.wav",
+            "Assets/Audio/SFX/pumpkin_laugh_1.mp3", "Assets/Audio/SFX/pumpkin_laugh_2.mp3",
+            "Assets/Audio/SFX/pumpkin_laugh_3.mp3", "Assets/Audio/SFX/pumpkin_laugh_4.mp3",
         };
         private const string RumblePath = "Assets/Audio/SFX/Low,_rumbling_hmmmm.wav";
         // Only a wait this long is the countdown to the boss.

@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1b75cc7e495d3d4f9f9de34b4b3c67d, type: 3}
+  m_Name: Knight Armor Settings
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.KnightArmorSettings
+  pieces:
+  - id: Helmet
+    pickup: {fileID: 8914777444600935556, guid: 5c220a814e840624f821412d1478ebf5,
+      type: 3}
+    armor: 15
+    stat: 1
+    points: 2
+  - id: Chest
+    pickup: {fileID: 6359092593216443307, guid: 91803bbe8040b0c4aa52b5592e761d00,
+      type: 3}
+    armor: 25
+    stat: 0
+    points: 2
+  - id: Bracers
+    pickup: {fileID: 8347699329195338303, guid: e34fba70973c0634eac7c2f642850a7f,
+      type: 3}
+    armor: 15
+    stat: 3
+    points: 2
+  - id: Boots
+    pickup: {fileID: 5762306074726497294, guid: 3fd4008de2db0b244aa94dbc283afe8a,
+      type: 3}
+    armor: 15
+    stat: 5
+    points: 2
+  weapons:
+  - {fileID: 2754509034827852370, guid: 2351921e578fc5241a832a8d1b971fdd, type: 3}
+  - {fileID: 2280671623837054201, guid: 9175f9adec0c8f043b180465df8348f5, type: 3}
+  keepsakes:
+  - {fileID: 7706152598417082904, guid: 4b98827b36fbe9f49b469a64fe5bb0c8, type: 3}
+  - {fileID: 4830991355054717284, guid: 1a8e7c45c03cd984ca5f5fcf8afb85ef, type: 3}
+  - {fileID: 6275010106268335749, guid: f6689028dea169a4f94083ccde9d72a9, type: 3}
+  - {fileID: 87445008430594107, guid: 7df44b94684ee5a48b69181400b9f36d, type: 3}
+  keepsakeSound: {fileID: 8300000, guid: a56cd51311da2df43a0220acff0c521f, type: 3}
+  keepsakeVolume: 0.9
+  allKeepsakesSound: {fileID: 8300000, guid: 70397107cf201194bbb25fb87d18f6d7, type: 3}
+  allKeepsakesVolume: 1
+  perRoom: {x: 1, y: 2}
+  chestChance: 0.3
+  smallestSpot: 0.4
+  skipNames:
+  - Pumpkin
+  - Book
+  - Bottle
+  - Candy
+  - Flip_Flop
+  roomSettles: 2.5
+  smallestRoom: 4
+  glint: {fileID: 4033412786151888123, guid: 49057b33ea71fbb4da4e8f02a8db9f28, type: 3}
+  glintScale: 0.35
+  glintEvery: {x: 5, y: 9}
+  foundPuff: {fileID: 431296081563789977, guid: 7d85674d137626445accce4cef7fe159,
+    type: 3}
+  foundSound: {fileID: 8300000, guid: 0acdbd19a1f27d249a4a9ff855bacf39, type: 3}
+  foundVolume: 0.9
+  equipSound: {fileID: 8300000, guid: 315f143d46539a848b07adf1cbfd5a62, type: 3}
+  equipVolume: 1
+  floatHeight: 1.1
+  hitSounds:
+  - {fileID: 8300000, guid: 54fac89927f7abb49aed32ea51436d23, type: 3}
+  - {fileID: 8300000, guid: 423ec03b8e688e04db8d55b7f3119fef, type: 3}
+  hitVolume: 0.7
+  breakSound: {fileID: 8300000, guid: eed8c542202798d40894eb3b0b6fd4ac, type: 3}
+  breakVolume: 0.9
+  icon: {fileID: -2090247495, guid: c4c5b808f41349e4380df7956a466178, type: 3}
+  numberColor: {r: 0.8, g: 0.95, b: 0.75, a: 1}

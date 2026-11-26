@@ -221,6 +221,9 @@ namespace Game.Combat
         /// <summary>True once its health has run out (its body may still be playing the death).</summary>
         public bool IsDead => dead || (health != null && health.Value <= 0f);
 
+        /// <summary>Its health now (-1 before its FSM is found), e.g. to tell unbreakable blocks (9999) apart.</summary>
+        public float HealthLeft => health != null ? health.Value : -1f;
+
         /// <summary>A piece of furniture rather than an enemy (see Furniture in the Inspector).</summary>
         public bool IsFurniture => furniture;
 

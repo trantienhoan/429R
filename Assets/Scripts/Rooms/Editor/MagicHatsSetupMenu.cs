@@ -39,7 +39,7 @@ namespace Game.EditorTools
         private const string PumpkinMesh = "pumpkin_evil";
         private const string PumpkinDrop = "Assets/Prefabs/Items/Broken_Stuffs/pumpkin_evil_drop.prefab";
         private const string PumpkinDropSmall = "Assets/Prefabs/Items/Broken_Stuffs/pumpkin_evil_drop_small.prefab";
-        private const string Laugh = "Assets/Audio/SFX/laughing_pumpkin_1.wav";
+        private const string Laugh = "Assets/Audio/SFX/laughing_pumpkin_1.mp3";
         private const string RevealSound = "Assets/Audio/SFX/magic_hat_spit_card.wav";
         private const string Filler = "Assets/Prefabs/Items/Breakable/Pumpkin_On_Tree.prefab";
         // The skull is 0.31 m across, the pumpkin 0.56 m.

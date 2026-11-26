@@ -19753,6 +19753,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 2124999359952799557}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: cf3f3f379d46ae844aedb99fa2b7073c,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6594311567003927157}
     - targetCorrespondingSourceObject: {fileID: -6759170251157166916, guid: cf3f3f379d46ae844aedb99fa2b7073c,
         type: 3}
       insertIndex: -1
@@ -20737,10 +20741,26 @@ MonoBehaviour:
   tilt: 8
   wobblesPerSecond: 5
   settleTime: 0.7
+  perExtraDamage: 0
+  mostHurtStrength: 2.5
   softHitPause: 0.75
   around: {fileID: 0}
   healthFsm: Health
   healthVariable: health
+--- !u!114 &6594311567003927157
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1466195575395978692}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 23d93139ff80dab41b0e03c9e9d855cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Combat.KnightArmorChest
+  controlFsm: Chest_Control
+  openState: Open_Chest
 --- !u!1 &1795838460629470899 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -9190288441693503962, guid: cf3f3f379d46ae844aedb99fa2b7073c,

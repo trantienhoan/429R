@@ -69,8 +69,8 @@ namespace Game.PlayGround.Editor
                     Load<GameObject>(PuffPath, missing),
                 },
                 blastSound = Load<AudioClip>(Sfx + "pumpkin_explode_1.wav", missing),
-                laughs = Clips(missing, "laughing_pumpkin_1", "laughing_pumpkin_2", "laughing_pumpkin_3", "laughing_pumpkin_4"),
-                hits = Clips(missing, "pumpkin_laugh_1", "pumpkin_laugh_2", "pumpkin_laugh_3", "pumpkin_laugh_4", "laughing_pumpkin_5"),
+                laughs = Clips(missing, "laughing_pumpkin_1.mp3", "laughing_pumpkin_2.mp3", "laughing_pumpkin_3.mp3", "laughing_pumpkin_4.mp3"),
+                hits = Clips(missing, "pumpkin_laugh_1.mp3", "pumpkin_laugh_2.mp3", "pumpkin_laugh_3.mp3", "pumpkin_laugh_4.mp3", "laughing_pumpkin_5.mp3"),
             };
             refs.blastEffects = System.Array.FindAll(refs.blastEffects, e => e != null);
 
@@ -246,7 +246,8 @@ namespace Game.PlayGround.Editor
             var list = new List<Object>();
             foreach (var name in names)
             {
-                var clip = Load<AudioClip>(Sfx + name + ".wav", missing);
+                // A name with its own extension (the user's new laughs are .mp3, 2026-11-26) is used as it is.
+                var clip = Load<AudioClip>(Sfx + name + (name.Contains(".") ? "" : ".wav"), missing);
                 if (clip != null) list.Add(clip);
             }
             return list.ToArray();

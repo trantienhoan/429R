@@ -26,7 +26,8 @@ namespace HutongGames.PlayMaker.Actions
         public FsmFloat storeAmount;
 
         [Tooltip("Tick for damage to the player: the amount is cut by the player's Toughness (a level-up stat), is " +
-                 "1.5x while the player is high on a boong, and half for a bite a bare fist blocked; never below 1.")]
+                 "1.5x while the player is high on a boong, and half for a bite a bare fist blocked; never below 1. " +
+                 "Then the Knight's armor found this run takes it first, and only the rest comes off this variable.")]
         public FsmBool playerToughness;
 
         public override void Reset()
@@ -49,6 +50,8 @@ namespace HutongGames.PlayMaker.Actions
                 amount *= Game.Leveling.PlayerLevel.DamageShare * Game.Leveling.PlayerBuffs.DamageTakenScale * Game.Combat.PlayerDamageShare.Take();
                 if (wholeNumbers.Value) amount = UnityEngine.Mathf.Round(amount);
                 amount = UnityEngine.Mathf.Max(amount, 1f);
+                // The Knight's armor found this run takes the hit first; health only what it can't (Knight Armor).
+                amount = Game.Combat.KnightArmor.Absorb(amount);
             }
             floatVariable.Value -= amount;
             if (!storeAmount.IsNone) storeAmount.Value = amount;

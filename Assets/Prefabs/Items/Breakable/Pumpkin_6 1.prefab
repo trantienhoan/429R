@@ -52,7 +52,10 @@ MonoBehaviour:
   tilt: 16
   wobblesPerSecond: 4.5
   settleTime: 0.9
+  perExtraDamage: 0
+  mostHurtStrength: 2.5
   softHitPause: 0.75
+  around: {fileID: 0}
   healthFsm: Health
   healthVariable: health
 --- !u!1 &6718550479359632818
@@ -858,10 +861,10 @@ MonoBehaviour:
           stringValues: []
           vector4Values: []
           objectReferences:
-          - {fileID: 8300000, guid: 5559a9c98e6c15148b6eb31df62d8b20, type: 3}
-          - {fileID: 8300000, guid: 448f0b20a89331745bbe48dca5ca98d8, type: 3}
-          - {fileID: 8300000, guid: bdaf5f6e3901b474f9ea00411277f5d9, type: 3}
-          - {fileID: 8300000, guid: 89aacdef08bfdc54694504d3ea8d2b78, type: 3}
+          - {fileID: 8300000, guid: 3704498f5d4522849a7eb3ff99ba5c00, type: 3}
+          - {fileID: 8300000, guid: 8b440e756063dd243936b5443227472d, type: 3}
+          - {fileID: 8300000, guid: 936f6a98fc34e3c43af7876340f87de6, type: 3}
+          - {fileID: 8300000, guid: fce30f0ca353461419741fa2c5af05a9, type: 3}
         fsmEnumParams:
         - useVariable: 0
           name: 
@@ -1667,10 +1670,10 @@ MonoBehaviour:
           stringValues: []
           vector4Values: []
           objectReferences:
-          - {fileID: 8300000, guid: 5559a9c98e6c15148b6eb31df62d8b20, type: 3}
-          - {fileID: 8300000, guid: 448f0b20a89331745bbe48dca5ca98d8, type: 3}
-          - {fileID: 8300000, guid: bdaf5f6e3901b474f9ea00411277f5d9, type: 3}
-          - {fileID: 8300000, guid: 89aacdef08bfdc54694504d3ea8d2b78, type: 3}
+          - {fileID: 8300000, guid: 3704498f5d4522849a7eb3ff99ba5c00, type: 3}
+          - {fileID: 8300000, guid: 8b440e756063dd243936b5443227472d, type: 3}
+          - {fileID: 8300000, guid: 936f6a98fc34e3c43af7876340f87de6, type: 3}
+          - {fileID: 8300000, guid: fce30f0ca353461419741fa2c5af05a9, type: 3}
         fsmEnumParams:
         - useVariable: 0
           name: 
@@ -2060,10 +2063,10 @@ MonoBehaviour:
         stringValues: []
         vector4Values: []
         objectReferences:
-        - {fileID: 8300000, guid: 5559a9c98e6c15148b6eb31df62d8b20, type: 3}
-        - {fileID: 8300000, guid: 448f0b20a89331745bbe48dca5ca98d8, type: 3}
-        - {fileID: 8300000, guid: bdaf5f6e3901b474f9ea00411277f5d9, type: 3}
-        - {fileID: 8300000, guid: 89aacdef08bfdc54694504d3ea8d2b78, type: 3}
+        - {fileID: 8300000, guid: 3704498f5d4522849a7eb3ff99ba5c00, type: 3}
+        - {fileID: 8300000, guid: 8b440e756063dd243936b5443227472d, type: 3}
+        - {fileID: 8300000, guid: 936f6a98fc34e3c43af7876340f87de6, type: 3}
+        - {fileID: 8300000, guid: fce30f0ca353461419741fa2c5af05a9, type: 3}
       enumVariables: []
       categories:
       - 
@@ -3750,6 +3753,7 @@ MonoBehaviour:
   settings: {fileID: 11400000, guid: a4bb7cba2ad24374b96f92f2938fdc52, type: 2}
   toughness: 4
   hitCooldown: 0.3
+  everyHitCounts: 0
   knockBack: 0
   knockBackDistance: 2
   knockBackTime: 0.45

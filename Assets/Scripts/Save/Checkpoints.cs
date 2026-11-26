@@ -39,6 +39,9 @@ namespace Game.Saving
             public string gloves = "";
             public string glovesOffered = "";
             public string glovesLastRun = "";
+            // The Knight's armor found this run (Knight Armor: "Helmet,Boots"; "" = none) and the armor left (-1: all).
+            public string armor = "";
+            public float armorLeft = -1f;
         }
 
         /// <summary>Raised when anything here changes, so the save is written.</summary>
@@ -202,6 +205,7 @@ namespace Game.Saving
             RestHealth = -1f;
             IsDying = false;
             Game.Combat.Gloves.NewRun();
+            Game.Combat.KnightArmor.NewRun();
             Changed?.Invoke();
             RunStarted?.Invoke();
         }
@@ -313,6 +317,8 @@ namespace Game.Saving
                     gloves = "",
                     glovesOffered = "",
                     glovesLastRun = Game.Combat.Gloves.Offered != null ? Game.Combat.Gloves.OfferedId : Game.Combat.Gloves.LastRunId,
+                    armor = "",
+                    armorLeft = -1f,
                 };
             }
             return new SavedCheckpoint
@@ -324,6 +330,8 @@ namespace Game.Saving
                 gloves = Game.Combat.Gloves.WornId,
                 glovesOffered = Game.Combat.Gloves.OfferedId,
                 glovesLastRun = Game.Combat.Gloves.LastRunId,
+                armor = Game.Combat.KnightArmor.SaveIds,
+                armorLeft = Game.Combat.KnightArmor.Armor,
             };
         }
 
@@ -341,6 +349,8 @@ namespace Game.Saving
             IsDying = false;
             // The run's gloves (none in older saves).
             Game.Combat.Gloves.Load(saved?.gloves, saved?.glovesOffered, saved?.glovesLastRun);
+            // The Knight's armor found this run (none in older saves).
+            Game.Combat.KnightArmor.Load(saved?.armor, saved != null ? saved.armorLeft : -1f);
             // Left during the boss fight: this game is a new run (Re-Dream), from the very start, all revives, no gloves.
             if (AtBoss)
             {
@@ -349,6 +359,7 @@ namespace Game.Saving
                 RevivesLeft = RevivesPerRun;
                 RestHealth = -1f;
                 Game.Combat.Gloves.NewRun();
+                Game.Combat.KnightArmor.NewRun();
             }
             IsLoaded = true;
         }
@@ -362,6 +373,7 @@ namespace Game.Saving
             RevivesLeft = RevivesPerRun;
             IsDying = false;
             Game.Combat.Gloves.Forget();
+            Game.Combat.KnightArmor.NewRun();
         }
     }
 }

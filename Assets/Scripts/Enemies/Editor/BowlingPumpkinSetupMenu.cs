@@ -104,7 +104,7 @@ namespace Game.EditorTools
                 so.FindProperty("radius").floatValue = ModelRadius;
                 SetList(so.FindProperty("breakOutEffects"), Lana + "Confetti/Hit_Blast.prefab", "Assets/Prefabs/Effects/Smoke/Smoke_Flash_Small_Puff.prefab");
                 so.FindProperty("breakOutSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "pumpkin_explode_1.wav");
-                SetList(so.FindProperty("wakeSounds"), Sfx + "laughing_pumpkin_1.wav", Sfx + "laughing_pumpkin_2.wav", Sfx + "laughing_pumpkin_3.wav");
+                SetList(so.FindProperty("wakeSounds"), Sfx + "laughing_pumpkin_1.mp3", Sfx + "laughing_pumpkin_2.mp3", Sfx + "laughing_pumpkin_3.mp3");
                 // The user's whistle (2026-10-25): it ends as the ball sets off.
                 so.FindProperty("rollWarning").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "choo_choo.wav");
                 so.FindProperty("rollSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(Sfx + "giant_ball_rolling.wav");

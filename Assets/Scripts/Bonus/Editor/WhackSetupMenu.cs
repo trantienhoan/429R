@@ -775,7 +775,7 @@ namespace Game.EditorTools
             Ref("goldSound", Load<AudioClip>(Sfx + "ka_ching.wav"));
             Ref("rainbowSound", Load<AudioClip>(Sfx + "A_magical_glowing.wav"));
             Ref("clockSound", Load<AudioClip>(Ui + "confirmation_002.ogg"));
-            Ref("skullSound", Load<AudioClip>(Sfx + "laughing_pumpkin_1.wav"));
+            Ref("skullSound", Load<AudioClip>(Sfx + "laughing_pumpkin_1.mp3"));
             Ref("missSound", Load<AudioClip>(Sfx + "Pumpkin_leuleu1.wav"));
             Ref("comboSound", Load<AudioClip>(Sfx + "fairy_yippy.wav"));
             // The gold frenzy's start (user, 2026-11-23: "Golden frenzy"): the user's bell.

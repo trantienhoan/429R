@@ -238,6 +238,13 @@ namespace Game.Combat
 
         public static string Label() => Shown ? "Health: shown" : "Health: hidden";
 
+        /// <summary>The health number and the change pop (for what is drawn next to them: the Knight's armor).</summary>
+        public TMP_Text NumberText => number;
+        public TMP_Text ChangeText => change;
+
+        /// <summary>Shows the HUD for a few seconds, as a health change does (the Knight's armor changing).</summary>
+        public void Poke() => changedAt = Time.unscaledTime;
+
         /// <summary>The settings were wiped (reset to a new install): the choice is read again, shown for a new player.</summary>
         public static void ForgetChoice() => playerChoice = null;
 

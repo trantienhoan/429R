@@ -18,6 +18,12 @@ namespace Game.Story
         [Min(1f)]
         [SerializeField] private float lightRange = 25f;
 
+        [Header("When the player dies: the laughing pumpkin's HEE HEE (user 2026-11-26)")]
+        [Tooltip("One at random as the HEE HEE picture comes up (Game Over Hold), never the same twice in a row. Empty = none.")]
+        [SerializeField] private AudioClip[] deathLaughs = new AudioClip[0];
+        [Range(0f, 1f)]
+        [SerializeField] private float deathLaughVolume = 0.9f;
+
         [Header("The light gets weird: its own Lamp Flicker stutters at each laugh, and it turns this colour")]
         [Tooltip("The colour the ceiling light turns toward while the laugh sounds.")]
         [SerializeField] private Color weirdColor = new Color(0.62f, 0.75f, 1f, 1f);
@@ -71,6 +77,8 @@ namespace Game.Story
 
         public string[] RoomBases => roomBases;
         public float LightRange => lightRange;
+        public AudioClip[] DeathLaughs => deathLaughs;
+        public float DeathLaughVolume => deathLaughVolume;
         public Color WeirdColor => weirdColor;
         public float WeirdMix => weirdMix;
         public float LightBackSeconds => lightBackSeconds;

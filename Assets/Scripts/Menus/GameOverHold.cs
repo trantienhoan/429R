@@ -78,7 +78,13 @@ namespace Game.Menus
 
             if (!holding)
             {
-                if (over.activeSelf && !shown) { shown = true; shownAt = now; fade.alpha = 1f; }
+                if (over.activeSelf && !shown)
+                {
+                    shown = true;
+                    shownAt = now;
+                    fade.alpha = 1f;
+                    Laugh();
+                }
                 if (shown && over.activeSelf) fade.alpha = WordsAlpha(now);
                 // Dying... took it off: keep it on through the restart.
                 if (shown && !over.activeSelf)
@@ -111,6 +117,37 @@ namespace Game.Menus
             over.SetActive(false);
             fade.alpha = 1f;
             SetBlack(0f);
+        }
+
+        // The laughing pumpkin's HEE HEE as the picture comes up (Story Laugh Settings' Death Laughs, user 2026-11-26):
+        // one at random, not the same as last time, heard in the player's head.
+        private AudioSource laughVoice;
+        private int lastLaugh = -1;
+
+        /// <summary>Death laughs played so far this session (for tests).</summary>
+        public static int Laughs { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => Laughs = 0;
+
+        private void Laugh()
+        {
+            var settings = Game.Story.StoryLaughSettings.Instance;
+            var clips = settings != null ? settings.DeathLaughs : null;
+            if (clips == null || clips.Length == 0) return;
+            int i = Random.Range(0, clips.Length);
+            if (clips.Length > 1 && i == lastLaugh) i = (i + 1) % clips.Length;
+            lastLaugh = i;
+            if (clips[i] == null) return;
+            if (laughVoice == null)
+            {
+                laughVoice = gameObject.AddComponent<AudioSource>();
+                laughVoice.playOnAwake = false;
+                laughVoice.spatialBlend = 0f;
+                laughVoice.ignoreListenerPause = true;
+            }
+            laughVoice.PlayOneShot(clips[i], settings.DeathLaughVolume);
+            Laughs++;
         }
 
         // The HEE HEE words: on for Words Seconds from the death, then faded out over Words Fade Seconds.

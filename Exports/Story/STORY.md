@@ -144,6 +144,45 @@ Parts 1-5 tell WHAT happens. Next, the game must show WHY. Nothing is decided ye
 Status 2026-11-25: answers recorded. Built first (user's pick): **the boss escape** (the mini boss pops out of the broken laughing pumpkin with its seed piece, runs off and digs in; it climbs back out of that hole for the fight). Details in Assets/NOTES_Next_Time.md "BOSS ESCAPE". Then built **the laughing pumpkin's green glow** (its candle-lit eyes and grin turn green and the seed's glow seeps out around it, faint at first and full when it turns giant, flaring with each laugh). Next: the rooms as lairs (concept art first), then mosquitoes.
 
 
+## Visual hints and easter eggs (ideas 2026-11-26, NOT built yet)
+
+User 2026-11-26: "I prefer telling story with visual than listening. Hints or easter eggs are better." Already built:
+the lairs, specimen board, glow jars, jar huddle, growth chart, the Fairy's jar at the boss. Ideas, smallest first:
+
+1. **Every clock stuck at 4:29** (the game's name): time stopped in this dream. Tiny.
+2. **Tally marks** scratched in the start prison room, one more for each boss win (save): "again and again". Small.
+3. **Green sprouts** in the start rooftop's cracks, more after each win: the Green comes back. Small (same counter as 2).
+4. **Earlier knights' gear** (dented helmets, a lost glove) near the boss arena: others tried before you. Small.
+5. **Her green trail**: faint green scuffs from the door to where the room's laughing pumpkin hides: she was dragged
+   here, and a hint where to look. Medium.
+6. **The watcher at the window**: now and then the giant pumpkin's glowing eyes drift past a window, bigger each room.
+   Medium.
+7. **The laugh's shadow**: each laugh throws the giant monster's shadow on the wall behind it, what it will become.
+   Medium (a fake shadow: builds have no real shadows).
+8. **Her lost things**: one tiny thing of hers hidden in each lair; find all 4 for a small reward. Medium (tiny models).
+
+**User picked 4, 6, 7, 8 (2026-11-26).** Idea 4 grew into the **Knight's armor hunt** (user: hide all the Knight's armor
+very randomly, in boxes, furniture, even the seed chests; each part gives armor, armor breaks first then health, and
+extra stats for that run). **BUILT + editor-tested 2026-11-26 (user "Yes, build it")**: Tools > 429 Game > Items > Set Up
+Knight Armor Hunt; details in Assets/NOTES_Next_Time.md. **Ideas 6, 7, 8 BUILT + editor-tested the same day** (user "Yes,
+build 6-8"): Tools > 429 Game > Story > Set Up Story Hints (Watcher, Shadow, Her Flowers). 6 = the giant's glowing eyes
+drift past a bedroom-kit window (or out in the dark while a room's walls are down for the fight), growing with each seed
+piece; 7 = each laugh throws the giant's fists-up shadow on the wall behind the laughing pumpkin; 8 = her lost things are
+her 4 flowers, one hidden in each room's set like the armor, all 4 in a run = her green shower + full health. The plan
+as agreed:
+- The pieces exist: Knight_429.blend's armor set = `Models/Knight_Armors` Helmet, Chest_Piece, Bracer, Boots, Shield,
+  Sword (one material), with item prefabs `Prefabs/Items/Pie_Knight_*`. Their old FSM sets the GAMESTAGES gear bools
+  (Head_Gear...), which are PROGRESS flags now: the armor pickups must not set them.
+- Armor = a pool on top of health: the player's damage action (FloatSubtractRandom, Player Toughness) takes it from the
+  armor first. Stats = run points like the gloves' (PlayerLevel RunPoints). Lost at a new run, kept through checkpoints.
+- Suggested: Helmet 15 armor + Toughness, Chest 25 + Max Health, Bracers 15 + Fist power (seen on the glove cuffs),
+  Boots 15 + Speed (each +2 points); 70 armor in all.
+- USER 2026-11-26: **the sword and shield are the legendary WEAPONS: grabbable, never eaten for stats.** They hide the
+  same way as the armor, but what pops out is the existing `Pie_Knight_Sword_Legendary` / `Pie_Knight_Shield_Legendary`
+  (LegendaryGear: trigger to grow, the shield blocks, 210 s life then candies; no FSM, no gear bools).
+- Hidden per run at random: 1-2 per room in its breakable boxes/furniture or its seed chest; a faint glint as the hint.
+  The boss arena's empty armour stand (idea 4) shows whose armor it was. Idea 8 (her lost things) can use the same hider.
+
 ## The start rooftop three ways (user 2026-11-25, BUILT)
 
 User's plan: the first time (a new save) the rooftop path is barely visible, no guide Knight, only the Fairy's light from
