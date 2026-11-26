@@ -166,23 +166,13 @@ namespace Game.EditorTools
                 Object.DestroyImmediate(pumpkin);
             }
 
-            // The huddle: a glowing jar with four of them round it, each facing the jar.
-            var sipping = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabFolder + "Lair_Sipping_Pumpkin.prefab");
+            // The huddle: a glowing jar. (The four sipping pumpkins round it are out, user 2026-11-26: "they are not doing
+            // anything but distraction"; Lair_Sipping_Pumpkin is kept for later.)
             var huddle = new GameObject("Lair_Jar_Huddle");
             try
             {
                 var j = (GameObject)PrefabUtility.InstantiatePrefab(jar, huddle.transform);
                 j.transform.localPosition = new Vector3(0f, 0.01f, 0f);
-                float[] angles = { 20f, 105f, 200f, 290f };
-                float[] sizes = { 1f, 0.85f, 1.1f, 0.92f };
-                for (int i = 0; i < angles.Length; i++)
-                {
-                    var p = (GameObject)PrefabUtility.InstantiatePrefab(sipping, huddle.transform);
-                    var dir = Quaternion.Euler(0f, angles[i], 0f) * Vector3.forward;
-                    p.transform.localPosition = dir * 0.27f + Vector3.up * 0.01f;
-                    p.transform.localRotation = Quaternion.LookRotation(-dir, Vector3.up);
-                    p.transform.localScale = Vector3.one * sizes[i];
-                }
                 bool had = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabFolder + "Lair_Jar_Huddle.prefab") != null;
                 PrefabUtility.SaveAsPrefabAsset(huddle, PrefabFolder + "Lair_Jar_Huddle.prefab");
                 if (!had) done.Add("made " + PrefabFolder + "Lair_Jar_Huddle.prefab");
@@ -561,18 +551,10 @@ namespace Game.EditorTools
             return false;
         }
 
-        // The open wardrobe's extras (the model's front faces +X; the closed door is on +Z, the open one on -Z): claw
-        // scratches on the closed door, an egg sac on a thread from the crown in front of the open door.
+        // The open wardrobe's extras (the model's front faces +X; the closed door is on +Z, the open one on -Z): an egg
+        // sac on a thread from the crown in front of the open door. (Its claw scratches are out: user 2026-11-26.)
         private static void WardrobeExtras(GameObject root)
         {
-            var scratches = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabFolder + "Lair_Claw_Scratches.prefab");
-            if (scratches != null)
-            {
-                var s = (GameObject)PrefabUtility.InstantiatePrefab(scratches, root.transform);
-                s.transform.localPosition = new Vector3(0.276f, 1.2f, 0.25f);
-                s.transform.localRotation = Quaternion.LookRotation(Vector3.right, Vector3.up) * Quaternion.Euler(0f, 0f, 12f);
-                s.transform.localScale = Vector3.one * 0.85f;
-            }
             var sac = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabFolder + "Lair_Web_Strand_Sac.prefab");
             if (sac != null)
             {

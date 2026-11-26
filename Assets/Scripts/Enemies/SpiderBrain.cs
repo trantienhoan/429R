@@ -222,6 +222,8 @@ namespace Game.Enemies
             WindUp,
             Charge,
             Rest,
+            // Not a special move: the stuck watchdog's leap at the player (Stuck Leap), run like one so nothing stops it.
+            StuckLeap,
         }
 
         /// <summary>
@@ -926,6 +928,10 @@ namespace Game.Enemies
                  "teleport dodges it; fists and held weapons don't stop it.")]
         [Min(1f)]
         [SerializeField] private float giantWebSpeed = 8f;
+        [Tooltip("Giant Web: it keeps turning to the player while it makes the ball and spits it at where they are at that " +
+                 "moment (user 2026-11-26: \"make that move aim to the Player till the moment the boss shoot that web " +
+                 "ball\"). Off: aimed at where they stood when it started making it.")]
+        [SerializeField] private bool giantWebTracks = true;
         [Tooltip("Bull Charge: the bugs in its way (its own minions too) are knocked flying aside, this far (x) and this " +
                  "high (y), in metres; they're not hurt. 0, 0 = it runs through them.")]
         [SerializeField] private Vector2 chargeKnockBugs = new(3.5f, 1.2f);
@@ -1026,6 +1032,21 @@ namespace Game.Enemies
                  "it, a soft lob does half. It keeps away, so a throw (or a flying punch) is the way to catch it.")]
         [Min(1f)]
         [SerializeField] private float anomalyHealth = 1f;
+
+        [Header("Stuck leap (user 2026-11-26: \"when the cockroach feel stucked, make them fly a bit and jump on Player\")")]
+        [Tooltip("When the stuck watchdog finds it stuck (still for Stuck Leap After seconds while it should be coming or " +
+                 "circling), it springs up and flies in an arc over whatever held it, landing next to the player: a hit if " +
+                 "they're still there. Off: it is put back on the NavMesh, as before.")]
+        [SerializeField] private bool stuckLeap;
+        [Tooltip("Seconds it must stand stuck first (the watchdog's usual is 6).")]
+        [Min(1f)]
+        [SerializeField] private float stuckLeapAfter = 3f;
+        [Tooltip("How high the arc goes over the higher of its two ends, in metres.")]
+        [Min(0.2f)]
+        [SerializeField] private float stuckLeapHeight = 1.3f;
+        [Tooltip("How fast it flies across, in metres a second (the flight takes 0.6-1.6 s).")]
+        [Min(1f)]
+        [SerializeField] private float stuckLeapSpeed = 7f;
 
         [Header("Sounds")]
         [SerializeField] private AudioClip[] noticeSounds = Array.Empty<AudioClip>();
@@ -1530,6 +1551,7 @@ namespace Game.Enemies
             if (clinger == this) clinger = null;
             GiveUpTurn();
             StopShooting();
+            Land();
         }
 
         private void OnDestroy()
@@ -3070,6 +3092,9 @@ namespace Game.Enemies
                     Stop();
                     if (Time.time >= stateUntil) EndSpecial();
                     return;
+                case SpecialPhase.StuckLeap:
+                    DoStuckLeap();
+                    return;
             }
         }
 
@@ -3090,6 +3115,8 @@ namespace Game.Enemies
             }
             else
             {
+                // It follows the player until the ball is spat (Giant Web Tracks): no spot locked at the start.
+                if (giantWebTracks) aimLocked = false;
                 Enter(State.Special, webDuration / giantWebAnimationSpeed);
                 webStart = Time.time;
                 webLaunched = false;
@@ -3619,7 +3646,10 @@ namespace Game.Enemies
                 return;
             }
             bool offMesh = !agent.isOnNavMesh;
-            bool shouldCome = !offMesh && noticed && state == State.Chase && PlayerDistance() > WindUpDistance() + 1.5f;
+            // Coming for the player, or circling them waiting for its turn (it should be moving either way; a cockroach
+            // boss stood circling at the room's edge, user 2026-11-26).
+            bool shouldCome = !offMesh && noticed && (state == State.Chase || state == State.Circle) &&
+                              PlayerDistance() > WindUpDistance() + 1.5f;
             var here = transform.position;
             if (!offMesh && !shouldCome)
             {
@@ -3632,9 +3662,93 @@ namespace Game.Enemies
                 stuckFrom = here;
                 return;
             }
-            if (Time.time - stuckSince < (offMesh ? 3f : 6f)) return;
+            if (Time.time - stuckSince < (offMesh ? 3f : stuckLeap ? stuckLeapAfter : 6f)) return;
             stuckSince = -1f;
+            if (stuckLeap && StartStuckLeap()) return;
             Unstick(offMesh);
+        }
+
+        // ---- Stuck leap (user 2026-11-26: a cockroach mini boss stuck at the room's edge flies at the player) ----
+
+        private bool stuckLeaping;
+        private Vector3 stuckLeapFrom, stuckLeapTo;
+        private float stuckLeapStart, stuckLeapSeconds;
+
+        // Off the ground and over whatever holds it, to a spot next to the player on its own NavMesh. The agent stays on
+        // the NavMesh where it was (Update Position off) while the body flies, and is warped to the landing spot.
+        private bool StartStuckLeap()
+        {
+            if (player == null || player.Camera == null || state == State.Dead || !agent.isOnNavMesh) return false;
+            var filter = new NavMeshQueryFilter { agentTypeID = agent.agentTypeID, areaMask = agent.areaMask };
+            var head = player.Camera.transform.position;
+            var floor = new Vector3(head.x, player.transform.position.y, head.z);
+            var from = transform.position;
+            var across = floor - from;
+            across.y = 0f;
+            float distance = across.magnitude;
+            var way = distance > 0.01f ? across / distance : transform.forward;
+            // Just short of the player: its head ends up at them.
+            var landing = floor - way * Mathf.Min(distance, 0.45f * Size() + playerBodyRadius + 0.3f);
+            if (!NavMesh.SamplePosition(landing, out var hit, 2f, filter)) return false;
+#if UNITY_EDITOR
+            Debug.LogWarning($"[Spider Brain] {name} was stuck in {state} at {from:F2}: leaps at the player, " +
+                             $"{Vector3.Distance(from, hit.position):F1} m to {hit.position:F2}", this);
+#endif
+            GiveUpTurn();
+            StopShooting();
+            Stop();
+            stuckLeapFrom = from;
+            stuckLeapTo = hit.position;
+            var flat = stuckLeapTo - stuckLeapFrom;
+            flat.y = 0f;
+            stuckLeapSeconds = Mathf.Clamp(flat.magnitude / stuckLeapSpeed, 0.6f, 1.6f);
+            stuckLeapStart = Time.time;
+            stuckLeaping = true;
+            agent.updatePosition = false;
+            specialPhase = SpecialPhase.StuckLeap;
+            Enter(State.Special, stuckLeapSeconds + 0.5f);
+            Play(HasAnimation("attack_leap") ? "attack_leap" : AlertLook, true);
+            PlayOne(noticeSounds, true);
+            SendToOwnFsms("StuckLeap");
+            return true;
+        }
+
+        private void DoStuckLeap()
+        {
+            float s = Mathf.Clamp01((Time.time - stuckLeapStart) / Mathf.Max(0.05f, stuckLeapSeconds));
+            var at = Vector3.Lerp(stuckLeapFrom, stuckLeapTo, s);
+            at.y += stuckLeapHeight * 4f * s * (1f - s) + Mathf.Max(0f, Mathf.Max(stuckLeapFrom.y, stuckLeapTo.y) - at.y) * Mathf.Sin(s * Mathf.PI);
+            transform.position = at;
+            var face = player != null && player.Camera != null ? player.Camera.transform.position - at : stuckLeapTo - stuckLeapFrom;
+            face.y = 0f;
+            if (face.sqrMagnitude > 0.0001f) transform.rotation = Quaternion.LookRotation(face);
+            if (s < 1f) return;
+            Land();
+            // It lands on the player: a hit if they're still within reach.
+            if (player != null && player.Camera != null && PlayerDistance() <= 0.45f * Size() + playerBodyRadius + 0.6f)
+            {
+                DamageVignette.HitFrom(transform);
+                LandOnPlayer();
+                SendToPlayer(BossLeapEvent(), PlayerHealthFsm);
+                if (chargeHitSound != null) PlayOne(chargeHitSound, true);
+                SendToOwnFsms("StuckLeapHit");
+            }
+            Play(IdleLook, true);
+            EndSpecial();
+        }
+
+        // A mini boss's hit uses its Unstoppable Player Event (its jumps' heavy hit), others their size's.
+        private string BossLeapEvent() =>
+            kindName == SizeClass.Boss && unstoppableAttacks && !string.IsNullOrEmpty(unstoppablePlayerEvent) ? unstoppablePlayerEvent : kind.playerEvent;
+
+        // Back on the NavMesh where it came down (also when anything ends the leap early: its death, a stage clean-up).
+        private void Land()
+        {
+            if (!stuckLeaping) return;
+            stuckLeaping = false;
+            if (agent == null) return;
+            agent.updatePosition = true;
+            if (agent.isOnNavMesh) agent.Warp(stuckLeapTo);
         }
 
         // Back onto the NavMesh: next to where it is, or, if it can't walk to the player from there (a NavMesh island),
@@ -5150,6 +5264,8 @@ namespace Game.Enemies
         {
             // The spot picked at a wind-up's start lasts through that wind-up and its strike only.
             if (next != State.Prepare && next != State.Attack && next != State.Special && next != State.WebShot) aimLocked = false;
+            // Anything that ends a stuck leap early (its death, a stage clean-up) brings it down on the NavMesh first.
+            if (stuckLeaping && next != State.Special) Land();
             state = next;
             stateUntil = Time.time + seconds;
             stillSince = -1f;

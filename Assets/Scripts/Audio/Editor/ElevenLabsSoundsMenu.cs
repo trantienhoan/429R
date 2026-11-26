@@ -48,6 +48,8 @@ namespace Game.EditorTools
             "laughing_pumpkin_1.mp3", "laughing_pumpkin_2.mp3", "laughing_pumpkin_3.mp3", "laughing_pumpkin_4.mp3",
             "laughing_pumpkin_5.mp3", "pumpkin_boss_laugh.mp3", "pumpkin_boss_laugh_2.mp3",
             "player_death_hee_hee_1.mp3", "player_death_hee_hee_2.mp3",
+            // The Fairy's new help calls (2026-11-26, Exports/Audio/FAIRY_HELP_PROMPTS.md).
+            "fairy_help_call_1.mp3", "fairy_help_call_2.mp3", "fairy_help_call_3.mp3", "fairy_help_call_4.mp3",
         };
         // Heard in the head (not placed in the world): they keep their stereo.
         private static readonly string[] KeepStereo =
@@ -66,6 +68,16 @@ namespace Game.EditorTools
             ("pumpkin_boss_laugh.wav", "pumpkin_boss_laugh.mp3"), ("pumpkin_boss_laugh_2.wav", "pumpkin_boss_laugh_2.mp3"),
             ("pumpkin_boss_laugh_loud.wav", "pumpkin_boss_laugh.mp3"), ("pumpkin_boss_laugh_2_loud.wav", "pumpkin_boss_laugh_2.mp3"),
         };
+
+        // The Fairy's new help calls (user 2026-11-26: "we need new calling for help sound for fairy"; "audio added"):
+        // her cage at the start (Fairy prefab, its FSM's two calls) gets calls 1 and 2, the jar at the boss
+        // (Story_Fairy_Jar's Calls) gets 3 and 2; once fairy_help_call_4 is in, the jar's Calls become 3 and 4.
+        private static readonly (string old, string now)[] FairyHelpSwaps =
+        {
+            ("Fairy_Call_1.wav", "fairy_help_call_1.mp3"), ("Fairy_Call_2.wav", "fairy_help_call_2.mp3"),
+            ("FairyHelp.wav", "fairy_help_call_3.mp3"), ("FairyCallHelp.wav", "fairy_help_call_2.mp3"),
+        };
+        private const string FairyJar = "Assets/Prefabs/Story/Story_Fairy_Jar.prefab";
 
         private static List<string> done;
         private static bool sceneChanged;
@@ -88,6 +100,7 @@ namespace Game.EditorTools
             StageSmoke();
             Laughs();
             DeathLaughs();
+            FairyHelpCalls();
 
             AssetDatabase.SaveAssets();
             if (sceneChanged) EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
@@ -568,10 +581,42 @@ namespace Game.EditorTools
 
         // ---- 10. The new laughing pumpkin voices ----
 
-        private static void Laughs()
+        private static void Laughs() => SwapEverywhere(LaughSwaps, "new pumpkin laughs");
+
+        // ---- 12. The Fairy's new help calls ----
+
+        private static void FairyHelpCalls()
+        {
+            SwapEverywhere(FairyHelpSwaps, "new Fairy help calls");
+            // The jar's two calls: 3 and 4 once call 4 is in.
+            var three = Clip("fairy_help_call_3.mp3", false);
+            var four = Clip("fairy_help_call_4.mp3", false);
+            if (three == null || four == null) return;
+            EditPrefab(FairyJar, root =>
+            {
+                foreach (var component in root.GetComponentsInChildren<Component>(true))
+                {
+                    if (component == null) continue;
+                    var so = new SerializedObject(component);
+                    var calls = so.FindProperty("calls");
+                    if (calls == null || !calls.isArray) continue;
+                    if (calls.arraySize == 2 && calls.GetArrayElementAtIndex(0).objectReferenceValue == three &&
+                        calls.GetArrayElementAtIndex(1).objectReferenceValue == four) return null;
+                    calls.arraySize = 2;
+                    calls.GetArrayElementAtIndex(0).objectReferenceValue = three;
+                    calls.GetArrayElementAtIndex(1).objectReferenceValue = four;
+                    so.ApplyModifiedPropertiesWithoutUndo();
+                    return "the jar's calls: fairy_help_call_3 and _4";
+                }
+                return null;
+            });
+        }
+
+        // Every prefab that plays an old clip plays its new one (bases before their variants).
+        private static void SwapEverywhere((string old, string now)[] swaps, string what)
         {
             var pairs = new List<(Object old, Object now)>();
-            foreach (var (oldFile, newFile) in LaughSwaps)
+            foreach (var (oldFile, newFile) in swaps)
             {
                 var now = Clip(newFile, false);
                 var old = Clip(oldFile, false);
@@ -618,7 +663,7 @@ namespace Game.EditorTools
                     PrefabUtility.UnloadPrefabContents(root);
                 }
             }
-            if (prefabs > 0) done.Add($"new pumpkin laughs in {prefabs} prefabs ({slots} slots)");
+            if (prefabs > 0) done.Add($"{what} in {prefabs} prefabs ({slots} slots)");
         }
 
         // When the player dies, the laughing pumpkin's HEE HEE (Story Laugh Settings, Game Over Hold plays it).

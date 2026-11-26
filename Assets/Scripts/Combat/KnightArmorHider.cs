@@ -10,11 +10,13 @@ namespace Game.Combat
     /// sometime in some furnitures, sometime even in chest that drop piece of seed"). Made by itself when the game starts
     /// (if Resources/Knight Armor Settings exists); nothing to put in a scene.
     /// - Every second it looks for breakable furniture and boxes (Enemy Hit Damage, Furniture) big enough to hide
-    ///   something. When a room's set has all come (none new for Room Settles seconds), 1-2 of the things not found yet
-    ///   go into random ones of them; a seed piece's chest (Knight Armor Chest) holds one now and then.
-    /// - A hiding place glints now and then. Broken: the thing pops out with a puff (an armor piece floats there, touch it
-    ///   to put it on; a legendary weapon drops to be picked up). Gone without breaking (the room cleared away, the set
-    ///   swapped): the thing hides again in the next set.
+    ///   something. When a room's set has all come (none new for Room Settles seconds), it may hide one armor piece not
+    ///   found yet (Room Chance) and, rarer, one legendary weapon (Weapon Room Chance) in random ones of them; a seed
+    ///   piece's chest (Knight Armor Chest) holds an armor piece now and then (Chest Chance). User 2026-11-26: "make them
+    ///   really rare" (it was 1-2 every room: all four in the first rooms).
+    /// - A hiding place glints now and then. Broken: the thing pops out with a puff (an armor piece floats there, grab it
+    ///   and eat it like a candy; a legendary weapon drops to be picked up). Gone without breaking (the room cleared away,
+    ///   the set swapped), or a found armor piece gone uneaten: it hides again in the next set, no chance roll.
     /// - A new run (or the save read): everything not found hides again, in a new random order.
     /// Also plays the armor's hit and break sounds, and adds the armor to the health HUD.
     /// </summary>
@@ -27,7 +29,11 @@ namespace Game.Combat
         public static KnightArmorHider Instance { get; private set; }
 
         private KnightArmorSettings settings;
+        // The armor pieces and the legendary weapons not found yet (each set may take one of each, by chance).
         private readonly List<string> queue = new();
+        private readonly List<string> weaponQueue = new();
+        // Things that were hidden (or found) and lost again: the next set takes them all, no chance roll.
+        private readonly List<string> carryOver = new();
         // Her lost things (story idea 8): one goes into each room's set, besides the armor.
         private readonly List<string> keepsakeQueue = new();
         private readonly Dictionary<Object, string> hidden = new();
@@ -79,7 +85,8 @@ namespace Game.Combat
         {
             var parts = new List<string>();
             foreach (var pair in hidden) parts.Add(pair.Value + " in " + (pair.Key != null ? pair.Key.name : "-"));
-            return $"queue [{string.Join(", ", queue)}] keepsakes [{string.Join(", ", keepsakeQueue)}] hidden [{string.Join(", ", parts)}]";
+            return $"queue [{string.Join(", ", queue)}] weapons [{string.Join(", ", weaponQueue)}] carry [{string.Join(", ", carryOver)}] " +
+                   $"keepsakes [{string.Join(", ", keepsakeQueue)}] hidden [{string.Join(", ", parts)}]";
         }
 
         // Everything not found yet goes back into the queues, in a new random order.
@@ -88,6 +95,8 @@ namespace Game.Combat
             hidden.Clear();
             nextGlint.Clear();
             queue.Clear();
+            weaponQueue.Clear();
+            carryOver.Clear();
             keepsakeQueue.Clear();
             batch.Clear();
             if (settings == null) return;
@@ -95,14 +104,28 @@ namespace Game.Combat
                 if (piece != null && !string.IsNullOrEmpty(piece.id) && piece.pickup != null && !KnightArmor.Has(piece.id))
                     queue.Add(piece.id);
             for (int i = 0; i < settings.Weapons.Length; i++)
-                if (settings.Weapons[i] != null) queue.Add(WeaponPrefix + i);
+                if (settings.Weapons[i] != null) weaponQueue.Add(WeaponPrefix + i);
             for (int i = 0; i < settings.Keepsakes.Length; i++)
             {
                 string id = KnightArmorSettings.KeepsakePrefix + i;
                 if (settings.Keepsakes[i] != null && !KnightArmor.Has(id)) keepsakeQueue.Add(id);
             }
             Shuffle(queue);
+            Shuffle(weaponQueue);
             Shuffle(keepsakeQueue);
+        }
+
+        /// <summary>
+        /// A found armor piece went without being eaten (the room cleared away, the purple hole): it hides again in the
+        /// next set. Called by the Knight Armor Pickup.
+        /// </summary>
+        public void Lost(string item)
+        {
+            if (settings == null || string.IsNullOrEmpty(item) || KnightArmor.Has(item)) return;
+            if (queue.Contains(item) || carryOver.Contains(item) || keepsakeQueue.Contains(item) || hidden.ContainsValue(item)) return;
+            if (IsKeepsake(item)) keepsakeQueue.Insert(0, item);
+            else carryOver.Add(item);
+            Debug.Log($"{Tag} {item} went uneaten: it hides again in the next room.");
         }
 
         private static void Shuffle(List<string> list)
@@ -141,9 +164,10 @@ namespace Game.Combat
             }
             foreach (var spot in lost)
             {
-                // Back to hiding, first in its queue: the next set gets it.
+                // Back to hiding: the next set gets it for sure (it won its chance already).
                 string item = hidden[spot];
-                (IsKeepsake(item) ? keepsakeQueue : queue).Insert(0, item);
+                if (IsKeepsake(item)) keepsakeQueue.Insert(0, item);
+                else carryOver.Add(item);
                 hidden.Remove(spot);
                 nextGlint.Remove(spot);
             }
@@ -170,16 +194,22 @@ namespace Game.Combat
             return Mathf.Max(bounds.size.x, bounds.size.y, bounds.size.z) >= settings.SmallestSpot;
         }
 
-        // A room's set has all come: 1-2 of the things still hidden go into it.
+        // A room's set has all come: what was lost hides in it again, then by chance one armor piece and, rarer, one
+        // legendary weapon.
         private void CloseBatch()
         {
             batch.RemoveAll(t => t == null || t.IsDead || !t.isActiveAndEnabled || hidden.ContainsKey(t));
+            // Pieces already worn (eaten some other way) don't hide again.
+            queue.RemoveAll(KnightArmor.Has);
+            carryOver.RemoveAll(KnightArmor.Has);
             if (batch.Count >= settings.SmallestRoom)
             {
-                int wanted = Random.Range(settings.PerRoom.x, settings.PerRoom.y + 1);
-                int count = Mathf.Min(wanted, queue.Count, batch.Count);
-                for (int i = 0; i < count; i++) Hide(TakeSpot(), Take(queue), batch.Count + 1);
-                // And one of her lost things.
+                while (carryOver.Count > 0 && batch.Count > 0) Hide(TakeSpot(), Take(carryOver), batch.Count + 1);
+                if (queue.Count > 0 && batch.Count > 0 && Random.value < settings.RoomChance)
+                    Hide(TakeSpot(), Take(queue), batch.Count + 1);
+                if (weaponQueue.Count > 0 && batch.Count > 0 && Random.value < settings.WeaponRoomChance)
+                    Hide(TakeSpot(), Take(weaponQueue), batch.Count + 1);
+                // And one of her lost things (none while the list is empty).
                 if (keepsakeQueue.Count > 0 && batch.Count > 0) Hide(TakeSpot(), Take(keepsakeQueue), batch.Count + 1);
             }
             batch.Clear();

@@ -393,7 +393,10 @@ namespace Game.Combat
             poisonSeen = taken;
             if (Mathf.Abs(now - lastHealth) > 0.01f)
             {
-                Changed(now - lastHealth, ticked);
+                // The number never shows below 0, so neither does the change: a revive from -5 to 161 is +161 (the
+                // 2026-11-26 run showed +166 for 0 -> 161).
+                float shownChange = Mathf.Max(0f, now) - Mathf.Max(0f, lastHealth);
+                if (Mathf.Abs(shownChange) > 0.01f) Changed(shownChange, ticked);
                 lastHealth = now;
             }
             // Cracked once the player has died this run: shown as it happens.

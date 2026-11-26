@@ -37,12 +37,78 @@ namespace Game.Story
             if (onMainGame) Tint(StorySeedSettings.Instance.Glow, StorySeedSettings.Instance.GlowParts);
         }
 
-        /// <summary>The player took the seed: the bright light and the voice, on the main game only.</summary>
+        /// <summary>
+        /// The player took the seed, on the main game only: a piece goes up in a green smoke bomb with the voice (user
+        /// 2026-11-26: the bright light that filled the view until the next room blinded them); the whole seed keeps
+        /// its light with the story's last words.
+        /// </summary>
         public void Touched()
         {
             if (!onMainGame && !OnMainGame()) return;
-            if (wholeSeed) StoryLight.PlayEnd(StorySeedSettings.Instance);
-            else StoryLight.Play(StorySeedSettings.Instance);
+            var settings = StorySeedSettings.Instance;
+            if (wholeSeed) StoryLight.PlayEnd(settings);
+            else if (settings.PieceSmoke == null) StoryLight.Play(settings);
+            else
+            {
+                GreenSmokeBomb(transform.position, settings);
+                Say(settings.RandomVoice(), settings.VoiceVolume);
+            }
+        }
+
+        /// <summary>Green smoke bombs set off so far (for tests).</summary>
+        public static int SmokeBombs { get; private set; }
+
+        // Metres between the eyes and the middle of the green puff, at least.
+        private const float SmokeKeepAway = 0.8f;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => SmokeBombs = 0;
+
+        // Its own copy of the smoke (not the effect pool's: the pool's copies are shared, and the boss escape uses the
+        // same smoke white), tinted the seed's green before its first puff.
+        private static void GreenSmokeBomb(Vector3 at, StorySeedSettings settings)
+        {
+            // Taken in the hand (or walked into), the seed is close to the eyes: the puff goes off at least Smoke Keep
+            // Away from them, so it's a poof to see, not a cloud over the view.
+            var cam = Camera.main;
+            if (cam != null)
+            {
+                var eyes = cam.transform.position;
+                var away = at - eyes;
+                if (away.magnitude < SmokeKeepAway)
+                    at = eyes + (away.sqrMagnitude > 0.0025f ? away.normalized : cam.transform.forward) * SmokeKeepAway;
+            }
+            var smoke = Instantiate(settings.PieceSmoke, at, Quaternion.identity);
+            smoke.transform.localScale = settings.PieceSmoke.transform.localScale * settings.PieceSmokeSize;
+            var parts = smoke.GetComponentsInChildren<ParticleSystem>(true);
+            var names = new string[parts.Length];
+            for (int i = 0; i < parts.Length; i++)
+            {
+                parts[i].Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                names[i] = parts[i].name;
+            }
+            TintGlow(smoke, settings.Glow, names);
+            foreach (var part in parts)
+                if (part.transform.parent == null || part.transform.parent.GetComponentInParent<ParticleSystem>() == null) part.Play(true);
+            Destroy(smoke, 5f);
+            SmokeBombs++;
+        }
+
+        private static AudioSource voice;
+
+        // The girl's voice in the player's head, as the light used to play it.
+        private static void Say(AudioClip clip, float volume)
+        {
+            if (clip == null) return;
+            if (voice == null)
+            {
+                var go = new GameObject("Story_Seed_Voice");
+                DontDestroyOnLoad(go);
+                voice = go.AddComponent<AudioSource>();
+                voice.playOnAwake = false;
+                voice.spatialBlend = 0f;
+            }
+            voice.PlayOneShot(clip, volume);
         }
 
         private void Tint(Color glow, string[] parts) => TintGlow(gameObject, glow, parts);

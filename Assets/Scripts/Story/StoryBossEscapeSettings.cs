@@ -8,10 +8,35 @@ namespace Game.Story
     /// starts normally and the flow is kept the same"). The laughing pumpkin held a small piece of the Green Seed; the
     /// boss carries it now. The game reads Assets/Resources/Story Boss Escape Settings.asset; without it, these defaults
     /// with no effects or sounds. Tools > 429 Game > Story > Set Up Boss Escape makes it.
+    /// User 2026-11-26: "make them use animation Alert then pop a smoke bomb like the one ninja always use then hide", and
+    /// no seed piece on its back (the boss's own seed at its death is the room's piece). Tools > 429 Game > Story > Smoke
+    /// Bomb Escape + Eyes-Only Watcher sets that up.
     /// </summary>
     [CreateAssetMenu(menuName = "429 Game/Story/Story Boss Escape Settings", fileName = "Story Boss Escape Settings")]
     public class StoryBossEscapeSettings : ScriptableObject
     {
+        public enum EscapeStyle { SmokeBomb, RunAndDig }
+
+        [Header("How it escapes")]
+        [Tooltip("Smoke Bomb: it pops out, rears up (its Alert look) and is gone in a puff of smoke, like a ninja; the real " +
+                 "boss comes in a puff too. Run And Dig: it runs off and digs in, and climbs out of its hole later.")]
+        [SerializeField] private EscapeStyle escape = EscapeStyle.SmokeBomb;
+        [Tooltip("The smoke bomb: a thick puff that hangs a moment (Smoke_Flash_Five_Puffs).")]
+        [SerializeField] private GameObject smokeBomb;
+        [Tooltip("The smoke's size, times the boss's length in metres.")]
+        [Min(0f)]
+        [SerializeField] private float smokeBombSize = 0.35f;
+        [Tooltip("Its poof, one at random.")]
+        [SerializeField] private AudioClip[] smokeBombSounds = new AudioClip[0];
+        [Range(0f, 1f)]
+        [SerializeField] private float smokeBombVolume = 1f;
+        [Tooltip("Seconds after the smoke goes off that it's gone (hidden in the smoke by then).")]
+        [Min(0f)]
+        [SerializeField] private float vanishAfter = 0.12f;
+        [Tooltip("When its EnemyManager calls it at the end of the room's waves, it comes in a smoke bomb too, where it " +
+                 "appears.")]
+        [SerializeField] private bool comeBackInSmoke = true;
+
         [Header("Popping out of the laughing pumpkin")]
         [Tooltip("The puff where the pumpkin broke as the boss pops out.")]
         [SerializeField] private GameObject popPuff;
@@ -21,9 +46,10 @@ namespace Game.Story
         [Tooltip("Seconds it takes to pop out to its full size.")]
         [Min(0.05f)]
         [SerializeField] private float popSeconds = 0.35f;
-        [Tooltip("Seconds it rears up and hisses at the player (its own alert look and sound) before it runs.")]
+        [Tooltip("Seconds it rears up and hisses at the player (its own Alert look, 0.98 s, and sound) before it runs or " +
+                 "vanishes.")]
         [Min(0f)]
-        [SerializeField] private float hissSeconds = 0.8f;
+        [SerializeField] private float hissSeconds = 1f;
 
         [Header("Running off")]
         [Tooltip("Its running speed, in metres a second.")]
@@ -79,8 +105,9 @@ namespace Game.Story
         [SerializeField] private float seedSize = 1.2f;
         [Tooltip("The piece floats this far above its back, in metres.")]
         [SerializeField] private float seedAbove = 0.06f;
-        [Tooltip("The real boss carries it too while the room's fight goes on (also a chaos one coming back).")]
-        [SerializeField] private bool seedOnBoss = true;
+        [Tooltip("The escaping boss and the real one carry it on their back. Off (user 2026-11-26): the boss's seed at its " +
+                 "death is the room's only piece.")]
+        [SerializeField] private bool seedOnBoss;
 
         [Header("Sound")]
         [Range(0f, 1f)]
@@ -105,6 +132,13 @@ namespace Game.Story
             }
         }
 
+        public EscapeStyle Escape => escape;
+        public GameObject SmokeBomb => smokeBomb;
+        public float SmokeBombSize => smokeBombSize;
+        public AudioClip[] SmokeBombSounds => smokeBombSounds;
+        public float SmokeBombVolume => smokeBombVolume;
+        public float VanishAfter => vanishAfter;
+        public bool ComeBackInSmoke => comeBackInSmoke;
         public GameObject PopPuff => popPuff;
         public float PopPuffSize => popPuffSize;
         public AudioClip PopSound => popSound;

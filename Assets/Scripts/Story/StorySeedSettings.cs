@@ -17,8 +17,16 @@ namespace Game.Story
         [Tooltip("The seed's particle objects that make its glow and halo ('shadow' is its warm halo); its smoke puff " +
                  "keeps its colours.")]
         [SerializeField] private string[] glowParts = { "circles", "GrowthParticles", "stars", "shadow" };
-        [Tooltip("The bright light that fills the view when a seed is taken (the Fairy's own light colour).")]
+        [Tooltip("The bright light that fills the view when a seed is taken (the Fairy's own light colour). Only the " +
+                 "whole seed (the ending) and a piece with no Piece Smoke use it now.")]
         [SerializeField] private Color lightColor = new Color(0.87f, 1f, 0.81f, 1f);
+        [Tooltip("A piece taken: a smoke bomb where it was, tinted the Glow colour, and the voice (user 2026-11-26: " +
+                 "\"don't blind them too much like that, just a green smoke bomb is enough\"). Empty: the bright light that " +
+                 "fills the view until the next room, as before.")]
+        [SerializeField] private GameObject pieceSmoke;
+        [Tooltip("The smoke's size, times its prefab's.")]
+        [Min(0.01f)]
+        [SerializeField] private float pieceSmokeSize = 0.15f;
         [Tooltip("The girl's voice when a seed is taken: \"please find me\". Put the user's recording here.")]
         [SerializeField] private AudioClip voice;
         [Tooltip("More takes of that voice (e.g. \"I am here\"): one of all of them is said at random.")]
@@ -138,6 +146,8 @@ namespace Game.Story
         public Color Glow => glow;
         public string[] GlowParts => glowParts;
         public Color LightColor => lightColor;
+        public GameObject PieceSmoke => pieceSmoke;
+        public float PieceSmokeSize => pieceSmokeSize;
         public AudioClip Voice => voice;
         public float VoiceVolume => voiceVolume;
 

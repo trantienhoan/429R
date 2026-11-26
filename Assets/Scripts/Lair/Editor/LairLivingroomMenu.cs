@@ -72,7 +72,7 @@ namespace Game.EditorTools
 
         private static readonly (string prefab, bool messyToo, Vector3 at, float turn, Sit sit, bool waits)[] Adds =
         {
-            ("Lair_Roach_Nest", true, new Vector3(-2.0f, 0f, 3.5f), 200f, Sit.Floor, false),
+            // (The roach nest is out: user 2026-11-26, "remove claw mark and nest and pumpkin ruler".)
             ("Lair_Jar_Huddle", true, new Vector3(-3.1f, 0f, 1.15f), 90f, Sit.Floor, false),
             ("Lair_Roach_Eggs", false, new Vector3(-1.6f, 0f, -4.0f), 30f, Sit.Floor, false),
             ("Lair_Glow_Jar", false, new Vector3(3.25f, 2.2f, -3.8f), 20f, Sit.OnTop, true),
@@ -105,9 +105,7 @@ namespace Game.EditorTools
             // More bug holes low on the walls.
             yield return new Surface("Lair_Bug_Hole", new Vector3(-4f, 0.3f, -3.2f), Vector3.left, 0.9f, 75f);
             yield return new Surface("Lair_Bug_Hole", new Vector3(0.4f, 0.25f, -4f), Vector3.back, 0.85f, 300f);
-            // Claw scratches on the north door and the big east door.
-            yield return new Surface("Lair_Claw_Scratches", new Vector3(2.6f, 1.1f, 4f), Vector3.forward, 1f, 12f);
-            yield return new Surface("Lair_Claw_Scratches", new Vector3(4f, 0.9f, 1.4f), Vector3.right, 1.1f, -8f);
+            // (The claw scratches are out: user 2026-11-26, "they look all bad".)
         }
 
         [MenuItem("Tools/429 Game/Lair/Set Up Living Room Lair")]

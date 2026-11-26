@@ -46,9 +46,12 @@ namespace Game.Story
         [SerializeField] private float inTheDark = 16f;
         [Tooltip("Height of the giant's picture at scale 1 (metres).")]
         [SerializeField] private float watcherHeight = 3.2f;
-        [Tooltip("Chance each half second while the player looks (0-1), and the quiet seconds after it was seen.")]
-        [Range(0f, 1f)] [SerializeField] private float watchChance = 0.06f;
-        [SerializeField] private Vector2 watchEvery = new Vector2(60f, 120f);
+        [Tooltip("Chance each half second while the player looks (0-1), and the quiet seconds after it was seen. User " +
+                 "2026-11-26: \"make it rarer to spawn\" (was 0.06 and 60-120 s).")]
+        [Range(0f, 1f)] [SerializeField] private float watchChance = 0.02f;
+        [SerializeField] private Vector2 watchEvery = new Vector2(180f, 360f);
+        [Tooltip("Its dark body shows round its eyes. Off: only its two eyes (user 2026-11-26: \"show only 2 eyes\").")]
+        [SerializeField] private bool watcherBody;
         [Tooltip("Seconds it stays (fading in, drifting, blinking once, fading out) and metres it drifts sideways.")]
         [SerializeField] private float watchSeconds = 4.5f;
         [SerializeField] private float drift = 2.2f;
@@ -85,6 +88,7 @@ namespace Game.Story
         public float WatcherHeight => watcherHeight;
         public float WatchChance => watchChance;
         public Vector2 WatchEvery => watchEvery;
+        public bool WatcherBody => watcherBody;
         public float WatchSeconds => watchSeconds;
         public float Drift => drift;
         public float WatcherDarkness => watcherDarkness;

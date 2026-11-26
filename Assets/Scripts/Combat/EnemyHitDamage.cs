@@ -367,6 +367,9 @@ namespace Game.Combat
         private void OnCollisionEnter(Collision collision)
         {
             if (health == null || dead || Time.time < settledAt) return;
+            // A thing on its way to the player's hand (Gentle Far Grab's ghost) hurts nothing, and isn't hurt (user
+            // 2026-11-26: the broom smashed everything on its way to the hand).
+            if (GentleFarGrab.OnTheWay(collision.rigidbody) || (TryGetComponent(out Rigidbody own) && GentleFarGrab.OnTheWay(own))) return;
             // What hit it: each one waits out its own Hit Cooldown (user, 2026-11-19: until then one shared wait ate a
             // left-right combo's second punch and two of a Triple Punch's three fists, with no number and no buzz).
             UnityEngine.Object hitter = collision.rigidbody != null ? collision.rigidbody : collision.collider;

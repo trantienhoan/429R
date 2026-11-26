@@ -74,7 +74,7 @@ namespace Game.EditorTools
         private static readonly (string prefab, bool messyToo, Vector3 at, float turn, Sit sit)[] Adds =
         {
             ("Lair_Jar_Huddle", true, new Vector3(1.55f, 0f, 2.4f), 30f, Sit.Floor),
-            ("Lair_Nest", true, new Vector3(2.75f, 0f, -2.45f), 200f, Sit.Floor),
+            // (The nest is out: user 2026-11-26, "remove claw mark and nest and pumpkin ruler".)
             ("Lair_Specimen_Board", true, new Vector3(3.74f, 1.95f, 0.95f), 270f, Sit.WallMiddle),
             ("Lair_Glow_Jar", false, new Vector3(3.47f, 1.15f, 0.72f), 0f, Sit.OnTop),
             ("Lair_Glow_Jar", false, new Vector3(3.5f, 1.15f, 1.18f), 40f, Sit.OnTop),

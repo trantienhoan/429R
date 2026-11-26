@@ -93,9 +93,81 @@ namespace Game.EditorTools
         }
 
         [MenuItem("Tools/429 Game/Weapons/Make Legendary Knight Gear", true)]
+        [MenuItem("Tools/429 Game/Weapons/Fix Legendary Gear Grip", true)]
         private static bool CanMakeLegendaryKnightGear()
         {
             return !EditorApplication.isPlaying;
+        }
+
+        // User 2026-11-26: "The sword and shield behave weird, hard to use, check their attach and collider." They kept
+        // the gear tokens' body: 999 kg with its centre of mass set 4.2 m off (below the sword, above the shield), so the
+        // hand's velocity tracking turned them round that far point: they swung, lagged and overshot. Now as the bat,
+        // broom and pan: 500 kg, the centre of mass worked out from the colliders. (The tokens themselves keep theirs.)
+        private const float WeaponMass = 500f;
+        // The shield's front (the clover, its -X) faced the hand's side: pointed at an enemy, the hand held it edge-on.
+        // Now the front faces where the hand points (the knuckles), its top up, the hand this far behind its back.
+        private const float ShieldGripGap = 0.06f;
+
+        /// <summary>Tools > 429 Game > Weapons > Fix Legendary Gear Grip: only the body and grip fixes (re-runnable).</summary>
+        [MenuItem("Tools/429 Game/Weapons/Fix Legendary Gear Grip")]
+        public static void FixLegendaryGearGrip()
+        {
+            var notes = new List<string>();
+            foreach (var (path, shield) in new[] { (SwordPath, false), (ShieldPath, true) })
+            {
+                if (AssetDatabase.LoadAssetAtPath<GameObject>(path) == null)
+                {
+                    notes.Add($"no {path}");
+                    continue;
+                }
+                var root = PrefabUtility.LoadPrefabContents(path);
+                try
+                {
+                    string note = root.name + ": " + FixBody(root);
+                    if (shield) note += ", " + FixShieldGrip(root);
+                    PrefabUtility.SaveAsPrefabAsset(root, path);
+                    notes.Add(note);
+                }
+                finally
+                {
+                    PrefabUtility.UnloadPrefabContents(root);
+                }
+            }
+            Debug.Log("[Knight Gear] Grip fixed: " + string.Join("; ", notes) + ". Prefabs only.");
+        }
+
+        private static string FixBody(GameObject root)
+        {
+            var body = root.GetComponent<Rigidbody>();
+            if (body == null) return "no body";
+            var so = new SerializedObject(body);
+            so.FindProperty("m_Mass").floatValue = WeaponMass;
+            so.FindProperty("m_ImplicitCom").boolValue = true;
+            so.FindProperty("m_ImplicitTensor").boolValue = true;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            return $"{WeaponMass} kg, centre of mass from its colliders";
+        }
+
+        private static string FixShieldGrip(GameObject root)
+        {
+            var grab = root.GetComponent<XRGrabInteractable>();
+            var attach = grab != null ? grab.attachTransform : null;
+            var shield = root.transform.Find("Pie_Knight_Shield");
+            var box = shield != null ? shield.GetComponent<BoxCollider>() : null;
+            if (attach == null || attach.parent != root.transform || box == null) return "no grip or shield collider (grip unchanged)";
+            // The shield's back (its +X side) and middle, in the root's space.
+            var toRoot = root.transform.worldToLocalMatrix * box.transform.localToWorldMatrix;
+            var mid = toRoot.MultiplyPoint3x4(box.center);
+            float back = float.MinValue;
+            for (int i = 0; i < 8; i++)
+            {
+                var corner = box.center + Vector3.Scale(box.size * 0.5f,
+                    new Vector3((i & 1) == 0 ? -1f : 1f, (i & 2) == 0 ? -1f : 1f, (i & 4) == 0 ? -1f : 1f));
+                back = Mathf.Max(back, toRoot.MultiplyPoint3x4(corner).x);
+            }
+            attach.localPosition = new Vector3(back + ShieldGripGap, mid.y, mid.z);
+            attach.localRotation = Quaternion.LookRotation(Vector3.left, Vector3.up);
+            return $"grip {attach.localPosition.x:F3} m behind its middle, its front facing where the hand points";
         }
 
         /// <summary>
@@ -196,6 +268,7 @@ namespace Game.EditorTools
             body.useGravity = true;
             body.interpolation = RigidbodyInterpolation.Interpolate;
             body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+            FixBody(root);
 
             if (!root.TryGetComponent(out LegendaryGear gear)) gear = root.AddComponent<LegendaryGear>();
             var settings = new SerializedObject(gear);
@@ -239,6 +312,7 @@ namespace Game.EditorTools
             settings.FindProperty("blockSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(BlockSound);
             settings.FindProperty("blockEffect").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(BlockEffect);
             settings.ApplyModifiedPropertiesWithoutUndo();
+            FixShieldGrip(root);
         }
 
         private static void SetWeaponPower(GameObject root, float power, float damage)

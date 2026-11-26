@@ -101,9 +101,7 @@ namespace Game.EditorTools
             yield return new Surface("Lair_Bug_Hole", new Vector3(3f, 0.35f, 1.63f), Vector3.right, 1.1f, 140f);   // in the gap between the shelf and the box tower
             yield return new Surface("Lair_Bug_Hole", new Vector3(0.45f, 0.28f, 3f), Vector3.forward, 0.9f, 200f);
             yield return new Surface("Lair_Bug_Hole", new Vector3(0.4f, 0.5f, -3f), Vector3.back, 0.75f, 300f);
-            // Claw scratches on the door (north, x -2.25).
-            yield return new Surface("Lair_Claw_Scratches", new Vector3(-2.05f, 1.15f, 3f), Vector3.forward, 1f, 15f);
-            yield return new Surface("Lair_Claw_Scratches", new Vector3(-2.5f, 0.7f, 3f), Vector3.forward, 0.75f, -10f);
+            // (The claw scratches on the door are out: user 2026-11-26, "they look all bad".)
         }
 
         [MenuItem("Tools/429 Game/Lair/Place Storage Room Webs")]

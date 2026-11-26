@@ -10,6 +10,10 @@ namespace Game.Combat
     /// and run points in one stat; the legendary sword and shield hide the same way but are found as weapons to grab,
     /// never eaten. Assets/Resources/Knight Armor Settings.asset (Tools > 429 Game > Items > Set Up Knight Armor Hunt).
     /// Without it nothing is hidden.
+    /// User, later that day: "the knight armor right now are spawn too many, I just in bedroom stage and already get them
+    /// all ... make them really rare", the sword and shield "even rarer than the rest of armor": each room's set now has
+    /// only a small chance to hide one piece (Room Chance) and a smaller one to hide a legendary weapon (Weapon Room
+    /// Chance). Tools > 429 Game > Items > Knight Armor: Rarer, Grab And Eat sets the numbers.
     /// </summary>
     [CreateAssetMenu(menuName = "429 Game/Combat/Knight Armor Settings", fileName = "Knight Armor Settings")]
     public class KnightArmorSettings : ScriptableObject
@@ -47,15 +51,17 @@ namespace Game.Combat
         [Range(0f, 1f)] [SerializeField] private float allKeepsakesVolume = 1f;
 
         [Header("Hiding (each run, at random)")]
-        [Tooltip("When a room's breakable furniture and boxes have all come (a set), this many of the things still hidden " +
-                 "go into them, at random (fewer when fewer are left).")]
-        [SerializeField] private Vector2Int perRoom = new Vector2Int(1, 2);
-        [Tooltip("A seed piece's chest holds one of them this often (0-1).")]
-        [Range(0f, 1f)] [SerializeField] private float chestChance = 0.3f;
+        [Tooltip("When a room's breakable furniture and boxes have all come (a set), the chance one armor piece still not " +
+                 "found hides in it (0-1; one at most).")]
+        [Range(0f, 1f)] [SerializeField] private float roomChance = 0.08f;
+        [Tooltip("The chance a room's set hides one of the legendary weapons (0-1; one at most): rarer than the armor.")]
+        [Range(0f, 1f)] [SerializeField] private float weaponRoomChance = 0.03f;
+        [Tooltip("A seed piece's chest holds an armor piece this often (0-1; never a weapon).")]
+        [Range(0f, 1f)] [SerializeField] private float chestChance = 0.05f;
         [Tooltip("Only things at least this big (metres, their longest side) can hide one.")]
         [Min(0f)] [SerializeField] private float smallestSpot = 0.4f;
         [Tooltip("Things whose name has any of these never hide one.")]
-        [SerializeField] private string[] skipNames = { "Pumpkin", "Book", "Bottle", "Candy", "Flip_Flop" };
+        [SerializeField] private string[] skipNames = { "Pumpkin", "Book", "Bottle", "Candy", "Flip_Flop", "Web" };
         [Tooltip("A room's things count as all there once none has come for this many seconds.")]
         [Min(0.5f)] [SerializeField] private float roomSettles = 2.5f;
         [Tooltip("A batch needs at least this many things to count as a room's set.")]
@@ -76,7 +82,8 @@ namespace Game.Combat
         [Tooltip("An armor piece being put on.")]
         [SerializeField] private AudioClip equipSound;
         [Range(0f, 1f)] [SerializeField] private float equipVolume = 1f;
-        [Tooltip("A found armor piece floats this high over the floor the player stands on (metres), in reach.")]
+        [Tooltip("A found armor piece floats this high over the floor the player stands on (metres), in reach, until it " +
+                 "is grabbed; let go, it falls like a candy. It is eaten at the mouth.")]
         [Min(0f)] [SerializeField] private float floatHeight = 1.1f;
 
         [Header("Armor taking hits")]
@@ -111,7 +118,8 @@ namespace Game.Combat
                 return count;
             }
         }
-        public Vector2Int PerRoom => perRoom;
+        public float RoomChance => roomChance;
+        public float WeaponRoomChance => weaponRoomChance;
         public float ChestChance => chestChance;
         public float SmallestSpot => smallestSpot;
         public string[] SkipNames => skipNames;

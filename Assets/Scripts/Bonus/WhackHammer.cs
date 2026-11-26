@@ -59,6 +59,9 @@ namespace Game.Bonus
         {
             grab = GetComponent<XRGrabInteractable>();
             body = GetComponent<Rigidbody>();
+            // It floats (kinematic) and flies back to its post, never thrown: XRI's throw on let-go only warned "Cannot
+            // throw a kinematic Rigidbody" each time (3 times in the 2026-11-26 run's log).
+            grab.throwOnDetach = false;
         }
 
         /// <summary>Its post: it waits there (kinematic, bobbing) until grabbed, and flies back there when let go.</summary>

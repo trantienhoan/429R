@@ -53,10 +53,19 @@ namespace HutongGames.PlayMaker.Actions
             {
                 Play("Tree Save Sound", Clip(treeSaveSound), tree.transform.position, Volume(treeSaveVolume), 0.5f);
                 Break(tree);
+                treeSavedAt = Time.time;
             }
-            else if (thrown) Game.Combat.PlayerLaunch.HurtOnLanding(playerEvent.Value);
+            // A second giant's smash a moment after the tree took one is the same hit: no 240 (the 2026-11-26 run: the
+            // tree broke at 31:05.75 and the player still lost 240 at 31:06).
+            else if (thrown && Time.time - treeSavedAt > SameSmash) Game.Combat.PlayerLaunch.HurtOnLanding(playerEvent.Value);
             Finish();
         }
+
+        private const float SameSmash = 2f;
+        private static float treeSavedAt = -100f;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => treeSavedAt = -100f;
 
         private static AudioClip Clip(FsmObject sound) => sound != null ? sound.Value as AudioClip : null;
 

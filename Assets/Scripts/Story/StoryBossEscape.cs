@@ -11,6 +11,9 @@ namespace Game.Story
     /// it with the pumpkin's piece of the Green Seed on its back, hisses at the player, runs off and digs into the
     /// floor, leaving a hole. Then the room goes on as before (walls drop, waves). When the room's EnemyManager calls the
     /// boss at the end, it climbs out of that hole, still carrying the piece.
+    /// User 2026-11-26 (Escape = Smoke Bomb, now the default): it pops out, plays its Alert look facing the player, and
+    /// is gone in a ninja's smoke bomb; no run, no hole. The real boss comes in a smoke bomb too. No seed piece on its
+    /// back (Seed On Boss off): the boss drops the room's piece when it dies, as before.
     ///
     /// Played by the Story Boss Escapes action (one GAMESTAGES state per room, between the room's waiting state and its
     /// wall drop). The boss shown here is a look-only copy of the real prefab: no brain, no health, no colliders, so it
@@ -18,7 +21,7 @@ namespace Game.Story
     /// </summary>
     public class StoryBossEscape : MonoBehaviour
     {
-        private enum Phase { Pop, Hiss, Run, Dig, Done }
+        private enum Phase { Pop, Hiss, Run, Dig, Smoke, Done }
 
         // A hole waiting for its boss: the boss prefab's name, and the GAMESTAGES states it belongs to.
         private class Burrow
@@ -67,6 +70,7 @@ namespace Game.Story
         {
             Burrows.Clear();
             Playing = 0;
+            SmokeBombs = 0;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -124,7 +128,9 @@ namespace Game.Story
             // Its body length (for the hole), from its look at full size.
             length = BodyLength() / 0.2f;
 
-            digAt = PickDigSpot(from, head.position, filter, out path);
+            // A smoke bomb vanishes it where it stands: no route, no hole.
+            if (SmokeBombStyle) { digAt = from; path = null; }
+            else digAt = PickDigSpot(from, head.position, filter, out path);
             corner = 0;
             burrow = new Burrow { boss = prefab.name, escape = escapeState, fight = fightState, agentType = agentType };
             // A newer escape of the same boss replaces an old hole.
@@ -138,7 +144,7 @@ namespace Game.Story
 
             if (settings.PopPuff != null) EffectPool.Play(settings.PopPuff, from + Vector3.up * 0.2f, settings.PopPuffSize * scale, 4f);
             Sound(settings.PopSound, 1f);
-            StoryBossSeed.Give(body.gameObject);
+            if (settings.SeedOnBoss) StoryBossSeed.Give(body.gameObject);
             Playing++;
             counted = true;
             Enter(Phase.Pop);
@@ -330,7 +336,27 @@ namespace Game.Story
                     LastDigAt = digAt;
                     OpenHole();
                     break;
+                case Phase.Smoke:
+                    // The smoke bomb at its feet; it's gone inside it a moment later.
+                    LastDigAt = body.position;
+                    SmokeBombAt(body.position, length, settings);
+                    var poofs = settings.SmokeBombSounds;
+                    if (poofs != null && poofs.Length > 0) Sound(poofs[Random.Range(0, poofs.Length)], settings.SmokeBombVolume);
+                    break;
             }
+        }
+
+        private bool SmokeBombStyle => settings != null && settings.Escape == StoryBossEscapeSettings.EscapeStyle.SmokeBomb;
+
+        /// <summary>How many smoke bombs have gone off (the escapes' and the real bosses' coming), for tests.</summary>
+        public static int SmokeBombs { get; private set; }
+
+        private static void SmokeBombAt(Vector3 feet, float bodyLength, StoryBossEscapeSettings settings)
+        {
+            SmokeBombs++;
+            if (settings.SmokeBomb == null) return;
+            EffectPool.Play(settings.SmokeBomb, feet + Vector3.up * (bodyLength * 0.15f),
+                settings.SmokeBombSize * Mathf.Max(0.6f, bodyLength), 5f);
         }
 
         private void Update()
@@ -359,13 +385,17 @@ namespace Game.Story
                 }
                 case Phase.Hiss:
                     Turn(FacePlayer(body.position), 360f);
-                    if (t >= settings.HissSeconds) Enter(path != null && path.Length > 1 ? Phase.Run : Phase.Dig);
+                    if (t >= settings.HissSeconds)
+                        Enter(SmokeBombStyle ? Phase.Smoke : path != null && path.Length > 1 ? Phase.Run : Phase.Dig);
                     break;
                 case Phase.Run:
                     RunAlong();
                     break;
                 case Phase.Dig:
                     Dig(t);
+                    break;
+                case Phase.Smoke:
+                    if (t >= settings.VanishAfter) Finish();
                     break;
             }
         }
@@ -487,9 +517,40 @@ namespace Game.Story
                 if (burrow.boss != kind) continue;
                 var settings = StoryBossEscapeSettings.Instance;
                 if (settings.SeedOnBoss) StoryBossSeed.Give(brain.gameObject);
-                if (burrow.cameOut || burrow.hole == null || !settings.ComeBackFromHole) continue;
+                if (burrow.cameOut) continue;
+                // Gone in a smoke bomb, back in one: where it appears.
+                if (settings.Escape == StoryBossEscapeSettings.EscapeStyle.SmokeBomb)
+                {
+                    burrow.cameOut = true;
+                    if (settings.ComeBackInSmoke) SmokeIn(brain, settings);
+                    continue;
+                }
+                if (burrow.hole == null || !settings.ComeBackFromHole) continue;
                 burrow.cameOut = true;
                 ComeOut(brain, burrow, settings);
+            }
+        }
+
+        private static void SmokeIn(SpiderBrain brain, StoryBossEscapeSettings settings)
+        {
+            var at = brain.transform.position;
+            float bodyLength = 1f;
+            var bounds = new Bounds(at, Vector3.zero);
+            bool any = false;
+            foreach (var look in brain.GetComponentsInChildren<Renderer>())
+            {
+                if (look is ParticleSystemRenderer || !look.enabled) continue;
+                if (any) bounds.Encapsulate(look.bounds);
+                else bounds = look.bounds;
+                any = true;
+            }
+            if (any) bodyLength = Mathf.Max(bounds.size.x, bounds.size.z);
+            SmokeBombAt(at, bodyLength, settings);
+            var poofs = settings.SmokeBombSounds;
+            if (poofs != null && poofs.Length > 0)
+            {
+                var clip = poofs[Random.Range(0, poofs.Length)];
+                if (clip != null) AudioSource.PlayClipAtPoint(clip, at, settings.SmokeBombVolume * settings.Volume);
             }
         }
 

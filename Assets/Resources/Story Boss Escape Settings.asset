@@ -12,11 +12,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6a67134cf95d9e74ca9d0d6639ee7982, type: 3}
   m_Name: Story Boss Escape Settings
   m_EditorClassIdentifier: Assembly-CSharp::Game.Story.StoryBossEscapeSettings
+  escape: 0
+  smokeBomb: {fileID: 3863394568552092252, guid: 0030dcf570a4b2f469bf29eb41f204cb,
+    type: 3}
+  smokeBombSize: 0.35
+  smokeBombSounds:
+  - {fileID: 8300000, guid: 5ed8090a8bdfecb4293c7b675a7259f0, type: 3}
+  - {fileID: 8300000, guid: a35a36f4921ea934abea75a33427d246, type: 3}
+  smokeBombVolume: 1
+  vanishAfter: 0.12
+  comeBackInSmoke: 1
   popPuff: {fileID: 804983386052247261, guid: 8ab20db805bb89d4b94a3836325db5ad, type: 3}
   popPuffSize: 0.35
   popSound: {fileID: 8300000, guid: e3a89633dcee00548ac5a40cc32b6586, type: 3}
   popSeconds: 0.35
-  hissSeconds: 0.8
+  hissSeconds: 1
   runSpeed: 4
   runDistance: {x: 2.5, y: 4.5}
   keepFromPlayer: 2.5
@@ -37,5 +47,5 @@ MonoBehaviour:
     type: 3}
   seedSize: 1.2
   seedAbove: 0.06
-  seedOnBoss: 1
+  seedOnBoss: 0
   volume: 1

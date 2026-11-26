@@ -127,7 +127,15 @@ namespace Game.Combat
             if (args.interactorObject is not NearFarInteractor hand || hand.interactionAttachController == null) return;
             if (args.interactableObject is not XRGrabInteractable grab) return;
             float distance = HandDistance(hand.transform, grab);
-            if (distance < farDistance) return;
+            if (distance < farDistance)
+            {
+                // A near grab far from its grip (the broom taken by its head): XRI swings the grip into the hand in a
+                // blink, and the rest of it sweeps through everything round the player. It goes through them as a ghost
+                // too, until its grip is in the hand (user 2026-11-26: "when I grab the broom, on its way to my hand,
+                // everything get damaged").
+                if (ghostOnTheWay) GhostUntilInHand(grab, hand);
+                return;
+            }
 
             // XRI has just put the grab point in the hand; put it back where the object is, so the object starts from
             // where it lies, and Update brings it in.
@@ -157,6 +165,46 @@ namespace Game.Combat
             ghost.hand = hand;
             ghost.speed = speed;
         }
+
+        private void GhostUntilInHand(XRGrabInteractable grab, NearFarInteractor hand)
+        {
+            var ghost = GhostOf(grab);
+            bool made = ghost == null;
+            if (made)
+            {
+                ghost = new Ghost { grab = grab, body = grab.GetComponent<Rigidbody>() };
+                foreach (var c in grab.GetComponentsInChildren<Collider>(true))
+                    if (c != null && !c.isTrigger && (c.attachedRigidbody == null || c.attachedRigidbody == ghost.body)) ghost.own.Add(c);
+            }
+            var was = (ghost.hand, ghost.catchingUp, ghost.flying);
+            ghost.hand = hand;
+            // Already in the hand (a grip that goes where it's grabbed, or the grip itself grabbed): nothing to do.
+            if (ghost.body == null || InHand(ghost))
+            {
+                if (!made) (ghost.hand, ghost.catchingUp, ghost.flying) = was;
+                return;
+            }
+            ghost.flying = false;
+            ghost.launched = false;
+            ghost.catchingUp = true;
+            ghost.solidAt = Time.time + catchUpSeconds;
+            if (made) ghosts.Add(ghost);
+        }
+
+        /// <summary>
+        /// Whether this body is on its way to a hand right now (pulled, catching up, or let go on the way): a ghost that
+        /// hurts nothing. Enemy Hit Damage ignores its bumps (and its own).
+        /// </summary>
+        public static bool OnTheWay(Rigidbody body)
+        {
+            if (body == null || instance == null) return false;
+            foreach (var g in instance.ghosts) if (g.body == body) return true;
+            return false;
+        }
+
+        private static GentleFarGrab instance;
+
+        private void Awake() => instance = this;
 
         // Its grab point has reached the hand's (it's really in the hand, not just the pull's target).
         private bool InHand(Ghost g)

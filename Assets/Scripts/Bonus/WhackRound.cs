@@ -16,7 +16,8 @@ namespace Game.Bonus
     /// - The chest (the nesting round's, Treasure_Chest_PUMPKIN_EXTRA) comes; touching or punching it open makes the
     ///   machine rise out of the floor where it was, facing away from the player: a half-ring table with 20 holes round
     ///   a spot to stand on, two mallets waiting on posts and a scoreboard behind it.
-    /// - Taking BOTH mallets starts the countdown (Seconds). Walking and teleporting stay off until it's over.
+    /// - Taking BOTH mallets starts the countdown (Seconds). (Walking and teleporting stayed off until it was over; Keep
+    ///   Still is off since 2026-11-26: the player walks as usual, and the machine is Machine Scale 0.8 of its size.)
     /// - Pumpkin heads pop up and go back down. A quick downward blow with a mallet whacks one (hands do nothing):
     ///   normal 1 candy, gold 10 (rare, spinning), rainbow 15, time +1 to +3 seconds (rare, the head shows how many),
     ///   skull: don't (it takes 3 candies and the combo). A gold head whacked starts a gold frenzy: for 3 s every head
@@ -26,7 +27,9 @@ namespace Game.Bonus
     ///   quicker towards its end, with one more head at once in the last (ticking) seconds.
     /// - The song (the jigsaw's 90 s songs, user 2026-11-23) plays from GO and ends with the countdown.
     /// - Time's up: the heads drop, the mallets go, the round goes on the leaderboard (saved, WhackScores) and the
-    ///   machine pours out every candy won, which the Candy Helmet feeds the player; then it sinks and the round is over
+    ///   machine pours out the candies won times the share of heads hit (Payout: whacked / (whacked + missed); user
+    ///   2026-11-26 "Though I missed a lot, I still get a lot of reward candies"), which the Candy Helmet feeds the
+    ///   player; the board shows WHACKED and MISSED, the time's number off; then it sinks and the round is over
     ///   (Finished), and Play Bonus Round goes on.
     /// Inside it the player plays with level-0 stats (Play Bonus Round adds Special Stage Stats).
     /// </summary>
@@ -34,6 +37,13 @@ namespace Game.Bonus
     public class WhackRound : MonoBehaviour, IBonusGame
     {
         [Header("Stage")]
+        [Tooltip("The machine's size, times its prefab's (user 2026-11-26: \"the machine is too big\"). 1 = as built: " +
+                 "heads 0.64-0.93 m from its middle, 0.82 m high.")]
+        [Range(0.5f, 1.2f)]
+        [SerializeField] private float machineScale = 0.8f;
+        [Tooltip("Walking and teleporting stay off while the countdown runs. Off (user 2026-11-26: \"Player can't move, I " +
+                 "could not move at all in that stage\"): the player moves as usual.")]
+        [SerializeField] private bool keepStill;
         [Tooltip("The sky over the field while the round is on (Bonus_Stage_Sky). Empty: none.")]
         [SerializeField] private GameObject stageSky;
         [Tooltip("The chest that comes first (Treasure_Chest_PUMPKIN_EXTRA): opened, the machine rises where it was.")]
@@ -213,6 +223,17 @@ namespace Game.Bonus
         public int Candies { get; private set; }
         public int Whacked { get; private set; }
         public int Misses { get; private set; }
+
+        /// <summary>The candies paid out at the end: those won times the share of heads hit (0 before the end).</summary>
+        public int Payout { get; private set; }
+
+        /// <summary>Candies won times hits over hits and misses (rounded): 13 hits and 39 misses pay a quarter.</summary>
+        public static int PayoutFor(int candies, int whacked, int misses)
+        {
+            int tries = whacked + misses;
+            if (candies <= 0 || tries <= 0) return 0;
+            return Mathf.RoundToInt(candies * (float)whacked / tries);
+        }
         public int Combo { get; private set; }
         public int BestCombo { get; private set; }
         public float TimeLeft => timeLeft;
@@ -312,6 +333,7 @@ namespace Game.Bonus
             yield return new WaitForSeconds(0.3f);
             if (machine == null) { Finished = true; yield break; }
             made = Instantiate(machine, spot, Quaternion.LookRotation(forward.normalized, Vector3.up), SpawnedStuff());
+            made.transform.localScale = machine.transform.localScale * machineScale;
             made.Hide();
             foreach (var h in made.Heads)
             {
@@ -385,18 +407,24 @@ namespace Game.Bonus
             MovementBack();
             foreach (var h in hammers) RemoveHammer(h, true);
             hammers.Clear();
-            int place = Game.Saving.WhackScores.Add(Candies, Whacked, BestCombo);
+            // What's paid out: the candies won times the share of heads hit (user 2026-11-26: "Though I missed a lot, I
+            // still get a lot of reward candies").
+            Payout = PayoutFor(Candies, Whacked, Misses);
+            int place = Game.Saving.WhackScores.Add(Payout, Whacked, BestCombo);
             yield return new WaitForSeconds(1f);
             made.ShowCombo(BestCombo);
             if (BestCombo >= 2) made.ShowCombo(0);
-            made.ShowMessage((place == 0 && Candies > 0 ? "NEW BEST!\n" : "") + "WHACKED " + Whacked + "\nBEST COMBO " + BestCombo, Gold);
+            made.HideTime();
+            made.ShowCandies(Payout);
+            made.ShowMessage((place == 0 && Payout > 0 ? "NEW BEST!\n" : "") + "WHACKED " + Whacked + "  MISSED " + Misses +
+                             "\nBEST COMBO " + BestCombo, Gold);
             made.ShowBest(Game.Saving.WhackScores.BestCandies);
 
             // 6. The candies won pour out of the machine, and the helmet feeds them to the player.
-            if (Candies > 0)
+            if (Payout > 0)
             {
                 var spout = made.CandySpout;
-                CandyFountain.Play(spout, Candies, candies, Mathf.Min(payoutSeconds, Candies * 0.08f), new Vector2(2f, 3.2f), new Vector2(0.5f, 1.4f));
+                CandyFountain.Play(spout, Payout, candies, Mathf.Min(payoutSeconds, Payout * 0.08f), new Vector2(2f, 3.2f), new Vector2(0.5f, 1.4f));
                 PlayerBuffs.Give(Buff.CandyHelmet, candyWaitSeconds);
                 StartCoroutine(Fireworks(made.transform.position, made.transform.forward));
                 yield return new WaitForSeconds(0.3f);
@@ -724,6 +752,7 @@ namespace Game.Bonus
         // teleporting (renewed every half second, so it lapses a moment after the round).
         private void KeepStill(bool now)
         {
+            if (!keepStill) return;
             if (!now && Time.time < nextStill) return;
             nextStill = Time.time + 0.5f;
             foreach (var mover in FindObjectsByType<ContinuousMoveProvider>(FindObjectsSortMode.None))

@@ -108,6 +108,9 @@ namespace Game.Bonus
             timeText.color = warn ? new Color(1f, 0.3f, 0.2f) : new Color(1f, 0.85f, 0.3f);
         }
 
+        /// <summary>The time's number off (the end board: a big red 0 there read as a score of 0).</summary>
+        public void HideTime() => Show(timeText, "");
+
         public void ShowCandies(int candies) => Show(candiesText, "CANDIES  " + candies);
 
         public void ShowCombo(int combo) => Show(comboText, combo >= 2 ? "COMBO x" + combo : "");

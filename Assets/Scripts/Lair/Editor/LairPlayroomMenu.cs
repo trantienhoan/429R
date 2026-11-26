@@ -63,8 +63,7 @@ namespace Game.EditorTools
 
         private static readonly (string prefab, bool messyToo, Vector3 at, float turn, Sit sit, bool waits)[] Adds =
         {
-            ("Lair_Roach_Nest", true, new Vector3(2.6f, 0f, 4.95f), 160f, Sit.Floor, false),
-            ("Lair_Roach_Nest", true, new Vector3(-3.0f, 0f, -4.95f), 340f, Sit.Floor, false),
+            // (The two roach nests are out: user 2026-11-26, "remove claw mark and nest and pumpkin ruler".)
             ("Lair_Roach_Eggs", true, new Vector3(-4.4f, 0f, 1.9f), 60f, Sit.Floor, false),
             ("Lair_Jar_Huddle", false, new Vector3(3.4f, 0f, -4.0f), 200f, Sit.Floor, false),
             ("Lair_Candle_Green", false, new Vector3(-5.25f, 0.6f, 5.0f), 0f, Sit.OnTop, true),   // the table's middle (at 4.75 it tipped off once)
@@ -101,8 +100,7 @@ namespace Game.EditorTools
             yield return new Surface("Lair_Bug_Hole", new Vector3(-3.2f, 0.08f, -2.08f), Vector3.left, 1f, 300f);
             yield return new Surface("Lair_Bug_Hole", new Vector3(-3.2f, 0.2f, 1.6f), Vector3.left, 0.8f, 75f);
             yield return new Surface("Lair_Bug_Hole", new Vector3(3.2f, 0.18f, -1.7f), Vector3.right, 0.8f, 250f);
-            yield return new Surface("Lair_Claw_Scratches", new Vector3(2.6f, 1.0f, 3.2f), Vector3.forward, 1f, 12f);
-            yield return new Surface("Lair_Claw_Scratches", new Vector3(-2.6f, 0.8f, -3.2f), Vector3.back, 1f, -8f);
+            // (The claw scratches are out: user 2026-11-26, "they look all bad".)
         }
 
         [MenuItem("Tools/429 Game/Lair/Set Up Playroom Lair")]

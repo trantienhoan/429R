@@ -141,13 +141,14 @@ Parts 1-5 tell WHAT happens. Next, the game must show WHY. Nothing is decided ye
 | Living room | LR - Stuffs / LR - Chaos (`Pumpkin_4`) | Enemy2 - Wait, EM2 | Cockroach_Boss |
 | Playroom (Jenga) | Jenga Tower / Jenga Tower 2 (`Pumpkin_6`) | Enemy 3 Stuffs, EM3 | Cockroach_Boss_PumpkinButt |
 
-Status 2026-11-25: answers recorded. Built first (user's pick): **the boss escape** (the mini boss pops out of the broken laughing pumpkin with its seed piece, runs off and digs in; it climbs back out of that hole for the fight). Details in Assets/NOTES_Next_Time.md "BOSS ESCAPE". Then built **the laughing pumpkin's green glow** (its candle-lit eyes and grin turn green and the seed's glow seeps out around it, faint at first and full when it turns giant, flaring with each laugh). Next: the rooms as lairs (concept art first), then mosquitoes.
+Status 2026-11-25: answers recorded. Built first (user's pick): **the boss escape** (the mini boss pops out of the broken laughing pumpkin with its seed piece, runs off and digs in; it climbs back out of that hole for the fight). Details in Assets/NOTES_Next_Time.md "BOSS ESCAPE". **Changed 2026-11-26 (user):** it pops out, plays its Alert look and vanishes in a ninja's smoke bomb (no run, no hole); the real boss arrives in a smoke bomb too; no seed piece on its back (the room's one piece is the seed the boss drops when it dies). Then built **the laughing pumpkin's green glow** (its candle-lit eyes and grin turn green and the seed's glow seeps out around it, faint at first and full when it turns giant, flaring with each laugh). Next: the rooms as lairs (concept art first), then mosquitoes.
 
 
 ## Visual hints and easter eggs (ideas 2026-11-26, NOT built yet)
 
 User 2026-11-26: "I prefer telling story with visual than listening. Hints or easter eggs are better." Already built:
-the lairs, specimen board, glow jars, jar huddle, growth chart, the Fairy's jar at the boss. Ideas, smallest first:
+the lairs, specimen board, glow jars, jar huddle, the Fairy's jar at the boss. (The growth chart, the claw scratches and
+the nests were taken out on 2026-11-26, user: "they look all bad".) Ideas, smallest first:
 
 1. **Every clock stuck at 4:29** (the game's name): time stopped in this dream. Tiny.
 2. **Tally marks** scratched in the start prison room, one more for each boss win (save): "again and again". Small.
@@ -168,8 +169,10 @@ Knight Armor Hunt; details in Assets/NOTES_Next_Time.md. **Ideas 6, 7, 8 BUILT +
 build 6-8"): Tools > 429 Game > Story > Set Up Story Hints (Watcher, Shadow, Her Flowers). 6 = the giant's glowing eyes
 drift past a bedroom-kit window (or out in the dark while a room's walls are down for the fight), growing with each seed
 piece; 7 = each laugh throws the giant's fists-up shadow on the wall behind the laughing pumpkin; 8 = her lost things are
-her 4 flowers, one hidden in each room's set like the armor, all 4 in a run = her green shower + full health. The plan
-as agreed:
+her 4 flowers, one hidden in each room's set like the armor, all 4 in a run = her green shower + full health.
+**Changed 2026-11-26 night (user):** the armor is really rare now (8% a room's set, the sword and shield 3%, a seed chest
+5%), grabbed and eaten like a candy, in the legendary sword's green aura; the sword and shield fixed and back in; the
+watcher shows only its two eyes, rarer; her flowers are out for now. The plan as agreed:
 - The pieces exist: Knight_429.blend's armor set = `Models/Knight_Armors` Helmet, Chest_Piece, Bracer, Boots, Shield,
   Sword (one material), with item prefabs `Prefabs/Items/Pie_Knight_*`. Their old FSM sets the GAMESTAGES gear bools
   (Head_Gear...), which are PROGRESS flags now: the armor pickups must not set them.

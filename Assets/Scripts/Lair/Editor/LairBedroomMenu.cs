@@ -77,7 +77,7 @@ namespace Game.EditorTools
         // waits for what it stands on (and spawns last).
         private static readonly (string prefab, bool messyToo, Vector3 at, float turn, Sit sit, bool waits)[] Adds =
         {
-            ("Lair_Nest_Big", true, new Vector3(-2.85f, 0f, 3.05f), 135f, Sit.Floor, false),
+            // (The big nest is out: user 2026-11-26, "remove claw mark and nest and pumpkin ruler".)
             ("Lair_Jar_Huddle", true, new Vector3(-2.5f, 0f, -0.15f), 90f, Sit.Floor, false),
             // (on the hanging shelves they fell off: Play test 2026-11-26) on top of the west wardrobe (Bedroom_Shelf_01)
             // and of the south-east shelf beside its bottles
@@ -115,12 +115,7 @@ namespace Game.EditorTools
             yield return new Surface("Lair_Bug_Hole", new Vector3(0.6f, 0.3f, 3f), Vector3.forward, 0.9f, 200f);
             yield return new Surface("Lair_Bug_Hole", new Vector3(-1.8f, 0.32f, -3f), Vector3.back, 0.85f, 300f);
             yield return new Surface("Lair_Bug_Hole", new Vector3(-3f, 0.4f, 0.6f), Vector3.left, 0.75f, 75f);
-            // The growth chart pinned beside the chained north door (its right, on the 3 m wall).
-            yield return new Surface("Lair_Growth_Chart", new Vector3(0.35f, 0.95f, 3f), Vector3.forward, 1f);
-            // Claw scratches on the chained north door and the locked west door.
-            yield return new Surface("Lair_Claw_Scratches", new Vector3(-1.2f, 1.15f, 3f), Vector3.forward, 1f, 15f);
-            yield return new Surface("Lair_Claw_Scratches", new Vector3(-1.85f, 0.7f, 3f), Vector3.forward, 0.75f, -10f);
-            yield return new Surface("Lair_Claw_Scratches", new Vector3(-3f, 1.0f, -2.0f), Vector3.left, 0.9f, 5f);
+            // (The growth chart and the claw scratches are out: user 2026-11-26, "they look all bad".)
         }
 
         [MenuItem("Tools/429 Game/Lair/Set Up Bedroom Lair")]
@@ -130,8 +125,7 @@ namespace Game.EditorTools
             foreach (var (source, copy) in Aged)
                 if (LairStoryPropsMenu.AgedCopy(BedroomFolder + source + ".prefab", copy, done) != null) done.Add(copy);
             TakenBed(done);
-            BigNest(done);
-            GrowthChart(done);
+            // (BigNest and GrowthChart made Lair_Nest_Big and Lair_Growth_Chart: out of the game since 2026-11-26.)
             AssetDatabase.SaveAssets();
             Debug.Log($"{Tag} Prefabs: {string.Join(", ", done)}.");
             LairPlaceStorageMenu.PlaceInSet(KitSet, Spots(), Surfaces(), Tag, "the bedroom");

@@ -40,17 +40,14 @@ MonoBehaviour:
   weapons:
   - {fileID: 2754509034827852370, guid: 2351921e578fc5241a832a8d1b971fdd, type: 3}
   - {fileID: 2280671623837054201, guid: 9175f9adec0c8f043b180465df8348f5, type: 3}
-  keepsakes:
-  - {fileID: 7706152598417082904, guid: 4b98827b36fbe9f49b469a64fe5bb0c8, type: 3}
-  - {fileID: 4830991355054717284, guid: 1a8e7c45c03cd984ca5f5fcf8afb85ef, type: 3}
-  - {fileID: 6275010106268335749, guid: f6689028dea169a4f94083ccde9d72a9, type: 3}
-  - {fileID: 87445008430594107, guid: 7df44b94684ee5a48b69181400b9f36d, type: 3}
+  keepsakes: []
   keepsakeSound: {fileID: 8300000, guid: a56cd51311da2df43a0220acff0c521f, type: 3}
   keepsakeVolume: 0.9
   allKeepsakesSound: {fileID: 8300000, guid: 70397107cf201194bbb25fb87d18f6d7, type: 3}
   allKeepsakesVolume: 1
-  perRoom: {x: 1, y: 2}
-  chestChance: 0.3
+  roomChance: 0.08
+  weaponRoomChance: 0.03
+  chestChance: 0.05
   smallestSpot: 0.4
   skipNames:
   - Pumpkin
@@ -58,6 +55,7 @@ MonoBehaviour:
   - Bottle
   - Candy
   - Flip_Flop
+  - Web
   roomSettles: 2.5
   smallestRoom: 4
   glint: {fileID: 4033412786151888123, guid: 49057b33ea71fbb4da4e8f02a8db9f28, type: 3}

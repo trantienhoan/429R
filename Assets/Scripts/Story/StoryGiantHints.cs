@@ -253,6 +253,8 @@ namespace Game.Story
             body.sprite = sprite;
             if (settings.ShadowMaterial != null) body.sharedMaterial = settings.ShadowMaterial;
             body.color = new Color(0f, 0f, 0f, 0f);
+            // Only its eyes (user 2026-11-26): the body still places them, unseen.
+            body.enabled = settings.WatcherBody;
 
             float spacing = Mathf.Abs(settings.RightEye.x - settings.LeftEye.x) * size.x * unit;
             var made = new Watcher
