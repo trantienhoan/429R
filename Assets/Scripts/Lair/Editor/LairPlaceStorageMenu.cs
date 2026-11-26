@@ -22,10 +22,10 @@ namespace Game.EditorTools
         private const string KitPath = "Assets/Prefabs/Bases/Bedroom_Kit_Base.prefab";
         private const string SetName = "Mini";
         private const string LairFolder = "Assets/Prefabs/Lair/";
-        private const float Inner = 3.70f;
-        private const float Top = 2.95f;
+        internal const float Inner = 3.70f;
+        internal const float Top = 2.95f;
 
-        private struct Spot
+        internal struct Spot
         {
             public string prefab, part;
             public Vector3 at, facing;
@@ -41,7 +41,7 @@ namespace Game.EditorTools
         }
 
         // A web across a corner: its hub this far out along the corner's middle line, under the ceiling, facing the room.
-        private static Spot Corner(float x, float z, float size, float height = Top)
+        internal static Spot Corner(float x, float z, float size, float height = Top)
         {
             var into = new Vector3(-Mathf.Sign(x), 0f, -Mathf.Sign(z)).normalized;
             // Its width is 0.884 m at size 1; across a square corner the gap is twice the distance out.
@@ -75,7 +75,7 @@ namespace Game.EditorTools
         // Pieces put on the kit's own surface: a ray from 'from' along 'dir' finds it (the piece's +Z = the surface's
         // facing). 'floor' puts the piece's pivot down at the floor under the hit (the vine grows from there). 'spin'
         // turns it round its facing.
-        private struct Surface
+        internal struct Surface
         {
             public string prefab;
             public Vector3 from, dir;
@@ -95,7 +95,6 @@ namespace Game.EditorTools
         private static IEnumerable<Surface> Surfaces()
         {
             // The pumpkin vine up the west wall, from a bug hole at its root.
-            yield return new Surface("Lair_Wall_Vine", new Vector3(-3f, 1f, 2.3f), Vector3.left, 1f, 0f, true);
             yield return new Surface("Lair_Bug_Hole", new Vector3(-3f, 0.12f, 2.12f), Vector3.left, 1.1f, 20f);
             // Bug holes low on the wainscoting, where no furniture stands.
             yield return new Surface("Lair_Bug_Hole", new Vector3(-3f, 0.42f, -1.95f), Vector3.left, 0.8f, 75f);
@@ -108,7 +107,11 @@ namespace Game.EditorTools
         }
 
         [MenuItem("Tools/429 Game/Lair/Place Storage Room Webs")]
-        public static void Place()
+        public static void Place() => PlaceInSet(SetName, Spots(), Surfaces(), Tag, "the storage room");
+
+        // Puts the pieces into one set of the room kit (Mini = the storage room, Big = the bedroom): the Spots on the
+        // named parts, the Surfaces where a ray meets the set's own faces. Earlier Lair_ pieces in that set go first.
+        internal static void PlaceInSet(string SetName, IEnumerable<Spot> spots, IEnumerable<Surface> surfaces, string Tag, string room, string KitPath = KitPath)
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
             {
@@ -137,7 +140,7 @@ namespace Game.EditorTools
                     removed++;
                 }
                 var placed = new List<string>();
-                foreach (var s in Spots())
+                foreach (var s in spots)
                 {
                     var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(LairFolder + s.prefab + ".prefab");
                     if (prefab == null)
@@ -158,7 +161,7 @@ namespace Game.EditorTools
                     go.transform.SetParent(part, true);
                     placed.Add($"{s.prefab} on {part.name}");
                 }
-                foreach (var s in Surfaces())
+                foreach (var s in surfaces)
                 {
                     var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(LairFolder + s.prefab + ".prefab");
                     if (prefab == null)
@@ -181,7 +184,7 @@ namespace Game.EditorTools
                     placed.Add($"{s.prefab} on {on.name}");
                 }
                 PrefabUtility.SaveAsPrefabAsset(root, KitPath);
-                Debug.Log($"{Tag} {placed.Count} pieces placed in the storage room ({removed} earlier ones replaced): " +
+                Debug.Log($"{Tag} {placed.Count} pieces placed in {room} ({removed} earlier ones replaced): " +
                           string.Join("; ", placed) + ". Prefab only, no scene change.");
             }
             finally

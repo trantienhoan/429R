@@ -69,6 +69,7 @@ namespace Game.PlayGround.Editor
                 var game = root.GetComponent<PlayGroundGame>();
                 if (game == null) { game = root.AddComponent<PlayGroundGame>(); notes.Add("Play Ground Game added"); }
                 game.enabled = true;
+                game.useRounds = true;   // (Use One Cook turns it to the look only)
                 FillGame(game, notes);
                 Spawners(root, false, notes);
                 RemoveDeadCopies(root, notes);
@@ -163,7 +164,7 @@ namespace Game.PlayGround.Editor
         }
 
         // The PlayGround's own start chest spawner on (the old single dish) or off (Gate Run drops the start chest).
-        private static void Spawners(GameObject root, bool on, List<string> notes)
+        internal static void Spawners(GameObject root, bool on, List<string> notes)
         {
             int n = 0;
             foreach (var t in root.GetComponentsInChildren<Transform>(true))
@@ -196,7 +197,7 @@ namespace Game.PlayGround.Editor
         }
 
         // A copy of the prefab as it was before this menu first changed it (a later run keeps that first copy).
-        private static void Backup(List<string> notes)
+        internal static void Backup(List<string> notes)
         {
             string folder = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments),
                 "429R_claude_backups", "2026-11-23", "gate1");

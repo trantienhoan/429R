@@ -146,8 +146,10 @@ namespace Game.Rooms
             var grab = thing.GetComponentInChildren<XRGrabInteractable>();
             if (grab != null && grab.isSelected) return false;
 
-            // Loose (a moving body), breakable (takes hits) or a bug: furniture, props, pieces, weapons, enemies.
-            bool loose = thing.CompareTag("Enemy") || thing.GetComponentInChildren<Game.Combat.EnemyHitDamage>() != null;
+            // Loose (a moving body), breakable (takes hits) or a bug: furniture, props, pieces, weapons, enemies. Or a
+            // looks-only prop marked as food (the lair nests, 2026-11-26).
+            bool loose = thing.CompareTag("Enemy") || thing.GetComponentInChildren<Game.Combat.EnemyHitDamage>() != null ||
+                         thing.GetComponentInChildren<PurpleHoleFood>() != null;
             if (!loose)
             {
                 foreach (var body in thing.GetComponentsInChildren<Rigidbody>())
@@ -246,6 +248,17 @@ namespace Game.Rooms
                 {
                     if (body == null || !body.gameObject.activeInHierarchy) continue;
                     var thing = StageThing(body.transform);
+                    if (thing == null || !seen.Add(thing)) continue;
+                    var flat = thing.transform.position - centre;
+                    flat.y = 0f;
+                    if (flat.magnitude > cfg.reach || !cfg.Eats(thing)) continue;
+                    things.Add(thing);
+                }
+                // Looks-only props marked as food (no body to find them by): the lair nests.
+                foreach (var food in FindObjectsByType<PurpleHoleFood>(FindObjectsSortMode.None))
+                {
+                    if (food == null || !food.gameObject.activeInHierarchy) continue;
+                    var thing = StageThing(food.transform);
                     if (thing == null || !seen.Add(thing)) continue;
                     var flat = thing.transform.position - centre;
                     flat.y = 0f;

@@ -14,6 +14,9 @@ namespace Game.Rooms
         [Tooltip("When it drops, a heavier mass is lowered to this, so a shelf made very heavy to stay put on the wall " +
                  "doesn't crush or fling what it lands on.")]
         [Min(0.1f)] [SerializeField] private float massWhenDropped = 20f;
+        [Tooltip("A prop that can be picked up once it has fallen (the hanging candle, user 2026-11-26): its XR Grab " +
+                 "Interactable stays switched off on the wall and is switched on when it drops.")]
+        [SerializeField] private bool grabbableWhenDropped = true;
 
         /// <summary>Every wall-hung prop that's in the game right now.</summary>
         public static readonly List<WallHungProp> Active = new List<WallHungProp>();
@@ -37,6 +40,8 @@ namespace Game.Rooms
             body.constraints = RigidbodyConstraints.None;
             if (body.mass > massWhenDropped) body.mass = massWhenDropped;
             body.WakeUp();
+            if (grabbableWhenDropped && TryGetComponent(out UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable grab) && !grab.enabled)
+                grab.enabled = true;
         }
     }
 }

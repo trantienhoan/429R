@@ -54,7 +54,7 @@ namespace Game.EditorTools
             Convert(paths);
         }
 
-        private static void Convert(IEnumerable<string> paths)
+        internal static void Convert(IEnumerable<string> paths)
         {
             if (PrefabStageUtility.GetCurrentPrefabStage() != null)
             {
@@ -88,7 +88,7 @@ namespace Game.EditorTools
         }
 
         // Swaps Light Off When Grabbed for a Lighter on the candle's root. Returns what changed (null: nothing).
-        private static string MakeLighter(GameObject root)
+        internal static string MakeLighter(GameObject root)
         {
             var changes = new List<string>();
             GameObject flame = null;

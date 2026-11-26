@@ -67,7 +67,7 @@ namespace Game.EditorTools
         private const string CandleWait = "Wait For Table";
         private const float CandleWaitSeconds = 1.5f;
 
-        private enum Sit { Floor, OnTop, WallMiddle }
+        internal enum Sit { Floor, OnTop, WallMiddle }
 
         // New points: the prefab, also in the messy set?, where (x, z and the height of the floor, shelf top or the
         // board's middle), its turn, and how it sits there.
@@ -291,7 +291,7 @@ namespace Game.EditorTools
 
         // Where the point goes so the prefab sits right: on the floor as built, its bottom on a shelf top, or its middle
         // at the given height (a board on the wall).
-        private static Vector3 Seat(GameObject prefab, Vector3 at, Quaternion rotation, Sit sit)
+        internal static Vector3 Seat(GameObject prefab, Vector3 at, Quaternion rotation, Sit sit)
         {
             if (sit == Sit.Floor) return at;
             var probe = Object.Instantiate(prefab, Vector3.zero, rotation);
@@ -317,7 +317,7 @@ namespace Game.EditorTools
         }
 
         // The prefab a point's FSM makes (its first Create Object), or null.
-        private static string Made(PlayMakerFSM fsm)
+        internal static string Made(PlayMakerFSM fsm)
         {
             if (!fsm.Fsm.Initialized) fsm.Fsm.Init(fsm);
             foreach (var state in fsm.Fsm.States)
@@ -331,7 +331,7 @@ namespace Game.EditorTools
         }
 
         // Every Create Object of the point makes this prefab (at the point itself, when given).
-        private static void SetMade(PlayMakerFSM fsm, GameObject prefab, GameObject at)
+        internal static void SetMade(PlayMakerFSM fsm, GameObject prefab, GameObject at)
         {
             if (fsm == null) return;
             Undo.RecordObject(fsm, "Place Storage Room Story Props");
@@ -353,7 +353,7 @@ namespace Game.EditorTools
         }
 
         // A first state that waits, then goes on (FINISHED) to the point's old first state.
-        private static bool AddWait(PlayMakerFSM pm)
+        internal static bool AddWait(PlayMakerFSM pm)
         {
             var f = pm.Fsm;
             if (!f.Initialized) f.Init(pm);
@@ -396,7 +396,7 @@ namespace Game.EditorTools
             return true;
         }
 
-        private static GameObject FindPrefab(string name)
+        internal static GameObject FindPrefab(string name)
         {
             foreach (var guid in AssetDatabase.FindAssets(name + " t:Prefab"))
             {
@@ -406,7 +406,7 @@ namespace Game.EditorTools
             return null;
         }
 
-        private static GameObject FindSceneObject(string name)
+        internal static GameObject FindSceneObject(string name)
         {
             foreach (var go in Resources.FindObjectsOfTypeAll<GameObject>())
                 if (go.name == name && go.scene.IsValid() && go.scene.isLoaded) return go;

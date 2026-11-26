@@ -17,7 +17,7 @@ namespace Game.EditorTools
         private static readonly string[] GateEffects = { "Area_circles_blue", "Area_heal_green", "Area_star_ellow" };
 
         /// <summary>
-        /// Puts a Seed Lock on Stone_Cube_Dice 1, 2 and 3: 50 Yellow, 5 Green or 1 Boss Seed opens it, Cube_N and
+        /// Puts a Seed Lock on Stone_Cube_Dice 1, 2 and 3: 1 Boss Seed opens it (user 2026-11-26; it was 50 Yellow, 5 Green or 1 Boss), Cube_N and
         /// Gate_N are its GAMESTAGES bools. Settings already on a block are kept; only empty ones are filled in.
         /// </summary>
         [MenuItem("Tools/429 Game/Paths/Set Up Seed Locks")]
@@ -53,9 +53,9 @@ namespace Game.EditorTools
                     var prices = serialized.FindProperty("prices");
                     if (prices.arraySize == 0)
                     {
-                        SetPrice(prices, 0, yellow, 50);
-                        SetPrice(prices, 1, green, 5);
-                        SetPrice(prices, 2, boss, 1);
+                        // User 2026-11-26: "Only the Boss Seed is kept and be able to be spent on gates" (Yellow Seeds are
+                        // the pieces of the Seed now, not money).
+                        SetPrice(prices, 0, boss, 1);
                     }
                     if (added)
                     {

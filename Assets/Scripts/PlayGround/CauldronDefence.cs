@@ -32,7 +32,9 @@ namespace Game.PlayGround
     ///    gear bool (with the start chest's Bracer that's all four GAMESTAGES needs).
     /// 6. Won (the countdown runs out, the cauldron standing): the Fairy Shield sweeps the field, gear seeds still lying
     ///    are eaten for the player and any gear bool still missing is set, then the pot swells and bursts (the Cauldron's
-    ///    Burst: Pot Broken; the first-clear prize, Cooking Rewards). Since 2026-11-18 (user: gates 1 and 2 end like gate 3)
+    ///    Burst: Pot Broken; the first-clear prize, Cooking Rewards). Since 2026-11-26 (Seed At The End, user: "cauldron
+    ///    finishes cooking and drop the seed, take the seed to move on") The_Seed then drops where the pot stood and Gate
+    ///    Exit takes the player to the rooftop. With it off: since 2026-11-18 (user: gates 1 and 2 end like gate 3)
     ///    with Pumpkin Finale on, the giant pumpkin (Finale Boss, a Pumpkin Ball Boss) drops where the pot stood and rolls
     ///    about the PlayGround (its roam area): broken, it bursts into Finale Candies and The_Seed (Gate Exit), and
     ///    GAMESTAGES takes the player to the rooftop's tree defence. Off: the pot's burst takes the player to the Daruma
@@ -225,7 +227,16 @@ namespace Game.PlayGround
         [Tooltip("Seconds from the countdown's end to the pot's swell (the sweep first).")]
         [Min(0f)] [SerializeField] private float burstDelay = 2.5f;
 
-        [Header("Won: the giant pumpkin (user, 2026-11-18)")]
+        [Header("Won: The_Seed from the pot (user, 2026-11-26)")]
+        [Tooltip("On (user 2026-11-26: \"cauldron finishes cooking and drop the seed, take the seed to move on\"): the cook " +
+                 "done, the field swept, the pot bursts (its candies, the first-clear prize) and The_Seed (Finale Seed) drops " +
+                 "where it stood; taking it goes on to the rooftop (Gate Exit). No giant pumpkin, no Daruma game. Off: Pumpkin " +
+                 "Finale decides (the giant pumpkin, or the Daruma game).")]
+        [SerializeField] private bool seedAtTheEnd = true;
+        [Tooltip("Seconds from the burst to the seed (the swell and the burst take about 2).")]
+        [Min(0f)] [SerializeField] private float seedDelay = 2.2f;
+
+        [Header("Won: the giant pumpkin (user, 2026-11-18; used when Seed At The End is off)")]
         [Tooltip("On: after the pot bursts the giant pumpkin drops in; breaking it gives The_Seed (then the rooftop's tree " +
                  "defence). Off: the Daruma game, as before.")]
         [SerializeField] private bool pumpkinFinale = true;
@@ -810,6 +821,28 @@ namespace Game.PlayGround
             GearGuard();
             Debug.Log("[Cauldron Defence] Won: the cauldron stood " + cauldron.DishSeconds.ToString("0") + " s (" + health.Health.ToString("0") + "/" + health.MaxHealth.ToString("0") + " health left). The pot bursts in " + burstDelay + " s.", this);
             Won?.Invoke(this);
+            if (seedAtTheEnd)
+            {
+                // The cook is done: the pot bursts (its candies and prize) and The_Seed drops where it stood; Gate Exit takes
+                // the player on once it's eaten (no giant pumpkin, no Daruma game).
+                if (TryGetComponent(out SpecialStage3Trigger noDaruma)) noDaruma.enabled = false;
+                if (burstDelay > 0f) yield return new WaitForSeconds(burstDelay);
+                FinaleSpot(out var spot, out var field, out var mid);
+                if (field != null && !field.ContainsFlat(spot, 1f)) spot = new Vector3(mid.x, spot.y, mid.z);
+                cauldron.Burst();
+                if (seedDelay > 0f) yield return new WaitForSeconds(seedDelay);
+                var seed = finaleSeed != null ? finaleSeed : GateRun.Current != null ? GateRun.Current.finaleSeed : null;
+                if (seed == null) Debug.LogWarning("[Cauldron Defence] Seed At The End: no Finale Seed set (The_Seed): GAMESTAGES' " +
+                                                   "The_Seed is set directly.", this);
+                // Its own object under Currently Spawned Stuffs (a Game Over clears it) until Gate Exit makes it stand alone.
+                var end = new GameObject("Cauldron Seed Exit");
+                var holder = SpawnedStuff();
+                if (holder != null) end.transform.SetParent(holder, false);
+                end.transform.position = spot;
+                GateExit.Begin(end, seed, spot, "[Cauldron Defence]");
+                Debug.Log("[Cauldron Defence] The cook is done: The_Seed dropped where the pot stood (then the rooftop).", this);
+                yield break;
+            }
             // The giant pumpkin instead of the Daruma game: the pot's burst no longer takes the player away.
             bool finale = pumpkinFinale && finaleBoss != null;
             if (pumpkinFinale && finaleBoss == null)

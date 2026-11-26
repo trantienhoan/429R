@@ -192,6 +192,9 @@ namespace Game.Locomotion
             if (thing.GetComponent<PumpkinBossBrain>() != null) return;
             // The player's own fists (the punching balls and the flying ones, which are pooled and reused) never fall.
             if (body != null && Game.Combat.Fist.IsFistBall(body)) return;
+            // Ball Valley's balls (gate 3) have their own falling (its caves and lawn edge); taken here, a snake lost a
+            // tail ball under its feet (2026-11-26: the rooftop's edges came while the valley's balls still rolled).
+            if (thing.GetComponent<Balls.BallPart>() != null) return;
             // Only once it's over the edge, not just touching it.
             var center = agent != null || body == null ? thing.transform.position : body.worldCenterOfMass;
             if (!Contains(center)) return;

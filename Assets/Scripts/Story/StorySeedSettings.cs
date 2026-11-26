@@ -80,6 +80,42 @@ namespace Game.Story
         [SerializeField] private float showerStarScale = 2f;
         [SerializeField] private float showerGlowScale = 1f;
 
+        [Header("The seal breaks (the rooftop lid): the pieces become the Seed and the tree grows")]
+        [Tooltip("User 2026-11-26: \"when the seal on the rooftop is broken, all the collected pieces fly out, circling and " +
+                 "join in as whole seed, dig to the ground and grow up as the Pumpkin Tree\". The item the collected pieces " +
+                 "are (Yellow_Seed, \"A piece of the Seed\"): they're used up at the seal (Spend Pieces). How many fly is " +
+                 "the seeds taken this run (the start + 4 rooms = 5), not this item's count, which carried over between " +
+                 "runs (user: \"why we have so many pieces?\").")]
+        [SerializeField] private Game.Inventory.ItemDefinition pieceItem;
+        [Tooltip("The pieces are used up: they become the Seed (the count goes back to 0 for the next run).")]
+        [SerializeField] private bool spendPieces = true;
+        [Min(1)]
+        [SerializeField] private int mostPiecesShown = 15;
+        [Tooltip("What they join into: the whole Seed's look (Items/Chest/The_Seed; it only shows).")]
+        [SerializeField] private GameObject wholeSeedLook;
+        [Tooltip("Its size while it hangs and digs, against the seed prefab's own (they read from far off).")]
+        [Min(0.1f)]
+        [SerializeField] private float wholeSeedSize = 2.2f;
+        [Tooltip("The green light round the pieces and the Seed.")]
+        [SerializeField] private Color flightLight = new Color(0.55f, 1f, 0.45f, 1f);
+        [Tooltip("The earth thrown up as the Seed digs in (user 2026-11-26: brown dirt; Prefabs/Story/Seed_Dig_Dirt, a " +
+                 "browner copy of the boss's scrape dust). Empty: the Seeds Into Soil action's own puff.")]
+        [SerializeField] private GameObject digPuff;
+        [Tooltip("Its size as the Seed goes down (several), and for the last burst when it's in.")]
+        [Min(0.05f)]
+        [SerializeField] private float digPuffSize = 0.7f;
+        [Min(0.05f)]
+        [SerializeField] private float lastPuffSize = 1.5f;
+        [Tooltip("Sounds (the user's ElevenLabs list: seed_chime, seed_whoosh, seed_merge, seed_plunge, tree_grow). " +
+                 "Empty = none.")]
+        [SerializeField] private AudioClip pieceChime;
+        [SerializeField] private AudioClip flightWhoosh;
+        [SerializeField] private AudioClip mergeSound;
+        [SerializeField] private AudioClip plungeSound;
+        [SerializeField] private AudioClip treeGrowSound;
+        [Range(0f, 1f)]
+        [SerializeField] private float flightVolume = 0.9f;
+
         private const string ResourcePath = "Story Seed Settings";
         private static StorySeedSettings instance;
 
@@ -140,5 +176,20 @@ namespace Game.Story
         public float ShowerRing => showerRing;
         public float ShowerStarScale => showerStarScale;
         public float ShowerGlowScale => showerGlowScale;
+        public Game.Inventory.ItemDefinition PieceItem => pieceItem;
+        public bool SpendPieces => spendPieces;
+        public int MostPiecesShown => mostPiecesShown;
+        public GameObject WholeSeedLook => wholeSeedLook;
+        public float WholeSeedSize => wholeSeedSize;
+        public Color FlightLight => flightLight;
+        public GameObject DigPuff => digPuff;
+        public float DigPuffSize => digPuffSize;
+        public float LastPuffSize => lastPuffSize;
+        public AudioClip PieceChime => pieceChime;
+        public AudioClip FlightWhoosh => flightWhoosh;
+        public AudioClip MergeSound => mergeSound;
+        public AudioClip PlungeSound => plungeSound;
+        public AudioClip TreeGrowSound => treeGrowSound;
+        public float FlightVolume => flightVolume;
     }
 }

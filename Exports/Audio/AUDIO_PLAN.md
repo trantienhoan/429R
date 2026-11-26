@@ -22,8 +22,39 @@ and several moments are silent.
 - **Names and folder:** save each file with the name in the tables below into
   `Assets/Audio/SFX/ElevenLabs/<group>/` (groups: Voice, Player, Enemy, Boss, Weapon, UI, Stage, Story, World,
   Ambience). Several takes = `_1`, `_2`, `_3`. Tell Claude "the sounds are in" and they get wired to their slots.
+  (Last night's sounds went straight into `Assets/Audio/SFX/`; that works too.)
 
 ---
+
+## TODAY 2026-11-26: the story sounds (19 files)
+
+User: "I want to complete more with the story telling of the game." These are the story moments that are still silent
+(or use a stand-in), in the order the player meets them. Same recipe as above. Only `fairy_eek` is a voice.
+
+| File | Moment | ElevenLabs prompt | Length | Takes |
+|---|---|---|---|---|
+| `amb_dark_walk` | The first dark walk, until the floor shows up | low dark drone, cold wind, empty endless space, faint far echo | 20 s LOOP | 1 |
+| `light_return_swell` | The dark walk ends: "the floor starts to show up" | warm rising magical swell, soft shimmer opening up | 2.5 s | 1 |
+| `fairy_eek` (voice) | She looks up and sees the pumpkin falling on her | a tiny startled gasp "Eek!", small fairy girl | 0.5 s | 2 |
+| `start_pumpkin_land` | The first pumpkin slams down on her spot | huge heavy pumpkin landing thud, ground shake, debris | 1 s | 1 |
+| `start_pumpkin_crack` | The first pumpkin cracks at half health (silent now) | sharp gourd crack crunch, splitting rind | 0.5 s | 1 |
+| `lamp_flicker` | A laughing pumpkin laughs: the room lamp stutters | electric lamp flicker buzz, unstable crackle | 1.5 s | 1 |
+| `cold_gust` | ... and the room turns cold | cold breathy ghostly gust of wind | 1.5 s | 1 |
+| `miniboss_pop_burst` | The mini boss bursts out of the broken laughing pumpkin | big wet pumpkin burst, squelch and pop | 1 s | 1 |
+| `boss_dig_rumble` | It digs into the floor / climbs back out | dirt shifting rumble, scraping claws | 1.5 s | 1 |
+| `seed_chime` | Each seed piece pops out over the dirt (rooftop seal) | bright magical chime, single sparkle | 0.5 s | 2 |
+| `seed_whoosh` | The pieces fly to the dirt | sparkly magic whoosh trail | 1 s | 1 |
+| `seed_merge` | They join into one seed | shimmering magical merge, rising chord | 1.5 s | 1 |
+| `seed_plunge` | The seed dives into the dirt | soft earthy plunge with a magic thump | 1 s | 1 |
+| `tree_grow` | The big tree grows and lights the night | magical bloom with wood creaking and growing, warm | 3 s | 1 |
+| `tree_fall` | The tree gives its life for you | big sad tree crash with a fading light tone | 3 s | 1 |
+| `jar_drain_loop` | NEW: the Fairy shut in a jar by the final boss, her light flowing into it | eerie magical draining hum, glassy, slow pulse | 4 s LOOP | 1 |
+| `jar_break` | NEW: the boss is beaten, her jar shatters, she is free | glass jar shattering with a bright magical release chime | 1.5 s | 1 |
+| `sparkle_rain_loop` | The ending: she showers you in green light | soft sparkle rain, magical, gentle | 5 s LOOP | 1 |
+| `green_protector_sting` | The ending title THE GREEN PROTECTOR | short heroic magical title sting, warm brass and bells | 3 s | 1 |
+
+Also for her board (optional, small): `board_open` (magical shimmer 0.5 s), `arrow_tick` (soft tick 0.2 s),
+`card_pick` (sparkle pick 0.4 s). Her calls from the jar reuse `FairyHelp` and `FairyCallHelp` (yours, unused so far).
 
 ## Priority 1: the biggest difference (about 40 files)
 

@@ -637,9 +637,23 @@ namespace Balls
 
         // ---------- simulation ----------
 
+        /// <summary>
+        /// 429R (2026-11-26): a tail ball destroyed by something else (a Fall Edge, the purple hole, a clean-up) left a dead
+        /// entry in the tail, and every frame after threw (MissingReferenceException at the tail loops: ~6,500 in one bot
+        /// run, while the main ball lived on). It is simply off the tail now; the balls behind it step up a size.
+        /// </summary>
+        bool DropLostBalls()
+        {
+            if (babies.RemoveAll(b => !b) == 0) return false;
+            if (babies.Count == 0) absorbed = false;
+            RefreshSize();
+            return true;
+        }
+
         void FixedUpdate()
         {
             if (!alive || !head) return;   // 429R: no proxy
+            DropLostBalls();
             if (vrBody)
             {
                 // 429R: the VR body only follows the player: no rolling, no pockets, no eating (Ball Valley Player).
@@ -1338,6 +1352,7 @@ namespace Balls
                 if (auraMade != null && auraMade.activeSelf) auraMade.SetActive(false);   // 429R: down a hole: its aura waits
                 return;
             }
+            DropLostBalls();   // 429R: a tail ball destroyed by something else
             float dt = Time.deltaTime;
             radius = Mathf.MoveTowards(radius, targetRadius, dt * 0.8f);
             head.transform.localScale = Vector3.one * (radius * 2f);

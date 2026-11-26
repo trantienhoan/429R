@@ -232,16 +232,9 @@ namespace Game.EditorTools
                     changed |= catalog.EditorAddSpecial(SetupUtility.GetOrCreateItemForPrefab(prefab), price);
                 }
             }
-            if (catalog.SpecialUnlockCurrency == null)
-            {
-                var key = AssetDatabase.LoadAssetAtPath<ItemDefinition>(SpecialUnlockItemPath);
-                if (key != null)
-                {
-                    catalog.EditorSetSpecialUnlock(key, SpecialUnlockPrice);
-                    changed = true;
-                }
-                else Debug.LogWarning($"[Shop Setup] '{SpecialUnlockItemPath}' doesn't exist, so the special line isn't locked. Set its unlock in the catalog.");
-            }
+            // User 2026-11-26: "We can remove yellow seed currency from the store": the special line is no longer locked
+            // behind Yellow Seeds (they're the pieces of the Seed now); a set-up run doesn't lock it again (it used to set
+            // Special Unlock Currency = Yellow_Seed, Special Unlock Price 15, when empty).
 
             if (!changed) return false;
             EditorUtility.SetDirty(catalog);

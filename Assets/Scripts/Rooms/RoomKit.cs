@@ -10,11 +10,12 @@ namespace Game.Rooms
     /// How a kit room comes and goes (user, 2026-11-19: "the walls come, form a room ... then to go the next room, the
     /// rooftop and all the walls go, the floor still stays, and new walls and rooftop come"). It replaces the old rigged
     /// Bedroom_Base_Z's clips with the same look and timing:
-    /// - Come: every wall piece (with its posts, windows, door frames and door leaves) starts lying flat on the floor with
-    ///   no height, then unfolds upright and grows up, all together, with a little overshoot (the old clips' pop-up-book
-    ///   look); the roof comes last, flying in from the side and landing on the walls. Pieces keep their length, so the
-    ///   pieces of a side move as one wall (user, 2026-11-24: grown from their own ends they parted and overlapped).
-    /// - Go: the roof lifts off and flies away first; the walls hop, fold back down flat and shrink to nothing.
+    /// - Come: every wall piece (with its posts, windows, door frames and door leaves) RISES STRAIGHT UP out of the floor,
+    ///   upright and at its full size, all together (user, 2026-11-26: "just make the walls raise up instead of folding
+    ///   up ... so the walls won't overlap each others"); the roof comes last, flying in from the side and landing on
+    ///   the walls. Come Style Unfold brings back the old pop-up-book look (lying flat, unfolding and growing).
+    /// - Go: the roof lifts off and flies away first; the walls sink straight down into the floor (Go Style Unfold: they
+    ///   hop, fold back down flat and shrink to nothing, as before).
     /// - Wallpaper: each piece's paper is shifted by where it stands along its side, so the picture runs on across the
     ///   joints instead of starting again at every piece (Wallpaper Metres; 0 = off).
     /// - The floor is never touched. Walls don't block (colliders, NavMesh carving) while they move or are gone.
@@ -42,8 +43,21 @@ namespace Game.Rooms
 
         [SerializeField] private Set[] sets = System.Array.Empty<Set>();
 
+        public enum WallMove
+        {
+            [Tooltip("Straight up out of the floor (come) / straight down into it (go), upright and full size.")]
+            Rise,
+            [Tooltip("The old pop-up book: lying flat, unfolding and growing (come) / folding down and shrinking (go).")]
+            Unfold,
+        }
+
         [Header("Come")]
-        [Tooltip("Degrees a wall lies folded outward before it stands up.")]
+        [Tooltip("How the walls come: Rise = straight up out of the floor (user, 2026-11-26); Unfold = the old pop-up book.")]
+        [SerializeField] private WallMove comeStyle = WallMove.Rise;
+        [Tooltip("Rise: how far below the floor a wall's top starts, past its own height (m).")]
+        [Min(0f)]
+        [SerializeField] private float riseMargin = 0.05f;
+        [Tooltip("Degrees a wall lies folded outward before it stands up (Unfold).")]
         [SerializeField] private float foldAngle = 90f;
         [Tooltip("How hard the walls overshoot as they stand (0 = none; the old clips had a little).")]
         [Min(0f)]
@@ -61,6 +75,8 @@ namespace Game.Rooms
         [SerializeField] private float roofSpin = 180f;
 
         [Header("Go")]
+        [Tooltip("How the walls go: Rise = straight down into the floor (user, 2026-11-26); Unfold = hop, fold and shrink.")]
+        [SerializeField] private WallMove goStyle = WallMove.Rise;
         [Tooltip("Share of the go time the roof takes to fly off (the walls start folding a little after it lifts).")]
         [Range(0.05f, 1f)]
         [SerializeField] private float roofLeaves = 0.45f;
@@ -101,6 +117,8 @@ namespace Game.Rooms
             // A floor part ("Floor...", the playroom arms' floors): grows in with its set and stays after it goes, as
             // the old room's floor did.
             public bool flat;
+            // Rise: how far down (in the set's space) its top is just under the floor.
+            public float drop;
         }
 
         private class SetState
@@ -130,6 +148,7 @@ namespace Game.Rooms
                 foreach (Transform child in set.root)
                 {
                     var part = new Part { t = child, pos = child.localPosition, rot = child.localRotation, scale = child.localScale, flat = child.name.StartsWith("Floor") };
+                    part.drop = TopAboveFoot(child, set.root) + riseMargin;
                     if (child == set.roof) s.roof = part;
                     else s.walls.Add(part);
                 }
@@ -226,11 +245,33 @@ namespace Game.Rooms
             p = Mathf.Clamp01(p);
             if (come)
             {
-                // Walls: unfold (ease out) and grow (back-out overshoot) over the whole come.
-                float up = EaseOutCubic(p);
-                float grow = Mathf.Max(Tiny, EaseOutBack(p, overshoot));
-                foreach (var w in s.walls) Wall(w, foldAngle * (1f - up), grow, 0f);
+                if (comeStyle == WallMove.Rise)
+                {
+                    // Walls: straight up out of the floor (ease out, no overshoot: nothing pokes past its place). A
+                    // floor part grows in as before.
+                    float up = EaseOutCubic(p);
+                    float grow = Mathf.Max(Tiny, EaseOutBack(p, overshoot));
+                    foreach (var w in s.walls)
+                    {
+                        if (w.flat) Wall(w, 0f, grow, 0f);
+                        else Rise(w, 1f - up);
+                    }
+                }
+                else
+                {
+                    // Walls: unfold (ease out) and grow (back-out overshoot) over the whole come.
+                    float up = EaseOutCubic(p);
+                    float grow = Mathf.Max(Tiny, EaseOutBack(p, overshoot));
+                    foreach (var w in s.walls) Wall(w, foldAngle * (1f - up), grow, 0f);
+                }
                 if (s.roof != null) Roof(s.roof, Mathf.InverseLerp(roofStarts, 1f, p), true);
+            }
+            else if (goStyle == WallMove.Rise)
+            {
+                // Walls: wait for the roof to lift, then sink straight down into the floor (ease in).
+                float q = Mathf.InverseLerp(wallsWait, 1f, p);
+                foreach (var w in s.walls) if (!w.flat) Rise(w, EaseInCubic(q));
+                if (s.roof != null) Roof(s.roof, Mathf.InverseLerp(0f, roofLeaves, p), false);
             }
             else
             {
@@ -242,6 +283,34 @@ namespace Game.Rooms
                 foreach (var w in s.walls) if (!w.flat) Wall(w, foldAngle * down, shrink, lift);
                 if (s.roof != null) Roof(s.roof, Mathf.InverseLerp(0f, roofLeaves, p), false);
             }
+        }
+
+        // A wall piece standing upright at full size, Down (0 = in place, 1 = its top just under the floor) lower.
+        private static void Rise(Part w, float down)
+        {
+            if (w.t == null) return;
+            w.t.localPosition = w.pos + Vector3.down * (w.drop * Mathf.Clamp01(down));
+            w.t.localRotation = w.rot;
+            w.t.localScale = w.scale;
+        }
+
+        // How high a part reaches above its own pivot (its foot), in the set's space: its meshes' tops.
+        private static float TopAboveFoot(Transform part, Transform space)
+        {
+            float top = float.MinValue;
+            foreach (var mf in part.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (mf.sharedMesh == null) continue;
+                var b = mf.sharedMesh.bounds;
+                for (int i = 0; i < 8; i++)
+                {
+                    var corner = new Vector3(i % 2 == 0 ? b.min.x : b.max.x, (i / 2) % 2 == 0 ? b.min.y : b.max.y, i / 4 == 0 ? b.min.z : b.max.z);
+                    float y = space.InverseTransformPoint(mf.transform.TransformPoint(corner)).y;
+                    if (y > top) top = y;
+                }
+            }
+            if (top == float.MinValue) return 3f;
+            return Mathf.Max(0.1f, top - part.localPosition.y);
         }
 
         // A wall piece folded outward about its foot (its pivot is the inner face's bottom edge; its local +Z faces the

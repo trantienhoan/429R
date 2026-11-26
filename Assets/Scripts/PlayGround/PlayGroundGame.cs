@@ -21,6 +21,11 @@ namespace Game.PlayGround
     [DisallowMultipleComponent]
     public class PlayGroundGame : MonoBehaviour, IGateGame
     {
+        [Tooltip("On: gate 1 in Gate Run's 3 rounds (its start chest; the PlayGround's own is kept away). Off (user 2026-11-26, " +
+                 "Use One Cook: \"There should be no stage anymore\"): only the look below (fog and light) is used; the " +
+                 "PlayGround's own start chest and the cauldron's one cook run the gate, Gate Run is switched off.")]
+        public bool useRounds = true;
+
         [Header("The cauldron")]
         [Tooltip("Fire_Woods_n_Cauldron (with its Cauldron Defence): popped out by the start chest's seed, or by this when " +
                  "the seed is never eaten.")]
@@ -124,7 +129,7 @@ namespace Game.PlayGround
         {
             // Gate Run drops the start chest now: the PlayGround's own stays away. (Awake runs on a switched-off component
             // too: then the old single dish keeps its own chest.)
-            if (!enabled || string.IsNullOrEmpty(oldChestSpawner)) return;
+            if (!enabled || !useRounds || string.IsNullOrEmpty(oldChestSpawner)) return;
             foreach (var t in GetComponentsInChildren<Transform>(true))
             {
                 if (t.name != oldChestSpawner) continue;
@@ -136,7 +141,8 @@ namespace Game.PlayGround
         {
             // The start chest in the field's middle (the cauldron pops out of its seed there); the round chests in front of
             // the player, off the pot.
-            if (TryGetComponent(out run)) run.chestSpot = ChestSpot;
+            if (useRounds && TryGetComponent(out run)) run.chestSpot = ChestSpot;
+            else run = null;
         }
 
         // ---------------------------------------------------------------- Gate Run's calls

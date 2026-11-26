@@ -303,7 +303,13 @@ namespace Game.EditorTools
                 var nest = new GameObject("Nest");
                 nest.transform.SetParent(root.transform, false);
                 nest.transform.localScale = Vector3.one * 1.35f;
-                Look(nest, "Twigs", nestMesh, atlas);
+                var twigsLook = Look(nest, "Twigs", nestMesh, atlas);
+                // The user's own twigs, edited in Exports/Lair/Lair_Nest.blend (2026-11-26), win over the built ones.
+                if (LairNestTwigsMenu.PrepareFbx(out var userTwigs, out _))
+                {
+                    LairNestTwigsMenu.Use(twigsLook, userTwigs);
+                    done.Add("Twigs from " + LairNestTwigsMenu.FbxPath);
+                }
                 if (glowMesh != null) Look(nest, "Green_Seeds", glowMesh, jar);
                 var sac = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabFolder + "Lair_Egg_Sac.prefab");
                 if (sac != null)
@@ -321,6 +327,8 @@ namespace Game.EditorTools
                     }
                 }
                 ChewedBox(root, atlas, done);
+                // Looks only (no body): the purple hole eats it only when marked (user 2026-11-26).
+                root.AddComponent<Game.Rooms.PurpleHoleFood>();
                 SavePrefab(root, done);
             }
             finally

@@ -219,18 +219,21 @@ namespace Game.EditorTools
 
         // A candle burning green (the Fairy's stolen light): Candle_Land with its flame, sparks and light turned green; it
         // still lights, breaks and swings like the candle.
-        private static void Candle(List<string> done)
+        private static void Candle(List<string> done) => GreenCandle("Assets/Prefabs/Light/Candle_Land.prefab", "Lair_Candle_Green", done);
+
+        // A green-burning copy of a candle prefab (its flame, sparks and light green; everything else as it is). Also used
+        // for the lair rooms' hanging candles (Lair_Candle_Hang_Green, from Candle_Hang: Candle Items Menu).
+        internal static void GreenCandle(string source, string name, List<string> done)
         {
-            const string source = "Assets/Prefabs/Light/Candle_Land.prefab";
             if (AssetDatabase.LoadAssetAtPath<GameObject>(source) == null)
             {
-                Debug.LogError($"{Tag} {source} is missing; no green candle.");
+                Debug.LogError($"{Tag} {source} is missing; no {name}.");
                 return;
             }
             var root = PrefabUtility.LoadPrefabContents(source);
             try
             {
-                root.name = "Lair_Candle_Green";
+                root.name = name;
                 foreach (var ps in root.GetComponentsInChildren<ParticleSystem>(true))
                 {
                     if (ps.name.Contains("Smoke")) continue;
@@ -249,7 +252,7 @@ namespace Game.EditorTools
                     look.sharedMaterial = green;
                 }
                 foreach (var l in root.GetComponentsInChildren<Light>(true)) l.color = new Color(0.35f, 1f, 0.3f, 1f);
-                SavePrefab(root, "Lair_Candle_Green", done);
+                SavePrefab(root, name, done);
             }
             finally
             {
@@ -486,7 +489,7 @@ namespace Game.EditorTools
 
         // A copy of a prefab with the furniture wood swapped for the aged wood; any broken pieces it makes (a Create
         // Object of a Broken_Stuffs prefab in that wood) become an aged copy "<name>_Drop" too. Returns the copy.
-        private static GameObject AgedCopy(string source, string name, List<string> done)
+        internal static GameObject AgedCopy(string source, string name, List<string> done)
         {
             var wood = AssetDatabase.LoadAssetAtPath<Material>(FurnitureWood);
             var aged = AgedWood(done);
