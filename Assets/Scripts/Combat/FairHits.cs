@@ -17,6 +17,20 @@ namespace Game.Combat
     {
         [Tooltip("Only things with this tag count, as in the FSM's Collision Event.")]
         [SerializeField] private string weaponTag = "Weapon";
+        [Tooltip("A shot (a weapon nobody holds: the Skull Gun's skulls, an arrow) counts as this share of a whack: 0.34 = " +
+                 "three shots make one whack. 1 = a shot is a whack, like a swing (user 2026-11-27: the rooftop's barrel " +
+                 "pumpkins took too much from the gun).")]
+        [Range(0.05f, 1f)]
+        [SerializeField] private float shotShare = 1f;
+
+        private float shotCredit;
+        // A bullet often touches twice (it bounces off and back): it counts once.
+        private Rigidbody lastShot;
+        private float lastShotAt;
+        private const float SameShotSeconds = 0.5f;
+
+        /// <summary>Shots it has had that didn't make a whack yet (for tests).</summary>
+        public float ShotCredit => shotCredit;
 
         private const string BlastEvent = "Blast";
 
@@ -77,6 +91,16 @@ namespace Game.Combat
             for (int i = 0; i < collision.contactCount; i++)
                 speed = Mathf.Max(speed, body.GetPointVelocity(collision.GetContact(i).point).magnitude);
             float power = body.TryGetComponent(out WeaponPower weapon) ? weapon.Power : 1f;
+            // A shot counts only as Shot Share of a whack: every few make one.
+            if (shotShare < 1f && !body.TryGetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>(out _))
+            {
+                if (body == lastShot && Time.time - lastShotAt < SameShotSeconds) return;
+                lastShot = body;
+                lastShotAt = Time.time;
+                shotCredit += shotShare;
+                if (shotCredit < 0.999f) return;
+                shotCredit -= 1f;
+            }
             PlayMakerHits.Judge(gameObject, collision, speed * power);
         }
 

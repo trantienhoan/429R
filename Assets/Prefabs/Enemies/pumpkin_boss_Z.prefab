@@ -190,7 +190,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3603649429642728882}
-  - component: {fileID: 6739581088241230442}
+  - component: {fileID: 8805033295704737748}
   m_Layer: 0
   m_Name: Hand.L
   m_TagString: Enemy
@@ -213,8 +213,8 @@ Transform:
   m_Children: []
   m_Father: {fileID: 7631042640696751047}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!135 &6739581088241230442
-SphereCollider:
+--- !u!136 &8805033295704737748
+CapsuleCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -231,9 +231,11 @@ SphereCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 0.0017
-  m_Center: {x: 0, y: 0.0011999999, z: 0}
+  serializedVersion: 2
+  m_Radius: 0.0020784333
+  m_Height: 0.0054976107
+  m_Direction: 1
+  m_Center: {x: 0.00009969779, y: 0.00023160991, z: -0.00011144031}
 --- !u!1 &2354953405022817593
 GameObject:
   m_ObjectHideFlags: 0
@@ -7710,7 +7712,7 @@ MonoBehaviour:
   headScale: 1.87
   upperScale: 1.87
   trueScale: 2.31
-  trueSpeed: 5
+  trueSpeed: 3.5
   upperSpeed: 0.6
   dizzyAfterDamage: 0.06
   dizzyFadePerSecond: 0.0029
@@ -7844,7 +7846,7 @@ MonoBehaviour:
     type: 3}
   pumpkinDrop: {fileID: 8690403555129543112, guid: 8b906c80238400c44be1890e333c3aaa,
     type: 3}
-  maxDropsAround: 10
+  maxDropsAround: 5
   fx: {fileID: 7085716964971832184}
   smoke: {fileID: 431296081563789977, guid: 7d85674d137626445accce4cef7fe159, type: 3}
   pumpkinBreak: {fileID: 6470502820101553460, guid: dd7824eba498c3d43b713291ed16e64d,
@@ -8100,7 +8102,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6704269948382120756}
-  - component: {fileID: 4822548527302650314}
+  - component: {fileID: 4507242068368480756}
   m_Layer: 0
   m_Name: Hand.R
   m_TagString: Enemy
@@ -8123,8 +8125,8 @@ Transform:
   m_Children: []
   m_Father: {fileID: 5492528458553699388}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!135 &4822548527302650314
-SphereCollider:
+--- !u!136 &4507242068368480756
+CapsuleCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -8141,9 +8143,11 @@ SphereCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 0.0017
-  m_Center: {x: 0, y: 0.0011999999, z: 0}
+  serializedVersion: 2
+  m_Radius: 0.0016803829
+  m_Height: 0.005944327
+  m_Direction: 1
+  m_Center: {x: -0.0000042099855, y: 0.00046834536, z: 0.000006531598}
 --- !u!1 &7198095774200768008
 GameObject:
   m_ObjectHideFlags: 0

@@ -699,6 +699,18 @@ namespace Game.EditorTools.Testing
 
             private bool TryStageThing(float dt, float inState)
             {
+                // The green light path (2026-11-27): walk along it into its teleport zone, then wait for the jump.
+                if (state.StartsWith("Green Path"))
+                {
+                    var run = Game.Story.GreenPathRun.Current;
+                    if (run != null && run.Path != null && run.Path.Drawn && !run.Teleporting && Camera.main != null)
+                    {
+                        var goal = run.NextGoal(Camera.main.transform.position);
+                        bool zone = (goal - run.Path.ZoneAt).sqrMagnitude < 0.01f;
+                        WalkTo(goal, 0.25f, dt, zone ? "the green path's zone" : "the green path's doorway");
+                    }
+                    return true;
+                }
                 // The Fairy (the first meeting, after the boss).
                 if ((state == "Move to Fairy" || state == "wait") && inState > 2f)
                 {

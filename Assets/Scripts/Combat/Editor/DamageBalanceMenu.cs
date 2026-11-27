@@ -29,20 +29,21 @@ namespace Game.EditorTools
 
         private static readonly (string path, float damage, float power)[] Table =
         {
-            // Weapons (they keep their Power; 0 = keep).
+            // Weapons (they keep their Power; 0 = keep). 2026-11-27: every weapon Damage 2 (a weapon hit beats a bare punch;
+            // Balance Weapons, WeaponBalanceMenu, holds their Power, Health and wear).
             ("Weapon/Hammer_Tool", Hammer, 0f),
             ("Weapon/Hammer_Boong", Hammer, 0f),
             ("Weapon/Hammer_Boong 2ND", Hammer, 0f),
             ("Weapon/Hammer_Boong_Bone", Hammer, 0f),
-            ("Weapon/Hammer_Broom", Heavy, 0f),
-            ("Weapon/Hammer_Pillow", Soft, 0f),
-            ("Weapon/Flip_Flop_L", FistLike, 0f),
-            ("Weapon/Flip_Flop_R", FistLike, 0f),
-            ("Weapon/Flip_Flop2_L", FistLike, 0f),
-            ("Weapon/Flip_Flop2_R", FistLike, 0f),
-            ("Weapon/Boong_Gun", FistLike, 0f),
-            ("Weapon/Bus_Boong", FistLike, 0f),
-            ("Weapon/Elon_Boong", FistLike, 0f),
+            ("Weapon/Hammer_Broom", 2f, 0f),
+            ("Weapon/Hammer_Pillow", 2f, 0f),
+            ("Weapon/Flip_Flop_L", 2f, 0f),
+            ("Weapon/Flip_Flop_R", 2f, 0f),
+            ("Weapon/Flip_Flop2_L", 2f, 0f),
+            ("Weapon/Flip_Flop2_R", 2f, 0f),
+            ("Weapon/Boong_Gun", 2f, 0f),
+            ("Weapon/Bus_Boong", 2f, 0f),
+            ("Weapon/Elon_Boong", 2f, 0f),
             ("Items/Pie_Knight_Sword", 2f, 1.5f),
             // The shop's legendary sword (3, a hard hit 6) and shield (Tools > 429 Game > Weapons > Make Legendary Knight Gear).
             ("Items/Pie_Knight_Sword_Legendary", 3f, 2.5f),

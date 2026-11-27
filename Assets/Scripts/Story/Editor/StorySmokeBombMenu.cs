@@ -36,10 +36,12 @@ namespace Game.EditorTools
             else
             {
                 var so = new SerializedObject(escape);
-                so.FindProperty("escape").enumValueIndex = (int)StoryBossEscapeSettings.EscapeStyle.SmokeBomb;
+                // 2026-11-27: Run And Smoke with the black smoke bomb (Run Away In A Black Smoke Bomb) is kept as it is.
+                bool runAndSmoke = escape.Escape == StoryBossEscapeSettings.EscapeStyle.RunAndSmoke;
+                if (!runAndSmoke) so.FindProperty("escape").enumValueIndex = (int)StoryBossEscapeSettings.EscapeStyle.SmokeBomb;
                 var smoke = AssetDatabase.LoadAssetAtPath<GameObject>(Smoke);
                 if (smoke == null) notes.Add($"no {Smoke} (no smoke shows)");
-                so.FindProperty("smokeBomb").objectReferenceValue = smoke;
+                if (!runAndSmoke || so.FindProperty("smokeBomb").objectReferenceValue == null) so.FindProperty("smokeBomb").objectReferenceValue = smoke;
                 var sounds = Poofs.Select(AssetDatabase.LoadAssetAtPath<AudioClip>).Where(c => c != null).ToArray();
                 var list = so.FindProperty("smokeBombSounds");
                 list.arraySize = sounds.Length;

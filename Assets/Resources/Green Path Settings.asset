@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef940692333b42645a9413d39bdc0611, type: 3}
+  m_Name: Green Path Settings
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Story.GreenPathSettings
+  pathPrefab: {fileID: 4779368329875356315, guid: 48ca9734a7116b04382afc9a7fc315d4,
+    type: 3}
+  tubePrefab: {fileID: 4559928504952526775, guid: 2a3fb0f01280aa54abb651072a7ae2b0,
+    type: 3}
+  hallwayPrefab: {fileID: 662810484792665178, guid: 41fe4160e68cbed45be79a0821e8a3e0,
+    type: 3}
+  doorways:
+  - whole: {fileID: 1471232511715126516, guid: 147ffce685b4e2d40ab574157acaba70, type: 3}
+    opened: {fileID: 4300000, guid: bc1b07511d2b26042baba461caec98a0, type: 2}
+  colour: {r: 0.55, g: 1, b: 0.45, a: 1}
+  bandBrightness: 0.55
+  step: 0.2
+  floorLift: 0.03
+  drawSpeed: 9
+  pulseSpeed: 3.2
+  pulseLength: 1.4
+  pulseSpacing: 5
+  minWalk: 24
+  hallwayMin: 24
+  hallwayMax: 24
+  rerouteFrom: 2.5
+  rerouteAfter: 1.2
+  leadStopShort: 0.9
+  exitSnap: 2.5
+  showAfter: 0.6
+  zoneRadius: 0.65
+  zoneClearAt: 1.2
+  zoneFaintAt: 9
+  zoneFarShare: 0.08
+  darkSeconds: 0.6
+  tubeSeconds: 1.5
+  jumpColour: {r: 0.62, g: 1, b: 0.55, a: 1}
+  jumpFade: 0.16
+  afterJump: 0.7
+  lightBack: 1
+  poofSize: 0.22
+  ambientLeft: 0.03
+  skyLeft: 0.04
+  lightsLeft: 0
+  appearSound: {fileID: 8300000, guid: 0acdbd19a1f27d249a4a9ff855bacf39, type: 3}
+  appearVolume: 0.45
+  zoneHum: {fileID: 8300000, guid: aeebf9f35b9b66a45945c9300732d5d6, type: 3}
+  zoneHumVolume: 0.25
+  poofSound: {fileID: 8300000, guid: 5ed8090a8bdfecb4293c7b675a7259f0, type: 3}
+  poofVolume: 0.8
+  tubeSound: {fileID: 8300000, guid: a465b0789e680484db77883e0f70a1a9, type: 3}
+  tubeVolume: 0.55
+  jumpSound: {fileID: 8300000, guid: 556d199a259adc84f85da0b1bc12a091, type: 3}
+  jumpVolume: 0.8

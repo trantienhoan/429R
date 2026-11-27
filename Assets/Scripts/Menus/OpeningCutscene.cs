@@ -441,6 +441,10 @@ namespace Game.Menus
         private const float OverHelmet = 0.5f;
         private const float ThrownPumpkinSeconds = 1.2f;
         private const float ThrownPumpkinArc = 6f;
+        // A pumpkin knocked out of the thrower's hands by the spin: how fast it's thrown off (m/s, away from the boss) and
+        // how long it takes to roll to a stop once down.
+        private const float DroppedPumpkinPush = 3f;
+        private const float DroppedPumpkinSettle = 0.4f;
         private const float SplatSize = 3f;
         // Where the thrower runs about: how far to each side of the player and how far ahead, in metres.
         private static readonly Rect ThrowerRuns = new(-7f, 14f, 16f, 18f);
@@ -1015,9 +1019,16 @@ namespace Game.Menus
 
                 Play(throwerKnight, knightGrabThrow, 0f);
                 var shadow = pumpkin.Find("Shadow");
+                bool lifted = false;
                 for (float t = 0f; t < ReleaseTime; t += Time.deltaTime)
                 {
-                    if (spinning) yield break;
+                    if (spinning)
+                    {
+                        // Flung with it over its head (user 2026-11-27: "when that knight is hit by the boss, the pumpkin
+                        // just hanging on air and not dropping"): it lets go, and the pumpkin falls.
+                        if (lifted) StartCoroutine(PumpkinDrops(pumpkin, shadow));
+                        yield break;
+                    }
                     if (t < GrabTime) TurnTo(body, pumpkin.position, 360f);
                     else
                     {
@@ -1026,6 +1037,7 @@ namespace Game.Menus
                         var inHands = (handL.position + handR.position) * 0.5f;
                         var above = helmet.position + Vector3.up * (OverHelmet * knightSize);
                         pumpkin.position = Vector3.Lerp(inHands, above, Mathf.InverseLerp(GrabTime, OverheadTime, t));
+                        lifted = true;
                     }
                     yield return null;
                 }
@@ -1052,6 +1064,53 @@ namespace Game.Menus
                 }
             }
             return best;
+        }
+
+        // Let go mid-lift (the boss's spin flung the Knight): the pumpkin is knocked off with it, falls, bounces twice and
+        // rolls to a stop on the ground, upright again with its shadow under it.
+        private IEnumerator PumpkinDrops(Transform pumpkin, Transform shadow)
+        {
+            if (pumpkin == null) yield break;
+            float ground = floorPoint.y + pumpkinLift;
+            var away = Flat(pumpkin.position - bossSpot);
+            away = away.sqrMagnitude > 0.01f ? away.normalized : -facing;
+            var velocity = away * DroppedPumpkinPush + Vector3.up * 2f;
+            var spin = Random.onUnitSphere * 420f;
+            int bounces = 0;
+            for (float t = 0f; t < 4f && pumpkin != null; t += Time.deltaTime)
+            {
+                float dt = Time.deltaTime;
+                velocity += Vector3.down * (9.81f * dt);
+                var at = pumpkin.position + velocity * dt;
+                if (at.y <= ground && velocity.y < 0f)
+                {
+                    at.y = ground;
+                    if (bounces >= 2 || -velocity.y < 1.5f)
+                    {
+                        pumpkin.position = at;
+                        break;
+                    }
+                    bounces++;
+                    velocity = new Vector3(velocity.x * 0.6f, -velocity.y * 0.35f, velocity.z * 0.6f);
+                    spin *= 0.5f;
+                }
+                pumpkin.position = at;
+                pumpkin.Rotate(spin * dt, Space.World);
+                yield return null;
+            }
+            if (pumpkin == null) yield break;
+            var from = pumpkin.rotation;
+            var upright = Quaternion.Euler(0f, pumpkin.eulerAngles.y, 0f);
+            var slide = Flat(velocity);
+            for (float t = 0f; t < DroppedPumpkinSettle; t += Time.deltaTime)
+            {
+                float k = t / DroppedPumpkinSettle;
+                pumpkin.position += slide * ((1f - k) * Time.deltaTime);
+                pumpkin.rotation = Quaternion.Slerp(from, upright, Mathf.SmoothStep(0f, 1f, k));
+                yield return null;
+            }
+            pumpkin.SetPositionAndRotation(new Vector3(pumpkin.position.x, ground, pumpkin.position.z), upright);
+            if (shadow != null) shadow.gameObject.SetActive(true);
         }
 
         // Up and over, and it bursts on the boss's chest.

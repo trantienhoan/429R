@@ -15,14 +15,21 @@ namespace Game.Story
     [CreateAssetMenu(menuName = "429 Game/Story/Story Boss Escape Settings", fileName = "Story Boss Escape Settings")]
     public class StoryBossEscapeSettings : ScriptableObject
     {
-        public enum EscapeStyle { SmokeBomb, RunAndDig }
+        public enum EscapeStyle { SmokeBomb, RunAndDig, RunAndSmoke }
 
         [Header("How it escapes")]
         [Tooltip("Smoke Bomb: it pops out, rears up (its Alert look) and is gone in a puff of smoke, like a ninja; the real " +
-                 "boss comes in a puff too. Run And Dig: it runs off and digs in, and climbs out of its hole later.")]
-        [SerializeField] private EscapeStyle escape = EscapeStyle.SmokeBomb;
-        [Tooltip("The smoke bomb: a thick puff that hangs a moment (Smoke_Flash_Five_Puffs).")]
+                 "boss comes in a puff too. Run And Dig: it runs off and digs in, and climbs out of its hole later. Run And " +
+                 "Smoke (user 2026-11-27: \"Make them run away with a black smoke bomb\"): it rears up, turns and runs off " +
+                 "away from the player, then is gone in the smoke bomb; the real boss comes in one too.")]
+        [SerializeField] private EscapeStyle escape = EscapeStyle.RunAndSmoke;
+        [Tooltip("The smoke bomb: a thick puff that hangs a moment (Prefabs/Story/Smoke_Bomb_Black, a black copy of " +
+                 "Smoke_Flash_Five_Puffs).")]
         [SerializeField] private GameObject smokeBomb;
+        [Tooltip("Run And Smoke: it runs at most this many seconds before the smoke bomb (sooner if it gets where it was " +
+                 "running to).")]
+        [Min(0.2f)]
+        [SerializeField] private float runSmokeSeconds = 1.4f;
         [Tooltip("The smoke's size, times the boss's length in metres.")]
         [Min(0f)]
         [SerializeField] private float smokeBombSize = 0.35f;
@@ -134,6 +141,9 @@ namespace Game.Story
 
         public EscapeStyle Escape => escape;
         public GameObject SmokeBomb => smokeBomb;
+        public float RunSmokeSeconds => runSmokeSeconds;
+        /// <summary>It goes in a smoke bomb (and the real boss comes in one): Smoke Bomb or Run And Smoke.</summary>
+        public bool Smokes => escape != EscapeStyle.RunAndDig;
         public float SmokeBombSize => smokeBombSize;
         public AudioClip[] SmokeBombSounds => smokeBombSounds;
         public float SmokeBombVolume => smokeBombVolume;
@@ -176,6 +186,13 @@ namespace Game.Story
             if (digSound == null) digSound = dig;
             if (hole == null) hole = holePrefab;
             if (seedPiece == null) seedPiece = seed;
+        }
+
+        /// <summary>For the setup menu: how it escapes and the smoke bomb it uses.</summary>
+        public void SetEscape(EscapeStyle style, GameObject bomb)
+        {
+            escape = style;
+            if (bomb != null) smokeBomb = bomb;
         }
 
         /// <summary>For the setup menu: the dig dust becomes Dust unless someone picked another one than Old.</summary>

@@ -95,4 +95,6 @@ goes through GAMESTAGES from "Clean for Path N" until Whack 6 starts on the roof
 - Freshly moved colliders report stale bounds until `Physics.SyncTransforms()`.
 - execute_code refuses code over 50,000 characters: strip comments and indentation from long test scripts.
 - Unity crashed once inside its own Profiler during a long bot run: switch Profiler recording off first.
+- The game writes the slot a moment after Play stops: wait about 5 s before deleting `_claude_test`, and check it is
+  still gone right before the next run (a run once resumed at the last run's checkpoint).
 - `Gate3PickMenu` and other old setup menus rewrite GAMESTAGES: never run a menu just to "see what it does".

@@ -36,8 +36,13 @@ namespace Game.Weapons
         [Header("Shot")]
         [Tooltip("Played on every trigger pull (the shot itself), e.g. elon_boong_shoot. Empty: none.")]
         [SerializeField] private AudioClip shotSound;
+        [Tooltip("More takes of the shot: each shot plays one of these or Shot Sound, at random (user 2026-11-27: the " +
+                 "same loud shot over and over was \"really annoying\").")]
+        [SerializeField] private AudioClip[] moreShotSounds = Array.Empty<AudioClip>();
         [Range(0f, 1f)]
         [SerializeField] private float shotVolume = 0.9f;
+        [Tooltip("Each shot's pitch, at random in this range (1, 1 = always the same).")]
+        [SerializeField] private Vector2 shotPitch = Vector2.one;
 
         [Header("About to blow")]
         [Tooltip("Optional: the part that shakes, e.g. its model. Empty: nothing shakes.")]
@@ -117,6 +122,18 @@ namespace Game.Weapons
             grab.selectEntered.RemoveListener(OnGrabbed);
         }
 
+        // Shot Sound or one of the more takes, at random (whichever are set).
+        private AudioClip PickShot()
+        {
+            int count = (shotSound != null ? 1 : 0) + (moreShotSounds != null ? moreShotSounds.Length : 0);
+            if (count == 0) return null;
+            int pick = Random.Range(0, count);
+            if (shotSound != null && pick-- == 0) return shotSound;
+            for (int i = 0; moreShotSounds != null && i < moreShotSounds.Length; i++)
+                if (pick-- == 0 && moreShotSounds[i] != null) return moreShotSounds[i];
+            return shotSound;
+        }
+
         private void OnGrabbed(SelectEnterEventArgs args)
         {
             if (args.interactorObject is XRBaseInputInteractor hand) lastHand = hand;
@@ -126,10 +143,15 @@ namespace Game.Weapons
         {
             if (!isActiveAndEnabled || exploded) return;
             // The gun still fires while it burns (the shot is the launcher's), so the shot is heard then too.
-            if (shotSound != null)
+            var clip = PickShot();
+            if (clip != null)
             {
-                if (speaker != null) speaker.PlayOneShot(shotSound, shotVolume);
-                else AudioSource.PlayClipAtPoint(shotSound, transform.position, shotVolume);
+                if (speaker != null)
+                {
+                    speaker.pitch = Random.Range(Mathf.Min(shotPitch.x, shotPitch.y), Mathf.Max(shotPitch.x, shotPitch.y));
+                    speaker.PlayOneShot(clip, shotVolume);
+                }
+                else AudioSource.PlayClipAtPoint(clip, transform.position, shotVolume);
             }
             if (blowAt >= 0f) return;
             if (args.interactorObject is XRBaseInputInteractor hand) lastHand = hand;
@@ -169,7 +191,11 @@ namespace Game.Weapons
             float heat = 1f - (blowAt - now) / Mathf.Max(fuse, 0.01f);
             if (now >= nextBeep && warningSound != null)
             {
-                if (speaker != null) speaker.PlayOneShot(warningSound, volume);
+                if (speaker != null)
+                {
+                    speaker.pitch = 1f;
+                    speaker.PlayOneShot(warningSound, volume);
+                }
                 else AudioSource.PlayClipAtPoint(warningSound, transform.position, volume);
                 nextBeep = now + Mathf.Max(warningSound.length, 0.2f);
             }

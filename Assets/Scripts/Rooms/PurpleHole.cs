@@ -127,12 +127,17 @@ namespace Game.Rooms
             // Marked to keep (2026-11-23): e.g. a gate's chests still waiting to be opened.
             if (thing.GetComponentInParent<KeepFromPurpleHole>(true) != null) return false;
             bool gate = Game.Gates.GateRun.Current != null;
+            // The guide Knight from the start (the Tip Knight, with the tip board) goes into the hole like the rest
+            // (user 2026-11-27: "the tip knight does not get suck to the purple hole"; it stayed standing into the next
+            // room). Keep Names still keeps every other knight and the Fairy.
+            bool tipKnight = thing.GetComponentInChildren<Game.Menus.TipBoard>(true) != null;
             for (var t = thing.transform; t != null; t = t.parent)
             {
                 string n = t.name;
                 if (IsCandy(n) || n.StartsWith("XR Origin")) return false;
                 // While a gate runs, its seeds are its progress: a death there must not eat them.
                 if (gate && (n.StartsWith("Seed_") || n.StartsWith("The_Seed"))) return false;
+                if (tipKnight) continue;
                 foreach (var keep in keepNames)
                 {
                     if (!string.IsNullOrEmpty(keep) && n.StartsWith(keep)) return false;

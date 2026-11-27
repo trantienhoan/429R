@@ -58,6 +58,19 @@ namespace Game.Combat
         [Range(0f, 1f)] [SerializeField] private float weaponRoomChance = 0.03f;
         [Tooltip("A seed piece's chest holds an armor piece this often (0-1; never a weapon).")]
         [Range(0f, 1f)] [SerializeField] private float chestChance = 0.05f;
+        [Tooltip("A secret room's giant pumpkin (behind the bedroom's chained door, the living room's double door) holds an " +
+                 "armor piece this often (0-1; user 2026-11-27: \"increase chance of obtains them when break stuffs in " +
+                 "secret rooms\"). Breaking it lets it out.")]
+        [Range(0f, 1f)] [SerializeField] private float secretRoomChance = 0.5f;
+        [Tooltip("At most this many armor pieces hide in one room, whatever hides them (its furniture sets, its seed " +
+                 "chest, one lost in an earlier room). A secret room counts as a room of its own (user 2026-11-27: \"1 " +
+                 "armour piece can find per room. secret room counts as another room\"). The legendary weapons aren't armor: " +
+                 "they keep their own chance.")]
+        [Min(1)] [SerializeField] private int piecesPerRoom = 1;
+        [Tooltip("A new room starts when GAMESTAGES enters a state whose name starts with one of these: the clean-ups " +
+                 "between rooms, the rooftop coming (also after a gate), a checkpoint, a new run.")]
+        [SerializeField] private string[] roomStarts =
+            { "Clean", "clean", "Destroy PlayGroundZ", "Rooftop_ON", "Boss PG", "CP ", "Game Over", "Restart Loop" };
         [Tooltip("Only things at least this big (metres, their longest side) can hide one.")]
         [Min(0f)] [SerializeField] private float smallestSpot = 0.4f;
         [Tooltip("Things whose name has any of these never hide one.")]
@@ -83,8 +96,9 @@ namespace Game.Combat
         [SerializeField] private AudioClip equipSound;
         [Range(0f, 1f)] [SerializeField] private float equipVolume = 1f;
         [Tooltip("A found armor piece floats this high over the floor the player stands on (metres), in reach, until it " +
-                 "is grabbed; let go, it falls like a candy. It is eaten at the mouth.")]
-        [Min(0f)] [SerializeField] private float floatHeight = 1.1f;
+                 "is grabbed; let go, it falls like a candy. It is eaten at the mouth. User 2026-11-27: \"make the armour " +
+                 "piece more close to the ground instead of flying up so high\" (was 1.1).")]
+        [Min(0f)] [SerializeField] private float floatHeight = 0.4f;
 
         [Header("Armor taking hits")]
         [SerializeField] private AudioClip[] hitSounds = new AudioClip[0];
@@ -121,6 +135,9 @@ namespace Game.Combat
         public float RoomChance => roomChance;
         public float WeaponRoomChance => weaponRoomChance;
         public float ChestChance => chestChance;
+        public float SecretRoomChance => secretRoomChance;
+        public int PiecesPerRoom => piecesPerRoom;
+        public string[] RoomStarts => roomStarts;
         public float SmallestSpot => smallestSpot;
         public string[] SkipNames => skipNames;
         public float RoomSettles => roomSettles;

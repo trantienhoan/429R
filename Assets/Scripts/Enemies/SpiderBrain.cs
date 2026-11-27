@@ -573,6 +573,11 @@ namespace Game.Enemies
                  "weapon's damage. The normal bees 2, the Pumpkin Butt bee boss 3. 1 = no change. Never the white bug.")]
         [Min(1f)]
         [SerializeField] private float winglessToughness = 1f;
+        [Tooltip("And from then on every hit that hurts it does this share of its damage (Enemy Hit Damage's Damage Taken; " +
+                 "user 2026-11-27 for the Pumpkin Butt bee boss: \"reduce its health, but increase its toughness when it " +
+                 "loses its wings\": 0.5 = half, so its last stretch on the floor takes twice the hits). 1 = no change.")]
+        [Range(0.1f, 1f)]
+        [SerializeField] private float winglessDamageTaken = 1f;
         [Tooltip("The wing bones in its model: they shrink away when the wings are lost.")]
         [SerializeField] private string[] wingBones = Array.Empty<string>();
         [Tooltip("Animator state for losing its wings and falling. Empty or not in the Animator: its hit animation.")]
@@ -3303,7 +3308,7 @@ namespace Game.Enemies
             bombPhase = 0f;
             FindFlashRenderers();
             if (models != null) bombModelsScale = models.localScale;
-            if (TryGetComponent(out EnemyHitDamage hits)) hits.damageTaken = bombDamageTaken;
+            if (TryGetComponent(out EnemyHitDamage hits)) hits.damageTaken = bombDamageTaken * BaseDamageTaken;
             PlayOne(noticeSounds, true);
             SendToOwnFsms("BombArmed");
         }
@@ -3346,7 +3351,7 @@ namespace Game.Enemies
         private void StopBomb()
         {
             bombAt = -1f;
-            if (TryGetComponent(out EnemyHitDamage hits)) hits.damageTaken = 1f;
+            if (TryGetComponent(out EnemyHitDamage hits)) hits.damageTaken = BaseDamageTaken;
             if (bombLit) ShowBombFlash(false);
             if (models != null && bombModelsScale != Vector3.zero) models.localScale = bombModelsScale;
         }
@@ -4008,6 +4013,12 @@ namespace Game.Enemies
 
         // ---- Losing its wings ----
 
+        // The share of a hit's damage it takes outside a bomb: Wingless Damage Taken once its wings are off, else all.
+        private float BaseDamageTaken => winglessTough ? winglessDamageTaken : 1f;
+
+        /// <summary>Its wings are off and it's tougher for it (for tests).</summary>
+        public bool WinglessTough => winglessTough;
+
         // Low on health a flier's wings come off: it stops, drops to the floor and walks from then on.
         private void LoseWings()
         {
@@ -4018,10 +4029,12 @@ namespace Game.Enemies
             volleyAt = 0f;
             StopShooting();
             // Tougher without its wings (Wingless Toughness), once.
-            if (winglessToughness > 1f && !winglessTough && !anomaly && TryGetComponent(out EnemyHitDamage tougher))
+            if ((winglessToughness > 1f || winglessDamageTaken < 1f) && !winglessTough && !anomaly && TryGetComponent(out EnemyHitDamage tougher))
             {
                 winglessTough = true;
                 tougher.Toughness *= winglessToughness;
+                // Hits do less from now on (a bomb ticking still doubles it on top).
+                tougher.damageTaken = (bombAt >= 0f ? bombDamageTaken : 1f) * BaseDamageTaken;
                 SendToOwnFsms("Toughened");
             }
             Stop();

@@ -48,12 +48,15 @@ namespace Game.EditorTools
         // - the bat: the hardest swing (power 2.2, damage 2; two hands x1.6 = 3), wears out a bit faster than the pan.
         private static readonly Spec[] Specs =
         {
-            new Spec { name = "Weapon_Frying_Pan", display = "Frying Pan", power = 1.7f, damage = 2f, thrownBonus = 1,
-                health = 40f, toughness = 6f, mass = 500f, twoHanded = false, gripY = 0.12f, headFrom = 0.29f, price = 16,
+            // 2026-11-27 (Balance Weapons, WeaponBalanceMenu holds the table): pan power 1.5, wear health 25, toughness 4,
+            // stun 1.2 (was 1.7 / 40 / 6 / 1.6: it hit like a hammer, stunned and outlasted everything); bat power 2,
+            // toughness 4 (was 2.2 / 24 / 5). Round 2 (user: make them more durable): pan health 50, bat 60.
+            new Spec { name = "Weapon_Frying_Pan", display = "Frying Pan", power = 1.5f, damage = 2f, thrownBonus = 1,
+                health = 50f, toughness = 4f, mass = 500f, twoHanded = false, gripY = 0.12f, headFrom = 0.29f, price = 16,
                 subMaterials = new[] { WoodMat, MetalMat },
-                stunSeconds = 1.6f, knockBackTimes = 0f, hitSounds = new[] { "Assets/Audio/SFX/metal_hit_1.wav", "Assets/Audio/SFX/metal_hit_2.wav" } },
-            new Spec { name = "Weapon_Baseball_Bat", display = "Baseball Bat", power = 2.2f, damage = 2f, thrownBonus = 1,
-                health = 24f, toughness = 5f, mass = 500f, twoHanded = true, twoHandBoost = 1.6f, gripY = 0.12f, headFrom = 0.45f, price = 18,
+                stunSeconds = 1.2f, knockBackTimes = 0f, hitSounds = new[] { "Assets/Audio/SFX/metal_hit_1.wav", "Assets/Audio/SFX/metal_hit_2.wav" } },
+            new Spec { name = "Weapon_Baseball_Bat", display = "Baseball Bat", power = 2f, damage = 2f, thrownBonus = 1,
+                health = 60f, toughness = 4f, mass = 500f, twoHanded = true, twoHandBoost = 1.6f, gripY = 0.12f, headFrom = 0.45f, price = 18,
                 subMaterials = new[] { WoodMat },
                 stunSeconds = 0f, knockBackTimes = 2.5f,
                 // The user's ElevenLabs bat hits (2026-11-25, Wire ElevenLabs Sounds).
@@ -164,7 +167,9 @@ namespace Game.EditorTools
                 var attach = root.transform.Find("Attach");
                 var broomAttach = AssetDatabase.LoadAssetAtPath<GameObject>(BroomPath).transform.Find("Attach");
                 attach.localPosition = new Vector3(0f, s.gripY, 0f);
-                attach.localRotation = Quaternion.Euler(180f, 0f, 0f) * broomAttach.localRotation;
+                // The pan's turned 90 degrees round its handle (2026-11-27, user: "rotate its attach by 90, so when Player
+                // hold the pan and smash stuff, they smash with the flat surface of the pan").
+                attach.localRotation = Game.Combat.EditorTools.WeaponBalanceMenu.PanGrip(broomAttach.localRotation, s.name == "Weapon_Frying_Pan");
 
                 // The smoke where it breaks, at the head.
                 var smoke = root.transform.Find("Smoke_Blast");

@@ -64,9 +64,23 @@ namespace Game.Story
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics() => SmokeBombs = 0;
 
+        /// <summary>
+        /// A poof of the seed's green smoke (a taken piece's smoke bomb, this size; a piece's is Piece Smoke Size), e.g.
+        /// the green path's teleport. Nothing without Story Seed Settings' Piece Smoke.
+        /// </summary>
+        public static void GreenPoof(Vector3 at, float size)
+        {
+            var settings = StorySeedSettings.Instance;
+            if (settings == null || settings.PieceSmoke == null) return;
+            GreenSmokeBomb(at, settings, size);
+        }
+
+        private static void GreenSmokeBomb(Vector3 at, StorySeedSettings settings) =>
+            GreenSmokeBomb(at, settings, settings.PieceSmokeSize);
+
         // Its own copy of the smoke (not the effect pool's: the pool's copies are shared, and the boss escape uses the
         // same smoke white), tinted the seed's green before its first puff.
-        private static void GreenSmokeBomb(Vector3 at, StorySeedSettings settings)
+        private static void GreenSmokeBomb(Vector3 at, StorySeedSettings settings, float size)
         {
             // Taken in the hand (or walked into), the seed is close to the eyes: the puff goes off at least Smoke Keep
             // Away from them, so it's a poof to see, not a cloud over the view.
@@ -79,7 +93,7 @@ namespace Game.Story
                     at = eyes + (away.sqrMagnitude > 0.0025f ? away.normalized : cam.transform.forward) * SmokeKeepAway;
             }
             var smoke = Instantiate(settings.PieceSmoke, at, Quaternion.identity);
-            smoke.transform.localScale = settings.PieceSmoke.transform.localScale * settings.PieceSmokeSize;
+            smoke.transform.localScale = settings.PieceSmoke.transform.localScale * size;
             var parts = smoke.GetComponentsInChildren<ParticleSystem>(true);
             var names = new string[parts.Length];
             for (int i = 0; i < parts.Length; i++)

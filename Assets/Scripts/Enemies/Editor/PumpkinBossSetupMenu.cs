@@ -166,7 +166,7 @@ namespace Game.EditorTools
             var bones = model.GetComponentsInChildren<Transform>(true).ToDictionary(t => t.name, t => t);
             foreach (var (bone, radius, along) in Spheres)
             {
-                if (!bones.TryGetValue(bone, out var t) || t.GetComponent<SphereCollider>() != null) continue;
+                if (!bones.TryGetValue(bone, out var t) || t.GetComponent<Collider>() != null) continue;   // a fist already fitted with a capsule keeps it
                 var sphere = t.gameObject.AddComponent<SphereCollider>();
                 sphere.radius = radius * BoneUnit;
                 sphere.center = new Vector3(0f, along * BoneUnit, 0f);

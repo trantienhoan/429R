@@ -19,9 +19,10 @@ namespace Game.Bonus
     /// - Taking BOTH mallets starts the countdown (Seconds). (Walking and teleporting stayed off until it was over; Keep
     ///   Still is off since 2026-11-26: the player walks as usual, and the machine is Machine Scale 0.8 of its size.)
     /// - Pumpkin heads pop up and go back down. A quick downward blow with a mallet whacks one (hands do nothing):
-    ///   normal 1 candy, gold 10 (rare, spinning), rainbow 15, time +1 to +3 seconds (rare, the head shows how many),
+    ///   normal 1 candy, gold 5 (rare, spinning), rainbow 8, time +1 to +3 seconds (rare, the head shows how many),
     ///   skull: don't (it takes 3 candies and the combo). A gold head whacked starts a gold frenzy: for 3 s every head
-    ///   is gold (3 candies each, faster, more at once, missing one costs nothing).
+    ///   is gold (1 candy each, faster, more at once, missing one costs nothing). (Halved 2026-11-27 from 10 / 15 / 3,
+    ///   user: "the reward for that game is a bit too much".)
     /// - Every whack in a row makes the heads come faster, stay up shorter, and more at once. A head that goes back
     ///   down unwhacked (not a skull) is a miss: the combo and the speed start over. Whatever the combo, the round gets
     ///   quicker towards its end, with one more head at once in the last (ticking) seconds.
@@ -116,11 +117,13 @@ namespace Game.Bonus
         [SerializeField] private float skullChance = 0.1f;
         [Min(0)]
         [SerializeField] private int normalCandies = 1;
-        [Tooltip("A gold head is rare, so it gives a lot.")]
+        [Tooltip("A gold head is rare, so it gives more (user 2026-11-27: \"the reward for that game is a bit too much\": " +
+                 "halved from 10; it also starts the frenzy).")]
         [Min(0)]
-        [SerializeField] private int goldCandies = 10;
+        [SerializeField] private int goldCandies = 5;
+        [Tooltip("The rarest head (halved 2026-11-27 from 15).")]
         [Min(0)]
-        [SerializeField] private int rainbowCandies = 15;
+        [SerializeField] private int rainbowCandies = 8;
         [Tooltip("Seconds a time (clock) head adds: a whole number from Least to Most at random, shown on the head (\"+2s\").")]
         [Min(0)]
         [SerializeField] private int leastClockSeconds = 1;
@@ -141,8 +144,10 @@ namespace Game.Bonus
                  "heads don't start another frenzy (a real gold whacked during one starts it over).")]
         [Min(0f)]
         [SerializeField] private float frenzySeconds = 3f;
+        [Tooltip("Candies each frenzy head gives (2026-11-27: 1, was 3: a frenzy brings many quick heads, and at 3 each it " +
+                 "was half the round's candies).")]
         [Min(0)]
-        [SerializeField] private int frenzyCandies = 3;
+        [SerializeField] private int frenzyCandies = 1;
         [Tooltip("In a frenzy the heads come this much more often (0.5 = twice as often).")]
         [Range(0.1f, 1f)]
         [SerializeField] private float frenzyPopEvery = 0.5f;

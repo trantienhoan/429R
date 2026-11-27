@@ -49,6 +49,8 @@ namespace Game.Locomotion
         private static readonly List<FallEdge> all = new();
         // Things already falling (from any edge), so each is handled once.
         private static readonly HashSet<GameObject> falling = new();
+        // Walkways out over the edges (the green path's hallway, 2026-11-27): no edge counts over their floor.
+        private static readonly List<BoxCollider> safeWalks = new();
         private static readonly Collider[] hits = new Collider[128];
 
         private BoxCollider box;
@@ -62,6 +64,42 @@ namespace Game.Locomotion
         {
             all.Clear();
             falling.Clear();
+            safeWalks.Clear();
+        }
+
+        /// <summary>
+        /// A walkway out over the edges (its floor's box, e.g. the green path's hallway, user 2026-11-27: "create a walk
+        /// path for Player can safe walk on it without falling to the fall edge"): no Fall Edge counts over it (from a
+        /// metre under its floor to 3 m over it) while it is there and on. Stepping off its sides still falls.
+        /// </summary>
+        public static void AddSafeWalk(BoxCollider floor)
+        {
+            if (floor != null && !safeWalks.Contains(floor)) safeWalks.Add(floor);
+        }
+
+        /// <summary>The walkway is gone (or going): the edges count over its spot again.</summary>
+        public static void RemoveSafeWalk(BoxCollider floor) => safeWalks.Remove(floor);
+
+        /// <summary>Whether this point is over a safe walkway's floor.</summary>
+        public static bool OnSafeWalk(Vector3 point)
+        {
+            for (int i = safeWalks.Count - 1; i >= 0; i--)
+            {
+                var floor = safeWalks[i];
+                if (floor == null)
+                {
+                    safeWalks.RemoveAt(i);
+                    continue;
+                }
+                if (!floor.enabled || !floor.gameObject.activeInHierarchy) continue;
+                var local = floor.transform.InverseTransformPoint(point) - floor.center;
+                var half = floor.size * 0.5f;
+                var scale = floor.transform.lossyScale;
+                float below = scale.y != 0f ? 1f / Mathf.Abs(scale.y) : 1f;
+                if (Mathf.Abs(local.x) <= half.x && Mathf.Abs(local.z) <= half.z &&
+                    local.y >= -half.y - below && local.y <= half.y + 3f * below) return true;
+            }
+            return false;
         }
 
         /// <summary>Whether this point is over any Fall Edge.</summary>
@@ -93,6 +131,7 @@ namespace Game.Locomotion
         /// <summary>The Fall Edge over this point (the newest, if several), or null.</summary>
         public static FallEdge At(Vector3 point)
         {
+            if (OnSafeWalk(point)) return null;
             FallEdge newest = null;
             foreach (var edge in all)
             {

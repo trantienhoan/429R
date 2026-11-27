@@ -279,6 +279,8 @@ namespace Game.Rooms
                 if (fsm.FsmName == "Health" && h != null) { pumpkinHealth = h; lastPumpkinHealth = h.Value; startPumpkinHealth = h.Value; }
             }
             if (breakPuff != null) EffectPool.Play(breakPuff, at + Vector3.up * 0.3f, breakPuffSize * 0.6f);
+            // 429R 2026-11-27: it may hold a piece of the Knight's armor (likelier than a room's furniture).
+            Game.Combat.KnightArmorHider.Instance?.SecretPumpkinUp(this, pumpkin.transform);
             // Its round bottom's edge (it rocks on it, never into the floor), measured before it pops in from small.
             float rim = pumpkin.TryGetComponent(out Renderer body) ? 0.95f * Mathf.Min(body.bounds.extents.x, body.bounds.extents.z) : 1.2f;
             StartCoroutine(PopIn(pumpkin.transform));
@@ -354,7 +356,12 @@ namespace Game.Rooms
                 pumpkinAt = pumpkin.transform.position;
                 if (lastPumpkinHealth > 0f) return;
             }
-            if (lastPumpkinHealth > 0f) { pumpkinHealth = null; return; }
+            if (lastPumpkinHealth > 0f)
+            {
+                pumpkinHealth = null;
+                Game.Combat.KnightArmorHider.Instance?.SecretPumpkinGone(this);
+                return;
+            }
             Broke();
         }
 
@@ -385,6 +392,8 @@ namespace Game.Rooms
                 CandyFountain.Play(pumpkinAt + Vector3.up * 1.2f, candyCount, candies, 1.5f, new Vector2(2.5f, 5f), new Vector2(1f, 3f));
                 if (candySound != null) AudioSource.PlayClipAtPoint(candySound, pumpkinAt);
             }
+            // The armor piece it held (if any) pops out too.
+            Game.Combat.KnightArmorHider.Instance?.SecretPumpkinBroke(this, pumpkinAt + Vector3.up * 1.2f);
             if (pumpkin != null) Destroy(pumpkin);
         }
 
@@ -404,6 +413,8 @@ namespace Game.Rooms
             {
                 pumpkinHealth = null;
                 Destroy(pumpkin);
+                // What it held hides again in the next room.
+                Game.Combat.KnightArmorHider.Instance?.SecretPumpkinGone(this);
             }
             StartCoroutine(BreakFloor());
         }

@@ -9745,6 +9745,66 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
+--- !u!1 &4214578293445514837
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7907633600664509186}
+  - component: {fileID: 6207881286851785036}
+  m_Layer: 0
+  m_Name: Boss Sky
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7907633600664509186
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4214578293445514837}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7530567627609544314}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6207881286851785036
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4214578293445514837}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d06b180268ac0e4c896ded3a96a3c88, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Rooms.BossFightSky
+  fightStates:
+  - BOSS
+  - wait
+  - fairy reward
+  - Thank For Playing
+  sky: {fileID: 8988169448021753431, guid: 4c4c80be6cf36f044a0ae99fc02152cd, type: 3}
+  skySize: 0.75
+  skipParts:
+  - Floor Ring
+  - Rising Sparkles
+  moon: {fileID: 7663314215844418125, guid: 4c4c80be6cf36f044a0ae99fc02152cd, type: 3}
+  groundMask: {fileID: 2011230435625697229, guid: 4c4c80be6cf36f044a0ae99fc02152cd,
+    type: 3}
+  ambient: {r: 0.42, g: 0.4, b: 0.5, a: 1}
+  noFog: 1
+  fadeSeconds: 2.5
 --- !u!1 &4349443564539461103
 GameObject:
   m_ObjectHideFlags: 0
@@ -20099,6 +20159,7 @@ Transform:
   - {fileID: 7315845153000678862}
   - {fileID: 7405283514250377308}
   - {fileID: 4063375633490572151}
+  - {fileID: 7907633600664509186}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &8851296057512575015

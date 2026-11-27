@@ -656,7 +656,8 @@ namespace Game.EditorTools
             }
             foreach (var part in arena.GetComponentsInChildren<Collider>(true)) Object.DestroyImmediate(part);
             foreach (var speaker in arena.GetComponentsInChildren<AudioSource>(true)) Object.DestroyImmediate(speaker);
-            foreach (var name in new[] { "Cube", "Sky Light" })
+            // (and the boss fight's copy of this opening's sky, 2026-11-27: the opening has its own)
+            foreach (var name in new[] { "Cube", "Sky Light", "Boss Sky" })
             {
                 var part = arena.transform.Find(name);
                 if (part != null) Object.DestroyImmediate(part.gameObject);

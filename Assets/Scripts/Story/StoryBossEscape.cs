@@ -14,6 +14,9 @@ namespace Game.Story
     /// User 2026-11-26 (Escape = Smoke Bomb, now the default): it pops out, plays its Alert look facing the player, and
     /// is gone in a ninja's smoke bomb; no run, no hole. The real boss comes in a smoke bomb too. No seed piece on its
     /// back (Seed On Boss off): the boss drops the room's piece when it dies, as before.
+    /// User 2026-11-27 (Escape = Run And Smoke, now the default): "Make them run away with a black smoke bomb": after its
+    /// Alert look it turns and runs off along a route away from the player (Run Smoke Seconds at most), then is gone in a
+    /// black smoke bomb (Prefabs/Story/Smoke_Bomb_Black); the real boss comes in one too.
     ///
     /// Played by the Story Boss Escapes action (one GAMESTAGES state per room, between the room's waiting state and its
     /// wall drop). The boss shown here is a look-only copy of the real prefab: no brain, no health, no colliders, so it
@@ -128,7 +131,8 @@ namespace Game.Story
             // Its body length (for the hole), from its look at full size.
             length = BodyLength() / 0.2f;
 
-            // A smoke bomb vanishes it where it stands: no route, no hole.
+            // A smoke bomb vanishes it where it stands: no route, no hole. Run And Smoke runs off along a route away from the
+            // player first (as to a dig spot), then smokes.
             if (SmokeBombStyle) { digAt = from; path = null; }
             else digAt = PickDigSpot(from, head.position, filter, out path);
             corner = 0;
@@ -347,6 +351,7 @@ namespace Game.Story
         }
 
         private bool SmokeBombStyle => settings != null && settings.Escape == StoryBossEscapeSettings.EscapeStyle.SmokeBomb;
+        private bool RunSmokeStyle => settings != null && settings.Escape == StoryBossEscapeSettings.EscapeStyle.RunAndSmoke;
 
         /// <summary>How many smoke bombs have gone off (the escapes' and the real bosses' coming), for tests.</summary>
         public static int SmokeBombs { get; private set; }
@@ -386,10 +391,12 @@ namespace Game.Story
                 case Phase.Hiss:
                     Turn(FacePlayer(body.position), 360f);
                     if (t >= settings.HissSeconds)
-                        Enter(SmokeBombStyle ? Phase.Smoke : path != null && path.Length > 1 ? Phase.Run : Phase.Dig);
+                        Enter(SmokeBombStyle ? Phase.Smoke : path != null && path.Length > 1 ? Phase.Run : RunSmokeStyle ? Phase.Smoke : Phase.Dig);
                     break;
                 case Phase.Run:
-                    RunAlong();
+                    // Run And Smoke: off it goes, and a moment later the smoke bomb.
+                    if (RunSmokeStyle && t >= settings.RunSmokeSeconds) Enter(Phase.Smoke);
+                    else RunAlong();
                     break;
                 case Phase.Dig:
                     Dig(t);
@@ -423,7 +430,7 @@ namespace Game.Story
             if (corner >= path.Length)
             {
                 body.position = digAt;
-                Enter(Phase.Dig);
+                Enter(RunSmokeStyle ? Phase.Smoke : Phase.Dig);
             }
         }
 
@@ -519,7 +526,7 @@ namespace Game.Story
                 if (settings.SeedOnBoss) StoryBossSeed.Give(brain.gameObject);
                 if (burrow.cameOut) continue;
                 // Gone in a smoke bomb, back in one: where it appears.
-                if (settings.Escape == StoryBossEscapeSettings.EscapeStyle.SmokeBomb)
+                if (settings.Smokes)
                 {
                     burrow.cameOut = true;
                     if (settings.ComeBackInSmoke) SmokeIn(brain, settings);

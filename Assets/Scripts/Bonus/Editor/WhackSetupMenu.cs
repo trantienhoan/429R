@@ -808,7 +808,8 @@ namespace Game.EditorTools
             }
             Migrate("goldChance", 0.1f, 0.04f);
             Migrate("clockChance", 0.06f, 0.03f);
-            Migrate("goldCandies", 5f, 10f);
+            // (goldCandies 5 -> 10 was here: dropped 2026-11-27, the user halved the reward back to 5, and a re-run must
+            // not raise it again.)
 
             // The candies: the nesting round's.
             var nesting = Load<GameObject>("Assets/Prefabs/Bases/Bonus_Round.prefab");

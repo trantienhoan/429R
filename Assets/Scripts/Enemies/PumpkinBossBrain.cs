@@ -140,9 +140,10 @@ namespace Game.Enemies
         [SerializeField] private float headScale = 1.7f;
         [SerializeField] private float upperScale = 1.7f;
         [SerializeField] private float trueScale = 2.1f;
-        [Tooltip("Running speed in true form, in m/s. The upper body moves at Upper Speed of it.")]
+        [Tooltip("Running speed in true form, in m/s. The upper body moves at Upper Speed of it. (2026-11-27: 5 -> 3.5, the " +
+                 "boss arena is smaller now; its charge and hops have their own speeds.)")]
         [Min(0.1f)]
-        [SerializeField] private float trueSpeed = 5f;
+        [SerializeField] private float trueSpeed = 3.5f;
         [Range(0.1f, 1f)]
         [SerializeField] private float upperSpeed = 0.6f;
 
@@ -485,7 +486,8 @@ namespace Game.Enemies
         [Header("Pumpkins to throw back")]
         [Tooltip("Dropped for every health it loses.")]
         [SerializeField] private GameObject pumpkinDrop;
-        [Min(1)] [SerializeField] private int maxDropsAround = 10;
+        [Tooltip("At most this many of its dropped pumpkins lying around at once (2026-11-27: 10 -> 5).")]
+        [Min(1)] [SerializeField] private int maxDropsAround = 5;
 
         [Header("Smoke and dust")]
         [Tooltip("Its blasts where it slams the ground or a blow lands, and its black vomit smoke (Pumpkin Boss Fx; " +
@@ -554,6 +556,7 @@ namespace Game.Enemies
         private readonly List<float> recentHits = new();
         private float nextSpamAnswer;
         private readonly Dictionary<Transform, Vector3> fistTracked = new();
+        private readonly Dictionary<Transform, Vector3> fistTrackedOther = new();
         private readonly List<PlayMakerFSM> fsmBuffer = new();
         private NavMeshAgent agent;
         private AudioSource speaker;
@@ -1416,6 +1419,7 @@ namespace Game.Enemies
             // A move ends any hop (its lift and squash ease back).
             hopStep = HopStep.None;
             fistTracked.Clear();
+            fistTrackedOther.Clear();
             marks = 0;
             act = what;
             actStarted = Time.time;
@@ -1839,28 +1843,34 @@ namespace Game.Enemies
         private void TryHit(Transform hand, float radius, Vector2 launch, bool trueForm)
         {
             if (actHit || hand == null) return;
-            // The fist's own hit sphere when it has one (it grows and flies out with the fist); otherwise round the hand.
-            Vector3 point;
+            // The fist's own hit shape (it grows and flies out with the fist): a capsule fitted to the fist pumpkin (Tools >
+            // 429 Game > Enemies > Pumpkin Boss: Fit Fist Hit Shapes, 2026-11-27: the old sphere sat 0.6 m behind the
+            // fist you see at full punch size and was smaller, so the push came late), or a sphere; otherwise round the hand.
+            Vector3 end, otherEnd;
             float r;
-            if (hand.TryGetComponent(out SphereCollider fist))
+            if (hand.TryGetComponent(out CapsuleCollider fistShape)) FistCapsule(fistShape, out end, out otherEnd, out r);
+            else if (hand.TryGetComponent(out SphereCollider fist))
             {
                 var b = fist.bounds;
-                point = b.center;
+                end = otherEnd = b.center;
                 r = Mathf.Max(b.extents.x, Mathf.Max(b.extents.y, b.extents.z));
             }
             else
             {
-                point = hand.position;
+                end = otherEnd = hand.position;
                 r = radius * Size;
             }
             // The rubber fist covers metres in a frame or two: everything along its path since last frame counts.
-            bool reached = PlayerNear(point, r);
-            if (!reached && fistTracked.TryGetValue(hand, out var last))
+            bool reached = FistNear(end, otherEnd, r);
+            if (!reached && fistTracked.TryGetValue(hand, out var last) && fistTrackedOther.TryGetValue(hand, out var lastOther))
             {
-                for (int i = 1; i < 8 && !reached; i++) reached = PlayerNear(Vector3.Lerp(last, point, i / 8f), r);
+                for (int i = 1; i < 8 && !reached; i++)
+                    reached = FistNear(Vector3.Lerp(last, end, i / 8f), Vector3.Lerp(lastOther, otherEnd, i / 8f), r);
             }
-            fistTracked[hand] = point;
+            fistTracked[hand] = end;
+            fistTrackedOther[hand] = otherEnd;
             if (!reached) return;
+            var point = (end + otherEnd) * 0.5f;
             actHit = true;
             // The blow lands: a blast where the fist meets them (on the boss's side of it).
             if (fx != null) fx.Hit(point, new Vector3(transform.position.x, point.y, transform.position.z), Size);
@@ -1892,6 +1902,34 @@ namespace Game.Enemies
             // Its own body (over or against the player as it hits) doesn't cut the throw short (user's play test 2026-11-11:
             // the throws ended after 0.03 s).
             PlayerLaunch.Launch(from, launch.x, launch.y * (push > 0f ? push : 1f), true, true, minPushShare, gameObject);
+        }
+
+        // The ends of a capsule's middle line, and its radius, in the world (it grows with the fist).
+        private static void FistCapsule(CapsuleCollider capsule, out Vector3 end, out Vector3 otherEnd, out float radius)
+        {
+            var t = capsule.transform;
+            var scale = t.lossyScale;
+            var axis = capsule.direction == 0 ? t.right : capsule.direction == 2 ? t.forward : t.up;
+            float along = Mathf.Abs(capsule.direction == 0 ? scale.x : capsule.direction == 2 ? scale.z : scale.y);
+            float across = capsule.direction == 0 ? Mathf.Max(Mathf.Abs(scale.y), Mathf.Abs(scale.z))
+                : capsule.direction == 2 ? Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.y))
+                : Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.z));
+            radius = capsule.radius * across;
+            float half = Mathf.Max(0f, capsule.height * 0.5f * along - radius);
+            var middle = t.TransformPoint(capsule.center);
+            end = middle + axis * half;
+            otherEnd = middle - axis * half;
+        }
+
+        // A fist (a capsule from End to Other End, or a sphere when they're the same point) touching the player's body.
+        private bool FistNear(Vector3 end, Vector3 otherEnd, float radius)
+        {
+            if ((end - otherEnd).sqrMagnitude < 0.0001f) return PlayerNear(end, radius);
+            for (int i = 0; i <= 4; i++)
+            {
+                if (PlayerNear(Vector3.Lerp(otherEnd, end, i / 4f), radius)) return true;
+            }
+            return false;
         }
 
         // A sphere touching the player's body: a standing cylinder from their feet to their head.
@@ -3231,10 +3269,11 @@ namespace Game.Enemies
             fx.Ground(at, strength, size > 0f ? size : Size);
         }
 
-        // The middle of a fist: its hit sphere (it grows and flies out with the fist), else the hand.
+        // The middle of a fist: its hit shape (it grows and flies out with the fist), else the hand.
         private Vector3 FistPoint(Transform hand)
         {
             if (hand == null) return transform.position;
+            if (hand.TryGetComponent(out CapsuleCollider shape)) return hand.TransformPoint(shape.center);
             return hand.TryGetComponent(out SphereCollider fist) ? fist.bounds.center : hand.position;
         }
 
